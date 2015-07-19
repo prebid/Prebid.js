@@ -10,7 +10,7 @@ isHome: false
 #Summary
 > Prebid.js helps you send out pre-bid requests asynchronously, while watching out the timeout for ya.
 
-![Prebid Diagram Image]({{ site.url }}/assets/images/prebid-diagram.png)
+![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
 
 1. **Register bidder tag Ids:** 
 
