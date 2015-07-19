@@ -1,4 +1,5 @@
-Jekyll Bootstrap Doc
-====================
+Prebid.js
+========
 
-http://mistic100.github.io/jekyll-bootstrap-doc
+###Add, A/B test pre-bid integrations without writing code.
+
