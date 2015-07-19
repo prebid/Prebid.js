@@ -46,7 +46,7 @@ h1 {
   border-bottom: 0px;
   padding-bottom: 0px;
 }
-h1.home-title {
+#content h1 {
   border: 0px;
 }
 .pb-home img {
