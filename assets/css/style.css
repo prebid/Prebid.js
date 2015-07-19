@@ -1,0 +1,58 @@
+.bs-docs-masthead {
+  padding-top:50px;
+  padding-bottom:40px;
+  margin-bottom:20px;
+}
+
+.bs-docs-header h1, .bs-docs-header p {
+  margin-right:0px;
+}
+
+.bs-docs-sidebar .nav > li > a {
+  font-size:15px;
+}
+.bs-docs-sidebar .nav .nav > li > a {
+  font-size:14px;
+}
+.back-top-top {
+  font-size:13px;
+}
+
+#content {
+  position:relative;
+}
+.bs-docs-header#content:after {
+  content:"";
+  position:absolute;
+  bottom:0px;
+  right:0px;
+  height:50px;
+  width:30%;
+  background:linear-gradient(135deg, transparent 50px, white 50px);
+}
+
+img {
+  width: 100%;
+}
+
+h1 {
+  padding-bottom: 9px;
+  margin: 40px 0 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.pb-home {
+  padding-top: 50px;
+  border-bottom: 0px;
+  padding-bottom: 0px;
+}
+h1.home-title {
+  border: 0px;
+}
+.pb-home img {
+  height: 80px;
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+
+}

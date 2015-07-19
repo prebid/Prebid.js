@@ -1,0 +1,62 @@
+# name of the software
+name: Prebid.js
+# current version of the software
+#version: 1.1.0
+# url of the download button
+downloadUrl: https://github.com/prebid/Prebid.js
+# licence of the software
+license: MIT License
+licenseUrl: http://opensource.org/licenses/MIT
+
+# list of additional links on the right of the top menu
+headerLinks:
+  - title: GitHub
+    url: https://github.com/prebid/Prebid.js
+
+# list if additional links on the footer
+footerLinks:
+  - title: GitHub
+    url: https://github.com/prebid/Prebid.js
+  - title: Issues
+    url: https://github.com/prebid/Prebid.js/issues?state=open
+
+# header
+header:
+  color1: "#4d280c"
+  color2: "#944b18"
+  #color1: "#080331"
+  #color2: "#673051"
+  trianglify: true
+
+# google analytics
+analytics:
+  account:
+  domain:
+
+# github buttons
+githubButton:
+  user: prebid
+  repo: Prebid.js
+
+# twitter buttons
+twitter:
+  enabled: true
+  via:
+  hash: prebidjs
+  account:
+
+# facebook buttons
+facebook:
+  enabled: false
+  profileUrl:
+
+# Build settings
+markdown: kramdown
+
+exclude: ['README.md', 'LICENSE', 'bower.json', 'Gemfile.lock', 'Gemfile']
+
+gems:
+  - jekyll-mentions
+  - jemoji
+  - jekyll-redirect-from
+  - jekyll-sitemap
