@@ -2,6 +2,7 @@
 layout: default
 title: Getting Started
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
+pid: 0
 isHome: false
 ---
 
@@ -30,7 +31,7 @@ isHome: false
 
 	Define a mapping of the bidders’ tag Ids to your ad units.
 
-2. **Ad server wait for bids:** 
+2. **Ad server waits for bids:** 
 
 	Define the timeout so your ad server would wait for a few hundred milliseconds and the bidders can respond with bids.
 
@@ -61,7 +62,7 @@ pbjs.adUnits = [{
     }]
 }];
 
-// 2. Ad server wait for bids
+// 2. Ad server waits for bids
 PREBID_TIMEOUT = 300;
 function initAdserver() {
     (function() {

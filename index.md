@@ -5,7 +5,7 @@ description: Add, A/B test pre-bid integrations without writing code.
 isHome: true
 ---
 
-<div class="bs-docs-featurette pb-home">
+<div class="bs-docs-featurette pb-home pb-docs">
   <div class="container">
     <h2 class="bs-docs-featurette-title">Designed for publishers, by publishers.</h2>
     <p class="lead">Prebid.js is developed with a group of publishers frustrated by weeks-long pre-bid implementations.</p>
@@ -31,6 +31,45 @@ isHome: true
         <p> Prebid.js helps you run a fair auction for all bidders. It rotates bidders and gives them the same amount of time.</p>
         <a href="" class="btn btn-outline btn-sm">Explore more</a>
       </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="bs-docs-featurette pb-docs">
+  <div class="container">
+    <h2 class="bs-docs-featurette-title">Support Major Bidders</h2>
+    <p class="lead">Open source is awesome. Bidders update their implementation to the latest here. You get the most up to date code to maximize your yield.</p>
+
+    <hr class="half-rule">
+
+    <div class="row bs-docs-featured-sites">
+    
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/amazon-logo.jpg" alt="Amazon" class="img-responsive">
+      </div>
+    
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/appnexus-logo.png" alt="AppNexus" class="img-responsive">
+      </div>
+    
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/criteo-logo.png" alt="Criteo" class="img-responsive">
+      </div>
+    
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/openx-logo.jpg" alt="OpenX" class="img-responsive">
+      </div>
+
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/pubmatic-logo.png" alt="Pubmatic" class="img-responsive">
+      </div>
+
+      <div class="col-xs-4 col-sm-2">
+        <img src="assets/images/logos/rubicon-logo.png" alt="Rubicon" class="img-responsive">
+      </div>
+    
     </div>
 
     <hr class="half-rule">
