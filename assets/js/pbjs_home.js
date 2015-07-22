@@ -22,7 +22,6 @@ function newVisitor(email, site) {
   visitor.save(null, {
     success: function(visitor) {
       $('#submit-email').text("You're Added!");
-      alert('success!');
     },
     error: function(visitor, error) {
       // Show the error message somewhere and let the user try again.
