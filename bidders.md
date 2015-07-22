@@ -52,11 +52,8 @@ These parameters in the bidReponse object are common across all bidders. Some ma
 | `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
 | `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
 | `adUrl` |	String |	The creative URL. Mime type is text/html. Can be rendered in an iFrame. |	"http://nym1.b.adnxs.com/ab?e=wqT..." |
-| `cpm` |	Float |	Supported. [Reference](#common-bidresponse) |	 |
-| `adTag` | String |	Supported. [Reference](#common-bidresponse) |	 |
-| `width` |	Integer |	Supported. [Reference](#common-bidresponse) |	 |
-| `height` |	Integer |	Supported. [Reference](#common-bidresponse) |	 |
-| `dealId` |	String |	Supported. [Reference](#common-bidresponse) |	 |
+
+[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`, `dealId`.
 
 
 ###Line item setup
@@ -79,20 +76,146 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 
 <div class="bs-docs-section" markdown="1">
 #Amazon
+
+###bidder code: 
+`amazon`
+
+###bidId
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `aid` | required | The site ID for Amazon. | "1234" |
+
+###bidResponse
+
+{: .table .table-bordered .table-striped }
+| Name | Type | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `keys` | String | The keys for Amazon | `["a3x2p13", "a1x6p11"]` |
+
+
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #Criteo
+
+###bidder code: 
+`criteo`
+
+###bidId
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `nid` | required | The nid from Criteo. | "1234" |
+| `cookiename` | required | The cookie name for Criteo. | "ckn_pub" |
+| `varname` | optional | The default is `crtg_content`. | "crtg_content" |
+
+###bidResponse
+
+{: .table .table-bordered .table-striped }
+| Name | Type | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `keys` | String | The keys from crtg_content | `["pub728=1", "pub320=1"]` |
+
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #OpenX
+
+###bidder code: 
+`openx`
+
+###bidId
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `pid` | required | The publisher ID | "534205285" |
+| `unitId` | required | the unit ID | "538562284" |
+| `cookiename` | required | The cookie name for OpenX. | "ox_pub" |
+
+###bidResponse
+
+{: .table .table-bordered .table-striped }
+| Name | Type | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `keys` | String | The keys from crtg_content | `["pub728=1", "pub320=1"]` |
+
+
 </div>
 
 <div class="bs-docs-section" markdown="1">
 #Pubmatic
+
+###bidder code: 
+`pubmatic`
+
+###bidId
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `pubId` | required | The publisher ID | "32572" |
+| `slot` | required | the unit ID | "38519891@300x250" |
+
+###bidResponse
+
+{: .table .table-bordered .table-striped }
+| Name | Type | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `bidid` | String | The unique identifier of a bid's creative. It's used by the line item's creative. | "38519891@300x250" |
+| `cpm` | String | Refer to [Common bidReponse](#common-bidresponse) | |
+
+###Creative Setup
+
+{% highlight js %}
+<script type="text/javascript">
+if(!window.PubMaticGrouped){ document.write('<script type="text/javascript" src="'+ ( location.protocol === "https:" ? "https:" : "http:" ) +'//ads.pubmatic.com/AdServer/js/gshowad.js"><\/script>');}
+</script>
+<script type="text/javascript">
+PubMaticGrouped.displayCreative("%%PATTERN:bidid%%");
+</script>
+{% endhighlight %}
+
+
 </div>
 
 <div class="bs-docs-section" markdown="1">
 #Rubicon
+
+###bidder code: 
+`rubicon`
+
+###bidId
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `account` | required | The publisher account ID | "4934" |
+| `site` | required | The site ID | "@300x250" |
+| `zonesize` | required | The concatenation of zone and size | "23948-15" |
+
+###bidResponse
+
+{: .table .table-bordered .table-striped }
+| Name | Type | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"234235_746323" |
+| `cpm` | String | Refer to [Common bidReponse](#common-bidresponse) | |
+
+###Creative Setup
+
+In your adserver, for each size, you can have a 3rd party tag creative with the below content. The value passed into apn_adid will be what pbjs.renderAd() will use to identify the creative. 
+
+{% highlight js %}
+<script type="text/JavaScript">
+    try{ window.top.pbjs.renderAd(document, '%%PATTERN:rb_adid%%'); } catch(e) {/*ignore*/}
+</script>
+{% endhighlight %}
+
+
 </div>
