@@ -134,16 +134,18 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `pid` | required | The publisher ID | "534205285" |
-| `unitId` | required | the unit ID | "538562284" |
-| `cookiename` | required | The cookie name for OpenX. | "ox_pub" |
+| `jstag_url` | required | The publisher specific URL of jstag | `ox-d.xyz.servedbyopenx.com/w/1.0/jstag?ef=db&nc=23923-EF` |
+| `pgid` | required | The page ID | "534205285" |
+| `auid` | required | the ad unit ID | "538562284" |
 
 ###bidResponse
 
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `keys` | String | The keys from crtg_content | `["pub728=1", "pub320=1"]` |
+| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"533915652_534127501" |
+
+[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`.
 
 
 </div>
