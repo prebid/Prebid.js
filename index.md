@@ -1,13 +1,13 @@
 ---
 layout: default
 title: Home
-description: Add, A/B test pre-bid integrations without writing code.
+description: Setup and manage pre-bid advertising partners without writing code. Prebid.js is open source and free.
 isHome: true
 ---
 
 <div class="bs-docs-featurette pb-home pb-docs">
   <div class="container">
-    <h2 class="bs-docs-featurette-title">Designed for publishers, by publishers.</h2>
+    <h2 class="bs-docs-featurette-title">Integrate pre-bid partners in minutes, not weeks.</h2>
     <p class="lead">Prebid.js is developed with a group of publishers frustrated by weeks-long pre-bid implementations.</p>
 
     <hr class="half-rule">
@@ -15,19 +15,19 @@ isHome: true
     <div class="row">
       <div class="col-sm-4">
         <img src="assets/images/ninja-orange.png" alt="Sass and Less support" class="img-responsive">
-        <h3>No more engineering work</h3>
+        <h3>No development required.</h3>
         <p>Prebid.js has built-in integrations with all major bidders: Amazon, AppNexus, Criteo, Pubmatic, Rubicon, etc.</p>
         <a href="" class="btn btn-outline btn-sm">See full bidder list</a>
       </div>
       <div class="col-sm-4">
         <img src="assets/images/latency-orange.png" alt="Responsive across devices" class="img-responsive">
-        <h3>Latency already minimized</h3>
+        <h3>Reduce page load time.</h3>
         <p>All blocking ad calls are now made async. Pre-bid requests now load together with your page's content.</p>
         <a href="" class="btn btn-outline btn-sm">How is this done</a>
       </div>
       <div class="col-sm-4">
         <img src="assets/images/balance-orange.png" alt="Components" class="img-responsive">
-        <h3>Maximize revenue</h3>
+        <h3>Maximize revenue.</h3>
         <p> Prebid.js helps you run a fair auction for all bidders. It rotates bidders and gives them the same amount of time.</p>
         <a href="" class="btn btn-outline btn-sm">Explore more</a>
       </div>
@@ -39,8 +39,8 @@ isHome: true
 
 <div class="bs-docs-featurette pb-docs">
   <div class="container">
-    <h2 class="bs-docs-featurette-title">Support Major Bidders</h2>
-    <p class="lead">Open source is awesome. Bidders update their implementation to the latest here. You get the most up to date code to maximize your yield.</p>
+    <h2 class="bs-docs-featurette-title">All Major Bidders Supported.</h2>
+    <p class="lead">Prebid.js has built-in, most up to date adapters for all of the major pre-bid bidders.</p>
 
     <hr class="half-rule">
 
@@ -73,8 +73,15 @@ isHome: true
     </div>
 
     <hr class="half-rule">
+  </div>
+</div>
 
-    <p class="lead">Prebid.js is open source. It's hosted, developed, and maintained on GitHub.</p>
+<div class="bs-docs-featurette pb-docs">
+  <div class="container">
+
+    <h2 class="bs-docs-featurette-title">Open Source and Community Owned.</h2>
+    
+    <p class="lead">Prebid.js is open source software. Anyone is free to modify the code and contribute adapters for new bidders. Prebid.js is hosted, developed, and maintained on GitHub.</p>
     <a href="getting-started.html" class="btn btn-outline btn-lg">Learn more about Prebid.js</a>
   </div>
 </div>

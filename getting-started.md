@@ -6,63 +6,60 @@ pid: 0
 isHome: false
 ---
 
+<!--
+
+I would move the Basic Example immediately below the “What is Prebid.js” section.
+I would break up Basic Example section into three sub-sections, one for each step. Under the code for each section, we should add quick explanatory text describing what’s going on.
+-->
+
+
 <div class="bs-docs-section" markdown="1">
 
 #Overview
 
-###What is Prebid.js
+###What is Prebid.js?
 
-> Prebid.js is an open-source Javascript framework that’s optimized for your pre-bid integrations. 
+> Prebid.js is an open source Javascript framework to help publishers integrate and manage pre-bid partners without writing custom code or increasing page load times. Prebid.js is 100% open source and free for anyone to use. [Learn more about pre-bid here.]()
 
-* It has clean, built-in support for all major bidders (Amazon, AppNexus, Criteo, Pubmatic, etc), as well as major ad servers (DFP, AdTech). 
+
+* It has clean, built-in support for all major bidders (Amazon, AppNexus, Criteo, Pubmatic, etc), as well as major ad servers (DFP, OAS, AdTech). 
 * Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time. 
 * Plugging in prebid.js is easy. Adding new pre-bid bidders is a matter of editing JSON config.
 
 <br>
-
-<a name="how-works">
-
-###How does it work?
-> Prebid.js helps you send out pre-bid requests asynchronously, while watching out the timeout for ya.
-
-![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
-
-1. **Register bidder tag Ids:** 
-
-	Define a mapping of the bidders’ tag Ids to your ad units.
-
-2. **Ad server waits for bids:** 
-
-	Define the timeout so your ad server would wait for a few hundred milliseconds and the bidders can respond with bids.
-
-3. **Set targeting for bids:** 
-
-	Set bids’ CPM for your ad units’ targeting, then send the impressions to your ad server.
-
-<br> 
 
 <a name="basic-example">
 
 ###Basic Example
 Here’s a basic example for Amazon and AppNexus bidding into a DFP ad unit:
 
-{% highlight js %}
-var pbjs = pbjs || {};
+#####1. Register bidder tag Ids
 
-// 1. Register bidder tag Ids
+In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units.
+
+{% highlight js %}
+
 pbjs.adUnits = [{
     code: "/1996833/slot-1",
     sizes: [[300, 250], [728, 90]],
     bids: [{
-    	bidder: "amazon",
-    	bidId: { siteId: "8765" }
+        bidder: "amazon",
+        bidId: { siteId: "8765" }
     }, {
         bidder: "appnexus",
         bidId: { tagId: "234235" }
     }]
 }];
 
-// 2. Ad server waits for bids
+{% endhighlight %}
+
+
+#####2. Ad server waits for bids
+
+Define the timeout to let your ad server wait for a few hundred milliseconds, so the bidders can respond with bids.
+
+{% highlight js %}
+
 PREBID_TIMEOUT = 300;
 function initAdserver() {
     (function() {
@@ -72,7 +69,16 @@ function initAdserver() {
 };
 setTimeout(initAdserver, PREBID_TIMEOUT);
 
-// 3. Set targeting for bids
+{% endhighlight %}
+
+
+
+#####3. Set targeting for bids
+
+Call the helper function once `setTargetingForGPTAsync()` to handle all the targeting for all bidders.
+
+{% highlight js %}
+
 googletag.cmd.push(function() {
     var slot = googletag.defineSlot('/1996833/slot-1', [[300, 250], [728, 90]]);
     if (pbjs.libLoaded) {
@@ -82,10 +88,22 @@ googletag.cmd.push(function() {
 
 {% endhighlight %}
 
+For detailed walkthrough and API references, check out the [Publisher API docs](publisher-api.html).
+
 <br>
 
-###Keep things modular
-> Heard of MVP? Here we go: PBA - publisher API, bidder API, and ad server API.
+<a name="how-works">
+
+###How does it work?
+> Prebid.js sends bid requests to partners asynchronously and manages timeouts to keep page load times fast.
+
+![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
+
+<br> 
+
+
+###Prebid.js is designed modularly
+> Prebid.js exposes three API’s - a Publisher API used to request ads, a Bidder API used for Bidders to respond to ad requests, and an Ad Server API used to integrate with ad servers.
 
 * **Publisher API**
 
@@ -93,7 +111,7 @@ googletag.cmd.push(function() {
 
 * **Bidder API**
 
-	Prebid.js supports all major pre-bid bidders out of the box. We used the same API to implement all the bidder integration. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs]().
+	Prebid.js supports all major pre-bid bidders out of the box. We used the same API to implement all the bidder integrations. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs]().
 
 * **Ad Server API**: 
 

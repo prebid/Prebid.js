@@ -25,47 +25,6 @@ isHome: false
 
 	Set bids’ CPM for your ad units’ targeting, then send the impressions to your ad server.
 
-<br> 
-
-###Basic Example
-Here’s a basic example for Amazon and AppNexus bidding into a DFP ad unit:
-
-{% highlight js %}
-var pbjs = pbjs || {};
-
-// 1. Register bidder tag Ids
-pbjs.adUnits = [{
-    code: "/1996833/slot-1",
-    sizes: [[300, 250], [728, 90]],
-    bids: [{
-    	bidder: "amazon",
-    	bidId: { siteId: "8765" }
-    }, {
-        bidder: "appnexus",
-        bidId: { tagId: "234235" }
-    }]
-}];
-
-// 2. Ad server wait for bids
-PREBID_TIMEOUT = 300;
-function initAdserver() {
-    (function() {
-        // To load GPT Library Async
-    })();
-    pbjs.initAdserverSet = true;
-};
-setTimeout(initAdserver, PREBID_TIMEOUT);
-
-// 3. Set targeting for bids
-googletag.cmd.push(function() {
-    var slot = googletag.defineSlot('/1996833/slot-1', [[300, 250], [728, 90]]);
-    if (pbjs.libLoaded) {
-        pbjs.setTargetingForGPTAsync(slot, '/1996833/slot-1');
-    }
-});
-
-{% endhighlight %}
-
 </div>
 
 <div class="bs-docs-section" markdown="1">

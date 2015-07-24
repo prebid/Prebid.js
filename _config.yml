@@ -5,8 +5,8 @@ version: 1.1.0
 # url of the download button
 downloadUrl: https://github.com/prebid/Prebid.js
 # licence of the software
-license: MIT License
-licenseUrl: http://opensource.org/licenses/MIT
+license: Apache License
+licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 
 # list of additional links on the right of the top menu
 headerLinks:

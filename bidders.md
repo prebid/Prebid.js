@@ -4,6 +4,7 @@ title: Bidders
 description: Documentation on bidders
 pid: 2
 isHome: false
+hide: true
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -37,8 +38,11 @@ These parameters in the bidReponse object are common across all bidders. Some ma
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `tagId` | required | The placement ID from AppNexus. | "234234" |
+
+<!--
 | `invCode` | optional | The inventory code you set up in a placement. Has to be used together with memberId. | "code234234" |
 | `memberId` | optional | Your member ID in AppNexus. Only useful to be used together with invCode. | "123" |
+-->
 
 <a href="appnexus-bidresponse"></a>
 
@@ -47,13 +51,33 @@ These parameters in the bidReponse object are common across all bidders. Some ma
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `adId` |	String |	The unique identifier of a bid's creative. It's used by the line item's creative. |	"234235_746323" |
+| `adId` |	String |	The unique identifier of a bid's creative. It's a concatenation of tagId and creativeId. It's used by the line item's creative. |	"apn_234235_746323" |
 | `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
 | `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
 | `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
-| `adUrl` |	String |	The creative URL. Mime type is text/html. Can be rendered in an iFrame. |	"http://nym1.b.adnxs.com/ab?e=wqT..." |
 
 [Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`, `dealId`.
+
+###Default bidderSettings
+{% highlight js %}
+{
+    bidder: "appnexus",
+    adserverTargeting: [
+        {
+            key: "apn_adid",
+            val: function(bidResponse) {
+                return bidResponse.adId;
+            }
+        }, {
+            key: "apn_key",
+            val: function(bidResponse) {
+                return bidResponse.keyMg;
+            }
+        }
+    ]
+}
+
+{% endhighlight %}
 
 
 ###Line item setup
@@ -93,6 +117,22 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `keys` | String | The keys for Amazon | `["a3x2p13", "a1x6p11"]` |
+
+###Default bidderSettings
+{% highlight js %}
+{
+    bidder: "amazon",
+    adserverTargeting: [
+        {
+            key: "amz_slots",
+            val: function(bidResponse) {
+                return bidResponse.amznslots;
+            }
+        }
+    ]
+}
+
+{% endhighlight %}
 
 
 </div>
@@ -143,7 +183,10 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"533915652_534127501" |
+| `adId` | String | The unique identifier of a bid's creative. It's a concatenation of auid and ad_id in OpenX's response. It's used by the line item's creative. |	"ox_533915652_534127501" |
+| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
+| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
+| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
 
 [Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`.
 
@@ -169,17 +212,39 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `bidid` | String | The unique identifier of a bid's creative. It's used by the line item's creative. | "38519891@300x250" |
-| `cpm` | String | Refer to [Common bidReponse](#common-bidresponse) | |
+| `adId` |	String |	The unique identifier of a bid's creative. It's Pubmatic's bidid. It's used by the line item's creative. |	"pm_38519891@300x250" |
+| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
+| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
+| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
+
+[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`.
+
+###Default bidderSettings
+{% highlight js %}
+{
+    bidder: "pubmatic",
+    adserverTargeting: [
+        {
+            key: "pm_adid",
+            val: function(bidResponse) {
+                return bidResponse.adId;
+            }
+        }, {
+            key: "pm_key",
+            val: function(bidResponse) {
+                return bidResponse.keyMg;
+            }
+        }
+    ]
+}
+
+{% endhighlight %}
 
 ###Creative Setup
 
 {% highlight js %}
-<script type="text/javascript">
-if(!window.PubMaticGrouped){ document.write('<script type="text/javascript" src="'+ ( location.protocol === "https:" ? "https:" : "http:" ) +'//ads.pubmatic.com/AdServer/js/gshowad.js"><\/script>');}
-</script>
-<script type="text/javascript">
-PubMaticGrouped.displayCreative("%%PATTERN:bidid%%");
+<script type="text/JavaScript">
+    try{ window.top.pbjs.renderAd(document, '%%PATTERN:pm_adid%%'); } catch(e) {/*ignore*/}
 </script>
 {% endhighlight %}
 
@@ -206,8 +271,12 @@ PubMaticGrouped.displayCreative("%%PATTERN:bidid%%");
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"234235_746323" |
-| `cpm` | String | Refer to [Common bidReponse](#common-bidresponse) | |
+| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"rb_234235_746323" |
+| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
+| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
+| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
+
+
 
 ###Creative Setup
 
