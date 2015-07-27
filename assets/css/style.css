@@ -1,11 +1,79 @@
-.bs-docs-masthead {
-  padding-top:50px;
-  padding-bottom:40px;
-  margin-bottom:20px;
+
+.bs-docs-nav .navbar-brand, .bs-docs-nav .navbar-nav>li>a {
+  color: #444;
+  font-weight: 400;
 }
 
+.bs-docs-masthead {
+  padding-top:30px;
+  padding-bottom:30px;
+  margin-bottom:0px;
+}
+
+.bs-docs-masthead h1 {
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.bs-docs-masthead .version {
+  color: white;
+}
+
+
+.bs-docs-masthead .btn.btn-default {
+  color: #FF8800;
+  background: #fefefe;
+  border-color: white;
+}
+
+.bs-docs-masthead .btn.btn-default:hover {
+  background: #dedede;
+}
+
+.btn.btn-outline {
+  color: #FF8800;
+  border-color: #cccccc;
+  
+}
+
+.btn.btn-outline:hover {
+  color: white;
+  background: #2ABBB0;
+  border-color: #2ABBB0;
+}
+
+
+.bs-docs-masthead .note {
+  font-size: 18px;
+  color: white;
+}
+
+.bs-docs-featurette-title {
+  font-weight: 300;
+  margin-bottom: 15px;
+  color: #444;
+}
+
+.bs-docs-featurette .col-sm-4 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.bs-docs-featurette .col-sm-4 p {
+  margin-bottom: 15px;
+}
+
+.bs-docs-featurette h3 {
+  font-weight: 500;
+  color: #444;
+}
+
+.bs-docs-header {
+  margin-bottom: 0px;
+}
 .bs-docs-header h1, .bs-docs-header p {
   margin-right:0px;
+  color: white;
 }
 
 .bs-docs-sidebar .nav > li > a {
@@ -35,7 +103,12 @@ img {
   width: 100%;
 }
 
-h1 {
+.full-rule {
+  margin-top: 50px;
+  margin-bottom: 50px;
+}
+
+.bs-docs-section h1 {
   padding-bottom: 9px;
   margin: 40px 0 20px;
   border-bottom: 1px solid #eee;
@@ -46,15 +119,24 @@ h1 {
   border-bottom: 0px;
   padding-bottom: 0px;
 }
-#content h1 {
-  border: 0px;
-}
+
 .pb-home img {
   height: 80px;
   width: auto;
   margin-left: auto;
   margin-right: auto;
 }
+
+.pb-home .bidder-logos img {
+  width: auto;
+  height: auto;
+}
+
+.bs-docs-footer {
+  margin-top: 0;
+}
+
+
 .nav.nav-tabs {
   margin-bottom: 15px;
   font-weight: bold;
