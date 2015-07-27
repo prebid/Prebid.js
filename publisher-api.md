@@ -34,6 +34,32 @@ isHome: false
 
 The code below registers the bidder tags for your ad units. Once the prebid.js library loads, it reads the pbjs.adUnits object and sends out bid requests. Check out the complete [reference on bidders](bidders.html).
 
+<div class="bs-callout bs-callout-info">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#bidder-register-dfp" role="tab" data-toggle="tab">DFP</a></li>
+        <li role="presentation"><a href="#bidder-register-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="bidder-register-dfp" markdown="1">
+
+`code` should be your GPT slot's ad unit path. If they don't match, prebid.js would **not** be able to set targeting correctly in section [Set Targeting]().
+
+
+</div>
+
+<div role="tabpanel" class="tab-pane" id="bidder-register-custom" markdown="1">
+
+`code` should be a unique identifier that can be used to map to an ad unit.
+
+</div>
+
+</div>
+
+</div>
+
 ###Example
 
 {% highlight js %}
@@ -53,7 +79,7 @@ pbjs.adUnits = [
                         tagId: "234235"
                     }
                 }]
-        }  
+        }
     },{
         code: "/1996833/slot-2",
         sizes: [[468, 60]],
@@ -65,8 +91,7 @@ pbjs.adUnits = [
                 },{
                     bidder: "appnexus",
                     bidId: {
-                        memberId: "343"
-                        invCode: "PBJS123"
+                        tagId: "827326"
                     }
                 }]
         }
@@ -99,13 +124,80 @@ pbjs.adUnits = [
 
 #Configure Ad Server Targeting (Optional)
 
-Bidders all have different recommended ad server line item targeting and creative setup. To remove the headache for you, Prebid.js has a default recommended query string targeting setting for every bidder. Check out the [default recommended settings here](bidders.html). You may choose to follow the recommendation and set up your line items and creatives that way. No need to worry about the following.
+Bidders all have different recommended ad server line item targeting and creative setup. To remove the headache for you, Prebid.js has a default recommended query string targeting setting for all bidders.
 
-If you prefer to customize your line item targeting and creative setup, you can overwrite the bidder settings as the below example shows. 
+
 
 ###Example
 
-The below example overwrites the default AppNexus and Amazon query string targeting. 
+
+{% highlight js %}
+
+pbjs.bidderSettings = {
+    standard: {
+        adserverTargeting: [{
+            key: "hb_bidder",
+            val: function(bidResponse) {
+                return bidResponse.bidder;
+            }
+        }, {
+            key: "hb_adid",
+            val: function(bidResponse) {
+                return bidResponse.adId;
+            }
+        }, {
+            key: "hb_pb",
+            val: function(bidResponse) {
+                return bidResponse.pbMg;
+            }
+        }, {
+            key: "hb_size",
+            val: function(bidResponse) {
+                return bidResponse.size;
+            }
+        }]
+    }
+}
+
+{% endhighlight %}
+
+
+{: .table .table-bordered .table-striped }
+| Function Name | Description |
+| :--- | :---- |
+| function(bidResponse) | The function returns a query string targeting value. It is used in pair with the adserverTargeting's `key` param. The key value pair together will be sent for targeting on the ad server's ad unit impression. `bidResponse` is bidder specific and you can find what're available in the [documentation here](bidders.html). |
+
+
+###Available bidResponse values
+
+{: .table .table-bordered .table-striped }
+|   Name |  Scope   |    Type | Description |
+| :----  |:--------| :-------| :----------- |
+| `bidder` |
+| `adId` |
+| `pbLg` |
+| `pbMg` |
+| `size` |
+
+
+###Bidder Level Customization (Optional)
+
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+<div class="panel panel-default">
+<div class="panel-heading" role="tab" id="headingOne">
+<h4 class="panel-title">
+<a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+    <i class="glyphicon glyphicon-menu-right"></i> Explore more
+</a>
+</h4>
+</div>
+<div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+<div class="panel-body" markdown="1">
+
+
+
+If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so. You can overwrite the bidder settings as the below example, which overwrites the default AppNexus and Amazon query string targeting. 
+
 
 {% highlight js %}
 pbjs.bidderSettings = [{
@@ -136,13 +228,15 @@ pbjs.bidderSettings = [{
 }]
 {% endhighlight %}
 
-###Explained
+
 The bidder setting for AppNexus is saying: send 2 pairs of key value string targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_adid` => the value of `bidResponse.adId`. The 2nd pair would be `apn_key` => the value of `bidResponse.keyHg`. You can find the documentation of AppNexus's bidResponse object [here](bidders.html#appnexus-bidresponse). Similar case for Amazon.
 
-{: .table .table-bordered .table-striped }
-| Function Name | Description |
-| :--- | :---- |
-| targetingValueHandler (bidResponse) | The function returns a query string targeting value. It is used in pair with the adserverTargeting's `key` param. The key value pair together will be sent for targeting on the ad server's ad unit impression. `bidResponse` is bidder specific and you can find what're available in the [documentation here](bidders.html). |
+
+</div>
+</div>
+</div>
+</div>
+
 
 </div>
 
@@ -171,9 +265,21 @@ This code pulls down the prebid.js library asynchronously from the appropriate C
 <div class="bs-docs-section" markdown="1">
 #Ad server timeout & targeting
 
-###If you're using DFP
 
-####1. Set Adserver Timeout Setting (Optional)
+
+<div class="bs-callout bs-callout-info">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#timeout-dfp" role="tab" data-toggle="tab">DFP</a></li>
+        <li role="presentation"><a href="#timeout-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="timeout-dfp" markdown="1">
+
+
+####1. Set Adserver Timeout Setting
 
 One challenge we've heard about from publishers we work with is how to delay GPT for a certain amount of time so that pre-bid bidders have a chance to respond. In this section we'll describe what we believe is the easiest way to delay GPT while setting a timeout. Note that delaying GPT using this technique is strictly optional.
 
@@ -204,33 +310,28 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 {% endhighlight %}
 
-#####Function Explained
 
-{: .table .table-bordered .table-striped }
-| Function Name | Description |
-| :--- | :---- |
-| setTargetingFor GPTAsync(slotObj, adUnitCode) | Set query string targeting on a given GPT ad unit. The logic for deciding query strings is described in the section [Configure AdServer Targeting](configure-adserver-targeting). This function is only relevant if you're using DFP as your ad server. |
+####2. Set Targeting
 
+`pbjs.setTargetingForGPTAsync` will find all the ad slots defined in the page, and call GPT's set targeting function for query string targeting. The logic for coming up with key value pairs can be found in the section [Configure AdServer Targeting](configure-adserver-targeting).
 
-####2. Set Targeting (Required)
+It's important to wrap `pbjs.setTargetingForGPTAsync` with the `pbjs.libLoaded` condition, because there's no guarantee that the Prebid.js library has been loaded at this point in the script's execution. You don't have to wrap it with googletag.cmd.push() because the function already handled that for you.
 
-Given the GPT slot object and the ad unit code, `pbjs.setTargetingForGPTAsync` will set the bid's price bucket and size targeting info on the slot object using GPT's `setTargeting` function. The logic for coming up with query string targeting can be found in the section [Configure AdServer Targeting](configure-adserver-targeting).
-
-It's important to wrap `pbjs.setTargetingForGPTAsync` with the `pbjs.libLoaded` condition, because there's no guarantee that the Prebid.js library has been loaded at this point in the script's execution.
+Note that the below function has to be called after **all your GPT slots have been defined**.
 
 {% highlight js %}
 
-googletag.cmd.push(function() {
-    var slot = googletag.defineSlot('/1996833/slot-1', [[300, 250], [728, 90]]);
-    if (pbjs.libLoaded) {
-        pbjs.setTargetingForGPTAsync(slot, '/1996833/slot-1');
-    }
-});
+if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
 
 {% endhighlight %}
 
 
-###If you're using a custom ad server
+
+</div>
+
+<div role="tabpanel" class="tab-pane" id="timeout-custom" markdown="1">
+
+
 
 You've probably already configured your custom ad server to wait for a certain amount of time before sending out the impressions. That amount of time is given to your pre-bid bidders to respond.
 
@@ -252,12 +353,25 @@ setTimeout(initAdserver, PB_PAGE_TIMEOUT);
 
 {% endhighlight %}
 
-#####Function Explained
+
+</div>
+
+</div>
+
+</div>
+
+
+
+####Functions
 
 {: .table .table-bordered .table-striped }
-| Function Name | Description | Return Example |
-| :--- | :---- | :---- |
+| Function Name | Description |
+| :--- | :---- |
+| setTargetingFor GPTAsync() | Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section [Configure AdServer Targeting](configure-adserver-targeting). This function is only relevant if you're using DFP as your ad server. Note that this function has to be called **after all ad units on page are defined**.|
 | getAdserver TargetingParams ForAdUnit (adUnitCode) | This function returns the query string targeting parameters for a given ad unit. This function will only return values after the prebid.js library has loaded. | [{<br>  key: "apn_adid",<br>  val: "234235" },<br>{<br>  key: "apn_key",<br>  val: "300x250p1.9" <br>}] |
+
+
+
 
 </div>
 

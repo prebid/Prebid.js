@@ -54,5 +54,8 @@ h1 {
   width: auto;
   margin-left: auto;
   margin-right: auto;
-
+}
+.nav.nav-tabs {
+  margin-bottom: 15px;
+  font-weight: bold;
 }

@@ -75,16 +75,11 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 #####3. Set targeting for bids
 
-Call the helper function once `setTargetingForGPTAsync()` to handle all the targeting for all bidders.
+Call the helper function once `setTargetingForGPTAsync()` to handle all the targeting for all bidders. 
 
 {% highlight js %}
 
-googletag.cmd.push(function() {
-    var slot = googletag.defineSlot('/1996833/slot-1', [[300, 250], [728, 90]]);
-    if (pbjs.libLoaded) {
-        pbjs.setTargetingForGPTAsync(slot, '/1996833/slot-1');
-    }
-});
+if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
 
 {% endhighlight %}
 
