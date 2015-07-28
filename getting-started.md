@@ -23,8 +23,8 @@ I would break up Basic Example section into three sub-sections, one for each ste
 
 
 * It has clean, built-in support for all major bidders (Amazon, AppNexus, Criteo, Pubmatic, etc), as well as major ad servers (DFP, OAS, AdTech). 
-* Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time. 
-* Plugging in prebid.js is easy. Adding new pre-bid bidders is a matter of editing JSON config.
+* Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time, confusing line item and targeting setup.
+* Plugging in prebid.js is easy. Adding new pre-bid bidders is a matter of adding tag Ids into a JSON config.
 
 <br>
 
@@ -44,10 +44,10 @@ pbjs.adUnits = [{
     sizes: [[300, 250], [728, 90]],
     bids: [{
         bidder: "amazon",
-        bidId: { siteId: "8765" }
+        params: { siteId: "8765" }
     }, {
         bidder: "appnexus",
-        bidId: { tagId: "234235" }
+        params: { tagId: "234235" }
     }]
 }];
 

@@ -6,6 +6,9 @@ pid: 4
 hide: false
 isHome: false
 ---
+<div class="bs-docs-section" markdown="1">
+
+#Goals
 
 ###Common problems
 
@@ -15,11 +18,25 @@ isHome: false
 
 ###Our goals
 
-1. Help you get down to 500 line items and a few creatives to manage all creative sizes and bidders. Adding a new bidder requires absolutely no change to any existing setup.
+1. Help you get down to 1 set of line items and a few creatives to manage all creative sizes and bidders. Adding a new bidder requires absolutely no change to any existing setup.
 2. Only manage 4 targeting parameter. 
 3. Helpful reports that can help you understand and optimize your header bidding setup.
 
+</div>
 
+<div class="bs-docs-section" markdown="1">
+
+#How does it work?
+
+![Ad Ops Diagram]({{ site.github.url }}/assets/images/adops-intro.png)
+
+1. headerbid.js contacts bidders in the page's header to get bids back. Note that headerbid.js makes **all calls truly async**, meaning the page's content can continue to render.
+2. headerbid.js then sets the targeting parameters on the impressions sent to the ad server. Note that headerbid.js helps you **standardize targeting params across all bidders**. The targeting params are shown in the diagram. The default setting contains (`hb_bidder`, `hb_size`, `hb_pb`, `hb_adid`).
+3. With **1 set of line items**, you can now manage header bidding for all bidders and all sizes. Find [more details here](#price-bucket-def) on price bucket setup.
+4. headerbid.js helps you standardize all creative setup. The short code snippet [documented here](#creative-setup) **handles all bidders and all sizes**. 
+
+
+</div>
 
 <div class="bs-docs-section" markdown="1">
 
@@ -57,10 +74,11 @@ Allmost all ad servers' line items can support multiple sizes. Make sure the siz
 
 </div>
 
+<a name="price-bucket-def"></a>
 
 ###eCPM
 
-Set up your line items:
+The line items' eCPM setup:
 
 {: .table .table-bordered .table-striped }
 |	 |	Low Granularity (good for testing) 	|	Medium Granularity (recommended/default)	 | High |
@@ -75,21 +93,36 @@ Set up your line items:
 
 ###Targeting
 
-#####Target all ad units
-???
+Line item targeting setup:
 
-#####Target price bucket
+* **Ad units**
 
-Each line item should target the price bucket string `hb_pb`. The targeted value should be of equavalent value to eCPM set at the line item.
+	All line items should target all ad units that you'd like header bidding running on.
 
-**Important**: the price bucket value should always be at **2 decimal** places. 
+* **Price bucket**
+
+	Each line item should target the price bucket string (default setting is `hb_pb`). The targeted value should be of equavalent value to eCPM set at the line item.
+
+	_**Important**_: the price bucket value should always be at **2 decimal** places. 
 
 </div>
 
 <div class="bs-docs-section" markdown="1">
 
 
+<a name="creative-setup"></a>
+
 #Creatives Setup
+
+The below code snippet works for all ad servers.
+
+{% highlight js %}
+
+<script>
+	try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+</script>
+
+{% endhighlight %}
 
 
 <div class="bs-callout bs-callout-info">
@@ -111,15 +144,7 @@ Create a new 3rd party tag creative.
 
 #####Code snippet
 
-Use the below code snippet:
-
-{% highlight js %}
-
-<script>
-	try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%', '%%PATTERN:hb_bidder%%'); } catch(e) {/*ignore*/}
-</script>
-
-{% endhighlight %}
+As documented above.
 
 #####Target ad unit size
 
@@ -158,15 +183,7 @@ Create one 3rd party tag creative per size.
 
 ####Step 2
 
-Use the below code snippet for the creative:
-
-{% highlight js %}
-
-<script>
-	try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%', '%%PATTERN:hb_bidder%%'); } catch(e) {/*ignore*/}
-</script>
-
-{% endhighlight %}
+As documented above.
 
 ####Step 3
 
@@ -196,19 +213,6 @@ Make sure your ad server supports the below query string keys:
 | hb_bidder | The bidder code | `appnexus` |
 | hb_size | The width and height concatenated | `300x250` |
 | hb_pb | The price bucket | 2.10 |
-
-</div>
-
-
-<div class="bs-docs-section" markdown="1">
-
-###How does it work?
-
-To help simplify the line item and targeting setup on the ad server side, Prebid.js has made 
-
-Let's first take a look at the 
-
-
 
 </div>
 

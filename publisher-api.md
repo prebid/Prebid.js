@@ -9,7 +9,7 @@ isHome: false
 <div class="bs-docs-section" markdown="1">
 
 #Summary
-> Prebid.js helps you send out pre-bid requests asynchronously, while watching out the timeout for ya.
+> Prebid.js sends bid requests to partners asynchronously and manages timeouts to keep page load times fast.
 
 ![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
 
@@ -70,12 +70,12 @@ pbjs.adUnits = [
         sizes: [[300, 250], [728, 90]],
         bids: [{
                     bidder: "amazon",
-                    bidId: {
+                    params: {
                         siteId: "8765"
                     }
                 },{
                     bidder: "appnexus",
-                    bidId: {
+                    params: {
                         tagId: "234235"
                     }
                 }]
@@ -85,12 +85,12 @@ pbjs.adUnits = [
         sizes: [[468, 60]],
         bids: [{
                     bidder: "amazon",
-                    bidId: {
+                    params: {
                         siteId: "8765"
                     }
                 },{
                     bidder: "appnexus",
-                    bidId: {
+                    params: {
                         tagId: "827326"
                     }
                 }]
@@ -114,7 +114,7 @@ pbjs.adUnits = [
 |	Name |	Scope 	|	 Type | Description |
 | :----  |:--------| :-------| :----------- |
 | `bidder` |	required |	string |	The bidder code. Find the [complete list here](bidders.html). |
-| `bidId` |	required |	object |	The bidder's preferred way of identifying a bid request. Find the [complete reference here](bidders.html). |
+| `params` |	required |	object |	The bidder's preferred way of identifying a bid request. Find the [complete reference here](bidders.html). |
 
 </div>
 
@@ -130,6 +130,10 @@ Bidders all have different recommended ad server line item targeting and creativ
 
 ###Example
 
+
+The below code snippet is the **default** setting for ad server targeting. For each bidder's bid, Prebid.js will set the below 4 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target the 4 keys.
+
+If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. **Note** that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly.
 
 {% highlight js %}
 
@@ -171,16 +175,18 @@ pbjs.bidderSettings = {
 ###Available bidResponse values
 
 {: .table .table-bordered .table-striped }
-|   Name |  Scope   |    Type | Description |
-| :----  |:--------| :-------| :----------- |
-| `bidder` |
-| `adId` |
-| `pbLg` |
-| `pbMg` |
-| `size` |
+|   Name |   Type | Description | Example
+| :----  |:--------| :-------| :-------|
+| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `appnexus` |
+| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
+| `pbLg` | String | The low granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.50` |
+| `pbMg` | String | The medium granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.97` |
+| `size` | String | The size of the bid creative. Concatenation of width and height by 'x'. | `300x250` |
 
 
 ###Bidder Level Customization (Optional)
+
+If you'd like even more customization (down to the bidder level), prebid.js also provides the API to do so. Click on Explore more for the details:
 
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 <div class="panel panel-default">

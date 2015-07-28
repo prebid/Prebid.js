@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Home
-description: Setup and manage header bidding advertising partners without writing code. headerbid.js is open source and free.
+description: Setup and manage header bidding advertising partners without writing code or confusing line items. headerbid.js is open source and free.
 isHome: true
 ---
 
@@ -22,8 +22,8 @@ isHome: true
 
       <div class="col-sm-4">
         <img src="assets/images/icons/icon-money.png" alt="Responsive across devices" class="img-responsive">
-        <h3>500 line items</h3>
-        <p>No more confusing line item and targeting setup. Only 500 line items can now handle all header bidding bidders and sizes.</p>
+        <h3>Minimum line item setup.</h3>
+        <p>With only 1 set of line items, headerbid.js allows ad ops to manage all bidders and sizes at ease. Adding new bidders require no ad server change.</p>
         <a href="adops.html" class="btn btn-outline">Learn more</a>
       </div>
 
