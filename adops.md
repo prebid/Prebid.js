@@ -19,7 +19,7 @@ isHome: false
 ###Our goals
 
 1. Help you get down to 1 set of line items and a few creatives to manage all creative sizes and bidders. Adding a new bidder requires absolutely no change to any existing setup.
-2. Only manage 4 targeting parameter. 
+2. Only manage 4 targeting parameters. 
 3. Helpful reports that can help you understand and optimize your header bidding setup.
 
 </div>
@@ -105,6 +105,8 @@ Line item targeting setup:
 
 	_**Important**_: the price bucket value should always be at **2 decimal** places. 
 
+	_**Important**_: Amazon has the price obfuscated, so make sure to apply the obfuscated price bucket values. Follow [the instructions here](bidders.html#amazon-caveats).
+
 </div>
 
 <div class="bs-docs-section" markdown="1">
@@ -114,7 +116,7 @@ Line item targeting setup:
 
 #Creatives Setup
 
-The below code snippet works for all ad servers.
+The below code snippet applies to all ad servers.
 
 {% highlight js %}
 
@@ -136,7 +138,14 @@ The below code snippet works for all ad servers.
 
 <div role="tabpanel" class="tab-pane active" id="creatives-dfp" markdown="1">
 
-DFP supports creative **size override**, which allows us to use **1 creative only** to run all bidders' all sizes header bidding setup.
+DFP supports creative **size override**, which allows us to use the same set of creatives to run all bidders' header bidding setup for all ad sizes.
+
+#####How many creatives should I submit?
+
+**IMPORTANT**: What's the **maximum number of ad units** your page can have? Set up **that number of creatives**. 
+
+WHY? The same creative cannot be served into more than 1 ad unit in a single GPT request call. We thus need to duplicate the creatives. But all creatives can share the same content.
+
 
 ####Step 1: New Creative
 
@@ -209,11 +218,71 @@ Make sure your ad server supports the below query string keys:
 {: .table .table-bordered .table-striped }
 |	Default Key String |	Description 	|	Example	 |
 | :----  |:--------| :-------|
-| hb_adid | The ad Id | `2343_234234` |
-| hb_bidder | The bidder code | `appnexus` |
-| hb_size | The width and height concatenated | `300x250` |
-| hb_pb | The price bucket | 2.10 |
+| hb_pb | The price bucket. Used by the line item to target. | `2.10` |
+| hb_adid | The ad Id. Used by the ad server creative to render ad. | `2343_234234` |
+| hb_bidder | The bidder code. Useful for logging and reporting. | `appnexus` |
+| hb_size | The width and height concatenated. Useful for logging and reporting. | `300x250` |
 
 </div>
 
 
+<div class="bs-docs-section" markdown="1">
+
+#Get started
+
+###Start with a few line items:
+
+To avoid having to deal with a few hundred line items from the beginning, we recommend your page use the `pbLg` (low granularity price bucket) to quickly get started. Let your developer overwrite the default bidder setting (as [documented here](publisher-api.html#configure-adserver-targeting)) using the below code snippet. 
+
+{% highlight js %}
+
+pbjs.bidderSettings = {
+    standard: {
+        adserverTargeting: [{
+            key: "hb_adid",
+            val: function(bidResponse) {
+                return bidResponse.adId;
+            }
+        }, {
+            key: "hb_pb",
+            val: function(bidResponse) {
+                return bidResponse.pbMg;
+            }
+        }]
+    }
+}
+
+{% endhighlight %}
+
+Follow the [Line Item Setup](#line-item-setup) and [Creative Setup](#creative-setup) to configure your ad server to support pre-bid. 
+
+###Start with one new ad unit
+
+To avoid the complexity of class 1, mediation, and AdX demand, we recommend getting started with one new ad unit. Create a new ad unit in your ad server and have it accept the line items you created in the previous step.
+
+### Implement prebid.js
+
+Work with your development team to implement prebid.js as documented in [Publisher API](publisher-api.html). We recommend **start with one bidder** first. You'll need to provide dev with the bidder's tag/site IDs (Find the specific bidder documentation [here](bidders.html)) and the ad unit.
+
+We have a whole list of examples here. Use your own bidder bid params and ad units.
+* gpt_example.html
+* custom_adserver_example.html
+
+### Debug
+
+If your page is not serving pre-bid ads, there could be 2 reasons:
+
+1. The ad server is not configured correctly. 
+2. The bidders do not have demand.
+
+
+### You're ready!
+
+Once your test pages serve and you're comfortable with pre-bid:
+
+* Add more line items for higher granularity. Use the default setting for `bidderSettings`.
+* Implement prebid.js in your site. 
+
+</div>
+
+<br>

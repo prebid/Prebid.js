@@ -35,7 +35,7 @@ Here’s a basic example for Amazon and AppNexus bidding into a DFP ad unit:
 
 #####1. Register bidder tag Ids
 
-In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units.
+In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Note that immediately after the library is loaded, prebid.js will send pre-bid requests async to all bidders you've specified.
 
 {% highlight js %}
 
@@ -50,6 +50,8 @@ pbjs.adUnits = [{
         params: { tagId: "234235" }
     }]
 }];
+
+// Load prebid.js library async
 
 {% endhighlight %}
 
@@ -106,11 +108,11 @@ For detailed walkthrough and API references, check out the [Publisher API docs](
 
 * **Bidder API**
 
-	Prebid.js supports all major pre-bid bidders out of the box. We used the same API to implement all the bidder integrations. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs]().
+	Prebid.js supports all major pre-bid bidders out of the box. We used the same API to implement all the bidder integrations. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs](adaptors.html).
 
 * **Ad Server API**: 
 
-	Prebid.js comes with support for most major ad servers. If you'd like to implement a custom ad server, or to add a new ad server into the list, refer to [Ad Server API Docs]().
+	Prebid.js comes with support for most major ad servers. If you'd like to implement a custom ad server, or to add a new ad server into the list, refer to [Ad Server API Docs](adaptors.html).
 
 </div>
 

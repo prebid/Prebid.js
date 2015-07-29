@@ -8,21 +8,37 @@ hide: true
 ---
 
 <div class="bs-docs-section" markdown="1">
+#Summary
+
+In this page, you can find the below information:
+
+* bidder code: this is the code prebid.js uses to identify bidders.
+* bid params: ad request parameters for a bidder. For example, tag Id, site ID, query string parameters. Your page should fill out the required bid params for a bidder to succesfully get a bid back.
+* bidder specific bidResponse: in addition to 
+* Caveats: every bidder is different. In addition to the standardized bidResponse object we propose, there might be caveats that you should know about.
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
 #Common
 
 <a name="common-bidresponse"></a>
 
 ###bidResponse
-These parameters in the bidReponse object are common across all bidders. Some may not be available for certain bidders and they're marked for each bidder:
+These parameters in the bidReponse object are common across all bidders.
+
 
 {: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `cpm` |	Float |	The bid price in the currency's unit amount. For example, 1.2 in USD would be 1 dollar and 20 cents ($1.20). |	1.2 |
-| `adTag` | String | The creative's payload in HTML | `<html><body><img src="http://cdn.com/creative.png"></body></html>` |
+|   Name |   Type | Description | Example
+| :----  |:--------| :-------| :-------|
+| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `appnexus` |
+| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
+| `pbLg` | String | The low granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.50` |
+| `pbMg` | String | The medium granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.97` |
+| `size` | String | The size of the bid creative. Concatenation of width and height by 'x'. | `300x250` |
 | `width` |	Integer |	The width of the bid creative in pixels. |	300 |
 | `height` |	Integer |	The height of the bid creative in pixels. |	250 |
-| `dealId` |	String |	The Deal ID. |	"827372323" |
+| `adTag` | String | The creative's payload in HTML | `<html><body><img src="http://cdn.com/creative.png"></body></html>` |
 
 </div>
 
@@ -32,7 +48,7 @@ These parameters in the bidReponse object are common across all bidders. Some ma
 ###bidder code: 
 `appnexus`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -44,58 +60,6 @@ These parameters in the bidReponse object are common across all bidders. Some ma
 | `memberId` | optional | Your member ID in AppNexus. Only useful to be used together with invCode. | "123" |
 -->
 
-<a href="appnexus-bidresponse"></a>
-
-###bidResponse
-
-{: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `adId` |	String |	The unique identifier of a bid's creative. It's a concatenation of tagId and creativeId. It's used by the line item's creative. |	"apn_234235_746323" |
-| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
-| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
-| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
-
-[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`, `dealId`.
-
-###Default bidderSettings
-{% highlight js %}
-{
-    bidder: "appnexus",
-    adserverTargeting: [
-        {
-            key: "apn_adid",
-            val: function(bidResponse) {
-                return bidResponse.adId;
-            }
-        }, {
-            key: "apn_key",
-            val: function(bidResponse) {
-                return bidResponse.keyMg;
-            }
-        }
-    ]
-}
-
-{% endhighlight %}
-
-
-###Line item setup
-Depending on what granularity of keys you have chosen from `keyLg`, `keyMg`, `keyHg`, set up the corresponding line items:
-
-* `keyLg`: 20 line items per size at $0.50 increment. For example: 
-* `keyMg`: 100 line items per size at $0.10 increment. For example: 
-* `keyHg`: 1000 line items per size at $0.01 increment. For example: 
-
-###Creative setup
-In your adserver, for each size, you can have a 3rd party tag creative with the below content. The value passed into apn_adid will be what pbjs.renderAd() will use to identify the creative. 
-
-{% highlight js %}
-<script type="text/JavaScript">
-    try{ window.top.pbjs.renderAd(document, '%%PATTERN:apn_adid%%'); } catch(e) {/*ignore*/}
-</script>
-{% endhighlight %}
-
 </div>
 
 <div class="bs-docs-section" markdown="1">
@@ -104,35 +68,33 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 ###bidder code: 
 `amazon`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `aid` | required | The site ID for Amazon. | "1234" |
 
-###bidResponse
+###bidResponse (bidder specific)
 
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `keys` | String | The keys for Amazon | `["a3x2p13", "a1x6p11"]` |
+| `pbLg` | String | The obfuscated price from Amazon, derived from Amazon's keys (example: `a3x2p10`). Note this is Amazon specific. | `amz_p10` |
+| `pbMg` | String | Same value as in `pbLg` | `amz_p10` |
 
-###Default bidderSettings
-{% highlight js %}
-{
-    bidder: "amazon",
-    adserverTargeting: [
-        {
-            key: "amz_slots",
-            val: function(bidResponse) {
-                return bidResponse.amznslots;
-            }
-        }
-    ]
-}
+<a name="amazon-caveats"></a>
 
-{% endhighlight %}
+###Caveats
+
+#####Price obfuscation and line item setup (IMPORTANT)
+
+Amazon obfuscates the price. Prebid.js will send the obfuscated price (example: `amz_p10`, taken from `a3x2p10`) through all the price level targeting params (`pbLg`, `pbMg`). Contact Amazon to get the obfuscated price to real CPM mapping. Suppose `p10` is mapped to `$1.50`. In your ad server, the line item for eCPM $1.50 should also let the price level key accept `amz_p10` (in addition to `$1.50` for other bidders). 
+
+#####No concept of tags
+
+Amazon's pre-bid implementation doesn't have the concept of placements. To avoid the same creative appearing twice, Prebid.js will apply slot level targeting and give each creative an `adId`.
+
 
 
 </div>
@@ -144,7 +106,7 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 ###bidder code: 
 `criteo`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -153,12 +115,13 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 | `cookiename` | required | The cookie name for Criteo. | "ckn_pub" |
 | `varname` | optional | The default is `crtg_content`. | "crtg_content" |
 
-###bidResponse
+###Caveats
 
-{: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `keys` | String | The keys from crtg_content | `["pub728=1", "pub320=1"]` |
+##### No price back
+
+Criteo doesn't return the price back directly through their pre-bid API. Prebid.js still manages the ad call for you, but it will NOT auto set the targeting or returning the targeting parameters. Instead, what's inside `crtg_content` will be available in the window Javascript variable. You can continue to manage the `crtg_content` as Criteo's own documentation proposes. Note that the line items and creatives for Criteo will have to be separate too.
+
+When Criteo supports bid price through their API, we will support Criteo in the same manner as the other bidders.
 
 </div>
 
@@ -169,7 +132,7 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 ###bidder code: 
 `openx`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -177,18 +140,6 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 | `jstag_url` | required | The publisher specific URL of jstag | `ox-d.xyz.servedbyopenx.com/w/1.0/jstag?ef=db&nc=23923-EF` |
 | `pgid` | required | The page ID | "534205285" |
 | `auid` | required | the ad unit ID | "538562284" |
-
-###bidResponse
-
-{: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `adId` | String | The unique identifier of a bid's creative. It's a concatenation of auid and ad_id in OpenX's response. It's used by the line item's creative. |	"ox_533915652_534127501" |
-| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
-| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
-| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
-
-[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`.
 
 
 </div>
@@ -199,54 +150,13 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 ###bidder code: 
 `pubmatic`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `pubId` | required | The publisher ID | "32572" |
 | `slot` | required | the unit ID | "38519891@300x250" |
-
-###bidResponse
-
-{: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `adId` |	String |	The unique identifier of a bid's creative. It's Pubmatic's bidid. It's used by the line item's creative. |	"pm_38519891@300x250" |
-| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
-| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
-| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
-
-[Common bidResponse](#common-bidresponse) supported: `cpm`, `adTag`, `width`, `height`.
-
-###Default bidderSettings
-{% highlight js %}
-{
-    bidder: "pubmatic",
-    adserverTargeting: [
-        {
-            key: "pm_adid",
-            val: function(bidResponse) {
-                return bidResponse.adId;
-            }
-        }, {
-            key: "pm_key",
-            val: function(bidResponse) {
-                return bidResponse.keyMg;
-            }
-        }
-    ]
-}
-
-{% endhighlight %}
-
-###Creative Setup
-
-{% highlight js %}
-<script type="text/JavaScript">
-    try{ window.top.pbjs.renderAd(document, '%%PATTERN:pm_adid%%'); } catch(e) {/*ignore*/}
-</script>
-{% endhighlight %}
 
 
 </div>
@@ -257,7 +167,7 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 ###bidder code: 
 `rubicon`
 
-###bidId
+###bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -265,28 +175,6 @@ In your adserver, for each size, you can have a 3rd party tag creative with the 
 | `account` | required | The publisher account ID | "4934" |
 | `site` | required | The site ID | "@300x250" |
 | `zonesize` | required | The concatenation of zone and size | "23948-15" |
-
-###bidResponse
-
-{: .table .table-bordered .table-striped }
-| Name | Type | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `adId` | String | The unique identifier of a bid's creative. It's used by the line item's creative. |	"rb_234235_746323" |
-| `keyLg` |	String |	A concatenated key showing the ad size and a "low granularity" CPM at $0.50 increments. |	"300x250p1.50" |
-| `keyMg` |	String |	A concatenated key showing the ad size and "medium granularity" CPM at $0.10 increments. |	"728x90p1.90" |
-| `keyHg` |	String |	A concatenated key showing the ad size and "high granularity" CPM at $0.01 increments. |	"468x60p1.59" |
-
-
-
-###Creative Setup
-
-In your adserver, for each size, you can have a 3rd party tag creative with the below content. The value passed into apn_adid will be what pbjs.renderAd() will use to identify the creative. 
-
-{% highlight js %}
-<script type="text/JavaScript">
-    try{ window.top.pbjs.renderAd(document, '%%PATTERN:rb_adid%%'); } catch(e) {/*ignore*/}
-</script>
-{% endhighlight %}
 
 
 </div>
