@@ -49,7 +49,6 @@ isHome: true
     <hr class="full-rule">
 
 
-
     <h2 class="bs-docs-featurette-title">All Major Bidders Supported.</h2>
     <p class="lead">Prebid.js has built-in, most up to date adapters for all of the major header bidding bidders.</p>
 
