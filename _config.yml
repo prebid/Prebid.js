@@ -22,7 +22,10 @@ footerLinks:
 
 # header
 header:
-  color1: "#2ABBB0"
+  #color1: "#0084B4"
+  #color1: "#55acee"
+  color1: "#3b88c3"
+  #color1: "#2ABBB0"
   
   #color1: "#080331"
   #color2: "#673051"

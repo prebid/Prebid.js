@@ -71,7 +71,7 @@ pbjs.adUnits = [
         bids: [{
                     bidder: "amazon",
                     params: {
-                        siteId: "8765"
+                        aaxId: "8765"
                     }
                 },{
                     bidder: "appnexus",
@@ -84,9 +84,11 @@ pbjs.adUnits = [
         code: "/1996833/slot-2",
         sizes: [[468, 60]],
         bids: [{
-                    bidder: "amazon",
+                    bidder: "rubicon",
                     params: {
-                        siteId: "8765"
+                        account: "4934",
+                        site: "13945",
+                        rp_zonesize: "23948-15"
                     }
                 },{
                     bidder: "appnexus",
@@ -118,7 +120,7 @@ pbjs.adUnits = [
 
 </div>
 
-<a name="configure-adserver-targeting"></a>
+<a name="adserver-targeting"></a>
 
 <div class="bs-docs-section" markdown="1">
 
@@ -179,7 +181,7 @@ pbjs.bidderSettings = {
 {: .table .table-bordered .table-striped }
 |   Name |   Type | Description | Example
 | :----  |:--------| :-------| :-------|
-| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `appnexus` |
+| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
 | `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
 | `pbLg` | String | The low granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.50` |
 | `pbMg` | String | The medium granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.97` |
@@ -251,7 +253,7 @@ This code pulls down the prebid.js library asynchronously from the appropriate C
 (function() {
     var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
     pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
-    pbjsEl.src = (isHttps ? "https://a248.e.akamai.net/appnexus.download.akamai.com/89298/adnexus-prod/tag" : "http://cdn.adnxs.com/tag") + "/prebid.js";
+    pbjsEl.src = (isHttps ? "https://" : "http://") + "cdn.site.com/prebid.js";
     var pbjsTargetEl = document.getElementsByTagName("head")[0];
     pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 })();
@@ -354,7 +356,7 @@ For more documentation on getting the targeting parameters, check out the next s
 
 
 <div class="bs-docs-section" markdown="1">
-#Ad server targeting
+#Set key-value targeting
 
 
 
@@ -370,7 +372,9 @@ For more documentation on getting the targeting parameters, check out the next s
 <div role="tabpanel" class="tab-pane active" id="targeting-dfp" markdown="1">
 
 
-`pbjs.setTargetingForGPTAsync` will find all the ad slots defined in the page, and call GPT's set targeting function for query string targeting. The logic for coming up with key value pairs can be found in the section [Configure AdServer Targeting](#configure-adserver-targeting).
+`pbjs.setTargetingForGPTAsync` will find all the ad slots defined in the page, and call GPT's set targeting function for query string targeting. The logic for coming up with key value pairs can be found in the section [Configure AdServer Targeting](#adserver-targeting).
+
+Prebid.js automatically clears the pre-bid related targeting defined in [Configure AdServer Targeting](#adserver-targeting) before it sets targeting.
 
 It's important to wrap `pbjs.setTargetingForGPTAsync` with the `pbjs.libLoaded` condition, because there's no guarantee that the Prebid.js library has been loaded at this point in the script's execution. You don't have to wrap it with googletag.cmd.push() because the function already handled that for you.
 

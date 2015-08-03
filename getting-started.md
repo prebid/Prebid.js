@@ -31,7 +31,7 @@ I would break up Basic Example section into three sub-sections, one for each ste
 <a name="basic-example">
 
 ###Basic Example
-Here’s a basic example for Amazon and AppNexus bidding into a DFP ad unit:
+Here’s a basic example for Rubicon and AppNexus bidding into a DFP ad unit:
 
 #####1. Register bidder tag Ids
 
@@ -43,8 +43,12 @@ pbjs.adUnits = [{
     code: "/1996833/slot-1",
     sizes: [[300, 250], [728, 90]],
     bids: [{
-        bidder: "amazon",
-        params: { siteId: "8765" }
+        bidder: "rubicon",
+        params: {
+            account: "4934",
+            site: "13945",
+            rp_zonesize: "23948-15"
+        }
     }, {
         bidder: "appnexus",
         params: { tagId: "234235" }
@@ -118,5 +122,38 @@ For detailed walkthrough and API references, check out the [Publisher API docs](
 
 
 
+<div class="bs-docs-section" markdown="1">
 
+
+#Download
+
+<p class="lead">
+Prebid.js is under rapid development. Get the latest version and stay in touch:
+</p>
+
+<div class="form-horizontal">
+  
+  <div class="form-group">
+    <label class="col-sm-2 col-xs-6 control-label">Email</label>
+    <div class="col-sm-4 col-xs-8">
+      <input class="form-control" placeholder="Email" id="email-field" required>
+    </div>
+    <div class="col-sm-4 col-xs-4">
+      <button class="btn btn-outline" id="submit-email" onclick="submitEmail()">Get Latest</button>
+    </div>
+  </div>
+</div>
+
+<div class="row bs-downloads">
+    <div class="col-sm-12">
+      <h3 id="download-bootstrap">Compiled and Minified</h3>
+      <p>Compiled and minified JavaScript with example files. No docs or original source files are included.</p>
+      <p>
+        <a href="" class="btn btn-lg btn-default" onclick="ga('send', 'event', 'Getting started', 'Download', 'Download compiled');">Download Prebid.js</a>
+      </p>
+    </div>
+
+  </div>
+
+</div>
 

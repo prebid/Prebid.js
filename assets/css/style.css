@@ -26,7 +26,7 @@
 }
 
 .bs-docs-masthead .btn.btn-default:hover {
-  background: #dedede;
+  background: #eee;
 }
 
 .btn.btn-outline {
@@ -38,7 +38,9 @@
 .btn.btn-outline:hover {
   color: white;
   background: #2ABBB0;
+  background: #3b88c3;
   border-color: #2ABBB0;
+  border-color: #3b88c3;
 }
 
 
@@ -138,7 +140,8 @@ img {
 .pb-home .bidder-logos h3 {
   /*padding-top: 20px;
   padding-bottom: 20px;*/
-  color: #2ABBB0;
+  /*color: #2ABBB0;*/
+  color: #3b88c3;
   /*font-size: 25px;*/
   font-weight: 300;
 }

@@ -59,7 +59,7 @@ Voila, you have dynamic allocation-like functionality for the major SSPs and exc
 | :----  |:--------| :-------|
 | hb_pb | The price bucket. Used by the line item to target. | `2.10` |
 | hb_adid | The ad Id. Used by the ad server creative to render ad. | `234234` |
-| hb_bidder | The bidder code. Useful for logging and reporting. | `appnexus` |
+| hb_bidder | The bidder code. Useful for logging and reporting. | `rubicon` |
 | hb_size | The width and height concatenated. Useful for logging and reporting. | `300x250` |
 | hb_cpm | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
 

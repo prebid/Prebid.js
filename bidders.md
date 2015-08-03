@@ -73,28 +73,34 @@ These parameters in the bidReponse object are common across all bidders.
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `aid` | required | The site ID for Amazon. | "1234" |
+| `aaxId` | required | The site ID for Amazon. | "1234" |
 
 ###bidResponse (bidder specific)
 
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `pbLg` | String | The obfuscated price from Amazon, derived from Amazon's keys (example: `a3x2p10`). Note this is Amazon specific. | `amz_p10` |
-| `pbMg` | String | Same value as in `pbLg` | `amz_p10` |
+| `keys` | Array of strings | Amazon's keys | `["a3x2p10", "a1x6p11"]` |
 
 <a name="amazon-caveats"></a>
 
 ###Caveats
 
-#####Price obfuscation and line item setup (IMPORTANT)
+Prebid.js sends separate key-value targeting for Amazon, because only the obfuscated price is returned. Please follow Amazon's instructions to setup line items and creatives in your ad server. 
 
-Amazon obfuscates the price. Prebid.js will send the obfuscated price (example: `amz_p10`, taken from `a3x2p10`) through all the price level targeting params (`pbLg`, `pbMg`). Contact Amazon to get the obfuscated price to real CPM mapping. Suppose `p10` is mapped to `$1.50`. In your ad server, the line item for eCPM $1.50 should also let the price level key accept `amz_p10` (in addition to `$1.50` for other bidders). 
+###Default bidder settings
 
-#####No concept of tags
+{% highlight js %}
+{
+	adserverTargeting: [{
+		key: "amznslots",
+		val: function (bidResponse) {
+			return bidResponse.keys;
+		}
+	}]
+}
 
-Amazon's pre-bid implementation doesn't have the concept of placements. To avoid the same creative appearing twice, Prebid.js will apply slot level targeting and give each creative an `adId`.
-
+{% endhighlight %}
 
 
 </div>
@@ -173,7 +179,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `account` | required | The publisher account ID | "4934" |
-| `site` | required | The site ID | "@300x250" |
+| `site` | required | The site ID | "13945" |
 | `zonesize` | required | The concatenation of zone and size | "23948-15" |
 
 
