@@ -34,7 +34,7 @@ isHome: false
 
 The code below registers the bidder tags for your ad units. Once the prebid.js library loads, it reads the pbjs.adUnits object and sends out bid requests. Check out the complete [reference on bidders](bidders.html).
 
-<div class="bs-callout bs-callout-info">
+<div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active"><a href="#bidder-register-dfp" role="tab" data-toggle="tab">DFP</a></li>
@@ -206,9 +206,7 @@ If you'd like even more customization (down to the bidder level), prebid.js also
 
 
 If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so. 
-Let’s say you still prefer to have a separate set of line items for a bidder (for full visibility into how many times a bidder has submitted a bid. Though we found that number not very useful, compared to how many times a bidder has actually won, which will be available without a separate set of line items). 
-
-You can overwrite the bidder settings as the below example, which overwrites the default AppNexus query string targeting. 
+Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example, which overwrites the default AppNexus query string targeting. 
 
 **Note that the line item setup has to match the targeting change**.
 
@@ -272,7 +270,7 @@ Note that immediately after the library is loaded, prebid.js will send pre-bid r
 
 
 
-<div class="bs-callout bs-callout-info">
+<div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active"><a href="#timeout-dfp" role="tab" data-toggle="tab">DFP</a></li>
@@ -360,7 +358,7 @@ For more documentation on getting the targeting parameters, check out the next s
 
 
 
-<div class="bs-callout bs-callout-info">
+<div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active"><a href="#targeting-dfp" role="tab" data-toggle="tab">DFP</a></li>
@@ -399,22 +397,54 @@ if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
 
 </div>
 
+</div>
 
 
-####Functions
 
-??????
+<div class="bs-docs-section" markdown="1">
 
-Talk about how the functions are all non-blocking. They will only return/set on what bidders have responded so far.
 
-{: .table .table-bordered .table-striped }
-| Function Name | Description |
-| :--- | :---- |
-| setTargetingFor GPTAsync() | Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section [Configure AdServer Targeting](configure-adserver-targeting). This function is only relevant if you're using DFP as your ad server. Note that this function has to be called **after all ad units on page are defined**.|
-| getAdserver TargetingParams ForAdUnit (adUnitCode) | A non blocking function that returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidders' response may not have been received if you call this function too quickly after the requests are sent.
+#Function Reference
 
-This function returns the query string targeting parameters for a given ad unit. This function will only return values after the prebid.js library has loaded. | [{<br>  key: "adid",<br>  val: "234" },<br>{<br>  key: "apn_key",<br>  val: "300x250p1.9" <br>}] |
+**Funciton** `setTargetingForGPTAsync()`
 
+Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section [Configure AdServer Targeting](configure-adserver-targeting). Note that this function has to be called **after all ad units on page are defined**.
+
+
+**Function** `getAdserverTargetingParamsForAdUnit(adUnitCode)`
+
+A non blocking function that returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidders' response may not have been received if you call this function too quickly after the requests are sent. 
+
+{% highlight js %}
+
+getAdserverTargetingParamsForAdUnit('1234')
+
+// will return:
+[{
+    key: "hb_adid",
+    val: "234"
+},{
+    key: "hb_pb",
+    val: "1.02"
+}, ...
+]
+{% endhighlight %}
+
+**Function** `requestBidsForAdUnit(adUnitCode)`
+
+A non blocking function that will send out bid requests for the given ad unit's bidders. If `adUnitCode` is not given, the function will request bids for ALL ad units.
+
+**Function** `registerBidCallbackHandler()`
+
+Once all bidders have responded, the function registered will be called.
+
+{% highlight js %}
+
+pbjs.registerBidCallbackHandler = function(){
+    pbjsInitAdserver();
+}
+
+{% endhighlight %}
 
 </div>
 
@@ -425,8 +455,10 @@ This function returns the query string targeting parameters for a given ad unit.
 
 #How to debug?
 
-Refer to the [Debug Section](adops.html#debug). 
+If your page is not serving pre-bid ads, there could be 2 reasons:
 
+1. The ad server is not configured correctly.
+2. The bidders do not have demand.
 
 </div>
 

@@ -99,7 +99,11 @@
 }
 
 img {
-  width: 100%;
+  max-width: 100%;
+}
+
+.demo-setup img {
+  max-width: 500px;
 }
 
 .full-rule {
@@ -131,12 +135,29 @@ img {
   height: auto;
 }
 
+.pb-home .bidder-logos {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  color: #2ABBB0;
+  font-size: 25px;
+  font-weight: 300;
+}
+
+.bs-callout code {
+  background-color: transparent;
+}
+
 .bs-docs-footer {
-  margin-top: 0;
+  margin-top: 60px;
 }
 
 
 .nav.nav-tabs {
   margin-bottom: 15px;
   font-weight: bold;
+}
+
+.bs-callout {
+  padding-top: 0px;
+  padding-bottom: 10px;
 }

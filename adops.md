@@ -1,28 +1,28 @@
 ---
 layout: default
-title: Ad Ops
-description: Ad Ops Guide
+title: Ad Ops Guide
+description: A guide to how ad ops would configure ad servers and work with developers to enable header bidding.
 pid: 4
 hide: false
 isHome: false
 ---
+
 <div class="bs-docs-section" markdown="1">
 
-#Goals
+#Overview
 
-###Common problems
+> **Prebid.js** brings header bidding, and thus **dynamic-allocation-like** functionality to **all** SSPs and other programmatic partners.
 
-1. How to avoid creating tens of thousands of line items and creatives? We've seen publishers creating 1 set of line items (each set has 1000 line items in it with $0.01 increment) for each creative size (there could be 20 sizes) and each bidder (there could be 5 bidders a publisher works with). That's 100,000 line items!
-2. How to not get confused by all the targeting params? Every bidder has a different set of targeting params. You could end up having to manage 30 targeting parameters across thousands of line items and creatives!
-3. What are some helpful reports that are relevant to header bidding? What reports should I run to ensure I'm optimizing header bidding together with my class 1 and mediation line items?
+If you spend an absurd about of time reviewing SSP reports to figure out which one makes you the most money, or are sick of dealing with passbacks on SSPs that can’t fill all your inventory – say hi to Prebid.js.
 
-###Our goals
+In an ideal world, every one of your SSPs would work similarly to dynamic allocation, where everything competes on price and is handled by your ad server. 
 
-1. Help you get down to 1 set of line items and a few creatives to manage all creative sizes and bidders. Adding a new bidder requires absolutely no change to any existing setup.
-2. Only manage 4 targeting parameters. 
-3. Helpful reports that can help you understand and optimize your header bidding setup.
+Prebid.js empowers publishers to create dynamic-allocation-like functionality for SSPs and other programmatic partners. Each partner competes on price for every impression at the same time, eliminating “first look” and “waterfalls” to help make publishers more money. 
+
+The result? More transparency into market demand, more control over the bid process, and a greater array of advertiser demand.
 
 </div>
+
 
 <div class="bs-docs-section" markdown="1">
 
@@ -30,84 +30,208 @@ isHome: false
 
 ![Ad Ops Diagram]({{ site.github.url }}/assets/images/adops-intro.png)
 
-1. headerbid.js contacts bidders in the page's header to get bids back. Note that headerbid.js makes **all calls truly async**, meaning the page's content can continue to render.
-2. headerbid.js then sets the targeting parameters on the impressions sent to the ad server. Note that headerbid.js helps you **standardize targeting params across all bidders**. The targeting params are shown in the diagram. The default setting contains (`hb_bidder`, `hb_size`, `hb_pb`, `hb_adid`).
-3. With **1 set of line items**, you can now manage header bidding for all bidders and all sizes. Find [more details here](#price-bucket-def) on price bucket setup.
-4. headerbid.js helps you standardize all creative setup. The short code snippet [documented here](#creative-setup) **handles all bidders and all sizes**. 
+##### 1. Bidders
+* You configure prebid.js and setup one or more supported “bidders” (SSP, retargeters, ad networks, etc. – whatever they’re called)
+* As the page loads, prebid.js will asynchronously call each bidder to request how much they’re willing to pay for the impression. Note: the asynchronous calls mean the pages’ content continues to render without interruption.
+
+##### 2. Timer on page
+* To allow time for prebid.js to run, a timer is wrapped around the ad server tags on page. When bids are returned, or the timer runs out, the ad call to the publisher’s ad server is made – with a little extra information piggybacked onboard.
+
+##### 3. Ad server requests with key-value targeting
+* When bids are received, prebid.js adds the bidder, size, price, and creative URL to your ad server’s call via key-values on the query string.
+
+##### 4. Line items
+* Within your ad server, line items are setup to target the various bid prices and sizes, allowing the bidders’ programmatic demand compete with other line items or integrated exchanges (like Google Ad Exchange) based on price. More details on price bucket and line item setup below.
+
+##### 5. Creative
+* A small snippet of JavaScript is setup as a creative on each pre-bid line item. When a programmatic line item is picked by your ad server, the “creative” JS snippet tells prebid.js which bidder to serve. The short code snippet documented here handles all bidders and all sizes.
+
+
+Voila, you have dynamic allocation-like functionality for the major SSPs and exchanges.
+
+<br>
+
+#### What key value targeting does prebid.js return to your ad server?
+
+
+{: .table .table-bordered .table-striped }
+|   Default Key |    Description     |   Example  |
+| :----  |:--------| :-------|
+| hb_pb | The price bucket. Used by the line item to target. | `2.10` |
+| hb_adid | The ad Id. Used by the ad server creative to render ad. | `234234` |
+| hb_bidder | The bidder code. Useful for logging and reporting. | `appnexus` |
+| hb_size | The width and height concatenated. Useful for logging and reporting. | `300x250` |
+| hb_cpm | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
 
 
 </div>
 
+
 <div class="bs-docs-section" markdown="1">
+
+#Getting Started
+
+> Here's what you need to implement header bidding via Prebid.js 
+
+#### Step 1: Setup a test page
+
+Publishers who successfully implement Prebid.js typically start with a test page consisting of 2 ad units, for example 300x250 and 728x90.
+
+#### Step 2: Decide on price bucket granularity
+
+With pre-bid, you’ll need to setup line items to tell your ad server how much money the “bidder” demand is worth to you. This process is done via key-values.
+
+Example:
+
+* Prebid.js is going to call your bidders for their price, then pass it into your ad server on the query-string. You want to target this bid price with a line item that earns you the same amount if it serves.
+
+* If you had 1-line item for every bid at a penny granularity of $0.01, $0.02, $0.03, ..., 1.23, ..., $4.56 you’d need 1,000 line items just to represent bids from $0-$10. We call this the “Exact” granularity option.
+
+* Creating 1,000 line items can be a hassle, so publishers typically use price buckets to represent price ranges that matter. For example, you could group bids into 10 cent increments, so bids of $1.06 or $1.02 would be rounded down into a single price bucket of $1.00.
+
+Our recommendation is to start with $1 or 10 cent granularity until you’re more comfortable with Prebid.js. At $1, you only need to setup 10-20 line items – easy. When you’re ready, get more granular with the price buckets to improve yield.
+
+#### Step 3: Sign-up for bidders
+
+To maximize earning potential, we recommend you sign-up for the various bidders prebid.js supports (more will be added):
+
+* Amazon
+* AppNexus
+* Criteo
+* Rubicon Project
+* OpenX
+* PubMatic
+
+#### Step 4: Implement Prebid.js
+
+Work with your development team to implement prebid.js as documented in Publisher API. We recommend you start with one bidder. You’ll need an account with the bidder and will need to provide your developer with the bidder’s tag/site IDs (documentation here) an
+
+
+</div>
+
+
+
+<div class="bs-docs-section demo-setup" markdown="1">
 
 #Line Item Setup
 
+In this section, we’ll help you start creating the line items to target the bids being passed into your ad server by prebid.js.
 
-###Sizes
+Note: for the rest of this document, we assume you’ll create ≈10 line items in $0.50 increments from $0.50 to $5.
 
-Make sure your line items accept all creative sizes that apply to your sites.
+### Naming
 
+Naming is fully customizable, and we recommend something simple like `Prebid_[PRICE_BUCKET]` to help you identify your various buckets. 
 
-<div class="bs-callout bs-callout-info">
+Examples: 
+
+* Line item 1 → name of “Prebid_0.50”
+* Line item 2 → name of “Prebid_1.00”
+* Line item 3 → name of “Prebid_1.50”
+* Line item 4 → name of “Prebid_2.00”
+
+### Setting Revenue (Rate)
+
+Rate, or line item revenue, depending on ad server naming conventions, should be equal to your price bucket on each line item. Why? You need to inform your ad server knows how much the programmatic bid is worth to you for decisioning and reporting.
+
+Examples: 
+
+* Prebid_0.50 → rate of $0.50
+* Prebid_1.00 → rate of $1.00
+* Prebid_1.50 → rate of $1.50
+* Prebid_2.00 → rate of $2.00
+
+### Sizes
+
+If your ad server requires size on the Line Item (like DoubleClick for Publishers), you’ll want to add all of your possible creative sizes to each line item.
+
+For example, if you have 300x250 and 728x90 on your page, each line item would have both sizes applied.
+
+<div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#line-items-dfp" role="tab" data-toggle="tab">DFP</a></li>
-        <li role="presentation"><a href="#line-items-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
     </ul>
 
 <div class="tab-content">
 
-<div role="tabpanel" class="tab-pane active" id="line-items-dfp" markdown="1">
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
 
-Inventory size: select all sizes that apply to your sites.
+![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-sizes.png)
+
+
+</div>
+</div>
+</div>
+
+### Settings
+
+
+<div class="bs-callout">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+
+The line item type should typically be "price priority" in DFP. That will enable the line items to compete on price. The goal can be set to ‘unlimited’ and with no end date.
+
+![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-settings.png)
+
+
+</div>
+</div>
+</div>
+
+
+
+
+### Targeting
+
+Each line item should have the following targets:
+
+* Inventory – the ad units where prebid.js is running.
+* Custom Criteria / Key-Value – the price buckets (default key is hb_pb) added to your ad call’s query string by prebid.js. The targeted value should be of equivalent value to eCPM set at the line item.
+
+    Example: for a line item setup to represent $1.00 bids, you’d set rate to $1.00 and target the key-value of hb_pb=1.00
+
+    **Important**: the price bucket value should always be at 2 decimal places. E.g. 1.00 not 1.
+
+
+<div class="bs-callout">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+
+![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-targeting.png)
+
+
+</div>
+</div>
+</div>
+
+
+
+
+### Priorities
+
+We recommend setting the priority of pre-bid line items to the same level as other non-guaranteed line items, or in DoubleClick for Publishers, the same level as dynamic allocation competes.
+
 
 
 </div>
 
-<div role="tabpanel" class="tab-pane" id="line-items-custom" markdown="1">
-
-Allmost all ad servers' line items can support multiple sizes. Make sure the sizes cover all that're relevant to your site.
-
-</div>
-
-</div>
-
-</div>
-
-<a name="price-bucket-def"></a>
-
-###eCPM
-
-The line items' eCPM setup:
-
-{: .table .table-bordered .table-striped }
-|	 |	Low Granularity (good for testing) 	|	Medium Granularity (recommended/default)	 | High |
-| :----  |:--------| :-------| :----------- |
-|	$0 - $3 |	$0.50 increment |	$0.01 increment | TBD |
-| $3 - $5 |	capped at $3.00 |	$0.02 increment |	TBD |
-| $5 - $10 |	capped at $3.00	|	$0.05 increment |	TBD |
-| $10 - $20 |	capped at $3.00	|	$0.10 increment (optional) |	TBD |
-| > $20 |	capped at $3.00 	|	capped at $20.00 	| TBD 	|
 
 
 
-###Targeting
-
-Line item targeting setup:
-
-* **Ad units**
-
-	All line items should target all ad units that you'd like header bidding running on.
-
-* **Price bucket**
-
-	Each line item should target the price bucket string (default setting is `hb_pb`). The targeted value should be of equavalent value to eCPM set at the line item.
-
-	_**Important**_: the price bucket value should always be at **2 decimal** places. 
-
-	_**Important**_: Amazon has the price obfuscated, so make sure to apply the obfuscated price bucket values. Follow [the instructions here](bidders.html#amazon-caveats).
-
-</div>
 
 <div class="bs-docs-section" markdown="1">
 
@@ -116,173 +240,131 @@ Line item targeting setup:
 
 #Creatives Setup
 
-The below code snippet applies to all ad servers.
+
+
+When your ad server determines a prebid.js line item won the impression, we need to return the winning creative ID to the page so Prebid.js can call the ad. To do this, simply add the creative below to your line items.
+
 
 {% highlight js %}
 
 <script>
-	try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+    try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
 </script>
 
 {% endhighlight %}
 
 
-<div class="bs-callout bs-callout-info">
+<div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#creatives-dfp" role="tab" data-toggle="tab">DFP</a></li>
-        <li role="presentation"><a href="#creatives-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
     </ul>
 
 <div class="tab-content">
 
-<div role="tabpanel" class="tab-pane active" id="creatives-dfp" markdown="1">
-
-DFP supports creative **size override**, which allows us to use the same set of creatives to run all bidders' header bidding setup for all ad sizes.
-
-#####How many creatives should I submit?
-
-**IMPORTANT**: What's the **maximum number of ad units** your page can have? Set up **that number of creatives**. 
-
-WHY? The same creative cannot be served into more than 1 ad unit in a single GPT request call. We thus need to duplicate the creatives. But all creatives can share the same content.
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
 
 
-####Step 1: New Creative
+A couple of important points:
 
-Create a new 3rd party tag creative. 
+* DoubleClick for Publishers (DFP) supports creative size override, which allows you to use one creative handle multiple sizes. Set each creative size to 1x1, then leverage DFP’s size override.
 
-#####Code snippet
+* Determine the maximum number of ad units your pages can have. Please duplicate and set up that number of creative for each line item. 
 
-As documented above.
-
-#####Target ad unit size
-
-Select 1x1 (no worries in the next section we'll show you how to override the size so the creative can work with all impression sizes).
-
-
-####Step 2: Add the creative to all line items
-
-Go to your line items and switch to the creatives tab. DFP will display a warning prompting you to upload creatives of the line items' accepted sizes. Click add existing creative for a size and you'll see the below screen.
-
-![Add Creative to Line Item]({{ site.github.url }}/assets/images/add-creative-to-line-item.png)
-
-Click "Show all" next to the "filtering for creatives with size" in this screen. You should be able to find the creative you've just submitted in the previous step.
-
-
-####Step 3: Add more sizes to the creative
-
-Step 2 has added one size override into the creative, but there're still many sizes uncovered. Click into the creative, and you can find:
-
-![Creative Size Override]({{ site.github.url }}/assets/images/creative-size-override.png)
-
-Add all the sizes you need into the "Size overrides" box.
+    Why? The same creative cannot be served into more than 1 ad unit in a single DoubleClick for Publishers GPT request call. If you have 5 ad units on a page, your prebid line items would have ≥ 5 creatives of size 1x1 and the code snippet above.
 
 
 </div>
-
-<div role="tabpanel" class="tab-pane" id="creatives-custom" markdown="1">
-
-If your ad server supports a creative of dynamic sizes, then check out the DFP tab for a similar setup.
-
-If your ad server's creative can only have one size:
-
-####Step 1
-
-Create one 3rd party tag creative per size. 
-
-####Step 2
-
-As documented above.
-
-####Step 3
-
-Attach all creatives to all line items.
-
 </div>
-
-</div>
-
 </div>
 
 
+### Step 1: New Creative
+
+
+<div class="bs-callout">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+
+* Create a new 3rd party tag creative.
+* Add the code snippet above.
+* Select 1x1 for creative size
+
+![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-creative.png)
+
+
+</div>
+</div>
+</div>
+
+### Step 2: Add the creative to all line items
+
+
+<div class="bs-callout">
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+
+
+Go to your line items and switch to the creatives tab. DFP will display a warning prompting you to upload creatives of the line items’ accepted sizes. Click add existing creative for a size and you’ll see the below screen.
+
+![Add Creative to Line Item]({{ site.github.url }}/assets/images/demo-setup/add-creative-to-line-item.png)
+
+Click “Show all” next to the “filtering for creatives with size” in this screen. You should be able to find the creative you’ve just submitted in the previous step.
+
+
+
+</div>
+</div>
 </div>
 
 
 
-<div class="bs-docs-section" markdown="1">
 
-#Query Strings
+### Step 3: Add more sizes to the creative
 
-Make sure your ad server supports the below query string keys:
 
-{: .table .table-bordered .table-striped }
-|	Default Key String |	Description 	|	Example	 |
-| :----  |:--------| :-------|
-| hb_pb | The price bucket. Used by the line item to target. | `2.10` |
-| hb_adid | The ad Id. Used by the ad server creative to render ad. | `2343_234234` |
-| hb_bidder | The bidder code. Useful for logging and reporting. | `appnexus` |
-| hb_size | The width and height concatenated. Useful for logging and reporting. | `300x250` |
+<div class="bs-callout">
 
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
+    </ul>
+
+<div class="tab-content">
+
+<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+
+
+Step 2 has added one size override into the creative, but there’re still many sizes uncovered. Click into the creative, and you can find:
+
+![Creative Size Override]({{ site.github.url }}/assets/images/demo-setup/creative-size-override.png)
+
+Add all the sizes you need into the “Size overrides” box.
+
+
+
+</div>
+</div>
 </div>
 
 
-<div class="bs-docs-section" markdown="1">
 
-#Get started
+### You’re ready!
 
-###Start with a few line items:
+Once your test pages serve and you’re comfortable with pre-bid:
 
-To avoid having to deal with a few hundred line items from the beginning, we recommend your page use the `pbLg` (low granularity price bucket) to quickly get started. Let your developer overwrite the default bidder setting (as [documented here](publisher-api.html#configure-adserver-targeting)) using the below code snippet. 
-
-{% highlight js %}
-
-pbjs.bidderSettings = {
-    standard: {
-        adserverTargeting: [{
-            key: "hb_adid",
-            val: function(bidResponse) {
-                return bidResponse.adId;
-            }
-        }, {
-            key: "hb_pb",
-            val: function(bidResponse) {
-                return bidResponse.pbMg;
-            }
-        }]
-    }
-}
-
-{% endhighlight %}
-
-Follow the [Line Item Setup](#line-item-setup) and [Creative Setup](#creative-setup) to configure your ad server to support pre-bid. 
-
-###Start with one new ad unit
-
-To avoid the complexity of class 1, mediation, and AdX demand, we recommend getting started with one new ad unit. Create a new ad unit in your ad server and have it accept the line items you created in the previous step.
-
-### Implement prebid.js
-
-Work with your development team to implement prebid.js as documented in [Publisher API](publisher-api.html). We recommend **start with one bidder** first. You'll need to provide dev with the bidder's tag/site IDs (Find the specific bidder documentation [here](bidders.html)) and the ad unit.
-
-We have a whole list of examples here. Use your own bidder bid params and ad units.
-* gpt_example.html
-* custom_adserver_example.html
-
-### Debug
-
-If your page is not serving pre-bid ads, there could be 2 reasons:
-
-1. The ad server is not configured correctly. 
-2. The bidders do not have demand.
-
-
-### You're ready!
-
-Once your test pages serve and you're comfortable with pre-bid:
-
-* Add more line items for higher granularity. Use the default setting for `bidderSettings`.
-* Implement prebid.js in your site. 
-
-</div>
+* Add more line items for higher granularity. Use the default setting for bidderSettings.
+* Implement prebid.js in your site.
 
 <br>
