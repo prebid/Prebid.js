@@ -149,7 +149,7 @@ Prebid.js is under rapid development. Get the latest version and stay in touch:
       <h3 id="download-bootstrap">Compiled and Minified</h3>
       <p>Compiled and minified JavaScript with example files. No docs or original source files are included.</p>
       <p>
-        <a href="" class="btn btn-lg btn-default" onclick="ga('send', 'event', 'Getting started', 'Download', 'Download compiled');">Download Prebid.js</a>
+        <a href="{{site.downloadUrl}}" class="btn btn-lg btn-default" onclick="ga('send', 'event', 'Getting started', 'Download', 'Download compiled');">Download Prebid.js</a>
       </p>
     </div>
 
