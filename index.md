@@ -56,29 +56,28 @@ isHome: true
 
     <div class="row bs-docs-featured-sites bidder-logos">
     
-      <div class="col-xs-4 col-sm-2">
-        Amazon
-        
+      <div class="col-xs-6 col-sm-2">
+        <h3>Amazon</h3>
       </div>
     
-      <div class="col-xs-4 col-sm-2">
-        AppNexus
+      <div class="col-xs-6 col-sm-2">
+        <h3>AppNexus</h3>
       </div>
     
-      <div class="col-xs-4 col-sm-2">
-        Criteo
+      <div class="col-xs-6 col-sm-2">
+        <h3>Criteo</h3>
       </div>
     
-      <div class="col-xs-4 col-sm-2">
-        OpenX
+      <div class="col-xs-6 col-sm-2">
+        <h3>OpenX</h3>
       </div>
 
-      <div class="col-xs-4 col-sm-2">
-        Pubmatic
+      <div class="col-xs-6 col-sm-2">
+        <h3>Pubmatic</h3>
       </div>
 
-      <div class="col-xs-4 col-sm-2">
-        Rubicon
+      <div class="col-xs-6 col-sm-2">
+        <h3>Rubicon</h3>
       </div>
     
     </div>

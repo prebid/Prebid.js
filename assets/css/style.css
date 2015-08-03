@@ -135,11 +135,11 @@ img {
   height: auto;
 }
 
-.pb-home .bidder-logos {
-  padding-top: 20px;
-  padding-bottom: 20px;
+.pb-home .bidder-logos h3 {
+  /*padding-top: 20px;
+  padding-bottom: 20px;*/
   color: #2ABBB0;
-  font-size: 25px;
+  /*font-size: 25px;*/
   font-weight: 300;
 }
 
