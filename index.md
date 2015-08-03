@@ -17,7 +17,7 @@ isHome: true
         <img src="assets/images/icons/icon-ninja.png" alt="Sass and Less support" class="img-responsive">
         <h3>No development required.</h3>
         <p>Prebid.js has built-in integrations with all major bidders: Amazon, AppNexus, Criteo, Pubmatic, Rubicon, etc.</p>
-        <a href="" class="btn btn-outline">See full bidder list</a>
+        <a href="bidders.html" class="btn btn-outline">See full bidder list</a>
       </div>
 
       <div class="col-sm-4">
@@ -31,7 +31,7 @@ isHome: true
         <img src="assets/images/icons/icon-latency.png" alt="Responsive across devices" class="img-responsive">
         <h3>Reduce page load time.</h3>
         <p>All blocking ad calls are now made async. Header bidding requests now load together with your page's content.</p>
-        <a href="" class="btn btn-outline">How is this done</a>
+        <a href="{{site.downloadUrl}}" class="btn btn-outline">How is this done</a>
       </div>
 <!--
       <div class="col-sm-4">
