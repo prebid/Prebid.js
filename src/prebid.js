@@ -7,42 +7,6 @@ var CriteoAdapter = require('./adapters/criteo');
 var AmazonAdapter = require('./adapters/amazon');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
-/*
-	TODO LIST
-	-[DONE] Set targeting from each placement
-	-[DONE] Create proper Bid object
-	-[DONE] Encode key value pairs
-	-[DONE] Change names to be consistent camel case
-	-Refactor private variables to start with _
-	-Validate proper placement settings (AppNexus - just the tag_id or a tuple of member_id+inv_code)
-	-[DONE] Handle callback so not to wait on page timeout if we get responses back faster
-	-Handle timeouts on individual bidders (there is no limit currently)
-	-Handle if all bids are in for a particular placement or particular bidder
-	-[DONE] Add timing tracking - for AppNexus only
-	-[DONE] Add query paramater support for debug check
-	-Add try / catch for all possible fail points to not leak errors to main page
-	-Remove unused code blocks
-	-Fix IE compatibility issues (object.keys etc)
-	-Fix JSHINT warnings
-	*/
-
-/*
-	Responsibility of PBJS library:
-	-Initializtion and parsing configurations
-	-Exposing API for reading bid responsees
-	-Exposing API for setting key/value pairs into DFP adserver
-	-Exposing API for register / calling prebid adaptors
-	-Error handling and logging
-	-Common functionality that can be shared by adaptors
-
-	Prebid adaptor Responsiblity:
-	-Register itself with prebid.js
-	-Make the prebid request to the parter
-	-Process response and call bidmanager.addBidResponse(adUnitCode, bid )
-	-Track if all bids are back from the adaptor and let prebid.js know when they are done
-	-   allBidsAreIn(bidderCode) <= function needs to be implemented in prebid.js
-
-
 
 /* private variables */
 
