@@ -183,9 +183,11 @@ pbjs.bidderSettings = {
 | :----  |:--------| :-------| :-------|
 | `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
 | `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
-| `pbLg` | String | The low granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.50` |
-| `pbMg` | String | The medium granularity price bucket. See the [definition here](adops.html#price-bucket-def). | `1.97` |
+| `pbLg` | String | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
+| `pbMg` | String | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
+| `pbHg` | String | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
 | `size` | String | The size of the bid creative. Concatenation of width and height by 'x'. | `300x250` |
+| `cpm` | float | The exact bid price from the bidder | 1.59 |
 
 <a name="bidder-customization"></a>
 

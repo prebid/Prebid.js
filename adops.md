@@ -64,6 +64,17 @@ Voila, you have dynamic allocation-like functionality for the major SSPs and exc
 | hb_cpm | Optional | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
 
 
+<a name="price-bucket-def"></a>
+
+#### Price Bucket Definition
+
+{: .table .table-bordered .table-striped }
+| bidResponse variable |    Description     |   Example  |
+| :----  |:--------| :-------|
+| `pbLg` | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
+| `pbMg` | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
+| `pbHg` | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
+
 </div>
 
 
