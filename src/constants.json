@@ -1,0 +1,17 @@
+{
+	"JSON_MAPPING": {
+		"PL_CODE": "code",
+		"PL_SIZE": "sizes",
+		"PL_BIDS": "bids",
+		"BD_BIDDER": "bidder",
+		"BD_ID": "paramsd",
+		"BD_PL_ID": "placementId",
+		"ADSERVER_TARGETING": "adserverTargeting",
+		"BD_SETTING_STANDARD" : "standard"
+	},
+	"DEBUG_MODE": "pbjs_debug",
+	"STATUS": {
+		"GOOD": "good",
+		"TIMEOUT": "timed out"
+	}
+}
