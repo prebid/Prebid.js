@@ -55,13 +55,13 @@ Voila, you have dynamic allocation-like functionality for the major SSPs and exc
 
 
 {: .table .table-bordered .table-striped }
-|   Default Key |    Description     |   Example  |
-| :----  |:--------| :-------|
-| hb_pb | The price bucket. Used by the line item to target. | `2.10` |
-| hb_adid | The ad Id. Used by the ad server creative to render ad. | `234234` |
-| hb_bidder | The bidder code. Useful for logging and reporting. | `rubicon` |
-| hb_size | The width and height concatenated. Useful for logging and reporting. | `300x250` |
-| hb_cpm | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
+|   Default Key | Scope |    Description     |   Example  |
+| :----  |:--------| :-------| :-------|
+| hb_pb | Required | The price bucket. Used by the line item to target. | `2.10` |
+| hb_adid | Required | The ad Id. Used by the ad server creative to render ad. | `234234` |
+| hb_bidder | Required | The bidder code. Useful for logging and reporting to learn about which bidder has higher fill rate/CPM. | `rubicon` |
+| hb_size | Optional | The width and height concatenated. | `300x250` |
+| hb_cpm | Optional | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
 
 
 </div>

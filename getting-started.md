@@ -22,7 +22,7 @@ I would break up Basic Example section into three sub-sections, one for each ste
 > Prebid.js is an open source Javascript framework to help publishers integrate and manage pre-bid partners without writing custom code or increasing page load times. Prebid.js is 100% open source and free for anyone to use. [Learn more about pre-bid here.]()
 
 
-* It has clean, built-in support for all major bidders (Amazon, AppNexus, Criteo, Pubmatic, etc), as well as major ad servers (DFP, OAS, AdTech). 
+* It has clean, built-in support for all major bidders (Amazon, AppNexus, Rubicon, etc), as well as major ad servers (DFP, OAS, AdTech). 
 * Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time, confusing line item and targeting setup.
 * Plugging in prebid.js is easy. Adding new pre-bid bidders is a matter of adding tag Ids into a JSON config.
 
