@@ -10,8 +10,11 @@ licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 
 # list of additional links on the right of the top menu
 headerLinks:
+  - title: Questions?
+    url: questions.html
   - title: GitHub
     url: https://github.com/prebid/Prebid.js
+
 
 # list if additional links on the footer
 footerLinks:
