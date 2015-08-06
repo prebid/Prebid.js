@@ -36,42 +36,6 @@ pbjs.libLoaded = true;
 //if pbjs.anq command queue already exists, use it, if not create it
 pbjs.anq = pbjs.anq || [];
 
-//@if TRACK_LATENCY=true
-
-//helper function to construct impbus trackers
-function buildTrackingTag(id) {
-	return 'https://secure.adnxs.com/imptr?id=' + id + '&t=2';
-}
-
-//time tracking buckets, to be used to track latency within script
-//array index is timeslice in ms, value passed to buildTrackingTag() is impbus tracker id
-var timeTrackingBuckets = [];
-timeTrackingBuckets[100] = buildTrackingTag(21139);
-timeTrackingBuckets[200] = buildTrackingTag(21140);
-timeTrackingBuckets[300] = buildTrackingTag(21141);
-timeTrackingBuckets[400] = buildTrackingTag(21142);
-timeTrackingBuckets[500] = buildTrackingTag(21143);
-timeTrackingBuckets[600] = buildTrackingTag(21144);
-timeTrackingBuckets[700] = buildTrackingTag(21145);
-timeTrackingBuckets[800] = buildTrackingTag(21146);
-timeTrackingBuckets[1000] = buildTrackingTag(21147);
-timeTrackingBuckets[1300] = buildTrackingTag(21148);
-timeTrackingBuckets[1600] = buildTrackingTag(21149);
-timeTrackingBuckets[2000] = buildTrackingTag(21150);
-timeTrackingBuckets[5000] = buildTrackingTag(21151);
-timeTrackingBuckets[10000] = buildTrackingTag(21152);
-
-//over 10.000 tracker
-var timeTrackerOverMaxBucket = buildTrackingTag(21154);
-//var timeTrackerBidTimeout = buildTrackingTag(19432);
-
-//bid requeted tracker for v0.0.12
-var timeTrackerBidRequested = buildTrackingTag(21153);
-//generic bid requeted tracker
-// var timeTrackerBidRequested = buildTrackingTag(19435);
-
-//@endif
-
 /*
  *   Main method entry point method
  */
@@ -88,11 +52,11 @@ function init() {
 	//TODO sort pbArr here to call in desired order
 	//call each pre bidder using the registry
 	callBids(pbArr);
-	
+
 }
 
 
-function callBids(bidderArr){
+function callBids(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
@@ -114,7 +78,6 @@ function registerBidAdapter(bidAdaptor, bidderCode) {
 		utils.logError('bidAdaptor or bidderCode not specified');
 	}
 }
-
 
 
 
@@ -170,37 +133,6 @@ function hasOwn(o, p) {
 	}
 }
 
-//@if TRACK_LATENCY=true
-//given a starttime and an end time, hit the correct impression tracker
-function processAndTrackLatency(startTime, endTime, placementCode) {
-
-	if (startTime && endTime) {
-		//get the difference between times
-		var timeDiff = endTime - startTime;
-		var trackingPixelFound = false;
-		var trackingUrl = '';
-		for (var curTrackerItem in timeTrackingBuckets) {
-			//find the closest upper bound of defined tracking times
-			if (timeDiff <= curTrackerItem) {
-				trackingPixelFound = true;
-				trackingUrl = timeTrackingBuckets[curTrackerItem];
-				adloader.trackPixel(trackingUrl);
-				break;
-			}
-		}
-		//if we didn't find a bucket, assume use the catch-all time over bucket
-		if (!trackingPixelFound) {
-			trackingUrl = timeTrackerOverMaxBucket;
-			adloader.trackPixel(trackingUrl);
-		}
-
-		utils.logMessage('latency for placmeent code : ' + placementCode + ' : ' + timeDiff + ' ms.' + ' Tracking URL Fired : ' + trackingUrl);
-	}
-}
-
-
-//@endif
-
 function isEmptyObject(obj) {
 	var name;
 	for (name in obj) {
@@ -209,79 +141,78 @@ function isEmptyObject(obj) {
 	return true;
 }
 
-function getWinningBid(bidArray){
+function getWinningBid(bidArray) {
 	var winningBid = {};
-	if(bidArray && bidArray.length !== 0){
-		bidArray.sort(function(a, b){
+	if (bidArray && bidArray.length !== 0) {
+		bidArray.sort(function(a, b) {
 			//put the highest CPM first
-				return b.cpm - a.cpm; 
+			return b.cpm - a.cpm;
 		});
-	//the first item has the highest cpm
-	winningBid = bidArray[0];
+		//the first item has the highest cpm
+		winningBid = bidArray[0];
 	}
 	return winningBid.bid;
 
 }
 
 
-function setGPTAsyncTargeting(code, slot, adUnitBids){
+function setGPTAsyncTargeting(code, slot, adUnitBids) {
 	var bidArrayTargeting = [];
 	if (adUnitBids.bids.length !== 0) {
-			//TODO: how to determine which bid to put into targeting?
-			for (var i = 0; i < adUnitBids.bids.length; i++) {
-				var bid = adUnitBids.bids[i];
-				//if use the generic key push into array with CPM for sorting
-				if(bid.usesGenericKeys){
-					bidArrayTargeting.push({
-						cpm : bid.cpm,
-						bid : bid
-					});
-				}
-				else{
-					var keyStrings = adUnitBids.bids[i].keyStringPairs;
-					for (var key in keyStrings) {
-						if (keyStrings.hasOwnProperty(key)) {
-							try {
-								utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-								slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
+		//TODO: how to determine which bid to put into targeting?
+		for (var i = 0; i < adUnitBids.bids.length; i++) {
+			var bid = adUnitBids.bids[i];
+			//if use the generic key push into array with CPM for sorting
+			if (bid.usesGenericKeys) {
+				bidArrayTargeting.push({
+					cpm: bid.cpm,
+					bid: bid
+				});
+			} else {
+				var keyStrings = adUnitBids.bids[i].keyStringPairs;
+				for (var key in keyStrings) {
+					if (keyStrings.hasOwnProperty(key)) {
+						try {
+							utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
+							slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
 
-							} catch (e) {
-								utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-							}
+						} catch (e) {
+							utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 						}
 					}
 				}
-				
-
 			}
 
-		} else {
-			utils.logMessage('No bids eligble for placement code : ' + code);
-		}
-		//set generic key targeting here
-		if(bidArrayTargeting.length !== 0){
-			
-			var winningBid = getWinningBid(bidArrayTargeting);
-			var keyValues = winningBid.keyStringPairs;
-			for (var key in keyValues) {
-						if (keyValues.hasOwnProperty(key)) {
-							try {
-								utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
-								slot.setTargeting(key, encodeURIComponent(keyValues[key]));
-
-							} catch (e) {
-								utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-							}
-						}
-					}
 
 		}
+
+	} else {
+		utils.logMessage('No bids eligble for placement code : ' + code);
+	}
+	//set generic key targeting here
+	if (bidArrayTargeting.length !== 0) {
+
+		var winningBid = getWinningBid(bidArrayTargeting);
+		var keyValues = winningBid.keyStringPairs;
+		for (var key in keyValues) {
+			if (keyValues.hasOwnProperty(key)) {
+				try {
+					utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
+					slot.setTargeting(key, encodeURIComponent(keyValues[key]));
+
+				} catch (e) {
+					utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
+				}
+			}
+		}
+
+	}
 }
 /*
  *   This function returns the object map of placemnts or
  *   if placement code is specified return just 1 placement bids
  */
-function getBidResponsesByAdUnit(adunitCode){
+function getBidResponsesByAdUnit(adunitCode) {
 	//bidmanager.pbBidResponseByPlacement.allBidsAvailable = pbjs.allBidsAvailable();
 	if (adunitCode) {
 		//console.log(json.stringify(bidmanager.pbBidResponseByPlacement[placementCode]));
@@ -298,36 +229,35 @@ pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
 	// call to populate pb_targetingMap
 	pbjs.getBidResponses(adunitCode);
 
-	if(adunitCode){
+	if (adunitCode) {
 		return JSON.stringify(pb_targetingMap[adunitCode]);
 	}
-	 return JSON.stringify(pb_targetingMap);
-	
+	return JSON.stringify(pb_targetingMap);
+
 
 };
 /*
-*	Copies bids into a bidArray response
-*/
-function buildBidResponse(bidArray){
+ *	Copies bids into a bidArray response
+ */
+function buildBidResponse(bidArray) {
 	var bidResponseArray = [];
 	//temp array to hold auction for bids
 	var bidArrayTargeting = [];
 	var bidClone = {};
-	if(bidArray){
-		for(var i = 0; i < bidArray.length; i++){
+	if (bidArray) {
+		for (var i = 0; i < bidArray.length; i++) {
 			var bid = bidArray[i];
 			//clone by json parse. This also gets rid of unwanted function properties
 			bidClone = getCloneBid(bid);
 
-			if(!bid.usesGenericKeys){
+			if (!bid.usesGenericKeys) {
 				//put unique key into targeting
 				pb_targetingMap[bidClone.adUnitCode] = bidClone.keyStringPairs;
-			}
-			else{
+			} else {
 				//else put into auction array
 				bidArrayTargeting.push({
-					cpm : bid.cpm,
-					bid : bid
+					cpm: bid.cpm,
+					bid: bid
 				});
 			}
 			//put all bids into bidArray by default
@@ -335,7 +265,7 @@ function buildBidResponse(bidArray){
 		}
 	}
 
-	if(bidArrayTargeting.length !== 0){
+	if (bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
 		var keyValues = winningBid.keyStringPairs;
 		pb_targetingMap[bidClone.adUnitCode] = keyValues;
@@ -344,10 +274,10 @@ function buildBidResponse(bidArray){
 	return bidResponseArray;
 }
 
-function getCloneBid(bid){
+function getCloneBid(bid) {
 	var bidClone = {};
 	//clone by json parse. This also gets rid of unwanted function properties
-	if(bid){
+	if (bid) {
 		var jsonBid = JSON.stringify(bid);
 		bidClone = JSON.parse(jsonBid);
 
@@ -368,64 +298,63 @@ pbjs.getBidResponses = function(adunitCode) {
 	var bidArray = [];
 	var returnObj = {};
 
-	if(adunitCode){
+	if (adunitCode) {
 		response = getBidResponsesByAdUnit(adunitCode);
 		bidArray = [];
-		if(response && response.bids){
+		if (response && response.bids) {
 			bidArray = buildBidResponse(response.bids);
 		}
 
-		 returnObj = {
-			bids : bidArray
+		returnObj = {
+			bids: bidArray
 		};
 
-	}
-	else{
+	} else {
 		response = getBidResponsesByAdUnit();
 		for (var adUnit in response) {
 			if (response.hasOwnProperty(adUnit)) {
-		    	if(response && response[adUnit] && response[adUnit].bids){
+				if (response && response[adUnit] && response[adUnit].bids) {
 					bidArray = buildBidResponse(response[adUnit].bids);
 				}
 
 
-				returnObj[adUnit] = {bids : bidArray};
+				returnObj[adUnit] = {
+					bids: bidArray
+				};
 
 			}
-	    		
-	  	}
+
+		}
 	}
 
-	return JSON.stringify(returnObj,  null, '\t');
-	
+	return JSON.stringify(returnObj, null, '\t');
+
 };
 /*
  *   This function sets targeting keys as defined by bid response into the GPT slot object
  */
 pbjs.setTargetingForGPTAsync = function(code, slot) {
 	var placementBids = {};
-	if(code && slot){
+	if (code && slot) {
 		placementBids = getBidResponsesByAdUnit(code);
 		setGPTAsyncTargeting(code, slot, placementBids);
-	}
-	else{
+	} else {
 		//get all the slots from google tag
-		if(window.googletag && window.googletag.pubads() && window.googletag.pubads().getSlots() ){
+		if (window.googletag && window.googletag.pubads() && window.googletag.pubads().getSlots()) {
 			var slots = window.googletag.pubads().getSlots();
-			for(var i = 0; i < slots.length; i++){
+			for (var i = 0; i < slots.length; i++) {
 				var adUnitCode = slots[i].getAdUnitPath();
-				if(adUnitCode){
+				if (adUnitCode) {
 					placementBids = getBidResponsesByAdUnit(adUnitCode);
 					setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
 				}
 			}
-		}
-		else{
+		} else {
 			utils.logError('Cannot set targeting into googletag ');
 		}
 
 	}
-	
+
 };
 
 pbjs.allBidsAvailable = function() {
@@ -447,31 +376,30 @@ pbjs.renderAd = function(doc, params) {
 				var width = adObject.width;
 				var url = adObject.adUrl;
 				var ad = adObject.ad;
-				
-				if(ad){
+
+				if (ad) {
 					doc.write(ad);
 					doc.close();
-					 if (doc.defaultView && doc.defaultView.frameElement) {
-                            doc.defaultView.frameElement.width = width;
-                            doc.defaultView.frameElement.height = height;
-                      }
+					if (doc.defaultView && doc.defaultView.frameElement) {
+						doc.defaultView.frameElement.width = width;
+						doc.defaultView.frameElement.height = height;
+					}
 				}
 				//doc.body.style.width = width;
 				//doc.body.style.height = height;
-				else if (url){
+				else if (url) {
 					doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
 					doc.close();
 
-					  if (doc.defaultView && doc.defaultView.frameElement) {
-                                        doc.defaultView.frameElement.width = width;
-                                        doc.defaultView.frameElement.height = height;
-                             }
+					if (doc.defaultView && doc.defaultView.frameElement) {
+						doc.defaultView.frameElement.width = width;
+						doc.defaultView.frameElement.height = height;
+					}
 
-				}
-				else{
+				} else {
 					utils.logError('Error trying to write ad. No ad for bid response id: ' + params);
 				}
-			
+
 			} else {
 				utils.logError('Error trying to write ad. Cannot find ad by given id : ' + params);
 			}
@@ -485,52 +413,17 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
-this.requestBidsForAdUnit = function(adUnitCode){
+this.requestBidsForAdUnit = function(adUnitCode) {
 	//todo
 
 };
 
-/* - preserving these in case we want to use them in the future.
-
-//override push command so we can do an Array.push when laoding before this script loads
-//and process it in processQueue() but then handle the command directly here after the script loads
-//this will mean can use 1 type of call for both pre and post script loading
-pbjs.anq.push = function(cmd) {
-	cmd.call();
-};
-
-//called when script is first loaded, in order to process any commands that were enqueue before script load
-//not used after script load... all commands after script load are directly called by overriden push function
-//pbjs.anq.push()
-function processQueue() {
-	//todo - is this faster/slower than interating backwards and removing items
-	//speed of variable check + assignment vs speed of splice
-	for (var i = 0; i < pbjs.anq.length; i++) {
-		if (typeof pbjs.anq[i].called === objectType_undefined) {
-
-			pbjs.anq[i].call();
-			pbjs.anq[i].called = true;
-		}
-	}
-}
-//call processQueue() to run any commands that were added before the script was loaded
-processQueue();
-
-*/
-
-//Register the adaptor object & code into prebid.js
-registerBidAdapter(RubiconAdapter(), 'rubicon');
-
 // Register the bid adaptors here
-//include appnexus_bidder.js
-
+registerBidAdapter(RubiconAdapter(), 'rubicon');
 registerBidAdapter(AppNexusAdapter(), 'appnexus');
-
-
 registerBidAdapter(OpenxAdapter(), 'openx');
 registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 registerBidAdapter(CriteoAdapter(), 'criteo');
 registerBidAdapter(AmazonAdapter(), 'amazon');
 
-//call init
 init();

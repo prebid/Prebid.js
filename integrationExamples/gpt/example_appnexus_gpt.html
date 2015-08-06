@@ -114,7 +114,7 @@
     (function() {
         var prbEl = document.createElement("script"); prbEl.type = "text/javascript"
         //prbEl.src = ("https:" == document.location.protocol ? "https://" : "http://") + "s3.amazonaws.com/APN-test/prebid.js";
-        prbEl.src = '../dist/build/prebid.js';
+        prbEl.src = '../../dist/build/prebid.js';
         var csaTargetEl = document.getElementsByTagName("head")[0];
         csaTargetEl.insertBefore(prbEl, csaTargetEl.firstChild);
     })();
