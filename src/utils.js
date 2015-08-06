@@ -7,6 +7,10 @@ var objectType_number = 'number';
 
 var _loggingChecked = false;
 
+var _lgPriceCap = 5.00;
+var _mgPriceCap = 10.00;
+var _hgPriceCap = 20.00;
+
 /*
  *   Substitues into a string from a given map using the token
  *   Usage
@@ -41,7 +45,7 @@ var getIncrementalInteger = (function() {
 
 function _getUniqueIdentifierStr() {
 	return getIncrementalInteger() + Math.random().toString(16).substr(2);
-};
+}
 
 //generate a random string (to be used as a dynamic JSONP callback)
 exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
@@ -227,11 +231,29 @@ exports.getPriceBucketString = function(cpm) {
 		cpmFloat = parseFloat(cpm);
 		if (cpmFloat) {
 			//round to closet .5
-			returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(1);
+			if(cpmFloat > _lgPriceCap){
+				returnObj.low = _lgPriceCap;
+			}
+			else{
+				returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
+			}
+			
 			//round to closet .1
-			returnObj.med =  (Math.floor(cpm * 10) / 10).toFixed(2);
+			if(cpmFloat > _mgPriceCap){
+				returnObj.low = _mgPriceCap;
+			}
+			else{
+				returnObj.med =  (Math.floor(cpm * 10) / 10).toFixed(2);
+			}
+			
 			//round to closet .01
-			returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
+			if(cpmFloat > _lgPriceCap){
+				returnObj.low = _lgPriceCap;
+			}
+			else{
+				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
+			}
+			
 		}
 
 	} catch (e) {

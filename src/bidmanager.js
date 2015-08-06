@@ -45,9 +45,6 @@ exports.clearAllBidResponses = function(adUnitCode){
 		for (var prop in this.pbBidResponseByPlacement){
 			delete this.pbBidResponseByPlacement[prop];
 		} 
-
-		console.log(pbBidResponseByPlacement);
-		console.log(this.pbBidResponseByPlacement);
 };
 
 /*
