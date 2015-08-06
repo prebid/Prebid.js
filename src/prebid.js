@@ -39,20 +39,37 @@ pbjs.anq = pbjs.anq || [];
 /*
  *   Main method entry point method
  */
-function init() {
+function init(adUnitCode) {
 	//parse settings into internal vars
-	//TODO here for parsing a URL to retrieve settings
-	pb_placements = pbjs.adUnits;
-	//Aggregrate prebidders by their codes
-	loadPreBidders();
+	if (adUnitCode) {
+		if (pbjs.adUnits) {
+			for (var i = 0; i < pbjs.adUnits.length; i++) {
+				if (pbjs.adUnits[i].code === adUnitCode) {
+					pb_placements = [pbjs.adUnits[i]];
+				}
+			}
+			loadPreBidders();
+			sortAndCallBids();
+		}
+	} else {
+		pb_placements = pbjs.adUnits;
+		//Aggregrate prebidders by their codes
+		loadPreBidders();
+		//sort and call // default no sort
+		sortAndCallBids();
+	}
+
+}
+
+function sortAndCallBids(sortFunc) {
 	//Translate the bidder map into array so we can sort later if wanted
 	var pbArr = Object.keys(pb_bidderMap).map(function(key) {
 		return pb_bidderMap[key];
 	});
-	//TODO sort pbArr here to call in desired order
-	//call each pre bidder using the registry
+	if (typeof sortFunc === objectType_function) {
+		pbArr.sort(sortFunc);
+	}
 	callBids(pbArr);
-
 }
 
 
@@ -61,6 +78,7 @@ function callBids(bidderArr) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
+			utils.logMessage("CALLING BIDDER ======= " + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
 			currentBidder.callBids(bidder);
 		}
@@ -101,7 +119,6 @@ function storeBidRequestByBidder(placementCode, sizes, bids) {
 		//increment request count
 		bidmanager.incrementBidCount();
 		var currentBid = bids[i];
-		//console.log(currentBid);
 		currentBid.placementCode = placementCode;
 		currentBid.sizes = sizes;
 
@@ -215,7 +232,6 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 function getBidResponsesByAdUnit(adunitCode) {
 	//bidmanager.pbBidResponseByPlacement.allBidsAvailable = pbjs.allBidsAvailable();
 	if (adunitCode) {
-		//console.log(json.stringify(bidmanager.pbBidResponseByPlacement[placementCode]));
 		return bidmanager.pbBidResponseByPlacement[adunitCode];
 	} else {
 		return bidmanager.pbBidResponseByPlacement;
@@ -413,8 +429,11 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
-this.requestBidsForAdUnit = function(adUnitCode) {
-	//todo
+pbjs.requestBidsForAdUnit = function(adUnitCode) {
+
+	bidmanager.clearAllBidResponses();
+	pb_bidderMap = {};
+	init(adUnitCode);
 
 };
 

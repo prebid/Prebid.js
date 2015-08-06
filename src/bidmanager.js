@@ -10,6 +10,7 @@ exports.pbCallbackMap = pbCallbackMap;
 var pbBidResponseByPlacement = {};
 exports.pbBidResponseByPlacement = pbBidResponseByPlacement;
 
+//this is used to look up the bid by bid ID later
 var _adResponsesByBidderId = {};
 exports._adResponsesByBidderId = _adResponsesByBidderId;
 
@@ -28,6 +29,25 @@ exports.getPlacementIdByCBIdentifer = function(id) {
 
 exports.incrementBidCount = function(){
 	bidRequestCount++;
+};
+
+exports.getBidResponseByAdUnit = function(adUnitCode){
+	return pbBidResponseByPlacement;
+
+};
+
+
+exports.clearAllBidResponses = function(adUnitCode){
+
+		bidRequestCount = 0;
+		this.bidResponseRecievedCount = 0;
+		
+		for (var prop in this.pbBidResponseByPlacement){
+			delete this.pbBidResponseByPlacement[prop];
+		} 
+
+		console.log(pbBidResponseByPlacement);
+		console.log(this.pbBidResponseByPlacement);
 };
 
 /*

@@ -171,7 +171,13 @@ exports.debugTurnedOn = debugTurnedOn;
 exports.logError = function(msg, code) {
 	var errCode = code || 'ERROR';
 	if (debugTurnedOn() && hasConsoleLogger()) {
-		console.log(errCode + ': ' + msg);
+		if(console.error){
+			console.error(errCode + ': ' + msg);
+		}
+		else{
+			console.log(errCode + ': ' + msg);
+		}
+		
 	}
 };
 
