@@ -31,7 +31,7 @@ isHome: true
         <img src="assets/images/icons/icon-latency.png" alt="Responsive across devices" class="img-responsive">
         <h3>Reduce page load time.</h3>
         <p>All blocking ad calls are now made async. Header bidding requests now load together with your page's content.</p>
-        <a href="{{site.downloadUrl}}" class="btn btn-outline">How is this done</a>
+        <a href="reduce-latency.html" class="btn btn-outline">How is this done</a>
       </div>
 <!--
       <div class="col-sm-4">
