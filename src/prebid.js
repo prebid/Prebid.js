@@ -176,7 +176,6 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot, adUnitBids) {
 	var bidArrayTargeting = [];
 	if (adUnitBids.bids.length !== 0) {
-		//TODO: how to determine which bid to put into targeting?
 		for (var i = 0; i < adUnitBids.bids.length; i++) {
 			var bid = adUnitBids.bids[i];
 			//if use the generic key push into array with CPM for sorting
@@ -191,6 +190,8 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 					if (keyStrings.hasOwnProperty(key)) {
 						try {
 							utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
+							//clear gpt targeting for slot then set
+							googletag.pubads().clearTargeting(code);
 							slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
 
 						} catch (e) {
@@ -429,6 +430,9 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
+/*
+*	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+*/
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 
 	bidmanager.clearAllBidResponses();
