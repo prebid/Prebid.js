@@ -4,8 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google-site-verification" content="_SMhyxJ4MnU9eTUQQNMUwU5W18T5tjNF7A6mumIci-A" />
+  <meta name="keywords" content="Header Bidding, Advanced Bidding, Header Bid, Pre-bid">
+  <meta name="description" content="{{page.description}}" />
 
-  <title>{{site.name}}</title>
+  {% if page.isHome %}
+    <title>{{page.title}}</title>
+  {% else %}
+  <title>{{page.title}} with Header Bidding</title>
+  {% endif %}
 
   <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>

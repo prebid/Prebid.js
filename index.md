@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: Prebid.js - Header Bidding Made Easy
 description: Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
 isHome: true
 ---
@@ -14,21 +14,21 @@ isHome: true
 
     <div class="row">
       <div class="col-sm-4">
-        <img src="assets/images/icons/icon-ninja.png" alt="Sass and Less support" class="img-responsive">
+        <img src="assets/images/icons/icon-ninja.png" alt="Header bidding no dev" class="img-responsive">
         <h3>No development required.</h3>
-        <p>Prebid.js has built-in integrations with all major bidders: Amazon, AppNexus, Criteo, Pubmatic, Rubicon, etc.</p>
+        <p>Prebid.js has built-in integrations with all major header bidding bidders: Amazon, AppNexus, Criteo, Pubmatic, Rubicon, etc.</p>
         <a href="bidders.html" class="btn btn-outline">See full bidder list</a>
       </div>
 
       <div class="col-sm-4">
-        <img src="assets/images/icons/icon-money.png" alt="Responsive across devices" class="img-responsive">
+        <img src="assets/images/icons/icon-money.png" alt="Header bidding min line item" class="img-responsive">
         <h3>Minimum line item setup.</h3>
         <p>With only 1 set of line items, Prebid.js allows ad ops to manage all bidders and sizes at ease. Adding new bidders require no ad server change.</p>
         <a href="adops.html" class="btn btn-outline">Learn more</a>
       </div>
 
       <div class="col-sm-4">
-        <img src="assets/images/icons/icon-latency.png" alt="Responsive across devices" class="img-responsive">
+        <img src="assets/images/icons/icon-latency.png" alt="Header bidding latency" class="img-responsive">
         <h3>Reduce page load time.</h3>
         <p>All blocking ad calls are now made async. Header bidding requests now load together with your page's content.</p>
         <a href="reduce-latency.html" class="btn btn-outline">How is this done</a>
