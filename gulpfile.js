@@ -8,11 +8,12 @@ var preprocess = require('gulp-preprocess');
 var strip = require('gulp-strip-comments');
 var beautify = require('gulp-beautify');
 var jscs = require('gulp-jscs');
-var notify = require('gulp-notify');
+//var notify = require('gulp-notify');
 var header = require('gulp-header');
 var del = require('del');
 var ecstatic = require('ecstatic');
 var browserify = require('gulp-browserify');
+var stylish = require('jshint-stylish');
 
 
 var fs = require('fs');
@@ -31,114 +32,7 @@ var distFilenameReleaseVersionExtname = ".js";
 var numberedVersionsDir = "versionNumbered/";
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 
-//var banner = ['/**',
-//   ' * @version v<%= pkg.version %>',
-//  ' */',
-//    ''].join('\n');
 var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
-
-//copy a full version of to our dist folder
-gulp.task('copyFullVersion', function() {
-
-    return gulp.src([csaSrcLocation])
-        .pipe(preprocess({
-            context: {
-                NODE_ENV: 'production',
-                TRACK_LATENCY: true
-            }
-        })) //To set environment variables in-line
-        .pipe(strip())
-        .pipe(beautify({
-            indentSize: 2,
-            preserveNewlines: false
-        }))
-        .pipe(header(banner, {
-            pkg: pkg
-        }))
-        .pipe(rename({
-            basename: distFilenameBase,
-            extname: distFilenameMaxVersionExtname
-        }))
-        .pipe(gulp.dest(releaseDir))
-        .pipe(rename({
-            dirname: numberedVersionsDir,
-            basename: distFilenameBase,
-            suffix: distFilenameVersionSuffix,
-            extname: distFilenameMaxVersionExtname
-        }))
-        .pipe(gulp.dest(releaseDir));
-
-});
-
-gulp.task('buildFullDebugVersion', function() {
-
-    return gulp.src([csaSrcLocation])
-        .pipe(preprocess({
-            context: {
-                NODE_ENV: 'debug',
-                TRACK_LATENCY: true
-
-            }
-        })) //To set environment variables in-line       
-        .pipe(beautify({
-            indentSize: 2,
-            preserveNewlines: false
-        }))
-        .pipe(header(banner, {
-            pkg: pkg
-        }))
-        .pipe(rename({
-            basename: distFilenameBase,
-            extname: distFilenameDebugExtname
-        }))
-        .pipe(gulp.dest(releaseDir))
-        .pipe(rename({
-            dirname: numberedVersionsDir,
-            basename: distFilenameBase,
-            suffix: distFilenameVersionSuffix,
-            extname: distFilenameDebugExtname
-        }))
-        .pipe(gulp.dest(releaseDir));
-
-});
-
-
-//create a sourcemap and minify
-gulp.task('minify', function() {
-    return gulp.src(csaSrcLocation)
-        .pipe(preprocess({
-            context: {
-                NODE_ENV: 'production',
-                TRACK_LATENCY: true
-
-            }
-        })) //To set environment variables in-line
-        //create our sourceemap
-
-    //.pipe(sourcemaps.init({loadMaps:true}))
-    //now that our sourcemap has been created, transform the code however we want
-    .pipe(uglify({
-            'preserveComments': 'some'
-        }))
-        //.pipe(sourcemaps.write('./'))
-        .pipe(header(banner, {
-            pkg: pkg
-        }))
-        .pipe(rename({
-            basename: distFilenameBase,
-            extname: distFilenameReleaseVersionExtname
-        }))
-        .pipe(gulp.dest(releaseDir))
-        .pipe(rename({
-            dirname: numberedVersionsDir,
-            basename: distFilenameBase,
-            suffix: distFilenameVersionSuffix,
-            extname: distFilenameReleaseVersionExtname
-        }))
-        .pipe(gulp.dest(releaseDir));
-});
-
-
 
 //basic/quick tests go here, to be run on every build
 gulp.task('runBasicTests', function() {});
@@ -156,7 +50,7 @@ gulp.task('jscs', function() {
 //run code quality checks here
 gulp.task('jshint', function() {
 
-    gulp.src(csaSrcLocation)
+    gulp.src(['./src/*.js', './src/adapters/*.js'])
         .pipe(jshint({
             'bitwise': 'true',
             'curly': 'true',
@@ -184,7 +78,9 @@ gulp.task('jshint', function() {
             'undef': true,
             'unused': true,
             'globals': {
-                'apn_csa': true,
+                'require': false,
+                'module' : true,
+                'exports' : true,
                 'pbjs' : true,
                 'googletag': true,
                 'ActiveXObject': true
@@ -193,7 +89,8 @@ gulp.task('jshint', function() {
             'devel': true,
 
         }))
-        .pipe(jshint.reporter());
+        .pipe(jshint.reporter('jshint-stylish'))
+        .pipe(jshint.reporter('fail'));
 
 });
 
@@ -211,7 +108,7 @@ gulp.task('codeQuality', ['jshint', 'jscs'], function() {});
 
 gulp.task('testAll', ['runBasicTests', 'runAdvancedTests'], function() {});
 
-gulp.task('default', ['clean-dist', 'codeQuality', 'runBasicTests', 'buildFullDebugVersion', 'copyFullVersion', 'minify'], function() {});
+gulp.task('default', ['build'], function() {});
 
 gulp.task('serve', ['build-dev', 'watch'], function () {
 	var port = 9999;
@@ -221,7 +118,7 @@ gulp.task('serve', ['build-dev', 'watch'], function () {
 	console.log('Server started at http://localhost:' + port + '/');
 });
 
-gulp.task('build-dev', ['clean-dist'], function () {
+gulp.task('build-dev', ['codeQuality', 'clean-dist'], function () {
 	gulp.src(['src/prebid.js'])
 	.pipe(browserify({
 		debug: true
@@ -230,10 +127,10 @@ gulp.task('build-dev', ['clean-dist'], function () {
 
 });
 
-gulp.task('build', ['jscs', 'clean-dist'], function () {
-	gulp.src(['src/prebid.js'])
-	.pipe(browserify())
-	.pipe(uglify())
+gulp.task('minify', function(){
+    gulp.src(['src/prebid.js'])
+    .pipe(browserify())
+    .pipe(uglify())
     .pipe(header(banner, {
             pkg: pkg
         }))
@@ -241,15 +138,16 @@ gulp.task('build', ['jscs', 'clean-dist'], function () {
             basename: 'prebid.min',
             extname: '.js'
         }))
-	.pipe(gulp.dest(path.join(releaseDir, 'build')));
+    .pipe(gulp.dest(path.join(releaseDir, 'build')));
+});
 
+gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'minify'], function () {
     gulp.src(['src/prebid.js'])
     .pipe(browserify())
     .pipe(header(banner, {
             pkg: pkg
         }))
     .pipe(gulp.dest(path.join(releaseDir, 'build')));
-
 });
 
 gulp.task('watch', function () {
