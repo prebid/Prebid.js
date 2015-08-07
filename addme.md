@@ -14,14 +14,24 @@ isHome: false
 
 #### Best Practices Listserv
 
-Stay informed of publisher best practices for header bidding and the latest for prebid.js:
+Stay informed of publisher best practices for header bidding and the latest for prebid.js.
 
-<div class="form-inline">
-  <div class="form-group">
+<div class="form row">
+  <div class="form-group col-sm-6">
     <label>Email: </label>
     <input type="text" class="form-control" id="email-field" placeholder="Email" required>
   </div>
-  <button class="btn btn-primary" id="submit-email" onclick="submitEmail()">Join Group</button>
+  <div class="form-group col-sm-12">
+  	<input id="iab-vote" type="checkbox"> Also vote for IAB admisters Prebid.org.
+  </div>
+  <div class="form-group col-sm-12">
+  	<button class="btn btn-primary" id="submit-email" onclick="submitEmail()">Join Best Practices Group</button>
+  </div>
+        
+</div>
+
+<div>
+  
 </div>
 
 </div>

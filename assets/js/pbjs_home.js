@@ -6,10 +6,11 @@ Parse.initialize("6ZZDyvR3T7JcfxPqRqdkvW6q89IKoSjRJxpDc8gw", "bvzQPaz6EILUCspXr3
 function submitEmail() {
   var email = $('#email-field').val();
   var site = $('#site-field').val();
-  newVisitor(email, site);
+  var iab_vote = $('#iab-vote').prop('checked');
+  newVisitor(email, site, iab_vote);
 }
 
-function newVisitor(email, site) {
+function newVisitor(email, site, iab_vote) {
   var Visitor = Parse.Object.extend("Visitor");
 
   var visitor = new Visitor();
@@ -17,6 +18,7 @@ function newVisitor(email, site) {
     
   // other fields can be set just like with Parse.Object
   visitor.set("site", site);
+  visitor.set("iab", iab_vote);
     
   $('#submit-email').text("Adding...");
   visitor.save(null, {
