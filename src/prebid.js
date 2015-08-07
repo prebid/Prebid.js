@@ -78,7 +78,7 @@ function callBids(bidderArr) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
-			utils.logMessage("CALLING BIDDER ======= " + bidder.bidderCode);
+			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
 			currentBidder.callBids(bidder);
 		}

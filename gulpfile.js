@@ -230,17 +230,28 @@ gulp.task('build-dev', ['clean-dist'], function () {
 
 });
 
-gulp.task('build', ['clean-dist'], function () {
+gulp.task('build', ['jscs', 'clean-dist'], function () {
 	gulp.src(['src/prebid.js'])
 	.pipe(browserify())
 	.pipe(uglify())
     .pipe(header(banner, {
             pkg: pkg
         }))
+    .pipe(rename({
+            basename: 'prebid.min',
+            extname: '.js'
+        }))
 	.pipe(gulp.dest(path.join(releaseDir, 'build')));
+
+    gulp.src(['src/prebid.js'])
+    .pipe(browserify())
+    .pipe(header(banner, {
+            pkg: pkg
+        }))
+    .pipe(gulp.dest(path.join(releaseDir, 'build')));
 
 });
 
 gulp.task('watch', function () {
-	gulp.watch(['src/**/*.js'], ['build-dev'])
+	gulp.watch(['src/**/*.js'], ['build-dev']);
 });
