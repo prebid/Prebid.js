@@ -26,8 +26,8 @@ var pb_preBidders = [],
 	_bidderRegistry = {};
 
 /* Public vars */
-
-pbjs.pageTimeout = pbjs.pageTimeout || 1000;
+//default timeout for all bids
+pbjs.bidderTimeout = pbjs.bidderTimeout || 3000;
 pbjs.logging = pbjs.logging || false;
 
 //let the world know we are loaded
@@ -40,6 +40,8 @@ pbjs.anq = pbjs.anq || [];
  *   Main method entry point method
  */
 function init(adUnitCode) {
+	//set timeout for all bids
+	setTimeout(bidmanager.executeCallback, pbjs.bidderTimeout);
 	//parse settings into internal vars
 	if (adUnitCode) {
 		if (pbjs.adUnits) {
@@ -434,7 +436,6 @@ pbjs.renderAd = function(doc, params) {
 *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
 */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
-
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
 	init(adUnitCode);

@@ -23,28 +23,31 @@ exports.bidResponseRecievedCount = bidResponseRecievedCount;
 var _allBidsAvailable = false;
 exports._allBidsAvailable = _allBidsAvailable;
 
+var _callbackExecuted = false;
+
 exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
 
-exports.incrementBidCount = function(){
+exports.incrementBidCount = function() {
 	bidRequestCount++;
 };
 
-exports.getBidResponseByAdUnit = function(adUnitCode){
+exports.getBidResponseByAdUnit = function(adUnitCode) {
 	return pbBidResponseByPlacement;
 
 };
 
 
-exports.clearAllBidResponses = function(adUnitCode){
+exports.clearAllBidResponses = function(adUnitCode) {
+	_allBidsAvailable = false;
+	_callbackExecuted = false;
+	bidRequestCount = 0;
+	bidResponseRecievedCount = 0;
 
-		bidRequestCount = 0;
-		this.bidResponseRecievedCount = 0;
-		
-		for (var prop in this.pbBidResponseByPlacement){
-			delete this.pbBidResponseByPlacement[prop];
-		} 
+	for (var prop in this.pbBidResponseByPlacement) {
+		delete this.pbBidResponseByPlacement[prop];
+	}
 };
 
 /*
@@ -69,7 +72,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//increment the bid count
 		bidResponseRecievedCount++;
 		//get price settings here
-		if(bid.getStatusCode() === 2){
+		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
 		var priceStringsObj = utils.getPriceBucketString(bid.cpm, bid.height, bid.width);
@@ -162,7 +165,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 			setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 		}
 		//now try with "generic" settings
-		else if(custBidObj && bidder_settings && bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]){
+		else if (custBidObj && bidder_settings && bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
 			custBidObj.usesGenericKeys = true;
 			setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 		}
@@ -172,43 +175,49 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
 }
 
-function setKeys(keyValues, bidderSettings, custBidObj){
+function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
-			for (var i = 0; i < targeting.length; i++) {
-				var key = targeting[i].key;
-				var value = targeting[i].val;
-				if (typeof value === objectType_function) {
-					try {
-						keyValues[key] = value(custBidObj);
-					} catch (e) {
-						utils.logError('Exception trying to parse value. Check bidderSettings configuration : ' + e.message);
-					}
-				} else {
-					keyValues[key] = value;
-				}
+	for (var i = 0; i < targeting.length; i++) {
+		var key = targeting[i].key;
+		var value = targeting[i].val;
+		if (typeof value === objectType_function) {
+			try {
+				keyValues[key] = value(custBidObj);
+			} catch (e) {
+				utils.logError('Exception trying to parse value. Check bidderSettings configuration : ' + e.message);
 			}
+		} else {
+			keyValues[key] = value;
+		}
+	}
 }
 
+exports.executeCallback = function(){
+
+	if (typeof pbjs.registerBidCallbackHandler === objectType_function && !_callbackExecuted) {
+		try {
+			pbjs.registerBidCallbackHandler();
+			_callbackExecuted = true;
+		} catch (e) {
+			_callbackExecuted = true;
+			utils.logError('Exception trying to execute callback handler registered : ' + e.message);
+		}
+	}
+};
+
 /*
- *   TODO - we need to implement this in each Bid Adaptor - not in prebid.js
  *   This method checks if all bids have a response (bid, no bid, timeout) and will execute callback method if all bids are in
  *   TODO: Need to track bids by placement as well
  */
 
 exports.checkIfAllBidsAreIn = function() {
-	if(bidRequestCount === bidResponseRecievedCount ){
+	if (bidRequestCount === bidResponseRecievedCount) {
 		_allBidsAvailable = true;
 	}
 
 	if (_allBidsAvailable) {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
-		if (typeof pbjs.registerBidCallbackHandler === objectType_function && !pbjs.initAdserverSet) {
-			try {
-				pbjs.registerBidCallbackHandler();
-			} catch (e) {
-				utils.logError('Exception trying to execute callback handler registered : ' + e.message);
-			}
-		}
+		this.executeCallback();
 	}
 
 	return _allBidsAvailable;
