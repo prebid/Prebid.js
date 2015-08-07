@@ -29,13 +29,13 @@ var distFilenameDebugExtname = ".debug.js";
 var distFilenameMaxVersionExtname = ".max.js";
 var distFilenameReleaseVersionExtname = ".js";
 var numberedVersionsDir = "versionNumbered/";
+var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 
 //var banner = ['/**',
 //   ' * @version v<%= pkg.version %>',
 //  ' */',
 //    ''].join('\n');
-var banner = '/* <%= pkg.name %> v<%= pkg.version %> */\n';
-
+var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
 
 //copy a full version of to our dist folder
 gulp.task('copyFullVersion', function() {

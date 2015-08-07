@@ -205,7 +205,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
 				// @endif
 				//indicate that there is no bid for this placement
-				bid = bidfactory(2);
+				bid = bidfactory.createBid(2);
 				bid.bidderCode = 'appnexus';
 				bidmanager.addBidResponse(placementCode, bid);
 			}
