@@ -233,9 +233,15 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
  *   if placement code is specified return just 1 placement bids
  */
 function getBidResponsesByAdUnit(adunitCode) {
-	//bidmanager.pbBidResponseByPlacement.allBidsAvailable = pbjs.allBidsAvailable();
+	var returnObj = {};
 	if (adunitCode) {
-		return bidmanager.pbBidResponseByPlacement[adunitCode];
+		returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+		if(returnObj){
+			return returnObj;
+		}
+		else{
+			return bidmanager.createEmptyBidResponseObj();
+		}
 	} else {
 		return bidmanager.pbBidResponseByPlacement;
 	}

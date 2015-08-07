@@ -139,11 +139,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 
 	} else {
 		//create an empty bid bid response object
-		bidResponseObj = {
-			//status: statusPending,
-			bids: [],
-			allBidsAvailable: false
-		};
+		bidResponseObj = this.createEmptyBidResponseObj();
 	}
 
 	//store the bidResponse in a map
@@ -152,6 +148,13 @@ exports.addBidResponse = function(adUnitCode, bid) {
 	this.checkIfAllBidsAreIn();
 
 	//TODO: check if all bids are in
+};
+
+exports.createEmptyBidResponseObj = function(){
+	return {
+			bids: [],
+			allBidsAvailable: false
+		};
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
