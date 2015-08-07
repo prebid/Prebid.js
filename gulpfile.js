@@ -118,7 +118,7 @@ gulp.task('serve', ['build-dev', 'watch'], function () {
 	console.log('Server started at http://localhost:' + port + '/');
 });
 
-gulp.task('build-dev', ['codeQuality', 'clean-dist'], function () {
+gulp.task('build-dev', ['jscs', 'clean-dist'], function () {
 	gulp.src(['src/prebid.js'])
 	.pipe(browserify({
 		debug: true
