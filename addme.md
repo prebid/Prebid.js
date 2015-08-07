@@ -16,15 +16,12 @@ isHome: false
 
 Stay informed of publisher best practices for header bidding and the latest for prebid.js.
 
-<div class="form row">
-  <div class="form-group col-sm-6">
+<div class="form-inline">
+  <div class="form-group">
     <label>Email: </label>
     <input type="text" class="form-control" id="email-field" placeholder="Email" required>
   </div>
-  <div class="form-group col-sm-12">
-  	<input id="iab-vote" type="checkbox"> Also vote for IAB admisters Prebid.org.
-  </div>
-  <div class="form-group col-sm-12">
+  <div class="form-group">
   	<button class="btn btn-primary" id="submit-email" onclick="submitEmail()">Join Best Practices Group</button>
   </div>
         
@@ -57,7 +54,7 @@ If you are a publisher that'd like to be contacted by bidders, or if you're a "b
 		<div class="radio">
 			<label>
 				<input type="radio" name="optionsRadios" id="company-bidder" value="company-bidder">
-				I'm a "bidder" <!--(<a href="adaptor.html">Check here</a> to learn how to implement an adaptor) -->
+				I'm a bidder <!--(<a href="adaptor.html">Check here</a> to learn how to implement an adaptor) -->
 			</label>
 		</div>
 	</div>
