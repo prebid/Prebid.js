@@ -1,0 +1,39 @@
+
+  <!-- Main navigation
+  =========================================== -->
+  <header class="navbar navbar-static-top bs-docs-nav" id="top">
+    <div class="container">
+      <div class="navbar-header" role="banner">
+        <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="{{site.github.url}}/index.html">{{site.name}}</a>
+      </div>
+      <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+        {% assign sorted_pages = site.pages | sort:"pid" %}
+        {% for p in sorted_pages %}
+          {% if p.isHome != true and p.hide != true and p.title !=  %}
+          <li {% if page.title == p.title %}class="active"{% endif %}>
+            <a href="{{site.github.url}}{{p.url}}">{{p.title}}
+              {% if p.isNew == true %}
+                <span class="label label-warning">New!</span>
+              {% endif %}
+            </a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+        {% for p in site.headerLinks %}
+          <li>
+            <a href="{{p.url}}">{{p.title}}</a>
+          </li>
+        {% endfor %}
+        </ul>
+      </nav>
+    </div>
+  </header>

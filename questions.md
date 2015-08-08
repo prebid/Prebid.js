@@ -1,9 +1,8 @@
 ---
-layout: default
+layout: page
 title: Questions & FAQ
 description: 
 hide: true
-isHome: false
 ---
 
 <div class="bs-docs-section" markdown="1">

@@ -1,10 +1,10 @@
 ---
-layout: default
+layout: page
 title: Ad Ops Guide
-description: A guide to how ad ops would configure ad servers and work with developers to enable header bidding.
+head_title: Ad Ops Guide for Header Bidding
+description: An ad ops guide for implementing header bidding with prebid.js.
 pid: 4
 hide: false
-isHome: false
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -368,6 +368,25 @@ Add all the sizes you need into the “Size overrides” box.
 </div>
 </div>
 </div>
+
+<!--
+
+<div class="bs-docs-section" markdown="1">
+
+#Query Strings
+
+This is critical for reporting
+
+</div>
+
+
+<div class="bs-docs-section" markdown="1">
+
+#Reporting
+
+</div>
+
+-->
 
 
 

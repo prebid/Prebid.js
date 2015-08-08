@@ -1,17 +1,19 @@
 ---
-layout: default
-title: Common Technical Challenges
-description: A walkthrough of common technical challenges Header Bidding Implementations face.
-isHome: false
-hide: true
+layout: post
+title: How to reduce latency of header bidding
+head_title: How to reduce latency of header bidding with prebid.js
+
+description: A walkthrough of why header bidding implementations cause latency. An overview of how to use prebid.js to reduce it.
+
+permalink: /blog/how-to-reduce-latency-of-header-bidding
+
 ---
 
-<div class="bs-docs-section" markdown="1">
-
-# Blocking Calls
 
 
-Why do header bidding cause latency? How to reduce it?
+> Why do header bidding cause latency? How to reduce it?
+
+Having seen almost all bidders' header bidding API calls, we've observed the few problems listed below:
 
 * Many bidders can NOT load their Javascript library asynchronously.
 * Publishers make more money if all bidders are treated fairly. However, bidders that offer asynchronous integrations today (better for the publisher) are given LESS time to respond. 
@@ -53,5 +55,3 @@ Here're a few screenshots of websites' network calls after implemented header bi
 
 	To help publishers maximize yield, all header bidders should be given the same amount of time to respond. However, Javascript doesn't make calls exactly at the same time, so we help you rotate the order that the bidders get called.
 
-
-</div>

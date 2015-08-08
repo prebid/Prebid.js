@@ -1,9 +1,8 @@
 ---
-layout: default
+layout: page
 title: Bidders
 description: Documentation on bidders
 pid: 2
-isHome: false
 hide: true
 ---
 

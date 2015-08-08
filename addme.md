@@ -1,11 +1,10 @@
 ---
-layout: default
+layout: page
 title: Add me!
 description: 
 pid: 5
 isNew: true
 hide: false
-isHome: false
 ---
 
 <div class="bs-docs-section" markdown="1">

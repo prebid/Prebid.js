@@ -1,9 +1,9 @@
 ---
-layout: default
+layout: page
 title: Publisher API
+head_title: Publisher API for Header Bidding
 description: API for publishers
 pid: 1
-isHome: false
 ---
 
 <div class="bs-docs-section" markdown="1">

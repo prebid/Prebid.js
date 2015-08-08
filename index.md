@@ -1,12 +1,14 @@
 ---
-layout: default
+layout: home
 title: Prebid.js - Header Bidding Made Easy
-description: Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
+head_title: Prebid.js - Header Bidding Made Easy
+
 isHome: true
+
+description: Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
 ---
 
 <div class="bs-docs-featurette pb-home pb-docs">
-  <div class="container">
     <h2 class="bs-docs-featurette-title">Integrate header bidding partners in minutes, not weeks.</h2>
     <p class="lead">Week-long header bidding implemenations are no picnic. We developed Prebid.js with a group of publishers to relieve that frustration.</p>
 
@@ -31,7 +33,7 @@ isHome: true
         <img src="assets/images/icons/icon-latency.png" alt="Header bidding latency" class="img-responsive">
         <h3>Reduce page load time.</h3>
         <p>All blocking ad calls are now made async. Header bidding requests now load together with your page's content.</p>
-        <a href="reduce-latency.html" class="btn btn-outline">How is this done</a>
+        <a href="blog/how-to-reduce-latency-of-header-bidding/" class="btn btn-outline">How is this done</a>
       </div>
 <!--
       <div class="col-sm-4">
@@ -89,5 +91,4 @@ isHome: true
     <p class="lead">Prebid.js is open source software. Anyone is free to modify the code and contribute adapters for new bidders. Prebid.js is hosted, developed, and maintained on GitHub.</p>
     <a href="getting-started.html" class="btn btn-outline btn-lg">Learn more about Prebid.js</a>
 
-  </div>
 </div>

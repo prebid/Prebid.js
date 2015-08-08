@@ -1,0 +1,50 @@
+{% include head.html %}
+
+{% include main_nav.html %}
+
+  <!-- Header
+  =========================================== -->
+
+  <div class="bs-docs-header" id="content">
+    <div class="container">
+      <h1>Blog</h1>
+      <p>A collection of helpful tips for implementing header bidding with prebid.js.</p>
+    </div>
+  </div>
+
+
+  <div class="container bs-docs-container">
+    <div class="row">
+      <!-- Content
+      =========================================== -->
+
+      <div class="col-md-9" role="main">
+        <div class="bs-docs-section">
+          <h1>{{page.title}}</h1>
+          {{content}}
+        </div>
+      </div>
+
+      <!-- Page navigation
+      =========================================== -->
+      <div class="col-md-3">
+        <div class="bs-docs-sidebar hidden-print">
+
+          <h5>Related Posts</h5>
+          <ul class="nav bs-docs-sidenav">
+
+            {% for post in site.posts %}
+
+              <li><a href="{{ post.url }}">{{ post.title }}</a></li>
+
+            {% endfor %}
+
+          </ul>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% include foot.html %}

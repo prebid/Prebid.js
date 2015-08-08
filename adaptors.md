@@ -1,10 +1,9 @@
 ---
-layout: default
+layout: page
 title: Bidder Adaptor
 description: Documentation on bidder adaptor
 pid: 4
 hide: true
-isHome: false
 ---
 
 ###Define callBids
