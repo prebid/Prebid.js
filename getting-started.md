@@ -25,7 +25,9 @@ isHome: false
     <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px"></iframe>
   </div>
   <div class="col-sm-7">
-    <div id="chart_div"></div>
+    <div id="chart_div">
+        <img src="{{ site.github.url }}/assets/images/loader.gif">
+    </div>
   </div>
 </div>
 
