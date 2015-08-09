@@ -5,8 +5,21 @@
 <script>
 
 	var pbjs = pbjs || {},
-	PREBID_TIMEOUT = 400;
+	PREBID_TIMEOUT = 600;
 
+    // logs will track events by the time it occured. e.g. {""}
+    var logs = {
+        'Load Prebid.js': {static: true},
+        'Adserver Timer': {static: true},
+        'amazon': {},
+        'appnexus': {},
+        'criteo': {},
+        'openx': {},
+        'pubmatic': {},
+        'rubicon': {},
+        'Load GPT': {static: true},
+        'Set Targeting': {static: true},
+    };
 
 	/* 1. Register bidder tag Ids
 
@@ -123,11 +136,31 @@
         initAdserver();
     };
 
+    pbjs.beforeCallBidder = function(bidderCode) {
+        setScriptLog(bidderCode, 'start');
+    }
+    pbjs.bidderRawBidsBack = function(bidderCode) {
+        setScriptLog(bidderCode, 'end');   
+    }
+
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
     
+    var timeInit = new Date().getTime();
+    
+    window.setScriptLog = function(name, ev) {
+        if (!(name in logs)) logs[name] = {};
+        logs[name][ev] = new Date().getTime() - timeInit;
+    }
+
     function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+
         //load GPT library here
+        setScriptLog('Adserver Timer', 'end');
+
+        setScriptLog('Load GPT', 'start');
+
         (function() {
             var gads = document.createElement('script');
             gads.async = true;
@@ -140,17 +173,25 @@
         })();
         pbjs.initAdserverSet = true;
     };
+
+    setScriptLog('Adserver Timer', 'start');
     // Load GPT when timeout is reached.
     setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    
+
 
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
     (function() {
+        setScriptLog('Load Prebid.js', 'start');
+
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
-        pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
-        pbjsEl.src = (isHttps ? "https://a248.e.akamai.net/appnexus.download.akamai.com/89298/adnexus-prod" : "http://cdn.adnxs.com") + "/tag/v/prebid/0.1.1/prebid.js";
+        pbjsEl.src = '/assets/js/prebid.js';
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+
+        setScriptLog('Load Prebid.js', 'end');
     })();
 
 </script>
@@ -159,11 +200,16 @@
 <script>
     googletag.cmd.push(function() {
 
+        //setScriptLog('Load GPT', 'end');
+        logs['Load GPT']['end'] = new Date().getTime() - timeInit;
+
         var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
 
         /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
         */
         if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
+
+        setScriptLog('Set Targeting', 'start');
 
         // The below writes out the targeting params and bid responses for available bids
         if (pbjs.libLoaded) {
@@ -175,7 +221,25 @@
             console.log('Dumping all bid objects to console:');
             console.log(pbjs.getBidResponses()); // or pass a code to get one particular ad unit
 
+            var bids = JSON.parse(pbjs.getBidResponses('/19968336/header-bid-tag-0')).bids;
+            for (var i in bids) {
+                var bid = bids[i];
+                if (!(bid.bidderCode in logs)) continue;
+
+                logs[bid.bidderCode]['cpm'] = bid.cpm;
+            }
+
+            console.log('hey');
+            console.log(logs);
+
+            setTimeout(function() {
+                window.top.logTime(logs, (new Date().getTime() - timeInit));
+            }, 500);
+
+
         }
+
+        setScriptLog('Set Targeting', 'end');
 
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();   

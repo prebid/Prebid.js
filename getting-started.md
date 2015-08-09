@@ -7,13 +7,34 @@ pid: 0
 isHome: false
 
 ---
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
-<!--
+<script type="text/javascript">
+  google.load('visualization', '1', {packages: ['corechart', 'bar']});  
+</script>
 
-I would move the Basic Example immediately below the “What is Prebid.js” section.
-I would break up Basic Example section into three sub-sections, one for each step. Under the code for each section, we should add quick explanatory text describing what’s going on.
--->
 
+
+<div class="bs-docs-section" markdown="1">
+
+#Live Demo
+
+<div class="row">
+
+  <div class="col-sm-5">
+    <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px"></iframe>
+  </div>
+  <div class="col-sm-7">
+    <div id="chart_div"></div>
+  </div>
+</div>
+
+<h4 style="margin-top:-10px">The above ad is auctioned with Prebid.js.</h4>
+
+* **Hover over** the timeline bars to discover how long each bidder takes.
+* Ad server is set to only wait for **up to 600ms**. Load GPT starts right around that time, ignoring the bidders that didn't respond in time. 
+
+</div>
 
 <div class="bs-docs-section" markdown="1">
 
@@ -102,8 +123,10 @@ For detailed walkthrough and API references, check out the [Publisher API docs](
 
 ![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
 
-<br> 
 
+<!--
+
+<br> 
 
 ###Prebid.js is designed modularly
 > Prebid.js exposes three API’s - a Publisher API used to request ads, a Bidder API used for Bidders to respond to ad requests, and an Ad Server API used to integrate with ad servers.
@@ -119,6 +142,8 @@ For detailed walkthrough and API references, check out the [Publisher API docs](
 * **Ad Server API**: 
 
 	Prebid.js comes with support for most major ad servers. If you'd like to implement a custom ad server, or to add a new ad server into the list, refer to [Ad Server API Docs](adaptors.html).
+
+-->
 
 </div>
 

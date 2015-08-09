@@ -5,10 +5,12 @@ head_title: Prebid.js - Header Bidding Made Easy
 
 isHome: true
 
-description: Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
+description: A free and open source library for publishers to implement header bidding quickly. 
 ---
 
 <div class="bs-docs-featurette pb-home pb-docs">
+
+
     <h2 class="bs-docs-featurette-title">Integrate header bidding partners in minutes, not weeks.</h2>
     <p class="lead">Week-long header bidding implemenations are no picnic. We developed Prebid.js with a group of publishers to relieve that frustration.</p>
 

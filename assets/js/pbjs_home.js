@@ -117,3 +117,96 @@ function newCompany(company_type, name, logo, email, intro) {
     }
   });
 }
+
+
+
+
+
+// logs = {"Load Prebid.js":{"static":true,"start":0,"end":4},"Adserver Timer":{"static":true,"start":0,"end":619},"amazon":{"start":134,"end":618,"cpm":0},"appnexus":{"start":132,"end":519,"cpm":0.5},"criteo":{"start":152,"end":519,"cpm":0},"openx":{"start":153,"end":1349},"pubmatic":{"start":135,"end":1059},"rubicon":{"start":154,"end":734,"cpm":3.813333},"Load GPT":{"static":true,"start":619,"end":813},"Set Targeting":{"static":true,"start":816,"end":842}};
+//finalEndTime = 1500;
+window.logTime = function(logs, finalEndTime) {
+  var rows = [];
+  for (eventName in logs) {
+    var bidderData = logs[eventName];
+
+    if (!('start' in bidderData)) continue;
+
+    var startTime = bidderData.start;
+    var endTime = bidderData.end;
+    if (!('end' in bidderData)) endTime = finalEndTime;
+
+    if (bidderData.start > bidderData.end) {
+      console.log('startTime ' + bidderData.start + ' > endTime ' + bidderData.end + ' for: ' + eventName);
+      continue;
+    }
+
+    var cpm = 0;
+    if ('cpm' in bidderData) cpm = bidderData.cpm;
+    cpm = Math.round(cpm * 100) / 100;
+
+    //var cpmStr = '';
+    //if (!bidderData.static) cpmStr = 'cpm:' + cpm;
+    // rows.push([eventName, cpmStr, startTime, endTime]);
+
+    var duration = endTime-startTime;
+    var tooltip = eventName + '\nDuration: ' + duration + 'ms\nStart: ' + startTime + 'ms, End: ' + endTime + 'ms';
+    var color = '#3b88c3';
+    var annotation = '$' + cpm.toString();
+    if (bidderData.static) {
+      color = '#ec971f';
+      annotation = '';
+    }
+    var style = 'color:' + color + ';opacity:0.6';
+    rows.push([eventName, startTime, duration, tooltip, style, annotation]);
+  }
+  console.log(JSON.stringify(rows));
+
+      var dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('string', 'Event');
+      dataTable.addColumn('number', 'Start');
+      dataTable.addColumn('number', 'End');
+      dataTable.addColumn({type: 'string', role: 'tooltip'});
+      dataTable.addColumn({type: 'string', role: 'style'});
+      dataTable.addColumn({type: 'string', role: 'annotation'});
+      dataTable.addRows(rows)
+
+
+    //var data = google.visualization.arrayToDataTable(rows);
+
+    var options = {
+      title: 'Timeline of this Header Bidding Auction',
+      //width: 600,
+      height: 400,
+      legend: { position: 'none' },
+      //chartArea: {width: '50%'},
+      colors: ['transparent', '#3b88c3'],
+      hAxis: {
+        minValue: 0,
+        //maxValue: finalEndTime,
+        viewWindow: {
+          max: finalEndTime + 50
+        }
+      },
+      vAxis: {
+      },
+      isStacked: true,
+      annotations: {
+          textStyle: {
+            fontSize: 10,
+            //color: '#871b47',
+            //opacity: 0.8
+          }
+        },
+      animation: {
+        startup: true,
+        duration: 300,
+        easing: 'linear'
+      }
+
+        
+    };
+    var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
+    chart.draw(dataTable, options);
+  
+  }
+

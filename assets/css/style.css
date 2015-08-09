@@ -49,6 +49,7 @@
 .bs-docs-masthead .note {
   font-size: 18px;
   color: white;
+  margin-top: 20px;
 }
 
 .bs-docs-featurette-title {
@@ -147,6 +148,28 @@ img {
   /*font-size: 25px;*/
   font-weight: 300;
 }
+
+@media (min-width: 768px) {
+  #pb-home-demo {
+    margin-top: 30px;
+  }
+  #pb-home-demo .col-sm-5 {
+   text-align: right;
+  }
+  #pb-home-demo .col-sm-7 {
+   text-align: left;
+  }
+  #pb-home-demo .col-sm-7 .lead {
+   margin-left: 0;
+   padding-left: 0;
+  }
+}
+
+
+/*
+#pb-home-demo .col-xs-12 {
+  text-align: center;
+}*/
 
 .bs-callout code {
   background-color: transparent;
