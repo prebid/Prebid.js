@@ -37,7 +37,6 @@
         code: '/19968336/header-bid-tag-0',
         sizes: [[300, 250], [300, 600]],
         bids: [
-            /*
             // 1 ad unit can be targeted by multiple bids.
             {
                 bidder: 'appnexus',
@@ -74,8 +73,7 @@
                     refererURL : 'http://drudgereport.com',
                     jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
                 }
-            },*/
-            {
+            },{
                 bidder: 'rubicon',
                 params: {
                    rp_account : '9707',
@@ -229,7 +227,7 @@
             console.log(logs);
 
             setTimeout(function() {
-                //window.top.logTime(logs, (new Date().getTime() - timeInit));
+                window.top.logTime(logs, (new Date().getTime() - timeInit));
             }, 500);
 
 
