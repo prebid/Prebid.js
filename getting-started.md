@@ -7,11 +7,6 @@ pid: 0
 isHome: false
 
 ---
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-
-<script type="text/javascript">
-  google.load('visualization', '1', {packages: ['corechart', 'bar']});  
-</script>
 
 
 
@@ -19,22 +14,8 @@ isHome: false
 
 #Live Demo
 
-<div class="row">
+{% include live_demo.html %}
 
-  <div class="col-sm-5">
-    <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px"></iframe>
-  </div>
-  <div class="col-sm-7">
-    <div id="chart_div">
-        <img src="{{ site.github.url }}/assets/images/loader.gif">
-    </div>
-  </div>
-</div>
-
-<h4 style="margin-top:-10px">The above ad is auctioned with Prebid.js.</h4>
-
-* **Hover over** the timeline bars to discover how long each bidder takes.
-* Ad server is set to only wait for **up to 600ms**. Load GPT starts right around that time, ignoring the bidders that didn't respond in time. 
 
 </div>
 

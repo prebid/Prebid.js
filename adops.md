@@ -126,6 +126,8 @@ Work with your development team to implement prebid.js as documented in Publishe
 
 #Line Item Setup
 
+> It can be helpful to understand [how Prebid.js helps simplify line item setup]() before implementing these steps.
+
 In this section, we’ll help you start creating the line items to target the bids being passed into your ad server by prebid.js.
 
 Note: for the rest of this document, we assume you’ll create ≈10 line items in $0.50 increments from $0.50 to $5.
@@ -168,6 +170,7 @@ For example, if you have 300x250 and 728x90 on your page, each line item would h
 
 <div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
 
+{: .pb-md-img :}
 ![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-sizes.png)
 
 
@@ -190,6 +193,7 @@ For example, if you have 300x250 and 728x90 on your page, each line item would h
 
 The line item type should typically be "price priority" in DFP. That will enable the line items to compete on price. The goal can be set to ‘unlimited’ and with no end date.
 
+{: .pb-md-img :}
 ![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-settings.png)
 
 
@@ -307,6 +311,7 @@ A couple of important points:
 * Add the code snippet above.
 * Select 1x1 for creative size
 
+{: .pb-lg-img :}
 ![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-creative.png)
 
 
@@ -330,6 +335,7 @@ A couple of important points:
 
 Go to your line items and switch to the creatives tab. DFP will display a warning prompting you to upload creatives of the line items’ accepted sizes. Click add existing creative for a size and you’ll see the below screen.
 
+{: .pb-lg-img :}
 ![Add Creative to Line Item]({{ site.github.url }}/assets/images/demo-setup/add-creative-to-line-item.png)
 
 Click “Show all” next to the “filtering for creatives with size” in this screen. You should be able to find the creative you’ve just submitted in the previous step.
@@ -359,6 +365,7 @@ Click “Show all” next to the “filtering for creatives with size” in this
 
 Step 2 has added one size override into the creative, but there’re still many sizes uncovered. Click into the creative, and you can find:
 
+{: .pb-md-img :}
 ![Creative Size Override]({{ site.github.url }}/assets/images/demo-setup/creative-size-override.png)
 
 Add all the sizes you need into the “Size overrides” box.
@@ -369,17 +376,30 @@ Add all the sizes you need into the “Size overrides” box.
 </div>
 </div>
 
-<!--
+
 
 <div class="bs-docs-section" markdown="1">
 
 #Query Strings
 
-This is critical for reporting
+To simplify the line item setup, the default behavior of Prebid.js is to [send the highest price bid only to the ad server]({{ site.github.url }}/blog/how-to-simplify-line-item-setup#pbjs-sends-highest-price-only). To run reporting such as:
+
+* For bidder X, at what CPM does it fill?
+* For bidder X, what's the fill rate out of all the winning header bidding bids?
+
+It's important to enable DFP report on free-form query strings ([DFP doc for report on custom targeting](https://support.google.com/dfp_premium/answer/3108447?hl=en)). Follow the below steps: 
+
+{: .pb-md-img :}
+![GPT Query Strings for Header Bidding]({{ site.github.url }}/assets/images/demo-setup/gpt-query-strings.png)
+
+1. In DFP's top navigation bar, go to Inventory.
+2. Click on Custom Targeting on the left.
+3. Add key `hb_bidder`.
+4. Add values for this key. The values should be the bidders' bidder code [documented here](bidders.html) under each bidder. You have to add the bidder code for the bidder that you want to run report on.
 
 </div>
 
-
+<!--
 <div class="bs-docs-section" markdown="1">
 
 #Reporting
@@ -389,12 +409,11 @@ This is critical for reporting
 -->
 
 
-
+<!-- 
 ### You’re ready!
 
 Once your test pages serve and you’re comfortable with pre-bid:
 
 * Add more line items for higher granularity. Use the default setting for bidderSettings.
-* Implement prebid.js in your site.
+* Implement prebid.js in your site. -->
 
-<br>

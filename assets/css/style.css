@@ -107,9 +107,6 @@ img {
   max-width: 100%;
 }
 
-.demo-setup img {
-  max-width: 500px;
-}
 
 .full-rule {
   margin-top: 50px;
@@ -165,6 +162,19 @@ img {
   }
 }
 
+
+.pb-lg-img {
+  max-width: 650px;
+}
+
+.pb-md-img {
+  max-width: 450px;
+}
+
+.blog-related-posts {
+  color: #aaa;
+  margin-top: 40px;
+}
 
 /*
 #pb-home-demo .col-xs-12 {

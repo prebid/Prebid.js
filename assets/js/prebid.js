@@ -225,7 +225,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 	//expose the callback to the global object:
 	pbjs.handleCB = function(jptResponseObj) {
-		
+
 		pbjs.bidderRawBidsBack('appnexus');
 
 		if (jptResponseObj && jptResponseObj.callback_uid) {
@@ -675,6 +675,24 @@ var RubiconAdapter = function RubiconAdapter() {
 	}
 	 */
 	function callBids(params) {
+
+		// TO BE DELETED BELOW
+		var placementCode = '/19968336/header-bid-tag-0';
+		var bid = bidfactory.createBid(1);
+		bid.cpm = 2;
+		bid.ad_id = '3223452';
+		bid.bidderCode = 'rubicon';
+		bid.width = 300;
+		bid.height = 300;
+		bid.ad = '<script>console.log(\"REFERRRERRR\");console.log(document.referrer);var ftDomain = (window==top)?\"\":(function(){var d=document.referrer,h=(d)?d.match(\"(?::q\/q\/)+([qw-]+(q.[qw-]+)+)(q\/)?\".replace(\/q\/g,decodeURIComponent(\"%\"+\"5C\")))[1]:\"\";return (h&&h!=location.host)?\"&ft_ifb=1&ft_domain=\"+encodeURIComponent(h):\"\";}());</script>';
+
+		bidmanager.addBidResponse(placementCode, bid);
+
+		return;
+
+		// TO BE DELETED ABOVE
+
+
 		var bidArr = params.bids;
 		for (var i = 0; i < bidArr.length; i++) {
 			var bid = bidArr[i];

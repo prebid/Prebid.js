@@ -22,6 +22,22 @@
         <div class="bs-docs-section">
           <h1>{{page.title}}</h1>
           {{content}}
+
+          <div class="blog-related-posts">
+            <h4>You may also enjoy:</h4>
+            <ul>
+            {% for p in site.posts %}
+              {% if p.id == page.id %}
+                {% continue %}
+              {% endif %}
+
+                <li><a href="{{ p.url }}">{{ p.title }}</a></li>
+
+
+            {% endfor %}
+            </ul>
+          </div>
+
         </div>
       </div>
 
@@ -33,9 +49,11 @@
           <h5>Related Posts</h5>
           <ul class="nav bs-docs-sidenav">
 
-            {% for post in site.posts %}
-
-              <li><a href="{{ post.url }}">{{ post.title }}</a></li>
+            {% for p in site.posts %}
+              {% if p.id == page.id %}
+                {% continue %}
+              {% endif %}
+              <li><a href="{{ p.url }}">{{ p.title }}</a></li>
 
             {% endfor %}
 

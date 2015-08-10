@@ -29,9 +29,4 @@ While implementing Prebid.js' adaptors for different bidders, we've noticed not 
 
 ###Live Test:
 
-<iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no"></iframe>
-
-<a href="{{ site.github.url }}/header-bidding-demo.html" target="_blank" class="btn btn-default">Open in a new window</a>
-
-To observe the latency yourself, <a href="{{ site.github.url }}/header-bidding-demo.html" target="_blank">Open the above demo ad unit</a> in a new window. Watch the latency of different bidders through the browser's developer tools. To isolate down to a specific bidder, search by the bidder's name. For example, "appnexus" or "rubicon".
-
+{% include live_demo.html %}
