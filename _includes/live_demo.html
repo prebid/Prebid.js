@@ -6,8 +6,25 @@
 
 <div class="row">
   <div class="col-sm-5">
-    <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px"></iframe>
+    <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px" id="demo-iframe"></iframe>
+
+    <div class="row pb-sm-center">
+	    <div class="col-sm-6">
+	    	<a href="{{ site.github.url }}/header-bidding-demo.html" class="btn btn-default btn-sm" target="_blank">Open in a new tab</a>
+	    </div>
+	    <div class="col-sm-6">
+	    	<script>function refresh_iframe_ad() {
+	    		$('#demo-iframe').contents()[0].location.reload();
+	    		$('#chart_div').html('<img src="/assets/images/loader.gif">');
+	    		return false;
+	    	}
+	    	</script>
+	    	<a class="btn btn-default btn-sm" target="_blank" onclick="refresh_iframe_ad()">Refresh this ad</a>
+	    </div>
+    </div>
+
   </div>
+
   <div class="col-sm-7">
     <div id="chart_div">
         <img src="{{ site.github.url }}/assets/images/loader.gif">

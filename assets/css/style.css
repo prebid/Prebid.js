@@ -150,15 +150,19 @@ img {
   #pb-home-demo {
     margin-top: 30px;
   }
-  #pb-home-demo .col-sm-5 {
-   text-align: right;
-  }
-  #pb-home-demo .col-sm-7 {
-   text-align: left;
-  }
   #pb-home-demo .col-sm-7 .lead {
    margin-left: 0;
    padding-left: 0;
+  }
+
+  .pb-sm-left {
+    text-align: left;
+  }
+  .pb-sm-center {
+    text-align: center;
+  }
+  .pb-sm-right {
+    text-align: right;
   }
 }
 
@@ -198,4 +202,8 @@ img {
 .bs-callout {
   padding-top: 0px;
   padding-bottom: 10px;
+}
+
+#chart_div {
+  height: 400px;
 }
