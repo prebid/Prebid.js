@@ -11,7 +11,7 @@ licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 # list of additional links on the right of the top menu
 headerLinks:
   - title: Blog
-    url: blog.html
+    url: /blog.html
   - title: GitHub
     url: https://github.com/prebid/Prebid.js
 
@@ -23,7 +23,7 @@ footerLinks:
   - title: Issues
     url: https://github.com/prebid/Prebid.js/issues?state=open
   - title: Contact Us
-    url: questions.html
+    url: /questions.html
 
 
 # header
