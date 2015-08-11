@@ -272,9 +272,9 @@ pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
 	pbjs.getBidResponses(adunitCode);
 
 	if (adunitCode) {
-		return JSON.stringify(pb_targetingMap[adunitCode]);
+		return pb_targetingMap[adunitCode];
 	}
-	return JSON.stringify(pb_targetingMap);
+	return pb_targetingMap;
 
 
 };
@@ -369,7 +369,7 @@ pbjs.getBidResponses = function(adunitCode) {
 		}
 	}
 
-	return JSON.stringify(returnObj, null, '\t');
+	return returnObj;
 
 };
 /*
