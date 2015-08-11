@@ -149,28 +149,55 @@ exports.addBidResponse = function(adUnitCode, bid) {
 	//TODO: check if all bids are in
 };
 
-exports.createEmptyBidResponseObj = function(){
+exports.createEmptyBidResponseObj = function() {
 	return {
-			bids: [],
-			allBidsAvailable: false
-		};
+		bids: [],
+		allBidsAvailable: false
+	};
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 	//retrive key value settings
 	var keyValues = {};
-	var bidder_settings = pbjs.bidderSettings;
-	if (bidder_settings) {
-		//first try to add based on bidderCode configuration
-		if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-			//
-			setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+	var bidder_settings = pbjs.bidderSettings || {};
+	//first try to add based on bidderCode configuration
+	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
+		//
+		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+	}
+	//now try with "generic" settings
+	else if (custBidObj && bidder_settings) {
+		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
+			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
+				adserverTargeting: [{
+					key: 'hb_bidder',
+					val: function(bidResponse) {
+						return bidResponse.bidderCode;
+					}
+				}, {
+					key: 'hb_adid',
+					val: function(bidResponse) {
+						return bidResponse.adId;
+					}
+				}, {
+					key: 'hb_pb',
+					val: function(bidResponse) {
+						return bidResponse.pbMg;
+					}
+				}, {
+					key: 'hb_size',
+					val: function(bidResponse) {
+						return bidResponse.size;
+
+					}
+				}]
+			};
+
+			//set default settings 
+
 		}
-		//now try with "generic" settings
-		else if (custBidObj && bidder_settings && bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-			custBidObj.usesGenericKeys = true;
-			setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
-		}
+		custBidObj.usesGenericKeys = true;
+		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
 	return keyValues;
@@ -179,6 +206,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
+	custBidObj['size'] = custBidObj.getSize();
 	for (var i = 0; i < targeting.length; i++) {
 		var key = targeting[i].key;
 		var value = targeting[i].val;
@@ -195,7 +223,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 }
 
 
-exports.executeCallback = function(){
+exports.executeCallback = function() {
 
 	if (typeof pbjs.registerBidCallbackHandler === objectType_function && !_callbackExecuted) {
 		try {
@@ -208,7 +236,7 @@ exports.executeCallback = function(){
 	}
 };
 
-exports.allBidsBack = function(){
+exports.allBidsBack = function() {
 	return _allBidsAvailable;
 };
 
