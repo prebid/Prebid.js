@@ -220,8 +220,6 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 		}
 
-		bidmanager.checkIfAllBidsAreIn();
-
 	};
 
 	return {

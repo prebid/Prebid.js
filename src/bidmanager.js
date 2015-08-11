@@ -21,7 +21,6 @@ var bidResponseRecievedCount = 0;
 exports.bidResponseRecievedCount = bidResponseRecievedCount;
 
 var _allBidsAvailable = false;
-exports._allBidsAvailable = _allBidsAvailable;
 
 var _callbackExecuted = false;
 
@@ -195,9 +194,6 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 	}
 }
 
-exports.setCallbackHandlerValue = function(value){
-	
-}
 
 exports.executeCallback = function(){
 
@@ -210,6 +206,10 @@ exports.executeCallback = function(){
 			utils.logError('Exception trying to execute callback handler registered : ' + e.message);
 		}
 	}
+};
+
+exports.allBidsBack = function(){
+	return _allBidsAvailable;
 };
 
 /*
@@ -226,6 +226,4 @@ exports.checkIfAllBidsAreIn = function() {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
 		this.executeCallback();
 	}
-
-	return _allBidsAvailable;
 };

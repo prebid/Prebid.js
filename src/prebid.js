@@ -7,6 +7,7 @@ var CriteoAdapter = require('./adapters/criteo');
 var AmazonAdapter = require('./adapters/amazon');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
+var module_test = require('./adapters/module_test.js');
 
 /* private variables */
 
@@ -40,6 +41,9 @@ pbjs.anq = pbjs.anq || [];
  *   Main method entry point method
  */
 function init(adUnitCode) {
+
+	module_test.setInternalVar();
+	module_test.logState();
 
 	if(!isValidAdUnitSetting()){
 		utils.logMessage('No adUnits configured. No bids requested.');
@@ -396,7 +400,7 @@ pbjs.setTargetingForGPTAsync = function(code, slot) {
 };
 
 pbjs.allBidsAvailable = function() {
-	return bidmanager.checkIfAllBidsAreIn();
+	return bidmanager.allBidsBack();
 };
 
 /*
