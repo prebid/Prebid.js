@@ -40,6 +40,12 @@ pbjs.anq = pbjs.anq || [];
  *   Main method entry point method
  */
 function init(adUnitCode) {
+
+	if(!isValidAdUnitSetting()){
+		utils.logMessage('No adUnits configured. No bids requested.');
+		return;
+	}
+
 	//set timeout for all bids
 	setTimeout(bidmanager.executeCallback, pbjs.bidderTimeout);
 	//parse settings into internal vars
@@ -61,6 +67,13 @@ function init(adUnitCode) {
 		sortAndCallBids();
 	}
 
+}
+
+function isValidAdUnitSetting(){
+	if(pbjs.adUnits && pbjs.adUnits.length !== 0){
+		return true;
+	}
+	return false;
 }
 
 function sortAndCallBids(sortFunc) {

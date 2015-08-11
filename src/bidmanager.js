@@ -195,6 +195,10 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 	}
 }
 
+exports.setCallbackHandlerValue = function(value){
+	
+}
+
 exports.executeCallback = function(){
 
 	if (typeof pbjs.registerBidCallbackHandler === objectType_function && !_callbackExecuted) {
@@ -214,7 +218,7 @@ exports.executeCallback = function(){
  */
 
 exports.checkIfAllBidsAreIn = function() {
-	if (bidRequestCount === bidResponseRecievedCount) {
+	if (bidRequestCount !== 0 && bidRequestCount === bidResponseRecievedCount) {
 		_allBidsAvailable = true;
 	}
 

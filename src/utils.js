@@ -232,7 +232,7 @@ exports.getPriceBucketString = function(cpm) {
 		if (cpmFloat) {
 			//round to closet .5
 			if(cpmFloat > _lgPriceCap){
-				returnObj.low = _lgPriceCap;
+				returnObj.low = _lgPriceCap.toFixed(2);
 			}
 			else{
 				returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
@@ -240,7 +240,7 @@ exports.getPriceBucketString = function(cpm) {
 			
 			//round to closet .1
 			if(cpmFloat > _mgPriceCap){
-				returnObj.low = _mgPriceCap;
+				returnObj.med = _mgPriceCap.toFixed(2);
 			}
 			else{
 				returnObj.med =  (Math.floor(cpm * 10) / 10).toFixed(2);
@@ -248,7 +248,7 @@ exports.getPriceBucketString = function(cpm) {
 			
 			//round to closet .01
 			if(cpmFloat > _lgPriceCap){
-				returnObj.low = _lgPriceCap;
+				returnObj.high = _lgPriceCap.toFixed(2);
 			}
 			else{
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
