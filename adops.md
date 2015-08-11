@@ -4,6 +4,7 @@ title: Ad Ops Guide
 head_title: Ad Ops Guide for Header Bidding
 description: An ad ops guide for implementing header bidding with prebid.js.
 pid: 4
+show_disqus: true
 hide: false
 ---
 

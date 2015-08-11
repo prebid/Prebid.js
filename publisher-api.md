@@ -3,6 +3,7 @@ layout: page
 title: Publisher API
 head_title: Publisher API for Header Bidding
 description: API for publishers
+show_disqus: true
 pid: 1
 ---
 
