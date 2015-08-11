@@ -16,6 +16,12 @@ Install
 Build
 ------------
 	$ gulp build
+
+Configure
+------------
+Edit `./integrationExamples/gpt/pbjs_example_gpt.html`
+
+Change `{id}` values appropriately 
 	
 Run
 ------------
