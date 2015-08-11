@@ -22,13 +22,9 @@ Stay informed of publisher best practices for header bidding and the latest for 
   </div>
   <div class="form-group">
   	<button class="btn btn-primary" id="submit-email" onclick="submitEmail()">Join Best Practices Group</button>
-  </div>
-        
+  </div>        
 </div>
 
-<div>
-  
-</div>
 
 </div>
 

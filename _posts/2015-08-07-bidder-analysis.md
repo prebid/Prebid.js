@@ -30,3 +30,9 @@ While implementing Prebid.js' adaptors for different bidders, we've noticed not 
 ###Live Test:
 
 {% include live_demo.html %}
+
+#### The above ad is auctioned with Prebid.js.
+
+* **Hover over** the timeline bars to discover how long each bidder takes.
+* Ad server is set to only wait for **up to 400ms**. If all bidders respond faster than that, Prebid.js will load the ad server early. If not, Prebid.js will ignore bidders that took too long. 
+* You may notice Javascript cannot initiate all bidder calls at once. To prevent bidders that get installed last to always have less time to respond, Prebid.js helps you keep the auction fair and rotate the order that bidders get called.

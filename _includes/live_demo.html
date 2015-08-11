@@ -5,35 +5,30 @@
 </script>
 
 <div class="row">
-  <div class="col-sm-5">
+  <div class="col-sm-5 text-center">
     <iframe src="{{ site.github.url }}/header-bidding-demo.html" width="300" height="250" frameborder="0" scrolling="no" style="margin-top: 60px" id="demo-iframe"></iframe>
 
-    <div class="row pb-sm-center">
-	    <div class="col-sm-6">
+    <div class="row">
+	    <div class="col-sm-6 col-xs-6 pb-sm-right">
 	    	<a href="{{ site.github.url }}/header-bidding-demo.html" class="btn btn-default btn-sm" target="_blank">Open in a new tab</a>
 	    </div>
-	    <div class="col-sm-6">
+	    <div class="col-sm-6 col-xs-6 pb-sm-left">
 	    	<script>function refresh_iframe_ad() {
 	    		$('#demo-iframe').contents()[0].location.reload();
 	    		$('#chart_div').html('<img src="/assets/images/loader.gif">');
 	    		return false;
 	    	}
 	    	</script>
-	    	<a class="btn btn-default btn-sm" target="_blank" onclick="refresh_iframe_ad()">Refresh this ad</a>
+	    	<a class="btn btn-primary btn-sm" target="_blank" onclick="refresh_iframe_ad()">Refresh this ad</a>
 	    </div>
     </div>
 
   </div>
 
-  <div class="col-sm-7">
+  <div class="col-sm-7 text-center">
     <div id="chart_div">
         <img src="{{ site.github.url }}/assets/images/loader.gif">
     </div>
   </div>
 </div>
 
-<h4 style="margin-top:-10px">The above ad is auctioned with Prebid.js.</h4>
-
-<url>
-<li> <bold>Hover over</bold> the timeline bars to discover how long each bidder takes.</li>
-<li> Ad server is set to only wait for <bold>up to 600ms</bold>. Load GPT starts right around that time, ignoring the bidders that didn't respond in time. </li>

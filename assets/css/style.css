@@ -125,6 +125,11 @@ img {
   padding-bottom: 0px;
 }
 
+.pb-home {
+  margin-top: 0;
+  padding-top: 0;
+}
+
 .pb-home img {
   height: 80px;
   width: auto;

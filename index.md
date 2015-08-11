@@ -5,14 +5,37 @@ head_title: Prebid.js - Header Bidding Made Easy
 
 isHome: true
 
-description: A free and open source library for publishers to implement header bidding quickly. 
+description: A free and open source library for publishers to quickly implement header bidding. 
 ---
+
+
+
+<a name="pb-home-live-demo"></a>
+
+<div class="row">
+    <div class="col-sm-10 col-sm-offset-1 text-center">
+
+      {% include live_demo.html %}
+
+    </div>
+</div>
 
 <div class="bs-docs-featurette pb-home pb-docs">
 
+    <p class="lead">The above header bidding ad is auctioned with Prebid.js. <a href="getting-started.html" target="_blank">Learn more about this auction here.</a></p>
 
-    <h2 class="bs-docs-featurette-title">Integrate header bidding partners in minutes, not weeks.</h2>
-    <p class="lead">Week-long header bidding implemenations are no picnic. We developed Prebid.js with a group of publishers to relieve that frustration.</p>
+<div class="form-inline">
+  <div class="form-group form-group-lg">
+    <input type="text" class="form-control" id="email-field" placeholder="Email" required>
+  </div>
+  <div class="form-group">
+    <button class="btn btn-outline btn-lg" id="submit-email" onclick="submitEmail()">Join Header Bidding Best Practices Group</button>
+  </div>        
+</div>
+
+
+<!--     <h2 class="bs-docs-featurette-title">Integrate header bidding partners in minutes, not weeks.</h2>
+    <p class="lead">Week-long header bidding implemenations are no picnic. We developed Prebid.js with a group of publishers to relieve that frustration.</p> -->
 
     <hr class="full-rule">
 
@@ -28,7 +51,7 @@ description: A free and open source library for publishers to implement header b
         <img src="assets/images/icons/icon-money.png" alt="Header bidding min line item" class="img-responsive">
         <h3>Minimum line item setup.</h3>
         <p>With only 1 set of line items, Prebid.js allows ad ops to manage all bidders and sizes at ease. Adding new bidders require no ad server change.</p>
-        <a href="adops.html" class="btn btn-outline">Learn more</a>
+        <a href="adops.html" class="btn btn-outline">Ad Ops Guide</a>
       </div>
 
       <div class="col-sm-4">
@@ -91,6 +114,6 @@ description: A free and open source library for publishers to implement header b
     <h2 class="bs-docs-featurette-title">Open Source and Community Owned.</h2>
     
     <p class="lead">Prebid.js is open source software. Anyone is free to modify the code and contribute adapters for new bidders. Prebid.js is hosted, developed, and maintained on GitHub.</p>
-    <a href="getting-started.html" class="btn btn-outline btn-lg">Learn more about Prebid.js</a>
+    <a href="getting-started.html" class="btn btn-outline btn-lg">Next: Overview of Prebid.js</a>
 
 </div>

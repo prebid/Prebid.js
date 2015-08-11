@@ -175,7 +175,7 @@ window.logTime = function(logs, finalEndTime) {
 
     var options = {
       title: 'Timeline of this Header Bidding Auction',
-      width: 550,
+      width: 600,
       height: 400,
       legend: { position: 'none' },
       //chartArea: {width: '50%'},

@@ -16,6 +16,13 @@ isHome: false
 
 {% include live_demo.html %}
 
+#### The above ad is auctioned with Prebid.js.
+
+* **Hover over** the timeline bars to discover how long each bidder takes.
+* Ad server is set to only wait for **up to 400ms**. If all bidders respond faster than that, Prebid.js will load the ad server early. If not, Prebid.js will ignore bidders that took too long. 
+* You may notice Javascript cannot initiate all bidder calls at once. To prevent bidders that get installed last to always have less time to respond, Prebid.js helps you keep the auction fair and rotate the order that bidders get called.
+
+
 
 </div>
 
@@ -25,12 +32,11 @@ isHome: false
 
 ###What is Prebid.js?
 
-> Prebid.js is an open source Javascript framework to help publishers integrate and manage pre-bid partners without writing custom code or increasing page load times. Prebid.js is 100% open source and free for anyone to use. [Learn more about pre-bid here.]()
-
+> Prebid.js is an open source Javascript framework to help publishers integrate and manage header bidding partners without writing custom code or increasing page load times. Prebid.js is 100% open source and free for anyone to use. 
 
 * It has clean, built-in support for all major bidders (Amazon, AppNexus, Rubicon, etc), as well as major ad servers (DFP, OAS, AdTech). 
 * Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time, confusing line item and targeting setup.
-* Plugging in prebid.js is easy. Adding new pre-bid bidders is a matter of adding tag Ids into a JSON config.
+* Plugging in prebid.js is easy. Adding new header bidding bidders is a matter of adding tag Ids into a JSON config.
 
 <br>
 
@@ -41,7 +47,7 @@ Here’s a basic example for Rubicon and AppNexus bidding into a DFP ad unit:
 
 #####1. Register bidder tag Ids
 
-In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Note that immediately after the library is loaded, prebid.js will send pre-bid requests async to all bidders you've specified.
+In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Note that immediately after the library is loaded, prebid.js will send header bidding requests async to all bidders you've specified.
 
 {% highlight js %}
 
@@ -120,7 +126,7 @@ For detailed walkthrough and API references, check out the [Publisher API docs](
 
 * **Bidder API**
 
-	Prebid.js supports all major pre-bid bidders out of the box. We used the same API to implement all the bidder integrations. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs](adaptors.html).
+	Prebid.js supports all major header bidding bidders out of the box. We used the same API to implement all the bidder integrations. If you'd like to add a new bidder into the framework, or just to study how it works, refer to [Bidder API Docs](adaptors.html).
 
 * **Ad Server API**: 
 
