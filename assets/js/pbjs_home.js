@@ -177,7 +177,7 @@ window.logTime = function(logs, finalEndTime) {
     //var data = google.visualization.arrayToDataTable(rows);
 
     var options = {
-      title: 'Timeline of this Header Bidding Auction',
+      title: 'Live Demo of Header Bidding',
       width: 600,
       height: 400,
       legend: { position: 'none' },
