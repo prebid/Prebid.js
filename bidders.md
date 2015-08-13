@@ -145,7 +145,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | :--- | :---- | :---------- | :------ |
 | `jstag_url` | required | The publisher specific URL of jstag | `ox-d.xyz.servedbyopenx.com/w/1.0/jstag?ef=db&nc=23923-EF` |
 | `pgid` | required | The page ID | "534205285" |
-| `auid` | required | the ad unit ID | "538562284" |
+| `unit` | required | the ad unit ID | "538562284" |
 
 
 </div>
