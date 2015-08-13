@@ -7,7 +7,6 @@ var CriteoAdapter = require('./adapters/criteo');
 var AmazonAdapter = require('./adapters/amazon');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
-var module_test = require('./adapters/module_test.js');
 
 /* private variables */
 
