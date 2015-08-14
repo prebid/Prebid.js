@@ -114,7 +114,7 @@ description: A free and open source library for publishers to quickly implement 
         <div class="logo-block">
           <img src="assets/images/logos/monetizemore-logo.jpg" alt="MonetizeMore Header Bidding" class="img-responsive">
         </div>
-        <a href="mailto:kean@monetizemore.com" class="btn btn-outline">Contact Bidder</a>
+        <a href="mailto:kean@monetizemore.com" class="btn btn-outline">Contact Publisher</a>
       </div>
 
       <div class="col-xs-6 col-sm-2">
