@@ -24,6 +24,8 @@ var _allBidsAvailable = false;
 
 var _callbackExecuted = false;
 
+var defaultBidderSettingsMap = {};
+
 exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
@@ -165,6 +167,10 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 		//
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 	}
+	//next try with defaultBidderSettings
+	else if(defaultBidderSettingsMap[bidderCode]){
+		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
+	}
 	//now try with "generic" settings
 	else if (custBidObj && bidder_settings) {
 		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
@@ -220,6 +226,10 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 			keyValues[key] = value;
 		}
 	}
+}
+
+exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting){
+	defaultBidderSettingsMap[bidderCode] = defaultSetting;
 }
 
 

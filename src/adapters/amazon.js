@@ -11,6 +11,15 @@ var adloader = require('../adloader');
  * @constructor
  */
 var AmazonAdapter = function AmazonAdapter() {
+	var _defaultBidderSettings = {
+                    adserverTargeting: [{
+                    	key: "amznslots",
+						val: function (bidResponse) {
+							return bidResponse.keys;
+						}
+					}
+                 ]
+            };
 	var bids;
 
 	function _callBids(params) {
@@ -49,7 +58,7 @@ var AmazonAdapter = function AmazonAdapter() {
 			});
 		}
 	}
-
+	/*
 	function _defaultBidderSettings() {
 		return {
 			adserverTargeting: [
@@ -62,6 +71,7 @@ var AmazonAdapter = function AmazonAdapter() {
 			]
 		};
 	}
+	*/
 
 	return {
 		callBids: _callBids,

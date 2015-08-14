@@ -96,6 +96,10 @@ function callBids(bidderArr) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
 			currentBidder.callBids(bidder);
+
+			if(currentBidder.defaultBidderSettings){
+				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
+			}
 		}
 	}
 }
