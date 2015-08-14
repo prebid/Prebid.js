@@ -102,7 +102,7 @@ description: A free and open source library for publishers to quickly implement 
       </div>
     
     </div>
-
+<!-- 
     <hr class="full-rule">
 
     <h2 class="bs-docs-featurette-title">Partners Center</h2>
@@ -156,7 +156,8 @@ description: A free and open source library for publishers to quickly implement 
 
     
     </div>
-
+ -->
+ 
     <hr class="full-rule">
 
 
