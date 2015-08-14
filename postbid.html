@@ -1,6 +1,6 @@
 <html>
 
-<head>
+<body style="margin:0;padding:0">
 
 <script>
     
@@ -39,15 +39,15 @@
     //  Optional callback handler function that will get called when all bids are available for timed out
     pbjs.registerBidCallbackHandler = function(){
         pbjs.initAdserverSet = true;
-        
+
         var params = pbjs.getAdserverTargetingParamsForAdUnit(unitCode);
-        pbjs.renderAd(document, params['hb_adId']);
+        pbjs.renderAd(document, params['hb_adid']);
 
     
         console.log('Are all bids available? : ' + pbjs.allBidsAvailable()); // return bool
 
         console.log('Targeting params:')
-        console.log(pbjs.getAdserverTargetingParamsForAdUnit());
+        console.log(JSON.stringify(pbjs.getAdserverTargetingParamsForAdUnit()));
 
         console.log('Dumping all bid objects to console:');
         console.log(pbjs.getBidResponses()); // or pass a code to get one particular ad unit

@@ -35,7 +35,7 @@ Stay informed of publisher best practices for header bidding and the latest for 
 
 #### Share your company
 
-If you are a publisher that'd like to be contacted by bidders, or if you're a "bidder" and want to share more about yourself, use the below form. Note that the information you entered here will be shared in this page after your approval. 
+If you are a publisher that'd like to be contacted by bidders, or if you're a bidder and want to share more about yourself, use the below form. Note that the information you entered here will be shared in this page after your approval. 
 
 <form class="form row" id="form-company">
 

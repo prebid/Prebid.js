@@ -130,8 +130,11 @@ img {
   padding-top: 0;
 }
 
-.pb-home img {
+.pb-home .benefits img {
   height: 80px;
+}
+
+.pb-home img {
   width: auto;
   margin-left: auto;
   margin-right: auto;
@@ -140,6 +143,19 @@ img {
 .pb-home .bidder-logos img {
   width: auto;
   height: auto;
+}
+
+.pb-home .partner-logos .logo-block {
+  height: 100px;
+  vertical-align: center;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.pb-home .partner-logos .logo-block img {
+  max-height: 60px;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .pb-home .bidder-logos h3 {

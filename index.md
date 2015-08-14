@@ -42,7 +42,7 @@ description: A free and open source library for publishers to quickly implement 
 
     <hr class="full-rule">
 
-    <div class="row">
+    <div class="row benefits">
       <div class="col-sm-4">
         <img src="assets/images/icons/icon-ninja.png" alt="Header bidding no dev" class="img-responsive">
         <h3>No development required</h3>
@@ -104,6 +104,61 @@ description: A free and open source library for publishers to quickly implement 
     </div>
 
     <hr class="full-rule">
+
+    <h2 class="bs-docs-featurette-title">Partners Center</h2>
+    <p class="lead">A free an open marketplace for publishers and bidders supporting Prebid.org to connect.</p>
+
+    <div class="row bs-docs-featured-sites partner-logos">
+    
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <img src="assets/images/logos/monetizemore-logo.jpg" alt="MonetizeMore Header Bidding" class="img-responsive">
+        </div>
+        <a href="mailto:kean@monetizemore.com" class="btn btn-outline">Contact Bidder</a>
+      </div>
+
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <img src="assets/images/logos/sonobi-logo.png" alt="Sonobi Header Bidding" class="img-responsive">
+        </div>
+        <a href="mailto:rnovak@sonobi.com" class="btn btn-outline">Contact Bidder</a>
+      </div>
+    
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <img src="assets/images/logos/studybreakmedia-logo.png" alt="StudyBreakMedia Header Bidding" class="img-responsive">
+        </div>
+        <a href="mailto:emry@studybreakmedia.com" class="btn btn-outline">Contact Publisher</a>
+      </div>
+
+
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <img src="assets/images/logos/appnexus-logo.png" alt="AppNexus Header Bidding" class="img-responsive">
+        </div>
+        <a href="mailto:mmcneeley@appnexus.com" class="btn btn-outline">Contact Bidder</a>
+      </div>
+    
+
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <img src="assets/images/logos/brealtime-logo.png" alt="bRealTime Header Bidding" class="img-responsive">
+        </div>
+        <a href="mailto:rnovak@sonobi.com" class="btn btn-outline">Contact Bidder</a>
+      </div>
+    
+      <div class="col-xs-6 col-sm-2">
+        <div class="logo-block">
+          <div>Add Your Company!</div>
+        </div>
+        <a href="/addme.html#contact-companies" class="btn btn-outline">Enter Here</a>
+      </div>
+
+    
+    </div>
+
+    <hr class="full-rule">
+
 
 
     <h2 class="bs-docs-featurette-title">Open Source Project</h2>
