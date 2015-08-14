@@ -109,7 +109,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		var keyValues = {};
 		if (bid.bidderCode && bid.cpm !== 0) {
 			keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
-			bid.keyStringPairs = keyValues;
+			bid.adserverTargeting = keyValues;
 		}
 
 		//store a reference to the bidResponse by adId

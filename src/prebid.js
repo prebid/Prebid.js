@@ -41,9 +41,6 @@ pbjs.anq = pbjs.anq || [];
  */
 function init(adUnitCode) {
 
-	module_test.setInternalVar();
-	module_test.logState();
-
 	if(!isValidAdUnitSetting()){
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
@@ -203,7 +200,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 					bid: bid
 				});
 			} else {
-				var keyStrings = adUnitBids.bids[i].keyStringPairs;
+				var keyStrings = adUnitBids.bids[i].adserverTargeting;
 				for (var key in keyStrings) {
 					if (keyStrings.hasOwnProperty(key)) {
 						try {
@@ -229,7 +226,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 	if (bidArrayTargeting.length !== 0) {
 
 		var winningBid = getWinningBid(bidArrayTargeting);
-		var keyValues = winningBid.keyStringPairs;
+		var keyValues = winningBid.adserverTargeting;
 		for (var key in keyValues) {
 			if (keyValues.hasOwnProperty(key)) {
 				try {
@@ -293,7 +290,7 @@ function buildBidResponse(bidArray) {
 
 			if (!bid.usesGenericKeys) {
 				//put unique key into targeting
-				pb_targetingMap[bidClone.adUnitCode] = bidClone.keyStringPairs;
+				pb_targetingMap[bidClone.adUnitCode] = bidClone.adserverTargeting;
 			} else {
 				//else put into auction array
 				bidArrayTargeting.push({
@@ -308,7 +305,7 @@ function buildBidResponse(bidArray) {
 
 	if (bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
-		var keyValues = winningBid.keyStringPairs;
+		var keyValues = winningBid.adserverTargeting;
 		pb_targetingMap[bidClone.adUnitCode] = keyValues;
 	}
 
