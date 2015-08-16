@@ -129,6 +129,8 @@
         initAdserver();
     };
 
+    pbjs.creativeBackHandler = function(){};
+
     pbjs.beforeCallBidder = function(bidderCode) {
         setScriptLog(bidderCode, 'start');
     }
@@ -182,8 +184,9 @@
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
         pbjsEl.src = '/assets/js/prebid.js';
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
-        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+        //pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 
+        setTimeout(function() {pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);}, 0)
         setScriptLog('Load Prebid.js', 'end');
     })();
 
