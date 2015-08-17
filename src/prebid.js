@@ -1,3 +1,5 @@
+/** @module pbjs */
+
 var CONSTANTS = require('./constants.json');
 var RubiconAdapter = require('./adapters/rubicon.js');
 var AppNexusAdapter = require('./adapters/appnexus.js');
@@ -455,14 +457,70 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
+function resetBids(){
+	bidmanager.clearAllBidResponses();
+	pb_bidderMap = {};
+}
+
 /*
 *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
 */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
-	bidmanager.clearAllBidResponses();
-	pb_bidderMap = {};
+	resetBids();
 	init(adUnitCode);
 
+};
+
+/**
+ * Request bids for adUnits passed into function
+ */
+pbjs.requestBidsForAdUnits = function(adUnitsObj){
+	if(!adUnitsObj || adUnitsObj.constructor !== Array){
+		utils.logError('requestBidsForAdUnits must pass an array of adUnits');
+		return;
+	}
+	resetBids();
+	var adUnitBackup = pbjs.adUnits.slice(0);
+	pbjs.adUnits = adUnitsObj;
+	init();
+	pbjs.adUnits = adUnitBackup;
+
+};
+
+/**
+ * [removeAdUnit description]
+ * @param  {String} adUnitCode the adUnitCode to remove
+ */
+pbjs.removeAdUnit = function(adUnitCode){
+	if(adUnitCode){
+		for(var i = 0; i < pbjs.adUnits.length; i++){
+			if(pbjs.adUnits[i].code === adUnitCode){
+				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
+			}
+		}
+	}
+};
+
+/**
+ * @function
+ * Request all bids that are configured in pbjs.adUnits
+ */
+pbjs.requestAllBids = function(){
+	resetBids();
+	init();
+};
+
+/**
+ * @function
+ * 
+ * Add a adunit
+ * @param {Object} adUnitObj adUnitObj to add
+ * @alias module:pbjs.addAdUnit
+ */
+pbjs.addAdUnit = function(adUnitObj){
+	if(adUnitObj){
+		pbjs.adUnits.push(adUnitObj);
+	}
 };
 
 // Register the bid adaptors here

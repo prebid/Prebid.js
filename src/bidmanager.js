@@ -230,7 +230,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
 exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting){
 	defaultBidderSettingsMap[bidderCode] = defaultSetting;
-}
+};
 
 
 exports.executeCallback = function() {

@@ -262,3 +262,18 @@ exports.getPriceBucketString = function(cpm) {
 	return returnObj;
 
 };
+
+exports.mapForEach = function(obj, func){
+	for (var key in obj) {
+		if (obj.hasOwnProperty(key)) {
+			if(typeof func === objectType_function){
+				func.call(this, obj[key], key);
+			}
+			else{
+				throw new TypeError();
+			}
+			
+		}
+	}
+
+};
