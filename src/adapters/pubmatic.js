@@ -57,7 +57,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
 		var map = {};
 		map['PM_PUB_ID'] = _pm_pub_id;
-		map['PM_OPTIMIZE_ADSLOTS'] = _pm_optimize_adslots.map( function(adSlot) {
+		map['PM_OPTIMIZE_ADSLOTS'] = _pm_optimize_adslots.map(function(adSlot) {
 			return "'" + adSlot + "'";
 		}).join(',');
 
@@ -80,14 +80,14 @@ var PubmaticAdapter = function PubmaticAdapter() {
 		var bidInfoMap = (response && response.progKeyValueMap) || {};
 		var dimensions;
 
-		for(i = 0; i < bids.length; i++) {
+		for (i = 0; i < bids.length; i++) {
 			var adResponse;
 			bid = bids[i].params;
 
 			adUnit = bidResponseMap[bid.adSlot] || {};
 
 			// adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
-			adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(result, pair){
+			adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(result, pair) {
 				var parts = pair.split('=');
 				result[parts[0]] = parts[1];
 				return result;

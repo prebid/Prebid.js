@@ -43,7 +43,7 @@ pbjs.anq = pbjs.anq || [];
  */
 function init(adUnitCode) {
 
-	if(!isValidAdUnitSetting()){
+	if (!isValidAdUnitSetting()) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
 	}
@@ -71,8 +71,8 @@ function init(adUnitCode) {
 
 }
 
-function isValidAdUnitSetting(){
-	if(pbjs.adUnits && pbjs.adUnits.length !== 0){
+function isValidAdUnitSetting() {
+	if (pbjs.adUnits && pbjs.adUnits.length !== 0) {
 		return true;
 	}
 	return false;
@@ -99,7 +99,7 @@ function callBids(bidderArr) {
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
 			currentBidder.callBids(bidder);
 
-			if(currentBidder.defaultBidderSettings){
+			if (currentBidder.defaultBidderSettings) {
 				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
 			}
 		}
@@ -255,10 +255,9 @@ function getBidResponsesByAdUnit(adunitCode) {
 	var returnObj = {};
 	if (adunitCode) {
 		returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-		if(returnObj){
+		if (returnObj) {
 			return returnObj;
-		}
-		else{
+		} else {
 			return bidmanager.createEmptyBidResponseObj();
 		}
 	} else {
@@ -457,14 +456,14 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
-function resetBids(){
+function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
 }
 
 /*
-*	This function will refresh the bid requests for all adUnits or for specified adUnitCode
-*/
+ *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
 	init(adUnitCode);
@@ -474,8 +473,8 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 /**
  * Request bids for adUnits passed into function
  */
-pbjs.requestBidsForAdUnits = function(adUnitsObj){
-	if(!adUnitsObj || adUnitsObj.constructor !== Array){
+pbjs.requestBidsForAdUnits = function(adUnitsObj) {
+	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
 		utils.logError('requestBidsForAdUnits must pass an array of adUnits');
 		return;
 	}
@@ -491,10 +490,10 @@ pbjs.requestBidsForAdUnits = function(adUnitsObj){
  * [removeAdUnit description]
  * @param  {String} adUnitCode the adUnitCode to remove
  */
-pbjs.removeAdUnit = function(adUnitCode){
-	if(adUnitCode){
-		for(var i = 0; i < pbjs.adUnits.length; i++){
-			if(pbjs.adUnits[i].code === adUnitCode){
+pbjs.removeAdUnit = function(adUnitCode) {
+	if (adUnitCode) {
+		for (var i = 0; i < pbjs.adUnits.length; i++) {
+			if (pbjs.adUnits[i].code === adUnitCode) {
 				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
 			}
 		}
@@ -505,7 +504,7 @@ pbjs.removeAdUnit = function(adUnitCode){
  * @function
  * Request all bids that are configured in pbjs.adUnits
  */
-pbjs.requestAllBids = function(){
+pbjs.requestAllBids = function() {
 	resetBids();
 	init();
 };
@@ -517,8 +516,8 @@ pbjs.requestAllBids = function(){
  * @param {Object} adUnitObj adUnitObj to add
  * @alias module:pbjs.addAdUnit
  */
-pbjs.addAdUnit = function(adUnitObj){
-	if(adUnitObj){
+pbjs.addAdUnit = function(adUnitObj) {
+	if (adUnitObj) {
 		pbjs.adUnits.push(adUnitObj);
 	}
 };

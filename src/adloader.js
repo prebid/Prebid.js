@@ -9,14 +9,14 @@ exports.loadScript = function(tagSrc, callback) {
 	// Execute a callback if necessary
 	if (callback && typeof callback === "function") {
 		if (jptScript.readyState) {
-			jptScript.onreadystatechange = function () {
+			jptScript.onreadystatechange = function() {
 				if (jptScript.readyState == "loaded" || jptScript.readyState == "complete") {
 					jptScript.onreadystatechange = null;
 					callback();
 				}
 			};
 		} else {
-			jptScript.onload = function () {
+			jptScript.onload = function() {
 				callback();
 			};
 		}

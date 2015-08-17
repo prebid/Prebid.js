@@ -20,15 +20,15 @@ var CriteoAdapter = function CriteoAdapter() {
 		_getUniqueNids(bids).forEach(_requestBid);
 	}
 
-	function _getUniqueNids(bids){
+	function _getUniqueNids(bids) {
 		var key;
 		var map = {};
 		var nids = [];
-		bids.forEach(function(bid){
+		bids.forEach(function(bid) {
 			map[bid.params.nid] = bid;
 		});
-		for (key in map){
-			if (map.hasOwnProperty(key)){
+		for (key in map) {
+			if (map.hasOwnProperty(key)) {
 				nids.push(map[key]);
 			}
 		}
@@ -38,16 +38,16 @@ var CriteoAdapter = function CriteoAdapter() {
 	function _requestBid(bid) {
 		var varname = 'crtg_varname_' + bid.params.nid;
 		var scriptUrl = '//rtax.criteo.com/delivery/rta/rta.js?netId=' + encodeURI(bid.params.nid) +
-			'&cookieName=' + encodeURI (bid.params.cookiename) +
+			'&cookieName=' + encodeURI(bid.params.cookiename) +
 			'&rnd=' + Math.floor(Math.random() * 99999999999) +
-			'&varName=' + encodeURI (varname);
+			'&varName=' + encodeURI(varname);
 
-		adloader.loadScript(scriptUrl, function(response){
+		adloader.loadScript(scriptUrl, function(response) {
 			var adResponse;
 			var content = window[varname];
 
 			// Add a response for each bid matching the "nid"
-			bids.forEach(function(existingBid){
+			bids.forEach(function(existingBid) {
 				if (existingBid.params.nid === bid.params.nid) {
 					if (content) {
 						adResponse = bidfactory.createBid(1);

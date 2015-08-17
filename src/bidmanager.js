@@ -168,7 +168,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 	}
 	//next try with defaultBidderSettings
-	else if(defaultBidderSettingsMap[bidderCode]){
+	else if (defaultBidderSettingsMap[bidderCode]) {
 		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
 	}
 	//now try with "generic" settings
@@ -228,7 +228,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 	}
 }
 
-exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting){
+exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
 	defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 

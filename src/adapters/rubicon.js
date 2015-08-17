@@ -60,9 +60,9 @@ var RubiconAdapter = function RubiconAdapter() {
 
 	// Build an ID that can be used to identify the response to the bid request.  There
 	// may be an identifier we can send that gets sent back to us.
-	function getBidId(bid){
+	function getBidId(bid) {
 		return (bid.params ? [bid.params.rp_account, bid.params.rp_site, bid.params.rp_zonesize] :
-						   	[bid.account_id, bid.site_id, bid.zone_id, bid.size_id]).join('-');
+			[bid.account_id, bid.site_id, bid.zone_id, bid.size_id]).join('-');
 
 	}
 
@@ -193,7 +193,7 @@ var RubiconAdapter = function RubiconAdapter() {
 		//TODO - need to send the bid back and track responses
 		var bid = {};
 		if (response && response.status === 'ok') {
-			try{
+			try {
 				var iframeId = '';
 				var bidObj = bidmanager.getPlacementIdByCBIdentifer(getBidId(response));
 				if (bidObj) {
@@ -212,7 +212,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
 					var iframeObj = window.frames[iframeId];
 					var rubiconObj = iframeObj.contentWindow.RubiconAdServing;
-					if(rubiconObj && rubiconObj.AdSizes){
+					if (rubiconObj && rubiconObj.AdSizes) {
 						/* should return
 						    1: {
 	       					 dim: "468x60"
@@ -233,11 +233,10 @@ var RubiconAdapter = function RubiconAdapter() {
 					bid.height = height;
 				}
 
-			}
-			catch(e){
+			} catch (e) {
 				utils.logError('Error parsing rubicon response bid: ' + e.message);
 			}
-			
+
 		} else {
 			//set bid response code to 2 = no response or error
 			bid = bidfactory.createBid(2);

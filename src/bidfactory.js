@@ -16,7 +16,7 @@ var utils = require('./utils.js');
  */
 function Bid(statusCode) {
 	var _bidId = utils.getUniqueIdentifierStr(),
-	_statusCode = statusCode || 0;
+		_statusCode = statusCode || 0;
 	this.bidderCode = '';
 	this.width = 0;
 	this.height = 0;
@@ -35,7 +35,7 @@ function Bid(statusCode) {
 				return 'Bid timed out';
 		}
 	}
-	this.getStatusCode = function(){
+	this.getStatusCode = function() {
 		return _statusCode;
 	};
 
@@ -45,14 +45,14 @@ function Bid(statusCode) {
 		this._statusMessage = this._getStatus();
 	}
 	//returns the size of the bid creative. Concatenation of width and height by ‘x’.
-	this.getSize = function (){
+	this.getSize = function() {
 		return this.width + 'x' + this.height;
 	};
 
 }
 
- // Bid factory function.
-exports.createBid = function(statusCde){
+// Bid factory function.
+exports.createBid = function(statusCde) {
 	return new Bid(statusCde);
 };
 

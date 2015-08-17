@@ -175,13 +175,12 @@ exports.debugTurnedOn = debugTurnedOn;
 exports.logError = function(msg, code) {
 	var errCode = code || 'ERROR';
 	if (debugTurnedOn() && hasConsoleLogger()) {
-		if(console.error){
+		if (console.error) {
 			console.error(errCode + ': ' + msg);
-		}
-		else{
+		} else {
 			console.log(errCode + ': ' + msg);
 		}
-		
+
 	}
 };
 
@@ -231,29 +230,26 @@ exports.getPriceBucketString = function(cpm) {
 		cpmFloat = parseFloat(cpm);
 		if (cpmFloat) {
 			//round to closet .5
-			if(cpmFloat > _lgPriceCap){
+			if (cpmFloat > _lgPriceCap) {
 				returnObj.low = _lgPriceCap.toFixed(2);
-			}
-			else{
+			} else {
 				returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
 			}
-			
+
 			//round to closet .1
-			if(cpmFloat > _mgPriceCap){
+			if (cpmFloat > _mgPriceCap) {
 				returnObj.med = _mgPriceCap.toFixed(2);
+			} else {
+				returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
 			}
-			else{
-				returnObj.med =  (Math.floor(cpm * 10) / 10).toFixed(2);
-			}
-			
+
 			//round to closet .01
-			if(cpmFloat > _lgPriceCap){
+			if (cpmFloat > _lgPriceCap) {
 				returnObj.high = _lgPriceCap.toFixed(2);
-			}
-			else{
+			} else {
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
 			}
-			
+
 		}
 
 	} catch (e) {
@@ -263,16 +259,15 @@ exports.getPriceBucketString = function(cpm) {
 
 };
 
-exports.mapForEach = function(obj, func){
+exports.mapForEach = function(obj, func) {
 	for (var key in obj) {
 		if (obj.hasOwnProperty(key)) {
-			if(typeof func === objectType_function){
+			if (typeof func === objectType_function) {
 				func.call(this, obj[key], key);
-			}
-			else{
+			} else {
 				throw new TypeError();
 			}
-			
+
 		}
 	}
 

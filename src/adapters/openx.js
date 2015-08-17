@@ -25,16 +25,16 @@ var OpenxAdapter = function OpenxAdapter(options) {
 		for (var i = 0; i < bids.length; i++) {
 			var bid = bids[i];
 			//load page options from bid request
-			if(bid.params.pageURL){
+			if (bid.params.pageURL) {
 				opts.pageURL = bid.params.pageURL;
 			}
-			if(bid.params.refererURL){
+			if (bid.params.refererURL) {
 				opts.refererURL = bid.params.refererURL;
 			}
 			if (bid.params.jstag_url) {
 				scriptUrl = bid.params.jstag_url;
 			}
-			if(bid.params.pgid){
+			if (bid.params.pgid) {
 				opts.pgid = bid.params.pgid;
 			}
 		}
@@ -44,7 +44,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 	function _requestBids() {
 
 		if (scriptUrl) {
-			adloader.loadScript(scriptUrl, function () {
+			adloader.loadScript(scriptUrl, function() {
 				var i;
 				var POX = OX();
 
@@ -57,7 +57,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 					POX.addAdUnit(bids[i].params.unit);
 				}
 
-				POX.addHook(function (response) {
+				POX.addHook(function(response) {
 					var i;
 					var bid;
 					var adUnit;

@@ -12,19 +12,18 @@ var adloader = require('../adloader');
  */
 var AmazonAdapter = function AmazonAdapter() {
 	var _defaultBidderSettings = {
-                    adserverTargeting: [{
-                    	key: "amznslots",
-						val: function (bidResponse) {
-							return bidResponse.keys;
-						}
-					}
-                 ]
-            };
+		adserverTargeting: [{
+			key: "amznslots",
+			val: function(bidResponse) {
+				return bidResponse.keys;
+			}
+		}]
+	};
 	var bids;
 
 	function _callBids(params) {
 		bids = params.bids || [];
-		adloader.loadScript('//c.amazon-adsystem.com/aax2/amzn_ads.js', function () {
+		adloader.loadScript('//c.amazon-adsystem.com/aax2/amzn_ads.js', function() {
 			_requestBids();
 		});
 	}
@@ -33,11 +32,11 @@ var AmazonAdapter = function AmazonAdapter() {
 	function _requestBids() {
 		if (amznads) {
 
-			var adIds = bids.map(function (bid) {
+			var adIds = bids.map(function(bid) {
 				return bid.params.aid;
 			});
 
-			amznads.getAdsCallback(adIds, function () {
+			amznads.getAdsCallback(adIds, function() {
 				var adResponse;
 				var placementCode = bids[0].placementCode;
 				var keys = amznads.getKeys();
