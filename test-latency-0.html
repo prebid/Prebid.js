@@ -12,6 +12,10 @@
     <title>Ad Ops Guide for Header Bidding</title>
   
   <script>
+  var clog = function(s) {
+    //console.log(s);
+  }
+
     var pbjsTimestamps = {slots:[]};
     pbjsTimestamps.init = new Date().getTime();
 
@@ -25,16 +29,18 @@
       timelog.set('bidCount', 0);
 
       var frontMarkedTime = pbjsTimestamps.frontMarked - pbjsTimestamps.init;
-      //console.log(frontMarkedTime);
+      //clog(frontMarkedTime);
 
       timelog.set("frontMarked", frontMarkedTime);
+
+      timelog.set('adserverCalled', pbjsTimestamps.adserverCalled);
         
 
       for (var i = 0; i < pbjsTimestamps.slots.length; i++) {
         var slot = pbjsTimestamps.slots[i];
         var code = slot.code;
         var slotRenderedTime = slot.rendered - pbjsTimestamps.init;
-        //console.log(code + ' : ' + slotRenderedTime);
+        //clog(code + ' : ' + slotRenderedTime);
 
         timelog.set("slot" + i, slotRenderedTime);
       }
@@ -44,7 +50,7 @@
           document.location.href = '/test-latency-1.html';
         },
         error: function(timelog, error) {
-          console.log(error);
+          clog(error);
         }
       });
 
@@ -210,7 +216,7 @@
         };
 
         pbjs.registerBidCallbackHandler = function(){
-            initAdserver();
+            //initAdserver();
         };
 
         pbjs.creativeBackHandler = function(adId) {
@@ -239,19 +245,25 @@
             pbjs.initAdserverSet = true;
         };
         // Load GPT when timeout is reached.
-        setTimeout(initAdserver, PREBID_TIMEOUT);
+        //setTimeout(initAdserver, PREBID_TIMEOUT);
+        pbjsTimestamps.adserverCalled = new Date().getTime() - pbjsTimestamps.init;
+        initAdserver();
+
+        clog('initAdserver called at: ' + pbjsTimestamps.adserverCalled);
 
         // Load the Prebid Javascript Library Async. We recommend loading it immediately after
         // the initAdserver() and setTimeout functions.
         
+        /*
         (function() {
             var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
             pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
             pbjsEl.src = (isHttps ? "https://a248.e.akamai.net/appnexus.download.akamai.com/89298/adnexus-prod" : "http://cdn.adnxs.com") + "/tag/v/prebid/0.1.1/prebid.js";
             var pbjsTargetEl = document.getElementsByTagName("head")[0];
             //setTimeout(function() {pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);}, 0)
-            //pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+            pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
         })();
+        */
 
         googletag.cmd.push(function() {
 
@@ -267,25 +279,25 @@
             
             /*
             if (pbjs.libLoaded) {
-                console.log('Are all bids available? : ' + pbjs.allBidsAvailable()); // return bool
+                clog('Are all bids available? : ' + pbjs.allBidsAvailable()); // return bool
 
-                console.log('Targeting params:')
-                console.log(JSON.stringify(pbjs.getAdserverTargetingParamsForAdUnit()));
+                clog('Targeting params:')
+                clog(JSON.stringify(pbjs.getAdserverTargetingParamsForAdUnit()));
 
-                //console.log('Dumping all bid objects to console:');
-                //console.log(pbjs.getBidResponses()); // or pass a code to get one particular 
+                //clog('Dumping all bid objects to console:');
+                //clog(pbjs.getBidResponses()); // or pass a code to get one particular 
             }
             */
 
             /*
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-                  //console.log('Slot has been rendered:');
-                  //console.log(event);
+                  //clog('Slot has been rendered:');
+                  //clog(event);
                   pbjsTimestamps.slots.push({
                     code: event.slot.getSlotId().getAdUnitPath(),
                     rendered: new Date().getTime()
                   });
-                  //console.log(pbjsTimestamps);
+                  //clog(pbjsTimestamps);
                 });
             */
 
@@ -663,7 +675,7 @@
         pbjsTimestamps.frontMarked = new Date().getTime();
         //var pbjsMarkedTime = pbjsTimestamps.frontMarked - pbjsTimestamps.init;
 
-        //console.log('image loaded after: ' + pbjsMarkedTime + 'ms');
+        //clog('image loaded after: ' + pbjsMarkedTime + 'ms');
       });
   
   </script>
