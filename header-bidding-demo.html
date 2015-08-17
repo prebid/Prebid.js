@@ -11,12 +11,11 @@
     var logs = {
         'Load Prebid.js': {static: true},
         'Adserver Timer': {static: true},
-        'amazon': {displayName: 'bidder1'},
-        'appnexus': {displayName: 'bidder2'},
-        'criteo': {displayName: 'bidder3'},
-        'openx': {displayName: 'bidder4'},
-        'pubmatic': {displayName: 'bidder5'},
-        'rubicon': {displayName: 'bidder6'},
+        'bidder1': {displayName: 'bidder1'},
+        'bidder2': {displayName: 'bidder2'},
+        'appnexus': {displayName: 'bidder3'},
+        'criteo': {displayName: 'bidder4'},
+        'openx': {displayName: 'bidder5'},
         'Load GPT': {static: true},
         'Set Targeting': {static: true},
     };
@@ -44,20 +43,7 @@
                    placementId: '4799418'
                 }
             }, 
-            {
-                bidder: 'amazon',
-                params: {
-                   aaxId: 'random-id'
-                }
-            }, 
-            // 1 ad unit can also be targeted by multiple bids from 1 bidder
-            {
-                bidder: 'pubmatic',
-                params: {
-                    publisherId: 39741,
-                    adSlot: '123456789@300x250'
-                }
-            },
+
             {
                 bidder: 'criteo',
                 params: {
@@ -73,13 +59,14 @@
                     jstag_url : 'http://prebid.org/assets/js/ox-d.js'
                 }
             },{
-                bidder: 'rubicon',
+                bidder: 'appnexus',
                 params: {
-                   rp_account : '1234',
-                   rp_site: '12345',
-                   rp_zonesize : '1234-15',
-                   rp_tracking : 'affiliate-1701207318',
-                   rp_floor : '0.1'
+                   placementId: '4799418'
+                }
+            },{
+                bidder: 'appnexus',
+                params: {
+                   placementId: '4799418'
                 }
             }
 
@@ -134,8 +121,18 @@
     pbjs.beforeCallBidder = function(bidderCode) {
         setScriptLog(bidderCode, 'start');
     }
+    var bidCount = 1;
     pbjs.bidderRawBidsBack = function(bidderCode) {
-        setScriptLog(bidderCode, 'end');   
+        var ename = bidderCode;
+
+        if ((bidderCode in logs) && ('end' in logs[bidderCode])) {
+            var start = logs[bidderCode].start;
+            ename = 'bidder' + bidCount;
+            logs[ename] = {'start': start};
+
+            bidCount ++;
+        }
+        setScriptLog(ename, 'end');   
     }
 
     var googletag = googletag || {};

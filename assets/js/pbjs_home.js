@@ -148,8 +148,8 @@ window.logTime = function(logs, finalEndTime) {
     //if (!bidderData.static) cpmStr = 'cpm:' + cpm;
     // rows.push([eventName, cpmStr, startTime, endTime]);
 
-    var name = eventName;
-    if ('displayName' in bidderData) name = bidderData.displayName;
+    //var name = eventName;
+    if ('displayName' in bidderData) eventName = bidderData.displayName;
 
     var duration = endTime-startTime;
     var tooltip = eventName + '\nDuration: ' + duration + 'ms\nStart: ' + startTime + 'ms, End: ' + endTime + 'ms';
@@ -160,7 +160,7 @@ window.logTime = function(logs, finalEndTime) {
       annotation = '';
     }
     var style = 'color:' + color + ';opacity:0.6';
-    rows.push([name, startTime, duration, tooltip, style, annotation]);
+    rows.push([eventName, startTime, duration, tooltip, style, annotation]);
   }
   console.log(JSON.stringify(rows));
 
