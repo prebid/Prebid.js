@@ -1,11 +1,11 @@
 ---
 layout: post
-title: How to maximize revenue
-head_title: How to maximize revenue for header bidding
+title: How many bidders should I work with?
+head_title: How many bidders for header bidding
 
-description: An analysis of header bidding bidders' price granularity and latency report.
+description: An analysis of the optimal number of bidders to work with for header bidding, to optimize yield and user experience. 
 
-permalink: /blog/how-to-maximize-revenue-for-header-bidding
+permalink: /blog/how-many-bidders-for-header-bidding
 
 ---
 
