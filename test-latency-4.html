@@ -27,7 +27,7 @@
 
       var timelog = new Timelog();
       timelog.set('placementCount', 2);
-      timelog.set('bidCount', 25);
+      timelog.set('bidCount', 1);
 
       var frontMarkedTime = pbjsTimestamps.frontMarked - pbjsTimestamps.init;
       clog(frontMarkedTime);
@@ -62,7 +62,7 @@
       
       timelog.save(null, {
         success: function(timelog) {
-          document.location.href = '/test-latency-2.html';
+          document.location.href = '/test-latency-3.html';
         },
         error: function(timelog, error) {
           clog(error);
@@ -104,8 +104,8 @@
 
     pbjs.getTestTimeout = function() {
       // between 0 and 11 * 100
-      return (Math.floor(Math.random() * 12))*100;
-      //return 0;
+      //return (Math.floor(Math.random() * 12))*100;
+      return 1000;
     }
     pbjs.PREBID_TIMEOUT = pbjs.getTestTimeout();
 
@@ -122,89 +122,6 @@
                     bidder: 'appnexus',
                     params: {
                        placementId: '3282718'
-                       //placementId: '4799418'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                
-                {
-                    bidder: 'amazon',
-                    params: {
-                       aaxId: '3080'
-                    }
-                },
-                // 1 ad unit can also be targeted by multiple bids from 1 bidder
-                {
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: 39741,
-                        adSlot: '39620189@300x250'
-                    }
-                }, {
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: 39741,
-                        adSlot: '39620189@300x600'
-                    }
-                }, 
-                {
-                    bidder: 'criteo',
-                    params: {
-                        nid: "2612",
-                        cookiename: "cto_test"
                     }
                 }
 
@@ -217,111 +134,8 @@
                     bidder: 'appnexus',
                     params: {
                        placementId: '3282718'
-                       //placementId: '4799418'
-                    }
-                }, 
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '3282718'
-                    }
-                },
-                {
-                    bidder: 'openx',
-                    params: {
-                        pgid: '537064855',
-                        unit: '537205649',
-                        pageURL : 'http://drudgereport.com',
-                        refererURL : 'http://drudgereport.com',
-                        jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
-                    }
-                },{
-                    bidder: 'openx',
-                    params: {
-                        pgid: '537064855',
-                        unit: '537205647',
-                        pageURL : 'http://drudgereport.com',
-                        refererURL : 'http://drudgereport.com',
-                        jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
-                    }
-                },{
-                    bidder: 'openx',
-                    params: {
-                        pgid: '537064855',
-                        unit: '537205652',
-                        pageURL : 'http://drudgereport.com',
-                        refererURL : 'http://drudgereport.com',
-                        jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
-                    }
-                },{
-                    bidder: 'openx',
-                    params: {
-                        pgid: '537064855',
-                        unit: '537205646',
-                        pageURL : 'http://drudgereport.com',
-                        refererURL : 'http://drudgereport.com',
-                        jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
-                    }
-                },
-                {
-                    bidder: 'rubicon',
-                    params: {
-                       rp_account : '9707',
-                       rp_site: '17955',
-                       rp_zonesize : '50983-15',
-                       rp_tracking : 'affiliate-1701207318',
-                       rp_floor : '0.1'
                     }
                 }
-
                 ]
         }];
 
