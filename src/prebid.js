@@ -36,7 +36,24 @@ pbjs.logging = pbjs.logging || false;
 pbjs.libLoaded = true;
 
 //if pbjs.anq command queue already exists, use it, if not create it
-pbjs.anq = pbjs.anq || [];
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push = function(cmd) {
+	try {
+		cmd.call();
+	} catch (e) {
+		utils.logError('Error processing command :' + e.message);
+	}
+};
+
+function processQue() {
+	for (var i = 0; i < pbjs.que.length; i++) {
+		if (typeof pbjs.que[i].called === objectType_undefined) {
+			pbjs.que[i].call();
+			pbjs.que[i].called = true;
+		}
+	}
+}
 
 /*
  *   Main method entry point method
@@ -501,8 +518,10 @@ pbjs.removeAdUnit = function(adUnitCode) {
 };
 
 /**
- * @function
  * Request all bids that are configured in pbjs.adUnits
+ * @function
+ * @alias module:pbjs.requestAllBids
+ * 
  */
 pbjs.requestAllBids = function() {
 	resetBids();
@@ -510,7 +529,6 @@ pbjs.requestAllBids = function() {
 };
 
 /**
- * @function
  * 
  * Add a adunit
  * @param {Object} adUnitObj adUnitObj to add
@@ -530,4 +548,9 @@ registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 registerBidAdapter(CriteoAdapter(), 'criteo');
 registerBidAdapter(AmazonAdapter(), 'amazon');
 
+processQue();
 init();
+
+pbjs.creativeBackHandler = function (){
+	utils.logMessage('don\'t call undefined functions');
+};
