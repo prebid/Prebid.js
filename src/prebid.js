@@ -64,7 +64,6 @@ function init(adUnitCode) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
 	}
-
 	//set timeout for all bids
 	setTimeout(bidmanager.executeCallback, pbjs.bidderTimeout);
 	//parse settings into internal vars
@@ -150,6 +149,8 @@ function loadPreBidders() {
 	for (i = 0; i < pb_preBidders.length; i++) {
 		pb_preBidders[i].loadPreBid();
 	}
+	//send a reference to bidmanager
+	bidmanager.setBidderMap(pb_bidderMap);
 }
 
 function storeBidRequestByBidder(placementCode, sizes, bids) {
@@ -282,20 +283,7 @@ function getBidResponsesByAdUnit(adunitCode) {
 	}
 }
 
-/*
- *   This function returns a "cleaned up" version of the bid response targeting paramasters in JSON form
- */
-pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
-	// call to populate pb_targetingMap
-	pbjs.getBidResponses(adunitCode);
 
-	if (adunitCode) {
-		return pb_targetingMap[adunitCode];
-	}
-	return pb_targetingMap;
-
-
-};
 /*
  *	Copies bids into a bidArray response
  */
@@ -348,6 +336,33 @@ function getCloneBid(bid) {
 	}
 	return bidClone;
 }
+
+function resetBids() {
+	bidmanager.clearAllBidResponses();
+	pb_bidderMap = {};
+}
+
+
+//////////////////////////////////
+//								//
+//		Start Public APIs		//
+// 								//
+//////////////////////////////////
+
+/*
+ *   This function returns a "cleaned up" version of the bid response targeting paramasters in JSON form
+ */
+pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
+	// call to populate pb_targetingMap
+	pbjs.getBidResponses(adunitCode);
+
+	if (adunitCode) {
+		return pb_targetingMap[adunitCode];
+	}
+	return pb_targetingMap;
+
+
+};
 
 /*
  *   This function returns a "cleaned up" version of the bid response in JSON form
@@ -473,10 +488,6 @@ pbjs.renderAd = function(doc, params) {
 
 };
 
-function resetBids() {
-	bidmanager.clearAllBidResponses();
-	pb_bidderMap = {};
-}
 
 /*
  *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
@@ -538,6 +549,27 @@ pbjs.addAdUnit = function(adUnitObj) {
 	if (adUnitObj) {
 		pbjs.adUnits.push(adUnitObj);
 	}
+};
+
+
+/**
+ * @function
+ * Add a callback event
+ * @param {String} event event to attach callback to.
+ * @param {Function} func  function to execute
+ * @returns {String} id for callback
+ */
+pbjs.addCallback = function(eventStr, func){
+	var id = null;
+	if(!eventStr || !func || typeof func !== objectType_function){
+		console.logError('error registering callback. Check method signature');
+		return id;
+	}
+
+
+	id = utils.getUniqueIdentifierStr;
+	bidmanager.addCallback(id, func, eventStr);
+	return id;
 };
 
 // Register the bid adaptors here

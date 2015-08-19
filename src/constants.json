@@ -13,5 +13,11 @@
 	"STATUS": {
 		"GOOD": "good",
 		"TIMEOUT": "timed out"
+	},
+	"CB" : {
+		"TYPE" : {
+			"ALL_BIDS_BACK" : "allBidsBack",
+			"AD_UNIT_BIDS_BACK" : "adUnitBidsBack"
+		}
 	}
 }
