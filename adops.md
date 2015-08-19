@@ -127,7 +127,7 @@ Work with your development team to implement prebid.js as documented in Publishe
 
 #Line Item Setup
 
-> It can be helpful to understand [how Prebid.js helps simplify line item setup]() before implementing these steps.
+> It can be helpful to understand [how Prebid.js helps simplify line item setup]({{ site.github.url }}/blog/how-to-simplify-line-item-setup/) before implementing these steps.
 
 In this section, we’ll help you start creating the line items to target the bids being passed into your ad server by prebid.js.
 
