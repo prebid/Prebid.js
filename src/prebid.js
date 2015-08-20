@@ -38,11 +38,20 @@ pbjs.libLoaded = true;
 //if pbjs.anq command queue already exists, use it, if not create it
 pbjs.que = pbjs.que || [];
 
+//create adUnit array
+pbjs.adUnits = pbjs.adUnits || [];
+
+//overide que.push so we immediate execute any function in the array
 pbjs.que.push = function(cmd) {
-	try {
-		cmd.call();
-	} catch (e) {
+	if(typeof cmd === objectType_function){
+		try {
+			cmd.call();
+		} catch (e) {
 		utils.logError('Error processing command :' + e.message);
+		}
+	}
+	else{
+		utils.logError('Commands written into pbjs.que.push must wrapped in a function');
 	}
 };
 
@@ -206,6 +215,7 @@ function getWinningBid(bidArray) {
 		});
 		//the first item has the highest cpm
 		winningBid = bidArray[0];
+		//TODO : if winning bid CPM === 0 - we need to indicate no targeting should be set
 	}
 	return winningBid.bid;
 
@@ -244,7 +254,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 		}
 
 	} else {
-		utils.logMessage('No bids eligble for placement code : ' + code);
+		utils.logMessage('No bids eligble for adUnit code : ' + code);
 	}
 	//set generic key targeting here
 	if (bidArrayTargeting.length !== 0) {
@@ -350,9 +360,9 @@ function resetBids() {
 //////////////////////////////////
 
 /*
- *   This function returns a "cleaned up" version of the bid response targeting paramasters in JSON form
+ *   This function returns a "cleaned up" version of the bid response targeting paramasters
  */
-pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
+pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 	// call to populate pb_targetingMap
 	pbjs.getBidResponses(adunitCode);
 
@@ -362,6 +372,12 @@ pbjs.getAdserverTargetingParamsForAdUnit = function(adunitCode) {
 	return pb_targetingMap;
 
 
+};
+/**
+ * 	returns all ad server targeting for all ad units
+ */
+pbjs.getAdserverTargeting = function(){
+	return pbjs.getAdserverTargetingForAdUnitCode();
 };
 
 /*
@@ -405,33 +421,66 @@ pbjs.getBidResponses = function(adunitCode) {
 	return returnObj;
 
 };
+/**
+ * Returns bidResponses for the specified adUnitCode
+ * @param  {[String} adUnitCode adUnitCode
+ * @return {Object}            bidResponse object
+ */
+pbjs.getBidResponsesForAdUnitCode = function(adUnitCode){
+	return pbjs.getBidResponses(adUnitCode);
+};
 /*
  *   This function sets targeting keys as defined by bid response into the GPT slot object
  */
-pbjs.setTargetingForGPTAsync = function(code, slot) {
-	var placementBids = {};
-	if (code && slot) {
-		placementBids = getBidResponsesByAdUnit(code);
-		setGPTAsyncTargeting(code, slot, placementBids);
-	} else {
-		//get all the slots from google tag
-		if (window.googletag && window.googletag.pubads() && window.googletag.pubads().getSlots()) {
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	if(!window.googletag || !window.googletag.pubads() || !window.googletag.pubads().getSlots()){
+		utils.logError('window.googletag is not defined on the page');
+		return;
+	}
+
+	var placementBids = {},
+	i = 0;
+	if (codeArr) {
+		for(i = 0; i < codeArr.length; i++){
+			var code = codeArr[i];
+			//get all the slots from google tag
 			var slots = window.googletag.pubads().getSlots();
-			for (var i = 0; i < slots.length; i++) {
-				var adUnitCode = slots[i].getAdUnitPath();
-				if (adUnitCode) {
-					placementBids = getBidResponsesByAdUnit(adUnitCode);
-					setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
+			for(var k = 0; k < slots.length; k++){
+				if(slots[k].getAdUnitPath() === code){
+					placementBids = getBidResponsesByAdUnit(code);
+					setGPTAsyncTargeting(code, slots[k], placementBids);
 				}
 			}
-		} else {
-			utils.logError('Cannot set targeting into googletag ');
 		}
-
+	} else {
+		//get all the slots from google tag
+		var slots = window.googletag.pubads().getSlots();
+		for (i = 0; i < slots.length; i++) {
+			var adUnitCode = slots[i].getAdUnitPath();
+			if (adUnitCode) {
+				placementBids = getBidResponsesByAdUnit(adUnitCode);
+				setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
+			}
+		}
 	}
 
 };
 
+pbjs.setTargetingForAdUnitsGPTAsync = function(adUnitCodesArr){
+	if(typeof adUnitCodesArr === objectType_string){
+		var codeArr = [adUnitCodesArr];
+		pbjs.setTargetingForGPTAsync(codeArr);
+	}
+	else if(typeof adUnitCodesArr === objectType_object){
+		pbjs.setTargetingForGPTAsync(adUnitCodesArr);
+	}
+
+};
+
+/**
+ * Returns a bool if all the bids have returned or timed out
+ * @return {bool} all bids available
+ */
 pbjs.allBidsAvailable = function() {
 	return bidmanager.allBidsBack();
 };
@@ -562,7 +611,7 @@ pbjs.addAdUnit = function(adUnitObj) {
 pbjs.addCallback = function(eventStr, func){
 	var id = null;
 	if(!eventStr || !func || typeof func !== objectType_function){
-		console.logError('error registering callback. Check method signature');
+		utils.logError('error registering callback. Check method signature');
 		return id;
 	}
 

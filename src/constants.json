@@ -16,7 +16,7 @@
 	},
 	"CB" : {
 		"TYPE" : {
-			"ALL_BIDS_BACK" : "allBidsBack",
+			"ALL_BIDS_BACK" : "allRequestedBidsBack",
 			"AD_UNIT_BIDS_BACK" : "adUnitBidsBack"
 		}
 	}

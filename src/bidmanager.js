@@ -135,7 +135,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 
 		} else {
 			//should never reach this code
-			utils.logError('Internal error');
+			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
 
 
@@ -293,7 +293,6 @@ function checkBidsBackByAdUnit(adUnitCode){
 		var adUnit = pbjs.adUnits[i];
 		if(adUnit.code === adUnitCode){
 			var bidsBack = pbBidResponseByPlacement[adUnitCode].bidsReceivedCount;
-			console.log('bids back :' + bidsBack);
 			//all bids back for ad unit
 			if(bidsBack === adUnit.bids.length){
 				triggerAdUnitCallbacks(adUnitCode);
