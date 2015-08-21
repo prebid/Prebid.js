@@ -43,14 +43,13 @@ pbjs.adUnits = pbjs.adUnits || [];
 
 //overide que.push so we immediate execute any function in the array
 pbjs.que.push = function(cmd) {
-	if(typeof cmd === objectType_function){
+	if (typeof cmd === objectType_function) {
 		try {
 			cmd.call();
 		} catch (e) {
-		utils.logError('Error processing command :' + e.message);
+			utils.logError('Error processing command :' + e.message);
 		}
-	}
-	else{
+	} else {
 		utils.logError('Commands written into pbjs.que.push must wrapped in a function');
 	}
 };
@@ -67,19 +66,20 @@ function processQue() {
 /*
  *   Main method entry point method
  */
-function init(adUnitCode) {
+function init(timeout, adUnitCodeArr) {
+	var cbTimeout = timeout || pbjs.bidderTimeout;
 
 	if (!isValidAdUnitSetting()) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
 	}
 	//set timeout for all bids
-	setTimeout(bidmanager.executeCallback, pbjs.bidderTimeout);
+	setTimeout(bidmanager.executeCallback, cbTimeout);
 	//parse settings into internal vars
-	if (adUnitCode) {
-		if (pbjs.adUnits) {
+	if (adUnitCodeArr && utils.isArray(adUnitCodeArr)) {
+		for (var k = 0; k < adUnitCodeArr.length; k++) {
 			for (var i = 0; i < pbjs.adUnits.length; i++) {
-				if (pbjs.adUnits[i].code === adUnitCode) {
+				if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
 					pb_placements = [pbjs.adUnits[i]];
 				}
 			}
@@ -376,7 +376,7 @@ pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 /**
  * 	returns all ad server targeting for all ad units
  */
-pbjs.getAdserverTargeting = function(){
+pbjs.getAdserverTargeting = function() {
 	return pbjs.getAdserverTargetingForAdUnitCode();
 };
 
@@ -426,27 +426,27 @@ pbjs.getBidResponses = function(adunitCode) {
  * @param  {[String} adUnitCode adUnitCode
  * @return {Object}            bidResponse object
  */
-pbjs.getBidResponsesForAdUnitCode = function(adUnitCode){
+pbjs.getBidResponsesForAdUnitCode = function(adUnitCode) {
 	return pbjs.getBidResponses(adUnitCode);
 };
 /*
  *   This function sets targeting keys as defined by bid response into the GPT slot object
  */
 pbjs.setTargetingForGPTAsync = function(codeArr) {
-	if(!window.googletag || !window.googletag.pubads() || !window.googletag.pubads().getSlots()){
+	if (!window.googletag || !window.googletag.pubads() || !window.googletag.pubads().getSlots()) {
 		utils.logError('window.googletag is not defined on the page');
 		return;
 	}
 
 	var placementBids = {},
-	i = 0;
+		i = 0;
 	if (codeArr) {
-		for(i = 0; i < codeArr.length; i++){
+		for (i = 0; i < codeArr.length; i++) {
 			var code = codeArr[i];
 			//get all the slots from google tag
 			var slots = window.googletag.pubads().getSlots();
-			for(var k = 0; k < slots.length; k++){
-				if(slots[k].getAdUnitPath() === code){
+			for (var k = 0; k < slots.length; k++) {
+				if (slots[k].getAdUnitPath() === code) {
 					placementBids = getBidResponsesByAdUnit(code);
 					setGPTAsyncTargeting(code, slots[k], placementBids);
 				}
@@ -466,12 +466,11 @@ pbjs.setTargetingForGPTAsync = function(codeArr) {
 
 };
 
-pbjs.setTargetingForAdUnitsGPTAsync = function(adUnitCodesArr){
-	if(typeof adUnitCodesArr === objectType_string){
+pbjs.setTargetingForAdUnitsGPTAsync = function(adUnitCodesArr) {
+	if (typeof adUnitCodesArr === objectType_string) {
 		var codeArr = [adUnitCodesArr];
 		pbjs.setTargetingForGPTAsync(codeArr);
-	}
-	else if(typeof adUnitCodesArr === objectType_object){
+	} else if (typeof adUnitCodesArr === objectType_object) {
 		pbjs.setTargetingForGPTAsync(adUnitCodesArr);
 	}
 
@@ -583,20 +582,72 @@ pbjs.removeAdUnit = function(adUnitCode) {
  * @alias module:pbjs.requestAllBids
  * 
  */
-pbjs.requestAllBids = function() {
+pbjs.requestAllBids = function(requestObj) {
+	var timeout = null;
+	var bidsBackHandler = null;
+	if (requestObj) {
+		timeout = requestObj.timeout;
+		bidsBackHandler = requestObj.bidsBackHandler;
+	}
+	if (typeof bidsBackHandler === objectType_function) {
+		bidmanager.addOneTimeCallback(bidsBackHandler);
+	}
+
 	resetBids();
-	init();
+	init(timeout);
 };
+/**
+ * Request bids ad-hoc 
+ * @param  {Object} requestObj {
+		adUnitCodes: [‘code1’, ‘code2’],
+		adUnits: [unit1, unit2], // OR. Optional
+		timeout: 400,
+		bidsBackHandler: function(bidResponses) {} // optional callback
+	}
+ */
+pbjs.requestBids = function(requestObj) {
+	if (!requestObj) {
+		utils.logError('pbjs.requestBids needs to send a requestObj');
+	}
+	var adUnitCodes = requestObj.adUnitCodes;
+	var adUnits = requestObj.adUnits;
+	var timeout = requestObj.timeout;
+	var bidsBackHandler = requestObj.bidsBackHandler;
+	var adUnitBackup = pbjs.adUnits.slice(0);
+
+	if (typeof bidsBackHandler === objectType_function) {
+		bidmanager.addOneTimeCallback(bidsBackHandler);
+	}
+
+	if (adUnitCodes && utils.isArray(adUnitCodes)) {
+		resetBids();
+		init(timeout, adUnitCodes);
+
+	} else if (adUnits && utils.isArray(adUnits)) {
+		resetBids();
+		pbjs.adUnits = adUnits;
+		init(timeout);
+	} else {
+		utils.logError('Error requesting bids in pbjs.requestBids. You must specify either adUnitCodes or adUnits');
+	}
+
+	pbjs.adUnits = adUnitBackup;
+};
+
+
 
 /**
  * 
  * Add a adunit
- * @param {Object} adUnitObj adUnitObj to add
+ * @param {Array} adUnitArr adUnitArr to add
  * @alias module:pbjs.addAdUnit
  */
-pbjs.addAdUnit = function(adUnitObj) {
-	if (adUnitObj) {
-		pbjs.adUnits.push(adUnitObj);
+pbjs.addAdUnit = function(adUnitArr) {
+	if (utils.isArray(adUnitArr)) {
+		//append array to existing
+		pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
+	} else if (typeof adUnitArr === objectType_object) {
+		pbjs.adUnits.push(adUnitArr);
 	}
 };
 
@@ -608,9 +659,9 @@ pbjs.addAdUnit = function(adUnitObj) {
  * @param {Function} func  function to execute
  * @returns {String} id for callback
  */
-pbjs.addCallback = function(eventStr, func){
+pbjs.addCallback = function(eventStr, func) {
 	var id = null;
-	if(!eventStr || !func || typeof func !== objectType_function){
+	if (!eventStr || !func || typeof func !== objectType_function) {
 		utils.logError('error registering callback. Check method signature');
 		return id;
 	}
@@ -630,8 +681,7 @@ registerBidAdapter(CriteoAdapter(), 'criteo');
 registerBidAdapter(AmazonAdapter(), 'amazon');
 
 processQue();
-init();
 
-pbjs.creativeBackHandler = function (){
+pbjs.creativeBackHandler = function() {
 	utils.logMessage('don\'t call undefined functions');
 };

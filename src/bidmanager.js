@@ -6,6 +6,7 @@ var objectType_undefined = 'undefined';
 
 var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
+var externalOneTimeCallback = null;
 var biddersByPlacementMap = {};
 
 var pbCallbackMap = {};
@@ -49,6 +50,8 @@ exports.clearAllBidResponses = function(adUnitCode) {
 	_callbackExecuted = false;
 	bidRequestCount = 0;
 	bidResponseRecievedCount = 0;
+	//clear the callback handler flag
+	externalCallbackArr.called = false;
 
 	for (var prop in this.pbBidResponseByPlacement) {
 		delete this.pbBidResponseByPlacement[prop];
@@ -255,9 +258,13 @@ exports.executeCallback = function() {
 		processCallbacks(externalCallbackArr, params);
 		externalCallbackArr.called = true;
 	}
-	
-	
 
+	//execute one time callback
+	if(externalOneTimeCallback){
+		processCallbacks(externalOneTimeCallback);
+		externalOneTimeCallback = null;
+	}
+	
 };
 
 exports.allBidsBack = function() {
@@ -272,21 +279,28 @@ function triggerAdUnitCallbacks(adUnitCode){
 
 function processCallbacks(callbackQueue, params){
 		var i;
-		for(i = 0; i < callbackQueue.length; i++){
-			var func = callbackQueue[i];
-			if(typeof func === 'function'){
-				try{
-					func.apply(pbjs, params);
-					//func.executed = true;
-				}
-				catch(e){
-					utils.logError('Error executing callback function: ' + e.message);
-				}
+		if(utils.isArray(callbackQueue)){
+			for(i = 0; i < callbackQueue.length; i++){
+				var func = callbackQueue[i];
+				callFunction(func, params);
 			}
-				
 		}
-		
-	}
+		else{
+			callFunction(callbackQueue, params);
+		}		
+}
+
+function callFunction(func, args){
+	if(typeof func === 'function'){
+		try{
+			func.apply(pbjs, args);
+			//func.executed = true;
+		}
+		catch(e){
+			utils.logError('Error executing callback function: ' + e.message);
+		}
+	}	
+}
 
 function checkBidsBackByAdUnit(adUnitCode){
 	for(var i = 0; i < pbjs.adUnits.length; i++){
@@ -336,6 +350,14 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 		this.executeCallback();
 		
 	}
+};
+
+/**
+ * Add a one time callback, that is discarded after it is called
+ * @param {Function} callback [description]
+ */
+exports.addOneTimeCallback = function(callback){
+	externalOneTimeCallback = callback;
 };
 
 exports.addCallback = function(id, callback, cbEvent){

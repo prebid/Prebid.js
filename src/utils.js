@@ -272,3 +272,13 @@ exports.mapForEach = function(obj, func) {
 	}
 
 };
+
+exports.isArray = function(obj){
+	if (Array.isArray){
+		return Array.isArray(obj);
+	}
+	if(obj && Object.prototype.toString.call( obj ) === '[object Array]'){
+		return true;
+	}
+	return false;
+};
