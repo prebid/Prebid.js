@@ -577,10 +577,12 @@ pbjs.removeAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request all bids that are configured in pbjs.adUnits
- * @function
- * @alias module:pbjs.requestAllBids
- * 
+ * Request all bids
+ * @param  {Object} requestObj optional request object
+ * {
+ * 	timeout : 500,
+ * 	bidsBackHandler : function(bidResponse) {}
+ * }
  */
 pbjs.requestAllBids = function(requestObj) {
 	var timeout = null;
@@ -638,11 +640,11 @@ pbjs.requestBids = function(requestObj) {
 
 /**
  * 
- * Add a adunit
+ * Add adunit(s) 
  * @param {Array} adUnitArr adUnitArr to add
- * @alias module:pbjs.addAdUnit
+ * @alias module:pbjs.addAdUnits
  */
-pbjs.addAdUnit = function(adUnitArr) {
+pbjs.addAdUnits = function(adUnitArr) {
 	if (utils.isArray(adUnitArr)) {
 		//append array to existing
 		pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
