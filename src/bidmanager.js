@@ -4,6 +4,11 @@ var utils = require('./utils.js');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 
+var externalCallbackByAdUnitArr = [];
+var externalCallbackArr = [];
+var externalOneTimeCallback = null;
+var biddersByPlacementMap = {};
+
 var pbCallbackMap = {};
 exports.pbCallbackMap = pbCallbackMap;
 
@@ -45,6 +50,8 @@ exports.clearAllBidResponses = function(adUnitCode) {
 	_callbackExecuted = false;
 	bidRequestCount = 0;
 	bidResponseRecievedCount = 0;
+	//clear the callback handler flag
+	externalCallbackArr.called = false;
 
 	for (var prop in this.pbBidResponseByPlacement) {
 		delete this.pbBidResponseByPlacement[prop];
@@ -73,6 +80,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//increment the bid count
 		bidResponseRecievedCount++;
 		//get price settings here
+		
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
@@ -125,16 +133,12 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			bidResponseObj = pbBidResponseByPlacement[adUnitCode];
 			//bidResponseObj.status = statusCode;
 			bidResponseObj.bids.push(bid);
+			//increment bid response by placement
+			bidResponseObj.bidsReceivedCount++;
 
 		} else {
-			//create an empty bid bid response object
-			bidResponseObj = {
-				//status: statusPending,
-				bids: [],
-				allBidsAvailable: false
-			};
-			//bidResponseObj.status = statusBidsAvail;
-			bidResponseObj.bids.push(bid);
+			//should never reach this code
+			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
 
 
@@ -146,7 +150,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 	//store the bidResponse in a map
 	pbBidResponseByPlacement[adUnitCode] = bidResponseObj;
 
-	this.checkIfAllBidsAreIn();
+	this.checkIfAllBidsAreIn(adUnitCode);
 
 	//TODO: check if all bids are in
 };
@@ -154,7 +158,8 @@ exports.addBidResponse = function(adUnitCode, bid) {
 exports.createEmptyBidResponseObj = function() {
 	return {
 		bids: [],
-		allBidsAvailable: false
+		allBidsAvailable: false,
+		bidsReceivedCount : 0
 	};
 };
 
@@ -235,6 +240,7 @@ exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
 
 exports.executeCallback = function() {
 
+	//this pbjs.registerBidCallbackHandler will be deprecated soon
 	if (typeof pbjs.registerBidCallbackHandler === objectType_function && !_callbackExecuted) {
 		try {
 			pbjs.registerBidCallbackHandler();
@@ -244,10 +250,85 @@ exports.executeCallback = function() {
 			utils.logError('Exception trying to execute callback handler registered : ' + e.message);
 		}
 	}
+
+	//trigger allBidsBack handler
+	//todo: get args
+	if(externalCallbackArr.called !== true){
+		var params = [];
+		processCallbacks(externalCallbackArr, params);
+		externalCallbackArr.called = true;
+	}
+
+	//execute one time callback
+	if(externalOneTimeCallback){
+		processCallbacks(externalOneTimeCallback);
+		externalOneTimeCallback = null;
+	}
+	
 };
 
 exports.allBidsBack = function() {
 	return _allBidsAvailable;
+};
+
+function triggerAdUnitCallbacks(adUnitCode){
+	//todo : get bid responses and send in args
+	var params = [adUnitCode];
+	processCallbacks(externalCallbackByAdUnitArr, params);
+}
+
+function processCallbacks(callbackQueue, params){
+		var i;
+		if(utils.isArray(callbackQueue)){
+			for(i = 0; i < callbackQueue.length; i++){
+				var func = callbackQueue[i];
+				callFunction(func, params);
+			}
+		}
+		else{
+			callFunction(callbackQueue, params);
+		}		
+}
+
+function callFunction(func, args){
+	if(typeof func === 'function'){
+		try{
+			func.apply(pbjs, args);
+			//func.executed = true;
+		}
+		catch(e){
+			utils.logError('Error executing callback function: ' + e.message);
+		}
+	}	
+}
+
+function checkBidsBackByAdUnit(adUnitCode){
+	for(var i = 0; i < pbjs.adUnits.length; i++){
+		var adUnit = pbjs.adUnits[i];
+		if(adUnit.code === adUnitCode){
+			var bidsBack = pbBidResponseByPlacement[adUnitCode].bidsReceivedCount;
+			//all bids back for ad unit
+			if(bidsBack === adUnit.bids.length){
+				triggerAdUnitCallbacks(adUnitCode);
+				
+			}
+		}
+	}
+	/*
+	utils.mapForEach(biddersByPlacementMap, function(value, key){
+		console.log('key: '+ key);
+		console.log(value);
+		if(key === adUnitCode){
+			var val = pbBidResponseByPlacement[adUnitCode];
+			alert('we have a winner: ' + val.bidsReceivedCount );
+		}
+
+	});
+	*/
+}
+
+exports.setBidderMap = function(bidderMap){
+	biddersByPlacementMap = bidderMap;
 };
 
 /*
@@ -255,13 +336,38 @@ exports.allBidsBack = function() {
  *   TODO: Need to track bids by placement as well
  */
 
-exports.checkIfAllBidsAreIn = function() {
+exports.checkIfAllBidsAreIn = function(adUnitCode) {
 	if (bidRequestCount !== 0 && bidRequestCount === bidResponseRecievedCount) {
 		_allBidsAvailable = true;
 	}
 
+	//check by ad units
+	checkBidsBackByAdUnit(adUnitCode);
+	
+
 	if (_allBidsAvailable) {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
 		this.executeCallback();
+		
 	}
+};
+
+/**
+ * Add a one time callback, that is discarded after it is called
+ * @param {Function} callback [description]
+ */
+exports.addOneTimeCallback = function(callback){
+	externalOneTimeCallback = callback;
+};
+
+exports.addCallback = function(id, callback, cbEvent){
+	callback['id'] = id;
+	if(CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent){
+		externalCallbackArr.push(callback);
+	}
+	else if(CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent){
+		externalCallbackByAdUnitArr.push(callback);
+	}
+
+	
 };
