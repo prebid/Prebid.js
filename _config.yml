@@ -3,7 +3,7 @@ name: Prebid.js
 # current version of the software
 version: 1.0.0
 # url of the download button
-downloadUrl: https://github.com/prebid/Prebid.js/releases/download/0.2.1/pbjs-0.2.1.zip
+downloadUrl: https://github.com/prebid/Prebid.js/releases/download/0.3.1/pbjs-0.3.1.zip
 # licence of the software
 license: Apache License
 licenseUrl: http://www.apache.org/licenses/LICENSE-2.0

@@ -38,8 +38,10 @@ The code below registers the bidder tags for your ad units. Once the prebid.js l
 <div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#bidder-register-dfp" role="tab" data-toggle="tab">DFP</a></li>
-        <li role="presentation"><a href="#bidder-register-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+        <li role="presentation" class="active"><a href="#bidder-register-dfp" role="tab" data-toggle="tab">DFP</a>
+        </li>
+        <li role="presentation"><a href="#bidder-register-custom" role="tab" data-toggle="tab">Custom Ad Server</a>
+        </li>
     </ul>
 
 <div class="tab-content">
@@ -65,41 +67,45 @@ The code below registers the bidder tags for your ad units. Once the prebid.js l
 
 {% highlight js %}
 var pbjs = pbjs || {};
-pbjs.adUnits = [
-    {
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function() {
+
+    var adUnits = [{
         code: "/1996833/slot-1",
         sizes: [[300, 250], [728, 90]],
         bids: [{
-                    bidder: "amazon",
-                    params: {
-                        aaxId: "8765"
-                    }
-                },{
-                    bidder: "appnexus",
-                    params: {
-                        tagId: "234235"
-                    }
-                }]
-        }
+            bidder: "amazon",
+            params: {
+                aId: "8765"
+            }
+        },{
+            bidder: "appnexus",
+            params: {
+                tagId: "234235"
+            }
+        }]
     },{
         code: "/1996833/slot-2",
         sizes: [[468, 60]],
         bids: [{
-                    bidder: "rubicon",
-                    params: {
-                        account: "4934",
-                        site: "13945",
-                        rp_zonesize: "23948-15"
-                    }
-                },{
-                    bidder: "appnexus",
-                    params: {
-                        tagId: "827326"
-                    }
-                }]
-        }
-    }
-];
+            bidder: "rubicon",
+            params: {
+                account: "4934",
+                site: "13945",
+                rp_zonesize: "23948-15"
+            }
+        },{
+            bidder: "appnexus",
+            params: {
+                tagId: "827326"
+            }
+        }]
+    }];
+
+    pbjs.addAdUnits(adUnits);
+});
+
 {% endhighlight %}
 
 ###AdUnit
@@ -122,6 +128,7 @@ pbjs.adUnits = [
 </div>
 
 <a name="adserver-targeting"></a>
+
 
 <div class="bs-docs-section" markdown="1">
 
@@ -192,6 +199,7 @@ pbjs.bidderSettings = {
 
 <a name="bidder-customization"></a>
 
+
 ###Bidder Level Customization (Optional)
 
 If you'd like even more customization (down to the bidder level), prebid.js also provides the API to do so. Click on Explore more for the details:
@@ -203,6 +211,7 @@ If you'd like even more customization (down to the bidder level), prebid.js also
 <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
     <i class="glyphicon glyphicon-menu-right"></i> Explore more
 </a>
+
 </h4>
 </div>
 <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
@@ -278,8 +287,10 @@ Note that immediately after the library is loaded, prebid.js will send pre-bid r
 <div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#timeout-dfp" role="tab" data-toggle="tab">DFP</a></li>
-        <li role="presentation"><a href="#timeout-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+        <li role="presentation" class="active"><a href="#timeout-dfp" role="tab" data-toggle="tab">DFP</a>
+        </li>
+        <li role="presentation"><a href="#timeout-custom" role="tab" data-toggle="tab">Custom Ad Server</a>
+        </li>
     </ul>
 
 <div class="tab-content">
@@ -302,6 +313,7 @@ Because GPT sends out all of the the impressions at the first `googletag.display
 
 PREBID_TIMEOUT = 300;
 function initAdserver() {
+    if (pbjs.initAdserverSet) return;
     (function() {
         var gads = document.createElement('script');
         gads.async = true;
@@ -324,9 +336,7 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 
 
-You've probably already configured your custom ad server to wait for a certain amount of time before sending out the impressions. That amount of time is given to your pre-bid bidders to respond.
-
-Note that `pbjs.getAdserverTargetingParamsForPlacement(code)` will only return targeting parameters after a few hundred milliseconds (the time it takes AppNexus to respond with bids). Make sure to wrap the call to set up targeting parameters with the `pbjs.libLoaded` condition, in case the Prebid.js library hasn't been loaded yet.
+You've probably already configured your custom ad server to wait for a certain amount of time before sending out the impressions. That amount of time is given to your pre-bid bidders to respond. Note that `pbjs.getAdserverTargetingParams(code)` will only return targeting parameters after a few hundred milliseconds (the time it takes bidders to respond with bids). 
 
 {% highlight js %}
 
@@ -336,15 +346,13 @@ function initAdserver() {
     // Step 1: Set key value targeting on the placements
     if (pbjs.libLoaded) {
         // For each of your placement, get and set targeting params
-        var targetingParams = pbjs.getAdserverTargetingParamsForAdUnit(code);
+        var targetingParams = pbjs.getAdserverTargetingParams();
     }
     // Step 2: Trigger the page to send the impressions to your ad server.
 };
 setTimeout(initAdserver, PB_PAGE_TIMEOUT);
 
 {% endhighlight %}
-
-For more documentation on getting the targeting parameters, check out the next section.
 
 </div>
 
@@ -366,8 +374,10 @@ For more documentation on getting the targeting parameters, check out the next s
 <div class="bs-callout">
 
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#targeting-dfp" role="tab" data-toggle="tab">DFP</a></li>
-        <li role="presentation"><a href="#targeting-custom" role="tab" data-toggle="tab">Custom Ad Server</a></li>
+        <li role="presentation" class="active"><a href="#targeting-dfp" role="tab" data-toggle="tab">DFP</a>
+        </li>
+        <li role="presentation"><a href="#targeting-custom" role="tab" data-toggle="tab">Custom Ad Server</a>
+        </li>
     </ul>
 
 <div class="tab-content">
@@ -379,13 +389,13 @@ For more documentation on getting the targeting parameters, check out the next s
 
 Prebid.js automatically clears the pre-bid related targeting defined in [Configure AdServer Targeting](#adserver-targeting) before it sets targeting.
 
-It's important to wrap `pbjs.setTargetingForGPTAsync` with the `pbjs.libLoaded` condition, because there's no guarantee that the Prebid.js library has been loaded at this point in the script's execution. You don't have to wrap it with googletag.cmd.push() because the function already handled that for you.
-
 Note that the below function has to be called after **all your GPT slots have been defined**.
 
 {% highlight js %}
 
-if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
+pbjs.que.push(function() {
+    pbjs.setTargetingForGPTAsync();
+});
 
 {% endhighlight %}
 
@@ -395,7 +405,7 @@ if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
 
 <div role="tabpanel" class="tab-pane" id="targeting-custom" markdown="1">
 
-
+`pbjs.getAdserverTargetingParams()` gives you the highest bid's targeting params for each ad unit. Set targeting on the ad units using your specific ad server's API.
 
 
 </div>
@@ -410,8 +420,208 @@ if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
 
 <div class="bs-docs-section" markdown="1">
 
-
 #Function Reference
+
+Version 0.3.1
+
+<a name="module_pbjs"></a>
+
+
+## pbjs
+
+* [pbjs](#module_pbjs)
+
+  * [.getAdserverTargeting()](#module_pbjs.getAdserverTargeting) ⇒ `object`
+  * [.getAdserverTargetingForAdUnitCode([adunitCode])](#module_pbjs.getAdserverTargetingForAdUnitCode) ⇒ `object`
+  * [.getBidResponses([adunitCode])](#module_pbjs.getBidResponses) ⇒ `object`
+  * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
+  * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
+  * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `bool`
+  * [.renderAd(doc, id)](#module_pbjs.renderAd)
+  * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
+  * [.requestBids(requestObj)](#module_pbjs.requestBids)
+  * [.addAdUnits(Array)](#module_pbjs.addAdUnits)
+  * [.addCallback(event, func)](#module_pbjs.addCallback) ⇒ `String`
+  * [.removeCallback(cbId)](#module_pbjs.removeCallback) ⇒ `String`
+
+<a name="module_pbjs.getAdserverTargeting"></a>
+
+### pbjs.getAdserverTargeting() ⇒ `object`
+Returns all ad server targeting for all ad units. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
+
+The targeting keys can be configured in [ad server targeting](#configure-ad-server-targeting).
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `object` - Map of adUnitCodes and targeting values []  
+
+<a name="module_pbjs.getAdserverTargetingForAdUnitCode"></a>
+
+### pbjs.getAdserverTargetingForAdUnitCode([adunitCode]) ⇒ `object`
+This function returns the query string targeting parameters available at this moment for a given ad unit. 
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+**Returns**: `object` - returnObj return bids  
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| [adunitCode] | `string` | adUnitCode to get the bid responses for |
+
+<a name="module_pbjs.getBidResponses"></a>
+
+### pbjs.getBidResponses() ⇒ `object`
+This function returns the bid responses at the given moment.
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `object` - map | object that contains the bidResponses  
+
+
+<a name="module_pbjs.getBidResponsesForAdUnitCode"></a>
+
+### pbjs.getBidResponsesForAdUnitCode(adUnitCode) ⇒ `Object`
+
+Returns bidResponses for the specified adUnitCode
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `Object` - bidResponse object  
+
+{: .table .table-bordered .table-striped }
+| Param | Scope | Type | Description |
+| --- | --- | --- | --- |
+| adUnitCode | Required | `String` | adUnitCode |
+
+<a name="module_pbjs.setTargetingForGPTAsync"></a>
+
+### pbjs.setTargetingForGPTAsync([codeArr])
+Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+{: .table .table-bordered .table-striped }
+| Param | Scope | Type | Description |
+| --- | --- | --- | -- |
+| [codeArr] | Optional | `array` | an array of adUnitodes to set targeting for. |
+
+<a name="module_pbjs.allBidsAvailable"></a>
+
+### pbjs.allBidsAvailable() ⇒ `bool`
+Returns a bool if all the bids have returned or timed out
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `bool` - all bids available  
+<a name="module_pbjs.renderAd"></a>
+
+### pbjs.renderAd(doc, id)
+This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+{: .table .table-bordered .table-striped }
+| Param | Scope | Type | Description |
+| --- | --- | --- | --- |
+| doc | Required | `object` | document |
+| id | Required | `string` | bid id to locate the ad |
+
+<a name="module_pbjs.removeAdUnit"></a>
+
+### pbjs.removeAdUnit(adUnitCode)
+Remove adUnit from the pbjs configuration
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+{: .table .table-bordered .table-striped }
+| Param | Scope | Type | Description |
+| --- | --- | --- | --- |
+| adUnitCode | Required | `String` | the adUnitCode to remove |
+
+
+<a name="module_pbjs.requestBids"></a>
+
+### pbjs.requestBids(requestObj)
+Request bids. When `adUnits` or `adUnitCodes` are not specified, request bids for all ad units added.
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+{: .table .table-bordered .table-striped }
+| Param | Scope | Type | Description |
+| --- | --- | --- | --- |
+| requestObj | Optional | `Object` |  |
+| requestObj.adUnitCodes | Optional | `Array of strings` | adUnit codes to request. Use this or requestObj.adUnits |
+| requestObj.adUnits | Optional | `Array of objects` | AdUnitObjects to request. Use this or requestObj.adUnitCodes |
+| requestObj.timeout | Optional | `Integer` | Timeout for requesting the bids specified in milliseconds |
+| requestObj.bidsBackHandler | Optional | `function` | Callback to execute when all the bid responses are back or the timeout hits. |
+
+<a name="module_pbjs.addAdUnits"></a>
+
+### pbjs.addAdUnits(Array)
+Add adunit(s)
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| Array | `string` &#124; `Array of strings` | of adUnits or single adUnit Object. |
+
+<a name="module_pbjs.addCallback"></a>
+
+### pbjs.addCallback(event, func) ⇒ `String`
+Add a callback event
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `String` - id for callback  
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| event | `String` | event to attach callback to Options: `adUnitBidsBack` |
+| func | `function` | function to execute. Paramaters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
+
+<a name="module_pbjs.removeCallback"></a>
+
+### pbjs.removeCallback(cbId) ⇒ `String`
+Remove a callback event
+
+**Kind**: static method of [pbjs](#module_pbjs)
+
+**Returns**: `String` - id for callback  
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| cbId | `string` | id of the callback to remove |
+
+
+
+
+
+
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingThree">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+          Older API Version (0.2.1)
+        </a>
+
+      </h4>
+    </div>
+    <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+      <div class="panel-body" markdown="1">
+        
 
 **Funciton** `setTargetingForGPTAsync()`
 
@@ -452,6 +662,22 @@ pbjs.registerBidCallbackHandler = function(){
 }
 
 {% endhighlight %}
+
+
+
+
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
 
 </div>
 

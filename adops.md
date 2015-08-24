@@ -285,7 +285,7 @@ A couple of important points:
 
 * DoubleClick for Publishers (DFP) supports creative size override, which allows you to use one creative handle multiple sizes. Set each creative size to 1x1, then leverage DFP’s size override.
 
-* Determine the maximum number of ad units your pages can have. Please duplicate and set up that number of creative for each line item. 
+* Determine the maximum number of ad units your pages can have. Please duplicate and set up that number of creatives. All your line items can share that set of creatives.
 
     Why? The same creative cannot be served into more than 1 ad unit in a single DoubleClick for Publishers GPT request call. If you have 5 ad units on a page, your prebid line items would have ≥ 5 creatives of size 1x1 and the code snippet above.
 

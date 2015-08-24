@@ -51,7 +51,8 @@ In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad u
 
 {% highlight js %}
 
-pbjs.adUnits = [{
+pbjs.que.push(function() {
+  var adUnits = [{
     code: "/1996833/slot-1",
     sizes: [[300, 250], [728, 90]],
     bids: [{
@@ -65,7 +66,9 @@ pbjs.adUnits = [{
         bidder: "appnexus",
         params: { tagId: "234235" }
     }]
-}];
+  }];
+  pbjs.addAdUnits(adUnits);
+});
 
 // Load prebid.js library async
 
@@ -93,11 +96,13 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 #####3. Set targeting for bids
 
-Call the helper function once `setTargetingForGPTAsync()` to handle all the targeting for all bidders. 
+Call the helper function `setTargetingForGPTAsync()` to handle all the targeting for all bidders. 
 
 {% highlight js %}
 
-if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
+pbjs.que.push(function() {
+  pbjs.setTargetingForGPTAsync();
+});
 
 {% endhighlight %}
 

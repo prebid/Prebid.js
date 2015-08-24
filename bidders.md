@@ -73,7 +73,7 @@ These parameters in the bidReponse object are common across all bidders.
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `aaxId` | required | The site ID for Amazon. | "1234" |
+| `aid` | required | The site ID for Amazon. | "1234" |
 
 ###bidResponse (bidder specific)
 
