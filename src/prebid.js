@@ -41,7 +41,11 @@ pbjs.que = pbjs.que || [];
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
 
-//overide que.push so we immediate execute any function in the array
+/**
+ * Command queue that functions will execute once prebid.js is loaded
+ * @param  {function} cmd Annoymous function to execute
+ * @alias module:pbjs.que.push
+ */
 pbjs.que.push = function(cmd) {
 	if (typeof cmd === objectType_function) {
 		try {
@@ -359,8 +363,11 @@ function resetBids() {
 // 								//
 //////////////////////////////////
 
-/*
- *   This function returns a "cleaned up" version of the bid response targeting paramasters
+/**
+ * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
+ * @param  {string} [adunitCode] adUnitCode to get the bid responses for
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCode
+ * @return {object}	returnObj return bids
  */
 pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 	// call to populate pb_targetingMap
@@ -374,14 +381,19 @@ pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 
 };
 /**
- * 	returns all ad server targeting for all ad units
+ * returns all ad server targeting for all ad units
+ * @return {object} Map of adUnitCodes and targeting values []
+ * @alias module:pbjs.getAdserverTargeting
  */
 pbjs.getAdserverTargeting = function() {
 	return pbjs.getAdserverTargetingForAdUnitCode();
 };
 
-/*
- *   This function returns a "cleaned up" version of the bid response in JSON form
+/**
+ * This function returns the bid responses at the given moment.
+ * @param  {string} [adunitCode] adunitCode adUnitCode to get the bid responses for
+ * @alias module:pbjs.getBidResponses
+ * @return {object}            map | object that contains the bidResponses
  */
 pbjs.getBidResponses = function(adunitCode) {
 	var bidArrayTargeting = [];
@@ -423,14 +435,17 @@ pbjs.getBidResponses = function(adunitCode) {
 };
 /**
  * Returns bidResponses for the specified adUnitCode
- * @param  {[String} adUnitCode adUnitCode
+ * @param  {String} adUnitCode adUnitCode
+ * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
 pbjs.getBidResponsesForAdUnitCode = function(adUnitCode) {
 	return pbjs.getBidResponses(adUnitCode);
 };
-/*
- *   This function sets targeting keys as defined by bid response into the GPT slot object
+/**
+ * Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
+ * @param {array} [codeArr] an array of adUnitodes to set targeting for. 
+ * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function(codeArr) {
 	if (!window.googletag || !window.googletag.pubads() || !window.googletag.pubads().getSlots()) {
@@ -438,11 +453,19 @@ pbjs.setTargetingForGPTAsync = function(codeArr) {
 		return;
 	}
 
+	var adUnitCodesArr = [];
+
+	if (typeof codeArr === objectType_string) {
+		 adUnitCodesArr = [codeArr];
+	} else if (typeof codeArr === objectType_object) {
+		adUnitCodesArr = codeArr;
+	}
+
 	var placementBids = {},
 		i = 0;
-	if (codeArr) {
-		for (i = 0; i < codeArr.length; i++) {
-			var code = codeArr[i];
+	if (adUnitCodesArr) {
+		for (i = 0; i < adUnitCodesArr.length; i++) {
+			var code = adUnitCodesArr[i];
 			//get all the slots from google tag
 			var slots = window.googletag.pubads().getSlots();
 			for (var k = 0; k < slots.length; k++) {
@@ -466,34 +489,27 @@ pbjs.setTargetingForGPTAsync = function(codeArr) {
 
 };
 
-pbjs.setTargetingForAdUnitsGPTAsync = function(adUnitCodesArr) {
-	if (typeof adUnitCodesArr === objectType_string) {
-		var codeArr = [adUnitCodesArr];
-		pbjs.setTargetingForGPTAsync(codeArr);
-	} else if (typeof adUnitCodesArr === objectType_object) {
-		pbjs.setTargetingForGPTAsync(adUnitCodesArr);
-	}
-
-};
-
 /**
  * Returns a bool if all the bids have returned or timed out
+ * @alias module:pbjs.allBidsAvailable
  * @return {bool} all bids available
  */
 pbjs.allBidsAvailable = function() {
 	return bidmanager.allBidsBack();
 };
 
-/*
- *   This function will render the ad (based on params) in the given iframe document passed through
- *   Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly
+/**
+ * This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly
+ * @param  {object} doc document
+ * @param  {string} id bid id to locate the ad
+ * @alias module:pbjs.renderAd
  */
-pbjs.renderAd = function(doc, params) {
-	utils.logMessage('Calling renderAd with adId :' + params);
-	if (doc && params) {
+pbjs.renderAd = function(doc, id) {
+	utils.logMessage('Calling renderAd with adId :' + id);
+	if (doc && id) {
 		try {
 			//lookup ad by ad Id
-			var adObject = bidmanager._adResponsesByBidderId[params];
+			var adObject = bidmanager._adResponsesByBidderId[id];
 			if (adObject) {
 				var height = adObject.height;
 				var width = adObject.width;
@@ -520,18 +536,18 @@ pbjs.renderAd = function(doc, params) {
 					}
 
 				} else {
-					utils.logError('Error trying to write ad. No ad for bid response id: ' + params);
+					utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
 				}
 
 			} else {
-				utils.logError('Error trying to write ad. Cannot find ad by given id : ' + params);
+				utils.logError('Error trying to write ad. Cannot find ad by given id : ' + id);
 			}
 
 		} catch (e) {
-			utils.logError('Error trying to write ad Id :' + params + ' to the page:' + e.message);
+			utils.logError('Error trying to write ad Id :' + id + ' to the page:' + e.message);
 		}
 	} else {
-		utils.logError('Error trying to write ad Id :' + params + ' to the page. Missing document or adId');
+		utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
 	}
 
 };
@@ -563,8 +579,9 @@ pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 };
 
 /**
- * [removeAdUnit description]
+ * Remove adUnit from the pbjs configuration
  * @param  {String} adUnitCode the adUnitCode to remove
+ * @alias module:pbjs.removeAdUnit
  */
 pbjs.removeAdUnit = function(adUnitCode) {
 	if (adUnitCode) {
@@ -577,12 +594,8 @@ pbjs.removeAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request all bids
- * @param  {Object} requestObj optional request object
- * {
- * 	timeout : 500,
- * 	bidsBackHandler : function(bidResponse) {}
- * }
+ * Request all bids configured in pbjs
+ * @alias module:pbjs.requestAllBids
  */
 pbjs.requestAllBids = function(requestObj) {
 	var timeout = null;
@@ -599,13 +612,13 @@ pbjs.requestAllBids = function(requestObj) {
 	init(timeout);
 };
 /**
- * Request bids ad-hoc 
- * @param  {Object} requestObj {
-		adUnitCodes: [‘code1’, ‘code2’],
-		adUnits: [unit1, unit2], // OR. Optional
-		timeout: 400,
-		bidsBackHandler: function(bidResponses) {} // optional callback
-	}
+ * Request bids ad-hoc. This function does not add or remove adUnits already configured. 
+ * @param  {Object} requestObj 
+ * @param {string[]} requestObj.adUnitCodes  adUnit codes to request. Use this or requestObj.adUnits
+ * @param {object[]} requestObj.adUnits AdUnitObjects to request. Use this or requestObj.adUnitCodes
+ * @param {number} [requestObj.timeout] Timeout for requesting the bids specified in milliseconds
+ * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits. 
+ * @alias module:pbjs.requestBids
  */
 pbjs.requestBids = function(requestObj) {
 	if (!requestObj) {
@@ -641,7 +654,7 @@ pbjs.requestBids = function(requestObj) {
 /**
  * 
  * Add adunit(s) 
- * @param {Array} adUnitArr adUnitArr to add
+ * @param {(string|string[])} Array of adUnits or single adUnit Object.
  * @alias module:pbjs.addAdUnits
  */
 pbjs.addAdUnits = function(adUnitArr) {
@@ -655,10 +668,10 @@ pbjs.addAdUnits = function(adUnitArr) {
 
 
 /**
- * @function
  * Add a callback event
- * @param {String} event event to attach callback to.
- * @param {Function} func  function to execute
+ * @param {String} event event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
+ * @param {Function} func  function to execute. Paramaters passed into the function: (bidResObj), [adUnitCode]);
+ * @alias module:pbjs.addCallback
  * @returns {String} id for callback
  */
 pbjs.addCallback = function(eventStr, func) {
@@ -668,10 +681,19 @@ pbjs.addCallback = function(eventStr, func) {
 		return id;
 	}
 
-
 	id = utils.getUniqueIdentifierStr;
 	bidmanager.addCallback(id, func, eventStr);
 	return id;
+};
+
+/**
+ * Remove a callback event
+ * @param {string} cbId id of the callback to remove
+ * @alias module:pbjs.removeCallback
+ * @returns {String} id for callback
+ */
+pbjs.removeCallback = function(cbId) {
+	//todo
 };
 
 // Register the bid adaptors here
