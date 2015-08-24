@@ -13,8 +13,9 @@ var del = require('del');
 var ecstatic = require('ecstatic');
 var browserify = require('gulp-browserify');
 var stylish = require('jshint-stylish');
-
-
+var gutil = require("gulp-util");
+var gulpJsdoc2md = require("gulp-jsdoc-to-markdown");
+var concat = require("gulp-concat");
 var fs = require('fs');
 
 
@@ -120,8 +121,11 @@ gulp.task('serve', ['build-dev', 'watch'], function () {
 gulp.task('build-dev', ['jscs', 'clean-dist'], function () {
 	gulp.src(['src/prebid.js'])
 	.pipe(browserify({
-		debug: true
+		debug: false
 	}))
+    .pipe(header(banner, {
+            pkg: pkg
+    }))
 	.pipe(gulp.dest(path.join(releaseDir, 'build')));
 
 });
@@ -152,3 +156,19 @@ gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'minify'], function (
 gulp.task('watch', function () {
 	gulp.watch(['src/**/*.js'], ['build-dev']);
 });
+
+
+gulp.task('clean-docs', function(){
+    del(['docs']);
+});
+
+gulp.task("docs", ['clean-docs'], function() {
+    return gulp.src("src/prebid.js")
+        .pipe(concat("readme.md"))
+        .pipe(gulpJsdoc2md())
+        .on("error", function(err){
+            gutil.log("jsdoc2md failed:", err.message);
+        })
+        .pipe(gulp.dest("docs"));
+});
+
