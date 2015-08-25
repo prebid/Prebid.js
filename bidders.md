@@ -86,7 +86,9 @@ These parameters in the bidReponse object are common across all bidders.
 
 ###Caveats
 
-Prebid.js sends separate key-value targeting for Amazon, because only the obfuscated price is returned. Please follow Amazon's instructions to setup line items and creatives in your ad server. 
+Prebid.js sends separate key-value targeting for Amazon, because only the obfuscated price is returned. Please follow Amazon's instructions to setup line items and creatives in your ad server.
+
+ Just one `ad unit` is required for this bidder, unlike other bidders where you specify a configuration for each ad unit.
 
 ###Default bidder settings
 
