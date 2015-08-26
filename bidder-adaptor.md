@@ -1,9 +1,9 @@
 ---
 layout: page
 title: Bidder Adaptor
-description: Documentation on bidder adaptor
-pid: 4
-hide: true
+description: Documentation on how to add a new bidder adaptor
+pid: 5
+hide: false
 ---
 
 <div class="bs-docs-section" markdown="1">
