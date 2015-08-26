@@ -4,23 +4,61 @@
 
 <script>
 
-	var pbjs = pbjs || {},
-	PREBID_TIMEOUT = 1500;
+    var PREBID_TIMEOUT = 700;
 
-
-	/* 1. Register bidder tag Ids
-
-    Registers the bidder tags for your ad units. Once the prebid.js 
-    library loads, it reads the pbjs.adUnits object and sends out 
-    bid requests. Find the complete reference on bidders at 
-    http://prebid.org/bidders.html.
-
-    code:  Your GPT slot’s ad unit path. If they don’t match, prebid.js 
-           would not be able to set targeting correctly
-    sizes: All sizes your ad unit accepts. They should match with GPT.
-
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    
+    /* pbjs.initAdserver will be called either when all bids are back, or
+       when the timeout is reached.
     */
-	pbjs.adUnits = [{
+    function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        //load GPT library here
+        (function() {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            var useSSL = 'https:' == document.location.protocol;
+            gads.src = (useSSL ? 'https:' : 'http:') +
+            '//www.googletagservices.com/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+        pbjs.initAdserverSet = true;
+    };
+    // Load GPT when timeout is reached.
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    // Load the Prebid Javascript Library Async. We recommend loading it immediately after
+    // the initAdserver() and setTimeout functions.
+    (function() {
+        var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
+        pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
+        pbjsEl.src = '../../dist/build/prebid.js';
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+    })();
+
+
+    pbjs.que.push(function(){
+
+    	/* 1. Register bidder tag Ids
+
+        Registers the bidder tags for your ad units. Once the prebid.js 
+        library loads, it reads the pbjs.adUnits object and sends out 
+        bid requests. Find the complete reference on bidders at 
+        http://prebid.org/bidders.html.
+
+        code:  Your GPT slot’s ad unit path. If they don’t match, prebid.js 
+               would not be able to set targeting correctly
+        sizes: All sizes your ad unit accepts. They should match with GPT.
+
+        */
+	   var adUnits = [{
         code: '{id}',
         sizes: [[300, 250], [300, 600]],
         bids: [
@@ -74,6 +112,40 @@
             }]
     }];
 
+    //add the adUnits
+    pbjs.addAdUnits(adUnits);
+
+    //register a callback handler
+    pbjs.addCallback('adUnitBidsBack', function(adUnitCode){
+            console.log('ad unit bids back for : ' + adUnitCode);
+        });
+
+        /* Request bids for the added ad units. 
+        */
+    pbjs.requestBids({
+
+            /* The bidsBack function will be called when either timeout is
+               reached, or when all bids come back, whichever happens sooner.
+            */
+            bidsBackHandler: function(bidResponses) {
+                initAdserver();
+            },
+
+            /* You can specify specific `adUnitCodes` to only request bids
+               for certain ad units.
+               adUnitCodes: ['code1', 'code2']
+            */
+
+            /* You can also make one off bid requests for the given `adUnits`. 
+               adUnits: [adUnit2, adUnit1]
+            */ 
+
+            /* The bidsBackHandler will be executed either when all bids are
+               back, or when the timeout is reached. 
+               timeout: 1000
+            */
+    })
+
   
     /* 2. Configure Ad Server Targeting
 
@@ -91,79 +163,30 @@
 
     */
     
-    pbjs.bidderSettings = {
-        standard: {
-            adserverTargeting: [{
-                key: "hb_bidder",
-                val: function(bidResponse) {
-                    return bidResponse.bidderCode;
+        pbjs.bidderSettings = {
+            standard: {
+                    adserverTargeting: [{
+                        key: "hb_bidder",
+                        val: function(bidResponse) {
+                            return bidResponse.bidderCode;
+                        }
+                    }, {
+                        key: "hb_adid",
+                        val: function(bidResponse) {
+                            return bidResponse.adId;
+                        }
+                    }, {
+                        key: "hb_pb",
+                        val: function(bidResponse) {
+                            return bidResponse.pbLg;
+                        }
+                    }]
                 }
-            }, {
-                key: "hb_adid",
-                val: function(bidResponse) {
-                    return bidResponse.getBidId();
-                }
-            }, {
-                key: "hb_pb",
-                val: function(bidResponse) {
-                    return bidResponse.pbMg;
-                }
-            }, {
-                key: "hb_size",
-                val: function(bidResponse) {
-                    return bidResponse.getSize();
+        };
 
-                }
-            }]
-        }
-    };
+    });
 
-    //  Optional callback handler that will get called when all bidders' bids are available.
-    pbjs.registerBidCallbackHandler = function(){
-        if(!pbjs.initAdserverSet){
-            //1st call
-            initAdserver(); 
-            console.log('initial callback');
-
-        }
-        else{
-            //2nd, 3rd, Nth call
-            //do somethign else
-            console.log('refresh callback');
-            callGPT();
-        }
-    };
-
-    var googletag = googletag || {};
-    googletag.cmd = googletag.cmd || [];
-    
-    function initAdserver() {
-        //load GPT library here
-        (function() {
-            var gads = document.createElement('script');
-            gads.async = true;
-            gads.type = 'text/javascript';
-            var useSSL = 'https:' == document.location.protocol;
-            gads.src = (useSSL ? 'https:' : 'http:') +
-            '//www.googletagservices.com/tag/js/gpt.js';
-            var node = document.getElementsByTagName('script')[0];
-            node.parentNode.insertBefore(gads, node);
-        })();
-        pbjs.initAdserverSet = true;
-    };
-    // Load GPT when timeout is reached.
-    setTimeout(initAdserver, PREBID_TIMEOUT);
-
-    // Load the Prebid Javascript Library Async. We recommend loading it immediately after
-    // the initAdserver() and setTimeout functions.
-    (function() {
-        var prbEl = document.createElement("script"); prbEl.type = "text/javascript"
-        //prbEl.src = 'http://cdn.adnxs.com/tag/v/prebid/0.1.1/prebid.js';
-        prbEl.src = '../../dist/build/prebid.js';
-        var csaTargetEl = document.getElementsByTagName("head")[0];
-        csaTargetEl.insertBefore(prbEl, csaTargetEl.firstChild);
-    })();
-
+  
 </script>
 
 

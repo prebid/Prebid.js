@@ -5,43 +5,9 @@ var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 
 var RubiconAdapter = function RubiconAdapter() {
-
 	// Map size dimensions to size 'ID'
 	var sizeMap = {};
 
-	//var bidResponse =
-	//callback when all bids are in
-
-	/* 1. must define a callBids method that will take params and handle all logic handling request
-	 *
-	params = {
-		bids: [{
-				bidder: 'appnexus',
-				adUnitCode: 'ad_unit_code',
-				sizes: [
-					[300, 250],
-					[300, 600]
-				],
-				params: {
-					key: value,
-					key: value
-				}
-			}, {
-				bidder: 'appnexus',
-				adUnitCode: 'ad_unit_code',
-				sizes: [
-					[300, 250],
-					[300, 600]
-				],
-				params: {
-					key: value,
-					key: value
-				}
-			}
-
-		]
-	}
-	 */
 	function callBids(params) {
 		var bidArr = params.bids;
 		for (var i = 0; i < bidArr.length; i++) {
@@ -82,32 +48,6 @@ var RubiconAdapter = function RubiconAdapter() {
 	}
 
 	function createRequestContent(bidOptions, callback, width, height) {
-		/* //this is the what the tag on page looks like.
-		//need to build this HTML content to insert into iframe
-		<script>
-		window.rp_account = '9707';
-		window.rp_site = '17955';
-		window.rp_zonesize = '50983-15';
-		window.rp_tracking = "affiliate-1701207318";
-		window.rp_visitor = {
-			gender: "",
-			genre: ""
-		};
-
-		window.rp_width = 300;
-		window.rp_height = 250;
-		window.rp_adtype = 'jsonp';
-		window.rp_inventory = ({
-			deals: "mobv3_excl,atf,demo1849,csm1834,znexcl1,exunisite,exmars,extargt,ldacomp,ent19116,rn14858,ukent,g03070,qc12170,qc2690,qc2695,qc1988,asov1,qc12172,qc12169,qc27434,rn24858,ent29116,lngen,cntq,cntauto,anthea,smg_blklist,amnetctr,ntflxblk,amtblk,zentend,nortb,deschoeff,js,excltop,"
-		});
-		window.rp_floor = 0.1;
-		window.rp_callback = window.parent.foo;
-		</script>
-
-		<script src="http://ads.rubiconproject.com/ad/9707.js"></script>
-
-
-*/
 
 		// Map the size 'ID' to the dimensions
 		sizeMap[bidOptions.params.rp_zonesize.split('-')[1]] = {
@@ -157,40 +97,9 @@ var RubiconAdapter = function RubiconAdapter() {
 
 	}
 
-	//This function is specific to AppNexus adaptor
-
-	//This function is specific to AppNexus adaptor - expose the callback to the global pbjs object:
 	pbjs.handleRubiconCallback = function(response) {
 		var placementCode = '';
-		//log the response object
-		//console.log(response);
-		//TODO need to identify the size by 'size_id'
-		/*
-			response object
-			{
-				account_id: 'id',
-				ads: [{
-					ad_id: '',
-					advertiser: 1234,
-					cpm: 10,
-					creative_id: 123456,
-					deal: 98877,
-					impression_id: '',
-					network: 1325,
-					script: 'ad_tag',
-					size_id: '15',
-					type: 'script'
-				}],
-				inventory: {},
-				site_id: 123213,
-				size_id: 15,
-				status: 'ok',
-				tracking: 'affiliate-17232',
-				zone_id: 50983
-			}
-			*/
-
-		//TODO - need to send the bid back and track responses
+	
 		var bid = {};
 		if (response && response.status === 'ok') {
 			try {
@@ -250,9 +159,6 @@ var RubiconAdapter = function RubiconAdapter() {
 
 		//add the bid response here
 		bidmanager.addBidResponse(placementCode, bid);
-
-		//3. let us know when all bids are in (need to check if they are all here first)
-		//bidsAreAllIn(bidderCode);
 
 	};
 
