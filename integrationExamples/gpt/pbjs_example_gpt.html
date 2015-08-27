@@ -36,11 +36,12 @@
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
     (function() {
-        var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
-        pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
-        pbjsEl.src = '../../dist/build/prebid.js';
-        var pbjsTargetEl = document.getElementsByTagName("head")[0];
-        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+        var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
+        pbs.type = "text/javascript";
+        //pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
+        pbs.src = '../../dist/build/prebid.js';
+        var target = document.getElementsByTagName("head")[0];
+        target.insertBefore(pbs, target.firstChild);
     })();
 
 
@@ -184,7 +185,7 @@
                 }
         };
 
-    });
+});
 
   
 </script>
@@ -193,9 +194,9 @@
 <script>
     googletag.cmd.push(function() {
 
-        var rightSlot = googletag.defineSlot('{id}', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+        var rightSlot = googletag.defineSlot('{id}', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
 
-        var topSlot = googletag.defineSlot('{id}', [[728, 90], [970, 90]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+        var topSlot = googletag.defineSlot('{id}', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
 
         /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
         */
