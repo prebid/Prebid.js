@@ -66,8 +66,14 @@ function processQue() {
  *   Main method entry point method
  */
 function init(timeout, adUnitCodeArr) {
-	var cbTimeout = timeout || pbjs.bidderTimeout;
-
+	var cbTimeout = 0;
+	if(timeout === objectType_undefined || timeout === null){
+		cbTimeout = pbjs.bidderTimeout;
+	}
+	else{
+		cbTimeout = timeout;
+	}
+	
 	if (!isValidAdUnitSetting()) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
