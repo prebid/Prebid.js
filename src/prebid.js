@@ -67,7 +67,7 @@ function processQue() {
  */
 function init(timeout, adUnitCodeArr) {
 	var cbTimeout = 0;
-	if(timeout === objectType_undefined || timeout === null){
+	if(typeof timeout === objectType_undefined || timeout === null){
 		cbTimeout = pbjs.bidderTimeout;
 	}
 	else{
