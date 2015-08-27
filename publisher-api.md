@@ -433,7 +433,7 @@ Version 0.3.1
 
   * [.getAdserverTargeting()](#module_pbjs.getAdserverTargeting) ⇒ `object`
   * [.getAdserverTargetingForAdUnitCode([adunitCode])](#module_pbjs.getAdserverTargetingForAdUnitCode) ⇒ `object`
-  * [.getBidResponses([adunitCode])](#module_pbjs.getBidResponses) ⇒ `object`
+  * [.getBidResponses()](#module_pbjs.getBidResponses) ⇒ `object`
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `bool`

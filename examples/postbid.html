@@ -1,0 +1,81 @@
+<html>
+
+<body style="margin:0;padding:0">
+
+<script>
+    
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    var unitCode = '1';
+
+    (function() {
+        var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
+        pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
+        //pbjsEl.src = "prebid.0.3.1.min.js";
+        pbjsEl.src = 'http://cdn.adnxs.com/tag/v/prebid/2.1.1/prebid.min.js'
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+    })();
+
+    pbjs.que.push(function() {
+        
+        // code must be unique. It's an ID you used to identify with your adserver tag. 
+        // sizes are required. 
+        var adUnits = [{
+            code: unitCode,
+            sizes: [[300, 250]],
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                           placementId: '4799418'
+                        }
+                    },
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                           rp_account : '9707',
+                           rp_site: '17955',
+                           rp_zonesize : '50983-15',
+                           rp_floor : '0.1'
+                        }
+                    }, {
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: 39741,
+                            adSlot: '39620189@300x250'
+                        }
+                    }]
+        }];
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.requestBids({
+            timeout: 1000,
+            bidsBackHandler: function(bidResponses) {
+                console.log('hey');
+
+                var params = pbjs.getAdserverTargetingForAdUnitCode(unitCode);
+
+                //if (params['hb_'])
+                console.log(params);
+                //pbjs.renderAd(document, params['hb_adid']);
+
+            
+                console.log('Are all bids available? : ' + pbjs.allBidsAvailable()); // return bool
+
+                console.log('Targeting params:')
+                console.log(JSON.stringify(pbjs.getAdserverTargeting()));
+
+                console.log('Dumping all bid objects to console:');
+                console.log(pbjs.getBidResponses()); // or pass a code to get one particular ad unit
+            }
+        });
+    
+    });  
+
+</script>
+
+</body>
+
+</html>
