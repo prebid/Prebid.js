@@ -97,7 +97,8 @@ var RubiconAdapter = function RubiconAdapter() {
 
 	}
 
-	pbjs.handleRubiconCallback = function(response) {
+	window.pbjs = window.pbjs || {que: []};
+	window.pbjs.handleRubiconCallback = function(response) {
 		var placementCode = '';
 	
 		var bid = {};

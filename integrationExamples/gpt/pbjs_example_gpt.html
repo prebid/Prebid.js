@@ -74,7 +74,7 @@
                 params: {
                    aid: '{id}'
                 }
-            }, 
+            },
             // 1 ad unit can also be targeted by multiple bids from 1 bidder
             {
                 bidder: 'pubmatic',
@@ -110,6 +110,12 @@
                    rp_tracking : '{id}',
                    rp_floor : '0.1'
                 }
+            }, {
+              bidder: 'yieldbot',
+              params: {
+                pub: '{id}',
+                name: '{id}'
+              }
             }]
     }];
 
