@@ -14,7 +14,7 @@ While implementing Prebid.js' adaptors for different bidders, we've noticed not 
 {: .table .table-bordered .table-striped }
 |	Bidder |	Price 	|	*Latency (rough estimate)   |
 | :----  |:--------| :-------|
-| Amazon | Estimated at $0.50 increment | 300ms |
+<!--| Amazon | Estimated at $0.50 increment | 300ms | -->
 | AOL | Unknown | Unknown |
 | AppNexus | Exact | 200ms, however async calls have to be made for multiple slots |
 | Casale | Exact | Unknown | 

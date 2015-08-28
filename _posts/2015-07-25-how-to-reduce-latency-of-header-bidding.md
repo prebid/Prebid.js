@@ -45,7 +45,7 @@ Here're a few screenshots of websites' network calls after implemented header bi
 
 * #####All Pre-bid Calls are made concurrently within 100ms.
 
-	Note that Amazon, AppNexus, Pubmatic, OpenX, Rubicon header bidding calls were all made within the first 100ms. 
+	Note that AppNexus, Pubmatic, OpenX, Rubicon header bidding calls were all made within the first 100ms. 
 
 * ##### Timeout at 400ms is respected.
 

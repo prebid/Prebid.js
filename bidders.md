@@ -62,6 +62,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 </div>
 
+<!--
 <div class="bs-docs-section" markdown="1">
 #Amazon
 
@@ -106,6 +107,8 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 
 </div>
+
+-->
 
 <div class="bs-docs-section" markdown="1">
 

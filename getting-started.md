@@ -34,7 +34,7 @@ isHome: false
 
 > Prebid.js is an open source Javascript framework to help publishers integrate and manage header bidding partners without writing custom code or increasing page load times. Prebid.js is 100% open source and free for anyone to use. 
 
-* It has clean, built-in support for all major bidders (Amazon, AppNexus, Rubicon, etc), as well as major ad servers (DFP, OAS, AdTech). 
+* It has clean, built-in support for all major bidders (AppNexus, Rubicon, etc), as well as major ad servers (DFP, OAS, AdTech). 
 * Prebid.js has solved many known problems publishers are facing - high latency, unfair auction mechanics, long development time, confusing line item and targeting setup.
 * Plugging in prebid.js is easy. Adding new header bidding bidders is a matter of adding tag Ids into a JSON config.
 

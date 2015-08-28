@@ -75,9 +75,11 @@ pbjs.que.push(function() {
         code: "/1996833/slot-1",
         sizes: [[300, 250], [728, 90]],
         bids: [{
-            bidder: "amazon",
+            bidder: "openx",
             params: {
-                aId: "8765"
+                pgid: "2342353",
+                unit: "234234",
+                jstag_url: "http://"
             }
         },{
             bidder: "appnexus",
@@ -687,6 +689,8 @@ pbjs.registerBidCallbackHandler = function(){
 
 
 #How to debug?
+
+Add `?pbjs_debug=true` to your page's 
 
 If your page is not serving pre-bid ads, there could be 2 reasons:
 

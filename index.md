@@ -77,9 +77,9 @@ description: A free and open source library for publishers to quickly implement 
 
     <div class="row bs-docs-featured-sites bidder-logos">
     
-      <div class="col-xs-6 col-sm-2">
+      <!-- <div class="col-xs-6 col-sm-2">
         <h3>Amazon</h3>
-      </div>
+      </div> -->
     
       <div class="col-xs-6 col-sm-2">
         <h3>AppNexus</h3>
