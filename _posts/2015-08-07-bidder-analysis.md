@@ -11,15 +11,16 @@ permalink: /blog/header-bidding-bidder-analysis
 
 While implementing Prebid.js' adaptors for different bidders, we've noticed not all bidders return exact price to the publisher's page. Different bidders also have vastly different response latency. We hope the analysis here can help you make smart decisions when implementing header bidding. 
 
+<!--| Amazon | Estimated at $0.50 increment | 300ms | -->
+
 {: .table .table-bordered .table-striped }
 |	Bidder |	Price 	|	*Latency (rough estimate)   |
 | :----  |:--------| :-------|
-<!--| Amazon | Estimated at $0.50 increment | 300ms | -->
 | AOL | Unknown | Unknown |
 | AppNexus | Exact | 200ms, however async calls have to be made for multiple slots |
 | Casale | Exact | Unknown | 
 | Criteo | Estimated | 200ms |
-| OpenX | Exact | 600ms |
+| OpenX | Exact | 500ms |
 | Pubmatic | Exact | 400ms |
 | Rubicon | Exact | 400ms |
 | Sonobi | Exact | Unknown |

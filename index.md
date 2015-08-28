@@ -100,6 +100,10 @@ description: A free and open source library for publishers to quickly implement 
       <div class="col-xs-6 col-sm-2">
         <h3>Rubicon</h3>
       </div>
+
+      <div class="col-xs-6 col-sm-2">
+        <h3>More</h3>
+      </div>
     
     </div>
 <!-- 
