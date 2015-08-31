@@ -24,52 +24,6 @@ function YieldbotAdapter() {
         "ybotq.push(function(){yieldbot.renderAd('%%SLOT%%:%%SIZE%%');})" +
         "</script>";
 
-  /**
-   * Return if the object is of the
-   * given type.
-   * @param {*} object to test
-   * @param {String} _t type string (e.g., Array)
-   * @return {Boolean} if object is of type _t
-   */
-  function isA(object, _t) {
-    return toString.call(object) === '[object ' + _t + ']';
-  }
-
-  /**
-   * Return if the object is "empty";
-   * this includes falsey, no keys, or no items at indices
-   * @param {*} object object to test
-   * @return {Boolean} if object is empty
-   */
-  function isEmpty(object) {
-    if (!object) return true;
-    if (isA(object, t_Arr) || isA(object, t_Str)) return !(object.length > 0);
-    for (var k in object) {
-      if (hasOwnProperty.call(object, k)) return false;
-    }
-    return true;
-  }
-
-  /**
-   * Iterate object with the function
-   * falls back to es5 `forEach`
-   * @param {Array|Object} object
-   * @param {Function(value, key, object)} fn
-   */
-  function _each(object, fn) {
-    if (isEmpty(object)) return;
-    if (isA(object.forEach, t_Fn)) return object.forEach(fn);
-
-    var k = 0,
-        l = object.length;
-
-    if (l > 0) {
-      for (; k < l; k++) fn(object[k], k, object);
-    } else {
-      for (k in object) fn(object[k], k, object);
-    }
-  }
-
   var yb = {
 
     /**
@@ -84,7 +38,7 @@ function YieldbotAdapter() {
      * @return {String} WxH string
      */
     formatSize: function (size) {
-      return isA(size, t_Arr) ? size.join('x') : size;
+      return utils.isA(size, t_Arr) ? size.join('x') : size;
     },
 
     /**
@@ -158,7 +112,7 @@ function YieldbotAdapter() {
    * after we set up all of the slots.
    */
   function responseHandler() {
-    _each(bidmap, function (placementCode, yslot) {
+    utils._each(bidmap, function (placementCode, yslot) {
       // get the params for the slot
       var params = yieldbot.getSlotCriteria(yslot);
 
@@ -180,7 +134,7 @@ function YieldbotAdapter() {
     // download the yieldbot intent tag
     adloader.loadScript(YB_URL);
 
-    _each(params.bids, function (bid, i) {
+    utils._each(params.bids, function (bid, i) {
 
       if (!bid.params) {
         utils.logError("invalid bid!", YB);
@@ -189,7 +143,7 @@ function YieldbotAdapter() {
 
       // normalize the bid & fallback onto the slot
       // for the sizes; in case they said `code`, make it `name`
-      bid.params.sizes = isEmpty(bid.params.sizes) ? bid.sizes : bid.params.sizes;
+      bid.params.sizes = utils.isEmpty(bid.params.sizes) ? bid.sizes : bid.params.sizes;
       bid.params.name = bid.params.name || bid.params.code;
 
       // on the first bid,

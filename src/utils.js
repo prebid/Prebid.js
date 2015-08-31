@@ -11,6 +11,10 @@ var _lgPriceCap = 5.00;
 var _mgPriceCap = 10.00;
 var _hgPriceCap = 20.00;
 
+var t_Arr = 'Array',
+      t_Str = 'String',
+      t_Fn = 'Function';
+
 /*
  *   Substitues into a string from a given map using the token
  *   Usage
@@ -282,3 +286,84 @@ exports.isArray = function(obj){
 	}
 	return false;
 };
+
+/**
+ * This function validates paramaters. 
+ * @param  {object[string]} paramObj          [description]
+ * @param  {string[]} requiredParamsArr [description]
+ * @return {bool}                   Bool if paramaters are valid
+ */
+exports.hasValidBidRequest = function(paramObj, requiredParamsArr){
+
+	for(var i = 0; i < requiredParamsArr.length; i++){
+		var found = false;
+
+		for (var key in paramObj) {
+			if (paramObj.hasOwnProperty(key)) {
+				if(key === requiredParamsArr[i] ){
+					found = true;
+				}
+			}
+		}
+		if(!found){
+			this.logError('Params are missing for adapter. One of these required paramaters are missing: ' + requiredParamsArr);
+			return false;
+		}
+	}
+
+	return true;
+};
+
+// Handle addEventListener gracefully in older browsers
+exports.addEventHandler = function(element, event, func) {
+		if (element.addEventListener) {
+			element.addEventListener(event, func, true);
+		} else if (element.attachEvent) {
+			element.attachEvent('on' + event, func);
+		}
+	};
+  /**
+   * Return if the object is of the
+   * given type.
+   * @param {*} object to test
+   * @param {String} _t type string (e.g., Array)
+   * @return {Boolean} if object is of type _t
+   */
+exports.isA = function(object, _t) {
+    return toString.call(object) === '[object ' + _t + ']';
+  };
+
+  /**
+   * Return if the object is "empty";
+   * this includes falsey, no keys, or no items at indices
+   * @param {*} object object to test
+   * @return {Boolean} if object is empty
+   */
+exports.isEmpty = function(object) {
+    if (!object) return true;
+    if (this.isA(object, t_Arr) || this.isA(object, t_Str)) return !(object.length > 0);
+    for (var k in object) {
+      if (hasOwnProperty.call(object, k)) return false;
+    }
+    return true;
+  };
+
+  /**
+   * Iterate object with the function
+   * falls back to es5 `forEach`
+   * @param {Array|Object} object
+   * @param {Function(value, key, object)} fn
+   */
+exports._each = function(object, fn) {
+    if (this.isEmpty(object)) return;
+    if (this.isA(object.forEach, t_Fn)) return object.forEach(fn);
+
+    var k = 0,
+        l = object.length;
+
+    if (l > 0) {
+      for (; k < l; k++) fn(object[k], k, object);
+    } else {
+      for (k in object) fn(object[k], k, object);
+    }
+  };
