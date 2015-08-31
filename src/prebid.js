@@ -1,5 +1,8 @@
 /** @module pbjs */
-
+// if pbjs already exists in global dodcument scope, use it, if not, create the object
+window.pbjs = (window.pbjs || {});
+window.pbjs.que = window.pbjs.que || [];
+var pbjs = window.pbjs;
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
@@ -13,14 +16,11 @@ var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
 
-//if pbjs already exists in global dodcument scope, use it, if not, create the object
-pbjs = typeof pbjs !== objectType_undefined ? pbjs : {};
-
 var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
 	pb_targetingMap = {};
-	
+
 
 /* Public vars */
 //default timeout for all bids
@@ -29,9 +29,6 @@ pbjs.logging = pbjs.logging || false;
 
 //let the world know we are loaded
 pbjs.libLoaded = true;
-
-//if pbjs.anq command queue already exists, use it, if not create it
-pbjs.que = pbjs.que || [];
 
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
