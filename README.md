@@ -33,7 +33,7 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 (function() {
         var d = document, pbs = d.createElement('script'), pro = d.location.protocal;
         pbs.type = 'text/javascript';
-        pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
+        pbs.src = ((pro === 'https:') ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
         var target = document.getElementsByTagName('head')[0];
         target.insertBefore(pbs, target.firstChild);
 })();

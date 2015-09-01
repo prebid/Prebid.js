@@ -80,7 +80,6 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//increment the bid count
 		bidResponseRecievedCount++;
 		//get price settings here
-		
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
@@ -93,27 +92,10 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//put adUnitCode into bid
 		bid.adUnitCode = adUnitCode;
 
-		/*
-		//if we have enough info to create the bid response - create here
-		if (bid.getStatusCode() && placementCode && bid.GetBidderCode()) {
-			bidResponse = {
-				bidderCode: bidderCode,
-				cpm: cpm,
-				adUrl: ad,
-				adId: adId,
-				width: width,
-				height: height,
-				dealId: dealId,
-				isDeal: isDeal,
-				tier: tier,
-				custObj: custObj,
-				status: statusCode,
-				keyLg: priceStringsObj.low,
-				keyMg: priceStringsObj.med,
-				keyHg: priceStringsObj.high
-			};
-		}
-		*/
+    // alias the bidderCode to bidder;
+    // NOTE: this is to match documentation
+    // on custom k-v targeting
+    bid.bidder = bid.bidderCode;
 
 		//if there is any key value pairs to map do here
 		var keyValues = {};
@@ -140,7 +122,6 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
-
 
 	} else {
 		//create an empty bid bid response object
@@ -203,34 +184,35 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 					}
 				}]
 			};
-
-			//set default settings 
-
 		}
+
 		custBidObj.usesGenericKeys = true;
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
 	return keyValues;
-
 }
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
-	custBidObj['size'] = custBidObj.getSize();
-	for (var i = 0; i < targeting.length; i++) {
-		var key = targeting[i].key;
-		var value = targeting[i].val;
-		if (typeof value === objectType_function) {
-			try {
-				keyValues[key] = value(custBidObj);
-			} catch (e) {
-				utils.logError('Exception trying to parse value. Check bidderSettings configuration : ' + e.message);
-			}
-		} else {
+	custBidObj.size = custBidObj.getSize();
+
+  utils._each(targeting, function (kvPair) {
+    var key = kvPair.key,
+        value = kvPair.val;
+
+    if (utils.isFn(value)) {
+      try {
+        keyValues[key] = value(custBidObj);
+      } catch (e) {
+        utils.logError("bidmanager", "ERROR", e);
+      }
+    } else {
 			keyValues[key] = value;
-		}
-	}
+    }
+  });
+
+  return keyValues;
 }
 
 exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
@@ -314,17 +296,6 @@ function checkBidsBackByAdUnit(adUnitCode){
 			}
 		}
 	}
-	/*
-	utils.mapForEach(biddersByPlacementMap, function(value, key){
-		console.log('key: '+ key);
-		console.log(value);
-		if(key === adUnitCode){
-			var val = pbBidResponseByPlacement[adUnitCode];
-			alert('we have a winner: ' + val.bidsReceivedCount );
-		}
-
-	});
-	*/
 }
 
 exports.setBidderMap = function(bidderMap){
