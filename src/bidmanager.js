@@ -205,7 +205,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
       try {
         keyValues[key] = value(custBidObj);
       } catch (e) {
-        utils.logError("invalid function during k/v targeting", "BIDMANAGER");
+        utils.logError("bidmanager", "ERROR", e);
       }
     } else {
 			keyValues[key] = value;
@@ -296,17 +296,6 @@ function checkBidsBackByAdUnit(adUnitCode){
 			}
 		}
 	}
-	/*
-	utils.mapForEach(biddersByPlacementMap, function(value, key){
-		console.log('key: '+ key);
-		console.log(value);
-		if(key === adUnitCode){
-			var val = pbBidResponseByPlacement[adUnitCode];
-			alert('we have a winner: ' + val.bidsReceivedCount );
-		}
-
-	});
-	*/
 }
 
 exports.setBidderMap = function(bidderMap){

@@ -26,18 +26,16 @@ var t_Arr = 'Array',
  *   map['something'] = 'something else';
  *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
  */
-var tokenRxpMap = {},
-    wordMatch = '(\\w+)';
-
-function getRegexpForToken(token) {
-  return (tokenRxpMap[token] ? tokenRxpMap[token] : (tokenRxpMap[token] = new RegExp(token + wordMatch + token, 'g')));
-}
-
 exports.replaceTokenInString = function(str, map, token) {
-  var regex = getRegexpForToken(token);
-  return str.replace(regex, function ($0, $1) {
-    return map[($1 || '').toLowerCase()] || '';
+  this._each(map, function (value, key) {
+    value = (value === undefined) ? '' : value;
+
+    var keyString = token + key.toUpperCase() + token,
+        re = new RegExp(keyString, 'g');
+
+    str = str.replace(re, value);
   });
+  return str
 };
 
 /* utility method to get incremental integer starting from 1 */
@@ -155,14 +153,15 @@ exports.logMessage = function(msg) {
 	}
 };
 
-var hasConsoleLogger = function() {
-	return (window.console && window.console.log);
-};
-exports.hasConsoleLogger = hasConsoleLogger;
-
 function hasConsoleLogger() {
 	return (window.console && window.console.log);
 }
+exports.hasConsoleLogger = hasConsoleLogger;
+
+var errLogFn = (function (hasLogger) {
+  if (!hasLogger) return '';
+  return window.console.error ? 'error' : 'log';
+}(hasConsoleLogger()));
 
 var debugTurnedOn = function() {
 	if (pbjs.logging === false && _loggingChecked === false) {
@@ -178,15 +177,10 @@ var debugTurnedOn = function() {
 };
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function(msg, code) {
+exports.logError = function(msg, code, exception) {
 	var errCode = code || 'ERROR';
 	if (debugTurnedOn() && hasConsoleLogger()) {
-		if (console.error) {
-			console.error(errCode + ': ' + msg);
-		} else {
-			console.log(errCode + ': ' + msg);
-		}
-
+    console[errLogFn].call(console, errCode + ': ' + msg, exception || '');
 	}
 };
 
@@ -263,20 +257,6 @@ exports.getPriceBucketString = function(cpm) {
 	}
 	return returnObj;
 
-};
-
-exports.mapForEach = function(obj, func) {
-
-  if (!this.isFn(func)) {
-    throw new TypeError();
-  }
-
-  var self = this;
-  function boundFn(value, key) {
-    return func.call(self, value, key);
-  }
-
-  this._each(obj, boundFn);
 };
 
 /**
