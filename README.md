@@ -29,51 +29,52 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 ### Example code ###
 
 **Include the prebid.js libraray**
-
-    (function() {
+```javascript
+(function() {
         var d = document, pbs = d.createElement('script'), pro = d.location.protocal;
         pbs.type = 'text/javascript';
         pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
         var target = document.getElementsByTagName('head')[0];
         target.insertBefore(pbs, target.firstChild);
-    })();
+})();
+```
 
 **Setup ad units**
-
-    pbjs.que.push(function(){
-	    var adUnits = [{
+```javascript
+pbjs.que.push(function(){
+	var adUnits = [{
         code: '{id}',
         sizes: [[300, 250], [300, 600]],
         bids: [
             {
                 bidder: 'amazon',
                 params: {
-                   aid: '{id}'
+                    aid: '{id}'
                 }
             },
-             {
+            {
                 bidder: 'appnexus',
                 params: {
-                   placementId: '{id}'
+                    placementId: '{id}'
                 }
             }
-            ]
-        
-        }];
+        ]
+    }];
 	//add the adUnits
     pbjs.addAdUnits(adUnits);
     }];
+```
 
 **Request Bids**
-
-    pbjs.que.push(function(){
-        pbjs.requestBids({
-            bidsBackHandler: function(bidResponses) {
-                //do stuff when the bids are back
-            }
-        })
-    });
-
+```javascript
+pbjs.que.push(function(){
+    pbjs.requestBids({
+        bidsBackHandler: function(bidResponses) {
+            //do stuff when the bids are back
+        }
+    })
+});
+```
 Contribute
 ----------
 
