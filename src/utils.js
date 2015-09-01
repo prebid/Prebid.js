@@ -12,8 +12,10 @@ var _mgPriceCap = 10.00;
 var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array',
-      t_Str = 'String',
-      t_Fn = 'Function';
+    t_Str = 'String',
+    t_Fn = 'Function',
+    hasOwnProperty = Object.prototype.hasOwnProperty,
+    slice = Array.prototype.slice;
 
 /*
  *   Substitues into a string from a given map using the token
@@ -24,18 +26,18 @@ var t_Arr = 'Array',
  *   map['something'] = 'something else';
  *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
  */
+var tokenRxpMap = {},
+    wordMatch = '(\\w+)';
+
+function getRegexpForToken(token) {
+  return (tokenRxpMap[token] ? tokenRxpMap[token] : (tokenRxpMap[token] = new RegExp(token + wordMatch + token, 'g')));
+}
+
 exports.replaceTokenInString = function(str, map, token) {
-	for (var key in map) {
-		if (map.hasOwnProperty(key)) {
-			var keyString = token + key.toUpperCase() + token;
-			if (typeof map[key] === objectType_undefined) {
-				map[key] = '';
-			}
-			var re = new RegExp(keyString, 'g');
-			str = str.replace(re, map[key]);
-		}
-	}
-	return str;
+  var regex = getRegexpForToken(token);
+  return str.replace(regex, function ($0, $1) {
+    return map[($1 || '').toLowerCase()] || '';
+  });
 };
 
 /* utility method to get incremental integer starting from 1 */
@@ -132,11 +134,11 @@ exports.parseSizesInput = function(sizeObj) {
 //into an AppNexus style string, (i.e. 300x250)
 function parseGPTSingleSizeArray(singleSize) {
 	//if we aren't exactly 2 items in this array, it is invalid
-	if (typeof singleSize === objectType_object && singleSize.length === 2 && !isNaN(singleSize[0]) && !isNaN(singleSize[1])) {
+  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
 		return singleSize[0] + 'x' + singleSize[1];
 	}
-
 }
+
 exports.parseGPTSingleSizeArray = parseGPTSingleSizeArray;
 
 exports.getTopWindowUrl = function() {
@@ -148,11 +150,11 @@ exports.getTopWindowUrl = function() {
 };
 
 exports.logMessage = function(msg) {
-
 	if (debugTurnedOn() && hasConsoleLogger()) {
 		console.log('MESSAGE: ' + msg);
 	}
 };
+
 var hasConsoleLogger = function() {
 	return (window.console && window.console.log);
 };
@@ -264,27 +266,17 @@ exports.getPriceBucketString = function(cpm) {
 };
 
 exports.mapForEach = function(obj, func) {
-	for (var key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			if (typeof func === objectType_function) {
-				func.call(this, obj[key], key);
-			} else {
-				throw new TypeError();
-			}
 
-		}
-	}
+  if (!this.isFn(func)) {
+    throw new TypeError();
+  }
 
-};
+  var self = this;
+  function boundFn(value, key) {
+    return func.call(self, value, key);
+  }
 
-exports.isArray = function(obj){
-	if (Array.isArray){
-		return Array.isArray(obj);
-	}
-	if(obj && Object.prototype.toString.call( obj ) === '[object Array]'){
-		return true;
-	}
-	return false;
+  this._each(obj, boundFn);
 };
 
 /**
@@ -298,13 +290,12 @@ exports.hasValidBidRequest = function(paramObj, requiredParamsArr){
 	for(var i = 0; i < requiredParamsArr.length; i++){
 		var found = false;
 
-		for (var key in paramObj) {
-			if (paramObj.hasOwnProperty(key)) {
-				if(key === requiredParamsArr[i] ){
-					found = true;
-				}
-			}
-		}
+    this._each(paramObj, function (value, key) {
+      if (key === requiredParamsArr[i]) {
+        found = true;
+      }
+    });
+
 		if(!found){
 			this.logError('Params are missing for adapter. One of these required paramaters are missing: ' + requiredParamsArr);
 			return false;
@@ -331,17 +322,29 @@ exports.addEventHandler = function(element, event, func) {
    */
 exports.isA = function(object, _t) {
     return toString.call(object) === '[object ' + _t + ']';
-  };
+};
 
-  /**
-   * Return if the object is "empty";
-   * this includes falsey, no keys, or no items at indices
-   * @param {*} object object to test
-   * @return {Boolean} if object is empty
-   */
+exports.isFn = function (object) {
+  return this.isA(object, t_Fn);
+};
+
+exports.isStr = function (object) {
+  return this.isA(object, t_Str);
+};
+
+exports.isArray = function (object) {
+  return this.isA(object, t_Arr);
+};
+
+/**
+ * Return if the object is "empty";
+ * this includes falsey, no keys, or no items at indices
+ * @param {*} object object to test
+ * @return {Boolean} if object is empty
+ */
 exports.isEmpty = function(object) {
     if (!object) return true;
-    if (this.isA(object, t_Arr) || this.isA(object, t_Str)) return !(object.length > 0);
+    if (this.isArray(object) || this.isStr(object)) return !(object.length > 0);
     for (var k in object) {
       if (hasOwnProperty.call(object, k)) return false;
     }
@@ -356,7 +359,7 @@ exports.isEmpty = function(object) {
    */
 exports._each = function(object, fn) {
     if (this.isEmpty(object)) return;
-    if (this.isA(object.forEach, t_Fn)) return object.forEach(fn);
+    if (this.isFn(object.forEach)) return object.forEach(fn);
 
     var k = 0,
         l = object.length;
@@ -364,6 +367,8 @@ exports._each = function(object, fn) {
     if (l > 0) {
       for (; k < l; k++) fn(object[k], k, object);
     } else {
-      for (k in object) fn(object[k], k, object);
+      for (k in object) {
+        if (hasOwnProperty.call(object, k)) fn(object[k], k, object);
+      }
     }
   };

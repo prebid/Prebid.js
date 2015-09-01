@@ -11,9 +11,6 @@ function YieldbotAdapter() {
   var toString = Object.prototype.toString,
       hasOwnProperty = Object.prototype.hasOwnProperty,
       ybq = window.ybotq || (window.ybotq = []),
-      t_Arr = 'Array',
-      t_Str = 'String',
-      t_Fn = 'Function',
       bidmap = {};
 
   // constants
@@ -27,18 +24,13 @@ function YieldbotAdapter() {
   var yb = {
 
     /**
-     * basic template: %%MY_VAR_TO_TPL%%
-     */
-    tplRxp: /%%(\w+)%%/g,
-
-    /**
      * Normalize a size; if the user gives us
      * a dim array, produce a wxh string
      * @param {String|Array} size
      * @return {String} WxH string
      */
     formatSize: function (size) {
-      return utils.isA(size, t_Arr) ? size.join('x') : size;
+      return utils.isArray(size) ? size.join('x') : size;
     },
 
     /**
@@ -54,9 +46,7 @@ function YieldbotAdapter() {
         size: yb.formatSize(size),
       };
 
-      return CREATIVE_TEMPLATE.replace(yb.tplRxp, function ($0, $1) {
-        return args[($1 || '').toLowerCase()];
-      });
+      return utils.replaceTokenInString(CREATIVE_TEMPLATE, args, '%%');
     },
 
     /**
@@ -78,6 +68,7 @@ function YieldbotAdapter() {
       bid.cpm = parseInt(params.ybot_cpm) / 100.0;
       bid.ad = yb.creative(slot, params.ybot_size);
       bid.placementCode = placement;
+
       return bid;
     },
 
@@ -120,7 +111,8 @@ function YieldbotAdapter() {
         return addErrorBid(placementCode, yslot, params);
       }
 
-      bidmanager.addBidResponse(placementCode, yb.makeBid(placementCode, yslot, params));
+      var bid = yb.makeBid(placementCode, yslot, params);
+      bidmanager.addBidResponse(placementCode, bid);
     });
   }
 
