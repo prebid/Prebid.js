@@ -102,7 +102,7 @@ description: A free and open source library for publishers to quickly implement 
       </div>
 
       <div class="col-xs-6 col-sm-2">
-        <h3>Yieldbot</h3>
+        <h3>Others</h3>
       </div>
     
     </div>
