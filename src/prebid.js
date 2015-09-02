@@ -160,36 +160,25 @@ function storeBidRequestByBidder(placementCode, sizes, bids) {
 	}
 }
 
-//use in place of hasOwnPropery - as opposed to a polyfill
-function hasOwn(o, p) {
-	if (o.hasOwnProperty) {
-		return o.hasOwnProperty(p);
-	} else {
-		return (typeof o[p] !== objectType_undefined) && (o.constructor.prototype[p] !== o[p]);
-	}
-}
-
-function isEmptyObject(obj) {
-	var name;
-	for (name in obj) {
-		return false;
-	}
-	return true;
-}
-
 function getWinningBid(bidArray) {
-	var winningBid = {};
+  // callback before we try to get the winner;
+  // gives the adapter or the end-user an opportunity
+  // to inject their own logic
+  utils.events.emit('beforeWinningBid', bidArray);
+
+	var winningBid;
 	if (bidArray && bidArray.length !== 0) {
 		bidArray.sort(function(a, b) {
-			//put the highest CPM first
-			return b.cpm - a.cpm;
+      var aCpm = (a || {}).cpm,
+          bCpm = (b || {}).cpm;
+      return (bCpm || 0.0) - (aCpm || 0.0);
 		});
+
 		//the first item has the highest cpm
 		winningBid = bidArray[0];
-		//TODO : if winning bid CPM === 0 - we need to indicate no targeting should be set
 	}
-	return winningBid.bid;
 
+	return winningBid.bid;
 }
 
 
@@ -198,6 +187,8 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 	if (adUnitBids.bids.length !== 0) {
 		for (var i = 0; i < adUnitBids.bids.length; i++) {
 			var bid = adUnitBids.bids[i];
+      if (!bid) continue;
+
 			//if use the generic key push into array with CPM for sorting
 			if (bid.usesGenericKeys) {
 				bidArrayTargeting.push({
@@ -220,8 +211,6 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 					}
 				}
 			}
-
-
 		}
 
 	} else {
@@ -269,30 +258,35 @@ function getBidResponsesByAdUnit(adunitCode) {
  *	Copies bids into a bidArray response
  */
 function buildBidResponse(bidArray) {
+
+  // there's no array, we won't be setting anything
+  // from here
+  if (utils.isEmpty(bidArray)) return;
+
 	var bidResponseArray = [];
 	//temp array to hold auction for bids
 	var bidArrayTargeting = [];
 	var bidClone = {};
-	if (bidArray) {
-		for (var i = 0; i < bidArray.length; i++) {
-			var bid = bidArray[i];
-			//clone by json parse. This also gets rid of unwanted function properties
-			bidClone = getCloneBid(bid);
+  for (var i = 0; i < bidArray.length; i++) {
+    var bid = bidArray[i];
+    if (!bid) continue;
 
-			if (!bid.usesGenericKeys) {
-				//put unique key into targeting
-				pb_targetingMap[bidClone.adUnitCode] = bidClone.adserverTargeting;
-			} else {
-				//else put into auction array
-				bidArrayTargeting.push({
-					cpm: bid.cpm,
-					bid: bid
-				});
-			}
-			//put all bids into bidArray by default
-			bidResponseArray.push(bidClone);
-		}
-	}
+    //clone by json parse. This also gets rid of unwanted function properties
+    bidClone = getCloneBid(bid);
+
+    if (!bid.usesGenericKeys) {
+      //put unique key into targeting
+      pb_targetingMap[bidClone.adUnitCode] = bidClone.adserverTargeting;
+    } else {
+      //else put into auction array
+      bidArrayTargeting.push({
+        cpm: bid.cpm,
+        bid: bid
+      });
+    }
+    //put all bids into bidArray by default
+    bidResponseArray.push(bidClone);
+  }
 
 	if (bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
@@ -378,6 +372,7 @@ pbjs.getBidResponses = function(adunitCode) {
 		response = getBidResponsesByAdUnit(adunitCode);
 		bidArray = [];
 		if (response && response.bids) {
+      utils.events.emit('beforeBidResponse', response);
 			bidArray = buildBidResponse(response.bids);
 		}
 
@@ -387,24 +382,15 @@ pbjs.getBidResponses = function(adunitCode) {
 
 	} else {
 		response = getBidResponsesByAdUnit();
-		for (var adUnit in response) {
-			if (response.hasOwnProperty(adUnit)) {
-				if (response && response[adUnit] && response[adUnit].bids) {
-					bidArray = buildBidResponse(response[adUnit].bids);
-				}
-
-
-				returnObj[adUnit] = {
-					bids: bidArray
-				};
-
-			}
-
-		}
+    utils._each(response, function (bidResponse, adUnit) {
+      utils.events.emit('beforeBidResponse', bidResponse);
+      returnObj[adUnit] = {
+        bids: (bidResponse && bidResponse.bids) ? buildBidResponse(bidResponse.bids) : []
+      };
+    });
 	}
 
 	return returnObj;
-
 };
 /**
  * Returns bidResponses for the specified adUnitCode
@@ -644,22 +630,30 @@ pbjs.addAdUnits = function(adUnitArr) {
  * @returns {String} id for callback
  */
 pbjs.addCallback = function(eventStr, func) {
-	var id = null;
-	if (!eventStr || !func || typeof func !== objectType_function) {
-		utils.logError('error registering callback. Check method signature');
-		return id;
-	}
+  var id = null;
+  if (!eventStr || !utils.isFn(func)) {
+    utils.logError('error registering callback. Check method signature');
+    return id;
+  }
 
-	id = utils.getUniqueIdentifierStr;
-	bidmanager.addCallback(id, func, eventStr);
-	return id;
+  id = utils.getUniqueIdentifierStr();
+  bidmanager.addCallback(id, func, eventStr);
+  return id;
+};
+
+/**
+ * Allow the user to bind to events
+ * NOTE: we don't let them emit events!
+ */
+pbjs.events = {
+  on: utils.events.on,
+  off: utils.events.off
 };
 
 /**
  * Remove a callback event
- * @param {string} cbId id of the callback to remove
+ * @param {Function} callback to remove
  * @alias module:pbjs.removeCallback
- * @returns {String} id for callback
  */
 pbjs.removeCallback = function(cbId) {
 	//todo
