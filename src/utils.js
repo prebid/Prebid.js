@@ -263,7 +263,7 @@ exports.getPriceBucketString = function(cpm) {
  * @param  {string[]} requiredParamsArr [description]
  * @return {bool}                   Bool if paramaters are valid
  */
-exports.hasValidBidRequest = function(paramObj, requiredParamsArr){
+exports.hasValidBidRequest = function(paramObj, requiredParamsArr, adapter){
 
 	for(var i = 0; i < requiredParamsArr.length; i++){
 		var found = false;
@@ -275,7 +275,7 @@ exports.hasValidBidRequest = function(paramObj, requiredParamsArr){
     });
 
 		if(!found){
-			this.logError('Params are missing for adapter. One of these required paramaters are missing: ' + requiredParamsArr);
+			this.logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
 			return false;
 		}
 	}
