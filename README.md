@@ -29,6 +29,7 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 ### Example code ###
 
 **Include the prebid.js libraray**
+Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
 ```javascript
 (function() {
         var d = document, pbs = d.createElement('script'), pro = d.location.protocal;
