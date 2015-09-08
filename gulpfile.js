@@ -126,7 +126,7 @@ gulp.task('build-dev', ['jscs', 'clean-dist'], function () {
     .pipe(header(banner, {
             pkg: pkg
     }))
-	.pipe(gulp.dest(path.join(releaseDir, 'build')));
+	.pipe(gulp.dest(releaseDir));
 
 });
 
@@ -141,7 +141,7 @@ gulp.task('minify', function(){
             basename: 'prebid.min',
             extname: '.js'
         }))
-    .pipe(gulp.dest(path.join(releaseDir, 'build')));
+    .pipe(gulp.dest(releaseDir));
 });
 
 gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'minify'], function () {
@@ -150,7 +150,7 @@ gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'minify'], function (
     .pipe(header(banner, {
             pkg: pkg
         }))
-    .pipe(gulp.dest(path.join(releaseDir, 'build')));
+    .pipe(gulp.dest(releaseDir));
 });
 
 gulp.task('watch', function () {
