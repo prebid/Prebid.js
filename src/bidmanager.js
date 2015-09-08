@@ -62,6 +62,12 @@ exports.clearAllBidResponses = function(adUnitCode) {
  *   This function should be called to by the BidderObject to register a new bid is in
  */
 exports.addBidResponse = function(adUnitCode, bid) {
+
+  // allow the user to edit the bid before it continues
+  // this can let publisher add proprietary/site-specific information
+  // (e.g., map data to a CPM)
+  utils.events.emit('beforeAddBidResponse', adUnitCode, bid);
+
 	var bidResponseObj = {},
 		statusPending = {
 			code: 0,
@@ -144,14 +150,51 @@ exports.createEmptyBidResponseObj = function() {
 	};
 };
 
+var _defaultBidderAdServerTargeting = [{
+  key: 'hb_bidder',
+  val: function(bidResponse) {
+    return bidResponse.bidderCode;
+  }
+}, {
+  key: 'hb_adid',
+  val: function(bidResponse) {
+    return bidResponse.adId;
+  }
+}, {
+  key: 'hb_pb',
+  val: function(bidResponse) {
+    return bidResponse.pbMg;
+  }
+}, {
+  key: 'hb_size',
+  val: function(bidResponse) {
+    return bidResponse.size;
+  }
+}];
+
+
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 	//retrive key value settings
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
 	//first try to add based on bidderCode configuration
 	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-		//
-		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+		// if bidder_settings has `usesGenericKeys` settings, apply it to the bid
+        custBidObj.usesGenericKeys = !!(bidder_settings[bidderCode].usesGenericKeys);
+
+        // if they didn't specify anything, but they did say they wanted to do 'generic' bidding,
+        // then copy it over
+        var adserverJsonKey = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
+
+        if (!bidder_settings[bidderCode][adserverJsonKey] && custBidObj.usesGenericKeys) {
+            var adserverTargeting = (bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) ?
+              bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][adserverJsonKey] :
+              _defaultBidderAdServerTargeting;
+
+            bidder_settings[bidderCode][adserverJsonKey] = adserverTargeting;
+        }
+
+        setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 	}
 	//next try with defaultBidderSettings
 	else if (defaultBidderSettingsMap[bidderCode]) {
@@ -159,33 +202,11 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 	}
 	//now try with "generic" settings
 	else if (custBidObj && bidder_settings) {
-		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
-			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
-				adserverTargeting: [{
-					key: 'hb_bidder',
-					val: function(bidResponse) {
-						return bidResponse.bidderCode;
-					}
-				}, {
-					key: 'hb_adid',
-					val: function(bidResponse) {
-						return bidResponse.adId;
-					}
-				}, {
-					key: 'hb_pb',
-					val: function(bidResponse) {
-						return bidResponse.pbMg;
-					}
-				}, {
-					key: 'hb_size',
-					val: function(bidResponse) {
-						return bidResponse.size;
-
-					}
-				}]
-			};
-		}
-
+        if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
+            bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
+                adserverTargeting: _defaultBidderAdServerTargeting
+            };
+        }
 		custBidObj.usesGenericKeys = true;
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
@@ -308,7 +329,8 @@ exports.setBidderMap = function(bidderMap){
  */
 
 exports.checkIfAllBidsAreIn = function(adUnitCode) {
-	if (bidRequestCount !== 0 && bidRequestCount === bidResponseRecievedCount) {
+
+	if (bidRequestCount !== 0 && bidRequestCount <= bidResponseRecievedCount) {
 		_allBidsAvailable = true;
 	}
 

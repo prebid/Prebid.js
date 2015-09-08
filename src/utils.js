@@ -83,7 +83,7 @@ exports.parseSizesInput = function(sizeObj) {
 		var sizeRegex = /^(\d)+x(\d)+$/i;
 		if (sizes) {
 			for (var curSizePos in sizes) {
-				if (hasOwn(sizes, curSizePos) && sizes[curSizePos].match(sizeRegex)) {
+				if (hasOwnProperty.call(sizes, curSizePos) && sizes[curSizePos].match(sizeRegex)) {
 					parsedSizes.push(sizes[curSizePos]);
 				}
 			}
@@ -329,24 +329,92 @@ exports.isEmpty = function(object) {
     return true;
   };
 
-  /**
-   * Iterate object with the function
-   * falls back to es5 `forEach`
-   * @param {Array|Object} object
-   * @param {Function(value, key, object)} fn
-   */
+/**
+ * Iterate object with the function
+ * falls back to es5 `forEach`
+ * @param {Array|Object} object
+ * @param {Function(value, key, object)} fn
+ */
 exports._each = function(object, fn) {
-    if (this.isEmpty(object)) return;
-    if (this.isFn(object.forEach)) return object.forEach(fn);
+  if (this.isEmpty(object)) return;
+  if (this.isFn(object.forEach)) return object.forEach(fn);
 
-    var k = 0,
-        l = object.length;
+  var k = 0,
+      l = object.length;
 
-    if (l > 0) {
-      for (; k < l; k++) fn(object[k], k, object);
-    } else {
-      for (k in object) {
-        if (hasOwnProperty.call(object, k)) fn(object[k], k, object);
+  if (l > 0) {
+    for (; k < l; k++) {
+      if (fn(object[k], k, object) === false) {
+        return;
       }
     }
+  } else {
+    for (k in object) {
+      if (hasOwnProperty.call(object, k)) {
+        if (fn(object[k], k, object) === false) {
+          return;
+        }
+      }
+    }
+  }
+};
+
+exports.events = (function (){
+
+  var utils = exports,
+      _handlers = {},
+      _public = {};
+
+  function _dispatch(event, args) {
+    utils._each(_handlers[event], function (fn) {
+      if (!fn) return;
+      fn.apply(null, args);
+    });
+  }
+
+  _public.on = function (event, handler) {
+    _handlers[event] = _handlers[event] || [];
+    _handlers[event].push(handler);
   };
+
+  _public.emit = function (event) {
+    var args = slice.call(arguments, 1);
+    _dispatch(event, args);
+  };
+
+  _public.off = function (event, handler) {
+    var idx,
+        fns = _handlers[event];
+
+    if (utils.isEmpty(fns)) {
+      return;
+    }
+
+    if ((idx = fns.indexOf(handler)) === -1) {
+      return;
+    }
+
+    // in our dispatch function,
+    // we won't try to call null spaces
+    fns[idx] = null;
+  };
+
+  return _public;
+}());
+
+/**
+ * Map an array or object into another array
+ * given a function
+ * @param {Array|Object} object
+ * @param {Function(value, key, object)} callback
+ * @return {Array}
+ */
+exports._map = function (object, callback) {
+  if (this.isEmpty(object)) return [];
+  if (this.isFn(object.map)) return object.map(callback);
+  var output = [];
+  this._each(object, function (value, key) {
+    output.push(callback(value, key, object));
+  });
+  return output;
+};
