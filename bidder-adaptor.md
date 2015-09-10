@@ -46,7 +46,7 @@ module.exports = BidderNameAdapter;
 
 ### Step 2: Send out bid requests
 
-When the page asks Prebid.js to send out bid requests, your bidder's `_callbIds(params)` funciton will be executed. This is a good place for you to send out bid requests to your bidder.
+When the page asks Prebid.js to send out bid requests, your bidder's `_callBids(params)` funciton will be executed. This is a good place for you to send out bid requests to your bidder.
 
 Example:
 

@@ -697,6 +697,8 @@ If your page is not serving pre-bid ads, there could be 2 reasons:
 1. The ad server is not configured correctly.
 2. The bidders do not have demand.
 
+Add pbjs_debug=true to the URL. Prebid.js will log warnings and helpful auction messages.
+
 </div>
 
 <br>
