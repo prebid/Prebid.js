@@ -9,8 +9,8 @@
 
     var doNotChange = 'doNotChange';
 
-    var adWidth = 160;
-    var adHeight = 600;
+    var adWidth = 300;
+    var adHeight = 250;
 
     (function() {
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
@@ -53,7 +53,7 @@
                     pbjs.renderAd(iframeDoc, params['hb_adid']);
                 } else {
                     // Passback 3rd party tag in Javascript.
-                    iframeDoc.write('<iframe src="http://ad.doubleclick.net/N3844/adi/ebay.nl.adnxs.pbk/SRP_160x600_SLR_BTF;sz=160x600;ord=[timestamp]?" width="160" height="600" marginwidth="0" marginheight="0" hspace="0" vspace="0" frameborder="0" scrolling="no"></iframe>');
+                    
                 }
             }
         });
