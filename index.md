@@ -46,7 +46,7 @@ description: A free and open source library for publishers to quickly implement 
       <div class="col-sm-4">
         <img src="assets/images/icons/icon-ninja.png" alt="Header bidding no dev" class="img-responsive">
         <h3>No development required</h3>
-        <p>Prebid.js includes adaptors for Amazon, AppNexus, Criteo, Pubmatic, Rubicon Project.</p>
+        <p>Prebid.js includes adaptors for AppNexus, Criteo, Pubmatic, Rubicon Project.</p>
         <a href="/bidders.html" class="btn btn-outline">See full bidder list</a>
       </div>
 
