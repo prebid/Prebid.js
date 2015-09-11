@@ -48,12 +48,6 @@ pbjs.que.push(function(){
         sizes: [[300, 250], [300, 600]],
         bids: [
             {
-                bidder: 'amazon',
-                params: {
-                    aid: '{id}'
-                }
-            },
-            {
                 bidder: 'appnexus',
                 params: {
                     placementId: '{id}'
