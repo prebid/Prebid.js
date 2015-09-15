@@ -144,7 +144,7 @@ gulp.task('minify', function(){
     .pipe(gulp.dest(releaseDir));
 });
 
-gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'minify'], function () {
+gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'build-dev', 'minify'], function () {
     gulp.src(['src/prebid.js'])
     .pipe(browserify())
     .pipe(header(banner, {
