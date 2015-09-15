@@ -81,7 +81,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
-		bid.timeToRespond = (bid.responseTimestamp - bid.requestTimestamp) + 'ms';
+		bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
 		//increment the bid count
 		bidResponseRecievedCount++;
