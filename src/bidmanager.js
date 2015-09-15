@@ -30,6 +30,7 @@ var _allBidsAvailable = false;
 var _callbackExecuted = false;
 
 var defaultBidderSettingsMap = {};
+var bidderStartTimes = {};
 
 exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
@@ -77,6 +78,11 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+		//record bid request and resposne time
+		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
+		bid.responseTimestamp = new Date().getTime();
+		bid.timeToRespond = (bid.responseTimestamp - bid.requestTimestamp) + 'ms';
+
 		//increment the bid count
 		bidResponseRecievedCount++;
 		//get price settings here
@@ -219,6 +225,9 @@ exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
 	defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
+exports.registerBidRequestTime = function(bidderCode, time){
+	bidderStartTimes[bidderCode] = time;
+};
 
 exports.executeCallback = function() {
 

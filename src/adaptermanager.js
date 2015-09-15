@@ -14,7 +14,6 @@ var CONSTANTS = require('./constants.json');
 var _bidderRegistry = {};
 
 
-
 exports.callBids = function(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
@@ -23,6 +22,8 @@ exports.callBids = function(bidderArr) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
 			currentBidder.callBids(bidder);
+			var currentTime = new Date().getTime();
+			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
 
 			if (currentBidder.defaultBidderSettings) {
 				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);

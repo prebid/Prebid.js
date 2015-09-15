@@ -35,7 +35,7 @@ exports.replaceTokenInString = function(str, map, token) {
 
     str = str.replace(re, value);
   });
-  return str
+  return str;
 };
 
 /* utility method to get incremental integer starting from 1 */
