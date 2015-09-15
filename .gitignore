@@ -49,3 +49,6 @@ crashlytics.properties
 crashlytics-build.properties
 *.swp
 *.swo
+
+#zip files (for releases)
+*.zip

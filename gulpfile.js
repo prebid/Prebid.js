@@ -17,6 +17,7 @@ var gutil = require("gulp-util");
 var gulpJsdoc2md = require("gulp-jsdoc-to-markdown");
 var concat = require("gulp-concat");
 var fs = require('fs');
+var zip = require('gulp-zip');
 
 
 var releaseDir = './dist/';
@@ -31,6 +32,7 @@ var distFilenameMaxVersionExtname = ".max.js";
 var distFilenameReleaseVersionExtname = ".js";
 var numberedVersionsDir = "versionNumbered/";
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
+var packageNameVersion = pkg.name + '_' + pkg.version;
 
 var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
 
@@ -94,8 +96,9 @@ gulp.task('jshint', function() {
 
 });
 
-gulp.task('clean-dist', function() {
+gulp.task('clean-dist', ['quality'], function(cb) {
     del([releaseDir + '']);
+    cb();
 
 });
 
@@ -130,7 +133,7 @@ gulp.task('build-dev', ['jscs', 'clean-dist'], function () {
 
 });
 
-gulp.task('minify', function(){
+gulp.task('minify', ['quality', 'clean-dist', 'build-dev'], function(cb){
     gulp.src(['src/prebid.js'])
     .pipe(browserify())
     .pipe(uglify())
@@ -142,15 +145,14 @@ gulp.task('minify', function(){
             extname: '.js'
         }))
     .pipe(gulp.dest(releaseDir));
+    //notify that release is ready
+    cb();
 });
 
-gulp.task('build', ['jscs', 'runBasicTests', 'clean-dist', 'build-dev', 'minify'], function () {
-    gulp.src(['src/prebid.js'])
-    .pipe(browserify())
-    .pipe(header(banner, {
-            pkg: pkg
-        }))
-    .pipe(gulp.dest(releaseDir));
+gulp.task('build', ['quality', 'clean-dist', 'minify', 'zip']);
+
+gulp.task('quality', ['jscs'], function(cb){
+    cb();
 });
 
 gulp.task('watch', function () {
@@ -170,5 +172,12 @@ gulp.task("docs", ['clean-docs'], function() {
             gutil.log("jsdoc2md failed:", err.message);
         })
         .pipe(gulp.dest("docs"));
+});
+ 
+//zip up for release
+gulp.task('zip', ['quality', 'clean-dist', 'minify'], function () {
+    return gulp.src(['dist/*', 'integrationExamples/gpt/*'])
+        .pipe(zip(packageNameVersion + '.zip'))
+        .pipe(gulp.dest('./'));
 });
 

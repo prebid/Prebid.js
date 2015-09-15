@@ -38,8 +38,7 @@
     (function() {
         var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
         pbs.type = "text/javascript";
-        //pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
-        pbs.src = '../../dist/build/prebid.js';
+        pbs.src = 'prebid.0.3.2.min.js';
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -60,66 +59,75 @@
 
         */
 	   var adUnits = [{
-        code: '{id}',
+        code: '/9968336/header-bid-tag-0',
         sizes: [[300, 250], [300, 600]],
         bids: [
             // 1 ad unit can be targeted by multiple bids.
             {
                 bidder: 'appnexus',
                 params: {
-                   placementId: '{id}'
+                   placementId: 'TO ADD'
                 }
             }, 
             // 1 ad unit can also be targeted by multiple bids from 1 bidder
-            {
+           {
                 bidder: 'pubmatic',
                 params: {
-                    publisherId: '{id}',
-                    adSlot: '{id}'
+                    publisherId: 'TO ADD',
+                    adSlot: 'TO ADD@300x250'
                 }
             }, {
                 bidder: 'pubmatic',
                 params: {
-                    publisherId: '{id}',
-                    adSlot: '{id}'
+                    publisherId: 'TO ADD',
+                    adSlot: 'TO ADD@300x600'
+                }
+            }, {
+                bidder: 'criteo',
+                params: {
+                    nid: "TO ADD",
+                    cookiename: "cto_test"
                 }
             }]
     },{
-        code: '{id}',
+        code: '/9968336/header-bid-tag1',
         sizes: [[728, 90], [970, 90]],
-        bids: [
-            {
+        bids: [{
+                bidder: 'appnexus',
+                params: {
+                   placementId: 'TO ADD'
+                }
+            },{
                 bidder: 'openx',
                 params: {
-                    unit: '{id}',
-                    pageURL : '{url}',
-                    refererURL : '{url}',
-                    jstag_url : '{url}'
+                    pgid: 'TO ADD',
+                    unit: 'TO ADD',
+                    jstag_url : 'TO ADD'
                 }
             },{
                 bidder: 'rubicon',
                 params: {
-                   rp_account : '{id}',
-                   rp_site: '{id}',
-                   rp_zonesize : '{id}',
-                   rp_tracking : '{id}',
-                   rp_inventory : '{object}',
+                   rp_account : 'TO ADD',
+                   rp_site: 'TO ADD',
+                   rp_zonesize : 'TO ADD',
+                   rp_tracking : 'TO ADD',
+                   rp_inventory : 'TO ADD',
                    rp_floor : '0.1'
                 }
-            }, {
+            },{
               bidder: 'yieldbot',
               params: {
-                pub: '{id}',
-                name: '{id}'
+                pub: 'TO ADD',
+                name: 'TO ADD'
               }
             },
               {
                 bidder: 'casale',
                 params: {
-                    slotId: '{id}', // number
-                    casaleUrl: '{url}'
+                    slotId: 'TO ADD', // number
+                    casaleUrl: 'TO ADD'
                 }
-            }]
+            }]  
     }];
 
     //add the adUnits
@@ -130,8 +138,9 @@
             console.log('ad unit bids back for : ' + adUnitCode);
         });
 
-        /* Request bids for the added ad units. 
-        */
+     /* Request bids for the added ad units. If adUnits or adUnitCodes are
+           not specified, the function will request bids for all added ad units.
+    */
     pbjs.requestBids({
 
             /* The bidsBack function will be called when either timeout is
@@ -203,22 +212,23 @@
 <script>
     googletag.cmd.push(function() {
 
-        var rightSlot = googletag.defineSlot('{id}', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
+        var rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
 
-        var topSlot = googletag.defineSlot('{id}', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
+        var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
 
-        /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
-        */
-        if (pbjs.libLoaded) pbjs.setTargetingForGPTAsync();
+        pbjs.que.push(function() {
+            /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
+            */
+            pbjs.setTargetingForGPTAsync();
 
-        // The below writes out the targeting params and bid responses for available bids
-        if (pbjs.libLoaded) {
-            console.log('Are all bids available? : ' + pbjs.allBidsAvailable()); // return bool
-            console.log('Dumping all bid objects to console:');
-            console.log(pbjs.getBidResponses()); // or pass a code to get one particular ad unit
+            console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
+
             console.log('Targeting params:')
-            console.log(pbjs.getAdserverTargetingParamsForAdUnit());
-        }
+            console.log(pbjs.getAdserverTargeting());
+
+            console.log('Dumping all bid objects to console:');
+            console.log(pbjs.getBidResponses());
+        });
 
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();   
@@ -234,9 +244,9 @@
 
     <h2>Prebid.js Test</h2>
 
-    <div id='{id}'>
+    <div id='div-gpt-ad-12345678-0'>
         <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display('{id}'); });
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-12345678-0'); });
         </script>
     </div>
 
