@@ -8,7 +8,7 @@ var objectType_number = 'number';
 var _loggingChecked = false;
 
 var _lgPriceCap = 5.00;
-var _mgPriceCap = 10.00;
+var _mgPriceCap = 20.00;
 var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array',
