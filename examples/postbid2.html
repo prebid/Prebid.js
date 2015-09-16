@@ -1,0 +1,88 @@
+<html>
+
+<body style="margin:0;padding:0">
+
+<script>
+   
+   var pbjs = pbjs || {};
+   pbjs.que = pbjs.que || [];
+
+   var doNotChange = 'doNotChange';
+
+   var adWidth = 728;
+   var adHeight = 90;
+
+   (function() {
+       var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
+       pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
+       pbjsEl.src = (isHttps ? "https://a248.e.akamai.net/appnexus.download.akamai.com/89298/adnexus-prod/tag" : "http://cdn.adnxs.com/tag") + "/v/prebid/2.1.1/prebid.min.js";
+       var pbjsTargetEl = document.getElementsByTagName("head")[0];
+       pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+   })();
+
+   pbjs.que.push(function() {
+       
+       // Add your bidder tag IDs here. Create 5 new placements (mimic as close as possible to current placement settings) for 5 auctions.  Input placement IDs below.
+       var adUnits = [{
+           code: 'doNotChange',
+           sizes: [[adWidth, adHeight]],
+           bids: [{
+                     bidder: 'appnexus',
+                     params: {
+                        placementId: '5596258'
+                     }
+                   },{
+                     bidder: 'appnexus',
+                     params: {
+                        placementId: '5596262'
+                     }
+                   },{
+                     bidder: 'appnexus',
+                     params: {
+                        placementId: '5596267'
+                     }
+                   },{
+                     bidder: 'appnexus',
+                     params: {
+                        placementId: '5596270'
+                     }
+                   },{
+                     bidder: 'appnexus',
+                     params: {
+                        placementId: '5596274'
+                     }
+                   }
+               ]
+
+       }];
+
+       pbjs.addAdUnits(adUnits);
+
+       pbjs.requestBids({
+           timeout: 800,
+           bidsBackHandler: function() {
+               var iframe = document.getElementById('postbid_if');
+               iframe.height = adHeight;
+               iframe.width = adWidth;
+
+               var iframeDoc = iframe.contentWindow.document;
+
+               var params = pbjs.getAdserverTargetingForAdUnitCode('doNotChange');
+
+               if(params && params['hb_adid']){
+                   pbjs.renderAd(iframeDoc, params['hb_adid']);
+               } else {
+                   // Passback 3rd party tag in Javascript (this is the creative from the original placement... exclude any comment).
+                   iframeDoc.write('<scr' + 'ipt type=text/javascript>google_ad_client="ca-pub-4075894099602271",google_ad_slot="2280188688",google_ad_width=300,google_ad_height=250;</scr' + 'ipt><scr' + 'ipt type=text/javascript src=//pagead2.googlesyndication.com/pagead/show_ads.js></scr' + 'ipt>');
+               }
+           }
+       });
+   });  
+
+</script>
+
+<iframe id='postbid_if' FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="0" HEIGHT="0"></iframe>
+
+</body>
+
+</html>
