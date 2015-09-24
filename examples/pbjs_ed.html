@@ -37,10 +37,8 @@
     // the initAdserver() and setTimeout functions.
     (function() {
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
-        pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
-        //pbjsEl.src = "prebid.0.3.1.min.js";
-        //pbjsEl.src = 'http://cdn.adnxs.com/tag/v/prebid/2.1.1/prebid.min.js'
-        pbjsEl.src = "prebid-casale.js";
+        pbjsEl.async = true;
+        pbjsEl.src = "prebid.js";
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
     })();
@@ -63,15 +61,21 @@
             code: '/19968336/header-bid-tag-0',
             sizes: [[300, 250], [300, 600]],
             bids: [
-                // {
-                //     bidder: 'openx',
-                //     params: {
-                //         unit: '537986876',
-                //         pageURL : 'http://elitedaily.com',
-                //         refererURL : 'http://elitedaily.com',
-                //         jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
-                //     }
-                // }
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                           placementId: '4799418'
+                        }
+                    }, 
+                    {
+                        bidder: 'openx',
+                        params: {
+                            unit: '537986876',
+                            pageURL : 'http://elitedaily.com',
+                            refererURL : 'http://elitedaily.com',
+                            jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
+                        }
+                    },
             
                     {
                         bidder: 'casale',
@@ -104,15 +108,21 @@
             code: '/19968336/header-bid-tag1',
             sizes: [[728, 90], [970, 90]],
             bids: [
-            // {
-            //     bidder: 'openx',
-            //     params: {
-            //         unit: '537986875',
-            //         pageURL : 'http://elitedaily.com',
-            //         refererURL : 'http://elitedaily.com',
-            //         jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
-            //     }
-            // }
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                           placementId: '4799418'
+                        }
+                    },
+                    {
+                        bidder: 'openx',
+                        params: {
+                            unit: '537986875',
+                            pageURL : 'http://elitedaily.com',
+                            refererURL : 'http://elitedaily.com',
+                            jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
+                        }
+                    },
             
                     {
                         bidder: 'casale',
@@ -274,88 +284,3 @@
 
 </html>
 
-
-
-Casale
-var cygnus_index_args = {
-    siteID: 164377,
-    slots: [{
-        id: "1",
-        width: 728,
-        height: 90,
-        siteID: 164377
-    }, {
-        id: "2",
-        width: 300,
-        height: 250,
-        siteID: 164377
-    }, {
-        id: "3",
-        width: 160,
-        height: 600,
-        siteID: 164377
-    }, {
-        id: "4",
-        width: 300,
-        height: 600,
-        siteID: 164377
-    }, {
-        id: "5",
-        width: 320,
-        height: 50,
-        siteID: 164377
-    }, {
-        id: "6",
-        width: 300,
-        height: 250,
-        siteID: 166941
-    }, {
-        id: "7",
-        width: 300,
-        height: 250,
-        siteID: 166941
-    }, {
-        id: "T1_1",
-        width: 728,
-        height: 90,
-        siteID: 164380
-    }, {
-        id: "T1_2",
-        width: 300,
-        height: 250,
-        siteID: 164380
-    }, {
-        id: "T1_3",
-        width: 160,
-        height: 600,
-        siteID: 164380
-    }, {
-        id: "T1_4",
-        width: 300,
-        height: 600,
-        siteID: 164380
-    }, {
-        id: "T1_5",
-        width: 320,
-        height: 50,
-        siteID: 164380
-    }]
-}
-
-//OpenX
-{
-    "/5765/elitedaily.tab": {
-        "728x90": 537986872,
-        "300x250": 537986873
-    },
-    "/5765/elitedaily.us": {
-        "728x90": 537986875,
-        "300x250": 537986876
-    },
-    "/5765/elitedaily.mob": {
-        "300x250": 537986874,
-        "320x50": 537986936
-    },
-    "timeout": 2500,
-    "max_bucket": 2000
-}
