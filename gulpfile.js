@@ -1,43 +1,33 @@
 var gulp = require('gulp');
-var path = require('path');
 var uglify = require('gulp-uglify');
-var sourcemaps = require('gulp-sourcemaps');
 var rename = require('gulp-rename');
 var jshint = require('gulp-jshint');
-var strip = require('gulp-strip-comments');
-var beautify = require('gulp-beautify');
 var jscs = require('gulp-jscs');
-//var notify = require('gulp-notify');
 var header = require('gulp-header');
 var del = require('del');
 var ecstatic = require('ecstatic');
 var browserify = require('gulp-browserify');
-var stylish = require('jshint-stylish');
 var gutil = require("gulp-util");
 var gulpJsdoc2md = require("gulp-jsdoc-to-markdown");
 var concat = require("gulp-concat");
-var fs = require('fs');
 var zip = require('gulp-zip');
-
+var mocha = require('gulp-mocha');
 
 var releaseDir = './dist/';
 var csaSrcLocation = './src/prebid.js';
 
 var pkg = require('./package.json');
 
-var distFilenameBase = "prebid";
-var distFilenameVersionSuffix = "-" + pkg.version;
-var distFilenameDebugExtname = ".debug.js";
-var distFilenameMaxVersionExtname = ".max.js";
-var distFilenameReleaseVersionExtname = ".js";
-var numberedVersionsDir = "versionNumbered/";
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = pkg.name + '_' + pkg.version;
 
 var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
 
 //basic/quick tests go here, to be run on every build
-gulp.task('runBasicTests', function() {});
+gulp.task('runBasicTests', function() {
+    return gulp.src('test/*', {read: false})
+        .pipe(mocha());
+});
 
 
 gulp.task('jscs', function() {
@@ -88,7 +78,7 @@ gulp.task('jshint', function() {
                 'ActiveXObject': true
             },
             'browser': true,
-            'devel': true,
+            'devel': true
 
         }))
         .pipe(jshint.reporter('jshint-stylish'))
