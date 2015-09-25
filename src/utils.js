@@ -8,7 +8,7 @@ var objectType_number = 'number';
 var _loggingChecked = false;
 
 var _lgPriceCap = 5.00;
-var _mgPriceCap = 10.00;
+var _mgPriceCap = 20.00;
 var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array',
@@ -242,8 +242,8 @@ exports.getPriceBucketString = function(cpm) {
 			}
 
 			//round to closet .01
-			if (cpmFloat > _lgPriceCap) {
-				returnObj.high = _lgPriceCap.toFixed(2);
+			if (cpmFloat > _hgPriceCap) {
+				returnObj.high = _hgPriceCap.toFixed(2);
 			} else {
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
 			}
