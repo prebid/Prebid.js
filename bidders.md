@@ -166,8 +166,8 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `pubId` | required | The publisher ID | "32572" |
-| `slot` | required | the unit ID | "38519891@300x250" |
+| `publisherId` | required | The publisher ID | "32572" |
+| `adSlot` | required | the unit ID | "38519891@300x250" |
 
 
 </div>
@@ -183,9 +183,9 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `account` | required | The publisher account ID | "4934" |
-| `site` | required | The site ID | "13945" |
-| `zonesize` | required | The concatenation of zone and size | "23948-15" |
+| `rp_account` | required | The publisher account ID | "4934" |
+| `rp_site` | required | The site ID | "13945" |
+| `zrp_onesize` | required | The concatenation of zone and size | "23948-15" |
 
 
 </div>
