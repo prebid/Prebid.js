@@ -53,7 +53,9 @@ These parameters in the bidReponse object are common across all bidders.
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `tagId` | required | The placement ID from AppNexus. | "234234" |
+| `placementId` | required | The placement ID from AppNexus. | "234234" |
+
+(Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
 <!--
 | `invCode` | optional | The inventory code you set up in a placement. Has to be used together with memberId. | "code234234" |
@@ -185,7 +187,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | :--- | :---- | :---------- | :------ |
 | `rp_account` | required | The publisher account ID | "4934" |
 | `rp_site` | required | The site ID | "13945" |
-| `zrp_onesize` | required | The concatenation of zone and size | "23948-15" |
+| `rp_zonesize` | required | The concatenation of zone and size | "23948-15" |
 
 
 </div>
