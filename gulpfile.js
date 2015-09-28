@@ -87,7 +87,7 @@ gulp.task('jshint', function() {
 });
 
 gulp.task('clean-dist', ['quality'], function(cb) {
-    del([releaseDir + '']);
+    //del([releaseDir + '']);
     cb();
 
 });
