@@ -1,5 +1,5 @@
 /* Prebid.js v0.3.2 
-Updated : 2015-09-15 */
+Updated : 2015-09-29 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -907,171 +907,149 @@ module.exports = RubiconAdapter;
 
 },{"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],8:[function(require,module,exports){
 /**
- * @file yieldbot adapter
+ * @overview Yieldbot sponsored Prebid.js adapter.
+ * @author elljoh
  */
-var utils = require('../utils'),
-    adloader = require('../adloader'),
-    bidmanager = require('../bidmanager'),
-    bidfactory = require('../bidfactory');
+var adloader = require('../adloader');
+var bidfactory = require('../bidfactory');
+var bidmanager = require('../bidmanager');
+var utils = require('../utils');
 
-function YieldbotAdapter() {
+/**
+ * Adapter for requesting bids from Yieldbot.
+ *
+ * @returns {Object} Object containing implementation for invocation in {@link module:adaptermanger.callBids}
+ * @class
+ */
+var YieldbotAdapter = function YieldbotAdapter() {
 
-  var toString = Object.prototype.toString,
-      hasOwnProperty = Object.prototype.hasOwnProperty,
-      ybq = window.ybotq || (window.ybotq = []),
-      bidmap = {};
+    window.ybotq = window.ybotq || [];
 
-  // constants
-  var YB = 'YIELDBOT',
-      YB_URL = '//cdn.yldbt.com/js/yieldbot.intent.js',
-      CREATIVE_TEMPLATE = "<script type='text/javascript' src='" +
-        YB_URL + "'></script><script type='text/javascript'>var ybotq=ybotq||[];" +
-        "ybotq.push(function(){yieldbot.renderAd('%%SLOT%%:%%SIZE%%');})" +
-        "</script>";
+    var ybotlib = {
+        BID_STATUS: {
+            PENDING: 0,
+            AVAILABLE: 1,
+            EMPTY: 2
+        },
+        definedSlots: [],
+        pageLevelOption: false,
+        /**
+         * Builds the Yieldbot creative tag.
+         *
+         * @param {String} slot - The slot name to bid for
+         * @param {String} size - The dimenstions of the slot
+         * @private
+         */
+        buildCreative: function(slot, size) {
+            return '<script type="text/javascript" src="//cdn.yldbt.com/js/yieldbot.intent.js"></script>' +
+                '<script type="text/javascript">var ybotq = ybotq || [];' +
+                'ybotq.push(function () {yieldbot.renderAd(\'' + slot.toLowerCase() + ':' + size + '\');});</script>';
+        },
+        /**
+         * Bid response builder.
+         *
+         * @param {Object} slotCriteria  - Yieldbot bid criteria
+         * @private
+         */
+        buildBid: function(slotCriteria) {
+            var bid = {};
 
-  var yb = {
+            if (slotCriteria && slotCriteria.ybot_ad && slotCriteria.ybot_ad !== 'n') {
 
-    /**
-     * Normalize a size; if the user gives us
-     * a dim array, produce a wxh string
-     * @param {String|Array} size
-     * @return {String} WxH string
-     */
-    formatSize: function (size) {
-      return utils.isArray(size) ? size.join('x') : size;
-    },
+                bid = bidfactory.createBid(ybotlib.BID_STATUS.AVAILABLE);
 
-    /**
-     * Return a creative from its template
-     * @param {String} slot -- this is the yieldbot slot code
-     * @param {String|Array} size that the bid was for
-     * @return {String} the creative's HTML
-     */
-    creative: function (slot, size) {
+                bid.cpm = parseInt(slotCriteria.ybot_cpm) / 100.0 || 0; // Yieldbot CPM bids are in cents
 
-      var args = {
-        slot: slot,
-        size: yb.formatSize(size),
-      };
+                var szArr = slotCriteria.ybot_size ? slotCriteria.ybot_size.split('x') : [0,0],
+                    slot = slotCriteria.ybot_slot || '',
+                    sizeStr = slotCriteria.ybot_size || ''; // Creative template needs the dimensions string
 
-      return utils.replaceTokenInString(CREATIVE_TEMPLATE, args, '%%');
-    },
+                bid.width = szArr[0] || 0;
+                bid.height = szArr[1] || 0;
 
-    /**
-     * Produce a bid for our bidmanager,
-     * set the relevant attributes from
-     * our returned yieldbot string
-     * @param {String} yieldBotStr the string from yieldbot page targeting
-     * @return {Bid} a bid for the bidmanager
-     */
-    makeBid: function (placement, slot, params) {
-      var dim = params.ybot_size.split('x'),
-          bid = bidfactory.createBid(1);
+                bid.ad = ybotlib.buildCreative(slot, sizeStr);
 
-      bid.bidderCode = 'yieldbot';
-      bid.width = parseInt(dim[0]);
-      bid.height = parseInt(dim[1]);
-      bid.code = slot;
-      bid.size = params.ybot_size;
-      bid.cpm = parseInt(params.ybot_cpm) / 100.0;
-      bid.ad = yb.creative(slot, params.ybot_size);
-      bid.placementCode = placement;
+                // Add Yieldbot parameters to allow publisher bidderSettings.yieldbot specific targeting
+                for (var k in slotCriteria) {
+                    bid[k] = slotCriteria[k];
+                }
 
-      return bid;
-    },
+            } else {
+                bid = bidfactory.createBid(BID_STATUS.EMPTY);
+            }
 
-    /**
-     * Add a slot to yieldbot (to request a bid)
-     * @param {Bid} bid this should be a bid from prebid
-     */
-    registerSlot: function (bid) {
-      ybq.push(function () {
-        bidmap[bid.params.name] = bid.placementCode;
-        yieldbot.defineSlot(bid.params.name, {
-          sizes: bid.params.sizes
-        });
-      });
-    }
-  };
+            bid.bidderCode = 'yieldbot';
+            return bid;
+        },
+        /**
+         * Yieldbot implementation of {@link module:adaptermanger.callBids}
+         * @param {Object} params - Adapter bid configuration object
+         * @private
+         */
+        callBids: function(params) {
 
-  function addErrorBid(placementCode, yslot, params) {
-    var bid = bidfactory.createBid(2);
-    bid.bidderCode = 'yieldbot';
-    bid.placementCode = placementCode;
-    bid.code = yslot;
-    bid.__raw = params;
+	    var bids = params.bids || [],
+                ybotq = window.ybotq || [];
 
-    utils.logError('invalid response; adding error bid: ' + placementCode, YB);
-    bidmanager.addBidResponse(placementCode, bid);
-  }
+            ybotlib.pageLevelOption = false;
 
-  /**
-   * Handle the response from yieldbot;
-   * this is pushed into the yieldbot queue
-   * after we set up all of the slots.
-   */
-  function responseHandler() {
-    utils._each(bidmap, function (placementCode, yslot) {
-      // get the params for the slot
-      var params = yieldbot.getSlotCriteria(yslot);
+            ybotq.push(function () {
+                var yieldbot = window.yieldbot;
 
-      if (!params || ((params || {}).ybot_ad === 'n')) {
-        return addErrorBid(placementCode, yslot, params);
-      }
+                utils._each(bids, function(v) {
+	            var bid = v,
+	                psn = bid.params && bid.params.psn || 'ERROR_DEFINE_YB_PSN',
+	                slot = bid.params && bid.params.slot || 'ERROR_DEFINE_YB_SLOT';
 
-      var bid = yb.makeBid(placementCode, yslot, params);
-      bidmanager.addBidResponse(placementCode, bid);
-    });
-  }
+                    yieldbot.pub(psn);
+                    yieldbot.defineSlot(slot, {sizes: bid.sizes || []});
 
-  /**
-   * @public call bids; set the slots
-   * for yieldbot + add the publisher id.
-   * @param {Object} params
-   * @param {Array<Bid>} params.bids the bids we want to make
-   */
-  function _callBids(params) {
-    // download the yieldbot intent tag
-    adloader.loadScript(YB_URL);
+                    var cbId = utils.getUniqueIdentifierStr();
+                    bidmanager.pbCallbackMap[cbId] = bid;
+                    ybotlib.definedSlots.push(cbId);
+                });
 
-    utils._each(params.bids, function (bid, i) {
+                yieldbot.enableAsync();
+                yieldbot.go();
+            });
 
-      if (!bid.params) {
-        utils.logError("invalid bid!", YB);
-        return;
-      }
+            ybotq.push(function () {
+                ybotlib.handleUpdateState();
+            });
 
-      // normalize the bid & fallback onto the slot
-      // for the sizes; in case they said `code`, make it `name`
-      bid.params.sizes = utils.isEmpty(bid.params.sizes) ? bid.sizes : bid.params.sizes;
-      bid.params.name = bid.params.name || bid.params.code;
+            adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
+        },
+        /**
+         * Yieldbot bid request callback handler.
+         *
+         * @see {@link YieldbotAdapter~_callBids}
+         * @private
+         */
+        handleUpdateState: function() {
+            var yieldbot = window.yieldbot;
 
-      // on the first bid,
-      // set the yieldbot publisher id
-      if (i === 0) {
-        if (!bid.params.pub) {
-          utils.logError("no publisher id provided!", YB);
-          return;
+            utils._each(ybotlib.definedSlots, function(v) {
+                var slot,
+                    criteria,
+                    placementCode,
+                    adapterConfig;
+
+                adapterConfig = bidmanager.getPlacementIdByCBIdentifer(v) || {};
+                slot = adapterConfig.params.slot || '';
+                criteria = yieldbot.getSlotCriteria(slot);
+
+                placementCode = adapterConfig.placementCode || 'ERROR_YB_NO_PLACEMENT';
+                var bid = ybotlib.buildBid(criteria);
+
+                bidmanager.addBidResponse(placementCode, bid);
+
+            });
         }
-
-        ybq.push(function(){ yieldbot.pub(bid.params.pub);});
-      }
-
-      yb.registerSlot(bid);
-    });
-
-    ybq.push(function () {
-      yieldbot.enableAsync();
-      yieldbot.go();
-    });
-
-    ybq.push(responseHandler);
-  }
-
-  return {
-    callBids: _callBids
-  };
-}
+    }
+    return {
+        callBids: ybotlib.callBids
+    };
+};
 
 module.exports = YieldbotAdapter;
 
@@ -2258,7 +2236,7 @@ var objectType_number = 'number';
 var _loggingChecked = false;
 
 var _lgPriceCap = 5.00;
-var _mgPriceCap = 10.00;
+var _mgPriceCap = 20.00;
 var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array',
@@ -2492,8 +2470,8 @@ exports.getPriceBucketString = function(cpm) {
 			}
 
 			//round to closet .01
-			if (cpmFloat > _lgPriceCap) {
-				returnObj.high = _lgPriceCap.toFixed(2);
+			if (cpmFloat > _hgPriceCap) {
+				returnObj.high = _hgPriceCap.toFixed(2);
 			} else {
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
 			}
