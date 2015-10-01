@@ -32,7 +32,7 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
 ```javascript
 (function() {
-        var d = document, pbs = d.createElement('script'), pro = d.location.protocal;
+        var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
         pbs.type = 'text/javascript';
         pbs.src = ((pro === 'https:') ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
         var target = document.getElementsByTagName('head')[0];
@@ -70,6 +70,10 @@ pbjs.que.push(function(){
     })
 });
 ```
+
+**See Console Debug Errors during testing**
+By default console errors are supressed. To enabled add `?pbjs_debug=true` to the end of the URL for testing. 
+
 Contribute
 ----------
 
