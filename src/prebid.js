@@ -44,6 +44,7 @@ pbjs.que.push = function(cmd) {
 			cmd.call();
 		} catch (e) {
 			utils.logError('Error processing command :' + e.message);
+			console.error(e);
 		}
 	} else {
 		utils.logError('Commands written into pbjs.que.push must wrapped in a function');
@@ -70,7 +71,7 @@ function init(timeout, adUnitCodeArr) {
 	else{
 		cbTimeout = timeout;
 	}
-	
+
 	if (!isValidAdUnitSetting()) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
@@ -417,7 +418,7 @@ pbjs.getBidResponsesForAdUnitCode = function(adUnitCode) {
 };
 /**
  * Set query string targeting on adUnits specified. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
- * @param {array} [codeArr] an array of adUnitodes to set targeting for. 
+ * @param {array} [codeArr] an array of adUnitodes to set targeting for.
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
 pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
@@ -466,7 +467,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {		
+pbjs.setTargetingForGPTAsync = function() {
 	pbjs.setTargetingForAdUnitsGPTAsync();
 };
 
@@ -576,12 +577,12 @@ pbjs.removeAdUnit = function(adUnitCode) {
 
 
 /**
- * Request bids ad-hoc. This function does not add or remove adUnits already configured. 
- * @param  {Object} requestObj 
+ * Request bids ad-hoc. This function does not add or remove adUnits already configured.
+ * @param  {Object} requestObj
  * @param {string[]} requestObj.adUnitCodes  adUnit codes to request. Use this or requestObj.adUnits
  * @param {object[]} requestObj.adUnits AdUnitObjects to request. Use this or requestObj.adUnitCodes
  * @param {number} [requestObj.timeout] Timeout for requesting the bids specified in milliseconds
- * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits. 
+ * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits.
  * @alias module:pbjs.requestBids
  */
 pbjs.requestBids = function(requestObj) {
@@ -617,12 +618,12 @@ pbjs.requestBids = function(requestObj) {
 
 		pbjs.adUnits = adUnitBackup;
 	}
-	
+
 };
 
 /**
- * 
- * Add adunit(s) 
+ *
+ * Add adunit(s)
  * @param {(string|string[])} Array of adUnits or single adUnit Object.
  * @alias module:pbjs.addAdUnits
  */
