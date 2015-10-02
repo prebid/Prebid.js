@@ -55,7 +55,7 @@ var CriteoAdapter = function CriteoAdapter() {
 
 						adResponse.keys = content.split(';');
 
-						bidmanager.addBidResponse(existingBid.placementCode, adResponse);
+						//bidmanager.addBidResponse(existingBid.placementCode, adResponse);
 					} else {
 						// Indicate an ad was not returned
 						adResponse = bidfactory.createBid(2);
