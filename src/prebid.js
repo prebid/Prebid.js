@@ -44,7 +44,6 @@ pbjs.que.push = function(cmd) {
 			cmd.call();
 		} catch (e) {
 			utils.logError('Error processing command :' + e.message);
-			console.error(e);
 		}
 	} else {
 		utils.logError('Commands written into pbjs.que.push must wrapped in a function');
