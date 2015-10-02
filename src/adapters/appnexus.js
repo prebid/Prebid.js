@@ -90,6 +90,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var placementId = utils.getBidIdParamater('placementId', bid.params);
 		var memberId = utils.getBidIdParamater('memberId', bid.params);
 		var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
+		var query = utils.getBidIdParamater('query', bid.params);
 
 		//build our base tag, based on if we are http or https
 
@@ -114,10 +115,10 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		}
 		//console.log(jptCall);
 
-		var targetingParams = '';
+		var targetingParams = utils.parseQueryStringParameters(query);
 
 		if (targetingParams) {
-			//don't append a & here, we have already done it at the end of the loop
+			//don't append a & here, we have already done it in parseQueryStringParameters
 			jptCall += targetingParams;
 		}
 
