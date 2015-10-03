@@ -199,7 +199,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 		for (var i = 0; i < adUnitBids.bids.length; i++) {
 			var bid = adUnitBids.bids[i];
 			//if use the generic key push into array with CPM for sorting
-			if (bid.usesGenericKeys) {
+			if (bid.alwaysUseBid) {
 				bidArrayTargeting.push({
 					cpm: bid.cpm,
 					bid: bid
@@ -270,20 +270,24 @@ function getBidResponsesByAdUnit(adunitCode) {
  */
 function buildBidResponse(bidArray) {
 	var bidResponseArray = [];
+	var adUnitCode = '';
 	//temp array to hold auction for bids
 	var bidArrayTargeting = [];
 	var bidClone = {};
 	if (bidArray) {
+		// init the pb_targetingMap for the adUnitCode
+		adUnitCode = bidArray[0] && bidArray[0].adUnitCode;
+		pb_targetingMap[adUnitCode] = [];
 		for (var i = 0; i < bidArray.length; i++) {
 			var bid = bidArray[i];
 			//clone by json parse. This also gets rid of unwanted function properties
 			bidClone = getCloneBid(bid);
 
-			if (!bid.usesGenericKeys) {
-				//put unique key into targeting
-				pb_targetingMap[bidClone.adUnitCode] = bidClone.adserverTargeting;
-			} else {
-				//else put into auction array
+			if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
+				// push key into targeting
+				pb_targetingMap[bidClone.adUnitCode].push(bidClone.adserverTargeting);
+			} else if (bid.cpm && bid.cpm > 0){
+				//else put into auction array if cpm > 0
 				bidArrayTargeting.push({
 					cpm: bid.cpm,
 					bid: bid
@@ -294,10 +298,11 @@ function buildBidResponse(bidArray) {
 		}
 	}
 
-	if (bidArrayTargeting.length !== 0) {
+	// push the winning bid into targeting map
+	if (adUnitCode && bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
 		var keyValues = winningBid.adserverTargeting;
-		pb_targetingMap[bidClone.adUnitCode] = keyValues;
+		pb_targetingMap[adUnitCode].push(keyValues);
 	}
 
 	return bidResponseArray;
