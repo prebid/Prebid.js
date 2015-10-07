@@ -1,5 +1,5 @@
 /* Prebid.js v0.3.2 
-Updated : 2015-09-29 */
+Updated : 2015-10-13 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -10,6 +10,7 @@ var PubmaticAdapter = require('./adapters/pubmatic.js');
 var CriteoAdapter = require('./adapters/criteo');
 var YieldbotAdapter = require('./adapters/yieldbot');
 var Casale = require('./adapters/casale');
+var Aol = require('./adapters/aol');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -56,7 +57,157 @@ registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 registerBidAdapter(CriteoAdapter(), 'criteo');
 registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 registerBidAdapter(Casale(), 'casale');
-},{"./adapters/appnexus.js":2,"./adapters/casale":3,"./adapters/criteo":4,"./adapters/openx":5,"./adapters/pubmatic.js":6,"./adapters/rubicon.js":7,"./adapters/yieldbot":8,"./bidmanager.js":11,"./constants.json":12,"./utils.js":14}],2:[function(require,module,exports){
+registerBidAdapter(Aol(), 'aol');
+
+},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/casale":4,"./adapters/criteo":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],2:[function(require,module,exports){
+var utils = require('../utils.js'),
+    bidfactory = require('../bidfactory.js'),
+    bidmanager = require('../bidmanager.js'),
+    adloader = require('../adloader');
+
+var AolAdapter = function AolAdapter() {
+  var bids,
+      bidsMap = {},
+      ADTECH_URI = '//aka-cdn.adtechus.com/dt/common/DAC.js',
+      d = window.document,
+      h = d.getElementsByTagName('HEAD')[0],
+      dummyUnitIdCount = 0;
+
+
+  // aol expects the ad unit
+  // to be on the page when request
+  // the bid, and will document.write() it in
+  // if you don't have it :/
+  function _dummyUnit(id) {
+    var div = d.createElement('DIV');
+
+    if (!id || !id.length) {
+      id = 'ad-placeholder-' + (++dummyUnitIdCount);
+    }
+
+    div.id = id + '-head-unit';
+    h.appendChild(div);
+    return div.id;
+  }
+
+  function _buildConfig(bid) {
+    return {
+      server: bid.params.server || 'adserver.adtechus.com',
+      network: bid.params.network+'',
+      bidKey: 'aolBid',
+      serviceType: 'pubapi',
+      params: {
+        cmd: 'bid',
+        cors: 'yes'
+      },
+      adjustment: bid.params.adjustment || 0.0
+    };
+  }
+
+  function _addBid(response, context) {
+    var bid = bidsMap[context.alias],
+        cpm;
+
+    if (!bid) {
+      utils.logError('AOL', 'ERROR', 'mismatched bid: ' + context.placement);
+      return;
+    }
+
+    cpm = response.getCPM();
+    if (cpm == null) {
+      return _addErrorBid(response, context);
+    }
+
+    var bidResponse = bidfactory.createBid(1);
+    bidResponse.bidderCode = 'aol';
+    bidResponse.ad = response.getCreative() + response.getPixels();
+    bidResponse.cpm = cpm;
+    bidResponse.width = response.getAdWidth();
+    bidResponse.height = response.getAdHeight();
+    bidResponse.creativeId = response.getCreativeId();
+
+    // add it to the bid manager
+    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+  }
+
+  function _addErrorBid(response, context) {
+    var bid = bidsMap[context.alias];
+    if (!bid) {
+      utils.logError('AOL', 'ERROR', 'mismatched bid: ' + context.placement);
+      return;
+    }
+
+    var bidResponse = bidfactory.createBid(2);
+    bidResponse.bidderCode = 'aol';
+    bidResponse.reason = response.getNbr();
+    bidResponse.raw = response.getResponse();
+    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+  }
+
+  var _pubApiConfig = {
+    pixelsDivId: 'pixelsDiv',
+    defaultKey: 'aolBid',
+    roundingConfig: [
+      {from: 0, to: 999, roundFunction: 'tenCentsRound'},
+      {from: 1000, to: -1, roundValue: 1000}
+    ],
+    pubApiOK: _addBid,
+    pubApiER: _addErrorBid,
+  };
+
+  function _mapUnit(bid) {
+    // save the bid
+    bidsMap[bid.params.alias] = bid;
+
+    return {
+      adContainerId: _dummyUnit(bid.params.adContainerId),
+      sizeId: bid.params.sizeId,
+      secure: false,
+      serviceType: 'pubapi',
+      performScreenDetection: false,
+      alias: bid.params.alias,
+      network: bid.params.network,
+      placement: bid.params.placement,
+      gpt: {
+        adUnitPath: bid.params.adUnitPath || bid.placementCode,
+        size: bid.params.size || (bid.sizes || [])[0]
+      },
+      params: {
+        cors: 'yes',
+        cmd: 'bid'
+      },
+      pubApiConfig: _pubApiConfig,
+      placementCode: bid.placementCode
+    };
+  }
+
+  function _reqBids() {
+    if (!window.ADTECH) {
+      utils.logError('AOL', 'ERROR', 'adtech is not present!');
+      return;
+    }
+
+    // get the bids
+    utils._each(bids, function (bid) {
+      var bidreq = _mapUnit(bid);
+      ADTECH.loadAd(bidreq);
+    });
+  }
+
+  function _callBids(params) {
+    bids = params.bids;
+    if (!bids || !bids.length) return;
+    adloader.loadScript(ADTECH_URI, _reqBids);
+  }
+
+  return {
+    callBids: _callBids
+  };
+};
+
+module.exports = AolAdapter;
+
+},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../utils.js":15}],3:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
@@ -149,6 +300,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var placementId = utils.getBidIdParamater('placementId', bid.params);
 		var memberId = utils.getBidIdParamater('memberId', bid.params);
 		var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
+		var query = utils.getBidIdParamater('query', bid.params);
 
 		//build our base tag, based on if we are http or https
 
@@ -173,10 +325,10 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		}
 		//console.log(jptCall);
 
-		var targetingParams = '';
+		var targetingParams = utils.parseQueryStringParameters(query);
 
 		if (targetingParams) {
-			//don't append a & here, we have already done it at the end of the loop
+			//don't append a & here, we have already done it in parseQueryStringParameters
 			jptCall += targetingParams;
 		}
 
@@ -287,7 +439,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	};
 };
 module.exports = AppNexusAdapter;
-},{"../adloader.js":9,"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],3:[function(require,module,exports){
+},{"../adloader.js":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],4:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -421,7 +573,7 @@ var CasaleAdapter = function CasaleAdapter() {
 };
 
 module.exports = CasaleAdapter;
-},{"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],4:[function(require,module,exports){
+},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],5:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -478,8 +630,6 @@ var CriteoAdapter = function CriteoAdapter() {
 						adResponse.bidderCode = 'criteo';
 
 						adResponse.keys = content.split(';');
-
-						bidmanager.addBidResponse(existingBid.placementCode, adResponse);
 					} else {
 						// Indicate an ad was not returned
 						adResponse = bidfactory.createBid(2);
@@ -498,7 +648,7 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":9,"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],5:[function(require,module,exports){
+},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -605,7 +755,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
-},{"../adloader":9,"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],6:[function(require,module,exports){
+},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],7:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -730,7 +880,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 };
 
 module.exports = PubmaticAdapter;
-},{"../adloader":9,"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],7:[function(require,module,exports){
+},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],8:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -905,7 +1055,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
 module.exports = RubiconAdapter;
 
-},{"../bidfactory.js":10,"../bidmanager.js":11,"../constants.json":12,"../utils.js":14}],8:[function(require,module,exports){
+},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],9:[function(require,module,exports){
 /**
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
@@ -1053,7 +1203,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
 module.exports = YieldbotAdapter;
 
-},{"../adloader":9,"../bidfactory":10,"../bidmanager":11,"../utils":14}],9:[function(require,module,exports){
+},{"../adloader":10,"../bidfactory":11,"../bidmanager":12,"../utils":15}],10:[function(require,module,exports){
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
 	//create a script tag for the jpt call
@@ -1110,7 +1260,7 @@ exports.trackPixel = function(pixelUrl) {
 
 	}
 };
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var utils = require('./utils.js');
 
 /**
@@ -1170,7 +1320,7 @@ exports.createBid = function(statusCde) {
 };
 
 //module.exports = Bid;
-},{"./utils.js":14}],11:[function(require,module,exports){
+},{"./utils.js":15}],12:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 
@@ -1525,7 +1675,7 @@ exports.addCallback = function(id, callback, cbEvent){
 	
 };
 
-},{"./constants.json":12,"./utils.js":14}],12:[function(require,module,exports){
+},{"./constants.json":13,"./utils.js":15}],13:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -1555,7 +1705,7 @@ module.exports={
 	"objectType_number" : "number"
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /** @module pbjs */
 // if pbjs already exists in global dodcument scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -1628,7 +1778,7 @@ function init(timeout, adUnitCodeArr) {
 	else{
 		cbTimeout = timeout;
 	}
-	
+
 	if (!isValidAdUnitSetting()) {
 		utils.logMessage('No adUnits configured. No bids requested.');
 		return;
@@ -1975,7 +2125,7 @@ pbjs.getBidResponsesForAdUnitCode = function(adUnitCode) {
 };
 /**
  * Set query string targeting on adUnits specified. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
- * @param {array} [codeArr] an array of adUnitodes to set targeting for. 
+ * @param {array} [codeArr] an array of adUnitodes to set targeting for.
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
 pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
@@ -2024,7 +2174,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {		
+pbjs.setTargetingForGPTAsync = function() {
 	pbjs.setTargetingForAdUnitsGPTAsync();
 };
 
@@ -2134,12 +2284,12 @@ pbjs.removeAdUnit = function(adUnitCode) {
 
 
 /**
- * Request bids ad-hoc. This function does not add or remove adUnits already configured. 
- * @param  {Object} requestObj 
+ * Request bids ad-hoc. This function does not add or remove adUnits already configured.
+ * @param  {Object} requestObj
  * @param {string[]} requestObj.adUnitCodes  adUnit codes to request. Use this or requestObj.adUnits
  * @param {object[]} requestObj.adUnits AdUnitObjects to request. Use this or requestObj.adUnitCodes
  * @param {number} [requestObj.timeout] Timeout for requesting the bids specified in milliseconds
- * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits. 
+ * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits.
  * @alias module:pbjs.requestBids
  */
 pbjs.requestBids = function(requestObj) {
@@ -2175,12 +2325,12 @@ pbjs.requestBids = function(requestObj) {
 
 		pbjs.adUnits = adUnitBackup;
 	}
-	
+
 };
 
 /**
- * 
- * Add adunit(s) 
+ *
+ * Add adunit(s)
  * @param {(string|string[])} Array of adUnits or single adUnit Object.
  * @alias module:pbjs.addAdUnits
  */
@@ -2225,7 +2375,7 @@ pbjs.removeCallback = function(cbId) {
 
 processQue();
 
-},{"./adaptermanager":1,"./bidmanager.js":11,"./constants.json":12,"./utils.js":14}],14:[function(require,module,exports){
+},{"./adaptermanager":1,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],15:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -2242,6 +2392,7 @@ var _hgPriceCap = 20.00;
 var t_Arr = 'Array',
     t_Str = 'String',
     t_Fn = 'Function',
+    toString = Object.prototype.toString,
     hasOwnProperty = Object.prototype.hasOwnProperty,
     slice = Array.prototype.slice;
 
@@ -2294,6 +2445,18 @@ exports.tryAppendQueryString = function(existingUrl, key, value) {
 		return existingUrl += key + '=' + encodeURIComponent(value) + '&';
 	}
 	return existingUrl;
+};
+
+
+//parse a query string object passed in bid params
+//bid params should be an object such as {key: "value", key1 : "value1"}
+exports.parseQueryStringParameters = function(queryObj) {
+	var result = "";
+	for (var k in queryObj){
+		if (queryObj.hasOwnProperty(k))
+			result += k + "=" + encodeURIComponent(queryObj[k]) + "&";
+	}
+	return result;
 };
 
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
@@ -2486,7 +2649,7 @@ exports.getPriceBucketString = function(cpm) {
 };
 
 /**
- * This function validates paramaters. 
+ * This function validates paramaters.
  * @param  {object[string]} paramObj          [description]
  * @param  {string[]} requiredParamsArr [description]
  * @return {bool}                   Bool if paramaters are valid
@@ -2579,4 +2742,4 @@ exports._each = function(object, fn) {
     }
   };
 
-},{"./constants.json":12}]},{},[13])
+},{"./constants.json":13}]},{},[14])
