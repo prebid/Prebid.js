@@ -57,7 +57,7 @@ pbjs.que.push(function(){
     }];
 	//add the adUnits
     pbjs.addAdUnits(adUnits);
-    }];
+});
 ```
 
 **Request Bids**
