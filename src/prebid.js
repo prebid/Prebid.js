@@ -421,7 +421,7 @@ pbjs.getBidResponsesForAdUnitCode = function(adUnitCode) {
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
 pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
-	if (!window.googletag || !window.googletag.pubads() || !window.googletag.pubads().getSlots()) {
+	if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
 		utils.logError('window.googletag is not defined on the page');
 		return;
 	}
