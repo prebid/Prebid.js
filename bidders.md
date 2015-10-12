@@ -1,9 +1,8 @@
 ---
 layout: page
-title: Bidders
-description: Documentation on bidders
-pid: 2
-hide: true
+title: Bidders' Params
+description: Documentation on bidders' params
+pid: 21
 ---
 
 <div class="bs-docs-section" markdown="1">

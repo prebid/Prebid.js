@@ -1,8 +1,8 @@
 ---
 layout: page
-title: Bidder Adaptor
+title: New Bidder Adaptor
 description: Documentation on how to add a new bidder adaptor
-pid: 5
+pid: 25
 hide: false
 ---
 

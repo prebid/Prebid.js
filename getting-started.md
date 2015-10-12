@@ -4,7 +4,9 @@ title: Getting Started
 head_title: Getting Started with Prebid.js for Header Bidding
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
 pid: 0
-isHome: false
+isNavDropdown: false
+isNavParent: true
+
 
 ---
 
@@ -47,9 +49,11 @@ Here’s a basic example for Rubicon and AppNexus bidding into a DFP ad unit:
 
 #####1. Register bidder tag Ids
 
-In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Note that immediately after the library is loaded, prebid.js will send header bidding requests async to all bidders you've specified.
+In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Call `pbjs.requestBids()` to send header bidding requests async to all bidders you've specified.
 
 {% highlight js %}
+
+// Load prebid.js library async.
 
 pbjs.que.push(function() {
   var adUnits = [{
@@ -68,9 +72,14 @@ pbjs.que.push(function() {
     }]
   }];
   pbjs.addAdUnits(adUnits);
-});
 
-// Load prebid.js library async
+  pbjs.requestBids({
+    bidsBackHandler: function() {
+        // callback when requested bids are all back
+    };
+  });
+
+});
 
 {% endhighlight %}
 
