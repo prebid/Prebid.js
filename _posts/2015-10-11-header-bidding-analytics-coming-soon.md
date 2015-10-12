@@ -22,7 +22,7 @@ permalink: /blog/header-bidding-analytics-coming-soon
 
 #### Example reports by Prebid.js Analytics:
 
-First and foremost, the day starts from making sure the bidders are not generating less revenue:
+The day starts from making sure the bidders are not generating less revenue:
 
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/revenue-by-date.png)
 
@@ -52,6 +52,11 @@ To understand exactly how much time per bidder spent, the Analytics Platform all
 <br>
 
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/loadtime-histogram.png)
+
+You might derive:
+
+- Bidder 1 is really fast, because 1/3 of its bids are in red, which is in the 200 - 300ms response time range.
+- Bidder 5 is really slow, as 1/3 of its bids are in 800 - 1000ms.
 
 <br>
 
