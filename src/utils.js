@@ -14,6 +14,7 @@ var _hgPriceCap = 20.00;
 var t_Arr = 'Array',
     t_Str = 'String',
     t_Fn = 'Function',
+    toString = Object.prototype.toString,
     hasOwnProperty = Object.prototype.hasOwnProperty,
     slice = Array.prototype.slice;
 
@@ -66,6 +67,18 @@ exports.tryAppendQueryString = function(existingUrl, key, value) {
 		return existingUrl += key + '=' + encodeURIComponent(value) + '&';
 	}
 	return existingUrl;
+};
+
+
+//parse a query string object passed in bid params
+//bid params should be an object such as {key: "value", key1 : "value1"}
+exports.parseQueryStringParameters = function(queryObj) {
+	var result = "";
+	for (var k in queryObj){
+		if (queryObj.hasOwnProperty(k))
+			result += k + "=" + encodeURIComponent(queryObj[k]) + "&";
+	}
+	return result;
 };
 
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
@@ -258,7 +271,7 @@ exports.getPriceBucketString = function(cpm) {
 };
 
 /**
- * This function validates paramaters. 
+ * This function validates paramaters.
  * @param  {object[string]} paramObj          [description]
  * @param  {string[]} requiredParamsArr [description]
  * @return {bool}                   Bool if paramaters are valid

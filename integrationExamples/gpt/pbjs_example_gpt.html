@@ -8,7 +8,7 @@
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
-    
+
     /* pbjs.initAdserver will be called either when all bids are back, or
        when the timeout is reached.
     */
@@ -88,6 +88,13 @@
                     nid: "TO ADD",
                     cookiename: "cto_test"
                 }
+            }
+            {
+                bidder: 'yieldbot',
+                params: {
+                    psn: 'TO ADD',
+                    slot: 'TO ADD',
+                }
             }]
     },{
         code: '/9968336/header-bid-tag1',
@@ -117,8 +124,8 @@
             },{
               bidder: 'yieldbot',
               params: {
-                pub: 'TO ADD',
-                name: 'TO ADD'
+                psn: 'TO ADD',
+                slot: 'TO ADD'
               }
             },
               {
@@ -127,7 +134,7 @@
                     slotId: 'TO ADD', // number
                     casaleUrl: 'TO ADD'
                 }
-            }]  
+            }]
     }];
 
     //add the adUnits
@@ -182,26 +189,28 @@
 
     */
     
-        pbjs.bidderSettings = {
-            standard: {
-                    adserverTargeting: [{
-                        key: "hb_bidder",
-                        val: function(bidResponse) {
-                            return bidResponse.bidderCode;
-                        }
-                    }, {
-                        key: "hb_adid",
-                        val: function(bidResponse) {
-                            return bidResponse.adId;
-                        }
-                    }, {
-                        key: "hb_pb",
-                        val: function(bidResponse) {
-                            return bidResponse.pbLg;
-                        }
-                    }]
+    pbjs.bidderSettings = {
+        standard: {
+            adserverTargeting: [{
+                key: "hb_bidder",
+                val: function(bidResponse) {
+                    return bidResponse.bidderCode;
                 }
-        };
+            }, {
+                key: "hb_adid",
+                val: function(bidResponse) {
+                    return bidResponse.adId;
+                }
+            }, {
+                key: "hb_pb",
+                val: function(bidResponse) {
+                    return bidResponse.pbLg;
+                }
+            }
+            ]
+        }
+    };
+ };
 
 });
 
