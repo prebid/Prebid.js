@@ -4,7 +4,7 @@
 
 <script>
 
-    var PREBID_TIMEOUT = 700;
+    var PREBID_TIMEOUT = 900;
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -39,6 +39,7 @@
         var d = document, pbs = d.createElement("script");
         pbs.type = "text/javascript";
         pbs.src = '/dist/prebid.js';
+        //pbs.async = true;
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -59,7 +60,7 @@
 
         */
 	   var adUnits = [{
-        code: '/9968336/header-bid-tag-0',
+        code: '/19968336/header-bid-tag-0',
         sizes: [[728, 90]],
         bids: [
             // 1 ad unit can be targeted by multiple bids.
@@ -76,7 +77,7 @@
                 }
             }]
     },{
-        code: '/9968336/header-bid-tag1',
+        code: '/19968336/header-bid-tag1',
        sizes: [[300, 250]],
        bids: [
          // 1 ad unit can be targeted by multiple bids.
@@ -176,8 +177,8 @@
 <script>
     googletag.cmd.push(function() {
 
-        var rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[728, 90]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
-        var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[300, 250]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+        var topSlot = googletag.defineSlot('/19968336/header-bid-tag1', [[300, 250]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
 
         pbjs.que.push(function() {
             /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
@@ -207,17 +208,17 @@
 
     <h2>Prebid.js Test</h2>
 
-    <div id='div-gpt-ad-12345678-0'>
+    <div id='div-gpt-ad-1438287399331-0'>
         <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display('div-gpt-ad-12345678-0'); });
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
         </script>
     </div>
 
 
-    <div id='{id}'>
-        <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display('{id}'); });
-        </script>
+    <div id='div-gpt-ad-1438287399331-1'>
+      <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
+      </script>
     </div>
 
 
