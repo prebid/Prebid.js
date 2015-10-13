@@ -42,6 +42,26 @@ These parameters in the bidReponse object are common across all bidders.
 </div>
 
 <div class="bs-docs-section" markdown="1">
+#AOL
+
+###bidder code: 
+`aol`
+
+###bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `placement` | required | The placement ID from AOL. | "23324932" |
+| `sizeId` | required | The size ID from AOL. | "170" |
+| `sizeId` | required | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
+
+(The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
+
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
 #AppNexus
 
 ###bidder code: 
@@ -191,3 +211,19 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 </div>
 
+<div class="bs-docs-section" markdown="1">
+#Yieldbot
+
+###bidder code: 
+`yieldbot`
+
+###bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `psn` | required | The publisher ID |  |
+| `slot` | required | The slot |  |
+
+
+</div>
