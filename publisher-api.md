@@ -87,7 +87,7 @@ pbjs.que.push(function() {
         },{
             bidder: "appnexus",
             params: {
-                tagId: "234235"
+                placementId: "234235"
             }
         }]
     },{
@@ -103,7 +103,7 @@ pbjs.que.push(function() {
         },{
             bidder: "appnexus",
             params: {
-                tagId: "827326"
+                placementId: "827326"
             }
         }]
     }];

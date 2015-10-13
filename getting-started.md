@@ -68,7 +68,7 @@ pbjs.que.push(function() {
         }
     }, {
         bidder: "appnexus",
-        params: { tagId: "234235" }
+        params: { placementId: "234235" }
     }]
   }];
   pbjs.addAdUnits(adUnits);
