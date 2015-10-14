@@ -210,11 +210,14 @@
 
 
 <script>
+    var rightSlot;
+    var topSlot;
+    
     googletag.cmd.push(function() {
 
-        var rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
+        rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
 
-        var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
+        topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
 
         pbjs.que.push(function() {
             /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
