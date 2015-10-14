@@ -252,7 +252,11 @@ exports.executeCallback = function() {
 
 	//execute one time callback
 	if(externalOneTimeCallback){
-		processCallbacks(externalOneTimeCallback);
+		var params = [];
+		var responseObj = pbjs.getBidResponses();
+		params.push(responseObj);
+
+		processCallbacks(externalOneTimeCallback,params);
 		externalOneTimeCallback = null;
 	}
 	
@@ -269,16 +273,16 @@ function triggerAdUnitCallbacks(adUnitCode){
 }
 
 function processCallbacks(callbackQueue, params){
-		var i;
-		if(utils.isArray(callbackQueue)){
-			for(i = 0; i < callbackQueue.length; i++){
-				var func = callbackQueue[i];
-				callFunction(func, params);
-			}
+	var i;
+	if(utils.isArray(callbackQueue)){
+		for(i = 0; i < callbackQueue.length; i++){
+			var func = callbackQueue[i];
+			callFunction(func, params);
 		}
-		else{
-			callFunction(callbackQueue, params);
-		}		
+	}
+	else{
+		callFunction(callbackQueue, params);
+	}		
 }
 
 function callFunction(func, args){
