@@ -282,7 +282,7 @@ pbjs.bidderSettings = {
 
 {% endhighlight %}
 
-Now let's say you would like to define you own price bucket function rather than use hte ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example:
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example:
 
 **Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
 
