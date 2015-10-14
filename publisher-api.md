@@ -14,15 +14,15 @@ pid: 1
 
 ![Prebid Diagram Image]({{ site.github.url }}/assets/images/prebid-diagram.png)
 
-1. **Register bidder tag Ids:** 
+1. **Register bidder tag Ids:**
 
 	Define a mapping of the bidders’ tag Ids to your ad units.
 
-2. **Ad server waits for bids:** 
+2. **Ad server waits for bids:**
 
 	Define the timeout so your ad server would wait for a few hundred milliseconds and the bidders can respond with bids.
 
-3. **Set targeting for bids:** 
+3. **Set targeting for bids:**
 
 	Set bids’ CPM for your ad units’ targeting, then send the impressions to your ad server.
 
@@ -84,7 +84,7 @@ pbjs.que.push(function() {
         },{
             bidder: "appnexus",
             params: {
-                tagId: "234235"
+                placementId: "234235"
             }
         }]
     },{
@@ -93,14 +93,14 @@ pbjs.que.push(function() {
         bids: [{
             bidder: "rubicon",
             params: {
-                account: "4934",
-                site: "13945",
+                rp_account: "4934",
+                rp_site: "13945",
                 rp_zonesize: "23948-15"
             }
         },{
             bidder: "appnexus",
             params: {
-                tagId: "827326"
+                placementId: "827326"
             }
         }]
     }];
@@ -147,12 +147,17 @@ The below code snippet is the **default** setting for ad server targeting. For e
 
 If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. **Note** that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly.
 
+By default, only the winning bid (bid with the highest cpm) will be send to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with prebid partner not returning a cpm Value (ie: Criteo).
+
+The bidderSettings object can also be really useful to define your own price bucket function to define the price bucket sent to the ad server.
+
 There's no need to include the following code if you choose to use the default setting.
 
 {% highlight js %}
 
 pbjs.bidderSettings = {
     standard: {
+    	alwaysUseBid: false,
         adserverTargeting: [{
             key: "hb_bidder",
             val: function(bidResponse) {
@@ -221,8 +226,8 @@ If you'd like even more customization (down to the bidder level), prebid.js also
 
 
 
-If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so. 
-Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example, which overwrites the default AppNexus query string targeting. 
+If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so.
+Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example, which overwrites the default AppNexus query string targeting.
 
 **Note that the line item setup has to match the targeting change**.
 
@@ -247,6 +252,72 @@ pbjs.bidderSettings = {
 
 
 The bidder setting for AppNexus is saying: send 2 pairs of key value string targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html).
+
+Now let's say you would like Criteo bid to always be send to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
+You could define your own bidderSetting, only for criteo bidder, that would setup Criteo bid to always be send to the adserver and not be evaluate against other bids
+
+{% highlight js %}
+
+pbjs.bidderSettings = {
+    standard: {
+    	alwaysUseBid: true,
+        adserverTargeting: [{
+            key: "crt_bid",
+            val: function(bidResponse) {
+                return (bidResponse.statusMessage == "Bid available" ? "true" : "false");
+            }
+        }]
+    }
+}
+
+{% endhighlight %}
+
+Now let's say you would like to define you own price bucket function rather than use hte ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example:
+
+**Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
+
+
+{% highlight js %}
+
+pbjs.bidderSettings = {
+    standard: {
+    	alwaysUseBid: false,
+        adserverTargeting: [{
+            key: "hb_bidder",
+            val: function(bidResponse) {
+                return bidResponse.bidder;
+            }
+        }, {
+            key: "hb_adid",
+            val: function(bidResponse) {
+                return bidResponse.adId;
+            }
+        }, {
+            key: "hb_pb",
+            val: function(bidResponse) {
+            	// define your own function to assign price bucket
+            	if (cpm < 2)
+            		return "pb1"; // all bids less than $2 are assigned to price bucket 'pb1'
+            	if (cpm < 3)
+            		return "pb2"; // all bids less than $3 are assigned to price bucket 'pb2'
+            	if (cpm < 4)
+            		return "pb3"; // all bids less than $4 are assigned to price bucket 'pb3'
+            	if (cpm < 5)
+            		return "pb4"; // all bids less than $5 are assigned to price bucket 'pb4'
+            	if (cpm < 6)
+            		return "pb5"; // all bids less than $6 are assigned to price bucket 'pb5'
+                return "pb6"; // all bids $6 and above are assigned to price bucket 'pb6'
+            }
+        }, {
+            key: "hb_size",
+            val: function(bidResponse) {
+                return bidResponse.size;
+            }
+        }]
+    }
+}
+
+{% endhighlight %}
 
 
 </div>
@@ -338,7 +409,7 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 
 
-You've probably already configured your custom ad server to wait for a certain amount of time before sending out the impressions. That amount of time is given to your pre-bid bidders to respond. Note that `pbjs.getAdserverTargetingParams(code)` will only return targeting parameters after a few hundred milliseconds (the time it takes bidders to respond with bids). 
+You've probably already configured your custom ad server to wait for a certain amount of time before sending out the impressions. That amount of time is given to your pre-bid bidders to respond. Note that `pbjs.getAdserverTargetingParams(code)` will only return targeting parameters after a few hundred milliseconds (the time it takes bidders to respond with bids).
 
 {% highlight js %}
 
@@ -455,17 +526,17 @@ The targeting keys can be configured in [ad server targeting](#configure-ad-serv
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `object` - Map of adUnitCodes and targeting values []  
+**Returns**: `object` - Map of adUnitCodes and targeting values []
 
 <a name="module_pbjs.getAdserverTargetingForAdUnitCode"></a>
 
 ### pbjs.getAdserverTargetingForAdUnitCode([adunitCode]) ⇒ `object`
-This function returns the query string targeting parameters available at this moment for a given ad unit. 
+This function returns the query string targeting parameters available at this moment for a given ad unit.
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
 
-**Returns**: `object` - returnObj return bids  
+**Returns**: `object` - returnObj return bids
 
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
@@ -479,7 +550,7 @@ This function returns the bid responses at the given moment.
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `object` - map | object that contains the bidResponses  
+**Returns**: `object` - map | object that contains the bidResponses
 
 
 <a name="module_pbjs.getBidResponsesForAdUnitCode"></a>
@@ -490,7 +561,7 @@ Returns bidResponses for the specified adUnitCode
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `Object` - bidResponse object  
+**Returns**: `Object` - bidResponse object
 
 {: .table .table-bordered .table-striped }
 | Param | Scope | Type | Description |
@@ -517,7 +588,7 @@ Returns a bool if all the bids have returned or timed out
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `bool` - all bids available  
+**Returns**: `bool` - all bids available
 <a name="module_pbjs.renderAd"></a>
 
 ### pbjs.renderAd(doc, id)
@@ -583,7 +654,7 @@ Add a callback event
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `String` - id for callback  
+**Returns**: `String` - id for callback
 
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
@@ -598,7 +669,7 @@ Remove a callback event
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-**Returns**: `String` - id for callback  
+**Returns**: `String` - id for callback
 
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
@@ -611,7 +682,7 @@ Remove a callback event
 
 
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-  
+
   <div class="panel panel-default">
     <div class="panel-heading" role="tab" id="headingThree">
       <h4 class="panel-title">
@@ -623,7 +694,7 @@ Remove a callback event
     </div>
     <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
       <div class="panel-body" markdown="1">
-        
+
 
 **Funciton** `setTargetingForGPTAsync()`
 
@@ -632,7 +703,7 @@ Set query string targeting on all GPT ad units. The logic for deciding query str
 
 **Function** `getAdserverTargetingParamsForAdUnit(adUnitCode)`
 
-A non blocking function that returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidders' response may not have been received if you call this function too quickly after the requests are sent. 
+A non blocking function that returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidders' response may not have been received if you call this function too quickly after the requests are sent.
 
 {% highlight js %}
 
@@ -690,7 +761,7 @@ pbjs.registerBidCallbackHandler = function(){
 
 #How to debug?
 
-Add `?pbjs_debug=true` to your page's 
+Add `?pbjs_debug=true` to your page's
 
 If your page is not serving pre-bid ads, there could be 2 reasons:
 

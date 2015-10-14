@@ -58,13 +58,13 @@ pbjs.que.push(function() {
     bids: [{
         bidder: "rubicon",
         params: {
-            account: "4934",
-            site: "13945",
+            rp_account: "4934",
+            rp_site: "13945",
             rp_zonesize: "23948-15"
         }
     }, {
         bidder: "appnexus",
-        params: { tagId: "234235" }
+        params: { placementId: "234235" }
     }]
   }];
   pbjs.addAdUnits(adUnits);
