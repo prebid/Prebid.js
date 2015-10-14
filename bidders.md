@@ -54,7 +54,7 @@ These parameters in the bidReponse object are common across all bidders.
 | :--- | :---- | :---------- | :------ |
 | `placement` | required | The placement ID from AOL. | "23324932" |
 | `sizeId` | required | The size ID from AOL. | "170" |
-| `sizeId` | required | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
+| `alias` | required | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
 
 (The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
 
