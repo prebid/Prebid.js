@@ -3,9 +3,11 @@ layout: page
 title: Ad Ops Guide
 head_title: Ad Ops Guide for Header Bidding
 description: An ad ops guide for implementing header bidding with prebid.js.
-pid: 4
+pid: 30
 show_disqus: true
 hide: false
+
+isNavParent: true
 ---
 
 <div class="bs-docs-section" markdown="1">

@@ -2,9 +2,10 @@
 layout: page
 title: Add me!
 description: 
-pid: 6
+pid: 60
 isNew: true
 hide: false
+isNavParent: true
 ---
 
 <div class="bs-docs-section" markdown="1">

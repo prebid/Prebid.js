@@ -4,7 +4,10 @@ title: Publisher API
 head_title: Publisher API for Header Bidding
 description: API for publishers
 show_disqus: true
-pid: 1
+
+isNavParent: true
+
+pid: 10
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -106,6 +109,13 @@ pbjs.que.push(function() {
     }];
 
     pbjs.addAdUnits(adUnits);
+
+    pbjs.requestBids({
+      bidsBackHandler: function() {
+          // callback when requested bids are all back
+      };
+    });
+
 });
 
 {% endhighlight %}

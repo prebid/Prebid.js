@@ -113,6 +113,11 @@ img {
   margin-bottom: 50px;
 }
 
+.full-rule.thin {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 .bs-docs-section h1 {
   padding-bottom: 9px;
   margin: 40px 0 20px;
