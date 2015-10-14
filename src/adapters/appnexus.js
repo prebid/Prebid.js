@@ -7,6 +7,7 @@ var bidfactory = require('../bidfactory.js');
 /* AppNexus bidder factory function
  *  Use to create a AppNexusAdapter object
  */
+ 
 
 var AppNexusAdapter = function AppNexusAdapter() {
 	var isCalled = false;
