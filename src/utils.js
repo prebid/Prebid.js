@@ -14,6 +14,7 @@ var _hgPriceCap = 20.00;
 var t_Arr = 'Array',
     t_Str = 'String',
     t_Fn = 'Function',
+    toString = Object.prototype.toString,
     hasOwnProperty = Object.prototype.hasOwnProperty,
     slice = Array.prototype.slice;
 
@@ -191,7 +192,7 @@ var errLogFn = (function (hasLogger) {
 
 var debugTurnedOn = function() {
 	if (pbjs.logging === false && _loggingChecked === false) {
-		pbjs.logging = !!getParameterByName(CONSTANTS.DEBUG_MODE);
+		pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 		_loggingChecked = true;
 	}
 
