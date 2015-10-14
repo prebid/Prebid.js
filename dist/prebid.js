@@ -1,5 +1,5 @@
 /* Prebid.js v0.3.2 
-Updated : 2015-10-13 */
+Updated : 2015-10-14 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -239,6 +239,7 @@ var bidfactory = require('../bidfactory.js');
 /* AppNexus bidder factory function
  *  Use to create a AppNexusAdapter object
  */
+ 
 
 var AppNexusAdapter = function AppNexusAdapter() {
 	var isCalled = false;
@@ -1597,7 +1598,11 @@ exports.executeCallback = function() {
 
 	//execute one time callback
 	if(externalOneTimeCallback){
-		processCallbacks(externalOneTimeCallback);
+		var params = [];
+		var responseObj = pbjs.getBidResponses();
+		params.push(responseObj);
+
+		processCallbacks(externalOneTimeCallback,params);
 		externalOneTimeCallback = null;
 	}
 	
@@ -1614,16 +1619,16 @@ function triggerAdUnitCallbacks(adUnitCode){
 }
 
 function processCallbacks(callbackQueue, params){
-		var i;
-		if(utils.isArray(callbackQueue)){
-			for(i = 0; i < callbackQueue.length; i++){
-				var func = callbackQueue[i];
-				callFunction(func, params);
-			}
+	var i;
+	if(utils.isArray(callbackQueue)){
+		for(i = 0; i < callbackQueue.length; i++){
+			var func = callbackQueue[i];
+			callFunction(func, params);
 		}
-		else{
-			callFunction(callbackQueue, params);
-		}		
+	}
+	else{
+		callFunction(callbackQueue, params);
+	}		
 }
 
 function callFunction(func, args){
@@ -2576,7 +2581,7 @@ var errLogFn = (function (hasLogger) {
 
 var debugTurnedOn = function() {
 	if (pbjs.logging === false && _loggingChecked === false) {
-		pbjs.logging = !!getParameterByName(CONSTANTS.DEBUG_MODE);
+		pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 		_loggingChecked = true;
 	}
 
