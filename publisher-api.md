@@ -538,36 +538,212 @@ The targeting keys can be configured in [ad server targeting](#configure-ad-serv
 
 **Returns**: `object` - Map of adUnitCodes and targeting values []
 
+**Returned Object Example:**
+
+{% highlight js %}
+{
+  "/9968336/header-bid-tag-0": {
+    "hb_bidder": "rubicon",
+    "hb_adid": "13f44b0d3c",
+    "hb_pb": "1.50"
+  },
+  "/9968336/header-bid-tag1": {
+    "hb_bidder": "openx",
+    "hb_adid": "147ac541a",
+    "hb_pb": "1.00"
+  }
+}
+{% endhighlight %}
+
 <a name="module_pbjs.getAdserverTargetingForAdUnitCode"></a>
 
 ### pbjs.getAdserverTargetingForAdUnitCode([adunitCode]) ⇒ `object`
-This function returns the query string targeting parameters available at this moment for a given ad unit.
+This function returns the query string targeting parameters available at this moment for a given ad unit. For full documentation see function [pbjs.getAdserverTargeting()](#module_pbjs.getAdserverTargeting).
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
-
 **Returns**: `object` - returnObj return bids
+
+**Request Params:**
 
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
 | --- | --- | --- |
 | [adunitCode] | `string` | adUnitCode to get the bid responses for |
 
+**Returned Object Example:**
+
+{% highlight js %}
+{
+  "hb_bidder": "rubicon",
+  "hb_adid": "13f44b0d3c",
+  "hb_pb": "0.50"
+}
+{% endhighlight %}
+
 <a name="module_pbjs.getBidResponses"></a>
 
 ### pbjs.getBidResponses() ⇒ `object`
 This function returns the bid responses at the given moment.
 
-**Kind**: static method of [pbjs](#module_pbjs)
+**Kind**: static method of [pbjs](#module_pbjs).
 
-**Returns**: `object` - map | object that contains the bidResponses
+**Returns**: `object` - map | object that contains the bidResponses.
+
+
+**Returned Object Params**:
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| --- | --- | --- |
+| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
+| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
+| `width` | Integer | The width of the returned creative size. | 300 |
+| `height` | Integer | The height of the returned creative size. | 250 |
+| `cpm` | Float | The exact bid price from the bidder | 1.59 |
+| `requestTimestamp` | Integer | The time stamp when the bid request is sent out in milliseconds | 1444844944106 |
+| `responseTimestamp` | Integer | The time steamp when the bid response is received in milliseconds | 1444844944185 |
+| `timeToRespond` | Integer | The amount of time for the bidder to respond with the bid | 79 |
+| `adUnitCode` | String | adUnitCode to get the bid responses for | "/9968336/header-bid-tag-0"|
+| `statusMessage` | String | The bid's status message | "Bid returned empty or error response" or "Bid available" |
+
+**Returned Object Example:**
+{% highlight js %}
+{
+  "/9968336/header-bid-tag-0": {
+    "bids": [
+      {
+        "bidderCode": "appnexus",
+        "width": 300,
+        "height": 250,
+        "statusMessage": "Bid available",
+        "adId": "7a53a9d3",
+        "creative_id": 29681110,
+        "cpm": 0.5,
+        "adUrl": "http://nym1.ib.adnxs.com/ab?e=wqT_3QLzBKBqAgAAAgDWAAUIkav6sAUQucfc0v-nzQcYj…r=http%3A%2F%2Flocal%3A4000%2Fexamples%2Fpbjs_partial_refresh_example.html",
+        "requestTimestamp": 1444844944095,
+        "responseTimestamp": 1444844944180,
+        "timeToRespond": 85,
+        "adUnitCode": "/19968336/header-bid-tag-0",
+        "bidder": "appnexus",
+        "usesGenericKeys": true,
+        "size": "300x250",
+        "adserverTargeting": {
+          "hb_bidder": "appnexus",
+          "hb_adid": "7a53a9d3",
+          "hb_pb": "0.50"
+        }
+      },
+      {
+        "bidderCode": "criteo",
+        "width": 0,
+        "height": 0,
+        "statusMessage": "Bid returned empty or error response",
+        "adId": "80bb5b1ab",
+        "requestTimestamp": 1444844944106,
+        "responseTimestamp": 1444844944185,
+        "timeToRespond": 79,
+        "cpm": 0,
+        "adUnitCode": "/19968336/header-bid-tag-0",
+        "bidder": "criteo"
+      },
+      {
+        "bidderCode": "pubmatic",
+        "width": "300",
+        "height": "250",
+        "statusMessage": "Bid available",
+        "adId": "1139e34e14",
+        "adSlot": "39620189@300x250",
+        "cpm": 1,
+        "ad": "<span class=\"PubAPIAd\"><script src='http://ad.turn.com/server/ads.js?pub=5757398&cch=36757096&code=37127675&l=3…tcGlkPUVERkNGMDY5LTA2ODctNDAxQy04NkMwLTIzQjNFNzI1MzdGNiZwYXNzYmFjaz0w_url='></script></span> <!-- PubMatic Ad Ends -->",
+        "adUrl": "http://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId…local%3A4000%2Fexamples%2Fpbjs_partial_refresh_example.html&lpu=hotels.com",
+        "dealId": "",
+        "requestTimestamp": 1444844944105,
+        "responseTimestamp": 1444844944354,
+        "timeToRespond": 249,
+        "adUnitCode": "/19968336/header-bid-tag-0",
+        "bidder": "pubmatic",
+        "usesGenericKeys": true,
+        "size": "300x250",
+        "adserverTargeting": {
+          "hb_bidder": "pubmatic",
+          "hb_adid": "1139e34e14",
+          "hb_pb": "1.00"
+        }
+      },
+      {
+        "bidderCode": "rubicon",
+        "width": "300",
+        "height": "250",
+        "statusMessage": "Bid available",
+        "adId": "130d3b0d9b",
+        "cpm": 0.795995,
+        "ad": "<scri...pt>",
+        "ad_id": "3161645",
+        "sizeId": "15",
+        "requestTimestamp": 1444844944116,
+        "responseTimestamp": 1444844944396,
+        "timeToRespond": 280,
+        "adUnitCode": "/19968336/header-bid-tag-0",
+        "bidder": "rubicon",
+        "usesGenericKeys": true,
+        "size": "300x250",
+        "adserverTargeting": {
+          "hb_bidder": "rubicon",
+          "hb_adid": "130d3b0d9b",
+          "hb_pb": "0.50"
+        }
+      }
+    ]
+  },
+  "/9968336/header-bid-tag1": {
+    "bids": [
+      {
+        "bidderCode": "casale",
+        "width": 0,
+        "height": 0,
+        "statusMessage": "Bid returned empty or error response",
+        "adId": "108c0ba49d",
+        "requestTimestamp": 1444844944130,
+        "responseTimestamp": 1444844944223,
+        "timeToRespond": 93,
+        "cpm": 0,
+        "adUnitCode": "/19968336/header-bid-tag1",
+        "bidder": "casale"
+      },
+      {
+        "bidderCode": "openx",
+        "width": "728",
+        "height": "90",
+        "statusMessage": "Bid available",
+        "adId": "14d7f9208f",
+        "ad_id": "537161420",
+        "cpm": 1.717,
+        "ad": "<iframe src=...tame>",
+        "requestTimestamp": 1444844944130,
+        "responseTimestamp": 1444844944490,
+        "timeToRespond": 360,
+        "adUnitCode": "/19968336/header-bid-tag1",
+        "bidder": "openx",
+        "usesGenericKeys": true,
+        "size": "728x90",
+        "adserverTargeting": {
+          "hb_bidder": "openx",
+          "hb_adid": "14d7f9208f",
+          "hb_pb": "1.50"
+        }
+      }
+    ]
+  }
+}
+{% endhighlight %}
 
 
 <a name="module_pbjs.getBidResponsesForAdUnitCode"></a>
 
 ### pbjs.getBidResponsesForAdUnitCode(adUnitCode) ⇒ `Object`
 
-Returns bidResponses for the specified adUnitCode
+Returns bidResponses for the specified adUnitCode. See full documentation at [pbjs.getBidResponses()](module_pbjs.getBidResponses).
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
