@@ -133,7 +133,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 <div class="bs-docs-section" markdown="1">
 
-#Casale
+#Casale (Index Exchange)
 
 ###bidder code: 
 `casale`
