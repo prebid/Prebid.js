@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <title>Prebid.js UnitTests</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="lib/browser/mocha.css" />
+    <script src="./lib/browser/jquery.js" type="text/javascript"></script>
+    <script src="./lib/mocha.js"></script>
+    <script src="./lib/chai.js" type="text/javascript"></script>
+
+    <script>mocha.setup('bdd')</script>
+    <script>
+      function assert(expr, msg) {
+        if (!expr) throw new Error(msg || 'failed');
+      }
+    </script>
+    <script src="../../dist/prebid.js"></script>
+    <script src="./api_spec.js"></script>
+    <script>
+      onload = function(){
+        var runner = mocha.run();
+        // runner.globals(['foo', 'bar', 'baz']);
+
+        // runner.on('test end', function(test){
+        //   console.log(test.fullTitle());
+        // });
+      };
+    </script>
+  </head>
+  <body>
+    <div id="mocha"></div>
+  </body>
+</html>
