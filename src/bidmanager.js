@@ -158,10 +158,12 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
 		//
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
 	}
 	//next try with defaultBidderSettings
 	else if (defaultBidderSettingsMap[bidderCode]) {
 		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
+		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
 	}
 	//now try with "generic" settings
 	else if (custBidObj && bidder_settings) {
@@ -191,8 +193,6 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 				}]
 			};
 		}
-
-		custBidObj.usesGenericKeys = true;
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
@@ -259,7 +259,7 @@ exports.executeCallback = function() {
 		processCallbacks(externalOneTimeCallback,params);
 		externalOneTimeCallback = null;
 	}
-	
+
 };
 
 exports.allBidsBack = function() {
@@ -282,7 +282,8 @@ function processCallbacks(callbackQueue, params){
 	}
 	else{
 		callFunction(callbackQueue, params);
-	}		
+	}
+
 }
 
 function callFunction(func, args){
@@ -294,7 +295,7 @@ function callFunction(func, args){
 		catch(e){
 			utils.logError('Error executing callback function: ' + e.message);
 		}
-	}	
+	}
 }
 
 function checkBidsBackByAdUnit(adUnitCode){
@@ -305,7 +306,7 @@ function checkBidsBackByAdUnit(adUnitCode){
 			//all bids back for ad unit
 			if(bidsBack === adUnit.bids.length){
 				triggerAdUnitCallbacks(adUnitCode);
-				
+
 			}
 		}
 	}
@@ -327,12 +328,12 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 
 	//check by ad units
 	checkBidsBackByAdUnit(adUnitCode);
-	
+
 
 	if (_allBidsAvailable) {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
 		this.executeCallback();
-		
+
 	}
 };
 
@@ -353,5 +354,5 @@ exports.addCallback = function(id, callback, cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
 
-	
+
 };

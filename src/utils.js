@@ -81,6 +81,22 @@ exports.parseQueryStringParameters = function(queryObj) {
 	return result;
 };
 
+
+//transform an array of AdServer targeting bids into a query string to send to the adserver
+//bid params should be an object such as {key: "value", key1 : "value1"}
+exports.transformAdServerTargetingObj = function(adServerTargetingAr) {
+	var result = "";
+	if (!adServerTargetingAr)
+		return "";
+	for (var i = 0; i < adServerTargetingAr.length; ++i){
+		AdserverTargetingObj = adServerTargetingAr[i];
+		for (var k in AdserverTargetingObj)
+			if (AdserverTargetingObj.hasOwnProperty(k))
+				result += k + "=" + encodeURIComponent(AdserverTargetingObj[k]) + "&";
+	}
+	return result;
+};
+
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
 //suitable for passing to a GPT tag, may include size and/or promo sizes
 exports.parseSizesInput = function(sizeObj) {
