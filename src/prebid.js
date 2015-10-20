@@ -7,6 +7,7 @@ var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
+var bidfactory = require('./bidfactory');
 
 /* private variables */
 
@@ -681,6 +682,39 @@ pbjs.addCallback = function(eventStr, func) {
  */
 pbjs.removeCallback = function(cbId) {
 	//todo
+};
+
+/**
+ * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
+ * @param  {[type]} bidderAdaptor [description]
+ * @param  {[type]} bidderCode    [description]
+ * @return {[type]}               [description]
+ */
+pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
+	try{
+		adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
+	}
+	catch(e){
+		utils.logError('Error registering bidder adapter : ' + e.message);
+	}	
+};
+
+/**
+ * Wrapper to bidfactory.createBid()
+ * @param  {[type]} statusCode [description]
+ * @return {[type]}            [description]
+ */
+pbjs.createBid = function(statusCode){
+	return bidfactory.createBid(statusCode);
+};
+
+/**
+ * Wrapper to bidmanager.addBidResponse
+ * @param {[type]} adUnitCode [description]
+ * @param {[type]} bid        [description]
+ */
+pbjs.addBidResponse = function(adUnitCode, bid){
+	bidmanager.addBidResponse(adUnitCode, bid);
 };
 
 processQue();
