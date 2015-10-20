@@ -1,4 +1,4 @@
-describe("api ", function() {
+describe("API", function() {
   var assert = chai.assert;
 
   describe("has api", function() {

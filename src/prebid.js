@@ -684,3 +684,10 @@ pbjs.removeCallback = function(cbId) {
 };
 
 processQue();
+
+
+pbjs_testonly = {};
+
+pbjs_testonly.getAdUnits = function() {
+    return pbjs.adUnits;
+};

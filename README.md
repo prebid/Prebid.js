@@ -96,3 +96,7 @@ Change `{id}` values appropriately
 	$ gulp serve
 
 Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html to run the example file
+
+### Unit Test In the Browser ###
+
+Open the /test/spec/runner.html file in browser.
