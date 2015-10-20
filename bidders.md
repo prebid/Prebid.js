@@ -133,6 +133,23 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 <div class="bs-docs-section" markdown="1">
 
+#Casale
+
+###bidder code: 
+`casale`
+
+###bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `slotId` | required | The slot id taken from casale javascript file. | "1" |
+| `casaleUrl` | required | The javascript URL shared by Casale. | "//js.indexww.com/ht/mysite.js" |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
 #Criteo
 
 ###bidder code: 
