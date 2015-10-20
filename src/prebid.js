@@ -199,12 +199,14 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 		for (var i = 0; i < adUnitBids.bids.length; i++) {
 			var bid = adUnitBids.bids[i];
 			//if use the generic key push into array with CPM for sorting
-			if (bid.alwaysUseBid) {
+			if (!bid.alwaysUseBid) {
 				bidArrayTargeting.push({
 					cpm: bid.cpm,
 					bid: bid
 				});
-			} else {
+			}
+			// alwaysUseBid = true - send the bid anyway
+			else {
 				var keyStrings = adUnitBids.bids[i].adserverTargeting;
 				for (var key in keyStrings) {
 					if (keyStrings.hasOwnProperty(key)) {
