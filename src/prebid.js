@@ -277,7 +277,7 @@ function buildBidResponse(bidArray) {
 	if (bidArray) {
 		// init the pb_targetingMap for the adUnitCode
 		adUnitCode = bidArray[0] && bidArray[0].adUnitCode;
-		pb_targetingMap[adUnitCode] = [];
+		pb_targetingMap[adUnitCode] = {};
 		for (var i = 0; i < bidArray.length; i++) {
 			var bid = bidArray[i];
 			//clone by json parse. This also gets rid of unwanted function properties
@@ -285,7 +285,7 @@ function buildBidResponse(bidArray) {
 
 			if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
 				// push key into targeting
-				pb_targetingMap[bidClone.adUnitCode].push(bidClone.adserverTargeting);
+				pb_targetingMap[bidClone.adUnitCode] = utils.merge_options(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
 			} else if (bid.cpm && bid.cpm > 0){
 				//else put into auction array if cpm > 0
 				bidArrayTargeting.push({
@@ -302,7 +302,7 @@ function buildBidResponse(bidArray) {
 	if (adUnitCode && bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
 		var keyValues = winningBid.adserverTargeting;
-		pb_targetingMap[adUnitCode].push(keyValues);
+		pb_targetingMap[adUnitCode] = utils.merge_options(pb_targetingMap[adUnitCode], keyValues);
 	}
 
 	return bidResponseArray;
