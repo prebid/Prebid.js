@@ -99,4 +99,5 @@ Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html 
 
 ### Unit Test In the Browser ###
 
-Open the /test/spec/runner.html file in browser.
+Navigate to http://localhost:9999/test/spec/runner.html to run the test file.
+

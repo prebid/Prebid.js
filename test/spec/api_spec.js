@@ -3,14 +3,12 @@ describe("API", function() {
 
   describe("has api", function() {
 
-    it('has api command queue', function() {
+    it('has api of command queue', function() {
       assert.isObject(pbjs);
       assert.isFunction(pbjs.que.push);
     });
 
     it('has function',function(){
-      assert.isObject(pbjs);
-      assert.isFunction(pbjs.que.push);
       assert.isFunction(pbjs.getAdserverTargeting);
       assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);
       assert.isFunction(pbjs.getBidResponses);

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="stylesheet" href="lib/browser/mocha.css" />
     <script src="./lib/browser/jquery.js" type="text/javascript"></script>
-    <script src="./lib/mocha.js"></script>
+    <script src="./lib/mocha.js" type="text/javascript"></script>
     <script src="./lib/chai.js" type="text/javascript"></script>
 
     <script>mocha.setup('bdd')</script>
@@ -13,15 +13,16 @@
         if (!expr) throw new Error(msg || 'failed');
       }
     </script>
-    <script src="../../dist/prebid.js"></script>
-    <script src="./api_spec.js"></script>
-    <script src="./adUnits_spec.js"></script>
-    <script src="./bids_spec.js"></script>
+    <script src="../../dist/prebid.js" type="text/javascript"></script>
+    <script src="./api_spec.js" type="text/javascript"></script>
+    <script src="./adUnits_spec.js" type="text/javascript"></script>
+    <script src="./bids_spec.js" type="text/javascript"></script>
+    <script src = "http://www.googletagservices.com/tag/js/gpt.js" type="text/javascript"></script>
 
     <script>
       onload = function(){
         var runner = mocha.run();
-        // runner.globals(['foo', 'bar', 'baz']);
+         runner.globals(['google_experimental_delay','pm_pub_id','pm_optimize_adslots']);
 
         // runner.on('test end', function(test){
         //   console.log(test.fullTitle());

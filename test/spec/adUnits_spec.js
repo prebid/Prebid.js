@@ -3,7 +3,7 @@ describe("AdUnits", function() {
 
     describe('addAdUnits', function() {
 
-        it('1. adUnits test', function() {
+        it('adUnits test', function() {
             var adUnits = [{
                 code: "/1996833/slot-1",
                 sizes: [[300, 250], [728, 90]],
