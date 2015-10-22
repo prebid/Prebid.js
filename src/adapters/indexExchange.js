@@ -4,16 +4,16 @@ var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 
-var ADAPTER_NAME = 'CASALE';
-var ADAPTER_CODE = 'casale';
+var ADAPTER_NAME = 'INDEX_EXCHANGE';
+var ADAPTER_CODE = 'indexExchange';
 
-var CasaleAdapter = function CasaleAdapter() {
+var IndexExchangeAdapter = function IndexExchangeAdapter() {
 	var slotIdMap = {};
 	var requiredParams = [
 		/* 0 */
 		'slotId',
 		/* 1 */
-		'casaleUrl'
+		'indexExchangeUrl'
 	];
 	var firstAdUnitCode = '';
 
@@ -77,7 +77,7 @@ var CasaleAdapter = function CasaleAdapter() {
 				});
 
 			} catch (e) {
-				utils.logError('Error calling casale adapter', ADAPTER_NAME, e);
+				utils.logError('Error calling indexExchange adapter', ADAPTER_NAME, e);
 				logErrorBidResponse();
 			}
 		});
@@ -127,7 +127,7 @@ var CasaleAdapter = function CasaleAdapter() {
 	return {
 		callBids: _callBids
 	};
-	//end of Rubicon bid adaptor
+	//end of IndexExchange bid adaptor
 };
 
-module.exports = CasaleAdapter;
+module.exports = IndexExchangeAdapter;
