@@ -8,6 +8,7 @@ var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
+var adloader = require('./adloader');
 
 /* private variables */
 
@@ -715,6 +716,16 @@ pbjs.createBid = function(statusCode){
  */
 pbjs.addBidResponse = function(adUnitCode, bid){
 	bidmanager.addBidResponse(adUnitCode, bid);
+};
+
+/**
+ * Wrapper to adloader.loadScript
+ * @param  {[type]}   tagSrc   [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
+pbjs.loadScript = function(tagSrc, callback){
+	adloader.loadScript(tagSrc, callback);
 };
 
 processQue();
