@@ -82,20 +82,29 @@ exports.parseQueryStringParameters = function(queryObj) {
 };
 
 
-//transform an array of AdServer targeting bids into a query string to send to the adserver
+//transform an AdServer targeting bids into a query string to send to the adserver
 //bid params should be an object such as {key: "value", key1 : "value1"}
-exports.transformAdServerTargetingObj = function(adServerTargetingAr) {
+exports.transformAdServerTargetingObj = function(adServerTargeting) {
 	var result = "";
-	if (!adServerTargetingAr)
+	if (!adServerTargeting)
 		return "";
-	for (var i = 0; i < adServerTargetingAr.length; ++i){
-		AdserverTargetingObj = adServerTargetingAr[i];
-		for (var k in AdserverTargetingObj)
-			if (AdserverTargetingObj.hasOwnProperty(k))
-				result += k + "=" + encodeURIComponent(AdserverTargetingObj[k]) + "&";
-	}
+	for (var k in adServerTargeting)
+		if (adServerTargeting.hasOwnProperty(k))
+			result += k + "=" + encodeURIComponent(adServerTargeting[k]) + "&";
 	return result;
 };
+
+
+ // Overwrites obj1's values with obj2's and adds obj2's if non existent in obj1
+ // @param obj1
+ // @param obj2
+ // @returns obj3 a new object based on obj1 and obj2
+exports.merge_options = function(obj1,obj2){
+    var obj3 = {};
+    for (var attrname in obj1) { obj3[attrname] = obj1[attrname]; }
+    for (var attrname in obj2) { obj3[attrname] = obj2[attrname]; }
+    return obj3;
+}
 
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
 //suitable for passing to a GPT tag, may include size and/or promo sizes
