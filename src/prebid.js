@@ -462,9 +462,9 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 			//get all the slots from google tag
 			var slots = window.googletag.pubads().getSlots();
 			for (var k = 0; k < slots.length; k++) {
-				if (slots[k].getAdUnitPath() === code) {
+				if (slots[k].getSlotElementId() === code) {
 					placementBids = getBidResponsesByAdUnit(code);
-					setGPTAsyncTargeting(code, slots[k], placementBids);
+					setGPTAsyncTargeting(slots[k].getAdUnitPath(), slots[k], placementBids);
 				}
 			}
 		}
@@ -472,10 +472,10 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		//get all the slots from google tag
 		var slots = window.googletag.pubads().getSlots();
 		for (i = 0; i < slots.length; i++) {
-			var adUnitCode = slots[i].getAdUnitPath();
+			var adUnitCode = slots[i].getSlotElementId();
 			if (adUnitCode) {
 				placementBids = getBidResponsesByAdUnit(adUnitCode);
-				setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
+				setGPTAsyncTargeting(slots[i].getAdUnitPath(), slots[i], placementBids);
 			}
 		}
 	}
@@ -697,7 +697,7 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 	}
 	catch(e){
 		utils.logError('Error registering bidder adapter : ' + e.message);
-	}	
+	}
 };
 
 /**
