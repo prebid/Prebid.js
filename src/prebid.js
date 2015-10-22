@@ -718,3 +718,11 @@ pbjs.addBidResponse = function(adUnitCode, bid){
 };
 
 processQue();
+
+
+//only for test
+pbjs_testonly = {};
+
+pbjs_testonly.getAdUnits = function() {
+    return pbjs.adUnits;
+};
