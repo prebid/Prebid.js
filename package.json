@@ -1,6 +1,6 @@
 {
   "name": "Prebid.js",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Client Side Auction Library",
   "main": "prebid.js",
   "scripts": {},

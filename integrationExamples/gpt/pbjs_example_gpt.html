@@ -59,7 +59,7 @@
 
         */
 	   var adUnits = [{
-        code: '/9968336/header-bid-tag-0',
+        code: 'div-gpt-ad-12345678-0',
         sizes: [[300, 250], [300, 600]],
         bids: [
             // 1 ad unit can be targeted by multiple bids.
@@ -96,7 +96,7 @@
                 }
             }]
     },{
-        code: '/9968336/header-bid-tag1',
+        code: 'div-gpt-ad-12345678-1',
         sizes: [[728, 90], [970, 90]],
         bids: [{
                 bidder: 'appnexus',
@@ -207,6 +207,31 @@
                 }
             }
             ]
+        },
+        appnexus: {
+            alwaysUseBid : true, // <-- new field - always send these custom keys for the specified bidder
+            adserverTargeting: [{
+                key: "custom_bidder",
+                val: function(bidResponse) {
+                    return bidResponse.bidderCode;
+                }
+            }, {
+                key: "custom_adid",
+                val: function(bidResponse) {
+                    return bidResponse.adId;
+                }
+            }, {
+                key: "custom_pb",
+                val: function(bidResponse) {
+                    return bidResponse.pbMg;
+                }
+            }, {
+                key: "custom_size",
+                val: function(bidResponse) {
+                    return bidResponse.getSize();
+
+                }
+            }]
         }
     };
  };
@@ -261,7 +286,7 @@
 
     <div id='{id}'>
         <script type='text/javascript'>
-            googletag.cmd.push(function() { googletag.display('{id}'); });
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-12345678-1'); });
         </script>
     </div>
 
