@@ -213,7 +213,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 				for (var key in keyStrings) {
 					if (keyStrings.hasOwnProperty(key)) {
 						try {
-							utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
+							utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
 							//clear gpt targeting for slot then set
 							//googletag.pubads().clearTargeting(code);
 							slot.clearTargeting();
@@ -240,7 +240,7 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 		for (var key in keyValues) {
 			if (keyValues.hasOwnProperty(key)) {
 				try {
-					utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
+					utils.logMessage('Attempting to set key value for slot: '  + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
 					slot.setTargeting(key, encodeURIComponent(keyValues[key]));
 
 				} catch (e) {
