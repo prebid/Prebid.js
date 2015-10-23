@@ -289,7 +289,7 @@ function buildBidResponse(bidArray) {
 
 			if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
 				// push key into targeting
-				pb_targetingMap[bidClone.adUnitCode] = utils.merge_options(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
+				pb_targetingMap[bidClone.adUnitCode] = utils.extend(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
 			} else if (bid.cpm && bid.cpm > 0){
 				//else put into auction array if cpm > 0
 				bidArrayTargeting.push({
@@ -306,7 +306,7 @@ function buildBidResponse(bidArray) {
 	if (adUnitCode && bidArrayTargeting.length !== 0) {
 		var winningBid = getWinningBid(bidArrayTargeting);
 		var keyValues = winningBid.adserverTargeting;
-		pb_targetingMap[adUnitCode] = utils.merge_options(pb_targetingMap[adUnitCode], keyValues);
+		pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
 	}
 
 	return bidResponseArray;

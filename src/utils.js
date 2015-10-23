@@ -94,17 +94,20 @@ exports.transformAdServerTargetingObj = function(adServerTargeting) {
 	return result;
 };
 
+//Copy all of the properties in the source objects over to the target object
+//return the target object.
+exports.extend = function(target, source){
+	target = target || {};
 
- // Overwrites obj1's values with obj2's and adds obj2's if non existent in obj1
- // @param obj1
- // @param obj2
- // @returns obj3 a new object based on obj1 and obj2
-exports.merge_options = function(obj1,obj2){
-    var obj3 = {};
-    for (var attrname in obj1) { obj3[attrname] = obj1[attrname]; }
-    for (var attrname in obj2) { obj3[attrname] = obj2[attrname]; }
-    return obj3;
-}
+	this._each(source,function(value,prop){    
+		if (typeof source[prop] === objectType_object) {
+			target[prop] = extend(target[prop], source[prop]);
+		} else {
+			target[prop] = source[prop];
+		}
+	});
+	return target;
+};
 
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
 //suitable for passing to a GPT tag, may include size and/or promo sizes
