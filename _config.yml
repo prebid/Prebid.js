@@ -62,6 +62,8 @@ facebook:
 # Build settings
 markdown: kramdown
 
+port: 80
+
 exclude: ['README.md', 'LICENSE', 'bower.json', 'Gemfile.lock', 'Gemfile']
 
 gems:

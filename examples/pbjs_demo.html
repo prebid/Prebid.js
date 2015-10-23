@@ -79,7 +79,7 @@
                     params: {
                        placementId: '4799418'
                     }
-                }, 
+                },
                 // 1 ad unit can also be targeted by multiple bids from 1 bidder
                 {
                     bidder: 'appnexus',
@@ -93,26 +93,12 @@
                     }
                 },
                 {
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: '123',
-                        adSlot: 'TO ADD'
-                    }
-                },
-                {
-                    bidder: 'openx',
-                    params: {
-                        unit: '123456',
-                        //jstag_url : 'TO ADD'
-                    }
-                },
-                {
                     bidder: 'criteo',
                     params: {
                         nid: "TO-ADD",
                         cookiename: "TO-ADD"
                     }
-                },
+                },/*
                 {
                     bidder: 'rubicon',
                     params: {
@@ -128,7 +114,21 @@
                         slotId: 'TO ADD',
                         casaleUrl: 'TO ADD'
                     }
-                }
+                },
+                {
+                    bidder: 'openx',
+                    params: {
+                        unit: '123456',
+                        //jstag_url : 'TO ADD'
+                    }
+                },
+                {
+                    bidder: 'pubmatic',
+                    params: {
+                        publisherId: '123',
+                        adSlot: 'TO ADD'
+                    }
+                }*/
             ]
         }];
 
@@ -147,6 +147,7 @@
                reached, or when all bids come back, whichever happens sooner.
             */
             bidsBackHandler: function(bidResponses) {
+
                 initAdserver();
             },
 
