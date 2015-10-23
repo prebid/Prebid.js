@@ -197,7 +197,7 @@ function getWinningBid(bidArray) {
 
 function setGPTAsyncTargeting(code, slot, adUnitBids) {
 	var bidArrayTargeting = [];
-	if (adUnitBids.bids.length !== 0) {
+	if (adUnitBids && adUnitBids.bids.length !== 0) {
 		for (var i = 0; i < adUnitBids.bids.length; i++) {
 			var bid = adUnitBids.bids[i];
 			//if use the generic key push into array with CPM for sorting
@@ -215,7 +215,8 @@ function setGPTAsyncTargeting(code, slot, adUnitBids) {
 						try {
 							utils.logMessage('Attempting to set key value for placement code: ' + code + ' slot: ' + slot + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
 							//clear gpt targeting for slot then set
-							googletag.pubads().clearTargeting(code);
+							//googletag.pubads().clearTargeting(code);
+							slot.clearTargeting();
 							slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
 
 						} catch (e) {
@@ -258,12 +259,9 @@ function getBidResponsesByAdUnit(adunitCode) {
 	var returnObj = {};
 	if (adunitCode) {
 		returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-		if (returnObj) {
-			return returnObj;
-		} else {
-			return bidmanager.createEmptyBidResponseObj();
-		}
-	} else {
+		return returnObj;
+	} 
+	else {
 		return bidmanager.pbBidResponseByPlacement;
 	}
 }
@@ -278,7 +276,7 @@ function buildBidResponse(bidArray) {
 	//temp array to hold auction for bids
 	var bidArrayTargeting = [];
 	var bidClone = {};
-	if (bidArray) {
+	if (bidArray && bidArray[0] && bidArray[0].adUnitCode) {
 		// init the pb_targetingMap for the adUnitCode
 		adUnitCode = bidArray[0] && bidArray[0].adUnitCode;
 		pb_targetingMap[adUnitCode] = {};
@@ -352,8 +350,14 @@ function requestAllBids(tmout){
  */
 pbjs.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
 	// call to retrieve bids array
-	var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
-	return utils.transformAdServerTargetingObj(res);
+	if(adunitCode){
+		var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
+		return utils.transformAdServerTargetingObj(res);
+	}
+	else{
+		utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+	}
+	
 
 };
 /**
@@ -462,9 +466,10 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 			//get all the slots from google tag
 			var slots = window.googletag.pubads().getSlots();
 			for (var k = 0; k < slots.length; k++) {
-				if (slots[k].getSlotElementId() === code) {
+
+				if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
 					placementBids = getBidResponsesByAdUnit(code);
-					setGPTAsyncTargeting(slots[k].getAdUnitPath(), slots[k], placementBids);
+					setGPTAsyncTargeting(code, slots[k], placementBids);
 				}
 			}
 		}
@@ -474,13 +479,33 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		for (i = 0; i < slots.length; i++) {
 			var adUnitCode = slots[i].getSlotElementId();
 			if (adUnitCode) {
-				placementBids = getBidResponsesByAdUnit(adUnitCode);
-				setGPTAsyncTargeting(slots[i].getAdUnitPath(), slots[i], placementBids);
+				placementBids = getBidsFromGTPIdentifier(slots[i]);
+				setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
 			}
 		}
 	}
 
 };
+/**
+ * Returns a string identifier (either DivId or adUnitPath)
+ * @param  {[type]} slot [description]
+ * @return {[type]}      [description]
+ */
+function getBidsFromGTPIdentifier(slot){
+	var bids = null;
+	if(slot){
+		//first get by elementId
+		bids =  getBidResponsesByAdUnit(slot.getSlotElementId());
+		//if not available, try by adUnitPath
+		if(!bids){
+			bids = getBidResponsesByAdUnit(slot.getAdUnitPath());
+		}
+	}
+	return bids;
+}
+
+/**
+
 
 /**
  * Set query string targeting on all GPT ad units.
