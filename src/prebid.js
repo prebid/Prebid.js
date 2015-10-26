@@ -613,7 +613,7 @@ pbjs.removeAdUnit = function(adUnitCode) {
 	if (adUnitCode) {
 		for (var i = 0; i < pbjs.adUnits.length; i++) {
 			if (pbjs.adUnits[i].code === adUnitCode) {
-				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
+				pbjs.adUnits.splice(i, 1);
 			}
 		}
 	}

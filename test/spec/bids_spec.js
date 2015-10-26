@@ -1,19 +1,21 @@
-describe("Bids", function() {
+describe("Publisher API _ Bids", function() {
     var assert = chai.assert,
     expect = chai.expect,
     should = chai.should();
 
     var rightSlotCode = '/19968336/header-bid-tag-0';
+    var rightDivCode = 'div-gpt-ad-1438287399331-0';
     var rightSlotSizes = [[300, 250], [300, 600]];
 
     var topSlotCode = '/19968336/header-bid-tag1';
+    var topDivCode = 'div-gpt-ad-1438287399331-1';
     var topSlotSizes = [[728, 90], [970, 90]];
     
 
     beforeEach(function(){
 
         var adUnit1 = {
-            code: rightSlotCode,
+            code: rightDivCode,
             sizes: rightSlotSizes,
             bids: [{
                         bidder: 'appnexus',
@@ -86,7 +88,7 @@ describe("Bids", function() {
             }; //adUnit1 end
 
         var adUnit2 = {
-            code: topSlotCode,
+            code: topDivCode,
             sizes: topSlotSizes,
             bids: [{
                     bidder: 'appnexus',
@@ -106,8 +108,8 @@ describe("Bids", function() {
         pbjs.setTargetingForAdUnitsGPTAsync([topSlotCode, rightSlotCode]);
 
         googletag.cmd.push(function() {
-            var rightSlot = googletag.defineSlot(rightSlotCode, rightSlotSizes, 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
-            var topSlot = googletag.defineSlot(topSlotCode, topSlotSizes, 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+            var rightSlot = googletag.defineSlot(rightSlotCode, rightSlotSizes, rightDivCode).addService(googletag.pubads());
+            var topSlot = googletag.defineSlot(topSlotCode, topSlotSizes, topDivCode).addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices(); 
@@ -121,7 +123,7 @@ describe("Bids", function() {
         });
     });
 
-    describe('Requests', function() {
+    describe('Request and callback', function() {
 
         it('bidsBackHandler callBack', function() {
 
@@ -135,59 +137,59 @@ describe("Bids", function() {
 
             var assertTargeting = function(){
 
-                var top = pbjs.getAdserverTargetingForAdUnitCode(topSlotCode),
-                right = pbjs.getAdserverTargetingForAdUnitCode(rightSlotCode),
+                var top = pbjs.getAdserverTargetingForAdUnitCode(topDivCode),
+                right = pbjs.getAdserverTargetingForAdUnitCode(rightDivCode),
                 all = pbjs.getAdserverTargeting();
 
-                console.log(top);
+                console.log('top = ' + top);
+                if(top!==undefined){
+                    assert.typeOf(top,'object');
+                    assert.typeOf(top.hb_adid,'string');
+                    assert.typeOf(top.hb_bidder,'string');
+                    assert.typeOf(top.hb_pb,'string');
+                    assert.typeOf(top.hb_size,'string');
+                }
 
-                assert.typeOf(top,'array');
-                assert.typeOf(top[0],'object');
-                assert.typeOf(top[0].hb_adid,'string');
-                assert.typeOf(top[0].hb_bidder,'string');
-                assert.typeOf(top[0].hb_pb,'string');
-                assert.typeOf(top[0].hb_size,'string');
 
+                console.log('right=' + right);
 
-                console.log(right);
+                if(right!==undefined){
+                    assert.typeOf(right,'object');
+                    assert.typeOf(right.hb_adid,'string');
+                    assert.typeOf(right.hb_bidder,'string');
+                    assert.typeOf(right.hb_pb,'string');
+                    assert.typeOf(right.hb_size,'string');
+                }
 
-                assert.typeOf(right,'array');
-                assert.typeOf(right[0],'object');
-                assert.typeOf(right[0].hb_adid,'string');
-                assert.typeOf(right[0].hb_bidder,'string');
-                assert.typeOf(right[0].hb_pb,'string');
-                assert.typeOf(right[0].hb_size,'string');
-
-                console.log(all);
+                console.log('all = ' + all);
                 assert.typeOf(all,'object');
-                should.exist(all[rightSlotCode]);
-                should.exist(all[topSlotCode]);
+                should.exist(all[rightDivCode]);
+                should.exist(all[topDivCode]);
 
-                assert.deepEqual(top,all[topSlotCode],'top slot targeting');
-                assert.deepEqual(right,all[rightSlotCode],'right slot targeting');
+                assert.deepEqual(top,all[topDivCode],'top slot targeting');
+                assert.deepEqual(right,all[rightDivCode],'right slot targeting');
             };
 
             var assertArguments = function(arg){
                 assert.typeOf(arg,'object');
-                should.exist(arg[rightSlotCode]);
-                should.exist(arg[topSlotCode]);
+                should.exist(arg[rightDivCode]);
+                should.exist(arg[topDivCode]);
 
                 console.log(arg);
                 var responses = pbjs.getBidResponses();
                 console.log(responses);
                 assert.typeOf(responses,'object');
-                should.exist(responses[rightSlotCode]);
-                should.exist(responses[topSlotCode]);
+                should.exist(responses[rightDivCode]);
+                should.exist(responses[topDivCode]);
                 assert.deepEqual(arg,responses,'reponse object');
 
-                var topResponse = pbjs.getBidResponsesForAdUnitCode(topSlotCode);
-                var rightResponse = pbjs.getBidResponsesForAdUnitCode(rightSlotCode);
+                var topResponse = pbjs.getBidResponsesForAdUnitCode(topDivCode);
+                var rightResponse = pbjs.getBidResponsesForAdUnitCode(rightDivCode);
 
-                assert.deepEqual(topResponse,responses[topSlotCode],'top slot response');
-                assert.deepEqual(rightResponse,responses[rightSlotCode],'right slot response');
+                assert.deepEqual(topResponse,responses[topDivCode],'top slot response');
+                assert.deepEqual(rightResponse,responses[rightDivCode],'right slot response');
 
             };
-
         });
     });
 });
