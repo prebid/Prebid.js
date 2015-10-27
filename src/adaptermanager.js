@@ -34,7 +34,7 @@ exports.callBids = function(bidderArr) {
 };
 
 
-function registerBidAdapter(bidAdaptor, bidderCode) {
+exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 	if (bidAdaptor && bidderCode) {
 		if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
 			_bidderRegistry[bidderCode] = bidAdaptor;
@@ -44,14 +44,14 @@ function registerBidAdapter(bidAdaptor, bidderCode) {
 	} else {
 		utils.logError('bidAdaptor or bidderCode not specified');
 	}
-}
+};
 
 // Register the bid adaptors here
-registerBidAdapter(RubiconAdapter(), 'rubicon');
-registerBidAdapter(AppNexusAdapter(), 'appnexus');
-registerBidAdapter(OpenxAdapter(), 'openx');
-registerBidAdapter(PubmaticAdapter(), 'pubmatic');
-registerBidAdapter(CriteoAdapter(), 'criteo');
-registerBidAdapter(YieldbotAdapter(), 'yieldbot');
-registerBidAdapter(Casale(), 'casale');
-registerBidAdapter(Aol(), 'aol');
+this.registerBidAdapter(RubiconAdapter(), 'rubicon');
+this.registerBidAdapter(AppNexusAdapter(), 'appnexus');
+this.registerBidAdapter(OpenxAdapter(), 'openx');
+this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
+this.registerBidAdapter(CriteoAdapter(), 'criteo');
+this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
+this.registerBidAdapter(Casale(), 'casale');
+this.registerBidAdapter(Aol(), 'aol');

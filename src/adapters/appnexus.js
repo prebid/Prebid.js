@@ -7,6 +7,7 @@ var bidfactory = require('../bidfactory.js');
 /* AppNexus bidder factory function
  *  Use to create a AppNexusAdapter object
  */
+ 
 
 var AppNexusAdapter = function AppNexusAdapter() {
 	var isCalled = false;
@@ -79,7 +80,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				adloader.trackPixel(trackingUrl);
 			}
 
-			utils.logMessage('latency for placmeent code : ' + placementCode + ' : ' + timeDiff + ' ms.' + ' Tracking URL Fired : ' + trackingUrl);
+			utils.logMessage('latency for placement code : ' + placementCode + ' : ' + timeDiff + ' ms.' + ' Tracking URL Fired : ' + trackingUrl);
 		}
 	}
 
