@@ -726,6 +726,35 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 };
 
 /**
+ *
+ */
+ pbjs.bidsAvailableForAdapter = function(bidderCode){
+
+	//TODO getAd
+	var bids = pb_bidderMap[bidderCode].bids;
+
+	for (var i = 0; i < bids.length; i++) {
+		var adunitCode = bids[i].placementCode;
+		var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+
+		var bid = bidfactory.createBid(1);
+		// bid.creative_id = adId;
+		bid.bidderCode = bidderCode;
+		bid.adUnitCode = adunitCode;
+		bid.bidder = bidderCode;
+		// bid.cpm = responseCPM;
+		// bid.adUrl = jptResponseObj.result.ad;
+		// bid.width = jptResponseObj.result.width;
+		// bid.height = jptResponseObj.result.height;
+		// bid.dealId = jptResponseObj.result.deal_id;
+
+		responseObj.bids.push(bid);
+		responseObj.bidsReceivedCount++;
+		bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
+	};
+}
+
+/**
  * Wrapper to bidfactory.createBid()
  * @param  {[type]} statusCode [description]
  * @return {[type]}            [description]

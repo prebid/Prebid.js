@@ -322,9 +322,8 @@ exports.setBidderMap = function(bidderMap){
  */
 
 exports.checkIfAllBidsAreIn = function(adUnitCode) {
-	if (bidRequestCount !== 0 && bidRequestCount === bidResponseRecievedCount) {
-		_allBidsAvailable = true;
-	}
+
+	_allBidsAvailable = checkAllBidsAvailable();
 
 	//check by ad units
 	checkBidsBackByAdUnit(adUnitCode);
@@ -336,6 +335,38 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 
 	}
 };
+
+function checkAllBidsAvailable(){
+	var available = true;
+	var allAdUnits = pbjs.adUnits;
+
+	for (var i = 0; i < allAdUnits.length; i++) {
+		var adUnit = allAdUnits[i];
+		if(typeof pbBidResponseByPlacement[adUnit.code] !== objectType_undefined){
+
+			for (var j = 0; j < pbBidResponseByPlacement[adUnit.code].bids.length; j++) {
+				var responseBid = pbBidResponseByPlacement[adUnit.code].bids[j];
+				for (var k = 0; k < adUnit.bids.length; k++) {
+					var bid = adUnit.bids[k];
+
+					if(responseBid.bidder===bid.bidder){
+						allAdUnits[i].bids.splice(k,1);
+					}
+				}
+			}
+		}
+	}
+
+	for (var i = 0; i < allAdUnits.length; i++) {
+		var adUnit = allAdUnits[i];
+		if(adUnit.bids.length > 0){
+			available = false;
+			break;
+		}
+	}
+
+	return available;
+}
 
 /**
  * Add a one time callback, that is discarded after it is called
