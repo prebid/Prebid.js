@@ -123,6 +123,14 @@ Work with your development team to implement prebid.js as documented in Publishe
 </div>
 
 
+<div class="bs-docs-section demo-setup" markdown="1">
+
+# Step by step guide for setting up DFP for Prebid.js
+
+<iframe width="853" height="480" src="https://www.youtube.com/embed/-bfI24_hwZ0?rel=0" frameborder="0" allowfullscreen></iframe>
+
+</div>
+
 
 <div class="bs-docs-section demo-setup" markdown="1">
 
