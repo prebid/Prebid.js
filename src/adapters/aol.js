@@ -28,20 +28,6 @@ var AolAdapter = function AolAdapter() {
     return div.id;
   }
 
-  function _buildConfig(bid) {
-    return {
-      server: bid.params.server || 'adserver.adtechus.com',
-      network: bid.params.network+'',
-      bidKey: 'aolBid',
-      serviceType: 'pubapi',
-      params: {
-        cmd: 'bid',
-        cors: 'yes'
-      },
-      adjustment: bid.params.adjustment || 0.0
-    };
-  }
-
   function _addBid(response, context) {
     var bid = bidsMap[context.alias],
         cpm;
@@ -90,7 +76,7 @@ var AolAdapter = function AolAdapter() {
       {from: 1000, to: -1, roundValue: 1000}
     ],
     pubApiOK: _addBid,
-    pubApiER: _addErrorBid,
+    pubApiER: _addErrorBid
   };
 
   function _mapUnit(bid) {
@@ -99,7 +85,8 @@ var AolAdapter = function AolAdapter() {
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),
-      sizeId: bid.params.sizeId,
+      sizeid: bid.params.sizeId,
+      pageid: bid.params.pageId,
       secure: false,
       serviceType: 'pubapi',
       performScreenDetection: false,
