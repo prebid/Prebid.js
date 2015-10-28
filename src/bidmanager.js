@@ -19,11 +19,8 @@ exports.pbBidResponseByPlacement = pbBidResponseByPlacement;
 var _adResponsesByBidderId = {};
 exports._adResponsesByBidderId = _adResponsesByBidderId;
 
-var bidRequestCount = 0;
-exports.bidRequestCount = bidRequestCount;
-
-var bidResponseRecievedCount = 0;
-exports.bidResponseRecievedCount = bidResponseRecievedCount;
+var bidResponseReceivedCount = {};
+exports.bidResponseReceivedCount = bidResponseReceivedCount;
 
 var _allBidsAvailable = false;
 
@@ -36,9 +33,6 @@ exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
 
-exports.incrementBidCount = function() {
-	bidRequestCount++;
-};
 
 exports.getBidResponseByAdUnit = function(adUnitCode) {
 	return pbBidResponseByPlacement;
@@ -49,8 +43,9 @@ exports.getBidResponseByAdUnit = function(adUnitCode) {
 exports.clearAllBidResponses = function(adUnitCode) {
 	_allBidsAvailable = false;
 	_callbackExecuted = false;
-	bidRequestCount = 0;
-	bidResponseRecievedCount = 0;
+
+	//init bid response received count
+	initbidResponseReceivedCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
@@ -58,6 +53,31 @@ exports.clearAllBidResponses = function(adUnitCode) {
 		delete this.pbBidResponseByPlacement[prop];
 	}
 };
+
+function initbidResponseReceivedCount(){
+
+	bidResponseReceivedCount = {};
+
+	for(var i=0; i<pbjs.adUnits.length; i++){
+		var bids = pbjs.adUnits[i].bids;
+		for(var j=0; j<bids.length; j++){
+			var bidder = bids[j].bidder;
+			bidResponseReceivedCount[bidder] = 0;
+		}
+	}
+}
+
+exports.increaseBidResponseReceivedCount = function(bidderCode){
+	increaseBidResponseReceivedCount(bidderCode);
+};
+
+function increaseBidResponseReceivedCount(bidderCode){
+	if(typeof bidResponseReceivedCount[bidderCode] === objectType_undefined){
+		bidResponseReceivedCount[bidderCode] = 1;
+	}else{
+		bidResponseReceivedCount[bidderCode]++;
+	}
+}
 
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
@@ -84,7 +104,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
 		//increment the bid count
-		bidResponseRecievedCount++;
+		increaseBidResponseReceivedCount(bid.bidderCode);
 		//get price settings here
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
@@ -98,10 +118,10 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//put adUnitCode into bid
 		bid.adUnitCode = adUnitCode;
 
-    // alias the bidderCode to bidder;
-    // NOTE: this is to match documentation
-    // on custom k-v targeting
-    bid.bidder = bid.bidderCode;
+	    // alias the bidderCode to bidder;
+	    // NOTE: this is to match documentation
+	    // on custom k-v targeting
+	    bid.bidder = bid.bidderCode;
 
 		//if there is any key value pairs to map do here
 		var keyValues = {};
@@ -203,22 +223,22 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
 	custBidObj.size = custBidObj.getSize();
 
-  utils._each(targeting, function (kvPair) {
-    var key = kvPair.key,
-        value = kvPair.val;
+	utils._each(targeting, function (kvPair) {
+		var key = kvPair.key,
+		value = kvPair.val;
 
-    if (utils.isFn(value)) {
-      try {
-        keyValues[key] = value(custBidObj);
-      } catch (e) {
-        utils.logError("bidmanager", "ERROR", e);
-      }
-    } else {
+		if (utils.isFn(value)) {
+			try {
+				keyValues[key] = value(custBidObj);
+			} catch (e) {
+				utils.logError("bidmanager", "ERROR", e);
+			}
+		} else {
 			keyValues[key] = value;
-    }
-  });
+		}
+	});
 
-  return keyValues;
+  	return keyValues;
 }
 
 exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
@@ -323,7 +343,7 @@ exports.setBidderMap = function(bidderMap){
 
 exports.checkIfAllBidsAreIn = function(adUnitCode) {
 
-	_allBidsAvailable = checkAllBidsAvailable();
+	_allBidsAvailable = checkAllBidsResponseReceived();
 
 	//check by ad units
 	checkBidsBackByAdUnit(adUnitCode);
@@ -332,38 +352,18 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 	if (_allBidsAvailable) {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
 		this.executeCallback();
-
 	}
 };
 
-function checkAllBidsAvailable(){
+// check all bids response received by bidder
+function checkAllBidsResponseReceived(){
 	var available = true;
-	var allAdUnits = pbjs.adUnits;
-
-	for (var i = 0; i < allAdUnits.length; i++) {
-		var adUnit = allAdUnits[i];
-		if(typeof pbBidResponseByPlacement[adUnit.code] !== objectType_undefined){
-
-			for (var j = 0; j < pbBidResponseByPlacement[adUnit.code].bids.length; j++) {
-				var responseBid = pbBidResponseByPlacement[adUnit.code].bids[j];
-				for (var k = 0; k < adUnit.bids.length; k++) {
-					var bid = adUnit.bids[k];
-
-					if(responseBid.bidder===bid.bidder){
-						allAdUnits[i].bids.splice(k,1);
-					}
-				}
-			}
-		}
-	}
-
-	for (var i = 0; i < allAdUnits.length; i++) {
-		var adUnit = allAdUnits[i];
-		if(adUnit.bids.length > 0){
+	
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count<1){
 			available = false;
-			break;
 		}
-	}
+	});
 
 	return available;
 }
@@ -384,6 +384,4 @@ exports.addCallback = function(id, callback, cbEvent){
 	else if(CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
-
-
 };

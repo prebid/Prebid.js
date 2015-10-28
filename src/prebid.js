@@ -137,8 +137,7 @@ function loadPreBidders() {
 
 function storeBidRequestByBidder(placementCode, sizes, bids) {
 	for (var i = 0; i < bids.length; i++) {
-		//increment request count
-		bidmanager.incrementBidCount();
+
 		var currentBid = bids[i];
 		currentBid.placementCode = placementCode;
 		currentBid.sizes = sizes;
@@ -357,8 +356,6 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
 	else{
 		utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
 	}
-	
-
 };
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -374,8 +371,6 @@ pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 		return pb_targetingMap[adunitCode];
 	}
 	return pb_targetingMap;
-
-
 };
 /**
  * returns all ad server targeting for all ad units
@@ -417,13 +412,11 @@ pbjs.getBidResponses = function(adunitCode) {
 					bidArray = buildBidResponse(response[adUnit].bids);
 				}
 
-
 				returnObj[adUnit] = {
 					bids: bidArray
 				};
 
 			}
-
 		}
 	}
 
@@ -752,6 +745,8 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 		responseObj.bidsReceivedCount++;
 		bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
 	};
+
+	bidmanager.increaseBidResponseReceivedCount(bidderCode);
 }
 
 /**
