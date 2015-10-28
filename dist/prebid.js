@@ -1114,7 +1114,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
                 }
 
             } else {
-                bid = bidfactory.createBid(BID_STATUS.EMPTY);
+                bid = bidfactory.createBid(ybotlib.BID_STATUS.EMPTY);
             }
 
             bid.bidderCode = 'yieldbot';
@@ -1331,11 +1331,8 @@ exports.pbBidResponseByPlacement = pbBidResponseByPlacement;
 var _adResponsesByBidderId = {};
 exports._adResponsesByBidderId = _adResponsesByBidderId;
 
-var bidRequestCount = 0;
-exports.bidRequestCount = bidRequestCount;
-
-var bidResponseRecievedCount = 0;
-exports.bidResponseRecievedCount = bidResponseRecievedCount;
+var bidResponseReceivedCount = {};
+exports.bidResponseReceivedCount = bidResponseReceivedCount;
 
 var _allBidsAvailable = false;
 
@@ -1348,9 +1345,6 @@ exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
 
-exports.incrementBidCount = function() {
-	bidRequestCount++;
-};
 
 exports.getBidResponseByAdUnit = function(adUnitCode) {
 	return pbBidResponseByPlacement;
@@ -1361,8 +1355,9 @@ exports.getBidResponseByAdUnit = function(adUnitCode) {
 exports.clearAllBidResponses = function(adUnitCode) {
 	_allBidsAvailable = false;
 	_callbackExecuted = false;
-	bidRequestCount = 0;
-	bidResponseRecievedCount = 0;
+
+	//init bid response received count
+	initbidResponseReceivedCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
@@ -1370,6 +1365,31 @@ exports.clearAllBidResponses = function(adUnitCode) {
 		delete this.pbBidResponseByPlacement[prop];
 	}
 };
+
+function initbidResponseReceivedCount(){
+
+	bidResponseReceivedCount = {};
+
+	for(var i=0; i<pbjs.adUnits.length; i++){
+		var bids = pbjs.adUnits[i].bids;
+		for(var j=0; j<bids.length; j++){
+			var bidder = bids[j].bidder;
+			bidResponseReceivedCount[bidder] = 0;
+		}
+	}
+}
+
+exports.increaseBidResponseReceivedCount = function(bidderCode){
+	increaseBidResponseReceivedCount(bidderCode);
+};
+
+function increaseBidResponseReceivedCount(bidderCode){
+	if(typeof bidResponseReceivedCount[bidderCode] === objectType_undefined){
+		bidResponseReceivedCount[bidderCode] = 1;
+	}else{
+		bidResponseReceivedCount[bidderCode]++;
+	}
+}
 
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
@@ -1396,7 +1416,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
 		//increment the bid count
-		bidResponseRecievedCount++;
+		increaseBidResponseReceivedCount(bid.bidderCode);
 		//get price settings here
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
@@ -1410,10 +1430,10 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//put adUnitCode into bid
 		bid.adUnitCode = adUnitCode;
 
-    // alias the bidderCode to bidder;
-    // NOTE: this is to match documentation
-    // on custom k-v targeting
-    bid.bidder = bid.bidderCode;
+	    // alias the bidderCode to bidder;
+	    // NOTE: this is to match documentation
+	    // on custom k-v targeting
+	    bid.bidder = bid.bidderCode;
 
 		//if there is any key value pairs to map do here
 		var keyValues = {};
@@ -1515,22 +1535,22 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
 	custBidObj.size = custBidObj.getSize();
 
-  utils._each(targeting, function (kvPair) {
-    var key = kvPair.key,
-        value = kvPair.val;
+	utils._each(targeting, function (kvPair) {
+		var key = kvPair.key,
+		value = kvPair.val;
 
-    if (utils.isFn(value)) {
-      try {
-        keyValues[key] = value(custBidObj);
-      } catch (e) {
-        utils.logError("bidmanager", "ERROR", e);
-      }
-    } else {
+		if (utils.isFn(value)) {
+			try {
+				keyValues[key] = value(custBidObj);
+			} catch (e) {
+				utils.logError("bidmanager", "ERROR", e);
+			}
+		} else {
 			keyValues[key] = value;
-    }
-  });
+		}
+	});
 
-  return keyValues;
+  	return keyValues;
 }
 
 exports.registerDefaultBidderSetting = function(bidderCode, defaultSetting) {
@@ -1634,9 +1654,8 @@ exports.setBidderMap = function(bidderMap){
  */
 
 exports.checkIfAllBidsAreIn = function(adUnitCode) {
-	if (bidRequestCount !== 0 && bidRequestCount === bidResponseRecievedCount) {
-		_allBidsAvailable = true;
-	}
+
+	_allBidsAvailable = checkAllBidsResponseReceived();
 
 	//check by ad units
 	checkBidsBackByAdUnit(adUnitCode);
@@ -1645,9 +1664,21 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 	if (_allBidsAvailable) {
 		//execute our calback method if it exists && pbjs.initAdserverSet !== true
 		this.executeCallback();
-
 	}
 };
+
+// check all bids response received by bidder
+function checkAllBidsResponseReceived(){
+	var available = true;
+	
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count<1){
+			available = false;
+		}
+	});
+
+	return available;
+}
 
 /**
  * Add a one time callback, that is discarded after it is called
@@ -1665,8 +1696,6 @@ exports.addCallback = function(id, callback, cbEvent){
 	else if(CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
-
-
 };
 
 },{"./constants.json":13,"./utils.js":15}],13:[function(require,module,exports){
@@ -1839,8 +1868,7 @@ function loadPreBidders() {
 
 function storeBidRequestByBidder(placementCode, sizes, bids) {
 	for (var i = 0; i < bids.length; i++) {
-		//increment request count
-		bidmanager.incrementBidCount();
+
 		var currentBid = bids[i];
 		currentBid.placementCode = placementCode;
 		currentBid.sizes = sizes;
@@ -2059,8 +2087,6 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
 	else{
 		utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
 	}
-	
-
 };
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -2076,8 +2102,6 @@ pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 		return pb_targetingMap[adunitCode];
 	}
 	return pb_targetingMap;
-
-
 };
 /**
  * returns all ad server targeting for all ad units
@@ -2119,13 +2143,11 @@ pbjs.getBidResponses = function(adunitCode) {
 					bidArray = buildBidResponse(response[adUnit].bids);
 				}
 
-
 				returnObj[adUnit] = {
 					bids: bidArray
 				};
 
 			}
-
 		}
 	}
 
@@ -2315,7 +2337,7 @@ pbjs.removeAdUnit = function(adUnitCode) {
 	if (adUnitCode) {
 		for (var i = 0; i < pbjs.adUnits.length; i++) {
 			if (pbjs.adUnits[i].code === adUnitCode) {
-				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
+				pbjs.adUnits.splice(i, 1);
 			}
 		}
 	}
@@ -2426,6 +2448,37 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 		utils.logError('Error registering bidder adapter : ' + e.message);
 	}
 };
+
+/**
+ *
+ */
+ pbjs.bidsAvailableForAdapter = function(bidderCode){
+
+	//TODO getAd
+	var bids = pb_bidderMap[bidderCode].bids;
+
+	for (var i = 0; i < bids.length; i++) {
+		var adunitCode = bids[i].placementCode;
+		var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+
+		var bid = bidfactory.createBid(1);
+		// bid.creative_id = adId;
+		bid.bidderCode = bidderCode;
+		bid.adUnitCode = adunitCode;
+		bid.bidder = bidderCode;
+		// bid.cpm = responseCPM;
+		// bid.adUrl = jptResponseObj.result.ad;
+		// bid.width = jptResponseObj.result.width;
+		// bid.height = jptResponseObj.result.height;
+		// bid.dealId = jptResponseObj.result.deal_id;
+
+		responseObj.bids.push(bid);
+		responseObj.bidsReceivedCount++;
+		bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
+	};
+
+	bidmanager.increaseBidResponseReceivedCount(bidderCode);
+}
 
 /**
  * Wrapper to bidfactory.createBid()

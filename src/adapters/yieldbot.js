@@ -67,7 +67,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
                 }
 
             } else {
-                bid = bidfactory.createBid(BID_STATUS.EMPTY);
+                bid = bidfactory.createBid(ybotlib.BID_STATUS.EMPTY);
             }
 
             bid.bidderCode = 'yieldbot';

@@ -137,8 +137,7 @@ function loadPreBidders() {
 
 function storeBidRequestByBidder(placementCode, sizes, bids) {
 	for (var i = 0; i < bids.length; i++) {
-		//increment request count
-		bidmanager.incrementBidCount();
+
 		var currentBid = bids[i];
 		currentBid.placementCode = placementCode;
 		currentBid.sizes = sizes;
@@ -357,8 +356,6 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
 	else{
 		utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
 	}
-	
-
 };
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -374,8 +371,6 @@ pbjs.getAdserverTargetingForAdUnitCode = function(adunitCode) {
 		return pb_targetingMap[adunitCode];
 	}
 	return pb_targetingMap;
-
-
 };
 /**
  * returns all ad server targeting for all ad units
@@ -417,13 +412,11 @@ pbjs.getBidResponses = function(adunitCode) {
 					bidArray = buildBidResponse(response[adUnit].bids);
 				}
 
-
 				returnObj[adUnit] = {
 					bids: bidArray
 				};
 
 			}
-
 		}
 	}
 
@@ -613,7 +606,7 @@ pbjs.removeAdUnit = function(adUnitCode) {
 	if (adUnitCode) {
 		for (var i = 0; i < pbjs.adUnits.length; i++) {
 			if (pbjs.adUnits[i].code === adUnitCode) {
-				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
+				pbjs.adUnits.splice(i, 1);
 			}
 		}
 	}
@@ -724,6 +717,37 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 		utils.logError('Error registering bidder adapter : ' + e.message);
 	}
 };
+
+/**
+ *
+ */
+ pbjs.bidsAvailableForAdapter = function(bidderCode){
+
+	//TODO getAd
+	var bids = pb_bidderMap[bidderCode].bids;
+
+	for (var i = 0; i < bids.length; i++) {
+		var adunitCode = bids[i].placementCode;
+		var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+
+		var bid = bidfactory.createBid(1);
+		// bid.creative_id = adId;
+		bid.bidderCode = bidderCode;
+		bid.adUnitCode = adunitCode;
+		bid.bidder = bidderCode;
+		// bid.cpm = responseCPM;
+		// bid.adUrl = jptResponseObj.result.ad;
+		// bid.width = jptResponseObj.result.width;
+		// bid.height = jptResponseObj.result.height;
+		// bid.dealId = jptResponseObj.result.deal_id;
+
+		responseObj.bids.push(bid);
+		responseObj.bidsReceivedCount++;
+		bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
+	};
+
+	bidmanager.increaseBidResponseReceivedCount(bidderCode);
+}
 
 /**
  * Wrapper to bidfactory.createBid()

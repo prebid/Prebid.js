@@ -1,4 +1,4 @@
-describe("API", function() {
+describe("Publisher API", function() {
   var assert = chai.assert;
 
   describe("has api", function() {
@@ -23,5 +23,4 @@ describe("API", function() {
       assert.isFunction(pbjs.removeCallback);   
    });
   });
-
 });
