@@ -1,8 +1,3 @@
-<script type 'text/javascript'>
-var i = 0, w = window.self;
-while(w!== window.top && !w.pbjs.renderAd && i<10){
-	w = window.self.parent;
-	i++;
-}
-try{ w.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e){}
+<script>
+    try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
 </script>
