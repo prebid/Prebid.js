@@ -29,7 +29,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addBid(response, context) {
-    var bid = bidsMap[context.alias],
+    var bid = bidsMap[context.alias || context.placement],
         cpm;
 
     if (!bid) {
@@ -55,7 +55,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addErrorBid(response, context) {
-    var bid = bidsMap[context.alias];
+    var bid = bidsMap[context.alias || context.placement];
     if (!bid) {
       utils.logError('AOL', 'ERROR', 'mismatched bid: ' + context.placement);
       return;
@@ -81,7 +81,7 @@ var AolAdapter = function AolAdapter() {
 
   function _mapUnit(bid) {
     // save the bid
-    bidsMap[bid.params.alias] = bid;
+    bidsMap[bid.params.alias || bid.params.placement] = bid;
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),

@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.0 
-Updated : 2015-10-28 */
+Updated : 2015-11-02 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -91,7 +91,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addBid(response, context) {
-    var bid = bidsMap[context.alias],
+    var bid = bidsMap[context.alias || context.placement],
         cpm;
 
     if (!bid) {
@@ -117,7 +117,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addErrorBid(response, context) {
-    var bid = bidsMap[context.alias];
+    var bid = bidsMap[context.alias || context.placement];
     if (!bid) {
       utils.logError('AOL', 'ERROR', 'mismatched bid: ' + context.placement);
       return;
@@ -143,7 +143,7 @@ var AolAdapter = function AolAdapter() {
 
   function _mapUnit(bid) {
     // save the bid
-    bidsMap[bid.params.alias] = bid;
+    bidsMap[bid.params.alias || bid.params.placement] = bid;
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),
