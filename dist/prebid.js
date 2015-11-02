@@ -1531,14 +1531,18 @@ exports.trackPixel = function(pixelUrl) {
 	//run impression trackers via page pixels?
 	try {
 
-		//add a cachebuster so we don't end up dropping any impressions
-		pixelUrl += '&rnd=' + Math.random();
-
 		if (pixelUrl) {
+			
+			//add a cachebuster so we don't end up dropping any impressions
+			pixelUrl += '&rnd=' + Math.random();
+
 			var img = document.createElement('img');
 			img.src = pixelUrl;
-		}
 
+			img.width = 1;
+			img.height = 1;
+			document.body.appendChild(img);
+		}
 
 	} catch (e) {
 
