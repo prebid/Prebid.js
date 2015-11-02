@@ -3,8 +3,8 @@ layout: page
 title: About Prebid.js
 description: How prebid.js was started and what is it about
 pid: 60
-isNew: true
-hide: false
+isNew: false
+hide: true
 isNavParent: true
 ---
 
