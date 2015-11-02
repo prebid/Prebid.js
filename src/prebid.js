@@ -9,6 +9,8 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
+var analyticsmanager = require('./analyticsmanager');
+
 
 /* private variables */
 
@@ -34,6 +36,9 @@ pbjs.libLoaded = true;
 
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
+
+//create analytics array
+pbjs.analytics = pbjs.analytics || [];
 
 /**
  * Command queue that functions will execute once prebid.js is loaded
@@ -97,6 +102,9 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
+
+	//TODO : process analytics adapter queue if the queue has processes
+
 
 }
 
@@ -737,8 +745,40 @@ pbjs.loadScript = function(tagSrc, callback){
 	adloader.loadScript(tagSrc, callback);
 };
 
-processQue();
 
+pbjs.registerAnalyticsAdaptor = function(analyticsAdaptor, analyticsCode){
+	try{
+		analyticsmanager.registerAnalyticsAdaptor(analyticsAdaptor(), analyticsCode);
+		// pbjs.addAnalytics(createAnalytics(analyticsCode));
+	}
+	catch(e){
+		utils.logError('Error analytics  adapter : ' + e.message);
+	}
+};
+
+pbjs.addAnalytics = function(analyticsArr){
+	if (utils.isArray(analyticsArr)) {
+		//append array to existing
+		pbjs.analytics.push.apply(pbjs.analytics, analyticsArr);
+	} else if (typeof analyticsArr === objectType_object) {
+		pbjs.analytics.push(analyticsArr);
+	}
+};
+
+function createAnalytics(analyticsCode){
+	var obj = { name:analyticsCode };
+	return obj;
+}
+
+pbjs.loadAnalytics = function(){
+	analyticsmanager.load(pbjs.analytics);
+};
+
+pbjs.callAnalytics = function(){
+	analyticsmanager.call(pbjs.analytics);
+};
+
+processQue();
 
 //only for test
 pbjs_testonly = {};
