@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.0 
-Updated : 2015-10-28 */
+Updated : 2015-11-02 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -804,6 +804,7 @@ var RubiconAdapter = function RubiconAdapter() {
 			'window.rp_adtype   = "jsonp";' +
 			'window.rp_inventory = %%RP_INVENTORY%% ;' +
 			'window.rp_floor=%%RP_FLOOR%%;' +
+			'window.rp_fastlane = true;' +
 			'window.rp_callback = ' + callback + ';';
 
 
@@ -1060,6 +1061,7 @@ exports.loadScript = function(tagSrc, callback) {
 	var jptScript = document.createElement('script');
 	jptScript.type = 'text/javascript';
 	jptScript.async = true;
+
 
 	// Execute a callback if necessary
 	if (callback && typeof callback === "function") {
@@ -1785,60 +1787,20 @@ function getWinningBid(bidArray) {
 }
 
 
-function setGPTAsyncTargeting(code, slot, adUnitBids) {
-	var bidArrayTargeting = [];
-	if (adUnitBids && adUnitBids.bids.length !== 0) {
-		for (var i = 0; i < adUnitBids.bids.length; i++) {
-			var bid = adUnitBids.bids[i];
-			//if use the generic key push into array with CPM for sorting
-			if (!bid.alwaysUseBid) {
-				bidArrayTargeting.push({
-					cpm: bid.cpm,
-					bid: bid
-				});
-			}
-			// alwaysUseBid = true - send the bid anyway
-			else {
-				var keyStrings = adUnitBids.bids[i].adserverTargeting;
-				for (var key in keyStrings) {
-					if (keyStrings.hasOwnProperty(key)) {
-						try {
-							utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-							//clear gpt targeting for slot then set
-							//googletag.pubads().clearTargeting(code);
-							slot.clearTargeting();
-							slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
+function setGPTAsyncTargeting(code, slot) {
+	//get the targeting that is already configured
+	var keyStrings = getTargetingfromGPTIdentifier(slot);
+	slot.clearTargeting();
+	for (var key in keyStrings) {
+		if (keyStrings.hasOwnProperty(key)) {
+			try {
+				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
+				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
 
-						} catch (e) {
-							utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-						}
-					}
-				}
-			}
-
-
-		}
-
-	} else {
-		utils.logMessage('No bids eligble for adUnit code : ' + code);
-	}
-	//set generic key targeting here
-	if (bidArrayTargeting.length !== 0) {
-
-		var winningBid = getWinningBid(bidArrayTargeting);
-		var keyValues = winningBid.adserverTargeting;
-		for (var key in keyValues) {
-			if (keyValues.hasOwnProperty(key)) {
-				try {
-					utils.logMessage('Attempting to set key value for slot: '  + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
-					slot.setTargeting(key, encodeURIComponent(keyValues[key]));
-
-				} catch (e) {
-					utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-				}
+			} catch (e) {
+				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
 		}
-
 	}
 }
 /*
@@ -2053,7 +2015,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 
 				if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
 					placementBids = getBidResponsesByAdUnit(code);
-					setGPTAsyncTargeting(code, slots[k], placementBids);
+					setGPTAsyncTargeting(code, slots[k]);
 				}
 			}
 		}
@@ -2063,8 +2025,8 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		for (i = 0; i < slots.length; i++) {
 			var adUnitCode = slots[i].getSlotElementId();
 			if (adUnitCode) {
-				placementBids = getBidsFromGTPIdentifier(slots[i]);
-				setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
+				//placementBids = getBidsFromGTPIdentifier(slots[i]);
+				setGPTAsyncTargeting(adUnitCode, slots[i]);
 			}
 		}
 	}
@@ -2075,17 +2037,17 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
  * @param  {[type]} slot [description]
  * @return {[type]}      [description]
  */
-function getBidsFromGTPIdentifier(slot){
-	var bids = null;
+function getTargetingfromGPTIdentifier(slot){
+	var targeting = null;
 	if(slot){
 		//first get by elementId
-		bids =  getBidResponsesByAdUnit(slot.getSlotElementId());
+		targeting =  pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
 		//if not available, try by adUnitPath
-		if(!bids){
-			bids = getBidResponsesByAdUnit(slot.getAdUnitPath());
+		if(!targeting){
+			targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
 		}
 	}
-	return bids;
+	return targeting;
 }
 
 /**
@@ -2197,7 +2159,7 @@ pbjs.removeAdUnit = function(adUnitCode) {
 	if (adUnitCode) {
 		for (var i = 0; i < pbjs.adUnits.length; i++) {
 			if (pbjs.adUnits[i].code === adUnitCode) {
-				pbjs.adUnits = pbjs.adUnits.splice(i, 1);
+				pbjs.adUnits.splice(i, 1);
 			}
 		}
 	}
