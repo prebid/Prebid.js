@@ -81,6 +81,34 @@ exports.parseQueryStringParameters = function(queryObj) {
 	return result;
 };
 
+
+//transform an AdServer targeting bids into a query string to send to the adserver
+//bid params should be an object such as {key: "value", key1 : "value1"}
+exports.transformAdServerTargetingObj = function(adServerTargeting) {
+	var result = "";
+	if (!adServerTargeting)
+		return "";
+	for (var k in adServerTargeting)
+		if (adServerTargeting.hasOwnProperty(k))
+			result += k + "=" + encodeURIComponent(adServerTargeting[k]) + "&";
+	return result;
+};
+
+//Copy all of the properties in the source objects over to the target object
+//return the target object.
+exports.extend = function(target, source){
+	target = target || {};
+
+	this._each(source,function(value,prop){    
+		if (typeof source[prop] === objectType_object) {
+			target[prop] = extend(target[prop], source[prop]);
+		} else {
+			target[prop] = source[prop];
+		}
+	});
+	return target;
+};
+
 //parse a GPT-Style General Size Array or a string like "300x250" into a format
 //suitable for passing to a GPT tag, may include size and/or promo sizes
 exports.parseSizesInput = function(sizeObj) {
@@ -176,7 +204,7 @@ var errLogFn = (function (hasLogger) {
 
 var debugTurnedOn = function() {
 	if (pbjs.logging === false && _loggingChecked === false) {
-		pbjs.logging = !!getParameterByName(CONSTANTS.DEBUG_MODE);
+		pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 		_loggingChecked = true;
 	}
 

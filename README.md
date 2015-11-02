@@ -57,7 +57,7 @@ pbjs.que.push(function(){
     }];
 	//add the adUnits
     pbjs.addAdUnits(adUnits);
-    }];
+});
 ```
 
 **Request Bids**
@@ -96,3 +96,8 @@ Change `{id}` values appropriately
 	$ gulp serve
 
 Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html to run the example file
+
+### Unit Test In the Browser ###
+
+Navigate to http://localhost:9999/test/spec/runner.html to run the test file.
+

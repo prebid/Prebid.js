@@ -28,22 +28,8 @@ var AolAdapter = function AolAdapter() {
     return div.id;
   }
 
-  function _buildConfig(bid) {
-    return {
-      server: bid.params.server || 'adserver.adtechus.com',
-      network: bid.params.network+'',
-      bidKey: 'aolBid',
-      serviceType: 'pubapi',
-      params: {
-        cmd: 'bid',
-        cors: 'yes'
-      },
-      adjustment: bid.params.adjustment || 0.0
-    };
-  }
-
   function _addBid(response, context) {
-    var bid = bidsMap[context.alias],
+    var bid = bidsMap[context.alias || context.placement],
         cpm;
 
     if (!bid) {
@@ -69,7 +55,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addErrorBid(response, context) {
-    var bid = bidsMap[context.alias];
+    var bid = bidsMap[context.alias || context.placement];
     if (!bid) {
       utils.logError('AOL', 'ERROR', 'mismatched bid: ' + context.placement);
       return;
@@ -90,16 +76,18 @@ var AolAdapter = function AolAdapter() {
       {from: 1000, to: -1, roundValue: 1000}
     ],
     pubApiOK: _addBid,
-    pubApiER: _addErrorBid,
+    pubApiER: _addErrorBid
   };
 
   function _mapUnit(bid) {
     // save the bid
-    bidsMap[bid.params.alias] = bid;
+    bidsMap[bid.params.alias || bid.params.placement] = bid;
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),
-      sizeId: bid.params.sizeId,
+      server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
+      sizeid: bid.params.sizeId,
+      pageid: bid.params.pageId,
       secure: false,
       serviceType: 'pubapi',
       performScreenDetection: false,
