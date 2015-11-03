@@ -24,6 +24,8 @@ footerLinks:
     url: https://github.com/prebid/Prebid.js/issues?state=open
   - title: Contact Us
     url: /questions.html
+  - title: About Us
+    url: /about.html
 
 
 # header
