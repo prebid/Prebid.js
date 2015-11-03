@@ -9,8 +9,6 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
-var analyticsmanager = require('./analyticsmanager');
-
 
 /* private variables */
 
@@ -36,9 +34,6 @@ pbjs.libLoaded = true;
 
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
-
-//create analytics array
-pbjs.analytics = pbjs.analytics || [];
 
 /**
  * Command queue that functions will execute once prebid.js is loaded
@@ -102,10 +97,6 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
-
-	//TODO : process analytics adapter queue if the queue has processes
-
-
 }
 
 function isValidAdUnitSetting() {
@@ -745,37 +736,62 @@ pbjs.loadScript = function(tagSrc, callback){
 	adloader.loadScript(tagSrc, callback);
 };
 
+//return data for analytics
+pbjs.getAnalyticsData = function(){
+	var returnObj = {};
+	var bidResponses = pbjs.getBidResponses();
 
-pbjs.registerAnalyticsAdaptor = function(analyticsAdaptor, analyticsCode){
-	try{
-		analyticsmanager.registerAnalyticsAdaptor(analyticsAdaptor(), analyticsCode);
-		// pbjs.addAnalytics(createAnalytics(analyticsCode));
+	//create return obj for all adUnits
+	for(var i=0;i<pbjs.adUnits.length;i++){
+		var allBids = pbjs.adUnits[i].bids;
+		for(var j=0;j<allBids.length;j++){
+			var bid = allBids[j];
+			if(typeof returnObj[bid.bidder] === objectType_undefined){
+				returnObj[bid.bidder] = {};
+				returnObj[bid.bidder].bids = [];
+			}
+
+			var returnBids = returnObj[bid.bidder].bids;
+			var returnBidObj = {};
+			returnBidObj.timeout = true;
+			returnBids.push(returnBidObj);
+		}
 	}
-	catch(e){
-		utils.logError('Error analytics  adapter : ' + e.message);
-	}
-};
 
-pbjs.addAnalytics = function(analyticsArr){
-	if (utils.isArray(analyticsArr)) {
-		//append array to existing
-		pbjs.analytics.push.apply(pbjs.analytics, analyticsArr);
-	} else if (typeof analyticsArr === objectType_object) {
-		pbjs.analytics.push(analyticsArr);
-	}
-};
+	utils._each(bidResponses,function(responseByUnit, adUnitCode){
+		var bids = responseByUnit.bids;
 
-function createAnalytics(analyticsCode){
-	var obj = { name:analyticsCode };
-	return obj;
-}
+		for(var i=0; i<bids.length; i++){
 
-pbjs.loadAnalytics = function(){
-	analyticsmanager.load(pbjs.analytics);
-};
+			var bid = bids[i];
+			if(bid.bidderCode!==''){
+				var returnBids = returnObj[bid.bidderCode].bids;
+				var returnIdx = 0;
+				
+				for(var j=0;j<returnBids.length;j++){
+					if(returnBids[j].timeout)
+						returnIdx = j;
+				}
 
-pbjs.callAnalytics = function(){
-	analyticsmanager.call(pbjs.analytics);
+				var returnBidObj = {};
+
+				returnBidObj.cpm = bid.cpm;
+				returnBidObj.timeToRespond = bid.timeToRespond;
+
+				//check winning
+				if(pb_targetingMap[adUnitCode].hb_adid === bid.adId){
+					returnBidObj.win = true;
+				}else{
+					returnBidObj.win = false;
+				}
+
+				returnBidObj.timeout = false;
+				returnBids[returnIdx] = returnBidObj;
+			}
+		}
+	});
+
+	return returnObj;
 };
 
 processQue();

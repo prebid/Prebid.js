@@ -42,7 +42,7 @@ gulp.task('jscs', function() {
 //run code quality checks here
 gulp.task('jshint', function() {
 
-    gulp.src(['./src/*.js', './src/adapters/*.js', './src/analytics/*.js'])
+    gulp.src(['./src/*.js', './src/adapters/*.js'])
         .pipe(jshint({
             'bitwise': 'true',
             'curly': 'true',
