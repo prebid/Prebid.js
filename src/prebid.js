@@ -294,6 +294,61 @@ function requestAllBids(tmout){
 	init(timeout);
 }
 
+function getCpmDistribution(cpm){
+	var distribution;
+	if(cpm >=0 && cpm <0.5){
+		distribution = '$0-0.5';
+	}else if(cpm >=0.5 && cpm <1){
+		distribution = '$0.5-1';
+	}else if(cpm >=1 && cpm <1.5){
+		distribution = '$1-1.5';		
+	}else if(cpm >=1.5 && cpm <2){
+		distribution = '$1.5-2';		
+	}else if(cpm >=2 && cpm <2.5){
+		distribution = '$2-2.5';		
+	}else if(cpm >=2.5 && cpm <3){
+		distribution = '$2.5-3';		
+	}else if(cpm >=3 && cpm <4){
+		distribution = '$3-4';		
+	}else if(cpm >=4 && cpm <6){
+		distribution = '$4-6';		
+	}else if(cpm >=6 && cpm <8){
+		distribution = '$6-8';		
+	}else if(cpm >=8){
+		distribution = '$8 above';
+	}
+	return distribution;
+}
+
+function getLoadTimeDistribution(time){
+	var distribution;
+	if(time >=0 && time <200){
+		distribution = '0-200ms';
+	}else if(time >=200 && time <300){
+		distribution = '200-300ms';
+	}else if(time >=300 && time <400){
+		distribution = '300-400ms';
+	}else if(time >=400 && time <500){
+		distribution = '400-500ms';
+	}else if(time >=500 && time <600){
+		distribution = '500-600ms';
+	}else if(time >=600 && time <800){
+		distribution = '600-800ms';
+	}else if(time >=800 && time <1000){
+		distribution = '800-1000ms';
+	}else if(time >=1000 && time <1200){
+		distribution = 't2: 1000-1200ms';
+	}else if(time >=1200 && time <1500){
+		distribution = 't2: 1200-1500ms';
+	}else if(time >=1500 && time <2000){
+		distribution = 't2: 1500-2000ms';
+	}else if(time >=2000){
+		distribution = 't2: 2000ms above';
+	}
+
+	return distribution;
+}
+
 
 //////////////////////////////////
 //								//
@@ -736,7 +791,11 @@ pbjs.loadScript = function(tagSrc, callback){
 	adloader.loadScript(tagSrc, callback);
 };
 
-//return data for analytics
+/**
+ * return data for analytics
+ * @param  {Function}  [description]
+ * @return {[type]}    [description]
+ */
 pbjs.getAnalyticsData = function(){
 	var returnObj = {};
 	var bidResponses = pbjs.getBidResponses();
@@ -793,6 +852,43 @@ pbjs.getAnalyticsData = function(){
 
 	return returnObj;
 };
+
+pbjs.sendAnalyticsData = function(){
+    ga('send', 'pageview');
+
+    var data = pbjs.getAnalyticsData();
+    for (bidder in data) {
+        if (hasOwnProperty.call(data, bidder)){
+
+            var bids = data[bidder].bids;
+            for(var i=0;i<bids.length;i++){
+                var bid = bids[i];
+                var category = 'Prebid.js Bids';
+                ga('send','event',category,'Requests',bidder,1);
+                ga('send','event',category,'Bids',bidder,1);
+                ga('send','event',category,'Timeouts',bidder,Number(bid.timeout));
+
+                if(typeof bid.win !== objectType_undefined){
+                   	ga('send','event',category,'Wins',bidder,Number(bid.win)); 
+                }
+
+                if(typeof bid.timeToRespond !== objectType_undefined){
+                	ga('send', 'event', category, 'Bid Load Time', bidder, bid.timeToRespond);
+
+                	var dis = getLoadTimeDistribution(bid.timeToRespond);
+                	ga('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
+                }
+                if(typeof bid.cpm !== objectType_undefined){
+                	var cpmDis = getCpmDistribution(bid.cpm);
+                	ga('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+                }
+
+            }
+        } 
+    }
+};
+
+
 
 processQue();
 
