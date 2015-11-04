@@ -12,7 +12,24 @@ var SovrnAdapter = function SovrnAdapter() {
 
 	function _callBids(params) {
 		var sovrnBids = params.bids || [];
-		_requestBids(sovrnBids); 
+		// De-dupe by tagid then issue single bid request for all bids
+		_requestBids(_getUniqueTagids(sovrnBids));
+	}
+
+	// filter bids to de-dupe them?
+	function _getUniqueTagids(bids) {
+		var key;
+		var map = {};
+		var Tagids = [];
+		bids.forEach(function(bid) {
+			map[utils.getBidIdParamater('tagid', bid.params)] = bid;
+		});
+		for (key in map) {
+			if (map.hasOwnProperty(key)) {
+				Tagids.push(map[key]);
+			}
+		}
+		return Tagids;
 	}
 
 	function _requestBids(bidReqs) {
@@ -29,22 +46,19 @@ var SovrnAdapter = function SovrnAdapter() {
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
 			
-			for (var i = 0; i<bid.sizes.length; i++) {
-				var size = bid.sizes[i];
-				var width = size[0];
-				var height = size[1];
-				imp = {
-						id: utils.getUniqueIdentifierStr(),
-						banner: {
-							w: width,
-							h: height
-						},
-						tagid: tagId,
-						bidfloor: bidFloor
+			//sovrn supports only one size per tagid, so we just take the first size if there are more
+			imp = 
+				{
+					id: utils.getUniqueIdentifierStr(),
+					banner: {
+						w: bid.sizes[0][0],
+						h: bid.sizes[0][1]
+					},
+					tagid: tagId,
+					bidfloor: bidFloor
 				}
-				sovrnImps.push(imp);
-				bidmanager.pbCallbackMap[imp.id] = bid;
-			}
+			sovrnImps.push(imp);
+			bidmanager.pbCallbackMap[imp.id] = bid;
 		});
 
 		// build bid request with impressions
