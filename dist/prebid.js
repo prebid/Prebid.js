@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.0 
-Updated : 2015-11-02 */
+Updated : 2015-11-04 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -9,19 +9,30 @@ var OpenxAdapter = require('./adapters/openx');
 var PubmaticAdapter = require('./adapters/pubmatic.js');
 var CriteoAdapter = require('./adapters/criteo');
 var YieldbotAdapter = require('./adapters/yieldbot');
-var Casale = require('./adapters/casale');
+var IndexExchange = require('./adapters/indexExchange');
 var Aol = require('./adapters/aol');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 
 var _bidderRegistry = {};
+exports.bidderRegistry = _bidderRegistry;
 
 
 exports.callBids = function(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
+		//rename casale to indexExchange
+		if(bidder && bidder.bidderCode && bidder.bidderCode === 'casale'){
+			bidder.bidderCode = 'indexExchange';
+			try{
+				utils._each(bidder.bids, function(value){
+					value.params['indexUrl'] = value.params.casaleUrl;
+				});
+			}
+			catch(e){}
+		}
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
@@ -56,10 +67,10 @@ this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
-this.registerBidAdapter(Casale(), 'casale');
+this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Aol(), 'aol');
 
-},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/casale":4,"./adapters/criteo":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],2:[function(require,module,exports){
+},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],2:[function(require,module,exports){
 var utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
     bidmanager = require('../bidmanager.js'),
@@ -429,140 +440,6 @@ var AppNexusAdapter = function AppNexusAdapter() {
 };
 module.exports = AppNexusAdapter;
 },{"../adloader.js":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],4:[function(require,module,exports){
-//Factory for creating the bidderAdaptor
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-
-var ADAPTER_NAME = 'CASALE';
-var ADAPTER_CODE = 'casale';
-
-var CasaleAdapter = function CasaleAdapter() {
-	var slotIdMap = {};
-	var requiredParams = [
-		/* 0 */
-		'slotId',
-		/* 1 */
-		'casaleUrl'
-	];
-	var firstAdUnitCode = '';
-
-	function _callBids(request) {
-		var bidArr = request.bids;
-
-		//validate first bid request with all required params.
-		if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
-			return;
-		}
-		for (var i = 0; i < bidArr.length; i++) {
-			var bid = bidArr[i];
-			//only validate 1st param on rest of bids
-			if (utils.hasValidBidRequest(bid.params, requiredParams.slice(0, 1), ADAPTER_NAME)) {
-				firstAdUnitCode = bid.placementCode;
-				var slotId = bid.params[requiredParams[0]];
-				slotIdMap[slotId] = bid;
-			}
-		}
-
-		var adUrl = bidArr[0].params[requiredParams[1]];
-		var iframeContents = createRequestContent(adUrl);
-		var iframe = buildIframeContainer();
-		var iframeId = iframe.id;
-		//attach to onload event of iframe to ensure script is ready
-		utils.addEventHandler(iframe, 'load', function() {
-			try {
-				var iframeObj = window.frames[iframeId];
-				var casaleObj = iframeObj.contentWindow._IndexRequestData.targetIDToBid;
-				var lookupObj = iframeObj.contentWindow.cygnus_index_args;
-
-				if (utils.isEmpty(casaleObj)) {
-					//no bid response
-					var bid = bidfactory.createBid(2);
-					bid.bidderCode = ADAPTER_CODE;
-					logErrorBidResponse();
-					return;
-				}
-
-				utils._each(casaleObj, function(adContents, cpmAndSlotId) {
-
-					utils._each(slotIdMap, function(bid, adSlotId) {
-						var obj = cpmAndSlotId.split('_');
-						var currentId = obj[0];
-						var currentCPM = obj[1];
-						if (currentId === adSlotId) {
-							var bidObj = slotIdMap[adSlotId];
-							var adUnitCode = bidObj.placementCode;
-							var slotObj = getSlotObj(lookupObj, adSlotId);
-							bid = bidfactory.createBid(1);
-							bid.cpm = (currentCPM / 100);
-							bid.ad = adContents;
-							bid.ad_id = adSlotId;
-							bid.bidderCode = ADAPTER_CODE;
-							bid.width = slotObj.width;
-							bid.height = slotObj.height;
-							bid.siteID = slotObj.siteID;
-							bidmanager.addBidResponse(adUnitCode, bid);
-						}
-					});
-				});
-
-			} catch (e) {
-				utils.logError('Error calling casale adapter', ADAPTER_NAME, e);
-				logErrorBidResponse();
-			}
-		});
-
-		var iframeDoc = iframe.contentWindow.document;
-		iframeDoc.write(iframeContents);
-		iframeDoc.close();
-	}
-
-	function getSlotObj(obj, id) {
-		var arr = obj.slots;
-		var returnObj = {};
-		utils._each(arr, function(value) {
-			if (value.id === id) {
-				returnObj = value;
-			}
-		});
-		return returnObj;
-	}
-
-	function logErrorBidResponse() {
-		//no bid response
-		var bid = bidfactory.createBid(2);
-		bid.bidderCode = ADAPTER_CODE;
-		//log error to first add unit
-		bidmanager.addBidResponse(firstAdUnitCode, bid);
-	}
-
-	function buildIframeContainer() {
-		var iframe = utils.createInvisibleIframe();
-		var elToAppend = document.getElementsByTagName('head')[0];
-		//insert the iframe into document
-		elToAppend.insertBefore(iframe, elToAppend.firstChild);
-		return iframe;
-
-	}
-
-	function createRequestContent(url) {
-		var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' + 'ipt>inDapIF=true;</scr' + 'ipt></head>';
-		content += '<body>';
-		content += '<scr' + 'ipt src="' + url + '"></scr' + 'ipt>';
-		content += '</body></html>';
-		return content;
-	}
-
-
-	return {
-		callBids: _callBids
-	};
-	//end of Rubicon bid adaptor
-};
-
-module.exports = CasaleAdapter;
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],5:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -637,7 +514,141 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],6:[function(require,module,exports){
+},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],5:[function(require,module,exports){
+//Factory for creating the bidderAdaptor
+var CONSTANTS = require('../constants.json');
+var utils = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+
+var ADAPTER_NAME = 'INDEXEXCHANGE';
+var ADAPTER_CODE = 'indexExchange';
+
+var IndexExchangeAdapter = function IndexExchangeAdapter() {
+	var slotIdMap = {};
+	var requiredParams = [
+		/* 0 */
+		'slotId',
+		/* 1 */
+		'indexUrl'
+	];
+	var firstAdUnitCode = '';
+
+	function _callBids(request) {
+		var bidArr = request.bids;
+
+		//validate first bid request with all required params.
+		if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
+			return;
+		}
+		for (var i = 0; i < bidArr.length; i++) {
+			var bid = bidArr[i];
+			//only validate 1st param on rest of bids
+			if (utils.hasValidBidRequest(bid.params, requiredParams.slice(0, 1), ADAPTER_NAME)) {
+				firstAdUnitCode = bid.placementCode;
+				var slotId = bid.params[requiredParams[0]];
+				slotIdMap[slotId] = bid;
+			}
+		}
+
+		var adUrl = bidArr[0].params[requiredParams[1]];
+		var iframeContents = createRequestContent(adUrl);
+		var iframe = buildIframeContainer();
+		var iframeId = iframe.id;
+		//attach to onload event of iframe to ensure script is ready
+		utils.addEventHandler(iframe, 'load', function() {
+			try {
+				var iframeObj = window.frames[iframeId];
+				var indexObj = iframeObj.contentWindow._IndexRequestData.targetIDToBid;
+				var lookupObj = iframeObj.contentWindow.cygnus_index_args;
+
+				if (utils.isEmpty(indexObj)) {
+					//no bid response
+					var bid = bidfactory.createBid(2);
+					bid.bidderCode = ADAPTER_CODE;
+					logErrorBidResponse();
+					return;
+				}
+
+				utils._each(indexObj, function(adContents, cpmAndSlotId) {
+
+					utils._each(slotIdMap, function(bid, adSlotId) {
+						var obj = cpmAndSlotId.split('_');
+						var currentId = obj[0];
+						var currentCPM = obj[1];
+						if (currentId === adSlotId) {
+							var bidObj = slotIdMap[adSlotId];
+							var adUnitCode = bidObj.placementCode;
+							var slotObj = getSlotObj(lookupObj, adSlotId);
+							bid = bidfactory.createBid(1);
+							bid.cpm = (currentCPM / 100);
+							bid.ad = adContents;
+							bid.ad_id = adSlotId;
+							bid.bidderCode = ADAPTER_CODE;
+							bid.width = slotObj.width;
+							bid.height = slotObj.height;
+							bid.siteID = slotObj.siteID;
+							bidmanager.addBidResponse(adUnitCode, bid);
+						}
+					});
+				});
+
+			} catch (e) {
+				utils.logError('Error calling index adapter', ADAPTER_NAME, e);
+				logErrorBidResponse();
+			}
+		});
+
+		var iframeDoc = iframe.contentWindow.document;
+		iframeDoc.write(iframeContents);
+		iframeDoc.close();
+	}
+
+	function getSlotObj(obj, id) {
+		var arr = obj.slots;
+		var returnObj = {};
+		utils._each(arr, function(value) {
+			if (value.id === id) {
+				returnObj = value;
+			}
+		});
+		return returnObj;
+	}
+
+	function logErrorBidResponse() {
+		//no bid response
+		var bid = bidfactory.createBid(2);
+		bid.bidderCode = ADAPTER_CODE;
+		//log error to first add unit
+		bidmanager.addBidResponse(firstAdUnitCode, bid);
+	}
+
+	function buildIframeContainer() {
+		var iframe = utils.createInvisibleIframe();
+		var elToAppend = document.getElementsByTagName('head')[0];
+		//insert the iframe into document
+		elToAppend.insertBefore(iframe, elToAppend.firstChild);
+		return iframe;
+
+	}
+
+	function createRequestContent(url) {
+		var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' + 'ipt>inDapIF=true;</scr' + 'ipt></head>';
+		content += '<body>';
+		content += '<scr' + 'ipt src="' + url + '"></scr' + 'ipt>';
+		content += '</body></html>';
+		return content;
+	}
+
+
+	return {
+		callBids: _callBids
+	};
+	//end of Rubicon bid adaptor
+};
+
+module.exports = IndexExchangeAdapter;
+},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1312,6 +1323,7 @@ exports.createBid = function(statusCde) {
 },{"./utils.js":15}],12:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
+var adaptermanager = require('./adaptermanager');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -1370,6 +1382,10 @@ function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};
 
+	utils._each(adaptermanager.bidderRegistry, function(val, key){
+		bidResponseReceivedCount[key] = 0;
+	});
+	/*
 	for(var i=0; i<pbjs.adUnits.length; i++){
 		var bids = pbjs.adUnits[i].bids;
 		for(var j=0; j<bids.length; j++){
@@ -1377,6 +1393,7 @@ function initbidResponseReceivedCount(){
 			bidResponseReceivedCount[bidder] = 0;
 		}
 	}
+	*/
 }
 
 exports.increaseBidResponseReceivedCount = function(bidderCode){
@@ -1698,7 +1715,7 @@ exports.addCallback = function(id, callback, cbEvent){
 	}
 };
 
-},{"./constants.json":13,"./utils.js":15}],13:[function(require,module,exports){
+},{"./adaptermanager":1,"./constants.json":13,"./utils.js":15}],13:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -1925,60 +1942,20 @@ function getWinningBid(bidArray) {
 }
 
 
-function setGPTAsyncTargeting(code, slot, adUnitBids) {
-	var bidArrayTargeting = [];
-	if (adUnitBids && adUnitBids.bids.length !== 0) {
-		for (var i = 0; i < adUnitBids.bids.length; i++) {
-			var bid = adUnitBids.bids[i];
-			//if use the generic key push into array with CPM for sorting
-			if (!bid.alwaysUseBid) {
-				bidArrayTargeting.push({
-					cpm: bid.cpm,
-					bid: bid
-				});
-			}
-			// alwaysUseBid = true - send the bid anyway
-			else {
-				var keyStrings = adUnitBids.bids[i].adserverTargeting;
-				for (var key in keyStrings) {
-					if (keyStrings.hasOwnProperty(key)) {
-						try {
-							utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-							//clear gpt targeting for slot then set
-							//googletag.pubads().clearTargeting(code);
-							slot.clearTargeting();
-							slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
+function setGPTAsyncTargeting(code, slot) {
+	//get the targeting that is already configured
+	var keyStrings = getTargetingfromGPTIdentifier(slot);
+	slot.clearTargeting();
+	for (var key in keyStrings) {
+		if (keyStrings.hasOwnProperty(key)) {
+			try {
+				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
+				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
 
-						} catch (e) {
-							utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-						}
-					}
-				}
-			}
-
-
-		}
-
-	} else {
-		utils.logMessage('No bids eligble for adUnit code : ' + code);
-	}
-	//set generic key targeting here
-	if (bidArrayTargeting.length !== 0) {
-
-		var winningBid = getWinningBid(bidArrayTargeting);
-		var keyValues = winningBid.adserverTargeting;
-		for (var key in keyValues) {
-			if (keyValues.hasOwnProperty(key)) {
-				try {
-					utils.logMessage('Attempting to set key value for slot: '  + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyValues[key]));
-					slot.setTargeting(key, encodeURIComponent(keyValues[key]));
-
-				} catch (e) {
-					utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-				}
+			} catch (e) {
+				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
 		}
-
 	}
 }
 /*
@@ -2193,7 +2170,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 
 				if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
 					placementBids = getBidResponsesByAdUnit(code);
-					setGPTAsyncTargeting(code, slots[k], placementBids);
+					setGPTAsyncTargeting(code, slots[k]);
 				}
 			}
 		}
@@ -2203,8 +2180,8 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		for (i = 0; i < slots.length; i++) {
 			var adUnitCode = slots[i].getSlotElementId();
 			if (adUnitCode) {
-				placementBids = getBidsFromGTPIdentifier(slots[i]);
-				setGPTAsyncTargeting(adUnitCode, slots[i], placementBids);
+				//placementBids = getBidsFromGTPIdentifier(slots[i]);
+				setGPTAsyncTargeting(adUnitCode, slots[i]);
 			}
 		}
 	}
@@ -2215,17 +2192,17 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
  * @param  {[type]} slot [description]
  * @return {[type]}      [description]
  */
-function getBidsFromGTPIdentifier(slot){
-	var bids = null;
+function getTargetingfromGPTIdentifier(slot){
+	var targeting = null;
 	if(slot){
 		//first get by elementId
-		bids =  getBidResponsesByAdUnit(slot.getSlotElementId());
+		targeting =  pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
 		//if not available, try by adUnitPath
-		if(!bids){
-			bids = getBidResponsesByAdUnit(slot.getAdUnitPath());
+		if(!targeting){
+			targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
 		}
 	}
-	return bids;
+	return targeting;
 }
 
 /**
