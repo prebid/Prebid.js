@@ -47,7 +47,7 @@
     (function() {
         var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
         pbs.type = "text/javascript";
-        pbs.src = 'prebid.0.3.2.min.js';
+        pbs.src = '/dist/prebid.js';
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -77,9 +77,7 @@
                 params: {
                    placementId: 'TO ADD'
                 }
-            }, 
-            // 1 ad unit can also be targeted by multiple bids from 1 bidder
-           {
+            }, {
                 bidder: 'pubmatic',
                 params: {
                     publisherId: 'TO ADD',
@@ -102,6 +100,16 @@
                 params: {
                     psn: 'TO ADD',
                     slot: 'TO ADD',
+                }
+            }, {
+                bidder: 'aol',
+                params: {
+                    network: // <String> network id
+                    sizeId: // <Integer> size id
+                    placement: // <Integer> placement id
+                    adContainerId: // <String> optional; div for placement,
+                    alias: // <String> slot alias
+                    size: // <Array<Integer>> size (optional; or will be first size)
                 }
             }]
     },{
@@ -137,10 +145,10 @@
               }
             },
               {
-                bidder: 'casale',
+                bidder: 'indexExchange',
                 params: {
                     slotId: 'TO ADD', // number
-                    casaleUrl: 'TO ADD'
+                    indexUrl: 'TO ADD'
                 }
             }]
     }];
@@ -150,8 +158,8 @@
 
     //register a callback handler
     pbjs.addCallback('adUnitBidsBack', function(adUnitCode){
-            console.log('ad unit bids back for : ' + adUnitCode);
-        });
+        console.log('ad unit bids back for : ' + adUnitCode);
+    });
 
      /* Request bids for the added ad units. If adUnits or adUnitCodes are
            not specified, the function will request bids for all added ad units.
@@ -180,8 +188,7 @@
                back, or when the timeout is reached. 
                timeout: 1000
             */
-    })
-
+    });
   
     /* 2. Configure Ad Server Targeting
 
@@ -214,7 +221,7 @@
             }, {
                 key: "hb_pb",
                 val: function(bidResponse) {
-                    return bidResponse.pbLg;
+                    return bidResponse.pbMg;
                 }
             }
             ]
@@ -245,11 +252,9 @@
             }]
         }
     };
- };
 
 });
 
-  
 </script>
 
 
