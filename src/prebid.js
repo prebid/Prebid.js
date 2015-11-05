@@ -337,13 +337,13 @@ function getLoadTimeDistribution(time){
 	}else if(time >=800 && time <1000){
 		distribution = '800-1000ms';
 	}else if(time >=1000 && time <1200){
-		distribution = 't2: 1000-1200ms';
+		distribution = '1000-1200ms';
 	}else if(time >=1200 && time <1500){
-		distribution = 't2: 1200-1500ms';
+		distribution = '1200-1500ms';
 	}else if(time >=1500 && time <2000){
-		distribution = 't2: 1500-2000ms';
+		distribution = '1500-2000ms';
 	}else if(time >=2000){
-		distribution = 't2: 2000ms above';
+		distribution = '2000ms above';
 	}
 
 	return distribution;
@@ -853,39 +853,90 @@ pbjs.getAnalyticsData = function(){
 	return returnObj;
 };
 
-pbjs.sendAnalyticsData = function(){
-    ga('send', 'pageview');
+
+/**
+ * Send data to google analytics. Will try to send immediately, if not wait 50 ms (default or passed in value) and send again. 
+ * @param  {object} gaObj optional custom GA global object
+ * @param  {number} timeout optional will wait this time to send again. 
+ */
+pbjs.sendAnalyticsData = function(gaObj, timeout){
+    var defaultTimeout = 50, //default to 50ms
+    analyticsQueue = [],
+    gaGlobal = window.ga;
+
+    var convertToCents = function(dollars){
+    	if(dollars){
+    		return Math.floor(dollars * 100);  
+    	}
+    	return 0;
+	};
+
+
+    if(typeof timeout === 'number'){
+    	defaultTimeout = timeout;
+    }
+
+    if(typeof gaObj === 'object'){
+    	gaGlobal = gaObj;
+    }
 
     var data = pbjs.getAnalyticsData();
-    for (bidder in data) {
-        if (hasOwnProperty.call(data, bidder)){
+    utils._each(data, function(value, bidder){
+	    var bids = value.bids;
+	    for(var i=0;i<bids.length;i++){
 
-            var bids = data[bidder].bids;
-            for(var i=0;i<bids.length;i++){
-                var bid = bids[i];
-                var category = 'Prebid.js Bids';
-                ga('send','event',category,'Requests',bidder,1);
-                ga('send','event',category,'Bids',bidder,1);
-                ga('send','event',category,'Timeouts',bidder,Number(bid.timeout));
+	        var bid = bids[i];
+	        var category = 'Prebid.js Bids';
+	        var cpmCents = convertToCents(bid.cpm);
 
-                if(typeof bid.win !== objectType_undefined){
-                   	ga('send','event',category,'Wins',bidder,Number(bid.win)); 
-                }
+	       	analyticsQueue.push(function(){
+	    		gaGlobal('send','event',category,'Requests',bidder,1);
+	    		gaGlobal('send','event',category,'Bids',bidder, cpmCents);
+	    	});
+	       
+	        if(Number(bid.timeout) > 0){
+	        	analyticsQueue.push(function(){
+	        	 	gaGlobal('send','event',category,'Timeouts',bidder);
+	        	});
+	        }
 
-                if(typeof bid.timeToRespond !== objectType_undefined){
-                	ga('send', 'event', category, 'Bid Load Time', bidder, bid.timeToRespond);
+	        if(bid.win > 0 ){
+	        	analyticsQueue.push(function(){
+	           		gaGlobal('send','event', category,'Wins', bidder, cpmCents ); 
+	           	});
+	        }
 
-                	var dis = getLoadTimeDistribution(bid.timeToRespond);
-                	ga('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
-                }
-                if(typeof bid.cpm !== objectType_undefined){
-                	var cpmDis = getCpmDistribution(bid.cpm);
-                	ga('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
-                }
+	        if(typeof bid.timeToRespond !== objectType_undefined){
+	        	analyticsQueue.push(function(){
+		        	gaGlobal('send', 'event', category, 'Bid Load Time', bidder, bid.timeToRespond);
 
-            }
-        } 
-    }
+		        	var dis = getLoadTimeDistribution(bid.timeToRespond);
+		        	gaGlobal('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
+		        });
+	        }
+	        if(bid.cpm > 0){
+	        	analyticsQueue.push(function(){
+		        	var cpmDis = getCpmDistribution(bid.cpm);
+		        	gaGlobal('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+		        });
+	        }
+
+	    }
+    });
+	
+	var executeQueue = function(){
+		for (var i = 0; i < analyticsQueue.length; i++) {
+			analyticsQueue[i].call();
+		}
+	};
+
+	if(typeof gaGlobal === 'object'){
+		executeQueue.call();
+	}
+	else{
+		setTimeout(executeQueue, defaultTimeout);
+	}
+    
 };
 
 
