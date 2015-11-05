@@ -34,7 +34,7 @@ Publishers had been experiencing the same challenges when implementing header bi
 
 ### Why open source?
 
-Header bidding empowers publishers to run unbiased auctions across demand sources, thereby increasing competition and bid density. It is in both publishers and demand partners’ best interests to keep header bidding an open, unbiased ecosystem. Company attempting to control header bidding tech are incentivized to prioritize their own demand for a higher margin. By keeping the code open source with community participation and moving toward community ownership, we work to ensure the header bidding auction logic is unbiased.
+Header bidding empowers publishers to run unbiased auctions across demand sources, thereby increasing competition and bid density. It is in both publishers and demand partners’ best interests to keep header bidding an open, unbiased ecosystem. Companies attempting to control header bidding tech are incentivized to prioritize their own demand for a higher margin. By keeping the code open source with community participation and moving toward community ownership, we work to ensure the header bidding auction logic is unbiased.
 
 Many publishers and demand partners have joined this effort to keep header bidding tech open and unbiased. The below contributing demand partners are currently maintaining their integrations with prebid.js: Yieldbot, AppNexus, AOL, OpenX, Sovrn. More are joining.
 
