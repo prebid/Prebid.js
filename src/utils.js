@@ -391,3 +391,17 @@ exports._each = function(object, fn) {
       }
     }
   };
+
+exports.contains = function(a, obj) {
+	if(this.isEmpty(a)){
+		return false;
+	}
+    var i = a.length;
+    while (i--) {
+       if (a[i] === obj) {
+           return true;
+       }
+    }
+    return false;
+};
+

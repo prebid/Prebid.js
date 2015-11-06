@@ -1,6 +1,7 @@
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
+var events = require('./events');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -95,6 +96,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
@@ -145,6 +147,8 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
+		//emit the bidResponse event
+		events.emit('bidResponse', adUnitCode, bid);
 
 	} else {
 		//create an empty bid bid response object

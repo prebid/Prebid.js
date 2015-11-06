@@ -9,6 +9,7 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
+var ga = require('./ga.js');
 
 /* private variables */
 
@@ -292,61 +293,6 @@ function requestAllBids(tmout){
 	var timeout = tmout;
 	resetBids();
 	init(timeout);
-}
-
-function getCpmDistribution(cpm){
-	var distribution;
-	if(cpm >=0 && cpm <0.5){
-		distribution = '$0-0.5';
-	}else if(cpm >=0.5 && cpm <1){
-		distribution = '$0.5-1';
-	}else if(cpm >=1 && cpm <1.5){
-		distribution = '$1-1.5';		
-	}else if(cpm >=1.5 && cpm <2){
-		distribution = '$1.5-2';		
-	}else if(cpm >=2 && cpm <2.5){
-		distribution = '$2-2.5';		
-	}else if(cpm >=2.5 && cpm <3){
-		distribution = '$2.5-3';		
-	}else if(cpm >=3 && cpm <4){
-		distribution = '$3-4';		
-	}else if(cpm >=4 && cpm <6){
-		distribution = '$4-6';		
-	}else if(cpm >=6 && cpm <8){
-		distribution = '$6-8';		
-	}else if(cpm >=8){
-		distribution = '$8 above';
-	}
-	return distribution;
-}
-
-function getLoadTimeDistribution(time){
-	var distribution;
-	if(time >=0 && time <200){
-		distribution = '0-200ms';
-	}else if(time >=200 && time <300){
-		distribution = '200-300ms';
-	}else if(time >=300 && time <400){
-		distribution = '300-400ms';
-	}else if(time >=400 && time <500){
-		distribution = '400-500ms';
-	}else if(time >=500 && time <600){
-		distribution = '500-600ms';
-	}else if(time >=600 && time <800){
-		distribution = '600-800ms';
-	}else if(time >=800 && time <1000){
-		distribution = '800-1000ms';
-	}else if(time >=1000 && time <1200){
-		distribution = '1000-1200ms';
-	}else if(time >=1200 && time <1500){
-		distribution = '1200-1500ms';
-	}else if(time >=1500 && time <2000){
-		distribution = '1500-2000ms';
-	}else if(time >=2000){
-		distribution = '2000ms above';
-	}
-
-	return distribution;
 }
 
 
@@ -853,92 +799,18 @@ pbjs.getAnalyticsData = function(){
 	return returnObj;
 };
 
-
 /**
- * Send data to google analytics. Will try to send immediately, if not wait 50 ms (default or passed in value) and send again. 
- * @param  {object} gaObj optional custom GA global object
- * @param  {number} timeout optional will wait this time to send again. 
+ * Will enable sendinga prebid.js data to google analytics
+ * @param  {[type]} gaGlobal optional object 
  */
-pbjs.sendAnalyticsData = function(gaObj, timeout){
-    var defaultTimeout = 50, //default to 50ms
-    analyticsQueue = [],
-    gaGlobal = window.ga;
-
-    var convertToCents = function(dollars){
-    	if(dollars){
-    		return Math.floor(dollars * 100);  
-    	}
-    	return 0;
-	};
-
-
-    if(typeof timeout === 'number'){
-    	defaultTimeout = timeout;
-    }
-
-    if(typeof gaObj === 'object'){
-    	gaGlobal = gaObj;
-    }
-
-    var data = pbjs.getAnalyticsData();
-    utils._each(data, function(value, bidder){
-	    var bids = value.bids;
-	    for(var i=0;i<bids.length;i++){
-
-	        var bid = bids[i];
-	        var category = 'Prebid.js Bids';
-	        var cpmCents = convertToCents(bid.cpm);
-
-	       	analyticsQueue.push(function(){
-	    		gaGlobal('send','event',category,'Requests',bidder,1);
-	    		gaGlobal('send','event',category,'Bids',bidder, cpmCents);
-	    	});
-	       
-	        if(Number(bid.timeout) > 0){
-	        	analyticsQueue.push(function(){
-	        	 	gaGlobal('send','event',category,'Timeouts',bidder);
-	        	});
-	        }
-
-	        if(bid.win > 0 ){
-	        	analyticsQueue.push(function(){
-	           		gaGlobal('send','event', category,'Wins', bidder, cpmCents ); 
-	           	});
-	        }
-
-	        if(typeof bid.timeToRespond !== objectType_undefined){
-	        	analyticsQueue.push(function(){
-		        	gaGlobal('send', 'event', category, 'Bid Load Time', bidder, bid.timeToRespond);
-
-		        	var dis = getLoadTimeDistribution(bid.timeToRespond);
-		        	gaGlobal('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
-		        });
-	        }
-	        if(bid.cpm > 0){
-	        	analyticsQueue.push(function(){
-		        	var cpmDis = getCpmDistribution(bid.cpm);
-		        	gaGlobal('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
-		        });
-	        }
-
-	    }
-    });
-	
-	var executeQueue = function(){
-		for (var i = 0; i < analyticsQueue.length; i++) {
-			analyticsQueue[i].call();
-		}
-	};
-
+pbjs.enableGA = function(gaGlobal){
 	if(typeof gaGlobal === 'object'){
-		executeQueue.call();
+		ga.enableAnalytics(gaGlobal);
 	}
 	else{
-		setTimeout(executeQueue, defaultTimeout);
+		ga.enableAnalytics(window.ga);
 	}
-    
 };
-
 
 
 processQue();
