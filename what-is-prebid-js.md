@@ -68,7 +68,6 @@ The benefits of using Prebid.js in particular are:
 
 Prebid.js has built-in support for most major bidders, including:
 
-- Amazon
 - AOL
 - AppNexus
 - Criteo
