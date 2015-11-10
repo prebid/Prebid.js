@@ -12,8 +12,6 @@ licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 headerLinks:
   - title: Blog
     url: /blog.html
-  - title: About
-    url: /about.html
   - title: GitHub
     url: https://github.com/prebid/Prebid.js
 
