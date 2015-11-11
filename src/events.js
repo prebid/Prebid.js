@@ -6,6 +6,8 @@ var utils = require('./utils'),
 
 //define entire events
 var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
+//keep a record of all events fired
+var eventsFired = [];
 
 module.exports = (function (){
 
@@ -14,9 +16,20 @@ module.exports = (function (){
 
   function _dispatch(event, args) {
     utils.logMessage('Emitting event for: ' + event  );
+    //record the event:
+    eventsFired.push({
+      eventType : event,
+      args : args
+    });
     utils._each(_handlers[event], function (fn) {
         if (!fn) return;
-        fn.apply(null, args);
+        try{
+          fn.apply(null, args);
+        }
+        catch(e){
+          utils.logError('Error executing handler:', 'events.js', e);
+        }
+        
     });
   }
 
@@ -57,6 +70,19 @@ module.exports = (function (){
 
   _public.get = function(){
     return _handlers;
+  };
+
+  /**
+   * This method can return a copy of all the events fired 
+   * @return {array[object]} array of events fired
+   */
+  _public.getEvents = function(){
+    var arrayCopy = [];
+    utils._each(eventsFired, function(value){
+        var newProp = utils.extend({}, value);
+        arrayCopy.push(newProp);
+    });
+    return arrayCopy;
   };
 
   return _public;

@@ -9,7 +9,8 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
-var ga = require('./ga.js');
+var ga = require('./ga');
+var events = require('./events');
 
 /* private variables */
 
@@ -18,6 +19,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
+var BID_WON = CONSTANTS.EVENTS.BID_WON;
 
 var pb_preBidders = [],
 	pb_placements = [],
@@ -56,8 +58,14 @@ pbjs.que.push = function(cmd) {
 function processQue() {
 	for (var i = 0; i < pbjs.que.length; i++) {
 		if (typeof pbjs.que[i].called === objectType_undefined) {
-			pbjs.que[i].call();
-			pbjs.que[i].called = true;
+			try{
+				pbjs.que[i].call();
+				pbjs.que[i].called = true;
+			}
+			catch(e){
+				utils.logError('Error processing command :', 'prebid.js', e);
+			}
+			
 		}
 	}
 }
@@ -403,6 +411,8 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
+	//TODO: emit bid timeout event here 
+
 	var adUnitCodesArr = codeArr;
 
 	if (typeof codeArr === objectType_string) {
@@ -490,6 +500,8 @@ pbjs.renderAd = function(doc, id) {
 			//lookup ad by ad Id
 			var adObject = bidmanager._adResponsesByBidderId[id];
 			if (adObject) {
+				//emit 'bid won' event here
+				events.emit(BID_WON, adObject);
 				var height = adObject.height;
 				var width = adObject.width;
 				var url = adObject.adUrl;
@@ -804,11 +816,11 @@ pbjs.getAnalyticsData = function(){
  * @param  {[type]} gaGlobal optional object 
  */
 pbjs.enableGA = function(gaGlobal){
-	if(typeof gaGlobal === 'object'){
+	try{
 		ga.enableAnalytics(gaGlobal);
 	}
-	else{
-		ga.enableAnalytics(window.ga);
+	catch(e){
+		utils.logError('Error calling GA: ', 'prebid.js', e);
 	}
 };
 

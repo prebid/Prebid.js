@@ -3,112 +3,141 @@
  */
 
 var events = require('./events');
+var utils = require('./utils');
+var CONSTANTS = require('./constants.json');
 
-var analyticsQueue = [];
-var gaGlobal = null;
-var enableCheck = true;
+var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
+var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+var BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
+var BID_WON = CONSTANTS.EVENTS.BID_WON;
 
-exports.enableAnalytics = function(ga){
-	gaGlobal = ga;
+var _analyticsQueue = [],
+	_gaGlobal = null,
+	_enableCheck = true,
+	_category = 'Prebid.js Bids';
 
-	var category = 'Prebid.js Bids';
+
+/**
+ * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
+ * @param  {object} ga optional
+ * @return {[type]}    [description]
+ */
+exports.enableAnalytics = function(ga) {
+	_gaGlobal = ga;
+	var bid = null;
+
+	//first send all events fired before enableAnalytics called
+
+	var existingEvents = events.getEvents();
+	utils._each(existingEvents, function(eventObj) {
+		var args = eventObj.args;
+		if (!eventObj) {
+			return;
+		}
+		if (eventObj.eventType === BID_REQUESTED) {
+			//bid is 1st args
+			bid = args[0];
+			sendBidRequestToGa(bid);
+		} else if (eventObj.eventType === BID_RESPONSE) {
+			//bid is 2nd args
+			bid = args[1];
+			sendBidResponseToGa(bid);
+
+		} else if (eventObj.eventType === BID_TIMEOUT) {
+
+
+		} else if (eventObj.eventType === BID_WON) {
+			bid = args[0];
+			sendBidWonToGa(bid);
+		}
+	});
+
+	//Next register event listeners to send data immediately
+
+	var _category = 'Prebid.js Bids';
 
 	//bidRequests 
-	events.on('bidRequest', function(adunit, bid){
-		analyticsQueue.push(function(){
-			gaGlobal('send','event',category,'Requests',bidder,1);
-		});
-		checkAnalytics();
+	events.on(BID_REQUESTED, function(bidRequestObj) {
+		sendBidRequestToGa(bidRequestObj);
 	});
 
 	//bidResponses 
-	events.on('bidResponse', function(adunit, bid){
-		analyticsQueue.push(function(){
-			var cpmCents = convertToCents(bid.cpm),
-			bidder = bid.bidder;
-			gaGlobal('send','event',category,'Bids',bidder, cpmCents);
-			gaGlobal('send','event', category, 'Bid Load Time', bidder, bid.timeToRespond);
-			if(typeof bid.timeToRespond !== objectType_undefined){
-				var dis = getLoadTimeDistribution(bid.timeToRespond);
-        		gaGlobal('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
-			}
-			if(bid.cpm > 0){
-	    		analyticsQueue.push(function(){
-	        		var cpmDis = getCpmDistribution(bid.cpm);
-	        		gaGlobal('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
-	        	});
-	    	}
-		});
-		checkAnalytics();
+	events.on(BID_RESPONSE, function(adunit, bid) {
+		sendBidResponseToGa(bid);
+
 	});
 
 	//bidTimeouts 
-	events.on('bidTimeout', function(adunit, bid){
-		if(Number(bid.timeout) > 0){
-    		analyticsQueue.push(function(){
-    	 	gaGlobal('send','event',category,'Timeouts',bidder);
-    		});
-    	}
-		checkAnalytics();
-	});
-   
-	//wins
-	events.on('bidWon', function(adunit, bid){
-		if(bid.win > 0 ){
-	    	analyticsQueue.push(function(){
-	       		gaGlobal('send','event', category,'Wins', bidder, cpmCents ); 
-	       	});
-    	}
-		checkAnalytics();
+	events.on(BID_TIMEOUT, function(adunit, bid) {
+		sendBidTimeoutToGa(bid);
 	});
 
+	//wins
+	events.on(BID_WON, function(bid) {
+		sendBidWonToGa(bid);
+	});
 };
 
-
-function checkAnalytics(){
-	if(enableCheck && typeof gaGlobal === 'function'){
-		for(var i = 0; i < analyticsQueue.length; i++){
-			analyticsQueue[i].call();
+/**
+ * Check if gaGlobal or window.ga is defined on page. If defined execute all the GA commands
+ */
+function checkAnalytics() {
+	if (_enableCheck && (typeof _gaGlobal === 'function' || typeof window.ga === 'function') ) {
+		if(typeof window.ga === 'function'){
+			_gaGlobal = window.ga;
 		}
-		analyticsQueue.push = function(fn){
+
+		/*
+		test
+		 */
+
+		_gaGlobal = function(){
+			console.log(arguments);
+		};
+
+		for (var i = 0; i < _analyticsQueue.length; i++) {
+			_analyticsQueue[i].call();
+		}
+		//override push to execute the command immediately from now on
+		_analyticsQueue.push = function(fn) {
 			fn.call();
 		};
-		enableCheck = false;
+		//turn check into NOOP
+		_enableCheck = false;
 	}
-
 }
 
 
-function convertToCents(dollars){
-	if(dollars){
-		return Math.floor(dollars * 100);  
+function convertToCents(dollars) {
+	if (dollars) {
+		return Math.floor(dollars * 100);
 	}
 	return 0;
 }
 
-function getLoadTimeDistribution(time){
+function getLoadTimeDistribution(time) {
 	var distribution;
-	if(time >=0 && time <200){
+	if (time >= 0 && time < 200) {
 		distribution = '0-200ms';
-	}else if(time >=200 && time <300){
+	} else if (time >= 200 && time < 300) {
 		distribution = '200-300ms';
-	}else if(time >=300 && time <400){
+	} else if (time >= 300 && time < 400) {
 		distribution = '300-400ms';
-	}else if(time >=400 && time <500){
+	} else if (time >= 400 && time < 500) {
 		distribution = '400-500ms';
-	}else if(time >=500 && time <600){
+	} else if (time >= 500 && time < 600) {
 		distribution = '500-600ms';
-	}else if(time >=600 && time <800){
+	} else if (time >= 600 && time < 800) {
 		distribution = '600-800ms';
-	}else if(time >=800 && time <1000){
+	} else if (time >= 800 && time < 1000) {
 		distribution = '800-1000ms';
-	}else if(time >=1000 && time <1200){
+	} else if (time >= 1000 && time < 1200) {
 		distribution = '1000-1200ms';
-	}else if(time >=1200 && time <1500){
+	} else if (time >= 1200 && time < 1500) {
 		distribution = '1200-1500ms';
-	}else if(time >=1500 && time <2000){
+	} else if (time >= 1500 && time < 2000) {
 		distribution = '1500-2000ms';
-	}else if(time >=2000){
+	} else if (time >= 2000) {
 		distribution = '2000ms above';
 	}
 
@@ -116,28 +145,81 @@ function getLoadTimeDistribution(time){
 }
 
 
-function getCpmDistribution(cpm){
+function getCpmDistribution(cpm) {
 	var distribution;
-	if(cpm >=0 && cpm <0.5){
+	if (cpm >= 0 && cpm < 0.5) {
 		distribution = '$0-0.5';
-	}else if(cpm >=0.5 && cpm <1){
+	} else if (cpm >= 0.5 && cpm < 1) {
 		distribution = '$0.5-1';
-	}else if(cpm >=1 && cpm <1.5){
-		distribution = '$1-1.5';		
-	}else if(cpm >=1.5 && cpm <2){
-		distribution = '$1.5-2';		
-	}else if(cpm >=2 && cpm <2.5){
-		distribution = '$2-2.5';		
-	}else if(cpm >=2.5 && cpm <3){
-		distribution = '$2.5-3';		
-	}else if(cpm >=3 && cpm <4){
-		distribution = '$3-4';		
-	}else if(cpm >=4 && cpm <6){
-		distribution = '$4-6';		
-	}else if(cpm >=6 && cpm <8){
-		distribution = '$6-8';		
-	}else if(cpm >=8){
+	} else if (cpm >= 1 && cpm < 1.5) {
+		distribution = '$1-1.5';
+	} else if (cpm >= 1.5 && cpm < 2) {
+		distribution = '$1.5-2';
+	} else if (cpm >= 2 && cpm < 2.5) {
+		distribution = '$2-2.5';
+	} else if (cpm >= 2.5 && cpm < 3) {
+		distribution = '$2.5-3';
+	} else if (cpm >= 3 && cpm < 4) {
+		distribution = '$3-4';
+	} else if (cpm >= 4 && cpm < 6) {
+		distribution = '$4-6';
+	} else if (cpm >= 6 && cpm < 8) {
+		distribution = '$6-8';
+	} else if (cpm >= 8) {
 		distribution = '$8 above';
 	}
 	return distribution;
+}
+
+function sendBidRequestToGa(bid) {
+	if (bid && bid.bidderCode) {
+		_analyticsQueue.push(function() {
+			_gaGlobal('send', 'event', _category, 'Requests', bid.bidderCode, 1);
+		});
+	}
+	//check the queue
+	checkAnalytics();
+}
+
+
+function sendBidResponseToGa(bid) {
+
+	if (bid && bid.bidder) {
+		_analyticsQueue.push(function() {
+			var cpmCents = convertToCents(bid.cpm),
+				bidder = bid.bidder;
+			if (typeof bid.timeToRespond !== 'undefined') {
+				var dis = getLoadTimeDistribution(bid.timeToRespond);
+				_gaGlobal('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
+			}
+			if (bid.cpm > 0) {
+				_analyticsQueue.push(function() {
+					var cpmDis = getCpmDistribution(bid.cpm);
+					_gaGlobal('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+					_gaGlobal('send', 'event', _category, 'Bids', bidder, cpmCents);
+					_gaGlobal('send', 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond);
+				});
+			}
+		});
+	}
+	//check the queue
+	checkAnalytics();
+}
+
+function sendBidTimeoutToGa(bid) {
+	if (Number(bid.timeout) > 0) {
+		_analyticsQueue.push(function() {
+			_gaGlobal('send', 'event', _category, 'Timeouts', bidder);
+		});
+	}
+	checkAnalytics();
+}
+
+function sendBidWonToGa(bid) {
+	console.log(bid);
+	var cpmCents = convertToCents(bid.cpm);
+	_analyticsQueue.push(function() {
+		_gaGlobal('send', 'event', _category, 'Wins', bid.bidderCode, cpmCents);
+	});
+	checkAnalytics();
 }
