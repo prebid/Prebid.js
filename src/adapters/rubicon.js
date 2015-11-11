@@ -71,6 +71,7 @@ var RubiconAdapter = function RubiconAdapter() {
 			'window.rp_adtype   = "jsonp";' +
 			'window.rp_inventory = %%RP_INVENTORY%% ;' +
 			'window.rp_floor=%%RP_FLOOR%%;' +
+			'window.rp_fastlane = true;' +
 			'window.rp_callback = ' + callback + ';';
 
 
