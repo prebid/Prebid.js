@@ -14,7 +14,9 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var _analyticsQueue = [],
 	_gaGlobal = null,
 	_enableCheck = true,
-	_category = 'Prebid.js Bids';
+	_category = 'Prebid.js Bids',
+	//to track how many events we are sending to GA.
+	_eventCount = 0;
 
 
 /**
@@ -23,7 +25,13 @@ var _analyticsQueue = [],
  * @return {[type]}    [description]
  */
 exports.enableAnalytics = function(ga) {
-	_gaGlobal = ga;
+	if(typeof ga !== 'undefined'){
+		_gaGlobal = ga;
+	}
+	else{
+		_gaGlobal = 'ga';
+	}
+
 	var bid = null;
 
 	//first send all events fired before enableAnalytics called
@@ -82,18 +90,7 @@ exports.enableAnalytics = function(ga) {
  * Check if gaGlobal or window.ga is defined on page. If defined execute all the GA commands
  */
 function checkAnalytics() {
-	if (_enableCheck && (typeof _gaGlobal === 'function' || typeof window.ga === 'function') ) {
-		if(typeof window.ga === 'function'){
-			_gaGlobal = window.ga;
-		}
-
-		/*
-		test
-		 */
-
-		_gaGlobal = function(){
-			console.log(arguments);
-		};
+	if (_enableCheck && typeof window[_gaGlobal] === 'function' ) {
 
 		for (var i = 0; i < _analyticsQueue.length; i++) {
 			_analyticsQueue[i].call();
@@ -105,6 +102,7 @@ function checkAnalytics() {
 		//turn check into NOOP
 		_enableCheck = false;
 	}
+	utils.logMessage('event count sent to GA: ' + _eventCount);
 }
 
 
@@ -176,7 +174,8 @@ function getCpmDistribution(cpm) {
 function sendBidRequestToGa(bid) {
 	if (bid && bid.bidderCode) {
 		_analyticsQueue.push(function() {
-			_gaGlobal('send', 'event', _category, 'Requests', bid.bidderCode, 1);
+			_eventCount++;
+			window[_gaGlobal]('send', 'event', _category, 'Requests', bid.bidderCode, 1);
 		});
 	}
 	//check the queue
@@ -191,16 +190,16 @@ function sendBidResponseToGa(bid) {
 			var cpmCents = convertToCents(bid.cpm),
 				bidder = bid.bidder;
 			if (typeof bid.timeToRespond !== 'undefined') {
+				_eventCount++;
 				var dis = getLoadTimeDistribution(bid.timeToRespond);
-				_gaGlobal('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
+				window[_gaGlobal]('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
 			}
 			if (bid.cpm > 0) {
-				_analyticsQueue.push(function() {
-					var cpmDis = getCpmDistribution(bid.cpm);
-					_gaGlobal('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
-					_gaGlobal('send', 'event', _category, 'Bids', bidder, cpmCents);
-					_gaGlobal('send', 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond);
-				});
+				_eventCount = _eventCount + 3;
+				var cpmDis = getCpmDistribution(bid.cpm);
+				window[_gaGlobal]('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+				window[_gaGlobal]('send', 'event', _category, 'Bids', bidder, cpmCents);
+				window[_gaGlobal]('send', 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond);
 			}
 		});
 	}
@@ -211,17 +210,18 @@ function sendBidResponseToGa(bid) {
 function sendTimedOutBiddersToGa(bidderArr){
 	utils._each(bidderArr, function(bidderCode){
 		_analyticsQueue.push(function() {
-			_gaGlobal('send', 'event', _category, 'Timeouts', bidderCode, 1);
+			_eventCount++;
+			window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, 1);
 		});
-	})
+	});
 	checkAnalytics();
 }
 
 function sendBidWonToGa(bid) {
-	console.log(bid);
 	var cpmCents = convertToCents(bid.cpm);
 	_analyticsQueue.push(function() {
-		_gaGlobal('send', 'event', _category, 'Wins', bid.bidderCode, cpmCents);
+		_eventCount++;
+		window[_gaGlobal]('send', 'event', _category, 'Wins', bid.bidderCode, cpmCents);
 	});
 	checkAnalytics();
 }
