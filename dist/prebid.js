@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.0 
-Updated : 2015-11-04 */
+Updated : 2015-11-11 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -23,16 +23,6 @@ exports.callBids = function(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
-		//rename casale to indexExchange
-		if(bidder && bidder.bidderCode && bidder.bidderCode === 'casale'){
-			bidder.bidderCode = 'indexExchange';
-			try{
-				utils._each(bidder.bids, function(value){
-					value.params['indexUrl'] = value.params.casaleUrl;
-				});
-			}
-			catch(e){}
-		}
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
@@ -670,6 +660,11 @@ var OpenxAdapter = function OpenxAdapter(options) {
 	var opts = options || {};
 	var scriptUrl;
 	var bids;
+  var bidsByAdUnitId = {};
+  var oxResponse;
+  var OX_RENDER_FN_NAME = 'ox_renderAd',
+      OX_CREATIVE_TAG_START = "<script type='text/javascript'>window.top.pbjs." + OX_RENDER_FN_NAME + "(window.frameElement, '",
+      OX_CREATIVE_TAG_END = "');</script>";
 
 	function _callBids(params) {
 		bids = params.bids || [];
@@ -692,61 +687,111 @@ var OpenxAdapter = function OpenxAdapter(options) {
 		_requestBids();
 	}
 
+  function _creative(adUnitId, adId) {
+    return OX_CREATIVE_TAG_START + adUnitId + "','" + adId + OX_CREATIVE_TAG_END;
+  }
+
+  function _createBidResponse(adUnit) {
+    var adResponse = adResponse = bidfactory.createBid(1);
+    adResponse.bidderCode = 'openx';
+    adResponse.ad_id = adUnit.get('ad_id');
+    adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+    adResponse.ad = _creative(adUnit.get('adunit_id'), adUnit.get('ad_id'));
+    adResponse.adUrl = adUnit.get('ad_url');
+    adResponse.width = adUnit.get('width');
+    adResponse.height = adUnit.get('height');
+    return adResponse;
+  }
+
+  function _createErrorResponse(adUnit) {
+    var adResponse = bidfactory.createBid(2);
+    adResponse.bidderCode = 'openx';
+    return adResponse;
+  }
+
+  // add the rendering function to the window;
+  // we need to do this because we have to render using the openx
+  // response that we received; by doing this we'll get the correct
+  // tracking pixels/creative payload from openx
+  function _bootstrapOpenX() {
+    window.pbjs = window.pbjs || {que: []};
+    window.pbjs[OX_RENDER_FN_NAME] = function (frameElement, adUnitId, adId) {
+      var bidResponses = bidsByAdUnitId[adUnitId];
+
+      if (!bidResponses) {
+        utils.logError('OPENX', 'ERROR', 'invalid adunitId returned in creative: ' + adUnitId);
+        return;
+      }
+
+      if (!oxResponse) {
+        utils.logError('OPENX creative rendered without response', 'ERROR');
+        return;
+      }
+
+      var adUnit = bidResponses[adId];
+      if (!adUnit) {
+        utils.logError('OPENX no adunit found for ad id: ' + adId, 'ERROR');
+        return;
+      }
+
+      // tell the adunit where to render;
+      // otherwise it will try to render in the parent (current)
+      // window
+      adUnit.set('anchor', frameElement);
+      oxResponse.showAdUnit(parseInt(adUnitId));
+    };
+  }
+
 	function _requestBids() {
 
-		if (scriptUrl) {
-			adloader.loadScript(scriptUrl, function() {
-				var i;
-				var POX = OX();
+    if (!scriptUrl) {
+      utils.logError('OPENX - no script url given!', 'ERROR');
+      return;
+    }
 
-				POX.setPageURL(opts.pageURL);
-				POX.setRefererURL(opts.refererURL);
-				POX.addPage(opts.pgid);
+    adloader.loadScript(scriptUrl, function() {
+      var POX = OX();
 
-				// Add each ad unit ID
-				for (i = 0; i < bids.length; i++) {
-					POX.addAdUnit(bids[i].params.unit);
-				}
+      POX.frameCreatives(false);
+      POX.setPageURL(opts.pageURL);
+      POX.setRefererURL(opts.refererURL);
+      POX.addPage(opts.pgid);
 
-				POX.addHook(function(response) {
-					var i;
-					var bid;
-					var adUnit;
-					var adResponse;
+      utils._each(bids, function (bid) {
+        POX.addAdUnit(bid.params.unit);
+      });
 
-					// Map each bid to its response
-					for (i = 0; i < bids.length; i++) {
-						bid = bids[i];
+      _bootstrapOpenX();
 
-						// Get ad response
-						adUnit = response.getOrCreateAdUnit(bid.params.unit);
+      POX.addHook(function(response) {
+        oxResponse = response;
 
-						// If 'pub_rev' (CPM) isn't returned we got an empty response
-						if (adUnit.get('pub_rev')) {
-							adResponse = adResponse = bidfactory.createBid(1);
+        utils._each(bids, function (bid) {
+          var adUnit = response.getOrCreateAdUnit(bid.params.unit),
+              adUnitId = adUnit.get('adunit_id') + '';
 
-							adResponse.bidderCode = 'openx';
-							adResponse.ad_id = adUnit.get('ad_id');
-							adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
-							adResponse.ad = adUnit.get('html');
-							adResponse.adUrl = adUnit.get('ad_url');
-							adResponse.width = adUnit.get('width');
-							adResponse.height = adUnit.get('height');
 
-							bidmanager.addBidResponse(bid.placementCode, adResponse);
-						} else {
-							// Indicate an ad was not returned
-							adResponse = bidfactory.createBid(2);
-							adResponse.bidderCode = 'openx';
-							bidmanager.addBidResponse(bid.placementCode, adResponse);
-						}
-					}
-				}, OX.Hooks.ON_AD_RESPONSE);
+          // we support multiple bids for the same ad unit id
+          // this is how we're going to actually render the ad
+          bidsByAdUnitId[adUnitId] = bidsByAdUnitId[adUnitId] || {};
+          bidsByAdUnitId[adUnitId][adUnit.get('ad_id') + ''] = adUnit;
 
-				// Make request
-				POX.load();
-			});
-		}
+          var adResponse;
+          if (adUnit.get('pub_rev')) {
+            adResponse = _createBidResponse(bid, adUnit);
+          } else {
+            adResponse = _createErrorResponse(bid, adUnit);
+          }
+
+          bidmanager.addBidResponse(bid.placementCode, adResponse);
+        });
+
+      }, OX.Hooks.ON_AD_RESPONSE);
+
+      // Make request
+      POX.load();
+    });
+
 	}
 
 	return {
@@ -755,6 +800,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
+
 },{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],7:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -954,6 +1000,7 @@ var RubiconAdapter = function RubiconAdapter() {
 			'window.rp_adtype   = "jsonp";' +
 			'window.rp_inventory = %%RP_INVENTORY%% ;' +
 			'window.rp_floor=%%RP_FLOOR%%;' +
+			'window.rp_fastlane = true;' +
 			'window.rp_callback = ' + callback + ';';
 
 
@@ -1381,11 +1428,7 @@ exports.clearAllBidResponses = function(adUnitCode) {
 function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};
-
-	utils._each(adaptermanager.bidderRegistry, function(val, key){
-		bidResponseReceivedCount[key] = 0;
-	});
-	/*
+	
 	for(var i=0; i<pbjs.adUnits.length; i++){
 		var bids = pbjs.adUnits[i].bids;
 		for(var j=0; j<bids.length; j++){
@@ -1393,7 +1436,6 @@ function initbidResponseReceivedCount(){
 			bidResponseReceivedCount[bidder] = 0;
 		}
 	}
-	*/
 }
 
 exports.increaseBidResponseReceivedCount = function(bidderCode){
