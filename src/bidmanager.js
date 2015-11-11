@@ -56,6 +56,21 @@ exports.clearAllBidResponses = function(adUnitCode) {
 	}
 };
 
+/**
+ * Returns a list of bidders that we haven't received a response yet
+ * @return {array} [description]
+ */
+exports.getTimedOutBidders = function(){
+	var bidderArr = [];
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count === 0){
+			bidderArr.push(bidderCode);
+		}
+	});
+
+	return bidderArr;
+};
+
 function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};

@@ -44,7 +44,9 @@ exports.enableAnalytics = function(ga) {
 			sendBidResponseToGa(bid);
 
 		} else if (eventObj.eventType === BID_TIMEOUT) {
-
+			var bidderArray = args[0];
+			sendTimedOutBiddersToGa(bidderArray);
+			//todo disable event listeners
 
 		} else if (eventObj.eventType === BID_WON) {
 			bid = args[0];
@@ -53,8 +55,6 @@ exports.enableAnalytics = function(ga) {
 	});
 
 	//Next register event listeners to send data immediately
-
-	var _category = 'Prebid.js Bids';
 
 	//bidRequests 
 	events.on(BID_REQUESTED, function(bidRequestObj) {
@@ -68,8 +68,8 @@ exports.enableAnalytics = function(ga) {
 	});
 
 	//bidTimeouts 
-	events.on(BID_TIMEOUT, function(adunit, bid) {
-		sendBidTimeoutToGa(bid);
+	events.on(BID_TIMEOUT, function(bidderArray) {
+		sendTimedOutBiddersToGa(bidderArray);
 	});
 
 	//wins
@@ -171,6 +171,8 @@ function getCpmDistribution(cpm) {
 	return distribution;
 }
 
+
+
 function sendBidRequestToGa(bid) {
 	if (bid && bid.bidderCode) {
 		_analyticsQueue.push(function() {
@@ -206,12 +208,12 @@ function sendBidResponseToGa(bid) {
 	checkAnalytics();
 }
 
-function sendBidTimeoutToGa(bid) {
-	if (Number(bid.timeout) > 0) {
+function sendTimedOutBiddersToGa(bidderArr){
+	utils._each(bidderArr, function(bidderCode){
 		_analyticsQueue.push(function() {
-			_gaGlobal('send', 'event', _category, 'Timeouts', bidder);
+			_gaGlobal('send', 'event', _category, 'Timeouts', bidderCode, 1);
 		});
-	}
+	})
 	checkAnalytics();
 }
 

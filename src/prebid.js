@@ -20,6 +20,7 @@ var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
+var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_preBidders = [],
 	pb_placements = [],
@@ -411,7 +412,9 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
-	//TODO: emit bid timeout event here 
+	//emit bid timeout event here 
+	var timedOutBidders = bidmanager.getTimedOutBidders();
+	events.emit(BID_TIMEOUT, timedOutBidders);
 
 	var adUnitCodesArr = codeArr;
 
