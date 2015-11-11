@@ -49,7 +49,8 @@
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
         pbjsEl.async = true; 
         
-        pbjsEl.src = "prebid.js";
+        //pbjsEl.src = "prebid.js";
+        pbjsEl.src = 'http://acdn.adnxs.com/prebid/prebid.js';
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 
@@ -77,7 +78,9 @@
                 {
                     bidder: 'appnexus',
                     params: {
-                       placementId: '4799418'
+                       placementId: '4799418',
+                       "referrer":"rolando.com",
+                       "alt_referrer":"rolando.com"
                     }
                 },
                 // 1 ad unit can also be targeted by multiple bids from 1 bidder
