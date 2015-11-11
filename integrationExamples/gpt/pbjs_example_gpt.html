@@ -30,15 +30,6 @@
     // Load GPT when timeout is reached.
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
-
-    function sendAnalytics(){
-        //You can get the analytic data
-        pbjs.getAnalyticsData();
-
-        //You can send the google analytics data automatically
-        pbjs.sendAnalyticsData();
-    }
-
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
@@ -171,8 +162,7 @@
             */
             bidsBackHandler: function(bidResponses) {
                 initAdserver();
-                
-                sendAnalytics();
+
             },
 
             /* You can specify specific `adUnitCodes` to only request bids
@@ -316,6 +306,11 @@
    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
  
     ga('create', 'XXXXXX', 'auto');
+    //Send data from prebid.js automatically 
+    pbjs.que.push(function(){
+        pbjs.enableGA();
+        //pbjs.enableGA(gaGlobal) // if you rename ga object
+    });
 </script>
 
 </html>
