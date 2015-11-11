@@ -58,10 +58,14 @@ exports.clearAllBidResponses = function(adUnitCode) {
 function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};
-
-	utils._each(adaptermanager.bidderRegistry, function(val, key){
-		bidResponseReceivedCount[key] = 0;
-	});
+	
+	for(var i=0; i<pbjs.adUnits.length; i++){
+		var bids = pbjs.adUnits[i].bids;
+		for(var j=0; j<bids.length; j++){
+			var bidder = bids[j].bidder;
+			bidResponseReceivedCount[bidder] = 0;
+		}
+	}
 }
 
 exports.increaseBidResponseReceivedCount = function(bidderCode){
