@@ -101,7 +101,7 @@ exports.extend = function(target, source){
 
 	this._each(source,function(value,prop){    
 		if (typeof source[prop] === objectType_object) {
-			target[prop] = extend(target[prop], source[prop]);
+			target[prop] = this.extend(target[prop], source[prop]);
 		} else {
 			target[prop] = source[prop];
 		}
@@ -288,9 +288,7 @@ exports.getPriceBucketString = function(cpm) {
 			} else {
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
 			}
-
 		}
-
 	} catch (e) {
 		this.logError('Exception parsing CPM :' + e.message);
 	}
@@ -378,7 +376,7 @@ exports.isEmpty = function(object) {
    */
 exports._each = function(object, fn) {
     if (this.isEmpty(object)) return;
-    if (this.isFn(object.forEach)) return object.forEach(fn);
+    if (this.isFn(object.forEach)) return object.forEach(fn, this);
 
     var k = 0,
         l = object.length;
@@ -387,7 +385,21 @@ exports._each = function(object, fn) {
       for (; k < l; k++) fn(object[k], k, object);
     } else {
       for (k in object) {
-        if (hasOwnProperty.call(object, k)) fn(object[k], k, object);
+        if (hasOwnProperty.call(object, k)) fn.call(this, object[k], k);
       }
     }
   };
+
+exports.contains = function(a, obj) {
+	if(this.isEmpty(a)){
+		return false;
+	}
+    var i = a.length;
+    while (i--) {
+       if (a[i] === obj) {
+           return true;
+       }
+    }
+    return false;
+};
+
