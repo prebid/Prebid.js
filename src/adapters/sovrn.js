@@ -80,10 +80,6 @@ var SovrnAdapter = function SovrnAdapter() {
 	pbjs.sovrnResponse = function(sovrnResponseObj) {
 		// valid object?
 		if (sovrnResponseObj && sovrnResponseObj.id) {
-			// @if NODE_ENV='debug'			
-			if(utils.debugTurnedOn && utils.hasConsoleLogger()) { console.log(sovrnResponseObj) }; //only dump objects in debug build
-			// @endif
-
 			// valid object w/ bid responses?
 			if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !==0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
 
@@ -100,10 +96,6 @@ var SovrnAdapter = function SovrnAdapter() {
 						bidObj.status = CONSTANTS.STATUS.GOOD;
 
 						//place ad response on bidmanager._adResponsesByBidderId
-						// @if NODE_ENV='debug'
-						utils.logMessage('Sovrn bid process for ad ID: ' + id);
-						// @endif
-	
 						var bid = [];
 						responseCPM = parseFloat(sovrnBid.price);
 
@@ -132,9 +124,6 @@ var SovrnAdapter = function SovrnAdapter() {
 							
 						}	else {
 							//0 price bid
-							// @if NODE_ENV='debug'
-							utils.logMessage('Sovrn responded with 0 bid for placement code ' + placementCode);
-							// @endif
 							//indicate that there is no bid for this placement
 							bid = bidfactory.createBid(2);
 							bid.bidderCode = 'sovrn';
@@ -143,9 +132,6 @@ var SovrnAdapter = function SovrnAdapter() {
 						}
 					} else {   // bid not found, we never asked for this?
 						//no response data
-						// @if NODE_ENV='debug'
-						utils.logMessage('No bid request found for sovrn impression ID '+id);
-						// @endif	
 						bid = bidfactory.createBid(2);
 						bid.bidderCode = 'sovrn';
 						bidmanager.addBidResponse(placementCode, bid);
@@ -153,18 +139,12 @@ var SovrnAdapter = function SovrnAdapter() {
 				});
 			} else {
 				//no response data
-				// @if NODE_ENV='debug'
-				utils.logMessage('Incomplete sovrn response for id '+sovrnResponseObj.id);
-				// @endif
 				bid = bidfactory.createBid(2);
 				bid.bidderCode = 'sovrn';
 				bidmanager.addBidResponse(placementCode, bid);
 			}
 		} else {
 			//no response data
-			// @if NODE_ENV='debug'
-			utils.logMessage('Sovrn callback received no valid object');
-			// @endif
 			bid = bidfactory.createBid(2);
 			bid.bidderCode = 'sovrn';
 			bidmanager.addBidResponse(placementCode, bid);
