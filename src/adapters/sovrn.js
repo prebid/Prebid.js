@@ -145,7 +145,10 @@ var SovrnAdapter = function SovrnAdapter() {
 						//no response data
 						// @if NODE_ENV='debug'
 						utils.logMessage('No bid request found for sovrn impression ID '+id);
-						// @endif						
+						// @endif	
+						bid = bidfactory.createBid(2);
+						bid.bidderCode = 'sovrn';
+						bidmanager.addBidResponse(placementCode, bid);
 					} 
 				});
 			} else {
@@ -153,12 +156,18 @@ var SovrnAdapter = function SovrnAdapter() {
 				// @if NODE_ENV='debug'
 				utils.logMessage('Incomplete sovrn response for id '+sovrnResponseObj.id);
 				// @endif
+				bid = bidfactory.createBid(2);
+				bid.bidderCode = 'sovrn';
+				bidmanager.addBidResponse(placementCode, bid);
 			}
 		} else {
 			//no response data
 			// @if NODE_ENV='debug'
 			utils.logMessage('Sovrn callback received no valid object');
 			// @endif
+			bid = bidfactory.createBid(2);
+			bid.bidderCode = 'sovrn';
+			bidmanager.addBidResponse(placementCode, bid);
 		}
 
 	}; // sovrnResponse
