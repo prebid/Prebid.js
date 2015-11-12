@@ -815,15 +815,25 @@ pbjs.getAnalyticsData = function(){
 };
 
 /**
- * Will enable sendinga prebid.js data to google analytics
- * @param  {[type]} gaGlobal optional object 
+ * Will enable sendinga prebid.js to data provider specified
+ * @param  {object} options object {provider : 'string', options : {}}
  */
-pbjs.enableGA = function(gaGlobal){
-	try{
-		ga.enableAnalytics(gaGlobal);
+pbjs.enableAnalytics = function(options){
+	if(!options){
+		utils.logError('pbjs.enableAnalytics should be called with option {}', 'prebid.js');
+		return;
 	}
-	catch(e){
-		utils.logError('Error calling GA: ', 'prebid.js', e);
+
+	if(options.provider === 'ga'){
+		try{
+			ga.enableAnalytics(typeof options.options === 'undefined' ? {} :options.options ) ;
+		}
+		catch(e){
+			utils.logError('Error calling GA: ', 'prebid.js', e);
+		}	
+	}
+	else if(options.provider === 'other_provider'){
+		//todo
 	}
 };
 

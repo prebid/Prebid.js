@@ -307,9 +307,14 @@
  
     ga('create', 'XXXXXX', 'auto');
     //Send data from prebid.js automatically 
-    pbjs.que.push(function(){
-        pbjs.enableGA();
-        //pbjs.enableGA('gaGlobal') // if you rename ga object, send the string that identifies the global object
+    pbjs.que.push(function() {
+        pbjs.enableAnalytics({
+            provider: 'ga',
+            options: {
+                global: 'ga', // <string> name of GA global. Default is 'ga'
+                enableDistribution: false, // <bool> enable/disable distribution. Recommend disable to save bandwidth/calls
+            }
+        });
     });
 </script>
 

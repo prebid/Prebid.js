@@ -15,21 +15,28 @@ var _analyticsQueue = [],
 	_gaGlobal = null,
 	_enableCheck = true,
 	_category = 'Prebid.js Bids',
-	//to track how many events we are sending to GA.
-	_eventCount = 0;
+	//to track how many events we are sending to GA. 
+	//GA limits the # of events to be sent see here ==> https://developers.google.com/analytics/devguides/collection/ios/v3/limits-quotas?hl=en
+	_eventCount = 0,
+	//limit data sent by leaving this false
+	_enableDistribution = false;
 
 
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
- * @param  {object} ga optional
+ * @param  {object} gaOptions to set distribution and GA global (if renamed);
  * @return {[type]}    [description]
  */
-exports.enableAnalytics = function(ga) {
-	if(typeof ga !== 'undefined'){
-		_gaGlobal = ga;
+exports.enableAnalytics = function(gaOptions) {
+	if(typeof gaOptions.global !== 'undefined'){
+		_gaGlobal = gaOptions.global;
 	}
 	else{
+		//default global is window.ga
 		_gaGlobal = 'ga';
+	}
+	if(typeof gaOptions.enableDistribution !== 'undefined'){
+		_enableDistribution = gaOptions.enableDistribution;
 	}
 
 	var bid = null;
@@ -189,15 +196,18 @@ function sendBidResponseToGa(bid) {
 		_analyticsQueue.push(function() {
 			var cpmCents = convertToCents(bid.cpm),
 				bidder = bid.bidder;
-			if (typeof bid.timeToRespond !== 'undefined') {
+			if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
 				_eventCount++;
 				var dis = getLoadTimeDistribution(bid.timeToRespond);
 				window[_gaGlobal]('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1);
 			}
 			if (bid.cpm > 0) {
-				_eventCount = _eventCount + 3;
+				_eventCount = _eventCount + 2;
 				var cpmDis = getCpmDistribution(bid.cpm);
-				window[_gaGlobal]('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+				if(_enableDistribution){
+					_eventCount++;
+					window[_gaGlobal]('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1);
+				}
 				window[_gaGlobal]('send', 'event', _category, 'Bids', bidder, cpmCents);
 				window[_gaGlobal]('send', 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond);
 			}
