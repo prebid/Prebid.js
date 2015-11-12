@@ -1,6 +1,7 @@
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
+var events = require('./events');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -55,13 +56,32 @@ exports.clearAllBidResponses = function(adUnitCode) {
 	}
 };
 
+/**
+ * Returns a list of bidders that we haven't received a response yet
+ * @return {array} [description]
+ */
+exports.getTimedOutBidders = function(){
+	var bidderArr = [];
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count === 0){
+			bidderArr.push(bidderCode);
+		}
+	});
+
+	return bidderArr;
+};
+
 function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};
-
-	utils._each(adaptermanager.bidderRegistry, function(val, key){
-		bidResponseReceivedCount[key] = 0;
-	});
+	
+	for(var i=0; i<pbjs.adUnits.length; i++){
+		var bids = pbjs.adUnits[i].bids;
+		for(var j=0; j<bids.length; j++){
+			var bidder = bids[j].bidder;
+			bidResponseReceivedCount[bidder] = 0;
+		}
+	}
 }
 
 exports.increaseBidResponseReceivedCount = function(bidderCode){
@@ -95,6 +115,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
@@ -145,6 +166,8 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
+		//emit the bidResponse event
+		events.emit('bidResponse', adUnitCode, bid);
 
 	} else {
 		//create an empty bid bid response object

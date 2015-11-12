@@ -12,6 +12,7 @@ var Sovrn = require('./adapters/sovrn');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
+var events = require('./events');
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -21,19 +22,11 @@ exports.callBids = function(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
-		//rename casale to indexExchange
-		if(bidder && bidder.bidderCode && bidder.bidderCode === 'casale'){
-			bidder.bidderCode = 'indexExchange';
-			try{
-				utils._each(bidder.bids, function(value){
-					value.params['indexUrl'] = value.params.casaleUrl;
-				});
-			}
-			catch(e){}
-		}
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
+			//emit 'bidRequested' event
+			events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
 			currentBidder.callBids(bidder);
 			var currentTime = new Date().getTime();
 			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
