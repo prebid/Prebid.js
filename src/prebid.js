@@ -21,7 +21,8 @@ var objectType_number = 'number';
 var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
-	pb_targetingMap = {};
+	pb_targetingMap = {},
+	pb_keyHistoryMap = {};
 
 
 /* Public vars */
@@ -197,7 +198,13 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	slot.clearTargeting();
+	//copy keyStrings into pb_keyHistoryMap
+	utils.extend(pb_keyHistoryMap, keyStrings);
+	utils._each(pb_keyHistoryMap, function(value, key){
+		//since DFP doesn't support deleting a single key, we will set all to empty string
+		//This is "clear" for that key
+		slot.setTargeting(key, '');
+	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
@@ -288,6 +295,7 @@ function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
 	pb_placements = [];
+	pb_targetingMap = {};
 }
 
 function requestAllBids(tmout){
