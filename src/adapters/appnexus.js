@@ -92,6 +92,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var memberId = utils.getBidIdParamater('memberId', bid.params);
 		var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
 		var query = utils.getBidIdParamater('query', bid.params);
+		var referrer = utils.getBidIdParamater('referrer', bid.params);
+		var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
+
 
 		//build our base tag, based on if we are http or https
 
@@ -109,6 +112,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
 		jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
+
+
 		//sizes takes a bit more logic
 		var sizeQueryString = utils.parseSizesInput(bid.sizes);
 		if (sizeQueryString) {
@@ -124,9 +129,13 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		}
 
 		//append referrer
-		jptCall = utils.tryAppendQueryString(jptCall, 'referrer', utils.getTopWindowUrl());
-
-
+		if(referrer===''){
+			referrer = utils.getTopWindowUrl();
+		}
+		
+		jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
+		jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
+		
 		//remove the trailing "&"
 		if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
 			jptCall = jptCall.substring(0, jptCall.length - 1);
