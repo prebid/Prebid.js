@@ -390,4 +390,4 @@ exports._each = function(object, fn) {
         if (hasOwnProperty.call(object, k)) fn(object[k], k, object);
       }
     }
-  };
+};
