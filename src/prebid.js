@@ -94,12 +94,12 @@ function init(timeout, adUnitCodeArr) {
 		for (var k = 0; k < adUnitCodeArr.length; k++) {
 			for (var i = 0; i < pbjs.adUnits.length; i++) {
 				if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-					pb_placements = [pbjs.adUnits[i]];
+					pb_placements.push(pbjs.adUnits[i]);
 				}
 			}
-			loadPreBidders();
-			sortAndCallBids();
 		}
+		loadPreBidders();
+		sortAndCallBids();
 	} else {
 		pb_placements = pbjs.adUnits;
 		//Aggregrate prebidders by their codes
@@ -296,6 +296,7 @@ function getCloneBid(bid) {
 function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
+	pb_placements = [];
 }
 
 function requestAllBids(tmout){
