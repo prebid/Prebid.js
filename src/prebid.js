@@ -762,10 +762,11 @@ pbjs.loadScript = function(tagSrc, callback){
 };
 
 /**
+ * This isn't ready yet
  * return data for analytics
  * @param  {Function}  [description]
  * @return {[type]}    [description]
- */
+ 
 pbjs.getAnalyticsData = function(){
 	var returnObj = {};
 	var bidResponses = pbjs.getBidResponses();
@@ -822,6 +823,8 @@ pbjs.getAnalyticsData = function(){
 
 	return returnObj;
 };
+
+*/
 
 /**
  * Will enable sendinga prebid.js to data provider specified

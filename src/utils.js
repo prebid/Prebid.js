@@ -394,6 +394,9 @@ exports.contains = function(a, obj) {
 	if(this.isEmpty(a)){
 		return false;
 	}
+	if (this.isFn(a.indexOf)) {
+    	return a.indexOf(obj) !== -1;
+	}
     var i = a.length;
     while (i--) {
        if (a[i] === obj) {
@@ -401,5 +404,22 @@ exports.contains = function(a, obj) {
        }
     }
     return false;
+};
+
+/**
+ * Map an array or object into another array
+ * given a function
+ * @param {Array|Object} object
+ * @param {Function(value, key, object)} callback
+ * @return {Array}
+ */
+exports._map = function (object, callback) {
+  if (this.isEmpty(object)) return [];
+  if (this.isFn(object.map)) return object.map(callback);
+  var output = [];
+  this._each(object, function (value, key) {
+    output.push(callback(value, key, object));
+  });
+  return output;
 };
 

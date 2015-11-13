@@ -2,10 +2,12 @@
  * events.js
  */
 var utils = require('./utils'),
+CONSTANTS = require('./constants'),
   slice = Array.prototype.slice;
 
 //define entire events
-var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
+//var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
+var allEvents = utils._map(CONSTANTS.EVENTS, function (v){ return v; });
 //keep a record of all events fired
 var eventsFired = [];
 
