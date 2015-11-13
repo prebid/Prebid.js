@@ -25,7 +25,8 @@ var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
-	pb_targetingMap = {};
+	pb_targetingMap = {},
+	pb_keyHistoryMap = {};
 
 
 /* Public vars */
@@ -94,12 +95,12 @@ function init(timeout, adUnitCodeArr) {
 		for (var k = 0; k < adUnitCodeArr.length; k++) {
 			for (var i = 0; i < pbjs.adUnits.length; i++) {
 				if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-					pb_placements = [pbjs.adUnits[i]];
+					pb_placements.push(pbjs.adUnits[i]);
 				}
 			}
-			loadPreBidders();
-			sortAndCallBids();
 		}
+		loadPreBidders();
+		sortAndCallBids();
 	} else {
 		pb_placements = pbjs.adUnits;
 		//Aggregrate prebidders by their codes
@@ -206,7 +207,13 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	slot.clearTargeting();
+	//copy keyStrings into pb_keyHistoryMap
+	utils.extend(pb_keyHistoryMap, keyStrings);
+	utils._each(pb_keyHistoryMap, function(value, key){
+		//since DFP doesn't support deleting a single key, we will set all to empty string
+		//This is "clear" for that key
+		slot.setTargeting(key, '');
+	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
@@ -296,6 +303,8 @@ function getCloneBid(bid) {
 function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
+	pb_placements = [];
+	pb_targetingMap = {};
 }
 
 function requestAllBids(tmout){

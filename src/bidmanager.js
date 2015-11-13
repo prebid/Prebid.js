@@ -24,6 +24,8 @@ exports._adResponsesByBidderId = _adResponsesByBidderId;
 var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
 
+var expectedBidsCount = {};
+
 var _allBidsAvailable = false;
 
 var _callbackExecuted = false;
@@ -48,6 +50,8 @@ exports.clearAllBidResponses = function(adUnitCode) {
 
 	//init bid response received count
 	initbidResponseReceivedCount();
+	//init expected bids count
+	initExpectedBidsCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
@@ -95,6 +99,19 @@ function increaseBidResponseReceivedCount(bidderCode){
 		bidResponseReceivedCount[bidderCode]++;
 	}
 }
+
+function initExpectedBidsCount(){
+	expectedBidsCount = {};
+}
+
+exports.setExpectedBidsCount = function(bidderCode,count){
+	expectedBidsCount[bidderCode] = count;
+}
+
+function getExpectedBidsCount(bidderCode){
+	return expectedBidsCount[bidderCode];
+}
+
 
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
@@ -380,7 +397,15 @@ function checkAllBidsResponseReceived(){
 	var available = true;
 	
 	utils._each(bidResponseReceivedCount,function(count,bidderCode){
-		if(count<1){
+
+		//expected bids count check for appnexus
+		if(bidderCode === 'appnexus'){
+			var expectedCount = getExpectedBidsCount(bidderCode);
+
+			if(typeof expectedCount === objectType_undefined || count < expectedCount){
+				available = false;
+			}
+		}else if(count<1){
 			available = false;
 		}
 	});
