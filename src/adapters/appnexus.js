@@ -80,6 +80,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
     			//build tag
     			var astTag = buildTag(bid);
+				bid.startTime = new Date().getTime();
+
     			bidmanager.pbCallbackMap[astTag.targetId] = bid;
 
     			apntag.anq.push(function(){
@@ -117,6 +119,10 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			if(bidObj){
 				bidObj.status = CONSTANTS.STATUS.GOOD;
 				placementCode = bidObj.placementCode;
+
+				try {
+					processAndTrackLatency(bidObj.startTime, new Date().getTime(), placementCode);
+				} catch (e) {}
 			}
 
 			utils.logMessage('Callback function called for ad ID: ' + targetId);
