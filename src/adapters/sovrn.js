@@ -4,6 +4,8 @@ var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
+var defaultPlacementForBadBid = '';
+
 /**
  * Adapter for requesting bids from Sovrn
  */
@@ -34,14 +36,15 @@ var SovrnAdapter = function SovrnAdapter() {
 
 	function _requestBids(bidReqs) {
 		// build bid request object
-		
 		var domain = window.location.host;
 		var page = window.location.pathname + location.search + location.hash;
 		
 		var sovrnImps = [];
+		//assign the first adUnit (placement) for bad bids;
+		defaultPlacementForBadBid  = bidReqs[0].placementCode;
 		
 		//build impression array for sovrn
-		bidReqs.forEach(function(bid)
+		utils._each(bidReqs, function(bid)
 		{
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
@@ -56,7 +59,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					},
 					tagid: tagId,
 					bidfloor: bidFloor
-				}
+				};
 			sovrnImps.push(imp);
 			bidmanager.pbCallbackMap[imp.id] = bid;
 		});
@@ -69,7 +72,7 @@ var SovrnAdapter = function SovrnAdapter() {
 				domain: domain,
 				page: page
 			}
-		}
+		};
 
 		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' + 
 			'&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
@@ -78,6 +81,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
 	//expose the callback to the global object:
 	pbjs.sovrnResponse = function(sovrnResponseObj) {
+		var bid = {};
 		// valid object?
 		if (sovrnResponseObj && sovrnResponseObj.id) {
 			// valid object w/ bid responses?
@@ -96,7 +100,6 @@ var SovrnAdapter = function SovrnAdapter() {
 						bidObj.status = CONSTANTS.STATUS.GOOD;
 
 						//place ad response on bidmanager._adResponsesByBidderId
-						var bid = [];
 						responseCPM = parseFloat(sovrnBid.price);
 
 						if(responseCPM !== 0) {		
@@ -105,7 +108,7 @@ var SovrnAdapter = function SovrnAdapter() {
 							var responseAd = sovrnBid.adm;
 							
 							// build impression url from response
-							var responseNurl = '<img src="'+sovrnBid.nurl+'">'
+							var responseNurl = '<img src="'+sovrnBid.nurl+'">';
 
 							//store bid response
 							//bid status is good (indicating 1)
@@ -141,13 +144,13 @@ var SovrnAdapter = function SovrnAdapter() {
 				//no response data
 				bid = bidfactory.createBid(2);
 				bid.bidderCode = 'sovrn';
-				bidmanager.addBidResponse(placementCode, bid);
+				bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
 			}
 		} else {
 			//no response data
 			bid = bidfactory.createBid(2);
 			bid.bidderCode = 'sovrn';
-			bidmanager.addBidResponse(placementCode, bid);
+			bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
 		}
 
 	}; // sovrnResponse
