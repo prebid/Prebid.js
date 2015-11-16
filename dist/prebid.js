@@ -1,5 +1,5 @@
-/* Prebid.js v0.4.0 
-Updated : 2015-11-04 */
+/* Prebid.js v0.4.1 
+Updated : 2015-11-16 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -11,9 +11,11 @@ var CriteoAdapter = require('./adapters/criteo');
 var YieldbotAdapter = require('./adapters/yieldbot');
 var IndexExchange = require('./adapters/indexExchange');
 var Aol = require('./adapters/aol');
+var Sovrn = require('./adapters/sovrn');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
+var events = require('./events');
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -23,19 +25,11 @@ exports.callBids = function(bidderArr) {
 	for (var i = 0; i < bidderArr.length; i++) {
 		//use the bidder code to identify which function to call
 		var bidder = bidderArr[i];
-		//rename casale to indexExchange
-		if(bidder && bidder.bidderCode && bidder.bidderCode === 'casale'){
-			bidder.bidderCode = 'indexExchange';
-			try{
-				utils._each(bidder.bids, function(value){
-					value.params['indexUrl'] = value.params.casaleUrl;
-				});
-			}
-			catch(e){}
-		}
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
+			//emit 'bidRequested' event
+			events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
 			currentBidder.callBids(bidder);
 			var currentTime = new Date().getTime();
 			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
@@ -69,8 +63,9 @@ this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Aol(), 'aol');
+this.registerBidAdapter(Sovrn(),'sovrn');
 
-},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],2:[function(require,module,exports){
+},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/sovrn":9,"./adapters/yieldbot":10,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./utils.js":18}],2:[function(require,module,exports){
 var utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
     bidmanager = require('../bidmanager.js'),
@@ -206,7 +201,7 @@ var AolAdapter = function AolAdapter() {
 
 module.exports = AolAdapter;
 
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../utils.js":15}],3:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../utils.js":18}],3:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
@@ -257,7 +252,12 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	function callBids(params) {
 		//console.log(params);
 		var anArr = params.bids;
-		for (var i = 0; i < anArr.length; i++) {
+		var bidsCount = anArr.length;
+
+		//set expected bids count for callback execution
+		bidmanager.setExpectedBidsCount('appnexus',bidsCount);
+
+		for (var i = 0; i < bidsCount; i++) {
 			var bidReqeust = anArr[i];
 			var callbackId = utils.getUniqueIdentifierStr();
 			adloader.loadScript(buildJPTCall(bidReqeust, callbackId));
@@ -301,6 +301,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var memberId = utils.getBidIdParamater('memberId', bid.params);
 		var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
 		var query = utils.getBidIdParamater('query', bid.params);
+		var referrer = utils.getBidIdParamater('referrer', bid.params);
+		var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
+
 
 		//build our base tag, based on if we are http or https
 
@@ -318,6 +321,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
 		jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
+
+
 		//sizes takes a bit more logic
 		var sizeQueryString = utils.parseSizesInput(bid.sizes);
 		if (sizeQueryString) {
@@ -333,9 +338,13 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		}
 
 		//append referrer
-		jptCall = utils.tryAppendQueryString(jptCall, 'referrer', utils.getTopWindowUrl());
-
-
+		if(referrer===''){
+			referrer = utils.getTopWindowUrl();
+		}
+		
+		jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
+		jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
+		
 		//remove the trailing "&"
 		if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
 			jptCall = jptCall.substring(0, jptCall.length - 1);
@@ -439,7 +448,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	};
 };
 module.exports = AppNexusAdapter;
-},{"../adloader.js":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],4:[function(require,module,exports){
+},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],4:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -514,7 +523,7 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],5:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],5:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -648,7 +657,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 };
 
 module.exports = IndexExchangeAdapter;
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],6:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -755,7 +764,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],7:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],7:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -880,7 +889,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 };
 
 module.exports = PubmaticAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],8:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],8:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -954,6 +963,7 @@ var RubiconAdapter = function RubiconAdapter() {
 			'window.rp_adtype   = "jsonp";' +
 			'window.rp_inventory = %%RP_INVENTORY%% ;' +
 			'window.rp_floor=%%RP_FLOOR%%;' +
+			'window.rp_fastlane = true;' +
 			'window.rp_callback = ' + callback + ';';
 
 
@@ -1055,7 +1065,184 @@ var RubiconAdapter = function RubiconAdapter() {
 
 module.exports = RubiconAdapter;
 
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":15}],9:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],9:[function(require,module,exports){
+var CONSTANTS = require('../constants.json');
+var utils = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader');
+
+var defaultPlacementForBadBid = '';
+
+/**
+ * Adapter for requesting bids from Sovrn
+ */
+var SovrnAdapter = function SovrnAdapter() {
+	var sovrnUrl = 'ap.lijit.com/rtb/bid';
+
+	function _callBids(params) {
+		var sovrnBids = params.bids || [];
+		// De-dupe by tagid then issue single bid request for all bids
+		_requestBids(_getUniqueTagids(sovrnBids));
+	}
+
+	// filter bids to de-dupe them?
+	function _getUniqueTagids(bids) {
+		var key;
+		var map = {};
+		var Tagids = [];
+		bids.forEach(function(bid) {
+			map[utils.getBidIdParamater('tagid', bid.params)] = bid;
+		});
+		for (key in map) {
+			if (map.hasOwnProperty(key)) {
+				Tagids.push(map[key]);
+			}
+		}
+		return Tagids;
+	}
+
+	function _requestBids(bidReqs) {
+		// build bid request object
+		var domain = window.location.host;
+		var page = window.location.pathname + location.search + location.hash;
+		
+		var sovrnImps = [];
+		//assign the first adUnit (placement) for bad bids;
+		defaultPlacementForBadBid  = bidReqs[0].placementCode;
+		
+		//build impression array for sovrn
+		utils._each(bidReqs, function(bid)
+		{
+			var tagId = utils.getBidIdParamater('tagid', bid.params);
+			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+			var adW=0,adH=0;
+			
+			//sovrn supports only one size per tagid, so we just take the first size if there are more
+			//if we are a 2 item array of 2 numbers, we must be a SingleSize array
+			var sizeArrayLength = bid.sizes.length;
+			if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+					adW=bid.sizes[0];
+					adH=bid.sizes[1];
+				}
+			else
+				{
+					adW=bid.sizes[0][0];
+					adH=bid.sizes[0][1];
+				}
+			imp = 
+				{
+					id: utils.getUniqueIdentifierStr(),
+					banner: {
+						w: adW,
+						h: adH
+					},
+					tagid: tagId,
+					bidfloor: bidFloor
+				};
+			sovrnImps.push(imp);
+			bidmanager.pbCallbackMap[imp.id] = bid;
+		});
+
+		// build bid request with impressions
+		var sovrnBidReq = {
+			id: utils.getUniqueIdentifierStr(),
+			imp: sovrnImps,
+			site:{ 
+				domain: domain,
+				page: page
+			}
+		};
+
+		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' + 
+			'&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
+		adloader.loadScript(scriptUrl, null);
+	}
+
+	//expose the callback to the global object:
+	pbjs.sovrnResponse = function(sovrnResponseObj) {
+		var bid = {};
+		// valid object?
+		if (sovrnResponseObj && sovrnResponseObj.id) {
+			// valid object w/ bid responses?
+			if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !==0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
+
+				sovrnResponseObj.seatbid[0].bid.forEach(function(sovrnBid){
+
+					var responseCPM;
+					var placementCode = '';
+					var id = sovrnBid.impid;
+					
+					// try to fetch the bid request we sent Sovrn
+					var	bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+					if (bidObj){
+						placementCode = bidObj.placementCode;
+						bidObj.status = CONSTANTS.STATUS.GOOD;
+
+						//place ad response on bidmanager._adResponsesByBidderId
+						responseCPM = parseFloat(sovrnBid.price);
+
+						if(responseCPM !== 0) {		
+							sovrnBid.placementCode = placementCode;
+							sovrnBid.size = bidObj.sizes;
+							var responseAd = sovrnBid.adm;
+							
+							// build impression url from response
+							var responseNurl = '<img src="'+sovrnBid.nurl+'">';
+
+							//store bid response
+							//bid status is good (indicating 1)
+							bid = bidfactory.createBid(1);
+							bid.creative_id = sovrnBid.Id;
+							bid.bidderCode = 'sovrn';
+							bid.cpm = responseCPM;
+						
+							//set ad content + impression url
+							// sovrn returns <script> block, so use bid.ad, not bid.adurl
+							bid.ad = decodeURIComponent(responseAd+responseNurl);		
+							bid.width = bidObj.sizes[0][0];
+							bid.height = bidObj.sizes[0][1];
+			
+							bidmanager.addBidResponse(placementCode, bid);
+							
+						}	else {
+							//0 price bid
+							//indicate that there is no bid for this placement
+							bid = bidfactory.createBid(2);
+							bid.bidderCode = 'sovrn';
+							bidmanager.addBidResponse(placementCode, bid);
+							
+						}
+					} else {   // bid not found, we never asked for this?
+						//no response data
+						bid = bidfactory.createBid(2);
+						bid.bidderCode = 'sovrn';
+						bidmanager.addBidResponse(placementCode, bid);
+					} 
+				});
+			} else {
+				//no response data
+				bid = bidfactory.createBid(2);
+				bid.bidderCode = 'sovrn';
+				bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
+			}
+		} else {
+			//no response data
+			bid = bidfactory.createBid(2);
+			bid.bidderCode = 'sovrn';
+			bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
+		}
+
+	}; // sovrnResponse
+
+	return {
+		callBids: _callBids
+	};
+};
+
+module.exports = SovrnAdapter;
+
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],10:[function(require,module,exports){
 /**
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
@@ -1203,7 +1390,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
 module.exports = YieldbotAdapter;
 
-},{"../adloader":10,"../bidfactory":11,"../bidmanager":12,"../utils":15}],10:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory":12,"../bidmanager":13,"../utils":18}],11:[function(require,module,exports){
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
 	//create a script tag for the jpt call
@@ -1260,7 +1447,7 @@ exports.trackPixel = function(pixelUrl) {
 
 	}
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var utils = require('./utils.js');
 
 /**
@@ -1320,10 +1507,11 @@ exports.createBid = function(statusCde) {
 };
 
 //module.exports = Bid;
-},{"./utils.js":15}],12:[function(require,module,exports){
+},{"./utils.js":18}],13:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
+var events = require('./events');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -1345,6 +1533,8 @@ exports._adResponsesByBidderId = _adResponsesByBidderId;
 
 var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
+
+var expectedBidsCount = {};
 
 var _allBidsAvailable = false;
 
@@ -1370,6 +1560,8 @@ exports.clearAllBidResponses = function(adUnitCode) {
 
 	//init bid response received count
 	initbidResponseReceivedCount();
+	//init expected bids count
+	initExpectedBidsCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
@@ -1378,14 +1570,25 @@ exports.clearAllBidResponses = function(adUnitCode) {
 	}
 };
 
+/**
+ * Returns a list of bidders that we haven't received a response yet
+ * @return {array} [description]
+ */
+exports.getTimedOutBidders = function(){
+	var bidderArr = [];
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count === 0){
+			bidderArr.push(bidderCode);
+		}
+	});
+
+	return bidderArr;
+};
+
 function initbidResponseReceivedCount(){
 
 	bidResponseReceivedCount = {};
-
-	utils._each(adaptermanager.bidderRegistry, function(val, key){
-		bidResponseReceivedCount[key] = 0;
-	});
-	/*
+	
 	for(var i=0; i<pbjs.adUnits.length; i++){
 		var bids = pbjs.adUnits[i].bids;
 		for(var j=0; j<bids.length; j++){
@@ -1393,7 +1596,6 @@ function initbidResponseReceivedCount(){
 			bidResponseReceivedCount[bidder] = 0;
 		}
 	}
-	*/
 }
 
 exports.increaseBidResponseReceivedCount = function(bidderCode){
@@ -1407,6 +1609,19 @@ function increaseBidResponseReceivedCount(bidderCode){
 		bidResponseReceivedCount[bidderCode]++;
 	}
 }
+
+function initExpectedBidsCount(){
+	expectedBidsCount = {};
+}
+
+exports.setExpectedBidsCount = function(bidderCode,count){
+	expectedBidsCount[bidderCode] = count;
+}
+
+function getExpectedBidsCount(bidderCode){
+	return expectedBidsCount[bidderCode];
+}
+
 
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
@@ -1427,6 +1642,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
@@ -1477,6 +1693,8 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
+		//emit the bidResponse event
+		events.emit('bidResponse', adUnitCode, bid);
 
 	} else {
 		//create an empty bid bid response object
@@ -1689,7 +1907,15 @@ function checkAllBidsResponseReceived(){
 	var available = true;
 	
 	utils._each(bidResponseReceivedCount,function(count,bidderCode){
-		if(count<1){
+
+		//expected bids count check for appnexus
+		if(bidderCode === 'appnexus'){
+			var expectedCount = getExpectedBidsCount(bidderCode);
+
+			if(typeof expectedCount === objectType_undefined || count < expectedCount){
+				available = false;
+			}
+		}else if(count<1){
 			available = false;
 		}
 	});
@@ -1715,7 +1941,7 @@ exports.addCallback = function(id, callback, cbEvent){
 	}
 };
 
-},{"./adaptermanager":1,"./constants.json":13,"./utils.js":15}],13:[function(require,module,exports){
+},{"./adaptermanager":1,"./constants.json":14,"./events":15,"./utils.js":18}],14:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -1742,10 +1968,111 @@ module.exports={
 	"objectType_undefined" : "undefined",
 	"objectType_object" : "object",
 	"objectType_string" : "string",
-	"objectType_number" : "number"
+	"objectType_number" : "number",
+
+
+	"EVENTS" : {
+		"BID_TIMEOUT" : "bidTimeout",
+		"BID_REQUESTED" : "bidRequested",
+		"BID_RESPONSE" : "bidResponse",
+		"BID_WON" : "bidWon"
+	}
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
+/**
+ * events.js
+ */
+var utils = require('./utils'),
+CONSTANTS = require('./constants'),
+  slice = Array.prototype.slice;
+
+//define entire events
+//var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
+var allEvents = utils._map(CONSTANTS.EVENTS, function (v){ return v; });
+//keep a record of all events fired
+var eventsFired = [];
+
+module.exports = (function (){
+
+  var _handlers = {},
+      _public = {};
+
+  function _dispatch(event, args) {
+    utils.logMessage('Emitting event for: ' + event  );
+    //record the event:
+    eventsFired.push({
+      eventType : event,
+      args : args
+    });
+    utils._each(_handlers[event], function (fn) {
+        if (!fn) return;
+        try{
+          fn.apply(null, args);
+        }
+        catch(e){
+          utils.logError('Error executing handler:', 'events.js', e);
+        }
+        
+    });
+  }
+
+  function _checkAvailableEvent(event){
+    return utils.contains(allEvents,event);
+  }
+
+  _public.on = function (event, handler) {
+
+    //check whether available event or not
+    if(_checkAvailableEvent(event)){
+      _handlers[event] = _handlers[event] || [];
+      _handlers[event].push(handler);
+    }
+    else{
+      utils.logError('Wrong event name : ' + event + ' Valid event names :' + allEvents);
+    }
+  };
+
+  _public.emit = function (event) {
+    var args = slice.call(arguments, 1);
+    _dispatch(event, args);
+  };
+
+  _public.off = function (event, id, handler) {
+    if (utils.isEmpty(_handlers[event])) {
+      return;
+    }
+
+    utils._each(_handlers[event],function(h){
+      if(h[id] !== null && h[id] !== undefined ){
+        if(typeof handler === 'undefined' || h[id] === handler){
+          h[id] = null;
+        }
+      }
+    });
+  };
+
+  _public.get = function(){
+    return _handlers;
+  };
+
+  /**
+   * This method can return a copy of all the events fired 
+   * @return {array[object]} array of events fired
+   */
+  _public.getEvents = function(){
+    var arrayCopy = [];
+    utils._each(eventsFired, function(value){
+        var newProp = utils.extend({}, value);
+        arrayCopy.push(newProp);
+    });
+    return arrayCopy;
+  };
+
+  return _public;
+}());
+
+},{"./constants":14,"./utils":18}],16:[function(require,module,exports){
 /** @module pbjs */
 // if pbjs already exists in global dodcument scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -1757,6 +2084,8 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
+var ga = require('./ga');
+var events = require('./events');
 
 /* private variables */
 
@@ -1765,11 +2094,14 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
+var BID_WON = CONSTANTS.EVENTS.BID_WON;
+var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
-	pb_targetingMap = {};
+	pb_targetingMap = {},
+	pb_keyHistoryMap = {};
 
 
 /* Public vars */
@@ -1803,8 +2135,14 @@ pbjs.que.push = function(cmd) {
 function processQue() {
 	for (var i = 0; i < pbjs.que.length; i++) {
 		if (typeof pbjs.que[i].called === objectType_undefined) {
-			pbjs.que[i].call();
-			pbjs.que[i].called = true;
+			try{
+				pbjs.que[i].call();
+				pbjs.que[i].called = true;
+			}
+			catch(e){
+				utils.logError('Error processing command :', 'prebid.js', e);
+			}
+			
 		}
 	}
 }
@@ -1832,12 +2170,12 @@ function init(timeout, adUnitCodeArr) {
 		for (var k = 0; k < adUnitCodeArr.length; k++) {
 			for (var i = 0; i < pbjs.adUnits.length; i++) {
 				if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-					pb_placements = [pbjs.adUnits[i]];
+					pb_placements.push(pbjs.adUnits[i]);
 				}
 			}
-			loadPreBidders();
-			sortAndCallBids();
 		}
+		loadPreBidders();
+		sortAndCallBids();
 	} else {
 		pb_placements = pbjs.adUnits;
 		//Aggregrate prebidders by their codes
@@ -1845,7 +2183,6 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
-
 }
 
 function isValidAdUnitSetting() {
@@ -1945,7 +2282,13 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	slot.clearTargeting();
+	//copy keyStrings into pb_keyHistoryMap
+	utils.extend(pb_keyHistoryMap, keyStrings);
+	utils._each(pb_keyHistoryMap, function(value, key){
+		//since DFP doesn't support deleting a single key, we will set all to empty string
+		//This is "clear" for that key
+		slot.setTargeting(key, '');
+	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
@@ -2035,6 +2378,8 @@ function getCloneBid(bid) {
 function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
+	pb_placements = [];
+	pb_targetingMap = {};
 }
 
 function requestAllBids(tmout){
@@ -2151,6 +2496,10 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
+	//emit bid timeout event here 
+	var timedOutBidders = bidmanager.getTimedOutBidders();
+	events.emit(BID_TIMEOUT, timedOutBidders);
+
 	var adUnitCodesArr = codeArr;
 
 	if (typeof codeArr === objectType_string) {
@@ -2238,6 +2587,8 @@ pbjs.renderAd = function(doc, id) {
 			//lookup ad by ad Id
 			var adObject = bidmanager._adResponsesByBidderId[id];
 			if (adObject) {
+				//emit 'bid won' event here
+				events.emit(BID_WON, adObject);
 				var height = adObject.height;
 				var width = adObject.width;
 				var url = adObject.adUrl;
@@ -2485,8 +2836,96 @@ pbjs.loadScript = function(tagSrc, callback){
 	adloader.loadScript(tagSrc, callback);
 };
 
-processQue();
+/**
+ * This isn't ready yet
+ * return data for analytics
+ * @param  {Function}  [description]
+ * @return {[type]}    [description]
+ 
+pbjs.getAnalyticsData = function(){
+	var returnObj = {};
+	var bidResponses = pbjs.getBidResponses();
 
+	//create return obj for all adUnits
+	for(var i=0;i<pbjs.adUnits.length;i++){
+		var allBids = pbjs.adUnits[i].bids;
+		for(var j=0;j<allBids.length;j++){
+			var bid = allBids[j];
+			if(typeof returnObj[bid.bidder] === objectType_undefined){
+				returnObj[bid.bidder] = {};
+				returnObj[bid.bidder].bids = [];
+			}
+
+			var returnBids = returnObj[bid.bidder].bids;
+			var returnBidObj = {};
+			returnBidObj.timeout = true;
+			returnBids.push(returnBidObj);
+		}
+	}
+
+	utils._each(bidResponses,function(responseByUnit, adUnitCode){
+		var bids = responseByUnit.bids;
+
+		for(var i=0; i<bids.length; i++){
+
+			var bid = bids[i];
+			if(bid.bidderCode!==''){
+				var returnBids = returnObj[bid.bidderCode].bids;
+				var returnIdx = 0;
+				
+				for(var j=0;j<returnBids.length;j++){
+					if(returnBids[j].timeout)
+						returnIdx = j;
+				}
+
+				var returnBidObj = {};
+
+				returnBidObj.cpm = bid.cpm;
+				returnBidObj.timeToRespond = bid.timeToRespond;
+
+				//check winning
+				if(pb_targetingMap[adUnitCode].hb_adid === bid.adId){
+					returnBidObj.win = true;
+				}else{
+					returnBidObj.win = false;
+				}
+
+				returnBidObj.timeout = false;
+				returnBids[returnIdx] = returnBidObj;
+			}
+		}
+	});
+
+	return returnObj;
+};
+
+*/
+
+/**
+ * Will enable sendinga prebid.js to data provider specified
+ * @param  {object} options object {provider : 'string', options : {}}
+ */
+pbjs.enableAnalytics = function(options){
+	if(!options){
+		utils.logError('pbjs.enableAnalytics should be called with option {}', 'prebid.js');
+		return;
+	}
+
+	if(options.provider === 'ga'){
+		try{
+			ga.enableAnalytics(typeof options.options === 'undefined' ? {} :options.options ) ;
+		}
+		catch(e){
+			utils.logError('Error calling GA: ', 'prebid.js', e);
+		}	
+	}
+	else if(options.provider === 'other_provider'){
+		//todo
+	}
+};
+
+
+processQue();
 
 //only for test
 pbjs_testonly = {};
@@ -2494,7 +2933,247 @@ pbjs_testonly = {};
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
-},{"./adaptermanager":1,"./adloader":10,"./bidfactory":11,"./bidmanager.js":12,"./constants.json":13,"./utils.js":15}],15:[function(require,module,exports){
+},{"./adaptermanager":1,"./adloader":11,"./bidfactory":12,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./ga":17,"./utils.js":18}],17:[function(require,module,exports){
+/**
+ * ga.js - analytics adapter for google analytics 
+ */
+
+var events = require('./events');
+var utils = require('./utils');
+var CONSTANTS = require('./constants.json');
+
+var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
+var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+var BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
+var BID_WON = CONSTANTS.EVENTS.BID_WON;
+
+var _disibleInteraction = { nonInteraction : true }, 
+	_analyticsQueue = [],
+	_gaGlobal = null,
+	_enableCheck = true,
+	_category = 'Prebid.js Bids',
+	//to track how many events we are sending to GA. 
+	//GA limits the # of events to be sent see here ==> https://developers.google.com/analytics/devguides/collection/ios/v3/limits-quotas?hl=en
+	_eventCount = 0,
+	//limit data sent by leaving this false
+	_enableDistribution = false;
+
+
+/**
+ * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
+ * @param  {object} gaOptions to set distribution and GA global (if renamed);
+ * @return {[type]}    [description]
+ */
+exports.enableAnalytics = function(gaOptions) {
+	if(typeof gaOptions.global !== 'undefined'){
+		_gaGlobal = gaOptions.global;
+	}
+	else{
+		//default global is window.ga
+		_gaGlobal = 'ga';
+	}
+	if(typeof gaOptions.enableDistribution !== 'undefined'){
+		_enableDistribution = gaOptions.enableDistribution;
+	}
+
+	var bid = null;
+
+	//first send all events fired before enableAnalytics called
+
+	var existingEvents = events.getEvents();
+	utils._each(existingEvents, function(eventObj) {
+		var args = eventObj.args;
+		if (!eventObj) {
+			return;
+		}
+		if (eventObj.eventType === BID_REQUESTED) {
+			//bid is 1st args
+			bid = args[0];
+			sendBidRequestToGa(bid);
+		} else if (eventObj.eventType === BID_RESPONSE) {
+			//bid is 2nd args
+			bid = args[1];
+			sendBidResponseToGa(bid);
+
+		} else if (eventObj.eventType === BID_TIMEOUT) {
+			var bidderArray = args[0];
+			sendTimedOutBiddersToGa(bidderArray);
+			//todo disable event listeners
+
+		} else if (eventObj.eventType === BID_WON) {
+			bid = args[0];
+			sendBidWonToGa(bid);
+		}
+	});
+
+	//Next register event listeners to send data immediately
+
+	//bidRequests 
+	events.on(BID_REQUESTED, function(bidRequestObj) {
+		sendBidRequestToGa(bidRequestObj);
+	});
+
+	//bidResponses 
+	events.on(BID_RESPONSE, function(adunit, bid) {
+		sendBidResponseToGa(bid);
+
+	});
+
+	//bidTimeouts 
+	events.on(BID_TIMEOUT, function(bidderArray) {
+		sendTimedOutBiddersToGa(bidderArray);
+	});
+
+	//wins
+	events.on(BID_WON, function(bid) {
+		sendBidWonToGa(bid);
+	});
+};
+
+/**
+ * Check if gaGlobal or window.ga is defined on page. If defined execute all the GA commands
+ */
+function checkAnalytics() {
+	if (_enableCheck && typeof window[_gaGlobal] === 'function' ) {
+
+		for (var i = 0; i < _analyticsQueue.length; i++) {
+			_analyticsQueue[i].call();
+		}
+		//override push to execute the command immediately from now on
+		_analyticsQueue.push = function(fn) {
+			fn.call();
+		};
+		//turn check into NOOP
+		_enableCheck = false;
+	}
+	utils.logMessage('event count sent to GA: ' + _eventCount);
+}
+
+
+function convertToCents(dollars) {
+	if (dollars) {
+		return Math.floor(dollars * 100);
+	}
+	return 0;
+}
+
+function getLoadTimeDistribution(time) {
+	var distribution;
+	if (time >= 0 && time < 200) {
+		distribution = '0-200ms';
+	} else if (time >= 200 && time < 300) {
+		distribution = '200-300ms';
+	} else if (time >= 300 && time < 400) {
+		distribution = '300-400ms';
+	} else if (time >= 400 && time < 500) {
+		distribution = '400-500ms';
+	} else if (time >= 500 && time < 600) {
+		distribution = '500-600ms';
+	} else if (time >= 600 && time < 800) {
+		distribution = '600-800ms';
+	} else if (time >= 800 && time < 1000) {
+		distribution = '800-1000ms';
+	} else if (time >= 1000 && time < 1200) {
+		distribution = '1000-1200ms';
+	} else if (time >= 1200 && time < 1500) {
+		distribution = '1200-1500ms';
+	} else if (time >= 1500 && time < 2000) {
+		distribution = '1500-2000ms';
+	} else if (time >= 2000) {
+		distribution = '2000ms above';
+	}
+
+	return distribution;
+}
+
+
+function getCpmDistribution(cpm) {
+	var distribution;
+	if (cpm >= 0 && cpm < 0.5) {
+		distribution = '$0-0.5';
+	} else if (cpm >= 0.5 && cpm < 1) {
+		distribution = '$0.5-1';
+	} else if (cpm >= 1 && cpm < 1.5) {
+		distribution = '$1-1.5';
+	} else if (cpm >= 1.5 && cpm < 2) {
+		distribution = '$1.5-2';
+	} else if (cpm >= 2 && cpm < 2.5) {
+		distribution = '$2-2.5';
+	} else if (cpm >= 2.5 && cpm < 3) {
+		distribution = '$2.5-3';
+	} else if (cpm >= 3 && cpm < 4) {
+		distribution = '$3-4';
+	} else if (cpm >= 4 && cpm < 6) {
+		distribution = '$4-6';
+	} else if (cpm >= 6 && cpm < 8) {
+		distribution = '$6-8';
+	} else if (cpm >= 8) {
+		distribution = '$8 above';
+	}
+	return distribution;
+}
+
+
+
+function sendBidRequestToGa(bid) {
+	if (bid && bid.bidderCode) {
+		_analyticsQueue.push(function() {
+			_eventCount++;
+			window[_gaGlobal]('send', 'event', _category, 'Requests', bid.bidderCode, 1, _disibleInteraction);
+		});
+	}
+	//check the queue
+	checkAnalytics();
+}
+
+
+function sendBidResponseToGa(bid) {
+
+	if (bid && bid.bidder) {
+		_analyticsQueue.push(function() {
+			var cpmCents = convertToCents(bid.cpm),
+				bidder = bid.bidder;
+			if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
+				_eventCount++;
+				var dis = getLoadTimeDistribution(bid.timeToRespond);
+				window[_gaGlobal]('send', 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1, _disibleInteraction);
+			}
+			if (bid.cpm > 0) {
+				_eventCount = _eventCount + 2;
+				var cpmDis = getCpmDistribution(bid.cpm);
+				if(_enableDistribution){
+					_eventCount++;
+					window[_gaGlobal]('send', 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disibleInteraction);
+				}
+				window[_gaGlobal]('send', 'event', _category, 'Bids', bidder, cpmCents, _disibleInteraction);
+				window[_gaGlobal]('send', 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disibleInteraction);
+			}
+		});
+	}
+	//check the queue
+	checkAnalytics();
+}
+
+function sendTimedOutBiddersToGa(bidderArr){
+	utils._each(bidderArr, function(bidderCode){
+		_analyticsQueue.push(function() {
+			_eventCount++;
+			window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, 1, _disibleInteraction);
+		});
+	});
+	checkAnalytics();
+}
+
+function sendBidWonToGa(bid) {
+	var cpmCents = convertToCents(bid.cpm);
+	_analyticsQueue.push(function() {
+		_eventCount++;
+		window[_gaGlobal]('send', 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disibleInteraction);
+	});
+	checkAnalytics();
+}
+
+},{"./constants.json":14,"./events":15,"./utils":18}],18:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -2598,7 +3277,7 @@ exports.extend = function(target, source){
 
 	this._each(source,function(value,prop){    
 		if (typeof source[prop] === objectType_object) {
-			target[prop] = extend(target[prop], source[prop]);
+			target[prop] = this.extend(target[prop], source[prop]);
 		} else {
 			target[prop] = source[prop];
 		}
@@ -2785,9 +3464,7 @@ exports.getPriceBucketString = function(cpm) {
 			} else {
 				returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
 			}
-
 		}
-
 	} catch (e) {
 		this.logError('Exception parsing CPM :' + e.message);
 	}
@@ -2875,7 +3552,7 @@ exports.isEmpty = function(object) {
    */
 exports._each = function(object, fn) {
     if (this.isEmpty(object)) return;
-    if (this.isFn(object.forEach)) return object.forEach(fn);
+    if (this.isFn(object.forEach)) return object.forEach(fn, this);
 
     var k = 0,
         l = object.length;
@@ -2884,9 +3561,43 @@ exports._each = function(object, fn) {
       for (; k < l; k++) fn(object[k], k, object);
     } else {
       for (k in object) {
-        if (hasOwnProperty.call(object, k)) fn(object[k], k, object);
+        if (hasOwnProperty.call(object, k)) fn.call(this, object[k], k);
       }
     }
   };
 
-},{"./constants.json":13}]},{},[14])
+exports.contains = function(a, obj) {
+	if(this.isEmpty(a)){
+		return false;
+	}
+	if (this.isFn(a.indexOf)) {
+    	return a.indexOf(obj) !== -1;
+	}
+    var i = a.length;
+    while (i--) {
+       if (a[i] === obj) {
+           return true;
+       }
+    }
+    return false;
+};
+
+/**
+ * Map an array or object into another array
+ * given a function
+ * @param {Array|Object} object
+ * @param {Function(value, key, object)} callback
+ * @return {Array}
+ */
+exports._map = function (object, callback) {
+  if (this.isEmpty(object)) return [];
+  if (this.isFn(object.map)) return object.map(callback);
+  var output = [];
+  this._each(object, function (value, key) {
+    output.push(callback(value, key, object));
+  });
+  return output;
+};
+
+
+},{"./constants.json":14}]},{},[16])
