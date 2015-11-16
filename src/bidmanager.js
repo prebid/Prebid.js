@@ -1,6 +1,7 @@
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
+var events = require('./events');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -22,6 +23,8 @@ exports._adResponsesByBidderId = _adResponsesByBidderId;
 
 var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
+
+var expectedBidsCount = {};
 
 var _allBidsAvailable = false;
 
@@ -47,12 +50,29 @@ exports.clearAllBidResponses = function(adUnitCode) {
 
 	//init bid response received count
 	initbidResponseReceivedCount();
+	//init expected bids count
+	initExpectedBidsCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
 	for (var prop in this.pbBidResponseByPlacement) {
 		delete this.pbBidResponseByPlacement[prop];
 	}
+};
+
+/**
+ * Returns a list of bidders that we haven't received a response yet
+ * @return {array} [description]
+ */
+exports.getTimedOutBidders = function(){
+	var bidderArr = [];
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count === 0){
+			bidderArr.push(bidderCode);
+		}
+	});
+
+	return bidderArr;
 };
 
 function initbidResponseReceivedCount(){
@@ -80,6 +100,19 @@ function increaseBidResponseReceivedCount(bidderCode){
 	}
 }
 
+function initExpectedBidsCount(){
+	expectedBidsCount = {};
+}
+
+exports.setExpectedBidsCount = function(bidderCode,count){
+	expectedBidsCount[bidderCode] = count;
+}
+
+function getExpectedBidsCount(bidderCode){
+	return expectedBidsCount[bidderCode];
+}
+
+
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
  */
@@ -99,6 +132,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
@@ -149,6 +183,8 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
+		//emit the bidResponse event
+		events.emit('bidResponse', adUnitCode, bid);
 
 	} else {
 		//create an empty bid bid response object
@@ -361,7 +397,15 @@ function checkAllBidsResponseReceived(){
 	var available = true;
 	
 	utils._each(bidResponseReceivedCount,function(count,bidderCode){
-		if(count<1){
+
+		//expected bids count check for appnexus
+		if(bidderCode === 'appnexus'){
+			var expectedCount = getExpectedBidsCount(bidderCode);
+
+			if(typeof expectedCount === objectType_undefined || count < expectedCount){
+				available = false;
+			}
+		}else if(count<1){
 			available = false;
 		}
 	});

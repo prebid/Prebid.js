@@ -12,6 +12,7 @@ var Sovrn = require('./adapters/sovrn');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
+var events = require('./events');
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -24,6 +25,8 @@ exports.callBids = function(bidderArr) {
 		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
 			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
 			var currentBidder = _bidderRegistry[bidder.bidderCode];
+			//emit 'bidRequested' event
+			events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
 			currentBidder.callBids(bidder);
 			var currentTime = new Date().getTime();
 			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
