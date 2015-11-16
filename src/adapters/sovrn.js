@@ -48,14 +48,26 @@ var SovrnAdapter = function SovrnAdapter() {
 		{
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+			var adW=0,adH=0;
 			
 			//sovrn supports only one size per tagid, so we just take the first size if there are more
+			//if we are a 2 item array of 2 numbers, we must be a SingleSize array
+			var sizeArrayLength = bid.sizes.length;
+			if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+					adW=bid.sizes[0];
+					adH=bid.sizes[1];
+				}
+			else
+				{
+					adW=bid.sizes[0][0];
+					adH=bid.sizes[0][1];
+				}
 			imp = 
 				{
 					id: utils.getUniqueIdentifierStr(),
 					banner: {
-						w: bid.sizes[0][0],
-						h: bid.sizes[0][1]
+						w: adW,
+						h: adH
 					},
 					tagid: tagId,
 					bidfloor: bidFloor
