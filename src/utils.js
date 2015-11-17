@@ -423,3 +423,11 @@ exports._map = function (object, callback) {
   return output;
 };
 
+exports.getViewableHeight = function(){
+	return (window.innerHeight)?window.innerHeight:document.documentElement.clientHeight||document.body.clientHeight||0;
+};
+
+exports.getViewableWidth = function(){
+	return (window.innerWidth)?window.innerWidth:document.documentElement.clientWidth||document.body.clientWidth||0;
+};
+
