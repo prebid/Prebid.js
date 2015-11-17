@@ -3,7 +3,7 @@ layout: page
 title: Getting Started
 head_title: Getting Started with Prebid.js for Header Bidding
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
-pid: 0
+pid: 2
 isNavDropdown: false
 isNavParent: true
 
