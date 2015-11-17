@@ -4,6 +4,7 @@ title: What is Prebid.js?
 head_title: What is Prebid.js?
 description: What Prebid.js is, and why it's useful
 pid: 0
+hide: true
 isNavParent: true
 isNavDropdown: false
 
