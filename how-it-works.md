@@ -4,6 +4,7 @@ title: How it Works
 head_title: How it Works
 description: An overview of how header bidding with prebid.js works
 pid: 1
+hide: true
 isNavParent: true
 isNavDropdown: false
 
