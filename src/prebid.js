@@ -26,7 +26,8 @@ var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
 	pb_targetingMap = {},
-	pb_keyHistoryMap = {};
+	pb_keyHistoryMap = {},
+	pb_bidsTimedOut = false;
 
 
 /* Public vars */
@@ -115,6 +116,14 @@ function isValidAdUnitSetting() {
 		return true;
 	}
 	return false;
+}
+
+function timeOutBidders(){
+	if(!pb_bidsTimedOut){
+		pb_bidsTimedOut = true;
+		var timedOutBidders = bidmanager.getTimedOutBidders();
+		events.emit(BID_TIMEOUT, timedOutBidders);	
+	}
 }
 
 function sortAndCallBids(sortFunc) {
@@ -305,6 +314,7 @@ function resetBids() {
 	pb_bidderMap = {};
 	pb_placements = [];
 	pb_targetingMap = {};
+	pb_bidsTimedOut = false;
 }
 
 function requestAllBids(tmout){
@@ -422,8 +432,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 	}
 
 	//emit bid timeout event here 
-	var timedOutBidders = bidmanager.getTimedOutBidders();
-	events.emit(BID_TIMEOUT, timedOutBidders);
+	timeOutBidders();
 
 	var adUnitCodesArr = codeArr;
 
@@ -847,6 +856,13 @@ pbjs.enableAnalytics = function(options){
 	else if(options.provider === 'other_provider'){
 		//todo
 	}
+};
+
+/**
+ * This will tell analytics that all bids received after are "timed out"
+ */
+pbjs.sendTimeoutEvent = function(){
+	timeOutBidders();
 };
 
 
