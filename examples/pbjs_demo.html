@@ -50,7 +50,7 @@
         pbjsEl.async = true; 
         
         //pbjsEl.src = "prebid.js";
-        pbjsEl.src = 'http://acdn.adnxs.com/prebid/prebid.js';
+        pbjsEl.src = '//acdn.adnxs.com/prebid/prebid.js';
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 
@@ -65,13 +65,13 @@
         bid requests. Find the complete reference on bidders at 
         http://prebid.org/bidders.html.
 
-        code:  Your GPT slot’s ad unit path. If they don’t match, prebid.js 
+        code:  Your GPT slot's slot element ID. If they don't match, prebid.js 
                would not be able to set targeting correctly
         sizes: All sizes your ad unit accepts. They should match with GPT.
 
         */
         var adUnits = [{
-            code: '/19968336/header-bid-tag-0',
+            code: 'div-gpt-ad-1438287399331-0',
             sizes: [[300, 250], [300, 600]],
             bids: [
                 // 1 ad unit can be targeted by multiple bids.
@@ -173,14 +173,14 @@
         /* 2. Configure Ad Server Targeting
 
         The below section defines what key value targeting will be sent to GPT. 
-        For each bidder’s bid, Prebid.js will set the below 4 keys (hb_bidder, 
+        For each bidder's bid, Prebid.js will set the below 4 keys (hb_bidder, 
         hb_adid, hb_pb, hb_size) with their corresponding values.
 
         Bidders all have different recommended ad server line item targeting and 
         creative setup. To remove the headache for you, Prebid.js has a default 
         recommended query string targeting setting for all bidders.
 
-        If you’d like to customize the key value pairs, you can overwrite the settings 
+        If you'd like to customize the key value pairs, you can overwrite the settings 
         as the below example shows. Let your ad ops team know about the change, so they 
         can update the line item targeting accordingly.
 
@@ -220,8 +220,6 @@
         eventLogger.logEventTime('loadGPT', 'end');
 
         var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
-
-        var topSlot = googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
 
         pbjs.que.push(function() {
             eventLogger.logEventTime('targeting', 'start');

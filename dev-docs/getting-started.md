@@ -15,17 +15,18 @@ nav_section: quick-start
 
 # JSFiddle
 
-The easiest way to get started with Prebid.js is using the following JSFiddle example:
+The easiest way to get started with Prebid.js is using the following JSFiddle example. Go to the "Result" tab to see the keyword targeting for this header auction.
 
 * **[Prebid.js JSFiddle](http://jsfiddle.net/hqhbLdxn/1/)**
 
-<iframe width="100%" height="500" src="//jsfiddle.net/hqhbLdxn/5/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="500" src="//jsfiddle.net/prebid/hqhbLdxn/8/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 <br>
 
 {: .bg-info :}
 Note that the above JSFiddle code is not integrated with an ad server. To move to the next section, you will **need access to your ad server** for setting up line items. For more information on how to setup your ad server, go to [Adops Guide](/adops/before-you-start.html).
 
+<!--
 <div class="bs-docs-section" markdown="1">
 
 # Explore Live Demo
@@ -38,6 +39,8 @@ Note that the above JSFiddle code is not integrated with an ad server. To move t
 Open it in a new tab, **download the HTML source**, and play around with it! We will explain how it works in the next section.
 
 </div>
+
+-->
 
 <div class="bs-docs-section" markdown="1">
 
@@ -58,7 +61,7 @@ In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad u
 
 pbjs.que.push(function() {
   var adUnits = [{
-    code: "/1996833/slot-1",
+    code: "div-gpt-ad-1438287399331-0",
     sizes: [[300, 250], [728, 90]],
     bids: [{
         bidder: "rubicon",
@@ -116,7 +119,7 @@ pbjs.que.push(function() {
 
 {% endhighlight %}
 
-For detailed walkthrough and API references, check out the [Developer Tutorial](/dev-docs/publisher-tutorial.html).
+For detailed walkthrough and API references, check out the [Code Examples](/dev-docs/examples/basic-example.html).
 
 <br>
 
