@@ -3,7 +3,10 @@ layout: page
 title: New Bidder Adaptor
 description: Documentation on how to add a new bidder adaptor
 pid: 25
-hide: false
+
+top_nav_section: dev_docs
+nav_section: adaptors
+
 ---
 
 <div class="bs-docs-section" markdown="1">

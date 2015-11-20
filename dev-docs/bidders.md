@@ -3,6 +3,10 @@ layout: page
 title: Bidders' Params
 description: Documentation on bidders' params
 pid: 21
+
+top_nav_section: dev_docs
+nav_section: reference
+
 ---
 
 <div class="bs-docs-section" markdown="1">

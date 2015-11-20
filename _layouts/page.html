@@ -5,16 +5,27 @@
   <!-- Header
   =========================================== -->
 
+<!-- 
   <div class="bs-docs-header" id="content">
     <div class="container">
       <h1>{{page.title}}</h1>
       <p>{{page.description}}</p>
     </div>
   </div>
-
+ -->
 
   <div class="container bs-docs-container">
+
+  {% if page.is_full_screen %}
+
+    {{content}}
+
+  {% else %}
+
     <div class="row">
+
+      {% include left_nav.html %}
+
       <!-- Content
       =========================================== -->
       <div class="col-md-9" role="main">
@@ -26,34 +37,12 @@
 
       </div>
 
-      <!-- Page navigation
-      =========================================== -->
-      <div class="col-md-3">
-        <div class="bs-docs-sidebar hidden-print">
 
-          <div id="pbjs-inpage-nav" role="complementary">
-            <h5>This Page</h5>
-            <ul class="nav bs-docs-sidenav">
-            </ul>
-          </div>
-
-          <h5>Related Posts</h5>
-          <ul class="nav bs-docs-sidenav">
-
-            {% for post in site.posts %}
-
-              <li><a href="{{ post.url }}">{{ post.title }}</a></li>
-
-            {% endfor %}
-
-          </ul>
-
-          <a class="back-to-top" href="#top">
-            <i class="glyphicon glyphicon-chevron-up"></i> Back to top
-          </a>
-        </div>
-      </div>
     </div>
+
+   {% endif %}
+
+
   </div>
 
 

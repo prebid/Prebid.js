@@ -10,8 +10,6 @@ licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 
 # list of additional links on the right of the top menu
 headerLinks:
-  - title: Blog
-    url: /blog.html
   - title: GitHub
     url: https://github.com/prebid/Prebid.js
 
@@ -22,8 +20,6 @@ footerLinks:
     url: https://github.com/prebid/Prebid.js
   - title: Issues
     url: https://github.com/prebid/Prebid.js/issues?state=open
-  - title: Contact Us
-    url: /questions.html
   - title: About Us
     url: /about.html
 
@@ -63,6 +59,40 @@ facebook:
 
 # Build settings
 markdown: kramdown
+
+nav_sections:
+  - top_nav: dev_docs
+    code: quick-start
+    name: QUICK START
+  - top_nav: dev_docs
+    code: troubleshooting
+    name: TROUBLESHOOTING
+  - top_nav: dev_docs
+    code: reference
+    name: REFERENCE
+  - top_nav: dev_docs
+    code: adaptors
+    name: ADAPTORS
+
+  - top_nav: overview
+    code: intro
+    name: INTRO
+  - top_nav: overview
+    code: analytics
+    name: ANALYTICS
+  - top_nav: overview
+    code: studies
+    name: LATEST STUDIES
+
+
+  - top_nav: adops
+    code: tutorials
+    name: TUTORIALS
+
+  - top_nav: support
+    code: support
+    name: SUPPORT
+
 
 port: 80
 

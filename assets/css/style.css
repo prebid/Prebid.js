@@ -233,3 +233,59 @@ img {
 #chart_div {
   height: 400px;
 }
+
+
+
+.docs-sidebar {
+  margin-top: 20px;
+  padding: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: #f4f8fa;
+  border-radius: 2px;
+}
+
+.docs-sidebar .nav>li>a{
+  padding: 0px;
+  padding-bottom: 10px;
+  color: #555;
+}
+.docs-sidebar .nav>li>a:hover{
+  color: #337ab7;
+  background: transparent;
+}
+
+.docs-sidebar .nav>li>a.selected {
+  color: #337ab7;
+}
+
+.docs-sidebar h5 {
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 15px;
+}
+
+.bs-docs-nav {
+  border-bottom: dotted 1px #3b88c3;
+}
+
+.bg-info {
+  padding: 10px;
+  border-radius: 5px;
+}
+
+
+table.jsfiddle-line-number {
+    width: 100%;
+    border: 0;
+}
+
+table.jsfiddle-line-number .line-number {
+    padding-top: 46px;
+    vertical-align: text-top;
+    line-height: 15px;
+    width: 17px;
+    color: #aaa;
+    font-size: 13px;
+    text-align: right;
+}

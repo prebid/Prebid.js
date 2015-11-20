@@ -1,0 +1,125 @@
+<html>
+<head>
+
+<script>
+
+    var PREBID_TIMEOUT = 400;
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+
+        (function() {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            var useSSL = 'https:' == document.location.protocol;
+            gads.src = (useSSL ? 'https:' : 'http:') +
+            '//www.googletagservices.com/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+        pbjs.initAdserverSet = true;
+    };
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    (function() {
+        var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
+        pbjsEl.async = true; 
+        pbjsEl.src = '//acdn.adnxs.com/prebid/prebid.js';
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+
+    })();
+
+    pbjs.que.push(function() {
+        var adUnits = [{
+            code: '/19968336/header-bid-tag-0',
+            sizes: [[300, 250], [300, 600]],
+            bids: [
+                // Add bids of a custom adaptor (in this case Amazon) to inform 
+                // Prebid.js that it should call its adaptor (in this case A9Adaptor
+                // as below)
+                {
+                    bidder: 'amazon'
+                },
+                {
+                    bidder: 'appnexus',
+                    params: {
+                       placementId: '4799418'
+                    }
+                }
+            ]
+        }];
+        pbjs.addAdUnits(adUnits);
+
+        // A custom bidder adaptor
+        var A9Adaptor = function A9Adaptor() {
+            return {
+                callBids: function(p) {
+                    pbjs.loadScript('//c.amazon-adsystem.com/aax2/amzn_ads.js', function() {
+                        amznads.getAdsCallback('3030', function() {
+
+                            // Indicate this bidder's bid is back here, so that Prebid.js can wait 
+                            // till this bid is back if all other bidders responded before the timeout.
+                            pbjs.bidsAvailableForAdapter('amazon');
+                        });
+                    });
+                }
+            };
+        };
+        pbjs.registerBidAdapter(A9Adaptor, 'amazon');
+
+
+        pbjs.requestBids({
+            bidsBackHandler: function(bidResponses) {
+                initAdserver();
+            }
+        })
+    });
+
+
+</script>
+
+
+<script>
+    googletag.cmd.push(function() {
+
+
+        var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+
+        pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+
+            // Set Amazon Targeting here together when you set targeting for other prebid bidders.
+            amznads.setTargetingForGPTAsync('amznslots');
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();   
+
+        
+    });
+
+
+    </script>
+</head>
+
+
+<body style="padding:0;margin:0">
+
+    <div id='div-gpt-ad-1438287399331-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
+        </script>
+    </div>
+
+</body>
+
+</html>

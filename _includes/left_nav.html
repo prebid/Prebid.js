@@ -1,0 +1,59 @@
+
+<!-- Site navigation
+=========================================== -->
+<div class="col-md-3">
+
+
+
+
+
+
+{% if page.top_nav_section %}
+
+
+
+  <div class="docs-sidebar">
+
+{% assign left_nav_sections = (site.nav_sections | where: "top_nav", page.top_nav_section) %}
+
+{% assign top_section_pages = (site.pages | where: "top_nav_section", page.top_nav_section) %}
+
+
+
+{% for left_section in left_nav_sections %}
+
+	{% assign section_pages = ((top_section_pages | where: "nav_section", left_section.code) | sort:"pid") %}
+
+
+    <h5>{{left_section.name}}</h5>
+    <ul class="nav bs-docs-sidena">
+
+      {% for p in section_pages %}
+
+      	{% if p.hide != true %}
+
+      		{% if p.url == page.url %}
+      			<li><a class="selected" href="{{ p.url }}">{{ p.title }}</a></li>
+      	  {% else %}
+
+        		<li><a href="{{ p.url }}">{{ p.title }}</a></li>
+          {% endif %}
+
+        {% endif %}
+
+      {% endfor %}
+
+    </ul>
+{% endfor %}
+
+
+
+
+  </div>
+
+{% endif %}
+
+</div>
+
+
+

@@ -1,0 +1,105 @@
+{% include head.html %}
+
+{% include main_nav.html %}
+
+  <div class="container bs-docs-container">
+
+
+
+<div class="row">
+
+      {% include left_nav.html %}
+
+
+<div class="col-md-9" role="main">
+
+<div class="bs-docs-section" markdown="1">
+
+<h1>{{ page.description }} </h1>
+
+<h4>This page contains:</h4>
+
+<ul>
+
+{% for about_bullet in page.about %}
+
+  <li>{{ about_bullet}}</li>
+
+{% endfor %}
+
+</ul>
+
+
+<h4>How to use this:</h4>
+
+Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
+
+<h4>Other examples:</h4>
+
+<ul>
+<li><a href="/dev-docs/examples/basic-example.html">Basic example</a></li>
+<li><a href="/dev-docs/examples/custom-price-bucket.html">Custom price bucket granularity</a></li>
+<li><a href="/dev-docs/examples/full-page-refresh.html">Full page refresh</a></li>
+<li><a href="/dev-docs/examples/adunit-refresh.html">Individual ad unit refresh</a></li>
+<!--
+<li>Criteo example</li>
+<li>Infinite scrolling</li>
+<li>Event listener</li>
+<li>Custom ad server</li>
+-->
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+<br>
+
+<div class="row">
+
+<div class="col-sm-6">
+
+
+<table class="jsfiddle-line-number">
+<tr>
+<td class="line-number">
+
+{% for num in (1...{{page.code_lines}}) %}
+
+{{ num }} <br>
+
+{% endfor %}
+
+</td>
+
+<td>
+
+
+<iframe width="100%" height="{{page.code_height}}" src="//{{page.jsfiddle_link}}" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+</td>
+</tr>
+</table>
+
+<!-- {% highlight js linenos %}
+
+    {% include example_code.html %}
+
+{% endhighlight %} -->
+
+</div>
+
+<div class="col-sm-6">
+
+{{content}}
+
+</div>
+
+</div>
+
+  </div>
+
+
+{% include foot.html %}

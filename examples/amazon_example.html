@@ -1,0 +1,276 @@
+
+<html>
+
+<head>
+<script>
+
+    var rightSlotCode = '/19968336/header-bid-tag-0';
+    var rightDivId = 'div-gpt-ad-1438287399331-0';
+
+    var rightSlotSizes = [[300, 250], [300, 600]];
+
+    var topSlotCode = '/19968336/header-bid-tag1';
+    var topDivId = 'div-gpt-ad-1438287399331-1'
+
+    var topSlotSizes = [[728, 90], [970, 90]];
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que  || [];
+    var PREBID_TIMEOUT = 1000;
+
+    var date = new Date().getTime();
+
+
+
+    function initAdserver() {
+        if (!pbjs.initAdserverSet){
+             //load GPT library here
+            (function() {
+                var gads = document.createElement('script');
+                gads.async = true;
+                gads.type = 'text/javascript';
+                var useSSL = 'https:' == document.location.protocol;
+                gads.src = (useSSL ? 'https:' : 'http:') +
+                '//www.googletagservices.com/tag/js/gpt.js';
+                var node = document.getElementsByTagName('script')[0];
+                node.parentNode.insertBefore(gads, node);
+            })();
+        }
+        pbjs.initAdserverSet = true;
+        
+
+    };
+    // Load GPT when timeout is reached.
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    pbjs.que.push(function(){
+       
+        var A9Adaptor = function A9Adaptor() {
+            return {
+                callBids: function(p) {
+                    pbjs.loadScript('//c.amazon-adsystem.com/aax2/amzn_ads.js', function() {
+                        amznads.getAdsCallback(p.bids[0].params.aId, function() {
+                            // Indicate bids are back here:
+                            pbjs.bidsAvailableForAdapter('amazon');
+                        });
+                    });
+                }
+            };
+        };
+
+        pbjs.registerBidAdapter(A9Adaptor, 'amazon');
+
+
+        var adUnit1 = {
+            code: rightSlotCode,
+            //code: rightDivId,
+            sizes: rightSlotSizes,
+            bids: [{
+                        bidder: 'amazon',
+                        params: {
+                            aId : 3030
+                        }
+                    }]
+        }
+
+        //can add a single ad unit
+        //pbjs.addAdUnit(adUnit1);
+
+        var adUnit2 = {
+            code: topSlotCode,
+            //code : topDivId,
+            sizes: topSlotSizes,
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId : '5215561'
+                            //memberId : '1234',
+                            //invCode : '7454'
+                        }
+                    }]
+
+            };
+
+
+        //add array of ad units
+         var arr = [adUnit2, adUnit1];
+         pbjs.addAdUnits([adUnit2, adUnit1]);
+
+    
+     pbjs.bidderSettings = 
+            {
+                appnexus: {
+                    alwaysUseBid : true,
+                    adserverTargeting: [{
+                        key: "hb_bidder",
+                        val: function(bidResponse) {
+                            return bidResponse.bidderCode;
+                        }
+                    }, {
+                        key: "hb_adid",
+                        val: function(bidResponse) {
+                            return bidResponse.adId;
+                        }
+                    }, {
+                        key: "hb_pb",
+                        val: function(bidResponse) {
+                            return bidResponse.pbMg;
+                        }
+                    }, {
+                        key: "hb_size",
+                        val: function(bidResponse) {
+                            return bidResponse.getSize();
+
+                        }
+                    }]
+                }
+        };
+             
+        pbjs.requestBids({
+
+            /* The bidsBack function will be called when either timeout is
+               reached, or when all bids come back, whichever happens sooner.
+            */
+            bidsBackHandler: function(bidResponses) {
+                //initAdserver();
+                //
+                //this never get's executed, because we don't register bids back from amazon adapter
+                //alert(bidResponse);
+                
+                var currentTime = new Date().getTime();
+                console.log('TIME for callback ===== ' + (currentTime-date));
+
+                initAdserver()
+            },
+
+            /* You can specify specific `adUnitCodes` to only request bids
+               for certain ad units.
+               adUnitCodes: ['code1', 'code2']
+            */
+
+            /* You can also make one off bid requests for the given `adUnits`. 
+               adUnits: [adUnit2, adUnit1]
+            */ 
+
+            /* The bidsBackHandler will be executed either when all bids are
+               back, or when the timeout is reached. 
+               timeout: 1000
+            */
+    });
+
+    });
+
+    (function() {
+        var d = document, pbs = d.createElement("script"), pro = d.location.protocal; pbs.type = "text/javascript";
+        //pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
+        //pbs.src = 'http://mkendall.devnxs.net/prebid.js'
+        pbs.src = 'http://acdn.adnxs.com/prebid/prebid.js';
+        //pbs.src = '../dist/prebid.js'
+        var target = document.getElementsByTagName("head")[0];
+        target.insertBefore(pbs, target.firstChild);
+    })();
+
+        //prbEl.src = 'http://cdn.adnxs.com/tag/v/prebid/2.1.1/prebid.min.js';
+
+
+
+    /*
+    googletag.cmd.push(function() {
+        googletag.pubads().setTargeting('amtest2', ["a728x90p14", "vp1"])
+    });
+*/
+
+</script>
+
+
+<script>
+
+    googletag.cmd.push(function() {
+
+        var rightSlot = googletag.defineSlot(rightSlotCode, rightSlotSizes, 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+
+        var topSlot = googletag.defineSlot(topSlotCode, topSlotSizes, 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+        //'div-gpt-ad-1438287399331-1'
+        
+        pbjs.que.push(function(){
+            pbjs.setTargetingForGPTAsync();
+
+
+            amznads.setTargetingForGPTAsync('amznslots');
+
+
+            console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
+
+            console.log('Targeting params:')
+            console.log(pbjs.getAdserverTargeting());
+
+            console.log('Dumping all bid objects to console:');
+            console.log(pbjs.getBidResponses());
+
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();      
+    });
+
+    
+
+    function refreshBids(){
+        pbjs.que.push(function(){
+            /*
+            pbjs.requestBids({
+                timeout: 500,
+                bidsBackHandler : function(){
+                    callGPT();
+                }
+            });
+            */
+             pbjs.requestBids();
+            
+        });
+    }
+
+    function callGPT(){
+       
+        console.log('executing inside pbjs object');
+        pbjs.setTargetingForGPTAsync();
+        googletag.pubads().refresh(); 
+        console.log(pbjs.getBidResponses()); 
+        
+
+    }
+
+
+    </script>
+</head>
+
+
+<body>
+
+    <h2>Prebid.js Test3</h2>
+
+    <!-- /19968336/pbjs-right1-300x250-300x600 -->
+    <div id='div-gpt-ad-1438287399331-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
+        </script>
+    </div>
+
+
+
+    <!-- /19968336/PBJS-top-728x90-970x90 -->
+    <div id='div-gpt-ad-1438287399331-1'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
+        </script>
+    </div>
+
+<button onclick="refreshBids()">Refresh Bids</button>
+
+
+</body>
+
+</html>

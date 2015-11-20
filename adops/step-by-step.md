@@ -1,132 +1,30 @@
 ---
 layout: page
-title: Ad Ops Guide
-head_title: Ad Ops Guide for Header Bidding
-description: An ad ops guide for implementing header bidding with prebid.js.
-pid: 30
+title: Step by step
+head_title: Getting Started with Prebid.js for Header Bidding
+description: An overview of Prebid.js, how it works, basic templates and examples, and more.
+pid: 0
 
-is_top_nav: yeah
+top_nav_section: adops
+nav_section: tutorials
 
 ---
-
-<div class="bs-docs-section" markdown="1">
-
-#Overview
-
-> **Prebid.js** brings header bidding, and thus **dynamic-allocation-like** functionality to **all** SSPs and other programmatic partners.
-
-If you spend an absurd about of time reviewing SSP reports to figure out which one makes you the most money, or are sick of dealing with passbacks on SSPs that can’t fill all your inventory – say hi to Prebid.js.
-
-In an ideal world, every one of your SSPs would work similarly to dynamic allocation, where everything competes on price and is handled by your ad server. 
-
-Prebid.js empowers publishers to create dynamic-allocation-like functionality for SSPs and other programmatic partners. Each partner competes on price for every impression at the same time, eliminating “first look” and “waterfalls” to help make publishers more money. 
-
-The result? More transparency into market demand, more control over the bid process, and a greater array of advertiser demand.
-
-</div>
-
-
-<div class="bs-docs-section" markdown="1">
-
-#How does it work?
-
-![Ad Ops Diagram]({{ site.github.url }}/assets/images/adops-intro.png)
-
-##### 1. Bidders
-* You configure prebid.js and setup one or more supported “bidders” (SSP, retargeters, ad networks, etc. – whatever they’re called)
-* As the page loads, prebid.js will asynchronously call each bidder to request how much they’re willing to pay for the impression. Note: the asynchronous calls mean the pages’ content continues to render without interruption.
-
-##### 2. Timer on page
-* To allow time for prebid.js to run, a timer is wrapped around the ad server tags on page. When bids are returned, or the timer runs out, the ad call to the publisher’s ad server is made – with a little extra information piggybacked onboard.
-
-##### 3. Ad server requests with key-value targeting
-* When bids are received, prebid.js adds the bidder, size, price, and creative URL to your ad server’s call via key-values on the query string.
-
-##### 4. Line items
-* Within your ad server, line items are setup to target the various bid prices and sizes, allowing the bidders’ programmatic demand compete with other line items or integrated exchanges (like Google Ad Exchange) based on price. More details on price bucket and line item setup below.
-
-##### 5. Creative
-* A small snippet of JavaScript is setup as a creative on each pre-bid line item. When a programmatic line item is picked by your ad server, the “creative” JS snippet tells prebid.js which bidder to serve. The short code snippet documented here handles all bidders and all sizes.
-
-
-Voila, you have dynamic allocation-like functionality for the major SSPs and exchanges.
-
-<br>
-
-#### What key value targeting does prebid.js return to your ad server?
-
-
-{: .table .table-bordered .table-striped }
-|   Default Key | Scope |    Description     |   Example  |
-| :----  |:--------| :-------| :-------|
-| hb_pb | Required | The price bucket. Used by the line item to target. | `2.10` |
-| hb_adid | Required | The ad Id. Used by the ad server creative to render ad. | `234234` |
-| hb_bidder | Required | The bidder code. Useful for logging and reporting to learn about which bidder has higher fill rate/CPM. | `rubicon` |
-| hb_size | Optional | The width and height concatenated. | `300x250` |
-| hb_cpm | Optional | The exact price the bidder bids for. It offers more accuracy than `hb_pb` and can be used by the line item to target. | `2.11` |
-
-
-<a name="price-bucket-def"></a>
-
-#### Price Bucket Definition
-
-{: .table .table-bordered .table-striped }
-| bidResponse variable |    Description     |   Example  |
-| :----  |:--------| :-------|
-| `pbLg` | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
-| `pbMg` | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
-| `pbHg` | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
-
-</div>
-
-
-<div class="bs-docs-section" markdown="1">
-
-#Getting Started
-
-> Here's what you need to implement header bidding via Prebid.js 
-
-#### Step 1: Setup a test page
-
-Publishers who successfully implement Prebid.js typically start with a test page consisting of 2 ad units, for example 300x250 and 728x90.
-
-#### Step 2: Decide on price bucket granularity
-
-With pre-bid, you’ll need to setup line items to tell your ad server how much money the “bidder” demand is worth to you. This process is done via key-values.
-
-Example:
-
-* Prebid.js is going to call your bidders for their price, then pass it into your ad server on the query-string. You want to target this bid price with a line item that earns you the same amount if it serves.
-
-* If you had 1-line item for every bid at a penny granularity of $0.01, $0.02, $0.03, ..., 1.23, ..., $4.56 you’d need 1,000 line items just to represent bids from $0-$10. We call this the “Exact” granularity option.
-
-* Creating 1,000 line items can be a hassle, so publishers typically use price buckets to represent price ranges that matter. For example, you could group bids into 10 cent increments, so bids of $1.06 or $1.02 would be rounded down into a single price bucket of $1.00.
-
-Our recommendation is to start with $1 or 10 cent granularity until you’re more comfortable with Prebid.js. At $1, you only need to setup 10-20 line items – easy. When you’re ready, get more granular with the price buckets to improve yield.
-
-#### Step 3: Sign-up for bidders
-
-To maximize earning potential, we recommend you sign-up for the various bidders prebid.js supports (more will be added):
-
-* AppNexus
-* Criteo
-* Rubicon Project
-* OpenX
-* PubMatic
-
-#### Step 4: Implement Prebid.js
-
-Work with your development team to implement prebid.js as documented in Publisher API. We recommend you start with one bidder. You’ll need an account with the bidder and will need to provide your developer with the bidder’s tag/site IDs (documentation here) an
-
-
-</div>
 
 
 <div class="bs-docs-section demo-setup" markdown="1">
 
 # Step by step guide for setting up DFP for Prebid.js
 
+
+
 <iframe width="853" height="480" src="https://www.youtube.com/embed/-bfI24_hwZ0?rel=0" frameborder="0" allowfullscreen></iframe>
+
+<div class="alert alert-danger" role="alert">
+  <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+  <span class="sr-only">Correction:</span>
+  Correction: in Line Item setting, "Display Creative" should choose "One or More", not "As Many as Possible" as described in the video.
+</div>
+
 
 </div>
 
@@ -391,7 +289,7 @@ Add all the sizes you need into the “Size overrides” box.
 
 #Query Strings
 
-To simplify the line item setup, the default behavior of Prebid.js is to [send the highest price bid only to the ad server]({{ site.github.url }}/blog/how-to-simplify-line-item-setup#pbjs-sends-highest-price-only). To run reporting such as:
+To simplify the line item setup, the default behavior of Prebid.js is to [send the highest price bid only to the ad server]({{ site.github.url }}/overview/how-to-simplify-line-item-setup.html#pbjs-sends-highest-price-only). To run reporting such as:
 
 * For bidder X, at what CPM does it fill?
 * For bidder X, what's the fill rate out of all the winning header bidding bids?
@@ -404,25 +302,6 @@ It's important to enable DFP report on free-form query strings ([DFP doc for rep
 1. In DFP's top navigation bar, go to Inventory.
 2. Click on Custom Targeting on the left.
 3. Add key `hb_bidder`.
-4. Add values for this key. The values should be the bidders' bidder code [documented here](bidders.html) under each bidder. You have to add the bidder code for the bidder that you want to run report on.
+4. Add values for this key. The values should be the bidders' bidder code [documented here](/dev-docs/bidders.html) under each bidder. You have to add the bidder code for the bidder that you want to run report on.
 
 </div>
-
-<!--
-<div class="bs-docs-section" markdown="1">
-
-#Reporting
-
-</div>
-
--->
-
-
-<!-- 
-### You’re ready!
-
-Once your test pages serve and you’re comfortable with pre-bid:
-
-* Add more line items for higher granularity. Use the default setting for bidderSettings.
-* Implement prebid.js in your site. -->
-
