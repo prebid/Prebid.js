@@ -38,7 +38,7 @@ var AolAdapter = function AolAdapter() {
     }
 
     cpm = response.getCPM();
-    if (cpm == null) {
+    if (cpm == null || isNaN(cpm)) {
       return _addErrorBid(response, context);
     }
 
