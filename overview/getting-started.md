@@ -21,9 +21,9 @@ nav_section: intro
 
 #### From start to finish:
 
-1. Developer downloads an example Prebid.js implementation page at [Develoepr Getting Started Guide](/dev-docs/getting-started.html). 
+1. Developer downloads an example Prebid.js implementation page at [Develoepr Code Examples](/dev-docs/examples/basic-example.html). 
 
-2. Adops follow the steps at [Adops Getting Started Guide](/adops/before-you-start.html). Create the bare minimum line items and creatives for developers to test with.
+2. Adops follow the steps at [Adops Getting Started Guide](/adops.html). Create the bare minimum line items and creatives for developers to test with.
 
 3. Developer starts implementing the Prebid framework to the site properties. 
 
@@ -35,6 +35,6 @@ nav_section: intro
 
 - If you are a developer, come to the [Develoepr Getting Started Guide](/dev-docs/getting-started.html).
 
-- If you are in adops, come to the [Adops Getting Started Guide](/adops/before-you-start.html).
+- If you are in adops, come to the [Adops Getting Started Guide](/adops.html).
 
 </div>
