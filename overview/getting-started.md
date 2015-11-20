@@ -21,7 +21,7 @@ nav_section: intro
 
 #### From start to finish:
 
-1. Developer downloads an example Prebid.js implementation page at [Develoepr Code Examples](/dev-docs/examples/basic-example.html). 
+1. Developer [gets started with Prebid.js](/dev-docs/getting-started.html) and downloads an example Prebid.js implementation page at [Develoepr Code Examples](/dev-docs/examples/basic-example.html). 
 
 2. Adops follow the steps at [Adops Getting Started Guide](/adops.html). Create the bare minimum line items and creatives for developers to test with.
 
