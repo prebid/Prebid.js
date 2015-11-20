@@ -24,7 +24,7 @@ The easiest way to get started with Prebid.js is using the following JSFiddle ex
 <br>
 
 {: .bg-info :}
-Note that the above JSFiddle code is not integrated with an ad server. To move to the next section, you will **need access to your ad server** for setting up line items. For more information on how to setup your ad server, go to [Adops Guide](/adops/before-you-start.html).
+Note that the above JSFiddle code is not integrated with an ad server. To move to the next section, you will **need access to your ad server** for setting up line items. For more information on how to setup your ad server, go to [Adops Guide](/adops.html).
 
 <!--
 <div class="bs-docs-section" markdown="1">
