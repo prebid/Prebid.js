@@ -2,6 +2,7 @@
 
 var RubiconAdapter = require('./adapters/rubicon.js');
 var AppNexusAdapter = require('./adapters/appnexus.js');
+var AolAdapter = require('./adapters/aol');
 var OpenxAdapter = require('./adapters/openx');
 var PubmaticAdapter = require('./adapters/pubmatic.js');
 var CriteoAdapter = require('./adapters/criteo');
@@ -59,3 +60,4 @@ this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
+this.registerBidAdapter(AolAdapter(), 'aol');
