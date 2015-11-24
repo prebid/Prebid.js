@@ -45,6 +45,8 @@ eventLogger.logBidsLatency = function() {
             bidEvent['end'] = bid.responseTimestamp - initTime;
             bidEvent['cpm'] = bid.cpm;
 
+            bidEvent['bidderCode'] = bid.bidderCode;
+
             pbjsLog.bids.push(bidEvent);
         }
     });
