@@ -36,7 +36,7 @@ var CriteoAdapter = function CriteoAdapter() {
 	}
 
 	function _requestBid(bid) {
-		var varname = 'crtg_varname_' + bid.params.nid;
+		var varname = bid.params.varname;
 		var scriptUrl = '//rtax.criteo.com/delivery/rta/rta.js?netId=' + encodeURI(bid.params.nid) +
 			'&cookieName=' + encodeURI(bid.params.cookiename) +
 			'&rnd=' + Math.floor(Math.random() * 99999999999) +
