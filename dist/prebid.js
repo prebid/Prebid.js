@@ -1,10 +1,11 @@
 /* Prebid.js v0.4.1 
-Updated : 2015-11-16 */
+Updated : 2015-11-23 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
 var RubiconAdapter = require('./adapters/rubicon.js');
 var AppNexusAdapter = require('./adapters/appnexus.js');
+var AolAdapter = require('./adapters/aol');
 var OpenxAdapter = require('./adapters/openx');
 var PubmaticAdapter = require('./adapters/pubmatic.js');
 var CriteoAdapter = require('./adapters/criteo');
@@ -62,8 +63,189 @@ this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
+this.registerBidAdapter(AolAdapter(), 'aol');
 
-},{"./adapters/appnexus.js":2,"./adapters/criteo":3,"./adapters/indexExchange":4,"./adapters/openx":5,"./adapters/pubmatic.js":6,"./adapters/rubicon.js":7,"./adapters/sovrn":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./events":14,"./utils.js":17}],2:[function(require,module,exports){
+},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/sovrn":9,"./adapters/yieldbot":10,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./utils.js":18}],2:[function(require,module,exports){
+var utils = require('../utils.js'),
+    bidfactory = require('../bidfactory.js'),
+    bidmanager = require('../bidmanager.js'),
+    adloader = require('../adloader');
+
+var AolAdapter = function AolAdapter() {
+
+    // constants
+    var ADTECH_PLACEMENT_RXP = /\W/g,
+	ADTECH_URI = '//aka-cdn.adtechus.com/dt/common/DAC.js',
+	ADTECH_BIDDER_NAME = 'aol',
+	ADTECH_PUBAPI_CONFIG = {
+		pixelsDivId: 'pixelsDiv',
+		defaultKey: 'aolBid',
+		roundingConfig: [
+			{from: 0, to: 999, roundFunction: 'tenCentsRound'},
+			{from: 1000, to: -1, roundValue: 1000}
+		],
+		pubApiOK: _addBid,
+		pubApiER: _addErrorBid
+	};
+
+    var bids,
+	bidsMap = {},
+	d = window.document,
+	h = d.getElementsByTagName('HEAD')[0],
+	aliasCount = 0,
+	dummyUnitIdCount = 0;
+
+    /**
+     * @private Given a placementCode slot path/div id
+     * for a unit, return a unique alias
+     * @param {String} placementCode
+     * @return {String} alias
+     */
+    function _generateAlias(placementCode) {
+	    return (placementCode || 'alias').replace(ADTECH_PLACEMENT_RXP, '') + (++aliasCount);
+    }
+
+    /**
+     * @private create a div that we'll use as the
+     * location for the AOL unit; AOL will document.write
+     * if the div is not present in the document.
+     * @param {String} id to identify the div
+     * @return {String} the id used with the div
+     */
+    function _dummyUnit(id) {
+	    var div = d.createElement('DIV');
+
+	    if (!id || !id.length) {
+		    id = 'ad-placeholder-' + (++dummyUnitIdCount);
+	    }
+
+	    div.id = id + '-head-unit';
+	    h.appendChild(div);
+	    return div.id;
+    }
+
+    /**
+     * @private Add a succesful bid response for aol
+     * @param {ADTECHResponse} response the response for the bid
+     * @param {ADTECHContext} context the context passed from aol
+     */
+    function _addBid(response, context) {
+	var bid = bidsMap[context.placement], cpm;
+
+	if (!bid) {
+	    utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
+	    return;
+	}
+
+    	cpm = response.getCPM();
+    	if (cpm == null) {
+	    return _addErrorBid(response, context);
+	}
+
+	var bidResponse = bidfactory.createBid(1);
+	bidResponse.bidderCode = ADTECH_BIDDER_NAME;
+	bidResponse.ad = response.getCreative() + response.getPixels();
+	bidResponse.cpm = cpm;
+	bidResponse.width = response.getAdWidth();
+	bidResponse.height = response.getAdHeight();
+	bidResponse.creativeId = response.getCreativeId();
+
+	// add it to the bid manager
+	bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    }
+
+    /**
+     * @private Add an error bid response for aol
+     * @param {ADTECHResponse} response the response for the bid
+     * @param {ADTECHContext} context the context passed from aol
+     */
+    function _addErrorBid(response, context) {
+	var bid = bidsMap[context.alias || context.placement];
+
+	if (!bid) {
+	    utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
+	    return;
+	}
+
+	var bidResponse = bidfactory.createBid(2);
+	bidResponse.bidderCode = ADTECH_BIDDER_NAME;
+	bidResponse.reason = response.getNbr();
+	bidResponse.raw = response.getResponse();
+	bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    }
+
+
+    /**
+    * @private map a prebid bidrequest to an ADTECH/aol bid request
+    * @param {Bid} bid the bid request
+    * @return {Object} the bid request, formatted for the ADTECH/DAC api
+    */
+    function _mapUnit(bid) {
+	// save the bid
+	bidsMap[bid.params.placement] = bid;
+
+	return {
+	    adContainerId: _dummyUnit(bid.params.adContainerId),
+	    server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
+	    sizeid: bid.params.sizeId || 0,
+	    pageid: bid.params.pageId,
+	    secure: false,
+	    serviceType: 'pubapi',
+	    performScreenDetection: false,
+	    alias: bid.params.alias || _generateAlias(bid.placementCode),
+	    network: bid.params.network,
+	    placement: parseInt(bid.params.placement),
+	    gpt: {
+		adUnitPath: bid.params.adUnitPath || bid.placementCode,
+		size: bid.params.size || (bid.sizes || [])[0]
+	    },
+	    params: {
+		cors: 'yes',
+		cmd: 'bid'
+	    },
+	    pubApiConfig: ADTECH_PUBAPI_CONFIG,
+	    placementCode: bid.placementCode
+	};
+    }
+
+    /**
+     * @private once ADTECH is loaded, request bids by
+     * calling ADTECH.loadAd
+     */
+    function _reqBids() {
+    	if (!window.ADTECH) {
+	    utils.logError('window.ADTECH is not present!', ADTECH_BIDDER_NAME);
+	    return;
+	}
+
+	// get the bids
+	utils._each(bids, function (bid) {
+	    var bidreq = _mapUnit(bid);
+	    window.ADTECH.loadAd(bidreq);
+	});
+    }
+
+    /**
+     * @public call the bids
+     * this requests the specified bids
+     * from aol marketplace
+     * @param {Object} params
+     * @param {Array} params.bids the bids to be requested
+     */
+    function _callBids(params) {
+	bids = params.bids;
+	if (!bids || !bids.length) return;
+	adloader.loadScript(ADTECH_URI, _reqBids);
+    }
+
+    return {
+	callBids: _callBids
+    };
+};
+
+module.exports = AolAdapter;
+
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../utils.js":18}],3:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
@@ -310,7 +492,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	};
 };
 module.exports = AppNexusAdapter;
-},{"../adloader.js":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],3:[function(require,module,exports){
+},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],4:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -385,7 +567,7 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],4:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],5:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -519,7 +701,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 };
 
 module.exports = IndexExchangeAdapter;
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],5:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -626,7 +808,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],6:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],7:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -751,7 +933,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 };
 
 module.exports = PubmaticAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],7:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],8:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -927,7 +1109,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
 module.exports = RubiconAdapter;
 
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],8:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],9:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1104,7 +1286,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
 module.exports = SovrnAdapter;
 
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],9:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],10:[function(require,module,exports){
 /**
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
@@ -1252,7 +1434,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
 module.exports = YieldbotAdapter;
 
-},{"../adloader":10,"../bidfactory":11,"../bidmanager":12,"../utils":17}],10:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory":12,"../bidmanager":13,"../utils":18}],11:[function(require,module,exports){
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
 	//create a script tag for the jpt call
@@ -1309,7 +1491,7 @@ exports.trackPixel = function(pixelUrl) {
 
 	}
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var utils = require('./utils.js');
 
 /**
@@ -1369,7 +1551,7 @@ exports.createBid = function(statusCde) {
 };
 
 //module.exports = Bid;
-},{"./utils.js":17}],12:[function(require,module,exports){
+},{"./utils.js":18}],13:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
@@ -1803,7 +1985,7 @@ exports.addCallback = function(id, callback, cbEvent){
 	}
 };
 
-},{"./adaptermanager":1,"./constants.json":13,"./events":14,"./utils.js":17}],13:[function(require,module,exports){
+},{"./adaptermanager":1,"./constants.json":14,"./events":15,"./utils.js":18}],14:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -1841,7 +2023,7 @@ module.exports={
 	}
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /**
  * events.js
  */
@@ -1934,7 +2116,7 @@ module.exports = (function (){
   return _public;
 }());
 
-},{"./constants":13,"./utils":17}],15:[function(require,module,exports){
+},{"./constants":14,"./utils":18}],16:[function(require,module,exports){
 /** @module pbjs */
 // if pbjs already exists in global dodcument scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -1963,7 +2145,8 @@ var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
 	pb_targetingMap = {},
-	pb_keyHistoryMap = {};
+	pb_keyHistoryMap = {},
+	pb_bidsTimedOut = false;
 
 
 /* Public vars */
@@ -2052,6 +2235,14 @@ function isValidAdUnitSetting() {
 		return true;
 	}
 	return false;
+}
+
+function timeOutBidders(){
+	if(!pb_bidsTimedOut){
+		pb_bidsTimedOut = true;
+		var timedOutBidders = bidmanager.getTimedOutBidders();
+		events.emit(BID_TIMEOUT, timedOutBidders);	
+	}
 }
 
 function sortAndCallBids(sortFunc) {
@@ -2242,6 +2433,7 @@ function resetBids() {
 	pb_bidderMap = {};
 	pb_placements = [];
 	pb_targetingMap = {};
+	pb_bidsTimedOut = false;
 }
 
 function requestAllBids(tmout){
@@ -2359,8 +2551,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 	}
 
 	//emit bid timeout event here 
-	var timedOutBidders = bidmanager.getTimedOutBidders();
-	events.emit(BID_TIMEOUT, timedOutBidders);
+	timeOutBidders();
 
 	var adUnitCodesArr = codeArr;
 
@@ -2786,6 +2977,13 @@ pbjs.enableAnalytics = function(options){
 	}
 };
 
+/**
+ * This will tell analytics that all bids received after are "timed out"
+ */
+pbjs.sendTimeoutEvent = function(){
+	timeOutBidders();
+};
+
 
 processQue();
 
@@ -2795,7 +2993,7 @@ pbjs_testonly = {};
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
-},{"./adaptermanager":1,"./adloader":10,"./bidfactory":11,"./bidmanager.js":12,"./constants.json":13,"./events":14,"./ga":16,"./utils.js":17}],16:[function(require,module,exports){
+},{"./adaptermanager":1,"./adloader":11,"./bidfactory":12,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./ga":17,"./utils.js":18}],17:[function(require,module,exports){
 /**
  * ga.js - analytics adapter for google analytics 
  */
@@ -3035,7 +3233,7 @@ function sendBidWonToGa(bid) {
 	checkAnalytics();
 }
 
-},{"./constants.json":13,"./events":14,"./utils":17}],17:[function(require,module,exports){
+},{"./constants.json":14,"./events":15,"./utils":18}],18:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -3462,4 +3660,4 @@ exports._map = function (object, callback) {
 };
 
 
-},{"./constants.json":13}]},{},[15])
+},{"./constants.json":14}]},{},[16])
