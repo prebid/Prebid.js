@@ -91,6 +91,16 @@ function init(timeout, adUnitCodeArr) {
 	}
 	//set timeout for all bids
 	setTimeout(bidmanager.executeCallback, cbTimeout);
+
+	//set size by dynamic size
+	for(var j=0; j<pbjs.adUnits.length; j++){
+		if(pbjs.adUnits[j].dynamicSizes){
+			var size = getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
+			//set size
+			pbjs.adUnits[j].sizes = size;
+		}
+	}
+	
 	//parse settings into internal vars
 	if (adUnitCodeArr && utils.isArray(adUnitCodeArr)) {
 		for (var k = 0; k < adUnitCodeArr.length; k++) {
@@ -109,6 +119,61 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
+}
+
+/*
+ *	get Sizes by viewable area size
+ */
+function getSizeByDynamicSizes(dynamicSizes){
+	var size = [];
+	var defaultSize =[];
+
+	//get viewable area size
+	var wWidth = utils.getViewableWidth();
+	var wheight = utils.getViewableHeight();
+
+	for( var i=0; i<dynamicSizes.length; i++){
+
+		var first = dynamicSizes[i][0];
+
+		//default size [0,0]
+		if(first[0] ===0 && first[1] ===0){
+			defaultSize = dynamicSizes[i];
+		}else if(first[0] <= wWidth && first[1] <=wheight){
+			if(size.length > 0){
+				//if the size already exists
+				//check the size closer to the viewable area size
+				if(size[0][0] <= first[0] && size[0][1] <= first[1]){
+					size = dynamicSizes[i];
+				}
+			}else{
+				size = dynamicSizes[i];
+			}
+		}
+	}
+	
+	if(size.length===0 && defaultSize.length>0){
+		size = defaultSize;
+	}
+
+	return size;
+}
+
+function addSizeMapping(){
+	var sizeArr = [];
+	var dynamicArr = [];
+
+	//convert args to array
+	for(var i=0; i<arguments.length;i++){
+		sizeArr[i] = arguments[i];
+	}
+
+	dynamicArr.push(sizeArr);
+
+	if(!this.dynamicSizes){
+		this.dynamicSizes =[];
+	}
+	this.dynamicSizes.push.apply(this.dynamicSizes,dynamicArr);
 }
 
 function isValidAdUnitSetting() {
@@ -487,7 +552,6 @@ function getTargetingfromGPTIdentifier(slot){
 	}
 	return targeting;
 }
-
 /**
 
 
@@ -658,14 +722,22 @@ pbjs.requestBids = function(requestObj) {
  * @alias module:pbjs.addAdUnits
  */
 pbjs.addAdUnits = function(adUnitArr) {
+
 	if (utils.isArray(adUnitArr)) {
+
+		for(var i=0; i<adUnitArr.length ;i++){
+			adUnitArr[i].addSizeMapping = addSizeMapping;
+		}
+
 		//append array to existing
 		pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
 	} else if (typeof adUnitArr === objectType_object) {
+		adUnitArr.addSizeMapping = addSizeMapping;
 		pbjs.adUnits.push(adUnitArr);
+
+		return pbjs.adUnits[pbjs.adUnits.length-1];
 	}
 };
-
 
 /**
  * Add a callback event
