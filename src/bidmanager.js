@@ -398,10 +398,8 @@ function checkAllBidsResponseReceived(){
 	
 	utils._each(bidResponseReceivedCount,function(count,bidderCode){
 
-		//expected bids count check for appnexus
-		if(bidderCode === 'appnexus'){
-			var expectedCount = getExpectedBidsCount(bidderCode);
-
+		var expectedCount = getExpectedBidsCount(bidderCode);
+		if (expectedCount) {
 			if(typeof expectedCount === objectType_undefined || count < expectedCount){
 				available = false;
 			}
