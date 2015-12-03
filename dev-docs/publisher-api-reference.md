@@ -515,7 +515,8 @@ Let’s say you still prefer to have a separate set of line items for a bidder. 
 
 {% highlight js %}
 pbjs.bidderSettings = {
-    appnexus: adserverTargeting: [
+    appnexus: {
+      adserverTargeting: [
         {
             key: "apn_pbMg",
             val: function(bidResponse) {
@@ -527,7 +528,8 @@ pbjs.bidderSettings = {
                 return bidResponse.adId;
             }
         }
-    ]
+      ]
+    }
 }
 {% endhighlight %}
 

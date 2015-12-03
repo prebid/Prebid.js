@@ -77,35 +77,39 @@ description: A free and open source library for publishers to quickly implement 
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
     
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>AOL</h3>
       </div>
     
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>AppNexus</h3>
       </div>
     
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>Criteo</h3>
       </div>
     
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>Index</h3>
       </div>
 
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>OpenX</h3>
       </div>
 
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>Pubmatic</h3>
       </div>
 
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
         <h3>Rubicon</h3>
       </div>
 
-      <div class="col-xs-6 col-sm-3">
+      <div class="col-xs-6 col-sm-4">
+        <h3>Sovrn</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-4">
         <h3>Yieldbot</h3>
       </div>
 

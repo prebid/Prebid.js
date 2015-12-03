@@ -71,6 +71,9 @@ pbjs.que.push(function() {
             rp_zonesize: "23948-15"
         }
     }, {
+        bidder: 'sovrn',
+        params: { tagId: '315045' }
+    }, {
         bidder: "appnexus",
         params: { placementId: "234235" }
     }]

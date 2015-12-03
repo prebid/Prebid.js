@@ -232,6 +232,27 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 </div>
 
+
+
+<div class="bs-docs-section" markdown="1">
+#Sovrn
+
+###bidder code: 
+`sovrn`
+
+###bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `tag_id` | required | The sovrn Ad Tag ID | "315045" |
+
+
+</div>
+
+
+
+
 <div class="bs-docs-section" markdown="1">
 #Yieldbot
 
