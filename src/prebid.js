@@ -94,7 +94,7 @@ function init(timeout, adUnitCodeArr) {
 	//set size by dynamic size
 	for(var j=0; j<pbjs.adUnits.length; j++){
 		if(pbjs.adUnits[j].dynamicSizes){
-			var size = getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
+			var size = pbjs.getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
 			//set size
 			pbjs.adUnits[j].sizes = size;
 		}
@@ -118,44 +118,6 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
-}
-
-/*
- *	get Sizes by viewable area size
- */
-function getSizeByDynamicSizes(dynamicSizes){
-	var size = [];
-	var defaultSize =[];
-
-	//get viewable area size
-	var wWidth = utils.getViewableWidth();
-	var wheight = utils.getViewableHeight();
-
-	for( var i=0; i<dynamicSizes.length; i++){
-
-		var first = dynamicSizes[i][0];
-
-		//default size [0,0]
-		if(first[0] ===0 && first[1] ===0){
-			defaultSize = dynamicSizes[i];
-		}else if(first[0] <= wWidth && first[1] <=wheight){
-			if(size.length > 0){
-				//if the size already exists
-				//check the size closer to the viewable area size
-				if(size[0][0] <= first[0] && size[0][1] <= first[1]){
-					size = dynamicSizes[i];
-				}
-			}else{
-				size = dynamicSizes[i];
-			}
-		}
-	}
-	
-	if(size.length===0 && defaultSize.length>0){
-		size = defaultSize;
-	}
-
-	return size;
 }
 
 function addSizeMapping(){
@@ -730,6 +692,8 @@ pbjs.addAdUnits = function(adUnitArr) {
 	}
 };
 
+
+
 /**
  * Add a callback event
  * @param {String} event event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
@@ -919,6 +883,15 @@ pbjs.enableAnalytics = function(options){
 	else if(options.provider === 'other_provider'){
 		//todo
 	}
+};
+
+/**
+ * get Sizes by viewable area size
+ * @param [] dynamic sizes array
+ * @return [] sizes array
+ */
+pbjs.getSizeByDynamicSizes = function(dynamicSizes){
+	return utils.getSizeByDynamicSizes(dynamicSizes);
 };
 
 

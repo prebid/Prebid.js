@@ -1,0 +1,251 @@
+<html>
+
+<head>
+
+<script>
+
+    var rightSlotCode = '/19968336/header-bid-tag-0';
+    var rightSlotSizes = [[300, 250], [300, 600]];
+
+    var topSlotCode = '/19968336/header-bid-tag1';
+    var topSlotSizes = [[728, 90], [970, 90]];
+
+    var dynamicSizes = [[[1024, 768], [970, 250]],[[980, 690], [728, 90]],[[640, 480], [120, 60]],[[540, 480], [120, 60]],[[0,0],[2,2]]];
+
+    
+	var pbjs = pbjs || {};
+    pbjs.que = pbjs.que  || [];
+    var PREBID_TIMEOUT = 1000;
+
+    pbjs.que.push(function(){
+    
+        var adUnit1 = {
+            code: rightSlotCode,
+            dynamicSizes: dynamicSizes,
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: '2251610',
+                            referrer:'rolando.com',
+                            alt_referrer:'rolando.com'
+                        }
+                    }
+                    ,
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                           rp_account : '9707',
+                           rp_site: '17955',
+                           rp_zonesize : '50983-15',
+                           rp_tracking : 'affiliate-1701207318',
+                           rp_inventory : '{ deals : "mobv3_excl,atf,demo1849,csm1834,znexcl1,exunisite,exmars,extargt,ldacomp,ent19116,rn14858,ukent,g03070,qc12170,qc2690,qc2695,qc1988,asov1,qc12172,qc12169,qc27434,rn24858,ent29116,lngen,cntq,cntauto,anthea,smg_blklist,amnetctr,ntflxblk,amtblk,zentend,nortb,deschoeff,js,excltop," }',
+                           rp_floor : '0.1'
+                        }
+                    },
+                    {
+                        bidder: 'openx',
+                        params: {
+                            unit: 537245128,
+                            pageURL : 'http://drudgereport.com',
+                            refererURL : 'http://drudgereport.com',
+                            jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
+                        }
+                    },
+                    {
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: 39741,
+                            adSlot: '39620189@300x250'
+                        }
+                      
+                    },
+                     {
+                        bidder: 'criteo',
+                        params: {
+                            nid: '2612',
+                            cookiename: 'cto_topix',
+                            varname : 'crtg_content'
+                        }
+                      
+                    },
+                  
+                    {
+                        bidder: 'yieldbot',
+                        params: {
+                            pub: 'id',
+                            name: 'name'
+                        }
+                    }, 
+                    {
+                        bidder: 'amazon',
+                        params: {
+                            aId : 3080
+                        }
+                    }      
+                ]
+        }
+
+        rightSlotSizes = pbjs.getSizeByDynamicSizes(dynamicSizes);
+
+        var adUnit2 = {
+            code: rightSlotCode,
+            sizes: rightSlotSizes,
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId : '5215561'
+                        }
+                    },
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: '2251610',
+                            referrer:'rolando.com',
+                            alt_referrer:'rolando.com'
+                        }
+                    }]
+
+            };
+
+        var adUnit3 = {
+            code: topSlotCode,
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId : '5215561'
+                        }
+                    },
+                    {
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: '2251610',
+                            referrer:'rolando.com',
+                            alt_referrer:'rolando.com'
+                        }
+                    }]
+
+            };
+
+
+        //add array of ad units
+         var arr = [adUnit2, adUnit1];
+         pbjs.addAdUnits([adUnit2, adUnit1]);
+
+         var ad2 = pbjs.addAdUnits(adUnit3);
+         //add size mapping
+         ad2.addSizeMapping([540, 480], [120, 60]);
+         ad2.addSizeMapping([111, 111], [30, 60]);
+         // topSlotSizes = ad2.sizes;
+
+        console.log('topSlotSizes = ' + topSlotSizes);
+        console.log('rightSlotSizes = '+ rightSlotSizes);
+
+       
+    });
+
+    (function() {
+        var d = document, pbs = d.createElement("script"), pro = d.location.protocal; pbs.type = "text/javascript";
+        pbs.src = '../../dist/prebid.js'
+        var target = document.getElementsByTagName("head")[0];
+        target.insertBefore(pbs, target.firstChild);
+    })();
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    // Load the Prebid Javascript Library Async
+    function initAdserver() {
+        //load GPT library here
+        (function() {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            var useSSL = 'https:' == document.location.protocol;
+            gads.src = (useSSL ? 'https:' : 'http:') +
+            '//www.googletagservices.com/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+        pbjs.initAdserverSet = true;
+
+        
+    };
+    //force load the ads if no response from prebid.js
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+</script>
+
+
+<script>
+    googletag.cmd.push(function() {
+
+        var rightSlot = googletag.defineSlot(rightSlotCode, rightSlotSizes, 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+        var topSlot = googletag.defineSlot(topSlotCode, topSlotSizes, 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+
+        pbjs.que.push(function(){
+            //set targeting by slot or all (no params)
+            //pbjs.setTargetingForAdUnitsGPTAsync();
+            pbjs.setTargetingForAdUnitsGPTAsync([topSlotCode, rightSlotCode]);
+            console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
+            //get all the bid responses
+            // console.log(pbjs.getBidResponses());
+            //get ad server targeting params for a slot
+            console.log('Targeting params for topSlot ' + pbjs.getAdserverTargetingForAdUnitCode (topSlotCode)); 
+            console.log('Targeting params for rightSlot ' + pbjs.getAdserverTargetingForAdUnitCode(rightSlotCode));
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices(); 
+
+    });
+
+
+    function refreshBids(){
+        pbjs.que.push(function(){
+            
+            pbjs.requestBids({
+                // timeout: 500,
+                bidsBackHandler : function(a){
+                    console.log(a);
+                    callGPT();
+                }
+            });  
+
+            // pbjs.requestBids();          
+        });
+    }
+
+    function callGPT(){
+        console.log('executing inside pbjs object');
+        pbjs.setTargetingForGPTAsync();
+        googletag.pubads().refresh(); 
+        var res = pbjs.getBidResponses();
+    }
+
+    
+    </script>
+</head>
+
+
+<body>
+
+    <h2>Prebid.js Test3</h2>
+
+    <!-- /19968336/pbjs-right1-300x250-300x600 -->
+    <div id='div-gpt-ad-1438287399331-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
+        </script>
+    </div>
+
+
+
+    <!-- /19968336/PBJS-top-728x90-970x90 -->
+    <div id='div-gpt-ad-1438287399331-1'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
+        </script>
+    </div>
+
+<button onclick="refreshBids()">Refresh Bids</button>
+</body>
+</html>
