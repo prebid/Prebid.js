@@ -179,6 +179,6 @@ description: A free and open source library for publishers to quickly implement 
     
     <p class="lead">Prebid.js is open source and community driven. The project is hosted, developed, and maintained on GitHub.</p>
 
-    <a href="getting-started.html" class="btn btn-outline btn-lg">Next: Overview of Prebid.js</a>
+    <a href="/overview/intro.html" class="btn btn-outline btn-lg">Next: Overview of Prebid.js</a>
 
 </div>
