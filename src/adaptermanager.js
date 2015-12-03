@@ -51,13 +51,19 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 	}
 };
 
-exports.setAliasBidder = function(bidderCode,alias){
-	var bidAdaptor = _bidderRegistry[bidderCode];
-	
-	if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
-		utils.logError('bidderCode ' + bidderCode + ' is not specified.');
+exports.setAliasBidder = function(bidderCode, alias){
+	var existingAlias = _bidderRegistry[alias];
+
+	if(typeof existingAlias === CONSTANTS.objectType_undefined){
+		var bidAdaptor = _bidderRegistry[bidderCode];
+
+		if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
+			utils.logError('bidderCode "' + bidderCode + '" is not specified.');
+		}else{
+			this.registerBidAdapter(bidAdaptor,alias);
+		}
 	}else{
-		this.registerBidAdapter(bidAdaptor,alias);
+		utils.logError('alias name "' + alias + '" has been already specified.');
 	}
 };
 
