@@ -1,0 +1,309 @@
+<html>
+
+<head>
+
+<script>
+
+    var rightSlotCode = '/19968336/header-bid-tag-0';
+    var rightSlotSizes = [[300, 250], [300, 600]];
+
+    var topSlotCode = '/19968336/header-bid-tag1';
+    var topSlotSizes = [[728, 90], [970, 90]];
+    
+	var pbjs = pbjs || {};
+    pbjs.que = pbjs.que  || [];
+    var PREBID_TIMEOUT = 1000;
+
+    pbjs.que.push(function(){
+        //these type of callbacks are always called until they are removed
+        var cbId = pbjs.addCallback('allRequestedBidsBack', function(){
+            if(!pbjs.initAdserverSet){
+                //only call initAdserver one time
+                initAdserver(); 
+                console.log('initial callback');
+            }else{
+                callGPT();
+                console.log('callGPT callback');
+            }
+        });
+
+        var cbId2 = pbjs.addCallback('adUnitBidsBack', function(adUnitCode){
+            console.log('ad unit bids back for : ' + adUnitCode);
+        });
+
+        pbjs.setAliasBidder('appnexus','bRealTime1');
+
+        var adUnit1 = {
+            code: rightSlotCode,
+            sizes: rightSlotSizes,
+            bids: [{
+                        bidder: 'bRealTime1',
+                        params: {
+                           placementId: '2251610'
+                        }
+                    }
+                    ,
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                           rp_account : '9707',
+                           rp_site: '17955',
+                           rp_zonesize : '50983-15',
+                           rp_tracking : 'affiliate-1701207318',
+                           rp_inventory : '{ deals : "mobv3_excl,atf,demo1849,csm1834,znexcl1,exunisite,exmars,extargt,ldacomp,ent19116,rn14858,ukent,g03070,qc12170,qc2690,qc2695,qc1988,asov1,qc12172,qc12169,qc27434,rn24858,ent29116,lngen,cntq,cntauto,anthea,smg_blklist,amnetctr,ntflxblk,amtblk,zentend,nortb,deschoeff,js,excltop," }',
+                           rp_floor : '0.1'
+                        }
+                    },
+                    {
+                        bidder: 'openx',
+                        params: {
+                            unit: 537245128,
+                            pageURL : 'http://drudgereport.com',
+                            refererURL : 'http://drudgereport.com',
+                            jstag_url : 'http://ox-d.intermarkets.net/w/1.0/jstag'
+                        }
+                    },
+                    {
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: 39741,
+                            adSlot: '39620189@300x250'
+                        }
+                      
+                    },
+                     {
+                        bidder: 'criteo',
+                        params: {
+                            nid: '2612',
+                            cookiename: 'cto_topix',
+                            varname : 'crtg_content'
+                        }
+                      
+                    },
+                    {
+                        bidder: 'indexExchange',
+                        params: {
+                            slotId: 2,
+                            indexExchangeUrl: 'http://js.indexww.com/ht/elitedaily.js'
+                        }
+                      
+                    },
+                     {
+                        bidder: 'indexExchange',
+                        params: {
+                            slotId: 3
+                            //indexExchangeUrl: 'http://js.indexww.com/ht/elitedaily.js'
+                        }
+                      
+                    },
+                    {
+                        bidder: 'yieldbot',
+                        params: {
+                            pub: 'id',
+                            name: 'name'
+                        }
+                    }, 
+                    {
+                        bidder: 'amazon',
+                        params: {
+                            aId : 3080
+                        }
+                    }      
+                ]
+        }
+
+        //can add a single ad unit
+        //pbjs.addAdUnit(adUnit1);
+
+        var adUnit2 = {
+            code: topSlotCode,
+            sizes: topSlotSizes,
+            bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId : '5215561'
+                            //memberId : '1234',
+                            //invCode : '7454'
+                        }
+                    }]
+
+            };
+
+
+        //add array of ad units
+         var arr = [adUnit2, adUnit1];
+         pbjs.addAdUnits([adUnit2, adUnit1]);
+
+         //if you want to load immediatly call this
+         //pbjs.requestAllBids();
+
+         //make an ad-hoc request
+         /*
+         pbjs.requestBids({
+            //adUnitCodes: ['code1', 'code2'],
+            adUnits: [adUnit2, adUnit1], // OR. Optional
+            timeout: 400,
+            bidsBackHandler: function(bidResponses) {alert('were back!')} // optional callback
+         })
+        */
+       
+    //end of que.push
+    //
+    ////   Optional key value settings targeting by bidder 
+    /*
+     pbjs.bidderSettings = 
+            {
+                standard: {
+                    adserverTargeting: [{
+                        key: "hb_bidder",
+                        val: function(bidResponse) {
+                            return bidResponse.bidderCode;
+                        }
+                    }, {
+                        key: "hb_adid",
+                        val: function(bidResponse) {
+                            return bidResponse.adId;
+                        }
+                    }, {
+                        key: "hb_pb",
+                        val: function(bidResponse) {
+                            return bidResponse.pbLg;
+                        }
+                    }, {
+                        key: "hb_size",
+                        val: function(bidResponse) {
+                            return bidResponse.getSize();
+
+                        }
+                    }]
+                }
+        };
+        */
+       
+       //pbjs.test();
+    });
+
+    (function() {
+        var d = document, pbs = d.createElement("script"), pro = d.location.protocal; pbs.type = "text/javascript";
+        //pbs.src = (pro ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
+        pbs.src = '../../dist/prebid.js'
+        var target = document.getElementsByTagName("head")[0];
+        target.insertBefore(pbs, target.firstChild);
+    })();
+
+        //prbEl.src = 'http://cdn.adnxs.com/tag/v/prebid/2.1.1/prebid.min.js';
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    // Load the Prebid Javascript Library Async
+    function initAdserver() {
+        //load GPT library here
+        (function() {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            var useSSL = 'https:' == document.location.protocol;
+            gads.src = (useSSL ? 'https:' : 'http:') +
+            '//www.googletagservices.com/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+        pbjs.initAdserverSet = true;
+
+        
+    };
+    //force load the ads if no response from prebid.js
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+</script>
+
+
+<script>
+    googletag.cmd.push(function() {
+
+        var rightSlot = googletag.defineSlot(rightSlotCode, rightSlotSizes, 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+
+        var topSlot = googletag.defineSlot(topSlotCode, topSlotSizes, 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+
+        
+        pbjs.que.push(function(){
+            //set targeting by slot or all (no params)
+            //pbjs.setTargetingForAdUnitsGPTAsync();
+            pbjs.setTargetingForAdUnitsGPTAsync([topSlotCode, rightSlotCode]);
+            console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
+            //get all the bid responses
+            console.log(pbjs.getBidResponses());
+            //get ad server targeting params for a slot
+            console.log('Targeting params for topSlot ' + pbjs.getAdserverTargetingForAdUnitCode (topSlotCode)); 
+            console.log('Targeting params for rightSlot ' + pbjs.getAdserverTargetingForAdUnitCode(rightSlotCode));
+
+        });
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices(); 
+        
+    });
+
+
+    function refreshBids(){
+        pbjs.que.push(function(){
+            
+            pbjs.requestBids({
+                timeout: 500,
+                bidsBackHandler : function(a){
+                    // callGPT();
+                    console.log('bidsBackHandler : ' + typeof a);
+                    // alert('bidsBackHandler : ' + a);
+                    console.log(a);
+                }
+            });
+            
+            // pbjs.requestBids();
+            
+        });
+    }
+
+    function callGPT(){
+       
+        console.log('executing inside pbjs object');
+        pbjs.setTargetingForGPTAsync();
+        googletag.pubads().refresh(); 
+        var res = pbjs.getBidResponses();
+        console.log(typeof res); 
+
+        console.log(res); 
+        
+
+    }
+
+
+    </script>
+</head>
+
+
+<body>
+
+    <h2>Prebid.js Test3</h2>
+
+    <!-- /19968336/pbjs-right1-300x250-300x600 -->
+    <div id='div-gpt-ad-1438287399331-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
+        </script>
+    </div>
+
+
+
+    <!-- /19968336/PBJS-top-728x90-970x90 -->
+    <div id='div-gpt-ad-1438287399331-1'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
+        </script>
+    </div>
+
+<button onclick="refreshBids()">Refresh Bids</button>
+
+
+</body>
+
+</html>

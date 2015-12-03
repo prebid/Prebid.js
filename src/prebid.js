@@ -865,6 +865,10 @@ pbjs.sendTimeoutEvent = function(){
 	timeOutBidders();
 };
 
+pbjs.setAliasBidder = function(bidderCode,alias){
+	adaptermanager.setAliasBidder(bidderCode,alias);
+};
+
 
 processQue();
 

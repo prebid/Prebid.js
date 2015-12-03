@@ -51,6 +51,16 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 	}
 };
 
+exports.setAliasBidder = function(bidderCode,alias){
+	var bidAdaptor = _bidderRegistry[bidderCode];
+	
+	if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
+		utils.logError('bidderCode ' + bidderCode + ' is not specified.');
+	}else{
+		this.registerBidAdapter(bidAdaptor,alias);
+	}
+};
+
 // Register the bid adaptors here
 this.registerBidAdapter(RubiconAdapter(), 'rubicon');
 this.registerBidAdapter(AppNexusAdapter(), 'appnexus');
