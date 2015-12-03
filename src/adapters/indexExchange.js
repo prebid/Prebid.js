@@ -344,7 +344,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 							bid = bidfactory.createBid(1);
 							bid.cpm = currentCPM / 100;
-							bid.ad = adContents;
+							bid.ad = adContents[0];
 							bid.ad_id = adSlotId;
 							bid.bidderCode = ADAPTER_CODE;
 							bid.width = slotObj.width;
