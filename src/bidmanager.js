@@ -111,6 +111,7 @@ exports.setExpectedBidsCount = function(bidderCode,count){
 function getExpectedBidsCount(bidderCode){
 	return expectedBidsCount[bidderCode];
 }
+exports.getExpectedBidsCount = getExpectedBidsCount;
 
 
 /*
@@ -395,17 +396,13 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 // check all bids response received by bidder
 function checkAllBidsResponseReceived(){
 	var available = true;
-	
-	utils._each(bidResponseReceivedCount,function(count,bidderCode){
 
-		//expected bids count check for appnexus
-		if(bidderCode === 'appnexus'){
-			var expectedCount = getExpectedBidsCount(bidderCode);
+	utils._each(bidResponseReceivedCount, function(count, bidderCode){
+		var expectedCount = getExpectedBidsCount(bidderCode);
 
-			if(typeof expectedCount === objectType_undefined || count < expectedCount){
-				available = false;
-			}
-		}else if(count<1){
+		// expectedCount should be set in the adapter, or it will be set
+		// after we call adapter.callBids()
+		if ((typeof expectedCount === objectType_undefined) || (count < expectedCount)) {
 			available = false;
 		}
 	});
