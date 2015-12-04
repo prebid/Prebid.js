@@ -33,6 +33,8 @@ var _callbackExecuted = false;
 var defaultBidderSettingsMap = {};
 var bidderStartTimes = {};
 
+var countme = 0;
+
 exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
@@ -145,6 +147,10 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
+
+		//emit the bidResponse event
+		events.emit('bidResponse', adUnitCode, bid);
+		
 		var priceStringsObj = utils.getPriceBucketString(bid.cpm, bid.height, bid.width);
 		//append price strings
 		bid.pbLg = priceStringsObj.low;
@@ -184,8 +190,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
-		//emit the bidResponse event
-		events.emit('bidResponse', adUnitCode, bid);
+		
 
 	} else {
 		//create an empty bid bid response object
@@ -427,3 +432,22 @@ exports.addCallback = function(id, callback, cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
 };
+
+//register event for bid adjustment
+events.on(CONSTANTS.EVENTS.BID_RESPONSE, function(adunit, bid) {
+	adjustBids(bid);
+});
+
+function adjustBids(bid){
+	var code = bid.bidderCode;
+	var bidPriceAdjusted = 0; 
+	if(code && pbjs.bidderSettings[code]){
+		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
+			bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+		}
+	}
+
+	if(bidPriceAdjusted !== 0){
+		bid.cpm = bidPriceAdjusted;
+	}
+}
