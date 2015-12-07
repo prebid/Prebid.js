@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.1 
-Updated : 2015-11-16 */
+Updated : 2015-12-07 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -11,6 +11,7 @@ var CriteoAdapter = require('./adapters/criteo');
 var YieldbotAdapter = require('./adapters/yieldbot');
 var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
+var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -62,8 +63,9 @@ this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
+this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
 
-},{"./adapters/appnexus.js":2,"./adapters/criteo":3,"./adapters/indexExchange":4,"./adapters/openx":5,"./adapters/pubmatic.js":6,"./adapters/rubicon.js":7,"./adapters/sovrn":8,"./adapters/yieldbot":9,"./bidmanager.js":12,"./constants.json":13,"./events":14,"./utils.js":17}],2:[function(require,module,exports){
+},{"./adapters/appnexus.js":2,"./adapters/criteo":3,"./adapters/indexExchange":4,"./adapters/openx":5,"./adapters/pubmatic.js":6,"./adapters/pulsepoint.js":7,"./adapters/rubicon.js":8,"./adapters/sovrn":9,"./adapters/yieldbot":10,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./utils.js":18}],2:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
@@ -310,7 +312,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	};
 };
 module.exports = AppNexusAdapter;
-},{"../adloader.js":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],3:[function(require,module,exports){
+},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],3:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -385,7 +387,7 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],4:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],4:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -519,7 +521,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 };
 
 module.exports = IndexExchangeAdapter;
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],5:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],5:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -626,7 +628,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],6:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -751,7 +753,69 @@ var PubmaticAdapter = function PubmaticAdapter() {
 };
 
 module.exports = PubmaticAdapter;
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],7:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],7:[function(require,module,exports){
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader.js');
+
+var PulsePointAdapter = function PulsePointAdapter() {
+
+	var getJsStaticUrl = 'http://projects.contextweb.com/av/prebid/getjs.static.js';
+	var bidUrl = 'http://projects.contextweb.com/av/prebid/bid';
+	
+    function _callBids(params) {
+    	var me = this;
+    	if(typeof window.pp === 'undefined') {
+			adloader.loadScript(getJsStaticUrl, function() { bid(params); });
+		} else {
+			me.bid(params);
+		}
+    }
+    
+    function bid(params) {
+		var bids = params.bids;
+		var me = this;
+		for (var i = 0; i < bids.length; i++) {
+			var bid = bids[i];
+			var ppBidRequest = new window.pp.Ad({
+				cf : bid.params.cf,
+	            cp : bid.params.cp,
+	            ct : bid.params.ct,
+	            cn : 1,
+	            ca : window.pp.requestActions.BID,
+	            cu : bidUrl,
+	            adUnitId: bid.placementCode,
+	            /* jshint ignore:start */
+	            callBack: function(bidResponse) { 
+	            	bidResponseAvailable(bid, bidResponse); 
+	            }
+	            /* jshint ignore:end */
+			});
+			ppBidRequest.display();
+		}
+	}
+
+	function bidResponseAvailable(bidRequest, bidResponse) {
+		if(bidResponse) {
+			var adSize = bidRequest.params.cf.split('X');
+			var bid = bidfactory.createBid(1);
+			bid.bidderCode = bidRequest.bidder;
+			bid.cpm = bidResponse.bidCpm;
+			bid.ad = bidResponse.html;
+			bid.width = adSize[0];
+			bid.height = adSize[1];
+			bidmanager.addBidResponse(bidRequest.placementCode, bid);
+		}
+	}
+
+	return {
+        callBids: _callBids
+    };
+
+};
+
+module.exports = PulsePointAdapter;
+},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13}],8:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -927,7 +991,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
 module.exports = RubiconAdapter;
 
-},{"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],8:[function(require,module,exports){
+},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],9:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1104,7 +1168,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
 module.exports = SovrnAdapter;
 
-},{"../adloader":10,"../bidfactory.js":11,"../bidmanager.js":12,"../constants.json":13,"../utils.js":17}],9:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],10:[function(require,module,exports){
 /**
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
@@ -1252,7 +1316,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
 module.exports = YieldbotAdapter;
 
-},{"../adloader":10,"../bidfactory":11,"../bidmanager":12,"../utils":17}],10:[function(require,module,exports){
+},{"../adloader":11,"../bidfactory":12,"../bidmanager":13,"../utils":18}],11:[function(require,module,exports){
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
 	//create a script tag for the jpt call
@@ -1309,7 +1373,7 @@ exports.trackPixel = function(pixelUrl) {
 
 	}
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var utils = require('./utils.js');
 
 /**
@@ -1369,7 +1433,7 @@ exports.createBid = function(statusCde) {
 };
 
 //module.exports = Bid;
-},{"./utils.js":17}],12:[function(require,module,exports){
+},{"./utils.js":18}],13:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
@@ -1803,7 +1867,7 @@ exports.addCallback = function(id, callback, cbEvent){
 	}
 };
 
-},{"./adaptermanager":1,"./constants.json":13,"./events":14,"./utils.js":17}],13:[function(require,module,exports){
+},{"./adaptermanager":1,"./constants.json":14,"./events":15,"./utils.js":18}],14:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -1841,7 +1905,7 @@ module.exports={
 	}
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /**
  * events.js
  */
@@ -1934,7 +1998,7 @@ module.exports = (function (){
   return _public;
 }());
 
-},{"./constants":13,"./utils":17}],15:[function(require,module,exports){
+},{"./constants":14,"./utils":18}],16:[function(require,module,exports){
 /** @module pbjs */
 // if pbjs already exists in global dodcument scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -1963,7 +2027,8 @@ var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
 	pb_targetingMap = {},
-	pb_keyHistoryMap = {};
+	pb_keyHistoryMap = {},
+	pb_bidsTimedOut = false;
 
 
 /* Public vars */
@@ -2052,6 +2117,14 @@ function isValidAdUnitSetting() {
 		return true;
 	}
 	return false;
+}
+
+function timeOutBidders(){
+	if(!pb_bidsTimedOut){
+		pb_bidsTimedOut = true;
+		var timedOutBidders = bidmanager.getTimedOutBidders();
+		events.emit(BID_TIMEOUT, timedOutBidders);	
+	}
 }
 
 function sortAndCallBids(sortFunc) {
@@ -2242,6 +2315,7 @@ function resetBids() {
 	pb_bidderMap = {};
 	pb_placements = [];
 	pb_targetingMap = {};
+	pb_bidsTimedOut = false;
 }
 
 function requestAllBids(tmout){
@@ -2359,8 +2433,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 	}
 
 	//emit bid timeout event here 
-	var timedOutBidders = bidmanager.getTimedOutBidders();
-	events.emit(BID_TIMEOUT, timedOutBidders);
+	timeOutBidders();
 
 	var adUnitCodesArr = codeArr;
 
@@ -2786,6 +2859,13 @@ pbjs.enableAnalytics = function(options){
 	}
 };
 
+/**
+ * This will tell analytics that all bids received after are "timed out"
+ */
+pbjs.sendTimeoutEvent = function(){
+	timeOutBidders();
+};
+
 
 processQue();
 
@@ -2795,7 +2875,7 @@ pbjs_testonly = {};
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
-},{"./adaptermanager":1,"./adloader":10,"./bidfactory":11,"./bidmanager.js":12,"./constants.json":13,"./events":14,"./ga":16,"./utils.js":17}],16:[function(require,module,exports){
+},{"./adaptermanager":1,"./adloader":11,"./bidfactory":12,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./ga":17,"./utils.js":18}],17:[function(require,module,exports){
 /**
  * ga.js - analytics adapter for google analytics 
  */
@@ -3035,7 +3115,7 @@ function sendBidWonToGa(bid) {
 	checkAnalytics();
 }
 
-},{"./constants.json":13,"./events":14,"./utils":17}],17:[function(require,module,exports){
+},{"./constants.json":14,"./events":15,"./utils":18}],18:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -3462,4 +3542,4 @@ exports._map = function (object, callback) {
 };
 
 
-},{"./constants.json":13}]},{},[15])
+},{"./constants.json":14}]},{},[16])
