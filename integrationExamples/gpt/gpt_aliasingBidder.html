@@ -31,13 +31,12 @@
             console.log('ad unit bids back for : ' + adUnitCode);
         });
 
-        pbjs.setAliasBidder('appnexus','bRealTime1');
 
         var adUnit1 = {
             code: rightSlotCode,
             sizes: rightSlotSizes,
             bids: [{
-                        bidder: 'bRealTime1',
+                        bidder: 'appnexus',
                         params: {
                            placementId: '2251610'
                         }
@@ -112,9 +111,6 @@
                 ]
         }
 
-        //can add a single ad unit
-        //pbjs.addAdUnit(adUnit1);
-
         var adUnit2 = {
             code: topSlotCode,
             sizes: topSlotSizes,
@@ -122,8 +118,6 @@
                         bidder: 'appnexus',
                         params: {
                             placementId : '5215561'
-                            //memberId : '1234',
-                            //invCode : '7454'
                         }
                     }]
 
@@ -131,8 +125,11 @@
 
 
         //add array of ad units
-         var arr = [adUnit2, adUnit1];
-         pbjs.addAdUnits([adUnit2, adUnit1]);
+        var arr = [adUnit2, adUnit1];
+        pbjs.addAdUnits([adUnit2, adUnit1]);
+
+        pbjs.setAliasBidder('appnexus','bRealTime1');
+
 
          //if you want to load immediatly call this
          //pbjs.requestAllBids();
@@ -190,8 +187,6 @@
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
-
-        //prbEl.src = 'http://cdn.adnxs.com/tag/v/prebid/2.1.1/prebid.min.js';
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];

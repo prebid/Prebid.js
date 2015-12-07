@@ -866,7 +866,24 @@ pbjs.sendTimeoutEvent = function(){
 };
 
 pbjs.setAliasBidder = function(bidderCode,alias){
-	adaptermanager.setAliasBidder(bidderCode,alias);
+
+	//find bidderCode and clone bidder using alias name
+	for (var i = 0; i < pbjs.adUnits.length; i++) {
+		var adUnit = pbjs.adUnits[i];
+
+		for(var j=0; j < adUnit.bids.length; j++){
+
+			var bid = adUnit.bids[j];
+			if(bid.bidder === bidderCode){
+				var newBid = getCloneBid(bid);
+				newBid.bidder = alias;
+				adUnit.bids.push(newBid);
+			}
+		}
+	}
+
+	//set alias bidder adapter
+	adaptermanager.aliasBidAdapter(bidderCode,alias);
 };
 
 
@@ -877,4 +894,8 @@ pbjs_testonly = {};
 
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
+};
+
+pbjs_testonly.clearAllAdUnits = function(){
+	pbjs.adUnits =[];
 };
