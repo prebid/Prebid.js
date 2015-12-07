@@ -1,8 +1,6 @@
 describe("Publisher API", function() {
   var assert = chai.assert;
 
-  describe("has api", function() {
-
     it('has api of command queue', function() {
       assert.isObject(pbjs);
       assert.isFunction(pbjs.que.push);
@@ -21,6 +19,6 @@ describe("Publisher API", function() {
       assert.isFunction(pbjs.addAdUnits);
       assert.isFunction(pbjs.addCallback);
       assert.isFunction(pbjs.removeCallback);   
+      assert.isFunction(pbjs.setAliasBidder);
    });
-  });
 });
