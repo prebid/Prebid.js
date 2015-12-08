@@ -140,7 +140,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 #Casale (Index)
 
 ###bidder code: 
-`casale`
+`indexExchange`
 
 ###bid params
 

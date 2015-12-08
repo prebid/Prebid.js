@@ -2,6 +2,16 @@
 
 <head>
 
+<script type='text/javascript'>
+  (function() {
+    var useSSL = 'https:' == document.location.protocol;
+    var src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt.js';
+    document.write('<scr' + 'ipt src="' + src + '"></scr' + 'ipt>');
+  })();
+</script>
+
+
 <script>
 
     var PREBID_TIMEOUT = 2000;
@@ -9,26 +19,29 @@
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
     
+
+
+
     /* pbjs.initAdserver will be called either when all bids are back, or
        when the timeout is reached.
     */
-    function initAdserver() {
-        if (pbjs.initAdserverSet) return;
-        //load GPT library here
-        (function() {
-            var gads = document.createElement('script');
-            gads.async = true;
-            gads.type = 'text/javascript';
-            var useSSL = 'https:' == document.location.protocol;
-            gads.src = (useSSL ? 'https:' : 'http:') +
-            '//www.googletagservices.com/tag/js/gpt.js';
-            var node = document.getElementsByTagName('script')[0];
-            node.parentNode.insertBefore(gads, node);
-        })();
-        pbjs.initAdserverSet = true;
-    };
-    // Load GPT when timeout is reached.
-    setTimeout(initAdserver, PREBID_TIMEOUT);
+    // function initAdserver() {
+    //     if (pbjs.initAdserverSet) return;
+    //     //load GPT library here
+    //     (function() {
+    //         var gads = document.createElement('script');
+    //         gads.async = true;
+    //         gads.type = 'text/javascript';
+    //         var useSSL = 'https:' == document.location.protocol;
+    //         gads.src = (useSSL ? 'https:' : 'http:') +
+    //         '//www.googletagservices.com/tag/js/gpt.js';
+    //         var node = document.getElementsByTagName('script')[0];
+    //         node.parentNode.insertBefore(gads, node);
+    //     })();
+    //     pbjs.initAdserverSet = true;
+    // };
+    // // Load GPT when timeout is reached.
+    // setTimeout(initAdserver, PREBID_TIMEOUT);
 
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
@@ -64,54 +77,56 @@
             sizes: [[300, 250], [300, 600]],
             bids: [
                 // 1 ad unit can be targeted by multiple bids.
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '4799418',
-                       referrer: 'appnexus.com'
-                    }
-                }, {
-                    bidder: 'sovrn',
-                    params: { 
-                        tagId: '315045' 
-                    }
-                },
-                {
-                    bidder: 'yieldbot',
-                    psn: '234',
-                    slot: '123'
-                },
-                // 1 ad unit can also be targeted by multiple bids from 1 bidder
-                {
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: 39741,
-                        adSlot: '39620189@300x250'
-                    }
-                }, {
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: 39741,
-                        adSlot: '39620189@300x600'
-                    }
-                },
-                {
-                    bidder: 'criteo',
-                    params: {
-                        nid: "2612",
-                        cookiename: "cto_test"
-                    }
-                },
-                {
-                    bidder: 'rubicon',
-                    params: {
-                       rp_account : '9707',
-                       rp_site: '17955',
-                       rp_zonesize : '50983-15',
-                       rp_tracking : 'affiliate-1701207318',
-                       rp_floor : '0.1'
-                    }
-                }
+                // {
+                //     bidder: 'appnexus',
+                //     params: {
+                //        placementId: '4799418',
+                //        referrer: 'appnexus.com'
+                //     }
+                // }
+
+                // , {
+                //     bidder: 'sovrn',
+                //     params: { 
+                //         tagId: '315045' 
+                //     }
+                // },
+                // {
+                //     bidder: 'yieldbot',
+                //     psn: '234',
+                //     slot: '123'
+                // },
+                // // 1 ad unit can also be targeted by multiple bids from 1 bidder
+                // {
+                //     bidder: 'pubmatic',
+                //     params: {
+                //         publisherId: 39741,
+                //         adSlot: '39620189@300x250'
+                //     }
+                // }, {
+                //     bidder: 'pubmatic',
+                //     params: {
+                //         publisherId: 39741,
+                //         adSlot: '39620189@300x600'
+                //     }
+                // },
+                // {
+                //     bidder: 'criteo',
+                //     params: {
+                //         nid: "2612",
+                //         cookiename: "cto_test"
+                //     }
+                // },
+                // {
+                //     bidder: 'rubicon',
+                //     params: {
+                //        rp_account : '9707',
+                //        rp_site: '17955',
+                //        rp_zonesize : '50983-15',
+                //        rp_tracking : 'affiliate-1701207318',
+                //        rp_floor : '0.1'
+                //     }
+                // }
 
                 ]
         },{
@@ -119,30 +134,30 @@
             sizes: [[728, 90], [970, 90]],
             bids: [
             
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       //placementId: '4799418'
-                    }
-                },
+                // {
+                //     bidder: 'appnexus',
+                //     params: {
+                //        //placementId: '4799418'
+                //     }
+                // },
                 
-                {
-                    bidder: 'casale',
-                    params: {
-                        slotId: '1',
-                        casaleUrl: 'http://js.indexww.com/ht/elitedaily.js'
-                    }
-                },
+                // {
+                //     bidder: 'casale',
+                //     params: {
+                //         slotId: '1',
+                //         casaleUrl: 'http://js.indexww.com/ht/elitedaily.js'
+                //     }
+                // },
                 
-                {
-                    bidder: 'openx',
-                    params: {
-                        unit: '537986875',
-                        pageURL : 'http://elitedaily.com',
-                        refererURL : 'http://elitedaily.com',
-                        jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
-                    }
-                }
+                // {
+                //     bidder: 'openx',
+                //     params: {
+                //         unit: '537986875',
+                //         pageURL : 'http://elitedaily.com',
+                //         refererURL : 'http://elitedaily.com',
+                //         jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
+                //     }
+                // }
             ]
         }];
         pbjs.addAdUnits(adUnits);
@@ -224,42 +239,60 @@
 
 
 <script>
+
+setTimeout(function() {
     googletag.cmd.push(function() {
 
         var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
 
         var topSlot = googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
 
-        pbjs.que.push(function() {
-            /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
-            */
-            pbjs.setTargetingForGPTAsync();
-
-            console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
-
-            console.log('Targeting params:')
-            console.log(pbjs.getAdserverTargeting());
-
-            console.log('Dumping all bid objects to console:');
-            console.log(JSON.stringify(pbjs.getBidResponses()));
-        });
-    
         googletag.pubads().enableSingleRequest();
+        googletag.pubads().enableSyncRendering();
+
         googletag.enableServices();   
         
     });
+}, 0)
 
-    function refreshBids() {
-        pbjs.que.push(function() {
-            pbjs.requestBids({
-                timeout: PREBID_TIMEOUT,
-                bidsBackHandler: function() {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh(); 
-                }
-            });
-        });
-    }
+    // googletag.cmd.push(function() {
+
+    //     var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+
+    //     var topSlot = googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+
+    //     // pbjs.que.push(function() {
+    //     //     /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
+    //     //     */
+    //     //     pbjs.setTargetingForGPTAsync();
+
+    //     //     console.log('Are all bids available? : ' + pbjs.allBidsAvailable());
+
+    //     //     console.log('Targeting params:')
+    //     //     console.log(pbjs.getAdserverTargeting());
+
+    //     //     console.log('Dumping all bid objects to console:');
+    //     //     console.log(JSON.stringify(pbjs.getBidResponses()));
+    //     // });
+
+    //     googletag.pubads().enableSingleRequest();
+    //     googletag.pubads().enableSyncRendering();
+
+    //     googletag.enableServices();   
+        
+    // });
+
+    // function refreshBids() {
+    //     pbjs.que.push(function() {
+    //         pbjs.requestBids({
+    //             timeout: PREBID_TIMEOUT,
+    //             bidsBackHandler: function() {
+    //                 pbjs.setTargetingForGPTAsync();
+    //                 googletag.pubads().refresh(); 
+    //             }
+    //         });
+    //     });
+    // }
 
 
     </script>
