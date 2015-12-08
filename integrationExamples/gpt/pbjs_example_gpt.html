@@ -221,6 +221,9 @@
             ]
         },
         appnexus: {
+            bidCpmAdjustment : function(bidCpm){
+                return bidCpm * .9;
+            },
             alwaysUseBid : true, // <-- new field - always send these custom keys for the specified bidder
             adserverTargeting: [{
                 key: "custom_bidder",
