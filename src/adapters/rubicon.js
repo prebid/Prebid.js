@@ -113,16 +113,22 @@ var RubiconAdapter = function RubiconAdapter() {
 					iframeId = bidObj.iframeId;
 				}
 
-				bid = bidfactory.createBid(1);
+				if (response.ads && response.ads[0] && response.ads[0].status === 'ok') {
+					bid = bidfactory.createBid(1);
 
-				if (response.ads && response.ads[0]) {
 					var rubiconAd = response.ads[0];
 					var size = sizeMap[rubiconAd.size_id];
 					var width = 0;
 					var height = 0;
 
 					var iframeObj = window.frames[iframeId];
-					var rubiconObj = iframeObj.contentWindow.RubiconAdServing;
+					var rubiconObj;
+					if(iframeObj.contentWindow){
+						rubiconObj = iframeObj.contentWindow.RubiconAdServing
+					}else{
+						rubiconObj = iframeObj.window.RubiconAdServing;
+					}
+
 					if (rubiconObj && rubiconObj.AdSizes) {
 						/* should return
 						    1: {
@@ -142,6 +148,14 @@ var RubiconAdapter = function RubiconAdapter() {
 					bid.sizeId = rubiconAd.size_id;
 					bid.width = width;
 					bid.height = height;
+					
+				}else{
+					bid = bidfactory.createBid(2);
+					bid.bidderCode = 'rubicon';
+					var bidObj = bidmanager.getPlacementIdByCBIdentifer(getBidId(response));
+					if (bidObj) {
+						placementCode = bidObj.placementCode;
+					}
 				}
 
 			} catch (e) {
