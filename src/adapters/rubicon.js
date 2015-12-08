@@ -122,7 +122,13 @@ var RubiconAdapter = function RubiconAdapter() {
 					var height = 0;
 
 					var iframeObj = window.frames[iframeId];
-					var rubiconObj = iframeObj.contentWindow.RubiconAdServing;
+					var rubiconObj;
+					if(iframeObj.contentWindow){
+						rubiconObj = iframeObj.contentWindow.RubiconAdServing
+					}else{
+						rubiconObj = iframeObj.window.RubiconAdServing;
+					}
+
 					if (rubiconObj && rubiconObj.AdSizes) {
 						/* should return
 						    1: {
