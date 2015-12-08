@@ -33,8 +33,6 @@ var _callbackExecuted = false;
 var defaultBidderSettingsMap = {};
 var bidderStartTimes = {};
 
-var countme = 0;
-
 exports.getPlacementIdByCBIdentifer = function(id) {
 	return pbCallbackMap[id];
 };
@@ -148,8 +146,10 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			bid.cpm = 0;
 		}
 
+		//emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+		events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 		//emit the bidResponse event
-		events.emit('bidResponse', adUnitCode, bid);
+		events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
 		
 		var priceStringsObj = utils.getPriceBucketString(bid.cpm, bid.height, bid.width);
 		//append price strings
@@ -434,16 +434,21 @@ exports.addCallback = function(id, callback, cbEvent){
 };
 
 //register event for bid adjustment
-events.on(CONSTANTS.EVENTS.BID_RESPONSE, function(adunit, bid) {
+events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
 	adjustBids(bid);
 });
 
 function adjustBids(bid){
 	var code = bid.bidderCode;
-	var bidPriceAdjusted = 0; 
+	var bidPriceAdjusted = bid.cpm; 
 	if(code && pbjs.bidderSettings[code]){
 		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
-			bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+			try{
+				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+			}
+			catch(e){
+				utils.logError('Error during bid adjustment', 'bidmanager.js', e);
+			}
 		}
 	}
 
