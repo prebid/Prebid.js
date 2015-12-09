@@ -4,8 +4,8 @@ var adloader = require('../adloader.js');
 
 var PulsePointAdapter = function PulsePointAdapter() {
 
-    var getJsStaticUrl = 'http://projects.contextweb.com/av/prebid/getjs.static.js';
-    var bidUrl = 'http://projects.contextweb.com/av/prebid/bid.php';
+    var getJsStaticUrl = 'http://tag.contextweb.com/getjs.static.js';
+    var bidUrl = 'http://tag.contextweb.com/bid';
     
     function _callBids(params) {
         if(typeof window.pp === 'undefined') {
