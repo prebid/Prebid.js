@@ -42,7 +42,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
 
     function bidResponseAvailable(bidRequest, bidResponse) {
         if(bidResponse) {
-            var adSize = bidRequest.params.cf.split('X');
+            var adSize = bidRequest.params.cf.toUpperCase().split('X');
             var bid = bidfactory.createBid(1);
             bid.bidderCode = bidRequest.bidder;
             bid.cpm = bidResponse.bidCpm;
