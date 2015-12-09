@@ -441,7 +441,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
 function adjustBids(bid){
 	var code = bid.bidderCode;
 	var bidPriceAdjusted = bid.cpm; 
-	if(code && pbjs.bidderSettings[code]){
+	if(code && pbjs.bidderSettings && pbjs.bidderSettings[code]){
 		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
 			try{
 				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
