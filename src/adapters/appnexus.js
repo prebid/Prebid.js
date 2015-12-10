@@ -241,7 +241,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 	return {
 		callBids: baseAdapter.callBids,
-		setBidderCode: baseAdapter.setBidderCode
+		setBidderCode: baseAdapter.setBidderCode,
+		createNew: exports.createNew
 	};
 };
 
