@@ -20,7 +20,8 @@ var _disibleInteraction = { nonInteraction : true },
 	//GA limits the # of events to be sent see here ==> https://developers.google.com/analytics/devguides/collection/ios/v3/limits-quotas?hl=en
 	_eventCount = 0,
 	//limit data sent by leaving this false
-	_enableDistribution = false;
+	_enableDistribution = false,
+	_timedOutBidders = [];
 
 
 /**
@@ -61,7 +62,7 @@ exports.enableAnalytics = function(gaOptions) {
 
 		} else if (eventObj.eventType === BID_TIMEOUT) {
 			var bidderArray = args[0];
-			sendTimedOutBiddersToGa(bidderArray);
+			_timedOutBidders = bidderArray;
 			//todo disable event listeners
 
 		} else if (eventObj.eventType === BID_WON) {
@@ -80,12 +81,12 @@ exports.enableAnalytics = function(gaOptions) {
 	//bidResponses 
 	events.on(BID_RESPONSE, function(adunit, bid) {
 		sendBidResponseToGa(bid);
-
+		sendBidTimeouts(bid);
 	});
 
 	//bidTimeouts 
 	events.on(BID_TIMEOUT, function(bidderArray) {
-		sendTimedOutBiddersToGa(bidderArray);
+		_timedOutBidders = bidderArray;
 	});
 
 	//wins
@@ -218,13 +219,18 @@ function sendBidResponseToGa(bid) {
 	checkAnalytics();
 }
 
-function sendTimedOutBiddersToGa(bidderArr){
-	utils._each(bidderArr, function(bidderCode){
-		_analyticsQueue.push(function() {
-			_eventCount++;
-			window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, 1, _disibleInteraction);
+function sendBidTimeouts(bid){
+
+	if(bid && bid.bidder){
+		_analyticsQueue.push(function(){
+			utils._each(_timedOutBidders, function(bidderCode){
+				if(bid.bidder === bidderCode){
+					_eventCount++;
+					window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disibleInteraction);
+				}
+			});
 		});
-	});
+	}
 	checkAnalytics();
 }
 
