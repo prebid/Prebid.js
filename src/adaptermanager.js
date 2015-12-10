@@ -63,25 +63,26 @@ exports.aliasBidAdapter = function(bidderCode, alias){
 		if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
 			utils.logError('bidderCode "' + bidderCode + '" is not specified.');
 		}else{
-
-			try{
-				var newAdapter = bidAdaptor.createNew();
-				newAdapter.setBidderCode(alias);
-				this.registerBidAdapter(newAdapter,alias);
-			}
-			catch(e){
-				utils.logError( bidderCode + ' does not support alias.');
-			}
+			var newAdapter = getNewAdapter(bidderCode);
+			newAdapter.setBidderCode(alias);
+			this.registerBidAdapter(newAdapter,alias);
 		}
 	}else{
 		utils.logError('alias name "' + alias + '" has been already specified.');
 	}
 };
 
+//get new adapter object
+function getNewAdapter(bidderCode){
+	if(bidderCode==='appnexus'){
+		return AppNexusAdapter.createNew();
+	}
+	//TODO . implement for all adaptor
+}
 
 // Register the bid adaptors here
 this.registerBidAdapter(RubiconAdapter(), 'rubicon');
-this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
+this.registerBidAdapter(getNewAdapter('appnexus'), 'appnexus');
 this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 this.registerBidAdapter(CriteoAdapter(), 'criteo');
