@@ -52,3 +52,6 @@ crashlytics-build.properties
 
 #zip files (for releases)
 *.zip
+
+#dist files
+dist
