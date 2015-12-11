@@ -68,5 +68,8 @@ this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
-this.registerBidAdapter(AolAdapter(), 'aol');
+<<<<<<< HEAD
 this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+=======
+this.registerBidAdapter(AolAdapter(), 'aol');
+>>>>>>> 20679ff336c49f1f7e580058fbfd62fbf34538ab

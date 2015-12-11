@@ -28,6 +28,7 @@
 
 
 	"EVENTS" : {
+		"BID_ADJUSTMENT" : "bidAdjustment",
 		"BID_TIMEOUT" : "bidTimeout",
 		"BID_REQUESTED" : "bidRequested",
 		"BID_RESPONSE" : "bidResponse",
