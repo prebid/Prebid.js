@@ -94,7 +94,7 @@ function init(timeout, adUnitCodeArr) {
 	//set size by dynamic size
 	for(var j=0; j<pbjs.adUnits.length; j++){
 		if(pbjs.adUnits[j].dynamicSizes){
-			var size = pbjs.getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
+			var size = utils.getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
 			//set size
 			pbjs.adUnits[j].sizes = size;
 		}
@@ -884,16 +884,6 @@ pbjs.enableAnalytics = function(options){
 		//todo
 	}
 };
-
-/**
- * get Sizes by viewable area size
- * @param [] dynamic sizes array
- * @return [] sizes array
- */
-pbjs.getSizeByDynamicSizes = function(dynamicSizes){
-	return utils.getSizeByDynamicSizes(dynamicSizes);
-};
-
 
 processQue();
 
