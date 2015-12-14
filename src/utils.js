@@ -423,46 +423,57 @@ exports._map = function (object, callback) {
   return output;
 };
 
-exports.getViewableHeight = function(){
+var getViewableHeight = function(){
 	return (window.innerHeight)?window.innerHeight:document.documentElement.clientHeight||document.body.clientHeight||0;
 };
 
-exports.getViewableWidth = function(){
+var getViewableWidth = function(){
 	return (window.innerWidth)?window.innerWidth:document.documentElement.clientWidth||document.body.clientWidth||0;
 };
 
 /*
- *	get Sizes by viewable area size
+ * get slot size, splice browser size
+ * @param {Array} sizes
  */
-exports.getSizeByDynamicSizes = function(dynamicSizes){
+var getSlotSize = function(sizes){
+	sizes.splice(0,1);
+	return sizes;
+};
+
+/*
+ * get Sizes by viewable area size
+ * @param {Array} sizes with browser, slot sizes
+ */
+exports.getSizeByBrowserSize = function(dynamicSizes){
 	var size = [];
 	var defaultSize =[];
 
 	//get viewable area size
-	var wWidth = this.getViewableWidth();
-	var wheight = this.getViewableHeight();
+	var wWidth = getViewableWidth();
+	var wheight = getViewableHeight();
 
-	for( var i=0; i<dynamicSizes.length; i++){
+	for( var i=0; i< dynamicSizes.length; i++){
 
-		var first = dynamicSizes[i][0];
+		var dynamicSize = dynamicSizes[i];
+		var browserSize = dynamicSize[0];
 
-		if(typeof first === objectType_undefined || typeof first[0]===objectType_undefined || typeof first[1]===objectType_undefined){
+		if(typeof browserSize === objectType_undefined || typeof browserSize[0]===objectType_undefined || typeof browserSize[1]===objectType_undefined){
 			this.logError('has no dynamic sizes.');
 			return;
 		}
 
 		//default size [0,0]
-		if(first[0] ===0 && first[1] ===0){
-			defaultSize = dynamicSizes[i];
-		}else if(first[0] <= wWidth && first[1] <=wheight){
+		if(browserSize[0] ===0 && browserSize[1] ===0){
+			defaultSize = getSlotSize(dynamicSize);
+		}else if(browserSize[0] <= wWidth && browserSize[1] <=wheight){
 			if(size.length > 0){
 				//if the size already exists
 				//check the size closer to the viewable area size
-				if(size[0][0] <= first[0] && size[0][1] <= first[1]){
-					size = dynamicSizes[i];
+				if(size[0][0] <= browserSize[0] && size[0][1] <= browserSize[1]){
+					size = getSlotSize(dynamicSize);
 				}
 			}else{
-				size = dynamicSizes[i];
+				size = getSlotSize(dynamicSize);
 			}
 		}
 	}
@@ -473,3 +484,5 @@ exports.getSizeByDynamicSizes = function(dynamicSizes){
 
 	return size;
 };
+
+

@@ -10,9 +10,6 @@
     var topSlotCode = '/19968336/header-bid-tag1';
     var topSlotSizes = [[728, 90], [970, 90]];
 
-    var dynamicSizes = [[[1024, 768], [970, 250]],[[980, 690], [728, 90]],[[640, 480], [120, 60]],[[540, 480], [120, 60]],[[0,0],[2,2]]];
-
-    
 	var pbjs = pbjs || {};
     pbjs.que = pbjs.que  || [];
     var PREBID_TIMEOUT = 1000;
@@ -21,7 +18,6 @@
     
         var adUnit1 = {
             code: rightSlotCode,
-            dynamicSizes: dynamicSizes,
             bids: [{
                         bidder: 'appnexus',
                         params: {
@@ -85,11 +81,10 @@
                 ]
         }
 
-        rightSlotSizes = pbjs.getSizeByDynamicSizes(dynamicSizes);
 
         var adUnit2 = {
             code: rightSlotCode,
-            sizes: rightSlotSizes,
+            // sizes: rightSlotSizes,
             bids: [{
                         bidder: 'appnexus',
                         params: {
@@ -127,20 +122,14 @@
             };
 
 
-        //add array of ad units
-         var arr = [adUnit2, adUnit1];
-         pbjs.addAdUnits([adUnit2, adUnit1]);
+        var ad1 = pbjs.addAdUnits(adUnit1);
+        ad1.addSizeMapping([1,1],[0,0],[3,3]);
 
-         var ad2 = pbjs.addAdUnits(adUnit3);
+        var ad2 = pbjs.addAdUnits(adUnit3);
          //add size mapping
-         ad2.addSizeMapping([540, 480], [120, 60]);
+         ad2.addSizeMapping([540, 480], [120, 60], [22,20]);
          ad2.addSizeMapping([111, 111], [30, 60]);
-         // topSlotSizes = ad2.sizes;
-
-        console.log('topSlotSizes = ' + topSlotSizes);
-        console.log('rightSlotSizes = '+ rightSlotSizes);
-
-       
+         ad2.addSizeMapping([0,0], [30, 60]);       
     });
 
     (function() {

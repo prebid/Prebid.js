@@ -93,9 +93,8 @@ function init(timeout, adUnitCodeArr) {
 
 	//set size by dynamic size
 	for(var j=0; j<pbjs.adUnits.length; j++){
-		if(pbjs.adUnits[j].dynamicSizes){
-			var size = utils.getSizeByDynamicSizes(pbjs.adUnits[j].dynamicSizes);
-			//set size
+		if(pbjs.adUnits[j].dsizes){
+			var size = utils.getSizeByBrowserSize(pbjs.adUnits[j].dsizes);
 			pbjs.adUnits[j].sizes = size;
 		}
 	}
@@ -125,16 +124,16 @@ function addSizeMapping(){
 	var dynamicArr = [];
 
 	//convert args to array
-	for(var i=0; i<arguments.length;i++){
+	for(var i=0; i< arguments.length; i++){
 		sizeArr[i] = arguments[i];
 	}
 
 	dynamicArr.push(sizeArr);
 
-	if(!this.dynamicSizes){
-		this.dynamicSizes =[];
+	if(!this.dsizes){
+		this.dsizes =[];
 	}
-	this.dynamicSizes.push.apply(this.dynamicSizes,dynamicArr);
+	this.dsizes.push.apply(this.dsizes,dynamicArr);
 }
 
 function isValidAdUnitSetting() {
