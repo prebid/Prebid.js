@@ -899,3 +899,15 @@ pbjs_testonly.getAdUnits = function() {
 pbjs_testonly.clearAllAdUnits = function(){
 	pbjs.adUnits =[];
 };
+
+pbjs_testonly.utils_replaceTokenInString = function(str, map, token){
+	return utils.replaceTokenInString(str, map, token);
+};
+
+pbjs_testonly.utils_getBidIdParamater = function(key, paramsObj) {
+	return utils.getBidIdParamater(key, paramsObj);
+};
+
+pbjs_testonly.utils_tryAppendQueryString = function(existingUrl, key, value){
+	return utils.tryAppendQueryString(existingUrl, key, value);
+};

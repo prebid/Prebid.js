@@ -25,23 +25,25 @@ describe("Publisher API _ Alias Bidder", function() {
         pbjs_testonly.clearAllAdUnits();
     });
    
+    describe('set Alias Bidder', function () {
 
-    it('set Alias Bidder', function() {
-   
-        pbjs.setAliasBidder('appnexus','bRealTime1');
-
-        var adUnits = pbjs_testonly.getAdUnits();
-        var adUnit1 = adUnits[0];
-        var bids1 = adUnit1.bids;
+        it('should have both of target bidder and alias bidder', function() {
        
-        assert.strictEqual(adUnit1.code,'/19968336/header-bid-tag1','adUnit1 code');
-        assert.deepEqual(adUnit1.sizes,[[728, 90], [970, 90]],'adUnit1 sizes');
-       
+            pbjs.setAliasBidder('appnexus','bRealTime1');
 
-        assert.strictEqual(bids1[0].bidder,'appnexus','adUnit1 bids1 bidder');
-        assert.strictEqual(bids1[0].params.placementId,'5215561','adUnit1 bids1 params.placementId');
-        assert.strictEqual(bids1[1].bidder,'bRealTime1','adUnit1 bids1 bidder');
-        assert.strictEqual(bids1[1].params.placementId,'5215561','adUnit1 bids1 params.placementId');
+            var adUnits = pbjs_testonly.getAdUnits();
+            var adUnit1 = adUnits[0];
+            var bids1 = adUnit1.bids;
+           
+            assert.strictEqual(adUnit1.code,'/19968336/header-bid-tag1','adUnit1 code');
+            assert.deepEqual(adUnit1.sizes,[[728, 90], [970, 90]],'adUnit1 sizes');
+           
+
+            assert.strictEqual(bids1[0].bidder,'appnexus','adUnit1 bids1 bidder');
+            assert.strictEqual(bids1[0].params.placementId,'5215561','adUnit1 bids1 params.placementId');
+            assert.strictEqual(bids1[1].bidder,'bRealTime1','adUnit1 bids1 bidder');
+            assert.strictEqual(bids1[1].params.placementId,'5215561','adUnit1 bids1 params.placementId');
+        });
     });
 
     

@@ -1,24 +1,63 @@
 describe("Publisher API", function() {
   var assert = chai.assert;
 
-    it('has api of command queue', function() {
+  describe('api of command queue',function(){
+
+    it('should have a global variable pbjs', function() {
       assert.isObject(pbjs);
-      assert.isFunction(pbjs.que.push);
     });
 
-    it('has function',function(){
+    it('should have a global variable pbjs.que as an array',function(){
+      assert.isArray(pbjs.que);
+    });
+
+    it('should have pbjs.que.push function', function(){
+      assert.isFunction(pbjs.que.push);
+    });
+  });
+
+  describe('has function',function(){
+
+    it('should have function pbjs.getAdserverTargeting',function(){
       assert.isFunction(pbjs.getAdserverTargeting);
-      assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);
-      assert.isFunction(pbjs.getBidResponses);
-      assert.isFunction(pbjs.getBidResponsesForAdUnitCode);
-      assert.isFunction(pbjs.setTargetingForGPTAsync);
-      assert.isFunction(pbjs.allBidsAvailable);
-      assert.isFunction(pbjs.renderAd);
-      assert.isFunction(pbjs.removeAdUnit);
-      assert.isFunction(pbjs.requestBids);      
-      assert.isFunction(pbjs.addAdUnits);
-      assert.isFunction(pbjs.addCallback);
-      assert.isFunction(pbjs.removeCallback);   
-      assert.isFunction(pbjs.setAliasBidder);
-   });
+    });
+    it('should have function pbjs.getAdserverTargetingForAdUnitCode',function(){
+      assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);      
+    });
+    it('should have function pbjs.getBidResponses',function(){
+      assert.isFunction(pbjs.getBidResponses);      
+    });
+    it('should have function pbjs.getBidResponsesForAdUnitCode',function(){
+      assert.isFunction(pbjs.getBidResponsesForAdUnitCode);      
+    });
+    it('should have function pbjs.setTargetingForGPTAsync',function(){
+      assert.isFunction(pbjs.setTargetingForGPTAsync);      
+    });
+    it('should have function pbjs.allBidsAvailable',function(){
+      assert.isFunction(pbjs.allBidsAvailable);      
+    });
+    it('should have function pbjs.renderAd',function(){
+      assert.isFunction(pbjs.renderAd);      
+    });
+    it('should have function pbjs.removeAdUnit',function(){
+      assert.isFunction(pbjs.removeAdUnit);      
+    });
+    it('should have function pbjs.requestBids',function(){
+      assert.isFunction(pbjs.requestBids);            
+    });
+    it('should have function pbjs.addAdUnits',function(){
+      assert.isFunction(pbjs.addAdUnits);      
+    });
+    it('should have function pbjs.addCallback',function(){
+      assert.isFunction(pbjs.addCallback);      
+    });
+    it('should have function pbjs.removeCallback',function(){
+      assert.isFunction(pbjs.removeCallback);         
+    });
+    it('should have function pbjs.setAliasBidder',function(){
+      assert.isFunction(pbjs.setAliasBidder);      
+    });
+
+  });
+
 });

@@ -13,19 +13,17 @@
         if (!expr) throw new Error(msg || 'failed');
       }
     </script>
-    <script src="../../dist/prebid.js" type="text/javascript"></script>
-    <script src="./api_spec.js" type="text/javascript"></script>
-    <script src="./adUnits_spec.js" type="text/javascript"></script>
-    <script src="./bids_spec.js" type="text/javascript"></script>
-    <script src="./aliasBidder_spec.js" type="text/javascript"></script>
-
+    <script src="../dist/prebid.js" type="text/javascript"></script>
+    <script src="./spec/api_spec.js" type="text/javascript"></script>
+    <script src="./spec/adUnits_spec.js" type="text/javascript"></script>
+   <!-- <script src="./spec/bids_spec.js" type="text/javascript"></script>-->
+    <script src="./spec/aliasBidder_spec.js" type="text/javascript"></script>
+    <script src="./spec/utils_spec.js" type="text/javascript"></script>
 
     <script>
       onload = function(){
         var runner = mocha.run();
-         // runner.globals(['google_experimental_delay','pm_pub_id','pm_optimize_adslots']);
-
-      
+         // runner.globals(['google_experimental_delay','pm_pub_id','pm_optimize_adslots']);      
       };
     </script>
   </head>
