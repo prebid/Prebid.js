@@ -11,8 +11,8 @@ var bidfactory = require('../bidfactory.js');
 
 var AppNexusAdapter = function AppNexusAdapter() {
 	var isCalled = false;
-	// var AST_URL = '//acdn.adnxs.com/ast/ast.js';
-	var AST_URL ='../../../../resources_apn-seller-tag/dist/ast.js';
+	
+	var AST_URL = 'http://acdn.adnxs.com/ast/alpha/ast.js';
 	var bids;
 
 	//time tracking buckets, to be used to track latency within script
@@ -71,12 +71,18 @@ var AppNexusAdapter = function AppNexusAdapter() {
     			apntag.anq = apntag.anq || [];
 
     			if(pbjs.logging){
-    				apntag.enableDebug();
+    				apntag.anq.push(function(){
+    					apntag.enableDebug();
+    				});
     			}else{
-    				apntag.disableDebug();
+    				apntag.anq.push(function(){
+	    				apntag.disableDebug();
+	    			});
     			}
 
-    			apntag.clearRequest();
+				apntag.anq.push(function(){
+    				apntag.clearRequest();
+    			});
 
     			//build tag
     			var astTag = buildTag(bid);
@@ -114,7 +120,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 		if(data){
 
-			bidObj = bidmanager.getPlacementIdByCBIdentifer(targetId);
+			var bidObj = bidmanager.getPlacementIdByCBIdentifer(targetId);
 
 			if(bidObj){
 				bidObj.status = CONSTANTS.STATUS.GOOD;
@@ -128,14 +134,18 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			utils.logMessage('Callback function called for ad ID: ' + targetId);
 
 			var bid = [];
-			if( data.ad && data.ad.cpm && data.ad.cpm !==0 ){
-				bid = bidfactory.createBid(1);
+			if( data.ads[0] && data.ads[0].cpm && data.ads[0].cpm !==0 ){
+				var ad = data.ads[0];
+				var contentSource = ad.content_source;
+				var adType = ad.ad_type;
 
-				bid.creative_id = data.ad.creative_id;
-				bid.cpm = data.ad.cpm;
-				bid.ad = data.ad.banner.content;
-				bid.width = data.ad.banner.width;
-				bid.height = data.ad.banner.height;
+				bid = bidfactory.createBid(1);
+				bid.creative_id = ad.creative_id;
+				bid.cpm = ad.cpm;
+
+				bid.ad = ad[contentSource][adType].content;
+				bid.width = ad[contentSource][adType].width;
+				bid.height = ad[contentSource][adType].height;
 			}else{
 				utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
 				//indicate that there is no bid for this placement
@@ -149,18 +159,24 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		}
 	}
 
+	//set ast tag 
 	function buildTag(bid){
 		var tag = {};
 		var uuid = utils.getUniqueIdentifierStr();
 
-		tag.member = bid.params.member;
-		tag.invCode = bid.params.invCode;
+		//clone bid.params to tag
+		var jsonBid = JSON.stringify(bid.params);
+		tag = JSON.parse(jsonBid);
+
+		//add tag value
+		//use uuid as a targetId to identify response
+		tag.targetId = uuid;
+
 		if(!tag.prebid)
 			tag.prebid = true;
 
 		if(!tag.sizes)
 			tag.sizes = bid.sizes;
-		tag.targetId = uuid;
 
 		return tag;
 	}
