@@ -4,7 +4,7 @@
 
 <script>
 
-    var PREBID_TIMEOUT = 2000;
+    var PREBID_TIMEOUT = 500;
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -70,18 +70,19 @@
                        placementId: '4799418',
                        referrer: 'appnexus.com'
                     }
-                }, {
-                    bidder: 'sovrn',
-                    params: { 
-                        tagId: '315045' 
-                    }
-                },
-                {
-                    bidder: 'yieldbot',
-                    psn: '234',
-                    slot: '123'
-                },
-                // 1 ad unit can also be targeted by multiple bids from 1 bidder
+                }, 
+                // {
+                //     bidder: 'sovrn',
+                //     params: { 
+                //         tagId: '315045' 
+                //     }
+                // },
+                // // {
+                // //     bidder: 'yieldbot',
+                // //     psn: '234',
+                // //     slot: '123'
+                // // },
+                // // 1 ad unit can also be targeted by multiple bids from 1 bidder
                 {
                     bidder: 'pubmatic',
                     params: {
@@ -118,21 +119,14 @@
             code: '/19968336/header-bid-tag1',
             sizes: [[728, 90], [970, 90]],
             bids: [
-            
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       //placementId: '4799418'
-                    }
-                },
                 
-                {
-                    bidder: 'casale',
-                    params: {
-                        slotId: '1',
-                        casaleUrl: 'http://js.indexww.com/ht/elitedaily.js'
-                    }
-                },
+                // {
+                //     bidder: 'casale',
+                //     params: {
+                //         slotId: '1',
+                //         casaleUrl: 'http://js.indexww.com/ht/elitedaily.js'
+                //     }
+                // },
                 
                 {
                     bidder: 'openx',

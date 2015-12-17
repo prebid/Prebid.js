@@ -8,6 +8,8 @@ pid: 80
 top_nav_section: overview
 nav_section: studies
 
+permalink: /header-bidding-bidder-analysis.html
+
 ---
 <div class="bs-docs-section" markdown="1">
 
