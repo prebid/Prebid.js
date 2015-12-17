@@ -911,3 +911,23 @@ pbjs_testonly.utils_getBidIdParamater = function(key, paramsObj) {
 pbjs_testonly.utils_tryAppendQueryString = function(existingUrl, key, value){
 	return utils.tryAppendQueryString(existingUrl, key, value);
 };
+
+pbjs_testonly.utils_parseQueryStringParameters = function(obj){
+	return utils.parseQueryStringParameters(obj);
+};
+
+pbjs_testonly.utils_transformAdServerTargetingObj = function(obj){
+	return utils.transformAdServerTargetingObj(obj);
+};
+
+pbjs_testonly.utils_extend = function(target, source){
+	return utils.extend(target, source);
+};
+
+pbjs_testonly.utils_parseSizesInput = function(obj){
+	return utils.parseSizesInput(obj);
+};
+
+pbjs_testonly.utils_parseGPTSingleSizeArray = function(singleSize){
+	return utils.parseGPTSingleSizeArray(singleSize);
+};
