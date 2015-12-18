@@ -24,7 +24,7 @@ description: A free and open source library for publishers to quickly implement 
 
 <div class="bs-docs-featurette pb-home pb-docs">
 
-    <p class="lead">The above header bidding ad is auctioned with Prebid.js. <a href="getting-started.html" target="_blank">Learn more about this auction here.</a></p>
+    <p class="lead">The above header bidding ad is auctioned with Prebid.js. <a href="/overview/intro.html" target="_blank">Learn more about this auction here.</a></p>
 
 <div class="form-inline">
   <div class="form-group form-group-lg">
@@ -47,7 +47,7 @@ description: A free and open source library for publishers to quickly implement 
         <img src="assets/images/icons/icon-ninja.png" alt="Header bidding no dev" class="img-responsive">
         <h3>No development required</h3>
         <p>Prebid.js includes adaptors for AppNexus, Criteo, Pubmatic, Rubicon Project.</p>
-        <a href="/bidders.html" class="btn btn-outline">See full bidder list</a>
+        <a href="/dev-docs/bidders.html" class="btn btn-outline">See full bidder list</a>
       </div>
 
       <div class="col-sm-4">
@@ -61,7 +61,7 @@ description: A free and open source library for publishers to quickly implement 
         <img src="assets/images/icons/icon-latency.png" alt="Header bidding latency" class="img-responsive">
         <h3>Reduce latency</h3>
         <p>Improves user experience with asynchronous ad calls that load together with the page content.</p>
-        <a href="blog/how-to-reduce-latency-of-header-bidding/" class="btn btn-outline">How is this done</a>
+        <a href="/overview/how-to-reduce-latency-of-header-bidding.html" class="btn btn-outline">How is this done</a>
       </div>
 
     </div>
