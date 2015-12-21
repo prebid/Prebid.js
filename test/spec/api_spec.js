@@ -54,8 +54,8 @@ describe("Publisher API", function() {
     it('should have function pbjs.removeCallback',function(){
       assert.isFunction(pbjs.removeCallback);         
     });
-    it('should have function pbjs.setAliasBidder',function(){
-      assert.isFunction(pbjs.setAliasBidder);      
+    it('should have function pbjs.aliasBidder',function(){
+      assert.isFunction(pbjs.aliasBidder);      
     });
 
   });
