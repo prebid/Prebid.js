@@ -12,6 +12,7 @@ var gulpJsdoc2md = require("gulp-jsdoc-to-markdown");
 var concat = require("gulp-concat");
 var zip = require('gulp-zip');
 var mocha = require('gulp-mocha');
+var preprocessify = require('preprocessify');
 
 var releaseDir = './dist/';
 var csaSrcLocation = './src/prebid.js';
@@ -86,8 +87,8 @@ gulp.task('jshint', function() {
 
 });
 
-gulp.task('clean-dist', ['quality'], function(cb) {
-    //del([releaseDir + '']);
+gulp.task('clean-dist', function(cb) {
+    del([releaseDir + '']);
     cb();
 
 });
@@ -123,13 +124,20 @@ gulp.task('build-dev', ['jscs', 'clean-dist'], function () {
 
 });
 
-gulp.task('minify', ['quality', 'clean-dist', 'build-dev'], function(cb){
+gulp.task('build-minify', ['clean-dist', 'quality'], function(cb){
+
     gulp.src(['src/prebid.js'])
-    .pipe(browserify())
+    .pipe(browserify({
+        transform : preprocessify({ NODE_ENV: 'production'})
+    }
+
+    ))
+    //unminified version:
+    .pipe(header(banner, {pkg: pkg}))
+    .pipe(gulp.dest(releaseDir))
+    //minified version
     .pipe(uglify())
-    .pipe(header(banner, {
-            pkg: pkg
-        }))
+    .pipe(header(banner, {pkg: pkg}))
     .pipe(rename({
             basename: 'prebid.min',
             extname: '.js'
@@ -139,7 +147,7 @@ gulp.task('minify', ['quality', 'clean-dist', 'build-dev'], function(cb){
     cb();
 });
 
-gulp.task('build', ['quality', 'clean-dist', 'minify', 'zip']);
+gulp.task('build', ['clean-dist', 'quality',  'build-minify', 'zip']);
 
 gulp.task('quality', ['jscs'], function(cb){
     cb();
@@ -165,7 +173,7 @@ gulp.task("docs", ['clean-docs'], function() {
 });
  
 //zip up for release
-gulp.task('zip', ['quality', 'clean-dist', 'minify'], function () {
+gulp.task('zip', ['quality', 'clean-dist', 'build-minify'], function () {
     return gulp.src(['dist/*', 'integrationExamples/gpt/*'])
         .pipe(zip(packageNameVersion + '.zip'))
         .pipe(gulp.dest('./'));

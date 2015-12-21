@@ -879,6 +879,7 @@ pbjs.aliasBidder = function(bidderCode,alias){
 
 processQue();
 
+// @ifdef DEBUG
 //only for test
 pbjs_testonly = {};
 
@@ -921,3 +922,4 @@ pbjs_testonly.utils_parseSizesInput = function(obj){
 pbjs_testonly.utils_parseGPTSingleSizeArray = function(singleSize){
 	return utils.parseGPTSingleSizeArray(singleSize);
 };
+// @endif
