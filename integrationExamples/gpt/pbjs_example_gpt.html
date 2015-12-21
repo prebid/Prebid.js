@@ -141,8 +141,11 @@
               {
                 bidder: 'indexExchange',
                 params: {
-                    slotId: 'TO ADD', // number
-                    indexUrl: 'TO ADD'
+                    id: 'TO ADD',
+                	siteID: 'TO ADD',
+                	timeout: 'TO ADD', //Optional
+                	tier2SiteID: 'TO ADD', //Optional
+                	tier3SiteID: 'TO ADD' //Optional
                 }
             }]
     }];
@@ -220,6 +223,9 @@
             ]
         },
         appnexus: {
+            bidCpmAdjustment : function(bidCpm){
+                return bidCpm * .9;
+            },
             alwaysUseBid : true, // <-- new field - always send these custom keys for the specified bidder
             adserverTargeting: [{
                 key: "custom_bidder",

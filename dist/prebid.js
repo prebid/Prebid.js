@@ -1,5 +1,5 @@
 /* Prebid.js v0.4.1 
-Updated : 2015-11-23 */
+Updated : 2015-12-08 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -31,6 +31,13 @@ exports.callBids = function(bidderArr) {
 			//emit 'bidRequested' event
 			events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
 			currentBidder.callBids(bidder);
+
+			// if the bidder didn't explicitly set the number of bids
+			// expected, default to the number of bids passed into the bidder
+			if (bidmanager.getExpectedBidsCount(bidder.bidderCode) === undefined) {
+				bidmanager.setExpectedBidsCount(bidder.bidderCode, bidder.bids.length);
+			}
+
 			var currentTime = new Date().getTime();
 			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
 
@@ -67,184 +74,189 @@ this.registerBidAdapter(AolAdapter(), 'aol');
 
 },{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/sovrn":9,"./adapters/yieldbot":10,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./utils.js":18}],2:[function(require,module,exports){
 var utils = require('../utils.js'),
-    bidfactory = require('../bidfactory.js'),
-    bidmanager = require('../bidmanager.js'),
-    adloader = require('../adloader');
+	bidfactory = require('../bidfactory.js'),
+	bidmanager = require('../bidmanager.js'),
+	adloader = require('../adloader');
 
 var AolAdapter = function AolAdapter() {
 
-    // constants
-    var ADTECH_PLACEMENT_RXP = /\W/g,
-	ADTECH_URI = '//aka-cdn.adtechus.com/dt/common/DAC.js',
-	ADTECH_BIDDER_NAME = 'aol',
-	ADTECH_PUBAPI_CONFIG = {
-		pixelsDivId: 'pixelsDiv',
-		defaultKey: 'aolBid',
-		roundingConfig: [
-			{from: 0, to: 999, roundFunction: 'tenCentsRound'},
-			{from: 1000, to: -1, roundValue: 1000}
-		],
-		pubApiOK: _addBid,
-		pubApiER: _addErrorBid
-	};
+	// constants
+	var ADTECH_PLACEMENT_RXP = /\W/g,
+		ADTECH_URI = (window.location.protocol) + '//aka-cdn.adtechus.com/dt/common/DAC.js',
+		ADTECH_BIDDER_NAME = 'aol',
+		ADTECH_PUBAPI_CONFIG = {
+			pixelsDivId: 'pixelsDiv',
+			defaultKey: 'aolBid',
+			roundingConfig: [{
+				from: 0,
+				to: 999,
+				roundFunction: 'tenCentsRound'
+			}, {
+				from: 1000,
+				to: -1,
+				roundValue: 1000
+			}],
+			pubApiOK: _addBid,
+			pubApiER: _addErrorBid
+		};
 
-    var bids,
-	bidsMap = {},
-	d = window.document,
-	h = d.getElementsByTagName('HEAD')[0],
-	aliasCount = 0,
-	dummyUnitIdCount = 0;
+	var bids,
+		bidsMap = {},
+		d = window.document,
+		h = d.getElementsByTagName('HEAD')[0],
+		aliasCount = 0,
+		dummyUnitIdCount = 0;
 
-    /**
-     * @private Given a placementCode slot path/div id
-     * for a unit, return a unique alias
-     * @param {String} placementCode
-     * @return {String} alias
-     */
-    function _generateAlias(placementCode) {
-	    return (placementCode || 'alias').replace(ADTECH_PLACEMENT_RXP, '') + (++aliasCount);
-    }
-
-    /**
-     * @private create a div that we'll use as the
-     * location for the AOL unit; AOL will document.write
-     * if the div is not present in the document.
-     * @param {String} id to identify the div
-     * @return {String} the id used with the div
-     */
-    function _dummyUnit(id) {
-	    var div = d.createElement('DIV');
-
-	    if (!id || !id.length) {
-		    id = 'ad-placeholder-' + (++dummyUnitIdCount);
-	    }
-
-	    div.id = id + '-head-unit';
-	    h.appendChild(div);
-	    return div.id;
-    }
-
-    /**
-     * @private Add a succesful bid response for aol
-     * @param {ADTECHResponse} response the response for the bid
-     * @param {ADTECHContext} context the context passed from aol
-     */
-    function _addBid(response, context) {
-	var bid = bidsMap[context.placement], cpm;
-
-	if (!bid) {
-	    utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
-	    return;
+	/**
+	 * @private Given a placementCode slot path/div id
+	 * for a unit, return a unique alias
+	 * @param {String} placementCode
+	 * @return {String} alias
+	 */
+	function _generateAlias(placementCode) {
+		return (placementCode || 'alias').replace(ADTECH_PLACEMENT_RXP, '') + (++aliasCount);
 	}
 
-    	cpm = response.getCPM();
-    	if (cpm == null) {
-	    return _addErrorBid(response, context);
+	/**
+	 * @private create a div that we'll use as the
+	 * location for the AOL unit; AOL will document.write
+	 * if the div is not present in the document.
+	 * @param {String} id to identify the div
+	 * @return {String} the id used with the div
+	 */
+	function _dummyUnit(id) {
+		var div = d.createElement('DIV');
+
+		if (!id || !id.length) {
+			id = 'ad-placeholder-' + (++dummyUnitIdCount);
+		}
+
+		div.id = id + '-head-unit';
+		h.appendChild(div);
+		return div.id;
 	}
 
-	var bidResponse = bidfactory.createBid(1);
-	bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-	bidResponse.ad = response.getCreative() + response.getPixels();
-	bidResponse.cpm = cpm;
-	bidResponse.width = response.getAdWidth();
-	bidResponse.height = response.getAdHeight();
-	bidResponse.creativeId = response.getCreativeId();
+	/**
+	 * @private Add a succesful bid response for aol
+	 * @param {ADTECHResponse} response the response for the bid
+	 * @param {ADTECHContext} context the context passed from aol
+	 */
+	function _addBid(response, context) {
+		var bid = bidsMap[context.placement],
+			cpm;
 
-	// add it to the bid manager
-	bidmanager.addBidResponse(bid.placementCode, bidResponse);
-    }
+		if (!bid) {
+			utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
+			return;
+		}
 
-    /**
-     * @private Add an error bid response for aol
-     * @param {ADTECHResponse} response the response for the bid
-     * @param {ADTECHContext} context the context passed from aol
-     */
-    function _addErrorBid(response, context) {
-	var bid = bidsMap[context.alias || context.placement];
+		cpm = response.getCPM();
+		if (cpm === null || isNaN(cpm)) {
+			return _addErrorBid(response, context);
+		}
 
-	if (!bid) {
-	    utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
-	    return;
+		var bidResponse = bidfactory.createBid(1);
+		bidResponse.bidderCode = ADTECH_BIDDER_NAME;
+		bidResponse.ad = response.getCreative() + response.getPixels();
+		bidResponse.cpm = cpm;
+		bidResponse.width = response.getAdWidth();
+		bidResponse.height = response.getAdHeight();
+		bidResponse.creativeId = response.getCreativeId();
+
+		// add it to the bid manager
+		bidmanager.addBidResponse(bid.placementCode, bidResponse);
 	}
 
-	var bidResponse = bidfactory.createBid(2);
-	bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-	bidResponse.reason = response.getNbr();
-	bidResponse.raw = response.getResponse();
-	bidmanager.addBidResponse(bid.placementCode, bidResponse);
-    }
+	/**
+	 * @private Add an error bid response for aol
+	 * @param {ADTECHResponse} response the response for the bid
+	 * @param {ADTECHContext} context the context passed from aol
+	 */
+	function _addErrorBid(response, context) {
+		var bid = bidsMap[context.alias || context.placement];
+
+		if (!bid) {
+			utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
+			return;
+		}
+
+		var bidResponse = bidfactory.createBid(2);
+		bidResponse.bidderCode = ADTECH_BIDDER_NAME;
+		bidResponse.reason = response.getNbr();
+		bidResponse.raw = response.getResponse();
+		bidmanager.addBidResponse(bid.placementCode, bidResponse);
+	}
 
 
-    /**
-    * @private map a prebid bidrequest to an ADTECH/aol bid request
-    * @param {Bid} bid the bid request
-    * @return {Object} the bid request, formatted for the ADTECH/DAC api
-    */
-    function _mapUnit(bid) {
-	// save the bid
-	bidsMap[bid.params.placement] = bid;
+	/**
+	 * @private map a prebid bidrequest to an ADTECH/aol bid request
+	 * @param {Bid} bid the bid request
+	 * @return {Object} the bid request, formatted for the ADTECH/DAC api
+	 */
+	function _mapUnit(bid) {
+		// save the bid
+		bidsMap[bid.params.placement] = bid;
+
+		return {
+			adContainerId: _dummyUnit(bid.params.adContainerId),
+			server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
+			sizeid: bid.params.sizeId || 0,
+			pageid: bid.params.pageId,
+			secure: false,
+			serviceType: 'pubapi',
+			performScreenDetection: false,
+			alias: bid.params.alias || _generateAlias(bid.placementCode),
+			network: bid.params.network,
+			placement: parseInt(bid.params.placement),
+			gpt: {
+				adUnitPath: bid.params.adUnitPath || bid.placementCode,
+				size: bid.params.size || (bid.sizes || [])[0]
+			},
+			params: {
+				cors: 'yes',
+				cmd: 'bid'
+			},
+			pubApiConfig: ADTECH_PUBAPI_CONFIG,
+			placementCode: bid.placementCode
+		};
+	}
+
+	/**
+	 * @private once ADTECH is loaded, request bids by
+	 * calling ADTECH.loadAd
+	 */
+	function _reqBids() {
+		if (!window.ADTECH) {
+			utils.logError('window.ADTECH is not present!', ADTECH_BIDDER_NAME);
+			return;
+		}
+
+		// get the bids
+		utils._each(bids, function(bid) {
+			var bidreq = _mapUnit(bid);
+			window.ADTECH.loadAd(bidreq);
+		});
+	}
+
+	/**
+	 * @public call the bids
+	 * this requests the specified bids
+	 * from aol marketplace
+	 * @param {Object} params
+	 * @param {Array} params.bids the bids to be requested
+	 */
+	function _callBids(params) {
+		bids = params.bids;
+		if (!bids || !bids.length) return;
+		adloader.loadScript(ADTECH_URI, _reqBids);
+	}
 
 	return {
-	    adContainerId: _dummyUnit(bid.params.adContainerId),
-	    server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
-	    sizeid: bid.params.sizeId || 0,
-	    pageid: bid.params.pageId,
-	    secure: false,
-	    serviceType: 'pubapi',
-	    performScreenDetection: false,
-	    alias: bid.params.alias || _generateAlias(bid.placementCode),
-	    network: bid.params.network,
-	    placement: parseInt(bid.params.placement),
-	    gpt: {
-		adUnitPath: bid.params.adUnitPath || bid.placementCode,
-		size: bid.params.size || (bid.sizes || [])[0]
-	    },
-	    params: {
-		cors: 'yes',
-		cmd: 'bid'
-	    },
-	    pubApiConfig: ADTECH_PUBAPI_CONFIG,
-	    placementCode: bid.placementCode
+		callBids: _callBids
 	};
-    }
-
-    /**
-     * @private once ADTECH is loaded, request bids by
-     * calling ADTECH.loadAd
-     */
-    function _reqBids() {
-    	if (!window.ADTECH) {
-	    utils.logError('window.ADTECH is not present!', ADTECH_BIDDER_NAME);
-	    return;
-	}
-
-	// get the bids
-	utils._each(bids, function (bid) {
-	    var bidreq = _mapUnit(bid);
-	    window.ADTECH.loadAd(bidreq);
-	});
-    }
-
-    /**
-     * @public call the bids
-     * this requests the specified bids
-     * from aol marketplace
-     * @param {Object} params
-     * @param {Array} params.bids the bids to be requested
-     */
-    function _callBids(params) {
-	bids = params.bids;
-	if (!bids || !bids.length) return;
-	adloader.loadScript(ADTECH_URI, _reqBids);
-    }
-
-    return {
-	callBids: _callBids
-    };
 };
 
 module.exports = AolAdapter;
-
 },{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../utils.js":18}],3:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -531,7 +543,7 @@ var CriteoAdapter = function CriteoAdapter() {
 	}
 
 	function _requestBid(bid) {
-		var varname = 'crtg_varname_' + bid.params.nid;
+		var varname = bid.params.varname;
 		var scriptUrl = '//rtax.criteo.com/delivery/rta/rta.js?netId=' + encodeURI(bid.params.nid) +
 			'&cookieName=' + encodeURI(bid.params.cookiename) +
 			'&rnd=' + Math.floor(Math.random() * 99999999999) +
@@ -573,50 +585,329 @@ var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader.js');
 
 var ADAPTER_NAME = 'INDEXEXCHANGE';
 var ADAPTER_CODE = 'indexExchange';
+
+var cygnus_index_primary_request = true;
+var cygnus_index_parse_res = function() {};
+window.cygnus_index_args = {};
+
+var cygnus_index_adunits =  [[728,90],[120,600],[300,250],[160,600],[336,280],[234,60],[300,600],[300,50],[320,50],[970,250],[300,1050],[970,90],[180,150]];
+
+var cygnus_index_start = function() { 
+	cygnus_index_args.parseFn = cygnus_index_parse_res;
+	var escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+	var meta = {
+		'\b': '\\b',
+		'\t': '\\t',
+		'\n': '\\n',
+		'\f': '\\f',
+		'\r': '\\r',
+		'"': '\\"',
+		'\\': '\\\\'
+	};
+
+	function escapeCharacter(character) {
+		var escaped = meta[character];
+		if (typeof escaped === 'string') {
+			return escaped;
+		} else {
+			return '\\u' + ('0000' + character.charCodeAt(0).toString(16)).slice(-4);
+		}
+	}
+
+	function quote(string) {
+		escapable.lastIndex = 0;
+		if (escapable.test(string)) {
+			return string.replace(escapable, escapeCharacter);
+		} else {
+			return string;
+		}
+	}
+
+	function OpenRTBRequest(siteID, parseFn, timeoutDelay) {
+		this.initialized = false;
+		if (typeof siteID !== "number" || siteID % 1 !== 0 || siteID < 0) {
+			throw "Invalid Site ID";
+		}
+		if (typeof timeoutDelay === "number" && timeoutDelay % 1 === 0 && timeoutDelay >= 0) {
+			this.timeoutDelay = timeoutDelay;
+		}
+
+		this.siteID = siteID;
+		this.impressions = [];
+		this._parseFnName = undefined;
+		if (top === self) {
+			this.sitePage = location.href;
+			this.topframe = 1;
+		} else {
+			this.sitePage = document.referrer;
+			this.topframe = 0;
+		}
+		if (typeof parseFn !== 'undefined') {
+			if (typeof parseFn === 'function') {
+				this._parseFnName = "cygnus_index_args.parseFn";
+			} else {
+				throw "Invalid jsonp target function";
+			}
+		}
+		if (typeof _IndexRequestData.requestCounter === 'undefined') {
+			_IndexRequestData.requestCounter = Math.floor(Math.random() * 256);
+		} else {
+			_IndexRequestData.requestCounter = (_IndexRequestData.requestCounter + 1) % 256;
+		}
+		this.requestID = String((new Date().getTime() % 2592000) * 256 + _IndexRequestData.requestCounter + 256);
+		this.initialized = true;
+	}
+	OpenRTBRequest.prototype.serialize = function() {
+		var json = '{"id":' + this.requestID + ',"site":{"page":"' + quote(this.sitePage) + '"';
+		if (typeof document.referrer === 'string') {
+			json += ',"ref":"' + quote(document.referrer) + '"';
+		}
+		json += '},"imp":[';
+		for (var i = 0; i < this.impressions.length; i++) {
+			var impObj = this.impressions[i];
+			var ext = [];
+			json += '{"id":"' + impObj.id + '", "banner":{"w":' + impObj.w + ',"h":' + impObj.h + ',"topframe":' + String(this.topframe) + "}";
+			if (typeof impObj.bidfloor === 'number') {
+				json += ',"bidfloor":' + impObj.bidfloor;
+				if (typeof impObj.bidfloorcur === 'string') {
+					json += ',"bidfloorcur":"' + quote(impObj.bidfloorcur) + '"';
+				}
+			}
+			if (typeof impObj.slotID === 'string' && (!impObj.slotID.match(/^\s*$/))) {
+				ext.push('"sid":"' + quote(impObj.slotID) + '"');
+			}
+			if (typeof impObj.siteID === 'number') {
+				ext.push('"siteID":' + impObj.siteID);
+			}
+			if (ext.length > 0) {
+				json += ',"ext": {' + ext.join() + '}';
+			}
+			if (i + 1 == this.impressions.length) {
+				json += '}';
+			} else {
+				json += '},';
+			}
+		}
+		json += "]}";
+		return json;
+	};
+	OpenRTBRequest.prototype.setPageOverride = function(sitePageOverride) {
+		if (typeof sitePageOverride === 'string' && (!sitePageOverride.match(/^\s*$/))) {
+			this.sitePage = sitePageOverride;
+			return true;
+		} else {
+			return false;
+		}
+	};
+	OpenRTBRequest.prototype.addImpression = function(width, height, bidFloor, bidFloorCurrency, slotID, siteID) {
+		var impObj = {
+			'id': String(this.impressions.length + 1)
+		};
+		if (typeof width !== 'number' || width <= 1) {
+			return null;
+		}
+		if (typeof height !== 'number' || height <= 1) {
+			return null;
+		}
+		if ((typeof slotID === 'string' || typeof slotID === 'number') && String(slotID).length <= 50) {
+			impObj.slotID = String(slotID);
+		}
+		impObj.w = width;
+		impObj.h = height;
+		if (bidFloor !== undefined && typeof bidFloor !== 'number') {
+			return null;
+		}
+		if (typeof bidFloor === 'number') {
+			if (bidFloor < 0) {
+				return null;
+			}
+			impObj.bidfloor = bidFloor;
+			if (bidFloorCurrency !== undefined && typeof bidFloorCurrency !== 'string') {
+				return null;
+			}
+			impObj.bidfloorcur = bidFloorCurrency;
+		}
+		if (typeof siteID !== 'undefined') {
+			if (typeof siteID === 'number' && siteID % 1 === 0 && siteID >= 0) {
+				impObj.siteID = siteID;
+			} else {
+				return null;
+			}
+		}
+		this.impressions.push(impObj);
+		return impObj.id;
+	};
+
+	OpenRTBRequest.prototype.buildRequest = function() {
+		if (this.impressions.length === 0 || this.initialized !== true) {
+			return;
+		}
+		var jsonURI = encodeURIComponent(this.serialize());
+		var scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+		scriptSrc += '/headertag?v=9&x3=1&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI;
+		if (typeof this.timeoutDelay === "number" && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
+			scriptSrc += '&t=' + this.timeoutDelay;
+		}
+		return scriptSrc;	
+	};
+	try {
+		if (typeof cygnus_index_args === 'undefined' || typeof cygnus_index_args.siteID === 'undefined' || typeof cygnus_index_args.slots === 'undefined') {
+			return;
+		}
+		if (typeof _IndexRequestData === 'undefined') {
+			_IndexRequestData = {};
+			_IndexRequestData.impIDToSlotID = {};
+			_IndexRequestData.reqOptions = {};
+		}
+		var req = new OpenRTBRequest(cygnus_index_args.siteID, cygnus_index_args.parseFn, cygnus_index_args.timeout);
+		if (cygnus_index_args.url && typeof cygnus_index_args.url === 'string') {
+			req.setPageOverride(cygnus_index_args.url);
+		}
+		_IndexRequestData.impIDToSlotID[req.requestID] = {};
+		_IndexRequestData.reqOptions[req.requestID] = {};
+		var slotDef, impID;
+
+		for (var i = 0; i < cygnus_index_args.slots.length; i++) {
+			slotDef = cygnus_index_args.slots[i];
+
+			impID = req.addImpression(slotDef.width, slotDef.height, slotDef.bidfloor, slotDef.bidfloorcur, slotDef.id, slotDef.siteID);
+			if (impID) {
+				_IndexRequestData.impIDToSlotID[req.requestID][impID] = String(slotDef.id);
+			}
+		}
+		if (typeof cygnus_index_args.targetMode === 'number') {
+			_IndexRequestData.reqOptions[req.requestID].targetMode = cygnus_index_args.targetMode;
+		}
+		if (typeof cygnus_index_args.callback === 'function') {
+			_IndexRequestData.reqOptions[req.requestID].callback = cygnus_index_args.callback;
+		}
+		return req.buildRequest();
+	} catch (e) {}
+};
 
 var IndexExchangeAdapter = function IndexExchangeAdapter() {
 	var slotIdMap = {};
 	var requiredParams = [
 		/* 0 */
-		'slotId',
-		/* 1 */
-		'indexUrl'
+		'id'
 	];
 	var firstAdUnitCode = '';
 
 	function _callBids(request) {
 		var bidArr = request.bids;
 
-		//validate first bid request with all required params.
 		if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
 			return;
 		}
+
+		var bid;
+
+		var tier2SiteID;
+		var tier3SiteID;
+
+		//Grab the global data for cygnus_index_args
 		for (var i = 0; i < bidArr.length; i++) {
-			var bid = bidArr[i];
-			//only validate 1st param on rest of bids
-			if (utils.hasValidBidRequest(bid.params, requiredParams.slice(0, 1), ADAPTER_NAME)) {
-				firstAdUnitCode = bid.placementCode;
-				var slotId = bid.params[requiredParams[0]];
-				slotIdMap[slotId] = bid;
+			bid = bidArr[i];
+
+			if (bid.timeout) {
+				cygnus_index_args.timeout = bid.timeout;
+			}
+
+			if (bid.siteID) {
+				cygnus_index_args.siteID = bid.siteID;
+			}
+
+			if (bid.tier2SiteID) {
+				tier2SiteID = bid.tier2SiteID;
+			}
+
+			if (bid.tier3SiteID) {
+				tier3SiteID = bid.tier3SiteID;
 			}
 		}
 
-		var adUrl = bidArr[0].params[requiredParams[1]];
-		var iframeContents = createRequestContent(adUrl);
-		var iframe = buildIframeContainer();
-		var iframeId = iframe.id;
-		//attach to onload event of iframe to ensure script is ready
-		utils.addEventHandler(iframe, 'load', function() {
+		if (!cygnus_index_args.siteID) {
+			return;
+		}
+
+		cygnus_index_args.slots = [];
+		var bidCount = 0;
+		//Grab the slot level data for cygnus_index_args
+		for (i = 0; i < bidArr.length; i++) {
+			bid = bidArr[i];
+
+			var width;
+			var height;
+
+			outer: for (var j = 0; j < bid.sizes.length; j++) {
+				inner: for (var k = 0; k < cygnus_index_adunits.length; k++) {
+					if (bid.sizes[j][0] === cygnus_index_adunits[k][0] &&
+				   	   bid.sizes[j][1] === cygnus_index_adunits[k][1]) {
+						width = bid.sizes[j][0];
+						height = bid.sizes[j][1];
+						break outer;
+					}
+				}
+			}
+
+			if (bid.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
+				cygnus_index_args.slots.push({
+					id:"SPQS",
+					width: bid.sqps.width,
+					height: bid.sqps.height,
+					siteID: bid.sqps.siteID || cygnus_index_args.siteID
+				});
+			}
+
+			if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
+				firstAdUnitCode = bid.placementCode;
+				var slotId = bid.params[requiredParams[0]];
+				slotIdMap[slotId] = bid;
+
+				if (cygnus_index_primary_request) {
+					cygnus_index_args.slots.push({
+						id: bid.params.id,
+						width: width,
+						height: height,
+						siteID: bid.params.siteID || cygnus_index_args.siteID
+					});
+
+					bidCount++;
+
+					if (bid.params.tier2SiteID || tier2SiteID) {
+						cygnus_index_args.slots.push({
+							id: "T1_"+bid.params.id,
+							width: width,
+							height: height,
+							siteID: bid.params.tier2SiteID || tier2SiteID
+						});
+					}
+					if (bid.params.tier3SiteID || tier3SiteID) {
+						cygnus_index_args.slots.push({
+							id:"T2_"+bid.params.id,
+							width:width,
+							height:height,
+							siteID:bid.params.tier3SiteID || tier3SiteID
+						});
+					}
+				}
+			}
+			bidmanager.setExpectedBidsCount(ADAPTER_CODE, bidCount);
+		}
+		cygnus_index_primary_request = false;
+
+		adloader.loadScript(cygnus_index_start());
+
+		window.cygnus_index_ready_state = function() {
 			try {
-				var iframeObj = window.frames[iframeId];
-				var indexObj = iframeObj.contentWindow._IndexRequestData.targetIDToBid;
-				var lookupObj = iframeObj.contentWindow.cygnus_index_args;
+				var indexObj = _IndexRequestData.targetIDToBid;
+				var lookupObj = cygnus_index_args;
 
 				if (utils.isEmpty(indexObj)) {
-					//no bid response
 					var bid = bidfactory.createBid(2);
 					bid.bidderCode = ADAPTER_CODE;
 					logErrorBidResponse();
@@ -624,7 +915,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				}
 
 				utils._each(indexObj, function(adContents, cpmAndSlotId) {
-
 					utils._each(slotIdMap, function(bid, adSlotId) {
 						var obj = cpmAndSlotId.split('_');
 						var currentId = obj[0];
@@ -632,29 +922,26 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 						if (currentId === adSlotId) {
 							var bidObj = slotIdMap[adSlotId];
 							var adUnitCode = bidObj.placementCode;
-							var slotObj = getSlotObj(lookupObj, adSlotId);
+							var slotObj = getSlotObj(cygnus_index_args, adSlotId);
+
 							bid = bidfactory.createBid(1);
-							bid.cpm = (currentCPM / 100);
-							bid.ad = adContents;
+							bid.cpm = currentCPM / 100;
+							bid.ad = adContents[0];
 							bid.ad_id = adSlotId;
 							bid.bidderCode = ADAPTER_CODE;
 							bid.width = slotObj.width;
 							bid.height = slotObj.height;
-							bid.siteID = slotObj.siteID;
+							bid.siteId = slotObj.siteID;
+
 							bidmanager.addBidResponse(adUnitCode, bid);
 						}
 					});
 				});
-
 			} catch (e) {
 				utils.logError('Error calling index adapter', ADAPTER_NAME, e);
 				logErrorBidResponse();
 			}
-		});
-
-		var iframeDoc = iframe.contentWindow.document;
-		iframeDoc.write(iframeContents);
-		iframeDoc.close();
+		};
 	}
 
 	function getSlotObj(obj, id) {
@@ -676,24 +963,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 		bidmanager.addBidResponse(firstAdUnitCode, bid);
 	}
 
-	function buildIframeContainer() {
-		var iframe = utils.createInvisibleIframe();
-		var elToAppend = document.getElementsByTagName('head')[0];
-		//insert the iframe into document
-		elToAppend.insertBefore(iframe, elToAppend.firstChild);
-		return iframe;
-
-	}
-
-	function createRequestContent(url) {
-		var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' + 'ipt>inDapIF=true;</scr' + 'ipt></head>';
-		content += '<body>';
-		content += '<scr' + 'ipt src="' + url + '"></scr' + 'ipt>';
-		content += '</body></html>';
-		return content;
-	}
-
-
 	return {
 		callBids: _callBids
 	};
@@ -701,7 +970,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 };
 
 module.exports = IndexExchangeAdapter;
-},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
+
+},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1150,18 +1420,18 @@ var SovrnAdapter = function SovrnAdapter() {
 		// build bid request object
 		var domain = window.location.host;
 		var page = window.location.pathname + location.search + location.hash;
-		
+
 		var sovrnImps = [];
 		//assign the first adUnit (placement) for bad bids;
 		defaultPlacementForBadBid  = bidReqs[0].placementCode;
-		
+
 		//build impression array for sovrn
 		utils._each(bidReqs, function(bid)
 		{
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
 			var adW=0,adH=0;
-			
+
 			//sovrn supports only one size per tagid, so we just take the first size if there are more
 			//if we are a 2 item array of 2 numbers, we must be a SingleSize array
 			var sizeArrayLength = bid.sizes.length;
@@ -1174,7 +1444,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					adW=bid.sizes[0][0];
 					adH=bid.sizes[0][1];
 				}
-			imp = 
+			imp =
 				{
 					id: utils.getUniqueIdentifierStr(),
 					banner: {
@@ -1192,13 +1462,13 @@ var SovrnAdapter = function SovrnAdapter() {
 		var sovrnBidReq = {
 			id: utils.getUniqueIdentifierStr(),
 			imp: sovrnImps,
-			site:{ 
+			site:{
 				domain: domain,
 				page: page
 			}
 		};
 
-		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' + 
+		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' +
 			'&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
 		adloader.loadScript(scriptUrl, null);
 	}
@@ -1216,7 +1486,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					var responseCPM;
 					var placementCode = '';
 					var id = sovrnBid.impid;
-					
+
 					// try to fetch the bid request we sent Sovrn
 					var	bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
 					if (bidObj){
@@ -1226,11 +1496,11 @@ var SovrnAdapter = function SovrnAdapter() {
 						//place ad response on bidmanager._adResponsesByBidderId
 						responseCPM = parseFloat(sovrnBid.price);
 
-						if(responseCPM !== 0) {		
+						if(responseCPM !== 0) {
 							sovrnBid.placementCode = placementCode;
 							sovrnBid.size = bidObj.sizes;
 							var responseAd = sovrnBid.adm;
-							
+
 							// build impression url from response
 							var responseNurl = '<img src="'+sovrnBid.nurl+'">';
 
@@ -1240,29 +1510,37 @@ var SovrnAdapter = function SovrnAdapter() {
 							bid.creative_id = sovrnBid.Id;
 							bid.bidderCode = 'sovrn';
 							bid.cpm = responseCPM;
-						
+
 							//set ad content + impression url
 							// sovrn returns <script> block, so use bid.ad, not bid.adurl
-							bid.ad = decodeURIComponent(responseAd+responseNurl);		
-							bid.width = bidObj.sizes[0][0];
-							bid.height = bidObj.sizes[0][1];
-			
+							bid.ad = decodeURIComponent(responseAd+responseNurl);
+							var sizeArrayLength = bidObj.sizes.length;
+							if (sizeArrayLength === 2 && typeof bidObj.sizes[0] === 'number' && typeof bidObj.sizes[1] === 'number') {
+									bid.width = bidObj.sizes[0];
+									bid.height = bidObj.sizes[1];
+								}
+							else
+								{
+									bid.width = bidObj.sizes[0][0];
+									bid.height = bidObj.sizes[0][1];
+								}
+
 							bidmanager.addBidResponse(placementCode, bid);
-							
+
 						}	else {
 							//0 price bid
 							//indicate that there is no bid for this placement
 							bid = bidfactory.createBid(2);
 							bid.bidderCode = 'sovrn';
 							bidmanager.addBidResponse(placementCode, bid);
-							
+
 						}
 					} else {   // bid not found, we never asked for this?
 						//no response data
 						bid = bidfactory.createBid(2);
 						bid.bidderCode = 'sovrn';
 						bidmanager.addBidResponse(placementCode, bid);
-					} 
+					}
 				});
 			} else {
 				//no response data
@@ -1665,6 +1943,7 @@ exports.setExpectedBidsCount = function(bidderCode,count){
 function getExpectedBidsCount(bidderCode){
 	return expectedBidsCount[bidderCode];
 }
+exports.getExpectedBidsCount = getExpectedBidsCount;
 
 
 /*
@@ -1698,6 +1977,12 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
+
+		//emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+		events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+		//emit the bidResponse event
+		events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
+		
 		var priceStringsObj = utils.getPriceBucketString(bid.cpm, bid.height, bid.width);
 		//append price strings
 		bid.pbLg = priceStringsObj.low;
@@ -1737,8 +2022,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
-		//emit the bidResponse event
-		events.emit('bidResponse', adUnitCode, bid);
+		
 
 	} else {
 		//create an empty bid bid response object
@@ -1949,17 +2233,13 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 // check all bids response received by bidder
 function checkAllBidsResponseReceived(){
 	var available = true;
-	
-	utils._each(bidResponseReceivedCount,function(count,bidderCode){
 
-		//expected bids count check for appnexus
-		if(bidderCode === 'appnexus'){
-			var expectedCount = getExpectedBidsCount(bidderCode);
+	utils._each(bidResponseReceivedCount, function(count, bidderCode){
+		var expectedCount = getExpectedBidsCount(bidderCode);
 
-			if(typeof expectedCount === objectType_undefined || count < expectedCount){
-				available = false;
-			}
-		}else if(count<1){
+		// expectedCount should be set in the adapter, or it will be set
+		// after we call adapter.callBids()
+		if ((typeof expectedCount === objectType_undefined) || (count < expectedCount)) {
 			available = false;
 		}
 	});
@@ -1984,6 +2264,30 @@ exports.addCallback = function(id, callback, cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
 };
+
+//register event for bid adjustment
+events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
+	adjustBids(bid);
+});
+
+function adjustBids(bid){
+	var code = bid.bidderCode;
+	var bidPriceAdjusted = bid.cpm; 
+	if(code && pbjs.bidderSettings[code]){
+		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
+			try{
+				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+			}
+			catch(e){
+				utils.logError('Error during bid adjustment', 'bidmanager.js', e);
+			}
+		}
+	}
+
+	if(bidPriceAdjusted !== 0){
+		bid.cpm = bidPriceAdjusted;
+	}
+}
 
 },{"./adaptermanager":1,"./constants.json":14,"./events":15,"./utils.js":18}],14:[function(require,module,exports){
 module.exports={
@@ -2016,6 +2320,7 @@ module.exports={
 
 
 	"EVENTS" : {
+		"BID_ADJUSTMENT" : "bidAdjustment",
 		"BID_TIMEOUT" : "bidTimeout",
 		"BID_REQUESTED" : "bidRequested",
 		"BID_RESPONSE" : "bidResponse",
