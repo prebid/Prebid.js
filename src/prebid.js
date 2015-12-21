@@ -865,12 +865,61 @@ pbjs.sendTimeoutEvent = function(){
 	timeOutBidders();
 };
 
+pbjs.aliasBidder = function(bidderCode,alias){
+
+	if(bidderCode && alias){
+		adaptermanager.aliasBidAdapter(bidderCode,alias);
+	}
+	else{
+		utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
+	}
+	
+};
+
 
 processQue();
 
+// @ifdef DEBUG
 //only for test
 pbjs_testonly = {};
 
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
+
+pbjs_testonly.clearAllAdUnits = function(){
+	pbjs.adUnits =[];
+};
+
+pbjs_testonly.utils_replaceTokenInString = function(str, map, token){
+	return utils.replaceTokenInString(str, map, token);
+};
+
+pbjs_testonly.utils_getBidIdParamater = function(key, paramsObj) {
+	return utils.getBidIdParamater(key, paramsObj);
+};
+
+pbjs_testonly.utils_tryAppendQueryString = function(existingUrl, key, value){
+	return utils.tryAppendQueryString(existingUrl, key, value);
+};
+
+pbjs_testonly.utils_parseQueryStringParameters = function(obj){
+	return utils.parseQueryStringParameters(obj);
+};
+
+pbjs_testonly.utils_transformAdServerTargetingObj = function(obj){
+	return utils.transformAdServerTargetingObj(obj);
+};
+
+pbjs_testonly.utils_extend = function(target, source){
+	return utils.extend(target, source);
+};
+
+pbjs_testonly.utils_parseSizesInput = function(obj){
+	return utils.parseSizesInput(obj);
+};
+
+pbjs_testonly.utils_parseGPTSingleSizeArray = function(singleSize){
+	return utils.parseGPTSingleSizeArray(singleSize);
+};
+// @endif

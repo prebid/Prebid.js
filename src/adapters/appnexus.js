@@ -3,13 +3,10 @@ var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
-
-/* AppNexus bidder factory function
- *  Use to create a AppNexusAdapter object
- */
- 
+var Adapter = require('./adapter.js');
 
 var AppNexusAdapter = function AppNexusAdapter() {
+	var baseAdapter = Adapter.createNew('appnexus');
 	var isCalled = false;
 
 	//time tracking buckets, to be used to track latency within script
@@ -44,14 +41,14 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		return 'https://secure.adnxs.com/imptr?id=' + id + '&t=2';
 	}
 
+	baseAdapter.callBids = function(params){
+	 	var bidCode = baseAdapter.getBidderCode();
 
-	function callBids(params) {
-		//console.log(params);
-		var anArr = params.bids;
+	 	var anArr = params.bids;
 		var bidsCount = anArr.length;
 
 		//set expected bids count for callback execution
-		bidmanager.setExpectedBidsCount('appnexus',bidsCount);
+		bidmanager.setExpectedBidsCount(bidCode,bidsCount);
 
 		for (var i = 0; i < bidsCount; i++) {
 			var bidReqeust = anArr[i];
@@ -60,9 +57,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			//store a reference to the bidRequest from the callback id
 			bidmanager.pbCallbackMap[callbackId] = bidReqeust;
 		}
+	};
 
-	}
-	//given a starttime and an end time, hit the correct impression tracker
+		//given a starttime and an end time, hit the correct impression tracker
 	function processAndTrackLatency(startTime, endTime, placementCode) {
 
 		if (startTime && endTime) {
@@ -163,6 +160,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	//expose the callback to the global object:
 	pbjs.handleCB = function(jptResponseObj) {
 
+	 	var bidCode;
+
 		if (jptResponseObj && jptResponseObj.callback_uid) {
 
 			var error;
@@ -172,6 +171,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				//retrieve bid object by callback ID
 				bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
 			if (bidObj) {
+
+				bidCode = bidObj.bidder;
+
 				placementCode = bidObj.placementCode;
 				//set the status
 				bidObj.status = CONSTANTS.STATUS.GOOD;
@@ -181,7 +183,6 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				} catch (e) {}
 
 				//place ad response on bidmanager._adResponsesByBidderId
-
 			}
 
 			// @if NODE_ENV='debug'
@@ -204,7 +205,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				bid = bidfactory.createBid(1);
 				//bid.adId = adId;
 				bid.creative_id = adId;
-				bid.bidderCode = 'appnexus';
+				bid.bidderCode = bidCode;
 				bid.cpm = responseCPM;
 				bid.adUrl = jptResponseObj.result.ad;
 				bid.width = jptResponseObj.result.width;
@@ -222,7 +223,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				// @endif
 				//indicate that there is no bid for this placement
 				bid = bidfactory.createBid(2);
-				bid.bidderCode = 'appnexus';
+				bid.bidderCode = bidCode;
 				bidmanager.addBidResponse(placementCode, bid);
 			}
 
@@ -239,8 +240,13 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	};
 
 	return {
-		callBids: callBids
-
+		callBids: baseAdapter.callBids,
+		setBidderCode: baseAdapter.setBidderCode,
+		createNew: exports.createNew
 	};
 };
-module.exports = AppNexusAdapter;
+
+exports.createNew = function(){
+	return new AppNexusAdapter();
+};
+// module.exports = AppNexusAdapter;

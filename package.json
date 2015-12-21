@@ -27,7 +27,8 @@
     "gulp-util": "^3.0.6",
     "gulp-zip": "^3.0.2",
     "jsdoc-to-markdown": "^1.1.1",
-    "jshint-stylish": "^2.0.1"
+    "jshint-stylish": "^2.0.1",
+    "preprocessify": "0.0.6"
   },
   "dependencies": {}
 }
