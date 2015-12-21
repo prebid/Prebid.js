@@ -42,6 +42,9 @@ exports.callBids = function(bidderArr) {
 				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
 			}
 		}
+		else{
+			utils.logError('Adapter trying to be called which does not exist: ' + bidder.bidderCode, 'adaptermanager.callBids');
+		}
 	}
 };
 
@@ -68,18 +71,18 @@ exports.aliasBidAdapter = function(bidderCode, alias){
 		var bidAdaptor = _bidderRegistry[bidderCode];
 
 		if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
-			utils.logError('bidderCode "' + bidderCode + '" is not specified.');
+			utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
 		}else{
 			try{
 				var newAdapter = bidAdaptor.createNew();
 				newAdapter.setBidderCode(alias);
 				this.registerBidAdapter(newAdapter,alias);
 			}catch(e){
-				utils.logError(bidderCode + ' does not support alias.');
+				utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
 			}
 		}
 	}else{
-		utils.logError('alias name "' + alias + '" has been already specified.');
+		utils.logMessage('alias name "' + alias + '" has been already specified.');
 	}
 };
 

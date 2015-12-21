@@ -57,7 +57,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			//store a reference to the bidRequest from the callback id
 			bidmanager.pbCallbackMap[callbackId] = bidReqeust;
 		}
-	}
+	};
 
 		//given a starttime and an end time, hit the correct impression tracker
 	function processAndTrackLatency(startTime, endTime, placementCode) {
@@ -248,5 +248,5 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 exports.createNew = function(){
 	return new AppNexusAdapter();
-}
+};
 // module.exports = AppNexusAdapter;
