@@ -194,10 +194,10 @@ function sendBidRequestToGa(bid) {
 
 function sendBidResponseToGa(bid) {
 
-	if (bid && bid.bidder) {
+	if (bid && bid.bidderCode) {
 		_analyticsQueue.push(function() {
 			var cpmCents = convertToCents(bid.cpm),
-				bidder = bid.bidder;
+				bidder = bid.bidderCode;
 			if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
 				_eventCount++;
 				var dis = getLoadTimeDistribution(bid.timeToRespond);
