@@ -227,7 +227,7 @@ function setGPTAsyncTargeting(code, slot) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
 				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
+				slot.setTargeting(key, keyStrings[key]);
 
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
@@ -236,7 +236,7 @@ function setGPTAsyncTargeting(code, slot) {
 	}
 }
 /*
- *   This function returns the object map of placemnts or
+ *   This function returns the object map of placements or
  *   if placement code is specified return just 1 placement bids
  */
 function getBidResponsesByAdUnit(adunitCode) {
