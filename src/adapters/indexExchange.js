@@ -224,10 +224,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 			return;
 		}
 
-		if (!cygnus_index_args.siteID) {
-			return;
-		}
-
 		cygnus_index_args.slots = [];
 		var bidCount = 0;
 
