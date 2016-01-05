@@ -9,14 +9,14 @@ nav_section: quick-start
 hide: true
 
 about:
-- <strong>Bidder Setup for Criteo.</strong>
-- Criteo bidder is called as part of the prebid.js setup
-- keyword are passed to the adserver using the standard RTA integration
-- one set of line item must be set in the adserver to manage criteo bidder separately. Follow Criteo's RTA guideline for the line item setup.
+- Bidder Setup for Criteo.
+- Criteo bidder is called as part of the prebid.js setup.
+- keyword are passed to the adserver using <strong>the standard RTA integration</strong>.
+- one set of line item must be set in the adserver to manage criteo bidder separately. <strong>Follow Criteo's RTA guideline for the line item setup</strong>.
 
 jsfiddle_link: jsfiddle.net/hqz36ew2/1/embedded/html,result
-code_height: 2220
-code_lines: 145
+code_height: 2240
+code_lines: 120
 
 pid: 10
 ---
@@ -41,7 +41,7 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 
 <div markdown="1">
-#### Line 55 to 64 and 71 to 80: Define the criteo bid
+#### Line 46 to 51 and 60 to 65: Define the criteo bid
 
 In this example, Criteo bidder is setup with:
 
@@ -61,10 +61,10 @@ If defined multiple time, with the same nid, prebid.js will actually only call c
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
-<br>
+
 
 <div markdown="1">
-#### Line 100: Set specific targeting for criteo bidder
+#### Line 85: Set specific targeting for criteo bidder
 
 Because Criteo doesn't send back a price, he can't take place in the client side prebid auction with the other bidders.
 Instead, we always pass to the adserver criteo's interest to bid on the impression.
