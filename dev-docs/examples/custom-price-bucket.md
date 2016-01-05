@@ -15,8 +15,8 @@ about:
 - One set of line items for all bidders
 
 jsfiddle_link: jsfiddle.net/prebid/bp9magow/2/embedded/html,result
-code_height: 2210
-code_lines: 143
+code_height: 2560
+code_lines: 137
 
 pid: 10
 ---
@@ -33,6 +33,8 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 
 </div>
 
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
@@ -62,10 +64,10 @@ You can see the effect of this customization if you click into the Result tab of
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
-<br>
+<br><br><br>
 
 <div markdown="1">
-#### Line 109 to 113: Set targeting with custom keywords
+#### Line 105 to 109: Set targeting with custom keywords
 
 `pbjs.setTargetingForGPTAsync()` will now use your custom keywords for targeting. The keywords can also be retrieved from calling `pbjs.getTargetingForGPTAsync()`. The result can be found in the Result tab of this JSFiddle gadget, and we've also copied it below:
 

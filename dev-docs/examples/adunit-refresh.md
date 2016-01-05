@@ -16,13 +16,15 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/embedded/html,result
-code_height: 2150
-code_lines: 139
+code_height: 2480
+code_lines: 133
 
 pid: 10
 ---
 
 
+<br>
+<br>
 <br>
 <br>
 <br>
@@ -44,10 +46,13 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
-<br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br>
+
+
 
 <div markdown="1">
-#### Line 90 to 114: Refresh bids listener
+#### Line 86 to 97: Refresh bids listener
 
 The refresh button for each ad unit triggers its corresponding function call. `pbjs.requestBids` can request bids for only selected ad units. The call will set keyword targeting and refresh the DFP ad units when:
 

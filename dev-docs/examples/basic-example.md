@@ -13,13 +13,14 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/9ow4k8j6/2/embedded/html,result
-code_height: 1670
-code_lines: 107
+code_height: 1890
+code_lines: 101
 
 pid: 10
 ---
 
 
+<br>
 <br>
 <br>
 <br>
@@ -40,6 +41,7 @@ Because GPT sends out all of the the impressions at the first `googletag.display
 
 <br>
 <br>
+<br>
 
 
 <div markdown="1">
@@ -52,6 +54,9 @@ This code pulls down the prebid.js library asynchronously from the appropriate C
 
 </div>
 
+<br>
+<br>
+<br>
 
 <div markdown="1">
 
@@ -62,7 +67,8 @@ It's important to wrap all prebid commands by `pbjs.que.push`. This is because t
 </div>
 
 
-
+<br>
+<br>
 
 <div markdown="1">
 
@@ -74,6 +80,9 @@ For each ad unit, register the header bidding bidders' tag Ids. For example in t
 
 </div>
 
+<br>
+<br>
+<br>
 <br>
 <br>
 <br>
@@ -90,11 +99,10 @@ Prebid.js will send out header bidding requests to all registered bidders once `
 
 <br>
 <br>
-<br>
 
 <div markdown="1">
 
-#### Line 78 to 80: Set keyword targeting
+#### Line 74 to 76: Set keyword targeting
 
 At this point, either the timeout has hit or all prebid bidders have responded. This is a good time to set the keyword targeting and send the impression to the ad server. In this example, `pbjs.setTargetingForGPTAsync()` selects the highest bid among all available ones for each ad unit, and automatically sets targeting on your ad units. Note that the function has to be called after all your GPT slots have been defined.
 

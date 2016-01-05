@@ -281,9 +281,9 @@ table.jsfiddle-line-number {
 }
 
 table.jsfiddle-line-number .line-number {
-    padding-top: 46px;
+    padding-top: 61px;
     vertical-align: text-top;
-    line-height: 15px;
+    line-height: 18px;
     width: 17px;
     color: #aaa;
     font-size: 13px;
