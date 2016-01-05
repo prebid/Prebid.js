@@ -39,7 +39,6 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
-<br><br><br><br><br><br>
 
 <div markdown="1">
 #### Line 55 to 64 and 71 to 80: Define the criteo bid
@@ -58,6 +57,7 @@ If defined multiple time, with the same nid, prebid.js will actually only call c
 
 
 
+<br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
