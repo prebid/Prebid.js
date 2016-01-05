@@ -12,7 +12,7 @@ about:
 - <strong>Bidder Setup for Criteo.</strong>
 - Criteo bidder is called as part of the prebid.js setup
 - keyword are passed to the adserver using the standard RTA integration
-- one set of line item must be set in the adserver to manage criteo bidder separately
+- one set of line item must be set in the adserver to manage criteo bidder separately. Follow Criteo's RTA guideline for the line item setup.
 
 jsfiddle_link: jsfiddle.net/hqz36ew2/1/embedded/html,result
 code_height: 2210
