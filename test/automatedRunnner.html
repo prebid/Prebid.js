@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- Test runner HTML file for executing tests with PhantomJS & displaying results -->
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>TextChanger tests</title>
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css"/>
+</head>
+<body>
+    <div id="mocha"></div>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script>mocha.setup('bdd')</script>
+    <script src="tests-browserify.js"></script>
+    <script>
+        if (window.mochaPhantomJS) {
+            mochaPhantomJS.run();
+        } else {
+            mocha.run();
+        }
+    </script>
+</body>
+</html>
