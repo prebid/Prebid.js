@@ -168,7 +168,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//if there is any key value pairs to map do here
 		var keyValues = {};
 		if (bid.bidderCode && bid.cpm !== 0) {
-			keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+			keyValues = this.getKeyValueTargetingPairs(bid.bidderCode, bid);
 			bid.adserverTargeting = keyValues;
 		}
 
@@ -213,7 +213,7 @@ exports.createEmptyBidResponseObj = function() {
 	};
 };
 
-function getKeyValueTargetingPairs(bidderCode, custBidObj) {
+exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
 	//retrive key value settings
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
@@ -260,7 +260,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 	}
 
 	return keyValues;
-}
+};
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
