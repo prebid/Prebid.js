@@ -216,12 +216,18 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	//copy keyStrings into pb_keyHistoryMap
-	utils.extend(pb_keyHistoryMap, keyStrings);
-	utils._each(pb_keyHistoryMap, function(value, key){
+	//copy keyStrings into pb_keyHistoryMap by code
+	if(!pb_keyHistoryMap[code]){
+		pb_keyHistoryMap[code] = keyStrings;
+	}
+	else{
+		utils.extend(pb_keyHistoryMap[code], keyStrings);
+	}
+	utils._each(pb_keyHistoryMap[code], function(value, key){
 		//since DFP doesn't support deleting a single key, we will set all to empty string
 		//This is "clear" for that key
 		slot.setTargeting(key, '');
+		utils.logMessage('Setting the key : ' + key + ' to empty string for code: ' + code);
 	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
