@@ -104,7 +104,7 @@ gulp.task('codeQuality', ['jshint', 'jscs'], function() {});
 
 gulp.task('default', ['build'], function() {});
 
-gulp.task('serve', ['build-dev', 'watch'], function () {
+gulp.task('serve', ['build-dev', 'watch', 'browser-sync'], function () {
 	var port = 9999;
 	require('http').createServer(ecstatic({
 		root: __dirname
@@ -112,7 +112,7 @@ gulp.task('serve', ['build-dev', 'watch'], function () {
 	console.log('Server started at http://localhost:' + port + '/');
 });
 
-gulp.task('build-dev', ['jscs', 'clean-dist', 'browserify', 'browser-sync', 'unit-tests'], function () {
+gulp.task('build-dev', ['jscs', 'clean-dist', 'browserify', 'unit-tests'], function () {
     gulp.src(['src/prebid.js'])
     .pipe(gulpBrowserify({
         debug: false

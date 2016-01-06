@@ -4,6 +4,7 @@ var assert = require("assert");
 
 //TODO refactor to use the spec files
 var utils = require('../src/utils');
+var bidmanager = require('../src/bidmanager');
 
     describe('replaceTokenInString', function(){
 
@@ -21,5 +22,160 @@ var utils = require('../src/utils');
             var output = utils.replaceTokenInString("hello %FOO%", {}, "%");
 
             assert.equal(output, "hello %FOO%");
+        });
+    });
+
+
+    describe('bidmanager.js', function(){
+
+
+
+        describe('getKeyValueTargetingPairs', function(){
+            var bid = {};
+            var bidPriceCpm = 5.578;
+            var bidPbLg = 5.50;
+            var bidPbMg = 5.50;
+            var bidPbHg = 5.57;
+            var adUnitCode = '12345';
+            var bidderCode = 'appnexus';
+            var size = '300x250';
+            var adId = '1adId';
+
+            before(function() {
+                console.log(pbjs);
+                bid.cpm = bidPriceCpm;
+                bid.pbLg = bidPbLg;
+                bid.pbMg = bidPbMg;
+                bid.pbHg = bidPbHg;
+                bid.height = 300;
+                bid.width = 250;
+                bid.adUnitCode = adUnitCode;
+                bid.getSize = function(){
+                    return this.height + 'x' + this.width;
+                };
+                bid.bidderCode = bidderCode;
+                bid.adId = adId;
+
+            });
+
+
+            it('No bidder level configuration defined - default', function() {
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": bidPbMg,"hb_size": size};
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
+             it('Custom configuration for all bidders', function() {
+                pbjs.bidderSettings = 
+                    {
+                        standard: {
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
+                            }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                    //change default here
+                                    return bidResponse.pbHg;
+                                }
+                            }, {
+                                key: "hb_size",
+                                val: function(bidResponse) {
+                                    return bidResponse.size;
+
+                                }
+                            }]
+                            
+                        }
+                };
+
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": bidPbHg,"hb_size": size};
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
+            it('Custom configuration for one bidder', function() {
+                pbjs.bidderSettings = 
+                    {
+                        appnexus: {
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
+                            }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                    //change default here
+                                    return bidResponse.pbHg;
+                                }
+                            }, {
+                                key: "hb_size",
+                                val: function(bidResponse) {
+                                    return bidResponse.size;
+
+                                }
+                            }]
+                            
+                        }
+                };
+
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": bidPbHg,"hb_size": size};
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
+            it('Custom configuration for one bidder - not matched', function() {
+                pbjs.bidderSettings = 
+                    {
+                        nonExistentBidder: {
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
+                            }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                    //change default here
+                                    return bidResponse.pbHg;
+                                }
+                            }, {
+                                key: "hb_size",
+                                val: function(bidResponse) {
+                                    return bidResponse.size;
+
+                                }
+                            }]
+                            
+                        }
+                };
+
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": bidPbMg,"hb_size": size};
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
         });
     });

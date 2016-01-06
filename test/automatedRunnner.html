@@ -3,20 +3,27 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>TextChanger tests</title>
+    <title>Unit Tests for Prebid.js</title>
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css"/>
 </head>
 <body>
     <div id="mocha"></div>
     <script src="../node_modules/mocha/mocha.js"></script>
+
+   <!-- <script src="lib/blanket.js"></script> -->
+
+
     <script>mocha.setup('bdd')</script>
-    <script src="tests-browserify.js"></script>
+    <script src="tests-browserify.js" data-cover></script>
+
     <script>
+    
         if (window.mochaPhantomJS) {
             mochaPhantomJS.run();
         } else {
             mocha.run();
         }
+        
     </script>
 </body>
 </html>
