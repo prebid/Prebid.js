@@ -214,22 +214,11 @@ exports.createEmptyBidResponseObj = function() {
 };
 
 exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
-	//retrive key value settings
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
-	//first try to add based on bidderCode configuration
-	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-		//
-		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
-	}
-	//next try with defaultBidderSettings
-	else if (defaultBidderSettingsMap[bidderCode]) {
-		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
-		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
-	}
-	//now try with "generic" settings
-	else if (custBidObj && bidder_settings) {
+
+	//1) set the keys from prebid defaults
+	if (custBidObj && bidder_settings) {
 		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
 			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
 				adserverTargeting: [{
@@ -257,6 +246,18 @@ exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
 			};
 		}
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
+	}
+
+	//2) set keys from inherited setting
+	if (defaultBidderSettingsMap[bidderCode]) {
+		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
+		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
+	}
+	//3) set keys from specific bidder setting
+	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
+		//
+		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
 	}
 
 	return keyValues;
