@@ -174,7 +174,7 @@ var bidmanager = require('../src/bidmanager');
 
             });
 
-            it('Custom configuration for one bidder and inherit standard', function() {
+            it('Custom bidCpmAdjustment for one bidder and inherit standard', function() {
                 pbjs.bidderSettings = 
                     {
                         appnexus: {
@@ -199,7 +199,61 @@ var bidmanager = require('../src/bidmanager');
                                     //change default here
                                     return 10.00;
                                 }
+                            }]
+                            
+                        }
+                };
+
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 10.0 };
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
+            it('Custom bidCpmAdjustment AND custom configuration for one bidder and do NOT inherit standard', function() {
+                pbjs.bidderSettings = 
+                    {
+                        appnexus: {
+                            bidCpmAdjustment : function(bidCpm){
+                                return bidCpm * 0.7;
+                            },
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
                             }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                    //change default here
+                                    return 15.00;
+                                }
+                            }]
+                        },
+                        standard: {
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
+                            }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                    //change default here
+                                    return 10.00;
+                                },
+                            },
+                            {
                                 key: "hb_size",
                                 val: function(bidResponse) {
                                     return bidResponse.size;
@@ -210,7 +264,7 @@ var bidmanager = require('../src/bidmanager');
                         }
                 };
 
-                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 10.0 ,"hb_size": size};
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 15.0 };
                 var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
                 assert.deepEqual(response, expected);
 
