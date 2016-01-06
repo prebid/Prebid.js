@@ -5,6 +5,45 @@ var assert = require("assert");
 //TODO refactor to use the spec files
 var utils = require('../src/utils');
 var bidmanager = require('../src/bidmanager');
+var appnexus = require('../src/adapters/appnexus');
+
+    describe('appnexus adapter unit tests', function(){
+
+        var adapterInstance =  null;
+        var bidRequest = {
+            bidder: "appnexus",
+            params: {
+                placementId: "123345",
+                referrer: "url.com",
+                alt_referrer: "url.com",
+                extraParam: "foobar",
+                query : {
+                    foo : 'bar',
+                    tasty : 'treat'
+                }
+            },
+            placementCode: "/19968336/header-bid-tag-0",
+            sizes: [
+                [300, 250],
+                [300, 600]
+            ]
+        };
+        var callbackId = 'cbId';
+
+
+        it('Get instance', function() {
+            adapterInstance = appnexus.createNew();
+            assert.ok(adapterInstance);
+        });
+
+           it('buildJPTCall()', function() {
+                var expectedUrl = 'http://ib.adnxs.com/jpt?callback=pbjs.handleAnCB&callback_uid=cbId&psa=0&id=123345&size=300x250&promo_sizes=300x600&foo=bar&tasty=treat&referrer=url.com&alt_referrer=url.com';
+                var url = adapterInstance.buildJPTCall(bidRequest, callbackId);
+                assert.equal(url, expectedUrl);
+        });
+
+
+    });
 
     describe('replaceTokenInString', function(){
 
