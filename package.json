@@ -1,11 +1,11 @@
 {
   "name": "Prebid.js",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Client Side Auction Library",
   "main": "prebid.js",
   "scripts": {},
   "author": [],
-  "license": "NONE",
+  "license": "Apache-2.0",
   "devDependencies": {
     "browser-sync": "^2.11.0",
     "browserify": "^12.0.1",

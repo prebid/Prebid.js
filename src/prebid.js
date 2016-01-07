@@ -227,14 +227,13 @@ function setGPTAsyncTargeting(code, slot) {
 		//since DFP doesn't support deleting a single key, we will set all to empty string
 		//This is "clear" for that key
 		slot.setTargeting(key, '');
-		utils.logMessage('Setting the key : ' + key + ' to empty string for code: ' + code);
+		//utils.logMessage('Attempting to clear the key : ' + key + ' to empty string for code: ' + code);
 	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
 				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
 				slot.setTargeting(key, keyStrings[key]);
-
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
