@@ -116,11 +116,29 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			jptCall += sizeQueryString + '&';
 		}
 
+		//this will be deprecated soon
 		var targetingParams = utils.parseQueryStringParameters(query);
 
 		if (targetingParams) {
 			//don't append a & here, we have already done it in parseQueryStringParameters
 			jptCall += targetingParams;
+		}
+
+		//append custom attributes:
+		var paramsCopy = utils.extend({}, bid.params);
+		//delete attributes already used
+		delete paramsCopy.placementId;
+		delete paramsCopy.memberId;
+		delete paramsCopy.invCode;
+		delete paramsCopy.query;
+		delete paramsCopy.referrer;
+		delete paramsCopy.alt_referrer;
+
+		//get the reminder
+		var queryParams = utils.parseQueryStringParameters(paramsCopy);
+		//append
+		if (queryParams) {
+			jptCall += queryParams;
 		}
 
 		//append referrer

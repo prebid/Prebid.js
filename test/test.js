@@ -13,10 +13,13 @@ var appnexus = require('../src/adapters/appnexus');
         var bidRequest = {
             bidder: "appnexus",
             params: {
+                memberId : "123",
                 placementId: "123345",
+                invCode : 'inv_code',
                 referrer: "url.com",
                 alt_referrer: "url.com",
                 extraParam: "foobar",
+                somethingElse : 'hello',
                 query : {
                     foo : 'bar',
                     tasty : 'treat'
@@ -37,7 +40,7 @@ var appnexus = require('../src/adapters/appnexus');
         });
 
            it('buildJPTCall()', function() {
-                var expectedUrl = 'http://ib.adnxs.com/jpt?callback=pbjs.handleAnCB&callback_uid=cbId&psa=0&id=123345&size=300x250&promo_sizes=300x600&foo=bar&tasty=treat&referrer=url.com&alt_referrer=url.com';
+                var expectedUrl = 'http://ib.adnxs.com/jpt?callback=pbjs.handleAnCB&callback_uid=cbId&psa=0&id=123345&member_id=123&code=inv_code&size=300x250&promo_sizes=300x600&foo=bar&tasty=treat&extraParam=foobar&somethingElse=hello&referrer=url.com&alt_referrer=url.com';
                 var url = adapterInstance.buildJPTCall(bidRequest, callbackId);
                 assert.equal(url, expectedUrl);
         });
