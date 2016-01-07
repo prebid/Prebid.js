@@ -1,7 +1,11 @@
+
 describe("Publisher API _ Bids", function() {
-    var assert = chai.assert,
-    expect = chai.expect,
-    should = chai.should();
+    var assert = require('chai').assert,
+    expect = require('chai').expect,
+    should = require('chai').should();
+
+    var prebid = require('../../src/prebid');
+
 
     var rightSlotCode = '/19968336/header-bid-tag-0';
     var rightDivCode = 'div-gpt-ad-1438287399331-0';

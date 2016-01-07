@@ -1,5 +1,7 @@
+var assert = require("assert");
+var utils = require('../../src/utils');
+
 describe("Utils", function() {
-  var assert = chai.assert;
 
     describe('replaceTokenInString', function(){
 
@@ -9,12 +11,12 @@ describe("Utils", function() {
                 'zap': 'quux'
             };
 
-            var output = pbjs_testonly.utils_replaceTokenInString("hello %FOO%, I am %ZAP%", tokensToReplace, "%");
+            var output = utils.replaceTokenInString("hello %FOO%, I am %ZAP%", tokensToReplace, "%");
             assert.equal(output, "hello bar, I am quux");
 	    });
 
 	    it('should ignore tokens it does not see', function() {
-            var output = pbjs_testonly.utils_replaceTokenInString("hello %FOO%", {}, "%");
+            var output = utils.replaceTokenInString("hello %FOO%", {}, "%");
 
             assert.equal(output, "hello %FOO%");
         });
@@ -26,7 +28,7 @@ describe("Utils", function() {
 				'a' : 'valueA',
 				'b' : 'valueB'
 			}
-			var output = pbjs_testonly.utils_getBidIdParamater('a',obj);
+			var output = utils.getBidIdParamater('a',obj);
 			assert.equal(output,'valueA');
 		});
 
@@ -35,7 +37,7 @@ describe("Utils", function() {
 				'a' : 'valueA',
 				'b' : 'valueB'
 			}
-			var output = pbjs_testonly.utils_getBidIdParamater('c',obj);
+			var output = utils.getBidIdParamater('c',obj);
 			assert.equal(output,'');
 		});
 	});
@@ -46,7 +48,7 @@ describe("Utils", function() {
 			var key = 'b';
 			var value = 'c';
 
-			var output = pbjs_testonly.utils_tryAppendQueryString(url, key, value);
+			var output = utils.tryAppendQueryString(url, key, value);
 
 			var expectedResult = url + key + "=" + encodeURIComponent(value) + '&';
 			assert.equal(output,expectedResult);
@@ -57,7 +59,7 @@ describe("Utils", function() {
 			var key = 'b';
 			var value = '';
 
-			var output = pbjs_testonly.utils_tryAppendQueryString(url, key, value);
+			var output = utils.tryAppendQueryString(url, key, value);
 			assert.equal(output,url);
 		});
 	});
@@ -69,14 +71,14 @@ describe("Utils", function() {
 				'b':'2'
 			};
 
-			var output = pbjs_testonly.utils_parseQueryStringParameters(obj);
+			var output = utils.parseQueryStringParameters(obj);
 			var expectedResult = "a=" + encodeURIComponent('1') + "&b=" + encodeURIComponent('2') + "&";
 			assert.equal(output,expectedResult);
 		});
 
 		it('should return an empty string, if input obj is empty',function(){
 			var obj ={};
-			var output = pbjs_testonly.utils_parseQueryStringParameters(obj);
+			var output = utils.parseQueryStringParameters(obj);
 			assert.equal(output,'');
 		});
 	});
@@ -88,14 +90,14 @@ describe("Utils", function() {
 				'b':'2'
 			};
 
-			var output = pbjs_testonly.utils_transformAdServerTargetingObj(obj);
+			var output = utils.transformAdServerTargetingObj(obj);
 			var expectedResult = "a=" + encodeURIComponent('1') + "&b=" + encodeURIComponent('2') + "&";
 			assert.equal(output,expectedResult);
 		});
 
 		it('should return an empty string, if input obj is empty',function(){
 			var obj ={};
-			var output = pbjs_testonly.utils_transformAdServerTargetingObj(obj);
+			var output = utils.transformAdServerTargetingObj(obj);
 			assert.equal(output,'');
 		});
 	});
@@ -117,7 +119,7 @@ describe("Utils", function() {
 				'c':'3'
 			};
 
-			var output = pbjs_testonly.utils_extend(target, source);
+			var output = utils.extend(target, source);
 			assert.deepEqual(output,expectedResult);
 		});
 
@@ -127,7 +129,7 @@ describe("Utils", function() {
 				'c':'3'
 			};
 
-			var output = pbjs_testonly.utils_extend(target, source);
+			var output = utils.extend(target, source);
 			assert.deepEqual(output,source);
 		});
 
@@ -138,7 +140,7 @@ describe("Utils", function() {
 			};			
 			var source = {};
 
-			var output = pbjs_testonly.utils_extend(target, source);
+			var output = utils.extend(target, source);
 			assert.deepEqual(output,target);
 		});
 	});
@@ -147,25 +149,25 @@ describe("Utils", function() {
 
 		it('should return query string using multi size array',function(){
 			var sizes = [[728, 90], [970, 90]];
-			var output = pbjs_testonly.utils_parseSizesInput(sizes);
+			var output = utils.parseSizesInput(sizes);
 			assert.equal(output,'size=728x90&promo_sizes=970x90');
 		});
 
 		it('should return query string using single size array',function(){
 			var sizes = [728, 90];
-			var output = pbjs_testonly.utils_parseSizesInput(sizes);
+			var output = utils.parseSizesInput(sizes);
 			assert.equal(output,'size=728x90');
 		});
 
 		it('should return query string using string input',function(){
 			var sizes = '300x250,970x90';
-			var output = pbjs_testonly.utils_parseSizesInput(sizes);
+			var output = utils.parseSizesInput(sizes);
 			assert.equal(output,'size=300x250&promo_sizes=970x90');
 		});
 
 		it('return undefined if input array is empty',function(){
 			var sizes =[];
-			var output = pbjs_testonly.utils_parseSizesInput(sizes);
+			var output = utils.parseSizesInput(sizes);
 			assert.equal(output,undefined);
 		});
 	});
@@ -174,49 +176,49 @@ describe("Utils", function() {
 
 		it('should return size string with input single size array',function(){
 			var size = [300,250];
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,'300x250');
 		});
 
 		it('should return size string with input single size array',function(){
 			var size =['300','250'];
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,'300x250');
 		});
 
 		it('return undefined using string input',function(){
 			var size ='1';
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 
 		it('return undefined using number input',function(){
 			var size =1;
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 
 		it('return undefined using one length single array',function(){
 			var size =[300];
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 
 		it('return undefined if the input is empty',function(){
 			var size ='';
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 
 		it('return undefined if the input is not a number',function(){
 			var size =['foo','bar'];
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 
 		it('return undefined if the input is not a number 2',function(){
 			var size =['foo',300];
-			var output = pbjs_testonly.utils_parseGPTSingleSizeArray(size);
+			var output = utils.parseGPTSingleSizeArray(size);
 			assert.equal(output,undefined);
 		});
 	});
