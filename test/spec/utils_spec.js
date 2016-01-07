@@ -3,6 +3,18 @@ var utils = require('../../src/utils');
 
 describe("Utils", function() {
 
+	var obj_string = 's',
+    obj_number = 1,
+    obj_object = {},
+    obj_array = [],
+    obj_function = function(){};
+
+    var type_string = 'String',
+    type_number = 'Number',
+    type_object = 'Object',
+    type_array = 'Array',
+    type_function = 'Function';
+
     describe('replaceTokenInString', function(){
 
 	    it('should replace all given tokens in a String', function() {
@@ -222,4 +234,166 @@ describe("Utils", function() {
 			assert.equal(output,undefined);
 		});
 	});
+
+	describe('isA',function(){
+		 it('should return true with string object', function() {
+            var output = utils.isA(obj_string,type_string);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with object', function() {
+            var output = utils.isA(obj_object,type_string);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return true with object', function() {
+            var output = utils.isA(obj_object,type_object);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with array object', function() {
+            var output = utils.isA(obj_array,type_object);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return true with array object', function() {
+            var output = utils.isA(obj_array,type_array);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with array object', function() {
+            var output = utils.isA(obj_array,type_function);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return true with function', function() {
+            var output = utils.isA(obj_function,type_function);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with number', function() {
+            var output = utils.isA(obj_function,type_number);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return true with number', function() {
+            var output = utils.isA(obj_number,type_number);
+            assert.deepEqual(output,true);
+        });
+	});
+
+	describe('isFn', function() {
+        it('should return true with input function',function(){
+            var output = utils.isFn(obj_function);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with input string',function(){
+            var output = utils.isFn(obj_string);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input number',function(){
+            var output = utils.isFn(obj_number);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input Array',function(){
+            var output = utils.isFn(obj_array);
+            assert.deepEqual(output,false);
+        });
+
+         it('should return false with input object',function(){
+            var output = utils.isFn(obj_object);
+            assert.deepEqual(output,false);
+        });
+    });
+
+    describe('isStr',function(){
+        it('should return true with input string',function(){
+            var output = utils.isStr(obj_string);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with input number',function(){
+            var output = utils.isStr(obj_number);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input object',function(){
+            var output = utils.isStr(obj_object);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input array',function(){
+            var output = utils.isStr(obj_array);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input function',function(){
+            var output = utils.isStr(obj_function);
+            assert.deepEqual(output,false);
+        });
+
+    });
+
+    describe('isArray',function(){
+        it('should return false with input string',function(){
+            var output = utils.isArray(obj_string);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input number',function(){
+            var output = utils.isArray(obj_number);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with input object',function(){
+            var output = utils.isArray(obj_object);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return true with input array',function(){
+            var output = utils.isArray(obj_array);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with input function',function(){
+            var output = utils.isArray(obj_function);
+            assert.deepEqual(output,false);
+        });
+
+    });
+
+    
+    describe('isEmpty',function(){
+        it('should return true with empty object',function(){
+            var output = utils.isEmpty(obj_object);
+            assert.deepEqual(output,true);
+        });
+
+        it('should return false with non-empty object',function(){
+            var obj = {'a':'b'};
+            var output = utils.isEmpty(obj);
+            assert.deepEqual(output,false);
+        });
+
+        it('should return false with null',function(){
+            var obj = null;
+            var output = utils.isEmpty(obj);
+            assert.deepEqual(output,true);
+        });
+    });
+
+    describe('contains',function(){
+    	it('should return true if the input string contains in the input obj',function(){
+    		var output = utils.contains('123','1');
+    		assert.deepEqual(output,true);
+    	});
+
+    	it('should return false if the input string do not contain in the input obj',function(){
+    		var output = utils.contains('234','1');
+    		assert.deepEqual(output,false);
+    	});
+    });
 });

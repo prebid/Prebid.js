@@ -199,7 +199,6 @@ gulp.task("browserify", function() {
         "./test/test.js",
         "./test/spec/api_spec.js",
         "./test/spec/utils_spec.js",
-        "./test/spec/bids_spec.js",
         "./test/spec/adUnits_spec.js",
         "./test/spec/aliasBidder_spec.js"
     ];
