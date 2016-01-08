@@ -12,16 +12,17 @@ No more week-long development. Header bidding is made easy by prebid.js :)
 **Table of Contents** 
 
 - [Prebid.js](#)
-	- [Usage](#usage)
-		- [Example code](#example-code)
-	- [Contribute](#contribute)
-		- [Add an Bidder Adapter](#add-an-bidder-adapter)
-		- [install](#install)
-		- [Build](#build)
-		- [Configure](#configure)
-		- [Run](#run)
+    - [Usage](#usage)
+        - [Example code](#example-code)
+    - [API](#api)
+    - [Contribute](#contribute)
+        - [Add an Bidder Adapter](#add-an-bidder-adapter)
+        - [install](#install)
+        - [Build](#build)
+        - [Configure](#configure)
+        - [Run](#run)
 
-	
+    
 Usage
 ----------
 Download the integration example [here](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/pbjs_example_gpt.html). 
@@ -43,7 +44,7 @@ Note that you need to host `prebid.js` locally or on a CDN and update the refere
 **Setup ad units**
 ```javascript
 pbjs.que.push(function(){
-	var adUnits = [{
+    var adUnits = [{
         code: '{id}',
         sizes: [[300, 250], [300, 600]],
         bids: [
@@ -55,7 +56,7 @@ pbjs.que.push(function(){
             }
         ]
     }];
-	//add the adUnits
+    //add the adUnits
     pbjs.addAdUnits(adUnits);
 });
 ```
@@ -74,26 +75,32 @@ pbjs.que.push(function(){
 **See Console Debug Errors during testing**
 By default console errors are supressed. To enabled add `?pbjs_debug=true` to the end of the URL for testing. 
 
+API
+----------
+Full Developer API reference:
+
+[Click here to access the API](http://prebid.org/dev-docs/publisher-api-reference.html)
+
 Contribute
 ----------
 
 ### Add an Bidder Adapter ###
-Follow the [guide outlined here](http://prebid.org/bidder-adaptor.html) to add an adapter. 
+Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter. 
 
 ### install ###
-	$ sudo npm install
+    $ sudo npm install
 
 ### Build ###
-	$ gulp build
+    $ gulp build
 
 ### Configure ###
 Edit `./integrationExamples/gpt/pbjs_example_gpt.html`
 
 Change `{id}` values appropriately 
-	
+    
 ### Run ###
 
-	$ gulp serve
+    $ gulp serve
 
 Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html to run the example file
 
