@@ -98,6 +98,14 @@
                     params: {
                         tagid: '123' // <String> tag Id
                     }
+            },
+            {
+                bidder: 'pulsepoint',
+                params: {
+                        cf: '300X250',
+                        cp: 521732,
+                        ct: 76835
+                }
             }
             ]
     },{
@@ -114,6 +122,12 @@
                     pgid: 'TO ADD',
                     unit: 'TO ADD',
                     jstag_url : 'TO ADD'
+                }
+            },{
+                bidder: 'aol',
+                params: {
+                    placement: 'TO ADD',
+                    network: 'TO ADD'
                 }
             },{
                 bidder: 'rubicon',
@@ -134,10 +148,12 @@
             },
               {
                 bidder: 'indexExchange',
-                siteID: 'TO ADD',
-                timeout: 'TO ADD',
                 params: {
                     id: 'TO ADD',
+                	siteID: 'TO ADD',
+                	timeout: 'TO ADD', //Optional
+                	tier2SiteID: 'TO ADD', //Optional
+                	tier3SiteID: 'TO ADD' //Optional
                 }
             }]
     }];
@@ -215,6 +231,9 @@
             ]
         },
         appnexus: {
+            bidCpmAdjustment : function(bidCpm){
+                return bidCpm * .9;
+            },
             alwaysUseBid : true, // <-- new field - always send these custom keys for the specified bidder
             adserverTargeting: [{
                 key: "custom_bidder",

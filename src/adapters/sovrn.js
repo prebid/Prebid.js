@@ -38,18 +38,18 @@ var SovrnAdapter = function SovrnAdapter() {
 		// build bid request object
 		var domain = window.location.host;
 		var page = window.location.pathname + location.search + location.hash;
-		
+
 		var sovrnImps = [];
 		//assign the first adUnit (placement) for bad bids;
 		defaultPlacementForBadBid  = bidReqs[0].placementCode;
-		
+
 		//build impression array for sovrn
 		utils._each(bidReqs, function(bid)
 		{
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
 			var adW=0,adH=0;
-			
+
 			//sovrn supports only one size per tagid, so we just take the first size if there are more
 			//if we are a 2 item array of 2 numbers, we must be a SingleSize array
 			var sizeArrayLength = bid.sizes.length;
@@ -62,7 +62,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					adW=bid.sizes[0][0];
 					adH=bid.sizes[0][1];
 				}
-			imp = 
+			imp =
 				{
 					id: utils.getUniqueIdentifierStr(),
 					banner: {
@@ -80,13 +80,13 @@ var SovrnAdapter = function SovrnAdapter() {
 		var sovrnBidReq = {
 			id: utils.getUniqueIdentifierStr(),
 			imp: sovrnImps,
-			site:{ 
+			site:{
 				domain: domain,
 				page: page
 			}
 		};
 
-		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' + 
+		var scriptUrl = '//'+sovrnUrl+'?callback=window.pbjs.sovrnResponse' +
 			'&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
 		adloader.loadScript(scriptUrl, null);
 	}
@@ -104,7 +104,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					var responseCPM;
 					var placementCode = '';
 					var id = sovrnBid.impid;
-					
+
 					// try to fetch the bid request we sent Sovrn
 					var	bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
 					if (bidObj){
@@ -114,11 +114,11 @@ var SovrnAdapter = function SovrnAdapter() {
 						//place ad response on bidmanager._adResponsesByBidderId
 						responseCPM = parseFloat(sovrnBid.price);
 
-						if(responseCPM !== 0) {		
+						if(responseCPM !== 0) {
 							sovrnBid.placementCode = placementCode;
 							sovrnBid.size = bidObj.sizes;
 							var responseAd = sovrnBid.adm;
-							
+
 							// build impression url from response
 							var responseNurl = '<img src="'+sovrnBid.nurl+'">';
 
@@ -128,29 +128,37 @@ var SovrnAdapter = function SovrnAdapter() {
 							bid.creative_id = sovrnBid.Id;
 							bid.bidderCode = 'sovrn';
 							bid.cpm = responseCPM;
-						
+
 							//set ad content + impression url
 							// sovrn returns <script> block, so use bid.ad, not bid.adurl
-							bid.ad = decodeURIComponent(responseAd+responseNurl);		
-							bid.width = bidObj.sizes[0][0];
-							bid.height = bidObj.sizes[0][1];
-			
+							bid.ad = decodeURIComponent(responseAd+responseNurl);
+							var sizeArrayLength = bidObj.sizes.length;
+							if (sizeArrayLength === 2 && typeof bidObj.sizes[0] === 'number' && typeof bidObj.sizes[1] === 'number') {
+									bid.width = bidObj.sizes[0];
+									bid.height = bidObj.sizes[1];
+								}
+							else
+								{
+									bid.width = bidObj.sizes[0][0];
+									bid.height = bidObj.sizes[0][1];
+								}
+
 							bidmanager.addBidResponse(placementCode, bid);
-							
+
 						}	else {
 							//0 price bid
 							//indicate that there is no bid for this placement
 							bid = bidfactory.createBid(2);
 							bid.bidderCode = 'sovrn';
 							bidmanager.addBidResponse(placementCode, bid);
-							
+
 						}
 					} else {   // bid not found, we never asked for this?
 						//no response data
 						bid = bidfactory.createBid(2);
 						bid.bidderCode = 'sovrn';
 						bidmanager.addBidResponse(placementCode, bid);
-					} 
+					}
 				});
 			} else {
 				//no response data

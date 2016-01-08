@@ -211,7 +211,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 	var slotIdMap = {};
 	var requiredParams = [
 		/* 0 */
-		'id'
+		'id',
+		/* 1 */
+		'siteID'
 	];
 	var firstAdUnitCode = '';
 
@@ -222,41 +224,12 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 			return;
 		}
 
-		var bid;
-
-		var tier2SiteID;
-		var tier3SiteID;
-
-		//Grab the global data for cygnus_index_args
-		for (var i = 0; i < bidArr.length; i++) {
-			bid = bidArr[i];
-
-			if (bid.timeout) {
-				cygnus_index_args.timeout = bid.timeout;
-			}
-
-			if (bid.siteID) {
-				cygnus_index_args.siteID = bid.siteID;
-			}
-
-			if (bid.tier2SiteID) {
-				tier2SiteID = bid.tier2SiteID;
-			}
-
-			if (bid.tier3SiteID) {
-				tier3SiteID = bid.tier3SiteID;
-			}
-		}
-
-		if (!cygnus_index_args.siteID) {
-			return;
-		}
-
 		cygnus_index_args.slots = [];
 		var bidCount = 0;
+
 		//Grab the slot level data for cygnus_index_args
 		for (i = 0; i < bidArr.length; i++) {
-			bid = bidArr[i];
+			var bid = bidArr[i];
 
 			var width;
 			var height;
@@ -272,12 +245,20 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				}
 			}
 
-			if (bid.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
+			if (bid.params.timeout && typeof cygnus_index_args.timeout === 'undefined') {
+				cygnus_index_args.timeout = bid.params.timeout;
+			}
+
+			if (bid.params.siteID && typeof cygnus_index_args.timeout === 'undefined') {
+				cygnus_index_args.siteID = bid.params.siteID;
+			}
+
+			if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
 				cygnus_index_args.slots.push({
 					id:"SPQS",
-					width: bid.sqps.width,
-					height: bid.sqps.height,
-					siteID: bid.sqps.siteID || cygnus_index_args.siteID
+					width: bid.params.sqps.width,
+					height: bid.params.sqps.height,
+					siteID: bid.params.sqps.siteID || cygnus_index_args.siteID
 				});
 			}
 
@@ -296,20 +277,20 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 					bidCount++;
 
-					if (bid.params.tier2SiteID || tier2SiteID) {
+					if (bid.params.tier2SiteID) {
 						cygnus_index_args.slots.push({
 							id: "T1_"+bid.params.id,
 							width: width,
 							height: height,
-							siteID: bid.params.tier2SiteID || tier2SiteID
+							siteID: bid.params.tier2SiteID
 						});
 					}
-					if (bid.params.tier3SiteID || tier3SiteID) {
+					if (bid.params.tier3SiteID) {
 						cygnus_index_args.slots.push({
 							id:"T2_"+bid.params.id,
 							width:width,
 							height:height,
-							siteID:bid.params.tier3SiteID || tier3SiteID
+							siteID:bid.params.tier3SiteID
 						});
 					}
 				}
@@ -344,12 +325,12 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 							bid = bidfactory.createBid(1);
 							bid.cpm = currentCPM / 100;
-							bid.ad = adContents;
+							bid.ad = adContents[0];
 							bid.ad_id = adSlotId;
 							bid.bidderCode = ADAPTER_CODE;
 							bid.width = slotObj.width;
 							bid.height = slotObj.height;
-							bid.siteId = slotObj.siteID;
+							bid.siteID = slotObj.siteID;
 
 							bidmanager.addBidResponse(adUnitCode, bid);
 						}

@@ -423,3 +423,10 @@ exports._map = function (object, callback) {
   return output;
 };
 
+var hasOwn = function(objectToCheck, propertyToCheckFor) {
+    if (objectToCheck.hasOwnProperty) {
+        return objectToCheck.hasOwnProperty(propertyToCheckFor);
+    } else {
+        return (typeof objectToCheck[propertyToCheckFor] !== UNDEFINED) && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
+    }
+};
