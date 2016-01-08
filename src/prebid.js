@@ -500,8 +500,8 @@ function getTargetingfromGPTIdentifier(slot){
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {
-	pbjs.setTargetingForAdUnitsGPTAsync();
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -571,7 +571,7 @@ pbjs.renderAd = function(doc, id) {
 
 
 /*
- *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
@@ -580,7 +580,7 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request bids for adUnits passed into function
+ * @deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
