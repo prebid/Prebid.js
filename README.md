@@ -13,6 +13,7 @@ No more week-long development. Header bidding is made easy by prebid.js :)
 
 - [Prebid.js](#)
     - [Usage](#usage)
+        - [Download the latest released code](#download-the-latest-released-code)
         - [Example code](#example-code)
     - [API](#api)
     - [Contribute](#contribute)
@@ -26,6 +27,9 @@ No more week-long development. Header bidding is made easy by prebid.js :)
 Usage
 ----------
 Download the integration example [here](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/pbjs_example_gpt.html). 
+
+### Download the latest released code ###
+[See the releases page here](https://github.com/prebid/Prebid.js/releases) and download a copy.
 
 ### Example code ###
 
