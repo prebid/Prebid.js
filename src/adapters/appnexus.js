@@ -97,18 +97,12 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var referrer = utils.getBidIdParamater('referrer', bid.params);
 		var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
 
-
 		//build our base tag, based on if we are http or https
 
 		var jptCall = 'http' + ('https:' === document.location.protocol ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
-		//var combinedTargetingParamsList = combineTargetingParams(bidOpts);
-
-		//callback is the callback function to call, this should be hard-coded to pbjs.handleCb once AL-107 is released
-		jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleCB');
+		jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
 		jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
-
-		//disable PSAs here, as per RAD-503
 		jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
 		jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
 		jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
@@ -121,13 +115,30 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		if (sizeQueryString) {
 			jptCall += sizeQueryString + '&';
 		}
-		//console.log(jptCall);
 
+		//this will be deprecated soon
 		var targetingParams = utils.parseQueryStringParameters(query);
 
 		if (targetingParams) {
 			//don't append a & here, we have already done it in parseQueryStringParameters
 			jptCall += targetingParams;
+		}
+
+		//append custom attributes:
+		var paramsCopy = utils.extend({}, bid.params);
+		//delete attributes already used
+		delete paramsCopy.placementId;
+		delete paramsCopy.memberId;
+		delete paramsCopy.invCode;
+		delete paramsCopy.query;
+		delete paramsCopy.referrer;
+		delete paramsCopy.alt_referrer;
+
+		//get the reminder
+		var queryParams = utils.parseQueryStringParameters(paramsCopy);
+		//append
+		if (queryParams) {
+			jptCall += queryParams;
 		}
 
 		//append referrer
@@ -150,15 +161,12 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		//append a timer here to track latency
 		bid.startTime = new Date().getTime();
 
-		//track initial request
-		//adloader.trackPixel(timeTrackerBidRequested); //TODO add this back in and figure out where it goes and what it does
-
 		return jptCall;
 
 	}
 
 	//expose the callback to the global object:
-	pbjs.handleCB = function(jptResponseObj) {
+	pbjs.handleAnCB = function(jptResponseObj) {
 
 	 	var bidCode;
 
@@ -199,11 +207,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				var responseAd = jptResponseObj.result.ad;
 				//store bid response
 				//bid status is good (indicating 1)
-				//TODO refactor to pass a Bid object instead of multiple params
-				//bidmanager.addBidResponse(statusCode, placementCode, bidderCode, custObj, cpm, ad, width, height, dealId, isDeal, tier, adId )
 				var adId = jptResponseObj.result.creative_id;
 				bid = bidfactory.createBid(1);
-				//bid.adId = adId;
 				bid.creative_id = adId;
 				bid.bidderCode = bidCode;
 				bid.cpm = responseCPM;
@@ -212,7 +217,6 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				bid.height = jptResponseObj.result.height;
 				bid.dealId = jptResponseObj.result.deal_id;
 
-				//bidmanager.addBidResponse(1, placementCode, 'appnexus', jptResponseObj, responseCPM, jptResponseObj.result.ad, jptResponseObj.result.width, jptResponseObj.result.height, '', false, '',  jptResponseObj.result.creative_id );
 				bidmanager.addBidResponse(placementCode, bid);
 
 
@@ -242,7 +246,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 	return {
 		callBids: baseAdapter.callBids,
 		setBidderCode: baseAdapter.setBidderCode,
-		createNew: exports.createNew
+		createNew: exports.createNew,
+		buildJPTCall : buildJPTCall
 	};
 };
 
