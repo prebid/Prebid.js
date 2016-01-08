@@ -249,7 +249,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				cygnus_index_args.timeout = bid.params.timeout;
 			}
 
-			if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
+			if (bid.params.siteID && typeof cygnus_index_args.timeout === 'undefined') {
 				cygnus_index_args.siteID = bid.params.siteID;
 			}
 
