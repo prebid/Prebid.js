@@ -1,5 +1,5 @@
 /* Prebid.js v0.5.0 
-Updated : 2016-01-07 */
+Updated : 2016-01-11 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -886,7 +886,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				cygnus_index_args.timeout = bid.params.timeout;
 			}
 
-			if (bid.params.siteID && typeof cygnus_index_args.timeout === 'undefined') {
+			if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
 				cygnus_index_args.siteID = bid.params.siteID;
 			}
 
@@ -3055,8 +3055,8 @@ function getTargetingfromGPTIdentifier(slot){
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {
-	pbjs.setTargetingForAdUnitsGPTAsync();
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -3126,7 +3126,7 @@ pbjs.renderAd = function(doc, id) {
 
 
 /*
- *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
@@ -3135,7 +3135,7 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request bids for adUnits passed into function
+ * @deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
