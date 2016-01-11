@@ -396,4 +396,80 @@ describe("Utils", function() {
     		assert.deepEqual(output,false);
     	});
     });
+
+    describe('_map',function(){
+    	it('return empty array when input object is empty',function(){
+    		var input = {};
+    		var callback = function(){};
+    		var output = utils._map(input,callback);
+    		assert.deepEqual(output,[]);
+    	});
+
+    	it('return value array with vaild input object',function(){
+    		var input = { 'a':'A','b':'B'};
+    		var callback = function(v){return v;};
+    		var output = utils._map(input,callback);
+    		assert.deepEqual(output,['A','B']);
+    	});
+
+    	it('return value array with vaild input object_callback func changed 1',function(){
+    		var input = { 'a':'A','b':'B'};
+    		var callback = function(v,k){return v+k;};
+    		var output = utils._map(input,callback);
+    		assert.deepEqual(output,['Aa','Bb']);
+    	});
+
+    	it('return value array with vaild input object_callback func changed 2',function(){
+    		var input = { 'a':'A','b':'B'};
+    		var callback = function(v,k,o){return o;};
+    		var output = utils._map(input,callback);
+    		assert.deepEqual(output,[input,input]);
+    	});
+    });
+
+	describe('createInvisibleIframe',function(){
+		var output = utils.createInvisibleIframe();
+
+		it('return iframe - id',function(){
+			assert.ok(output.id);
+		});
+		it('return iframe - height',function(){
+			assert.deepEqual(output.height,0);
+		});
+		it('return iframe - width',function(){
+			assert.deepEqual(output.width,0);
+		});
+		it('return iframe - border',function(){
+			assert.deepEqual(output.border,'0px');
+		});
+		it('return iframe - hspace',function(){
+			assert.deepEqual(output.hspace,'0');
+		});
+		it('return iframe - vspace',function(){
+			assert.deepEqual(output.vspace,'0');
+		});
+		it('return iframe - marginWidth',function(){
+			assert.deepEqual(output.marginWidth,'0');
+		});
+		it('return iframe - marginHeight',function(){
+			assert.deepEqual(output.marginHeight,'0');
+		});
+		it('return iframe - style.border',function(){
+			assert.deepEqual(output.style.border,'0px');
+		});
+		it('return iframe - scrolling',function(){
+			assert.deepEqual(output.scrolling,'no');
+		});
+		it('return iframe - frameBorder',function(){
+			assert.deepEqual(output.frameBorder,'0');
+		});
+		it('return iframe - src',function(){
+			assert.deepEqual(output.src,'about:self');
+		});
+		it('return iframe - style',function(){
+			assert.ok(output.style);
+		});
+	});
+
+
 });
