@@ -1,7 +1,7 @@
 {
   "name": "prebid.js",
   "version": "0.5.0",
-  "description": "Client Side Auction Library",
+  "description": "Header Bidding Management Library",
   "main": "prebid.js",
   "scripts": {},
   "author": [],
