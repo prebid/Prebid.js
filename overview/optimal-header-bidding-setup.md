@@ -5,6 +5,9 @@ description: What is the optimal header bidding setup and some common problems.
 
 pid: 10
 
+
+show_disqus: true
+
 top_nav_section: overview
 nav_section: studies
 
@@ -28,7 +31,7 @@ nav_section: studies
 <div class="col-sm-6" markdown="1">
 
 
-This setup (captured using Headerbid Expert) has demonstrated a few facts that made it an ideal header bidding auction.
+This setup (captured using [Headerbid Expert](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop)) has demonstrated a few facts that made it an ideal header bidding auction.
 
 **1. Asynchronous Calls**
 All calls from the header bidding partners are asynchronous. The calls do not block the page, other header bidding partners, or the ad server from loading.
@@ -135,4 +138,19 @@ The ad server sees the impression and header bidding info immediately after all 
 </div>
 </div>
 
+<br>
+
+### Analyze Your Own Site
+
+Add the Plugin [Headerbid Expert](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop) to your browser.
+
+<div class="pb-md-img">
+<a href="https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop" target="_blank"><img src="/assets/images/hb-expert/headerbid-expert-logo.png" style="cursor:pointer">
+</a>
 </div>
+
+
+</div>
+
+
+
