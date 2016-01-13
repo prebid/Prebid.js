@@ -98,6 +98,14 @@
                     params: {
                         tagid: '123' // <String> tag Id
                     }
+            },
+            {
+                bidder: 'pulsepoint',
+                params: {
+                        cf: '300X250',
+                        cp: 521732,
+                        ct: 76835
+                }
             }
             ]
     },{
@@ -140,10 +148,12 @@
             },
               {
                 bidder: 'indexExchange',
-                siteID: 'TO ADD',
-                timeout: 'TO ADD',
                 params: {
-                    id: 'TO ADD',
+                    id: 'TO ADD',        //String - required
+                	siteID: TO ADD,      //Number - required
+                	timeout: TO ADD,     //Number - Optional
+                	tier2SiteID: TO ADD, //Number - Optional
+                	tier3SiteID: TO ADD  //Number - Optional
                 }
             }]
     }];

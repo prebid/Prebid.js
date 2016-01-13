@@ -1,12 +1,14 @@
 {
-  "name": "Prebid.js",
-  "version": "0.4.1",
-  "description": "Client Side Auction Library",
+  "name": "prebid.js",
+  "version": "0.5.0",
+  "description": "Header Bidding Management Library",
   "main": "prebid.js",
   "scripts": {},
   "author": [],
-  "license": "NONE",
+  "license": "Apache-2.0",
   "devDependencies": {
+    "browser-sync": "^2.11.0",
+    "browserify": "^12.0.1",
     "del": "^1.1.1",
     "ecstatic": "^0.8.0",
     "gulp": "^3.9.0",
@@ -19,6 +21,7 @@
     "gulp-jsdoc-to-markdown": "^1.1.1",
     "gulp-jshint": "^1.9.2",
     "gulp-mocha": "^2.1.3",
+    "gulp-mocha-phantomjs": "^0.10.1",
     "gulp-notify": "^2.2.0",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.5.0",
@@ -27,7 +30,11 @@
     "gulp-util": "^3.0.6",
     "gulp-zip": "^3.0.2",
     "jsdoc-to-markdown": "^1.1.1",
-    "jshint-stylish": "^2.0.1"
+    "jshint-stylish": "^2.0.1",
+    "mocha": "^2.3.4",
+    "mocha-phantomjs": "^4.0.2",
+    "preprocessify": "0.0.6",
+    "vinyl-source-stream": "^1.1.0"
   },
   "dependencies": {}
 }

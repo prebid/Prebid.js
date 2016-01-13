@@ -168,7 +168,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//if there is any key value pairs to map do here
 		var keyValues = {};
 		if (bid.bidderCode && bid.cpm !== 0) {
-			keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+			keyValues = this.getKeyValueTargetingPairs(bid.bidderCode, bid);
 			bid.adserverTargeting = keyValues;
 		}
 
@@ -213,22 +213,28 @@ exports.createEmptyBidResponseObj = function() {
 	};
 };
 
-function getKeyValueTargetingPairs(bidderCode, custBidObj) {
-	//retrive key value settings
+function setDefaultAdServerTargeting (){
+
+
+}
+
+exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
-	//first try to add based on bidderCode configuration
-	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-		//
+
+	//1) set keys from specific bidder setting if they exist
+	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
 	}
-	//next try with defaultBidderSettings
+
+	//2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
 	else if (defaultBidderSettingsMap[bidderCode]) {
 		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
 	}
-	//now try with "generic" settings
+
+	//3) set the keys from "standard" setting or from prebid defaults
 	else if (custBidObj && bidder_settings) {
 		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
 			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
@@ -259,8 +265,11 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
+	
+	
+
 	return keyValues;
-}
+};
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
@@ -441,7 +450,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
 function adjustBids(bid){
 	var code = bid.bidderCode;
 	var bidPriceAdjusted = bid.cpm; 
-	if(code && pbjs.bidderSettings[code]){
+	if(code && pbjs.bidderSettings && pbjs.bidderSettings[code]){
 		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
 			try{
 				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);

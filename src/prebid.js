@@ -216,19 +216,24 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	//copy keyStrings into pb_keyHistoryMap
-	utils.extend(pb_keyHistoryMap, keyStrings);
-	utils._each(pb_keyHistoryMap, function(value, key){
+	//copy keyStrings into pb_keyHistoryMap by code
+	if(!pb_keyHistoryMap[code]){
+		pb_keyHistoryMap[code] = keyStrings;
+	}
+	else{
+		utils.extend(pb_keyHistoryMap[code], keyStrings);
+	}
+	utils._each(pb_keyHistoryMap[code], function(value, key){
 		//since DFP doesn't support deleting a single key, we will set all to empty string
 		//This is "clear" for that key
 		slot.setTargeting(key, '');
+		//utils.logMessage('Attempting to clear the key : ' + key + ' to empty string for code: ' + code);
 	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
 				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
-
+				slot.setTargeting(key, keyStrings[key]);
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
@@ -236,7 +241,7 @@ function setGPTAsyncTargeting(code, slot) {
 	}
 }
 /*
- *   This function returns the object map of placemnts or
+ *   This function returns the object map of placements or
  *   if placement code is specified return just 1 placement bids
  */
 function getBidResponsesByAdUnit(adunitCode) {
@@ -495,8 +500,8 @@ function getTargetingfromGPTIdentifier(slot){
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {
-	pbjs.setTargetingForAdUnitsGPTAsync();
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -566,7 +571,7 @@ pbjs.renderAd = function(doc, id) {
 
 
 /*
- *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
@@ -575,7 +580,7 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request bids for adUnits passed into function
+ * @deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
@@ -865,12 +870,61 @@ pbjs.sendTimeoutEvent = function(){
 	timeOutBidders();
 };
 
+pbjs.aliasBidder = function(bidderCode,alias){
+
+	if(bidderCode && alias){
+		adaptermanager.aliasBidAdapter(bidderCode,alias);
+	}
+	else{
+		utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
+	}
+	
+};
+
 
 processQue();
 
+// @ifdef DEBUG
 //only for test
 pbjs_testonly = {};
 
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
+
+pbjs_testonly.clearAllAdUnits = function(){
+	pbjs.adUnits =[];
+};
+
+pbjs_testonly.utils_replaceTokenInString = function(str, map, token){
+	return utils.replaceTokenInString(str, map, token);
+};
+
+pbjs_testonly.utils_getBidIdParamater = function(key, paramsObj) {
+	return utils.getBidIdParamater(key, paramsObj);
+};
+
+pbjs_testonly.utils_tryAppendQueryString = function(existingUrl, key, value){
+	return utils.tryAppendQueryString(existingUrl, key, value);
+};
+
+pbjs_testonly.utils_parseQueryStringParameters = function(obj){
+	return utils.parseQueryStringParameters(obj);
+};
+
+pbjs_testonly.utils_transformAdServerTargetingObj = function(obj){
+	return utils.transformAdServerTargetingObj(obj);
+};
+
+pbjs_testonly.utils_extend = function(target, source){
+	return utils.extend(target, source);
+};
+
+pbjs_testonly.utils_parseSizesInput = function(obj){
+	return utils.parseSizesInput(obj);
+};
+
+pbjs_testonly.utils_parseGPTSingleSizeArray = function(singleSize){
+	return utils.parseGPTSingleSizeArray(singleSize);
+};
+// @endif

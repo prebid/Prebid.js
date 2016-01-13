@@ -1,5 +1,5 @@
-/* Prebid.js v0.4.1 
-Updated : 2015-12-08 */
+/* Prebid.js v0.5.0 
+Updated : 2016-01-11 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -12,6 +12,7 @@ var CriteoAdapter = require('./adapters/criteo');
 var YieldbotAdapter = require('./adapters/yieldbot');
 var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
+var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -45,25 +46,54 @@ exports.callBids = function(bidderArr) {
 				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
 			}
 		}
+		else{
+			utils.logError('Adapter trying to be called which does not exist: ' + bidder.bidderCode, 'adaptermanager.callBids');
+		}
 	}
 };
 
 
 exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 	if (bidAdaptor && bidderCode) {
+
 		if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
 			_bidderRegistry[bidderCode] = bidAdaptor;
+
 		} else {
 			utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
 		}
+		
 	} else {
 		utils.logError('bidAdaptor or bidderCode not specified');
 	}
 };
 
+exports.aliasBidAdapter = function(bidderCode, alias){
+	var existingAlias = _bidderRegistry[alias];
+
+	if(typeof existingAlias === CONSTANTS.objectType_undefined){
+		var bidAdaptor = _bidderRegistry[bidderCode];
+
+		if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
+			utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+		}else{
+			try{
+				var newAdapter = bidAdaptor.createNew();
+				newAdapter.setBidderCode(alias);
+				this.registerBidAdapter(newAdapter,alias);
+			}catch(e){
+				utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+			}
+		}
+	}else{
+		utils.logMessage('alias name "' + alias + '" has been already specified.');
+	}
+};
+
+
 // Register the bid adaptors here
 this.registerBidAdapter(RubiconAdapter(), 'rubicon');
-this.registerBidAdapter(AppNexusAdapter(), 'appnexus');
+this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
 this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 this.registerBidAdapter(CriteoAdapter(), 'criteo');
@@ -71,8 +101,34 @@ this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
 this.registerBidAdapter(AolAdapter(), 'aol');
+this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
 
-},{"./adapters/aol":2,"./adapters/appnexus.js":3,"./adapters/criteo":4,"./adapters/indexExchange":5,"./adapters/openx":6,"./adapters/pubmatic.js":7,"./adapters/rubicon.js":8,"./adapters/sovrn":9,"./adapters/yieldbot":10,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./utils.js":18}],2:[function(require,module,exports){
+},{"./adapters/aol":3,"./adapters/appnexus.js":4,"./adapters/criteo":5,"./adapters/indexExchange":6,"./adapters/openx":7,"./adapters/pubmatic.js":8,"./adapters/pulsepoint.js":9,"./adapters/rubicon.js":10,"./adapters/sovrn":11,"./adapters/yieldbot":12,"./bidmanager.js":15,"./constants.json":16,"./events":17,"./utils.js":20}],2:[function(require,module,exports){
+function Adapter(code){
+	var bidderCode = code;
+
+	function setBidderCode(code){
+		bidderCode = code;
+	}
+
+	function getBidderCode(){
+		return bidderCode;
+	}
+
+	function callBids(){
+	}
+
+	return {
+		callBids: callBids,
+		setBidderCode: setBidderCode,
+		getBidderCode: getBidderCode
+	};
+}
+
+exports.createNew = function(bidderCode){
+	return new Adapter(bidderCode);
+};
+},{}],3:[function(require,module,exports){
 var utils = require('../utils.js'),
 	bidfactory = require('../bidfactory.js'),
 	bidmanager = require('../bidmanager.js'),
@@ -257,19 +313,16 @@ var AolAdapter = function AolAdapter() {
 };
 
 module.exports = AolAdapter;
-},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../utils.js":18}],3:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory.js":14,"../bidmanager.js":15,"../utils.js":20}],4:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
-
-/* AppNexus bidder factory function
- *  Use to create a AppNexusAdapter object
- */
- 
+var Adapter = require('./adapter.js');
 
 var AppNexusAdapter = function AppNexusAdapter() {
+	var baseAdapter = Adapter.createNew('appnexus');
 	var isCalled = false;
 
 	//time tracking buckets, to be used to track latency within script
@@ -304,14 +357,14 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		return 'https://secure.adnxs.com/imptr?id=' + id + '&t=2';
 	}
 
+	baseAdapter.callBids = function(params){
+	 	var bidCode = baseAdapter.getBidderCode();
 
-	function callBids(params) {
-		//console.log(params);
-		var anArr = params.bids;
+	 	var anArr = params.bids;
 		var bidsCount = anArr.length;
 
 		//set expected bids count for callback execution
-		bidmanager.setExpectedBidsCount('appnexus',bidsCount);
+		bidmanager.setExpectedBidsCount(bidCode,bidsCount);
 
 		for (var i = 0; i < bidsCount; i++) {
 			var bidReqeust = anArr[i];
@@ -320,9 +373,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			//store a reference to the bidRequest from the callback id
 			bidmanager.pbCallbackMap[callbackId] = bidReqeust;
 		}
+	};
 
-	}
-	//given a starttime and an end time, hit the correct impression tracker
+		//given a starttime and an end time, hit the correct impression tracker
 	function processAndTrackLatency(startTime, endTime, placementCode) {
 
 		if (startTime && endTime) {
@@ -360,18 +413,12 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		var referrer = utils.getBidIdParamater('referrer', bid.params);
 		var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
 
-
 		//build our base tag, based on if we are http or https
 
 		var jptCall = 'http' + ('https:' === document.location.protocol ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
-		//var combinedTargetingParamsList = combineTargetingParams(bidOpts);
-
-		//callback is the callback function to call, this should be hard-coded to pbjs.handleCb once AL-107 is released
-		jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleCB');
+		jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
 		jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
-
-		//disable PSAs here, as per RAD-503
 		jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
 		jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
 		jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
@@ -384,13 +431,30 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		if (sizeQueryString) {
 			jptCall += sizeQueryString + '&';
 		}
-		//console.log(jptCall);
 
+		//this will be deprecated soon
 		var targetingParams = utils.parseQueryStringParameters(query);
 
 		if (targetingParams) {
 			//don't append a & here, we have already done it in parseQueryStringParameters
 			jptCall += targetingParams;
+		}
+
+		//append custom attributes:
+		var paramsCopy = utils.extend({}, bid.params);
+		//delete attributes already used
+		delete paramsCopy.placementId;
+		delete paramsCopy.memberId;
+		delete paramsCopy.invCode;
+		delete paramsCopy.query;
+		delete paramsCopy.referrer;
+		delete paramsCopy.alt_referrer;
+
+		//get the reminder
+		var queryParams = utils.parseQueryStringParameters(paramsCopy);
+		//append
+		if (queryParams) {
+			jptCall += queryParams;
 		}
 
 		//append referrer
@@ -406,22 +470,18 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			jptCall = jptCall.substring(0, jptCall.length - 1);
 		}
 
-		// @if NODE_ENV='debug'
-		utils.logMessage('jpt request built: ' + jptCall);
-		// @endif
 
 		//append a timer here to track latency
 		bid.startTime = new Date().getTime();
-
-		//track initial request
-		//adloader.trackPixel(timeTrackerBidRequested); //TODO add this back in and figure out where it goes and what it does
 
 		return jptCall;
 
 	}
 
 	//expose the callback to the global object:
-	pbjs.handleCB = function(jptResponseObj) {
+	pbjs.handleAnCB = function(jptResponseObj) {
+
+	 	var bidCode;
 
 		if (jptResponseObj && jptResponseObj.callback_uid) {
 
@@ -432,6 +492,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				//retrieve bid object by callback ID
 				bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
 			if (bidObj) {
+
+				bidCode = bidObj.bidder;
+
 				placementCode = bidObj.placementCode;
 				//set the status
 				bidObj.status = CONSTANTS.STATUS.GOOD;
@@ -441,12 +504,8 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				} catch (e) {}
 
 				//place ad response on bidmanager._adResponsesByBidderId
-
 			}
 
-			// @if NODE_ENV='debug'
-			utils.logMessage('JSONP callback function called for ad ID: ' + id);
-			// @endif
 			var bid = [];
 			if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
 				responseCPM = parseInt(jptResponseObj.result.cpm, 10);
@@ -458,31 +517,24 @@ var AppNexusAdapter = function AppNexusAdapter() {
 				var responseAd = jptResponseObj.result.ad;
 				//store bid response
 				//bid status is good (indicating 1)
-				//TODO refactor to pass a Bid object instead of multiple params
-				//bidmanager.addBidResponse(statusCode, placementCode, bidderCode, custObj, cpm, ad, width, height, dealId, isDeal, tier, adId )
 				var adId = jptResponseObj.result.creative_id;
 				bid = bidfactory.createBid(1);
-				//bid.adId = adId;
 				bid.creative_id = adId;
-				bid.bidderCode = 'appnexus';
+				bid.bidderCode = bidCode;
 				bid.cpm = responseCPM;
 				bid.adUrl = jptResponseObj.result.ad;
 				bid.width = jptResponseObj.result.width;
 				bid.height = jptResponseObj.result.height;
 				bid.dealId = jptResponseObj.result.deal_id;
 
-				//bidmanager.addBidResponse(1, placementCode, 'appnexus', jptResponseObj, responseCPM, jptResponseObj.result.ad, jptResponseObj.result.width, jptResponseObj.result.height, '', false, '',  jptResponseObj.result.creative_id );
 				bidmanager.addBidResponse(placementCode, bid);
 
 
 			} else {
 				//no response data
-				// @if NODE_ENV='debug'
-				utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-				// @endif
 				//indicate that there is no bid for this placement
 				bid = bidfactory.createBid(2);
-				bid.bidderCode = 'appnexus';
+				bid.bidderCode = bidCode;
 				bidmanager.addBidResponse(placementCode, bid);
 			}
 
@@ -490,21 +542,24 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 		} else {
 			//no response data
-			// @if NODE_ENV='debug'
-			utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-			// @endif
 
 		}
 
 	};
 
 	return {
-		callBids: callBids
-
+		callBids: baseAdapter.callBids,
+		setBidderCode: baseAdapter.setBidderCode,
+		createNew: exports.createNew,
+		buildJPTCall : buildJPTCall
 	};
 };
-module.exports = AppNexusAdapter;
-},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],4:[function(require,module,exports){
+
+exports.createNew = function(){
+	return new AppNexusAdapter();
+};
+// module.exports = AppNexusAdapter;
+},{"../adloader.js":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20,"./adapter.js":2}],5:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -579,7 +634,7 @@ var CriteoAdapter = function CriteoAdapter() {
 };
 
 module.exports = CriteoAdapter;
-},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],5:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],6:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -793,7 +848,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 	var slotIdMap = {};
 	var requiredParams = [
 		/* 0 */
-		'id'
+		'id',
+		/* 1 */
+		'siteID'
 	];
 	var firstAdUnitCode = '';
 
@@ -804,41 +861,12 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 			return;
 		}
 
-		var bid;
-
-		var tier2SiteID;
-		var tier3SiteID;
-
-		//Grab the global data for cygnus_index_args
-		for (var i = 0; i < bidArr.length; i++) {
-			bid = bidArr[i];
-
-			if (bid.timeout) {
-				cygnus_index_args.timeout = bid.timeout;
-			}
-
-			if (bid.siteID) {
-				cygnus_index_args.siteID = bid.siteID;
-			}
-
-			if (bid.tier2SiteID) {
-				tier2SiteID = bid.tier2SiteID;
-			}
-
-			if (bid.tier3SiteID) {
-				tier3SiteID = bid.tier3SiteID;
-			}
-		}
-
-		if (!cygnus_index_args.siteID) {
-			return;
-		}
-
 		cygnus_index_args.slots = [];
 		var bidCount = 0;
+
 		//Grab the slot level data for cygnus_index_args
 		for (i = 0; i < bidArr.length; i++) {
-			bid = bidArr[i];
+			var bid = bidArr[i];
 
 			var width;
 			var height;
@@ -854,12 +882,20 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				}
 			}
 
-			if (bid.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
+			if (bid.params.timeout && typeof cygnus_index_args.timeout === 'undefined') {
+				cygnus_index_args.timeout = bid.params.timeout;
+			}
+
+			if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
+				cygnus_index_args.siteID = bid.params.siteID;
+			}
+
+			if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
 				cygnus_index_args.slots.push({
 					id:"SPQS",
-					width: bid.sqps.width,
-					height: bid.sqps.height,
-					siteID: bid.sqps.siteID || cygnus_index_args.siteID
+					width: bid.params.sqps.width,
+					height: bid.params.sqps.height,
+					siteID: bid.params.sqps.siteID || cygnus_index_args.siteID
 				});
 			}
 
@@ -878,20 +914,20 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 					bidCount++;
 
-					if (bid.params.tier2SiteID || tier2SiteID) {
+					if (bid.params.tier2SiteID) {
 						cygnus_index_args.slots.push({
 							id: "T1_"+bid.params.id,
 							width: width,
 							height: height,
-							siteID: bid.params.tier2SiteID || tier2SiteID
+							siteID: bid.params.tier2SiteID
 						});
 					}
-					if (bid.params.tier3SiteID || tier3SiteID) {
+					if (bid.params.tier3SiteID) {
 						cygnus_index_args.slots.push({
 							id:"T2_"+bid.params.id,
 							width:width,
 							height:height,
-							siteID:bid.params.tier3SiteID || tier3SiteID
+							siteID:bid.params.tier3SiteID
 						});
 					}
 				}
@@ -931,7 +967,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 							bid.bidderCode = ADAPTER_CODE;
 							bid.width = slotObj.width;
 							bid.height = slotObj.height;
-							bid.siteId = slotObj.siteID;
+							bid.siteID = slotObj.siteID;
 
 							bidmanager.addBidResponse(adUnitCode, bid);
 						}
@@ -971,7 +1007,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 module.exports = IndexExchangeAdapter;
 
-},{"../adloader.js":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],6:[function(require,module,exports){
+},{"../adloader.js":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],7:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1078,7 +1114,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 };
 
 module.exports = OpenxAdapter;
-},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],7:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],8:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1203,7 +1239,75 @@ var PubmaticAdapter = function PubmaticAdapter() {
 };
 
 module.exports = PubmaticAdapter;
-},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],8:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],9:[function(require,module,exports){
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader.js');
+
+var PulsePointAdapter = function PulsePointAdapter() {
+
+    var getJsStaticUrl = 'http://tag.contextweb.com/getjs.static.js';
+    var bidUrl = 'http://tag.contextweb.com/bid';
+    
+    function _callBids(params) {
+        if(typeof window.pp === 'undefined') {
+            adloader.loadScript(getJsStaticUrl, function() { bid(params); });
+        } else {
+            bid(params);
+        }
+    }
+    
+    function bid(params) {
+        var bids = params.bids;
+        for (var i = 0; i < bids.length; i++) {
+            var bidRequest = bids[i];
+            var callback = bidResponseCallback(bidRequest);
+            var ppBidRequest = new window.pp.Ad({
+                cf : bidRequest.params.cf,
+                cp : bidRequest.params.cp,
+                ct : bidRequest.params.ct,
+                cn : 1,
+                ca : window.pp.requestActions.BID,
+                cu : bidUrl,
+                adUnitId: bidRequest.placementCode,
+                callback: callback
+            });
+            ppBidRequest.display();
+        }
+    }
+
+    function bidResponseCallback(bid) {
+        return function(bidResponse) { 
+                    bidResponseAvailable(bid, bidResponse); 
+                };
+    }
+
+    function bidResponseAvailable(bidRequest, bidResponse) {
+        if(bidResponse) {
+            var adSize = bidRequest.params.cf.toUpperCase().split('X');
+            var bid = bidfactory.createBid(1);
+            bid.bidderCode = bidRequest.bidder;
+            bid.cpm = bidResponse.bidCpm;
+            bid.ad = bidResponse.html;
+            bid.width = adSize[0];
+            bid.height = adSize[1];
+            bidmanager.addBidResponse(bidRequest.placementCode, bid);
+        } else {
+            var passback = bidfactory.createBid(2);
+            passback.bidderCode = bidRequest.bidder;
+            bidmanager.addBidResponse(bidRequest.placementCode, passback);
+        }
+    }
+
+    return {
+        callBids: _callBids
+    };
+
+};
+
+module.exports = PulsePointAdapter;
+
+},{"../adloader.js":13,"../bidfactory.js":14,"../bidmanager.js":15}],10:[function(require,module,exports){
 //Factory for creating the bidderAdaptor
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -1319,16 +1423,22 @@ var RubiconAdapter = function RubiconAdapter() {
 					iframeId = bidObj.iframeId;
 				}
 
-				bid = bidfactory.createBid(1);
+				if (response.ads && response.ads[0] && response.ads[0].status === 'ok') {
+					bid = bidfactory.createBid(1);
 
-				if (response.ads && response.ads[0]) {
 					var rubiconAd = response.ads[0];
 					var size = sizeMap[rubiconAd.size_id];
 					var width = 0;
 					var height = 0;
 
 					var iframeObj = window.frames[iframeId];
-					var rubiconObj = iframeObj.contentWindow.RubiconAdServing;
+					var rubiconObj;
+					if(iframeObj.contentWindow){
+						rubiconObj = iframeObj.contentWindow.RubiconAdServing
+					}else{
+						rubiconObj = iframeObj.window.RubiconAdServing;
+					}
+
 					if (rubiconObj && rubiconObj.AdSizes) {
 						/* should return
 						    1: {
@@ -1348,6 +1458,14 @@ var RubiconAdapter = function RubiconAdapter() {
 					bid.sizeId = rubiconAd.size_id;
 					bid.width = width;
 					bid.height = height;
+					
+				}else{
+					bid = bidfactory.createBid(2);
+					bid.bidderCode = 'rubicon';
+					var bidObj = bidmanager.getPlacementIdByCBIdentifer(getBidId(response));
+					if (bidObj) {
+						placementCode = bidObj.placementCode;
+					}
 				}
 
 			} catch (e) {
@@ -1379,7 +1497,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
 module.exports = RubiconAdapter;
 
-},{"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],9:[function(require,module,exports){
+},{"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],11:[function(require,module,exports){
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -1564,7 +1682,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
 module.exports = SovrnAdapter;
 
-},{"../adloader":11,"../bidfactory.js":12,"../bidmanager.js":13,"../constants.json":14,"../utils.js":18}],10:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory.js":14,"../bidmanager.js":15,"../constants.json":16,"../utils.js":20}],12:[function(require,module,exports){
 /**
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
@@ -1602,7 +1720,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         buildCreative: function(slot, size) {
             return '<script type="text/javascript" src="//cdn.yldbt.com/js/yieldbot.intent.js"></script>' +
                 '<script type="text/javascript">var ybotq = ybotq || [];' +
-                'ybotq.push(function () {yieldbot.renderAd(\'' + slot.toLowerCase() + ':' + size + '\');});</script>';
+                'ybotq.push(function () {yieldbot.renderAd(\'' + slot + ':' + size + '\');});</script>';
         },
         /**
          * Bid response builder.
@@ -1712,10 +1830,14 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
 module.exports = YieldbotAdapter;
 
-},{"../adloader":11,"../bidfactory":12,"../bidmanager":13,"../utils":18}],11:[function(require,module,exports){
+},{"../adloader":13,"../bidfactory":14,"../bidmanager":15,"../utils":20}],13:[function(require,module,exports){
+var utils = require('./utils');
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
-	//create a script tag for the jpt call
+	if(!tagSrc){
+		utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
+		return;
+	}
 	var jptScript = document.createElement('script');
 	jptScript.type = 'text/javascript';
 	jptScript.async = true;
@@ -1769,7 +1891,7 @@ exports.trackPixel = function(pixelUrl) {
 
 	}
 };
-},{}],12:[function(require,module,exports){
+},{"./utils":20}],14:[function(require,module,exports){
 var utils = require('./utils.js');
 
 /**
@@ -1829,7 +1951,7 @@ exports.createBid = function(statusCde) {
 };
 
 //module.exports = Bid;
-},{"./utils.js":18}],13:[function(require,module,exports){
+},{"./utils.js":20}],15:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
@@ -2000,7 +2122,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//if there is any key value pairs to map do here
 		var keyValues = {};
 		if (bid.bidderCode && bid.cpm !== 0) {
-			keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+			keyValues = this.getKeyValueTargetingPairs(bid.bidderCode, bid);
 			bid.adserverTargeting = keyValues;
 		}
 
@@ -2045,22 +2167,28 @@ exports.createEmptyBidResponseObj = function() {
 	};
 };
 
-function getKeyValueTargetingPairs(bidderCode, custBidObj) {
-	//retrive key value settings
+function setDefaultAdServerTargeting (){
+
+
+}
+
+exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
-	//first try to add based on bidderCode configuration
-	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-		//
+
+	//1) set keys from specific bidder setting if they exist
+	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
 	}
-	//next try with defaultBidderSettings
+
+	//2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
 	else if (defaultBidderSettingsMap[bidderCode]) {
 		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
 	}
-	//now try with "generic" settings
+
+	//3) set the keys from "standard" setting or from prebid defaults
 	else if (custBidObj && bidder_settings) {
 		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
 			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
@@ -2091,8 +2219,11 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
+	
+	
+
 	return keyValues;
-}
+};
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
@@ -2273,7 +2404,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
 function adjustBids(bid){
 	var code = bid.bidderCode;
 	var bidPriceAdjusted = bid.cpm; 
-	if(code && pbjs.bidderSettings[code]){
+	if(code && pbjs.bidderSettings && pbjs.bidderSettings[code]){
 		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
 			try{
 				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
@@ -2289,7 +2420,7 @@ function adjustBids(bid){
 	}
 }
 
-},{"./adaptermanager":1,"./constants.json":14,"./events":15,"./utils.js":18}],14:[function(require,module,exports){
+},{"./adaptermanager":1,"./constants.json":16,"./events":17,"./utils.js":20}],16:[function(require,module,exports){
 module.exports={
 	"JSON_MAPPING": {
 		"PL_CODE": "code",
@@ -2328,7 +2459,7 @@ module.exports={
 	}
 }
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * events.js
  */
@@ -2421,7 +2552,7 @@ module.exports = (function (){
   return _public;
 }());
 
-},{"./constants":14,"./utils":18}],16:[function(require,module,exports){
+},{"./constants":16,"./utils":20}],18:[function(require,module,exports){
 /** @module pbjs */
 // if pbjs already exists in global dodcument scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -2640,19 +2771,24 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	//copy keyStrings into pb_keyHistoryMap
-	utils.extend(pb_keyHistoryMap, keyStrings);
-	utils._each(pb_keyHistoryMap, function(value, key){
+	//copy keyStrings into pb_keyHistoryMap by code
+	if(!pb_keyHistoryMap[code]){
+		pb_keyHistoryMap[code] = keyStrings;
+	}
+	else{
+		utils.extend(pb_keyHistoryMap[code], keyStrings);
+	}
+	utils._each(pb_keyHistoryMap[code], function(value, key){
 		//since DFP doesn't support deleting a single key, we will set all to empty string
 		//This is "clear" for that key
 		slot.setTargeting(key, '');
+		//utils.logMessage('Attempting to clear the key : ' + key + ' to empty string for code: ' + code);
 	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
 				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
-
+				slot.setTargeting(key, keyStrings[key]);
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
@@ -2660,7 +2796,7 @@ function setGPTAsyncTargeting(code, slot) {
 	}
 }
 /*
- *   This function returns the object map of placemnts or
+ *   This function returns the object map of placements or
  *   if placement code is specified return just 1 placement bids
  */
 function getBidResponsesByAdUnit(adunitCode) {
@@ -2919,8 +3055,8 @@ function getTargetingfromGPTIdentifier(slot){
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {
-	pbjs.setTargetingForAdUnitsGPTAsync();
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -2990,7 +3126,7 @@ pbjs.renderAd = function(doc, id) {
 
 
 /*
- *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
@@ -2999,7 +3135,7 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request bids for adUnits passed into function
+ * @deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
@@ -3289,16 +3425,22 @@ pbjs.sendTimeoutEvent = function(){
 	timeOutBidders();
 };
 
+pbjs.aliasBidder = function(bidderCode,alias){
+
+	if(bidderCode && alias){
+		adaptermanager.aliasBidAdapter(bidderCode,alias);
+	}
+	else{
+		utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
+	}
+	
+};
+
 
 processQue();
 
-//only for test
-pbjs_testonly = {};
 
-pbjs_testonly.getAdUnits = function() {
-    return pbjs.adUnits;
-};
-},{"./adaptermanager":1,"./adloader":11,"./bidfactory":12,"./bidmanager.js":13,"./constants.json":14,"./events":15,"./ga":17,"./utils.js":18}],17:[function(require,module,exports){
+},{"./adaptermanager":1,"./adloader":13,"./bidfactory":14,"./bidmanager.js":15,"./constants.json":16,"./events":17,"./ga":19,"./utils.js":20}],19:[function(require,module,exports){
 /**
  * ga.js - analytics adapter for google analytics 
  */
@@ -3321,7 +3463,8 @@ var _disibleInteraction = { nonInteraction : true },
 	//GA limits the # of events to be sent see here ==> https://developers.google.com/analytics/devguides/collection/ios/v3/limits-quotas?hl=en
 	_eventCount = 0,
 	//limit data sent by leaving this false
-	_enableDistribution = false;
+	_enableDistribution = false,
+	_timedOutBidders = [];
 
 
 /**
@@ -3362,7 +3505,7 @@ exports.enableAnalytics = function(gaOptions) {
 
 		} else if (eventObj.eventType === BID_TIMEOUT) {
 			var bidderArray = args[0];
-			sendTimedOutBiddersToGa(bidderArray);
+			_timedOutBidders = bidderArray;
 			//todo disable event listeners
 
 		} else if (eventObj.eventType === BID_WON) {
@@ -3381,12 +3524,12 @@ exports.enableAnalytics = function(gaOptions) {
 	//bidResponses 
 	events.on(BID_RESPONSE, function(adunit, bid) {
 		sendBidResponseToGa(bid);
-
+		sendBidTimeouts(bid);
 	});
 
 	//bidTimeouts 
 	events.on(BID_TIMEOUT, function(bidderArray) {
-		sendTimedOutBiddersToGa(bidderArray);
+		_timedOutBidders = bidderArray;
 	});
 
 	//wins
@@ -3494,10 +3637,10 @@ function sendBidRequestToGa(bid) {
 
 function sendBidResponseToGa(bid) {
 
-	if (bid && bid.bidder) {
+	if (bid && bid.bidderCode) {
 		_analyticsQueue.push(function() {
 			var cpmCents = convertToCents(bid.cpm),
-				bidder = bid.bidder;
+				bidder = bid.bidderCode;
 			if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
 				_eventCount++;
 				var dis = getLoadTimeDistribution(bid.timeToRespond);
@@ -3519,13 +3662,18 @@ function sendBidResponseToGa(bid) {
 	checkAnalytics();
 }
 
-function sendTimedOutBiddersToGa(bidderArr){
-	utils._each(bidderArr, function(bidderCode){
-		_analyticsQueue.push(function() {
-			_eventCount++;
-			window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, 1, _disibleInteraction);
+function sendBidTimeouts(bid){
+
+	if(bid && bid.bidder){
+		_analyticsQueue.push(function(){
+			utils._each(_timedOutBidders, function(bidderCode){
+				if(bid.bidder === bidderCode){
+					_eventCount++;
+					window[_gaGlobal]('send', 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disibleInteraction);
+				}
+			});
 		});
-	});
+	}
 	checkAnalytics();
 }
 
@@ -3538,7 +3686,7 @@ function sendBidWonToGa(bid) {
 	checkAnalytics();
 }
 
-},{"./constants.json":14,"./events":15,"./utils":18}],18:[function(require,module,exports){
+},{"./constants.json":16,"./events":17,"./utils":20}],20:[function(require,module,exports){
 var CONSTANTS = require('./constants.json');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -3964,5 +4112,11 @@ exports._map = function (object, callback) {
   return output;
 };
 
-
-},{"./constants.json":14}]},{},[16])
+var hasOwn = function(objectToCheck, propertyToCheckFor) {
+    if (objectToCheck.hasOwnProperty) {
+        return objectToCheck.hasOwnProperty(propertyToCheckFor);
+    } else {
+        return (typeof objectToCheck[propertyToCheckFor] !== UNDEFINED) && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
+    }
+};
+},{"./constants.json":16}]},{},[18])
