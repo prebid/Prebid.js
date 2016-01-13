@@ -68,7 +68,7 @@ function processQue() {
 			catch(e){
 				utils.logError('Error processing command :', 'prebid.js', e);
 			}
-			
+
 		}
 	}
 }
@@ -122,7 +122,7 @@ function timeOutBidders(){
 	if(!pb_bidsTimedOut){
 		pb_bidsTimedOut = true;
 		var timedOutBidders = bidmanager.getTimedOutBidders();
-		events.emit(BID_TIMEOUT, timedOutBidders);	
+		events.emit(BID_TIMEOUT, timedOutBidders);
 	}
 }
 
@@ -249,7 +249,7 @@ function getBidResponsesByAdUnit(adunitCode) {
 	if (adunitCode) {
 		returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
 		return returnObj;
-	} 
+	}
 	else {
 		return bidmanager.pbBidResponseByPlacement;
 	}
@@ -436,7 +436,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
-	//emit bid timeout event here 
+	//emit bid timeout event here
 	timeOutBidders();
 
 	var adUnitCodesArr = codeArr;
@@ -780,7 +780,7 @@ pbjs.loadScript = function(tagSrc, callback){
  * return data for analytics
  * @param  {Function}  [description]
  * @return {[type]}    [description]
- 
+
 pbjs.getAnalyticsData = function(){
 	var returnObj = {};
 	var bidResponses = pbjs.getBidResponses();
@@ -811,7 +811,7 @@ pbjs.getAnalyticsData = function(){
 			if(bid.bidderCode!==''){
 				var returnBids = returnObj[bid.bidderCode].bids;
 				var returnIdx = 0;
-				
+
 				for(var j=0;j<returnBids.length;j++){
 					if(returnBids[j].timeout)
 						returnIdx = j;
@@ -856,7 +856,7 @@ pbjs.enableAnalytics = function(options){
 		}
 		catch(e){
 			utils.logError('Error calling GA: ', 'prebid.js', e);
-		}	
+		}
 	}
 	else if(options.provider === 'other_provider'){
 		//todo
