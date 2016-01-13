@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
-var defaultPlacementForBadBid = '';
+var allPlacementCodes;
 
 /**
  * Adapter for requesting bids from Sovrn
@@ -40,9 +40,7 @@ var SovrnAdapter = function SovrnAdapter() {
 		var page = window.location.pathname + location.search + location.hash;
 
 		var sovrnImps = [];
-		//assign the first adUnit (placement) for bad bids;
-		defaultPlacementForBadBid  = bidReqs[0].placementCode;
-
+		allPlacementCodes = [];
 		//build impression array for sovrn
 		utils._each(bidReqs, function(bid)
 		{
@@ -74,6 +72,7 @@ var SovrnAdapter = function SovrnAdapter() {
 				};
 			sovrnImps.push(imp);
 			bidmanager.pbCallbackMap[imp.id] = bid;
+			allPlacementCodes.push(bid.placementCode);
 		});
 
 		// build bid request with impressions
@@ -91,24 +90,41 @@ var SovrnAdapter = function SovrnAdapter() {
 		adloader.loadScript(scriptUrl, null);
 	}
 
+	function addBlankBidResponsesForAllPlacementsExceptThese(placementsWithBidsBack){
+		utils._each(allPlacementCodes, function(placementCode)
+		{
+			if(utils.contains(placementsWithBidsBack, placementCode)) {
+				// A bid was returned for this placement already
+			} else {
+				// Add a no-bid response for this placement.
+				var bid = {};
+				bid = bidfactory.createBid(2);
+				bid.bidderCode = 'sovrn';
+				bidmanager.addBidResponse(placementCode, bid);
+			}
+		});
+	}
+
+
 	//expose the callback to the global object:
 	pbjs.sovrnResponse = function(sovrnResponseObj) {
-		var bid = {};
 		// valid object?
 		if (sovrnResponseObj && sovrnResponseObj.id) {
 			// valid object w/ bid responses?
 			if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !==0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
-
+				var placementsWithBidsBack = [];
 				sovrnResponseObj.seatbid[0].bid.forEach(function(sovrnBid){
 
 					var responseCPM;
 					var placementCode = '';
 					var id = sovrnBid.impid;
+					var bid = {};
 
 					// try to fetch the bid request we sent Sovrn
-					var	bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+					var bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
 					if (bidObj){
 						placementCode = bidObj.placementCode;
+						placementsWithBidsBack.push(placementCode);
 						bidObj.status = CONSTANTS.STATUS.GOOD;
 
 						//place ad response on bidmanager._adResponsesByBidderId
@@ -145,7 +161,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
 							bidmanager.addBidResponse(placementCode, bid);
 
-						}	else {
+						} else {
 							//0 price bid
 							//indicate that there is no bid for this placement
 							bid = bidfactory.createBid(2);
@@ -153,24 +169,21 @@ var SovrnAdapter = function SovrnAdapter() {
 							bidmanager.addBidResponse(placementCode, bid);
 
 						}
-					} else {   // bid not found, we never asked for this?
+					} else {	 // bid not found, we never asked for this?
 						//no response data
 						bid = bidfactory.createBid(2);
 						bid.bidderCode = 'sovrn';
 						bidmanager.addBidResponse(placementCode, bid);
 					}
 				});
+				addBlankBidResponsesForAllPlacementsExceptThese(placementsWithBidsBack);
 			} else {
-				//no response data
-				bid = bidfactory.createBid(2);
-				bid.bidderCode = 'sovrn';
-				bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
+				//no response data for any placements
+				addBlankBidResponsesForAllPlacementsExceptThese([]);
 			}
 		} else {
-			//no response data
-			bid = bidfactory.createBid(2);
-			bid.bidderCode = 'sovrn';
-			bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
+			//no response data for any placements
+			addBlankBidResponsesForAllPlacementsExceptThese([]);
 		}
 
 	}; // sovrnResponse
