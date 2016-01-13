@@ -1,16 +1,15 @@
 /** @module adaptermanger */
 
-// var RubiconAdapter = require('./adapters/rubicon.js');
-// var AppNexusAdapter = require('./adapters/appnexus.js');
-// var AolAdapter = require('./adapters/aol');
-// var OpenxAdapter = require('./adapters/openx');
-// var PubmaticAdapter = require('./adapters/pubmatic.js');
-// var CriteoAdapter = require('./adapters/criteo');
-// var YieldbotAdapter = require('./adapters/yieldbot');
-// var IndexExchange = require('./adapters/indexExchange');
+var RubiconAdapter = require('./adapters/rubicon.js');
+var AppNexusAdapter = require('./adapters/appnexus.js');
+var AolAdapter = require('./adapters/aol');
+var OpenxAdapter = require('./adapters/openx');
+var PubmaticAdapter = require('./adapters/pubmatic.js');
+var CriteoAdapter = require('./adapters/criteo');
+var YieldbotAdapter = require('./adapters/yieldbot');
+var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
-// var PulsePointAdapter = require('./adapters/pulsepoint.js');
-
+var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -60,7 +59,7 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 		} else {
 			utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
 		}
-
+		
 	} else {
 		utils.logError('bidAdaptor or bidderCode not specified');
 	}
@@ -90,13 +89,13 @@ exports.aliasBidAdapter = function(bidderCode, alias){
 
 
 // Register the bid adaptors here
-// this.registerBidAdapter(RubiconAdapter(), 'rubicon');
-// this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
-// this.registerBidAdapter(OpenxAdapter(), 'openx');
-// this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
-// this.registerBidAdapter(CriteoAdapter(), 'criteo');
-// this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
-// this.registerBidAdapter(IndexExchange(), 'indexExchange');
+this.registerBidAdapter(RubiconAdapter(), 'rubicon');
+this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
+this.registerBidAdapter(OpenxAdapter(), 'openx');
+this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
+this.registerBidAdapter(CriteoAdapter(), 'criteo');
+this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
+this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(Sovrn(),'sovrn');
-// this.registerBidAdapter(AolAdapter(), 'aol');
-// this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+this.registerBidAdapter(AolAdapter(), 'aol');
+this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
