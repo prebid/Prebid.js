@@ -4,304 +4,148 @@ title: Step by step
 head_title: Getting Started with Prebid.js for Header Bidding
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
 pid: 0
-
 top_nav_section: adops
 nav_section: tutorials
 
 ---
 
-
 <div class="bs-docs-section demo-setup" markdown="1">
 
-# Step by step guide for setting up DFP for Prebid.js
+# Step by step guide to DFP setup
 
-
-
-<iframe width="853" height="480" src="https://www.youtube.com/embed/-bfI24_hwZ0?rel=0" frameborder="0" allowfullscreen></iframe>
+<iframe width="853" height="480" src="https://www.youtube.com/embed/-bfI24_hwZ0?rel=0" frameborder="0" allowfullscreen="true"></iframe>
 
 <div class="alert alert-danger" role="alert">
   <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
   <span class="sr-only">Correction:</span>
-  Correction: in Line Item setting, "Display Creative" should choose "One or More", not "As Many as Possible" as described in the video.
+  Correction: in your Line Item settings, 'Display Creative' should be set to 'One or More', not 'As Many as Possible' as described in the video.
 </div>
 
-
 </div>
 
+* TOC
+{:toc }
 
-<div class="bs-docs-section demo-setup" markdown="1">
+## Step 1. Add a line item
 
-#Line Item Setup
+In DFP, create a new order with a $0.50 line item.
 
-> It can be helpful to understand [how Prebid.js helps simplify line item setup]({{ site.github.url }}/blog/how-to-simplify-line-item-setup/) before implementing these steps.
-
-In this section, we’ll help you start creating the line items to target the bids being passed into your ad server by prebid.js.
-
-Note: for the rest of this document, we assume you’ll create ≈10 line items in $0.50 increments from $0.50 to $5.
-
-### Naming
-
-Naming is fully customizable, and we recommend something simple like `Prebid_[PRICE_BUCKET]` to help you identify your various buckets. 
-
-Examples: 
-
-* Line item 1 → name of “Prebid_0.50”
-* Line item 2 → name of “Prebid_1.00”
-* Line item 3 → name of “Prebid_1.50”
-* Line item 4 → name of “Prebid_2.00”
-
-### Setting Revenue (Rate)
-
-Rate, or line item revenue, depending on ad server naming conventions, should be equal to your price bucket on each line item. Why? You need to inform your ad server knows how much the programmatic bid is worth to you for decisioning and reporting.
-
-Examples: 
-
-* Prebid_0.50 → rate of $0.50
-* Prebid_1.00 → rate of $1.00
-* Prebid_1.50 → rate of $1.50
-* Prebid_2.00 → rate of $2.00
-
-### Sizes
-
-If your ad server requires size on the Line Item (like DoubleClick for Publishers), you’ll want to add all of your possible creative sizes to each line item.
-
-For example, if you have 300x250 and 728x90 on your page, each line item would have both sizes applied.
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
+Enter all of the inventory sizes that your website has.
 
 {: .pb-md-img :}
-![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-sizes.png)
+![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/inventory-sizes.png)
 
-
-</div>
-</div>
-</div>
-
-### Settings
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-The line item type should typically be "price priority" in DFP. That will enable the line items to compete on price. The goal can be set to ‘unlimited’ and with no end date.
+Because header bidding partners return prices, set the Line Item
+**Type** to **Price priority** to enable them to compete on price.
 
 {: .pb-md-img :}
-![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-settings.png)
+![Price Priority]({{ site.github.url }}/assets/images/demo-setup/price-priority.png)
 
-
-</div>
-</div>
-</div>
-
-
-
-
-### Targeting
-
-Each line item should have the following targets:
-
-* Inventory – the ad units where prebid.js is running.
-* Custom Criteria / Key-Value – the price buckets (default key is hb_pb) added to your ad call’s query string by prebid.js. The targeted value should be of equivalent value to eCPM set at the line item.
-
-    Example: for a line item setup to represent $1.00 bids, you’d set rate to $1.00 and target the key-value of hb_pb=1.00
-
-    **Important**: the price bucket value should always be at 2 decimal places. E.g. 1.00 not 1.
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-line-item-targeting.png)
-
-
-</div>
-</div>
-</div>
-
-
-
-
-### Priorities
-
-We recommend setting the priority of pre-bid line items to the same level as other non-guaranteed line items, or in DoubleClick for Publishers, the same level as dynamic allocation competes.
-
-
-
-</div>
-
-
-
-
-
-<div class="bs-docs-section" markdown="1">
-
-
-<a name="creative-setup"></a>
-
-#Creatives Setup
-
-
-
-When your ad server determines a prebid.js line item won the impression, we need to return the winning creative ID to the page so Prebid.js can call the ad. To do this, simply add the creative below to your line items.
-
-
-{% highlight js %}
-
-<script>
-    try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
-</script>
-
-{% endhighlight %}
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-
-A couple of important points:
-
-* DoubleClick for Publishers (DFP) supports creative size override, which allows you to use one creative handle multiple sizes. Set each creative size to 1x1, then leverage DFP’s size override.
-
-* Determine the maximum number of ad units your pages can have. Please duplicate and set up that number of creatives. All your line items can share that set of creatives.
-
-    Why? The same creative cannot be served into more than 1 ad unit in a single DoubleClick for Publishers GPT request call. If you have 5 ad units on a page, your prebid line items would have ≥ 5 creatives of size 1x1 and the code snippet above.
-
-
-</div>
-</div>
-</div>
-
-
-### Step 1: New Creative
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-* Create a new 3rd party tag creative.
-* Add the code snippet above.
-* Select 1x1 for creative size
-
-{: .pb-lg-img :}
-![GPT Line Item Sizes]({{ site.github.url }}/assets/images/demo-setup/gpt-creative.png)
-
-
-</div>
-</div>
-</div>
-
-### Step 2: Add the creative to all line items
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-
-Go to your line items and switch to the creatives tab. DFP will display a warning prompting you to upload creatives of the line items’ accepted sizes. Click add existing creative for a size and you’ll see the below screen.
-
-{: .pb-lg-img :}
-![Add Creative to Line Item]({{ site.github.url }}/assets/images/demo-setup/add-creative-to-line-item.png)
-
-Click “Show all” next to the “filtering for creatives with size” in this screen. You should be able to find the creative you’ve just submitted in the previous step.
-
-
-
-</div>
-</div>
-</div>
-
-
-
-
-### Step 3: Add more sizes to the creative
-
-
-<div class="bs-callout">
-
-    <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#li-sizes-dfp" role="tab" data-toggle="tab">DFP</a></li>
-    </ul>
-
-<div class="tab-content">
-
-<div role="tabpanel" class="tab-pane active" id="li-sizes-dfp" markdown="1">
-
-
-Step 2 has added one size override into the creative, but there’re still many sizes uncovered. Click into the creative, and you can find:
+Set the **Rate** to $0.50 so that this line item will compete with
+your other demand sources at $0.50 ECPM.
 
 {: .pb-md-img :}
-![Creative Size Override]({{ site.github.url }}/assets/images/demo-setup/creative-size-override.png)
+![Rate]({{ site.github.url }}/assets/images/demo-setup/rate.png)
 
-Add all the sizes you need into the “Size overrides” box.
+Set **Display Creatives** to *One or More* since we'll have one or
+more creatives attached to this line item.
 
-
-
-</div>
-</div>
-</div>
-
-
-
-<div class="bs-docs-section" markdown="1">
-
-#Query Strings
-
-To simplify the line item setup, the default behavior of Prebid.js is to [send the highest price bid only to the ad server]({{ site.github.url }}/overview/how-to-simplify-line-item-setup.html#pbjs-sends-highest-price-only). To run reporting such as:
-
-* For bidder X, at what CPM does it fill?
-* For bidder X, what's the fill rate out of all the winning header bidding bids?
-
-It's important to enable DFP report on free-form query strings ([DFP doc for report on custom targeting](https://support.google.com/dfp_premium/answer/3108447?hl=en)). Follow the below steps: 
+Set **Rotate Creatives** to *Evenly*.
 
 {: .pb-md-img :}
-![GPT Query Strings for Header Bidding]({{ site.github.url }}/assets/images/demo-setup/gpt-query-strings.png)
+![Display and Rotation]({{ site.github.url }}/assets/images/demo-setup/display-and-rotation.png)
 
-1. In DFP's top navigation bar, go to Inventory.
-2. Click on Custom Targeting on the left.
-3. Add key `hb_bidder`.
-4. Add values for this key. The values should be the bidders' bidder code [documented here](/dev-docs/bidders.html) under each bidder. You have to add the bidder code for the bidder that you want to run report on.
+Choose the inventory that you want to run header bidding on.
 
-</div>
+By default, 'prebid.js' will send the highest bid price to DFP using
+the keyword `hb_pb`.
+
+This line item will capture the bids in the range from $0.50 to $1 by
+targeting the keyword `hb_pb` set to `0.50` in the **Key-values**
+section.  Be sure to use 2 decimal places.
+
+{: .pb-md-img :}
+![Key-values]({{ site.github.url }}/assets/images/demo-setup/key-values.png)
+
+## Step 2. Add a Creative
+
+Add creatives to this $0.50 line item so it can be duplicated later.
+
+Choose the same advertiser we've assigned the line item to.
+
+Note that this has to be a **Third party** creative.
+
+In this example the creative name is
+"Synergy\_Prebid\_Creative".
+
+Copy this creative code snippet and paste it into the **Code
+snippet** box.
+
+    <script>
+      try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+    </script>
+
+{: .pb-md-img :}
+![New creative]({{ site.github.url }}/assets/images/demo-setup/new-creative.png)
+
+Make sure the creative size is set to 1x1.  This allows us to set up
+size override, which allows this creative to serve on all inventory
+sizes.
+
+Next, attach the creative to the $0.50 line item you created in Step
+1.
+
+Because our creative size is 1x1, we need to disable the filtering by
+clicking on the **Show All** button in the **Use existing creatives**
+dialog.
+
+Click into "Synergy\_Prebid\_Creative", click the **Settings** tab,
+and override all sizes in the **Size overrides** box.
+
+Save the creative and go back to the line item.
+
+## Step 3. Duplicate Creatives
+
+DFP has a constraint that one creative can be served to at most one ad
+unit in a page under GPT's single request mode.
+
+Let's say your page has 4 ad units.  We need to have at least 4
+creatives attached to the line item in case more than 2 bids are
+within the $0.50 range.
+
+Therefore, we need to duplicate our Prebid creative 4 times.
+
+Once that's done, we have a fully functioning line item with 4
+creatives attached.
+
+## Step 4. Duplicate Line Items
+
+Now let's duplicate our line item for bids above $0.50.
+
+In the Prebid order page, copy the line item with shared creatives.
+
+This way you only have 4 creatives to maintain, and any updates to
+those creatives are applied to all pre-bid line items.
+
+For example, we can duplicate 3 more line items:
+
+-   $1
+-   $1.50
+-   $2.
+
+Let's go into each of them to update some settings.  For each
+duplicated line item:
+
+1.  Change the name to reflect the price, e.g., "Prebid\_1.00",
+    "Prebid\_1.50"
+
+2.  Change the **Rate** to match the new price of the line item.
+
+3.  In **Key-values**, make sure to target `hb_pb` at the new price,
+    e.g., $1.00.  Again, be sure to use 2 decimal places.
+
+4.  (Optional) Set the start time to *Immediate* so you don't have to
+    wait.
+
+Repeat for your other line items until you have the pricing
+granularity level you want.
