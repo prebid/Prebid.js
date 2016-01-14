@@ -65,6 +65,15 @@
             sizes: [[300, 250], [300, 600]],
             bids: [
                 {
+                    bidder: 'openx',
+                    params: {
+                        unit: '537986875',
+                        pageURL : 'http://elitedaily.com',
+                        refererURL : 'http://elitedaily.com',
+                        jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
+                    }
+                },
+                {
                     bidder: 'pubmatic',
                     params: {
                         publisherId: 39741,
@@ -80,16 +89,8 @@
                        rp_tracking : 'affiliate-1701207318',
                        rp_floor : '0.1'
                     }
-                },
-                {
-                    bidder: 'openx',
-                    params: {
-                        unit: '537986875',
-                        pageURL : 'http://elitedaily.com',
-                        refererURL : 'http://elitedaily.com',
-                        jstag_url : 'http://ox-d.elitedaily.servedbyopenx.com/w/1.0/jstag?nc=5765-elite_daily'
-                    }
                 }
+                
 
                 ]
         }];
