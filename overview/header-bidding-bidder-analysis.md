@@ -34,6 +34,8 @@ While implementing Prebid.js' adaptors for different bidders, we've noticed not 
 
 *Note that the above latency estimate was done in New York, US with fast Internet connection. To provide more accurate report, publishers can implement latency trackers through [Prebid.js Analytics](/overview/ga-analytics.html).
 
+
+<!-- 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <div id="chart_us"></div>
 <div id="chart_uk"></div>
@@ -147,7 +149,6 @@ function drawMultSeries() {
 
 
 </script>
-
 
 
 
