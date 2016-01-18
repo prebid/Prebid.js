@@ -1,6 +1,7 @@
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
+var events = require('./events');
 
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
@@ -22,6 +23,8 @@ exports._adResponsesByBidderId = _adResponsesByBidderId;
 
 var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
+
+var expectedBidsCount = {};
 
 var _allBidsAvailable = false;
 
@@ -47,12 +50,29 @@ exports.clearAllBidResponses = function(adUnitCode) {
 
 	//init bid response received count
 	initbidResponseReceivedCount();
+	//init expected bids count
+	initExpectedBidsCount();
 	//clear the callback handler flag
 	externalCallbackArr.called = false;
 
 	for (var prop in this.pbBidResponseByPlacement) {
 		delete this.pbBidResponseByPlacement[prop];
 	}
+};
+
+/**
+ * Returns a list of bidders that we haven't received a response yet
+ * @return {array} [description]
+ */
+exports.getTimedOutBidders = function(){
+	var bidderArr = [];
+	utils._each(bidResponseReceivedCount,function(count,bidderCode){
+		if(count === 0){
+			bidderArr.push(bidderCode);
+		}
+	});
+
+	return bidderArr;
 };
 
 function initbidResponseReceivedCount(){
@@ -80,6 +100,20 @@ function increaseBidResponseReceivedCount(bidderCode){
 	}
 }
 
+function initExpectedBidsCount(){
+	expectedBidsCount = {};
+}
+
+exports.setExpectedBidsCount = function(bidderCode,count){
+	expectedBidsCount[bidderCode] = count;
+}
+
+function getExpectedBidsCount(bidderCode){
+	return expectedBidsCount[bidderCode];
+}
+exports.getExpectedBidsCount = getExpectedBidsCount;
+
+
 /*
  *   This function should be called to by the BidderObject to register a new bid is in
  */
@@ -99,6 +133,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		};
 
 	if (bid) {
+
 		//record bid request and resposne time
 		bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
 		bid.responseTimestamp = new Date().getTime();
@@ -110,6 +145,12 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		if (bid.getStatusCode() === 2) {
 			bid.cpm = 0;
 		}
+
+		//emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+		events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+		//emit the bidResponse event
+		events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
+		
 		var priceStringsObj = utils.getPriceBucketString(bid.cpm, bid.height, bid.width);
 		//append price strings
 		bid.pbLg = priceStringsObj.low;
@@ -127,7 +168,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 		//if there is any key value pairs to map do here
 		var keyValues = {};
 		if (bid.bidderCode && bid.cpm !== 0) {
-			keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+			keyValues = this.getKeyValueTargetingPairs(bid.bidderCode, bid);
 			bid.adserverTargeting = keyValues;
 		}
 
@@ -149,6 +190,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
 			//should never reach this code
 			utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid );
 		}
+		
 
 	} else {
 		//create an empty bid bid response object
@@ -171,22 +213,28 @@ exports.createEmptyBidResponseObj = function() {
 	};
 };
 
-function getKeyValueTargetingPairs(bidderCode, custBidObj) {
-	//retrive key value settings
+function setDefaultAdServerTargeting (){
+
+
+}
+
+exports.getKeyValueTargetingPairs = function(bidderCode, custBidObj) {
 	var keyValues = {};
 	var bidder_settings = pbjs.bidderSettings || {};
-	//first try to add based on bidderCode configuration
-	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode]) {
-		//
+
+	//1) set keys from specific bidder setting if they exist
+	if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
 		setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
 	}
-	//next try with defaultBidderSettings
+
+	//2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
 	else if (defaultBidderSettingsMap[bidderCode]) {
 		setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
 		custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
 	}
-	//now try with "generic" settings
+
+	//3) set the keys from "standard" setting or from prebid defaults
 	else if (custBidObj && bidder_settings) {
 		if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
 			bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
@@ -217,8 +265,11 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 		setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
 	}
 
+	
+	
+
 	return keyValues;
-}
+};
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
 	var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
@@ -359,9 +410,13 @@ exports.checkIfAllBidsAreIn = function(adUnitCode) {
 // check all bids response received by bidder
 function checkAllBidsResponseReceived(){
 	var available = true;
-	
-	utils._each(bidResponseReceivedCount,function(count,bidderCode){
-		if(count<1){
+
+	utils._each(bidResponseReceivedCount, function(count, bidderCode){
+		var expectedCount = getExpectedBidsCount(bidderCode);
+
+		// expectedCount should be set in the adapter, or it will be set
+		// after we call adapter.callBids()
+		if ((typeof expectedCount === objectType_undefined) || (count < expectedCount)) {
 			available = false;
 		}
 	});
@@ -386,3 +441,27 @@ exports.addCallback = function(id, callback, cbEvent){
 		externalCallbackByAdUnitArr.push(callback);
 	}
 };
+
+//register event for bid adjustment
+events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function(bid) {
+	adjustBids(bid);
+});
+
+function adjustBids(bid){
+	var code = bid.bidderCode;
+	var bidPriceAdjusted = bid.cpm; 
+	if(code && pbjs.bidderSettings && pbjs.bidderSettings[code]){
+		if(typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function){
+			try{
+				bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+			}
+			catch(e){
+				utils.logError('Error during bid adjustment', 'bidmanager.js', e);
+			}
+		}
+	}
+
+	if(bidPriceAdjusted !== 0){
+		bid.cpm = bidPriceAdjusted;
+	}
+}

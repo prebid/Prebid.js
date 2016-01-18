@@ -24,5 +24,14 @@
 	"objectType_undefined" : "undefined",
 	"objectType_object" : "object",
 	"objectType_string" : "string",
-	"objectType_number" : "number"
+	"objectType_number" : "number",
+
+
+	"EVENTS" : {
+		"BID_ADJUSTMENT" : "bidAdjustment",
+		"BID_TIMEOUT" : "bidTimeout",
+		"BID_REQUESTED" : "bidRequested",
+		"BID_RESPONSE" : "bidResponse",
+		"BID_WON" : "bidWon"
+	}
 }

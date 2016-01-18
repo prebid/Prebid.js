@@ -92,17 +92,22 @@
                     psn: 'TO ADD',
                     slot: 'TO ADD',
                 }
-            }, {
-                bidder: 'aol',
+            },
+            {
+                bidder: 'sovrn',
+                    params: {
+                        tagid: '123' // <String> tag Id
+                    }
+            },
+            {
+                bidder: 'pulsepoint',
                 params: {
-                    network: // <String> network id
-                    sizeId: // <Integer> size id
-                    placement: // <Integer> placement id
-                    adContainerId: // <String> optional; div for placement,
-                    alias: // <String> slot alias
-                    size: // <Array<Integer>> size (optional; or will be first size)
+                        cf: '300X250',
+                        cp: 521732,
+                        ct: 76835
                 }
-            }]
+            }
+            ]
     },{
         code: 'div-gpt-ad-12345678-1',
         sizes: [[728, 90], [970, 90]],
@@ -117,6 +122,12 @@
                     pgid: 'TO ADD',
                     unit: 'TO ADD',
                     jstag_url : 'TO ADD'
+                }
+            },{
+                bidder: 'aol',
+                params: {
+                    placement: 'TO ADD',
+                    network: 'TO ADD'
                 }
             },{
                 bidder: 'rubicon',
@@ -138,8 +149,11 @@
               {
                 bidder: 'indexExchange',
                 params: {
-                    slotId: 'TO ADD', // number
-                    indexUrl: 'TO ADD'
+                    id: 'TO ADD',        //String - required
+                	siteID: TO ADD,      //Number - required
+                	timeout: TO ADD,     //Number - Optional
+                	tier2SiteID: TO ADD, //Number - Optional
+                	tier3SiteID: TO ADD  //Number - Optional
                 }
             }]
     }];
@@ -162,6 +176,7 @@
             */
             bidsBackHandler: function(bidResponses) {
                 initAdserver();
+
             },
 
             /* You can specify specific `adUnitCodes` to only request bids
@@ -216,6 +231,9 @@
             ]
         },
         appnexus: {
+            bidCpmAdjustment : function(bidCpm){
+                return bidCpm * .9;
+            },
             alwaysUseBid : true, // <-- new field - always send these custom keys for the specified bidder
             adserverTargeting: [{
                 key: "custom_bidder",
@@ -297,5 +315,24 @@
 
 
 </body>
+
+<script>
+   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ 
+    ga('create', 'XXXXXX', 'auto');
+    //Send data from prebid.js automatically 
+    pbjs.que.push(function() {
+        pbjs.enableAnalytics({
+            provider: 'ga',
+            options: {
+                global: 'ga', // <string> name of GA global. Default is 'ga'
+                enableDistribution: false, // <bool> enable/disable distribution. Recommend disable to save bandwidth/calls
+            }
+        });
+    });
+</script>
 
 </html>

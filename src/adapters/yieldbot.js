@@ -35,7 +35,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         buildCreative: function(slot, size) {
             return '<script type="text/javascript" src="//cdn.yldbt.com/js/yieldbot.intent.js"></script>' +
                 '<script type="text/javascript">var ybotq = ybotq || [];' +
-                'ybotq.push(function () {yieldbot.renderAd(\'' + slot.toLowerCase() + ':' + size + '\');});</script>';
+                'ybotq.push(function () {yieldbot.renderAd(\'' + slot + ':' + size + '\');});</script>';
         },
         /**
          * Bid response builder.

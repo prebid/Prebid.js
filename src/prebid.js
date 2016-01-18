@@ -9,6 +9,8 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
+var ga = require('./ga');
+var events = require('./events');
 
 /* private variables */
 
@@ -17,11 +19,15 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
+var BID_WON = CONSTANTS.EVENTS.BID_WON;
+var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_preBidders = [],
 	pb_placements = [],
 	pb_bidderMap = {},
-	pb_targetingMap = {};
+	pb_targetingMap = {},
+	pb_keyHistoryMap = {},
+	pb_bidsTimedOut = false;
 
 
 /* Public vars */
@@ -55,8 +61,14 @@ pbjs.que.push = function(cmd) {
 function processQue() {
 	for (var i = 0; i < pbjs.que.length; i++) {
 		if (typeof pbjs.que[i].called === objectType_undefined) {
-			pbjs.que[i].call();
-			pbjs.que[i].called = true;
+			try{
+				pbjs.que[i].call();
+				pbjs.que[i].called = true;
+			}
+			catch(e){
+				utils.logError('Error processing command :', 'prebid.js', e);
+			}
+			
 		}
 	}
 }
@@ -97,7 +109,6 @@ function init(timeout, adUnitCodeArr) {
 		//sort and call // default no sort
 		sortAndCallBids();
 	}
-
 }
 
 function isValidAdUnitSetting() {
@@ -105,6 +116,14 @@ function isValidAdUnitSetting() {
 		return true;
 	}
 	return false;
+}
+
+function timeOutBidders(){
+	if(!pb_bidsTimedOut){
+		pb_bidsTimedOut = true;
+		var timedOutBidders = bidmanager.getTimedOutBidders();
+		events.emit(BID_TIMEOUT, timedOutBidders);	
+	}
 }
 
 function sortAndCallBids(sortFunc) {
@@ -197,13 +216,24 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
 	//get the targeting that is already configured
 	var keyStrings = getTargetingfromGPTIdentifier(slot);
-	slot.clearTargeting();
+	//copy keyStrings into pb_keyHistoryMap by code
+	if(!pb_keyHistoryMap[code]){
+		pb_keyHistoryMap[code] = keyStrings;
+	}
+	else{
+		utils.extend(pb_keyHistoryMap[code], keyStrings);
+	}
+	utils._each(pb_keyHistoryMap[code], function(value, key){
+		//since DFP doesn't support deleting a single key, we will set all to empty string
+		//This is "clear" for that key
+		slot.setTargeting(key, '');
+		//utils.logMessage('Attempting to clear the key : ' + key + ' to empty string for code: ' + code);
+	});
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
 				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
-
+				slot.setTargeting(key, keyStrings[key]);
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
 			}
@@ -211,7 +241,7 @@ function setGPTAsyncTargeting(code, slot) {
 	}
 }
 /*
- *   This function returns the object map of placemnts or
+ *   This function returns the object map of placements or
  *   if placement code is specified return just 1 placement bids
  */
 function getBidResponsesByAdUnit(adunitCode) {
@@ -288,6 +318,8 @@ function resetBids() {
 	bidmanager.clearAllBidResponses();
 	pb_bidderMap = {};
 	pb_placements = [];
+	pb_targetingMap = {};
+	pb_bidsTimedOut = false;
 }
 
 function requestAllBids(tmout){
@@ -404,6 +436,9 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
+	//emit bid timeout event here 
+	timeOutBidders();
+
 	var adUnitCodesArr = codeArr;
 
 	if (typeof codeArr === objectType_string) {
@@ -465,8 +500,8 @@ function getTargetingfromGPTIdentifier(slot){
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function() {
-	pbjs.setTargetingForAdUnitsGPTAsync();
+pbjs.setTargetingForGPTAsync = function(codeArr) {
+	pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -491,6 +526,8 @@ pbjs.renderAd = function(doc, id) {
 			//lookup ad by ad Id
 			var adObject = bidmanager._adResponsesByBidderId[id];
 			if (adObject) {
+				//emit 'bid won' event here
+				events.emit(BID_WON, adObject);
 				var height = adObject.height;
 				var width = adObject.width;
 				var url = adObject.adUrl;
@@ -534,7 +571,7 @@ pbjs.renderAd = function(doc, id) {
 
 
 /*
- *	This function will refresh the bid requests for all adUnits or for specified adUnitCode
+ *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function(adUnitCode) {
 	resetBids();
@@ -543,7 +580,7 @@ pbjs.requestBidsForAdUnit = function(adUnitCode) {
 };
 
 /**
- * Request bids for adUnits passed into function
+ * @deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnits = function(adUnitsObj) {
 	if (!adUnitsObj || adUnitsObj.constructor !== Array) {
@@ -738,12 +775,156 @@ pbjs.loadScript = function(tagSrc, callback){
 	adloader.loadScript(tagSrc, callback);
 };
 
+/**
+ * This isn't ready yet
+ * return data for analytics
+ * @param  {Function}  [description]
+ * @return {[type]}    [description]
+ 
+pbjs.getAnalyticsData = function(){
+	var returnObj = {};
+	var bidResponses = pbjs.getBidResponses();
+
+	//create return obj for all adUnits
+	for(var i=0;i<pbjs.adUnits.length;i++){
+		var allBids = pbjs.adUnits[i].bids;
+		for(var j=0;j<allBids.length;j++){
+			var bid = allBids[j];
+			if(typeof returnObj[bid.bidder] === objectType_undefined){
+				returnObj[bid.bidder] = {};
+				returnObj[bid.bidder].bids = [];
+			}
+
+			var returnBids = returnObj[bid.bidder].bids;
+			var returnBidObj = {};
+			returnBidObj.timeout = true;
+			returnBids.push(returnBidObj);
+		}
+	}
+
+	utils._each(bidResponses,function(responseByUnit, adUnitCode){
+		var bids = responseByUnit.bids;
+
+		for(var i=0; i<bids.length; i++){
+
+			var bid = bids[i];
+			if(bid.bidderCode!==''){
+				var returnBids = returnObj[bid.bidderCode].bids;
+				var returnIdx = 0;
+				
+				for(var j=0;j<returnBids.length;j++){
+					if(returnBids[j].timeout)
+						returnIdx = j;
+				}
+
+				var returnBidObj = {};
+
+				returnBidObj.cpm = bid.cpm;
+				returnBidObj.timeToRespond = bid.timeToRespond;
+
+				//check winning
+				if(pb_targetingMap[adUnitCode].hb_adid === bid.adId){
+					returnBidObj.win = true;
+				}else{
+					returnBidObj.win = false;
+				}
+
+				returnBidObj.timeout = false;
+				returnBids[returnIdx] = returnBidObj;
+			}
+		}
+	});
+
+	return returnObj;
+};
+
+*/
+
+/**
+ * Will enable sendinga prebid.js to data provider specified
+ * @param  {object} options object {provider : 'string', options : {}}
+ */
+pbjs.enableAnalytics = function(options){
+	if(!options){
+		utils.logError('pbjs.enableAnalytics should be called with option {}', 'prebid.js');
+		return;
+	}
+
+	if(options.provider === 'ga'){
+		try{
+			ga.enableAnalytics(typeof options.options === 'undefined' ? {} :options.options ) ;
+		}
+		catch(e){
+			utils.logError('Error calling GA: ', 'prebid.js', e);
+		}	
+	}
+	else if(options.provider === 'other_provider'){
+		//todo
+	}
+};
+
+/**
+ * This will tell analytics that all bids received after are "timed out"
+ */
+pbjs.sendTimeoutEvent = function(){
+	timeOutBidders();
+};
+
+pbjs.aliasBidder = function(bidderCode,alias){
+
+	if(bidderCode && alias){
+		adaptermanager.aliasBidAdapter(bidderCode,alias);
+	}
+	else{
+		utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
+	}
+	
+};
+
+
 processQue();
 
-
+// @ifdef DEBUG
 //only for test
 pbjs_testonly = {};
 
 pbjs_testonly.getAdUnits = function() {
     return pbjs.adUnits;
 };
+
+pbjs_testonly.clearAllAdUnits = function(){
+	pbjs.adUnits =[];
+};
+
+pbjs_testonly.utils_replaceTokenInString = function(str, map, token){
+	return utils.replaceTokenInString(str, map, token);
+};
+
+pbjs_testonly.utils_getBidIdParamater = function(key, paramsObj) {
+	return utils.getBidIdParamater(key, paramsObj);
+};
+
+pbjs_testonly.utils_tryAppendQueryString = function(existingUrl, key, value){
+	return utils.tryAppendQueryString(existingUrl, key, value);
+};
+
+pbjs_testonly.utils_parseQueryStringParameters = function(obj){
+	return utils.parseQueryStringParameters(obj);
+};
+
+pbjs_testonly.utils_transformAdServerTargetingObj = function(obj){
+	return utils.transformAdServerTargetingObj(obj);
+};
+
+pbjs_testonly.utils_extend = function(target, source){
+	return utils.extend(target, source);
+};
+
+pbjs_testonly.utils_parseSizesInput = function(obj){
+	return utils.parseSizesInput(obj);
+};
+
+pbjs_testonly.utils_parseGPTSingleSizeArray = function(singleSize){
+	return utils.parseGPTSingleSizeArray(singleSize);
+};
+// @endif
