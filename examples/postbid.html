@@ -24,15 +24,23 @@
         
         // Add your bidder tag IDs here.
         var adUnits = [{
-            code: 'doNotChange',
+            code: doNotChange,
             sizes: [[adWidth, adHeight]],
-            bids: [{
+            bids: [
+                {
                     bidder: 'appnexus',
                     params: {
                        placementId: '4799418'
                     }
-                }
+                },
                 // Add other bidders here. 
+                {
+                    bidder: 'pubmatic',
+                    params: {
+                        publisherId: 39741,
+                        adSlot: '39620189@300x250'
+                    }
+                }
             ]
         }];
 
@@ -47,13 +55,17 @@
 
                 var iframeDoc = iframe.contentWindow.document;
 
-                var params = pbjs.getAdserverTargetingForAdUnitCode('doNotChange');
+                var params = pbjs.getAdserverTargetingForAdUnitCode(doNotChange);
 
+                // If any bidders return any creatives
                 if(params && params['hb_adid']){
                     pbjs.renderAd(iframeDoc, params['hb_adid']);
                 } else {
-                    // Passback 3rd party tag in Javascript.
+                    // If no bidder return any creatives,
+                    // Passback 3rd party tag in Javascript,
+                    // by overwriting the current page with the 3rd party tag.
                     
+                    // TO ADD 3rd PARTY TAG
                 }
             }
         });
