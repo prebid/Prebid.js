@@ -1,7 +1,10 @@
 describe("Publisher API _ AdUnits", function() {
-    var assert = chai.assert,
-    should = chai.should(),
-    expect = chai.expect;
+    var assert = require('chai').assert,
+    expect = require('chai').expect,
+    should = require('chai').should();
+
+    var prebid = require('../../src/prebid');
+
 
     before(function(){
         var adUnits = [{

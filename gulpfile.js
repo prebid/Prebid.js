@@ -154,8 +154,8 @@ gulp.task('quality', ['jscs'], function(cb){
 });
 
 gulp.task('watch', function () {
-	gulp.watch(['src/**/*.js'], ['build-dev']);
-    //gulp.watch(["test/tests.js", "src/*"], ["browserify", "unit-tests"]);
+	// gulp.watch(['src/**/*.js'], ['build-dev']);
+    gulp.watch(["test/tests.js", "src/*","test/spec/*.js"], ["browserify", "unit-tests"]);
 });
 
 
@@ -195,7 +195,15 @@ gulp.task("browser-sync", function () {
 //see http://fettblog.eu/gulp-browserify-multiple-bundles/
 gulp.task("browserify", function() {
     "use strict";
-    return browserify("./test/test.js")
+    var files =[
+        "./test/test.js",
+        "./test/spec/api_spec.js",
+        "./test/spec/utils_spec.js",
+        "./test/spec/adUnits_spec.js",
+        "./test/spec/aliasBidder_spec.js"
+    ];
+
+    return browserify({ entries: [files] })
         .bundle()
         .on("error", function (err) {
             console.log(err.toString());
