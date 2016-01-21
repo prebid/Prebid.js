@@ -602,6 +602,26 @@ pbjs.bidderSettings = {
 
 {% endhighlight %}
 
+#### 3. Adjust bid price for a specific bidder
+
+Some bidders return gross prices, instead of the net prices (what the publisher will actually get paid for). For example, a publisher's net price might be 15% below the returned gross price. In this case, the publisher may want to adjust the bidder's returned price to run a true header bidding auction. Otherwise, this bidder's gross price will unfairly win over your other demand sources who report the real price.
+
+{% highlight js %}
+
+pbjs.bidderSettings = {
+  standard: { ... }
+  aol: {
+    bidCpmAdjustment : function(bidCpm){
+      // adjust the bid in real time before the auction takes place
+      return bidCpm * .85;
+    }
+  }
+};
+
+{% endhighlight %}
+
+Note that in the above example, the AOL bidder will inherit from "standard" adserverTargeting keys, so that you don't have to define the targeting keywords again.
+
 #### function(bidResponse)
 
 {: .table .table-bordered .table-striped }

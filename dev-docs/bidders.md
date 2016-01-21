@@ -57,8 +57,9 @@ These parameters in the bidReponse object are common across all bidders.
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `placement` | required | The placement ID from AOL. | "23324932" |
-| `sizeId` | required | The size ID from AOL. | "170" |
-| `alias` | required | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
+| `network` | required | The network ID from AOL. | |
+| `sizeId` | optional | The size ID from AOL. | "170" |
+| `alias` | optional | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
 
 (The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
 
@@ -77,6 +78,7 @@ These parameters in the bidReponse object are common across all bidders.
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `placementId` | required | The placement ID from AppNexus. | "234234" |
+| `randomeKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. Multiple key value pairs can be added here. | `randomKey` => `randomVal` |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
@@ -147,8 +149,15 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `slotId` | required | The slot id taken from casale javascript file. | "1" |
+| `id` | required | The placement ID |  |
+| `siteID` | required | the site ID | |
+| `tier2SiteID` | optional | | |
+| `tier3SiteID` | optional | | |
+
+
+<!-- | `slotId` | required | The slot id taken from casale javascript file. | "1" |
 | `casaleUrl` | required | The javascript URL shared by Casale. | "//js.indexww.com/ht/mysite.js" |
+ -->
 
 </div>
 
@@ -266,6 +275,24 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | :--- | :---- | :---------- | :------ |
 | `psn` | required | The publisher ID |  |
 | `slot` | required | The slot |  |
+
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+#PulsePoint
+
+###bidder code: 
+`pulsepoint`
+
+###bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `cf` | required | String, adSize identifier | `"300X250"` |
+| `cp` | required | Number, Publisher Id | `12345` |
+| `ct` | required | Number, Ad Tag Id | `12345` |
 
 
 </div>
