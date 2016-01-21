@@ -42,28 +42,39 @@ var CriteoAdapter = function CriteoAdapter() {
 			'&rnd=' + Math.floor(Math.random() * 99999999999) +
 			'&varName=' + encodeURI(varname);
 
+		// Create a zero latency bid based on the Criteo cookie (if available)
+		_processBid(bid, _getCookieValue(bid.params.cookiename));
+
 		adloader.loadScript(scriptUrl, function(response) {
-			var adResponse;
-			var content = window[varname];
-
-			// Add a response for each bid matching the "nid"
-			bids.forEach(function(existingBid) {
-				if (existingBid.params.nid === bid.params.nid) {
-					if (content) {
-						adResponse = bidfactory.createBid(1);
-						adResponse.bidderCode = 'criteo';
-
-						adResponse.keys = content.split(';');
-					} else {
-						// Indicate an ad was not returned
-						adResponse = bidfactory.createBid(2);
-						adResponse.bidderCode = 'criteo';
-					}
-
-					bidmanager.addBidResponse(existingBid.placementCode, adResponse);
-				}
-			});
+			// Create bid based on Criteo response
+			_processBid(bid, window[varname]);
 		});
+	}
+
+	function _processBid(bid, content) {
+		var adResponse;
+		// Add a response for each bid matching the "nid"
+		bids.forEach(function(existingBid) {
+			if (existingBid.params.nid === bid.params.nid) {
+				if (content) {
+					adResponse = bidfactory.createBid(1);
+					adResponse.bidderCode = 'criteo';
+
+					adResponse.keys = content.replace(/\;$/, '').split(';');;
+				} else {
+					// Indicate an ad was not returned
+					adResponse = bidfactory.createBid(2);
+					adResponse.bidderCode = 'criteo';
+				}
+
+				bidmanager.addBidResponse(existingBid.placementCode, adResponse);
+			}
+		});
+	}
+
+	function _getCookieValue(cookieName) {
+		var cookieValue = document.cookie.match('(^|;)\\s*' + cookieName + '\\s*=\\s*([^;]+)');
+		return cookieValue ? unescape(cookieValue.pop()) : '';
 	}
 
 	return {
