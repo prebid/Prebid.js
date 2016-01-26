@@ -314,7 +314,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 		window.cygnus_index_ready_state = function() {
 			try {
+                bidmanager.setExpectedBidsCount(ADAPTER_CODE, 0);
 				var indexObj = _IndexRequestData.targetIDToBid;
+                var counter = 0;
+                for(var key in indexObj){
+                    counter++;
+                }
+                bidmanager.setExpectedBidsCount(ADAPTER_CODE, counter);
 				var lookupObj = cygnus_index_args;
 
 				if (utils.isEmpty(indexObj)) {
