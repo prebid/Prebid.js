@@ -38,23 +38,13 @@ exports.loadScript = function(tagSrc, callback) {
 	}
 };
 
+//track a impbus tracking pixel
+//TODO: Decide if tracking via AJAX is sufficent, or do we need to
+//run impression trackers via page pixels?
 exports.trackPixel = function(pixelUrl) {
-	//track a impbus tracking pixel
-
-	//TODO: Decide of tracking via AJAX is sufficent, or do we need to
-	//run impression trackers via page pixels?
-	try {
-
-		//add a cachebuster so we don't end up dropping any impressions
-		pixelUrl += '&rnd=' + Math.random();
-
-		if (pixelUrl) {
-			var img = document.createElement('img');
-			img.src = pixelUrl;
-		}
-
-
-	} catch (e) {
-
+	if (!pixelUrl) {
+		throw new TypeError('pixelUrl is required');
 	}
+	//add a cachebuster so we don't end up dropping any impressions
+	(new Image()).src = pixelUrl + '&rnd=' + Math.random() * 100;
 };
