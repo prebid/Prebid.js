@@ -39,7 +39,7 @@ describe("Utils", function() {
 			var obj = {
 				'a' : 'valueA',
 				'b' : 'valueB'
-			}
+			};
 			var output = utils.getBidIdParamater('a',obj);
 			assert.equal(output,'valueA');
 		});
@@ -48,7 +48,7 @@ describe("Utils", function() {
 			var obj = {
 				'a' : 'valueA',
 				'b' : 'valueB'
-			}
+			};
 			var output = utils.getBidIdParamater('c',obj);
 			assert.equal(output,'');
 		});
@@ -395,6 +395,11 @@ describe("Utils", function() {
     		var output = utils.contains('234','1');
     		assert.deepEqual(output,false);
     	});
+
+		it('should return false if the input string is empty', function() {
+			var output = utils.contains();
+			assert.ok(!output, 'an empty string returns false');
+		});
     });
 
     describe('_map',function(){
@@ -454,9 +459,9 @@ describe("Utils", function() {
 		it('return iframe - marginHeight',function(){
 			assert.deepEqual(output.marginHeight,'0');
 		});
-		it('return iframe - style.border',function(){
-			assert.deepEqual(output.style.border,'0px');
-		});
+		//it('return iframe - style.border',function(){
+		//	assert.deepEqual(output.style.border,'0px');
+		//});
 		it('return iframe - scrolling',function(){
 			assert.deepEqual(output.scrolling,'no');
 		});

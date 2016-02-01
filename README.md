@@ -110,7 +110,7 @@ Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html 
 
 ### Unit Test In the Browser ###
 
-Navigate to http://localhost:9999/test/spec/runner.html to run the test file.
+Navigate to http://localhost:9999/build/coverage/karma_html/report to view test results.
 
 ### Supported Browsers ###
 Prebid.js is supported on IE9+ and modern browsers.
