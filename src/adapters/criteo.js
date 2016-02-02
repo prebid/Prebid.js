@@ -53,7 +53,7 @@ var CriteoAdapter = function CriteoAdapter() {
 						adResponse = bidfactory.createBid(1);
 						adResponse.bidderCode = 'criteo';
 
-						adResponse.keys = content.split(';');
+						adResponse.keys = content.replace(/\;$/, '').split(';');
 					} else {
 						// Indicate an ad was not returned
 						adResponse = bidfactory.createBid(2);
