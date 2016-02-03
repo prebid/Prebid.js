@@ -38,7 +38,7 @@
     (function() {
         var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
         pbs.type = "text/javascript";
-        pbs.src = '/dist/prebid.js';
+        pbs.src = '../../dist/prebid.js';
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -66,9 +66,9 @@
             {
                 bidder: 'appnexus',
                 params: {
-                   placementId: 'TO ADD'
+                   placementId: '4799418'
                 }
-            }, {
+            }/*, {
                 bidder: 'pubmatic',
                 params: {
                     publisherId: 'TO ADD',
@@ -98,9 +98,9 @@
                     params: {
                         tagid: '123' // <String> tag Id
                     }
-            }
+            }*/
             ]
-    },{
+    }/*,{
         code: 'div-gpt-ad-12345678-1',
         sizes: [[728, 90], [970, 90]],
         bids: [{
@@ -147,8 +147,14 @@
                 	tier2SiteID: 'TO ADD', //Optional
                 	tier3SiteID: 'TO ADD' //Optional
                 }
+            },
+            {
+                bidder: 'triplelift',
+                params:{
+                    inventoryCode: 'TO ADD'
+                }
             }]
-    }];
+    }*/];
 
     //add the adUnits
     pbjs.addAdUnits(adUnits);
@@ -262,7 +268,7 @@
 
         var rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
 
-        var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
+       /* var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());*/
 
         pbjs.que.push(function() {
             /* Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
@@ -299,11 +305,11 @@
     </div>
 
 
-    <div id='{id}'>
+    <!--div id='{id}'>
         <script type='text/javascript'>
             googletag.cmd.push(function() { googletag.display('div-gpt-ad-12345678-1'); });
         </script>
-    </div>
+    </div-->
 
 
 </body>
