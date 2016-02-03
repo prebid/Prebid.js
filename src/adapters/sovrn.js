@@ -60,7 +60,7 @@ var SovrnAdapter = function SovrnAdapter() {
 					adW=bid.sizes[0][0];
 					adH=bid.sizes[0][1];
 				}
-			imp =
+			var imp =
 				{
 					id: utils.getUniqueIdentifierStr(),
 					banner: {
