@@ -112,3 +112,5 @@ Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html 
 
 Navigate to http://localhost:9999/test/spec/runner.html to run the test file.
 
+### Supported Browsers ###
+Prebid.js is supported on IE9+ and modern browsers.
