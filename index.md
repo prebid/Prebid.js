@@ -71,8 +71,8 @@ description: A free and open source library for publishers to quickly implement 
     <hr class="full-rule">
 
 
-    <h2 class="bs-docs-featurette-title">All Major Bidders Supported</h2>
-    <p class="lead">Prebid.js includes adaptors to the major SSPs, ad networks, and exchanges.</p>
+    <h2 class="bs-docs-featurette-title">Tags That Work in Prebid.js</h2>
+    <!-- <p class="lead">Prebid.js includes adaptors to the major SSPs, ad networks, and exchanges.</p> -->
 
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
