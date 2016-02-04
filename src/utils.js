@@ -69,29 +69,24 @@ exports.tryAppendQueryString = function(existingUrl, key, value) {
 	return existingUrl;
 };
 
-
 //parse a query string object passed in bid params
 //bid params should be an object such as {key: "value", key1 : "value1"}
-exports.parseQueryStringParameters = function(queryObj) {
+function parseQueryStringParameters(obj){
 	var result = "";
 	for (var k in queryObj){
 		if (queryObj.hasOwnProperty(k))
 			result += k + "=" + encodeURIComponent(queryObj[k]) + "&";
 	}
 	return result;
-};
-
+}
+exports.parseQueryStringParameters = parseQueryStringParameters;
 
 //transform an AdServer targeting bids into a query string to send to the adserver
 //bid params should be an object such as {key: "value", key1 : "value1"}
 exports.transformAdServerTargetingObj = function(adServerTargeting) {
-	var result = "";
 	if (!adServerTargeting)
 		return "";
-	for (var k in adServerTargeting)
-		if (adServerTargeting.hasOwnProperty(k))
-			result += k + "=" + encodeURIComponent(adServerTargeting[k]) + "&";
-	return result;
+	return parseQueryStringParameters(adServerTargeting);
 };
 
 //Copy all of the properties in the source objects over to the target object
@@ -307,11 +302,11 @@ exports.hasValidBidRequest = function(paramObj, requiredParamsArr, adapter){
 	for(var i = 0; i < requiredParamsArr.length; i++){
 		var found = false;
 
-    this._each(paramObj, function (value, key) {
-      if (key === requiredParamsArr[i]) {
-        found = true;
-      }
-    });
+		this._each(paramObj, function (value, key) {
+			if (key === requiredParamsArr[i]) {
+		        	found = true;
+		      	}
+	    	});
 
 		if(!found){
 			this.logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
