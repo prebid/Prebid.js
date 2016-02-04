@@ -192,6 +192,9 @@ img {
   }
 }
 
+.pb-sm-img {
+  max-width: 200px;
+}
 
 .pb-lg-img {
   max-width: 650px;

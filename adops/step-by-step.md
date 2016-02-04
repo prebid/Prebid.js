@@ -38,14 +38,18 @@ Enter all of the inventory sizes that your website has.
 Because header bidding partners return prices, set the Line Item
 **Type** to **Price priority** to enable them to compete on price.
 
-{: .pb-md-img :}
+{: .pb-sm-img :}
 ![Price Priority]({{ site.github.url }}/assets/images/demo-setup/price-priority.png)
+
+<br>
 
 Set the **Rate** to $0.50 so that this line item will compete with
 your other demand sources at $0.50 ECPM.
 
-{: .pb-md-img :}
+{: .pb-sm-img :}
 ![Rate]({{ site.github.url }}/assets/images/demo-setup/rate.png)
+
+<br>
 
 Set **Display Creatives** to *One or More* since we'll have one or
 more creatives attached to this line item.
@@ -67,6 +71,8 @@ section.  Be sure to use 2 decimal places.
 {: .pb-md-img :}
 ![Key-values]({{ site.github.url }}/assets/images/demo-setup/key-values.png)
 
+<br>
+
 ## Step 2. Add a Creative
 
 Add creatives to this $0.50 line item so it can be duplicated later.
@@ -85,7 +91,7 @@ snippet** box.
       try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
     </script>
 
-{: .pb-md-img :}
+{: .pb-lg-img :}
 ![New creative]({{ site.github.url }}/assets/images/demo-setup/new-creative.png)
 
 Make sure the creative size is set to 1x1.  This allows us to set up
@@ -104,6 +110,8 @@ and override all sizes in the **Size overrides** box.
 
 Save the creative and go back to the line item.
 
+<br>
+
 ## Step 3. Duplicate Creatives
 
 DFP has a constraint that one creative can be served to at most one ad
@@ -118,6 +126,8 @@ Therefore, we need to duplicate our Prebid creative 4 times.
 Once that's done, we have a fully functioning line item with 4
 creatives attached.
 
+<br>
+
 ## Step 4. Duplicate Line Items
 
 Now let's duplicate our line item for bids above $0.50.
@@ -131,7 +141,7 @@ For example, we can duplicate 3 more line items:
 
 -   $1
 -   $1.50
--   $2.
+-   $2
 
 Let's go into each of them to update some settings.  For each
 duplicated line item:
