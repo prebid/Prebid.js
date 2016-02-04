@@ -10,6 +10,7 @@ nav_section: reference
 ---
 
 <div class="bs-docs-section" markdown="1">
+
 #Summary
 
 In this page, you can find the below information:
@@ -22,11 +23,13 @@ In this page, you can find the below information:
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #Common
 
 <a name="common-bidresponse"></a>
 
 ###bidResponse
+
 These parameters in the bidReponse object are common across all bidders.
 
 
@@ -46,9 +49,11 @@ These parameters in the bidReponse object are common across all bidders.
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #AOL
 
 ###bidder code: 
+
 `aol`
 
 ###bid params
@@ -67,9 +72,11 @@ These parameters in the bidReponse object are common across all bidders.
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #AppNexus
 
 ###bidder code: 
+
 `appnexus`
 
 ###bid params
@@ -142,6 +149,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 #Casale (Index)
 
 ###bidder code: 
+
 `indexExchange`
 
 ###bid params
@@ -166,6 +174,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 #Criteo
 
 ###bidder code: 
+
 `criteo`
 
 ###bid params
@@ -192,6 +201,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 #OpenX
 
 ###bidder code: 
+
 `openx`
 
 ###bid params
@@ -207,9 +217,11 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #Pubmatic
 
 ###bidder code: 
+
 `pubmatic`
 
 ###bid params
@@ -224,9 +236,11 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #Rubicon
 
 ###bidder code: 
+
 `rubicon`
 
 ###bid params
@@ -244,9 +258,11 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 
 <div class="bs-docs-section" markdown="1">
+
 #Sovrn
 
 ###bidder code: 
+
 `sovrn`
 
 ###bid params
@@ -263,9 +279,11 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 
 <div class="bs-docs-section" markdown="1">
+
 #Yieldbot
 
 ###bidder code: 
+
 `yieldbot`
 
 ###bid params
@@ -280,9 +298,11 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 </div>
 
 <div class="bs-docs-section" markdown="1">
+
 #PulsePoint
 
 ###bidder code: 
+
 `pulsepoint`
 
 ###bid params
