@@ -123,27 +123,24 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 	
 	function _processUserMatchings(userMatchings)
 	{
-		var iframe, headElem = document.getElementsByTagName('head')[0], script, url;
+		var headElem = document.getElementsByTagName('head')[0], createdElem;
 		
 		utils._each(userMatchings, function(userMatching) {
-			url =  decodeURIComponent(userMatching.Url);
 			switch(userMatching.Type) {
 				case "redirect":
-					new Image(0,0).src = url;
+					createdElem = document.createElement('img');
 					break;
 				case "iframe":
-					iframe = utils.createInvisibleIframe();
-					iframe.src = url;
-					headElem.insertBefore(iframe, headElem.firstChild);
+					createdElem = utils.createInvisibleIframe();
 					break;
 				case "javascript":
-					script = document.createElement('script');
-                    script.type = 'text/javascript';
-                    script.async = true;
-                    script.src = url;
-					headElem.insertBefore(iframe, headElem.firstChild);
+					createdElem = document.createElement('script');
+                    createdElem.type = 'text/javascript';
+                    createdElem.async = true;
 					break;
 			}
+			createdElem.src = decodeURIComponent(userMatching.Url);
+			headElem.insertBefore(createdElem, headElem.firstChild);
 		});
 	}
 	
