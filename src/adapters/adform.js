@@ -60,7 +60,7 @@ function AdformAdapter() {
                 if (adItem && adItem.response == 'banner') {
                     bidObject = bidfactory.createBid(1);
                     bidObject.bidderCode = bidder;
-                    bidObject.cpm = parseInt(adItem.win_bid, 10);
+                    bidObject.cpm = adItem.win_bid;
                     bidObject.cur = adItem.win_cur;
                     bidObject.ad = adItem.banner;
                     bidObject.width = adItem.width;
