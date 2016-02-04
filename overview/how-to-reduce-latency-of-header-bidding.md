@@ -27,7 +27,7 @@ Having seen almost all bidders' header bidding API calls, we've observed the few
 
 Here're a few screenshots of websites' network calls after implemented header bidding. In a later section, there's a screenshot showing how header bidding is accelerated by prebid.js.
 
-####Blocking Call Screenshot 1
+#### Blocking Call Screenshot 1
 
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-blocking-1.png)
 
@@ -36,7 +36,7 @@ Here're a few screenshots of websites' network calls after implemented header bi
 
 <br> 
 
-####Blocking Call Screenshot 2
+#### Blocking Call Screenshot 2
 
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-blocking-2.png)
 
@@ -49,7 +49,7 @@ Here're a few screenshots of websites' network calls after implemented header bi
 
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-concurrent.png)
 
-* #####All Pre-bid Calls are made concurrently within 100ms.
+* ##### All Pre-bid Calls are made concurrently within 100ms.
 
 	Note that AppNexus, Pubmatic, OpenX, Rubicon header bidding calls were all made within the first 100ms. 
 

@@ -44,14 +44,14 @@ Open it in a new tab, **download the HTML source**, and play around with it! We 
 
 <div class="bs-docs-section" markdown="1">
 
-#Quick Start
+# Quick Start
 
 <a name="basic-example">
 
-###Basic Example
+### Basic Example
 Here is a basic example for Rubicon and AppNexus bidding into a DFP ad unit:
 
-#####1. Register bidder tag Ids
+##### 1. Register bidder tag Ids
 
 In a simple JSON config, define a mapping of the bidders’ tag Ids to your ad units. Then load prebid.js library async. Call `pbjs.requestBids()` to send header bidding requests async to all bidders you've specified.
 
@@ -91,7 +91,7 @@ pbjs.que.push(function() {
 {% endhighlight %}
 
 
-#####2. Ad server waits for bids
+##### 2. Ad server waits for bids
 
 Define the timeout to let your ad server wait for a few hundred milliseconds, so the bidders can respond with bids.
 
@@ -110,7 +110,7 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 
 
-#####3. Set targeting for bids
+##### 3. Set targeting for bids
 
 Call the helper function `setTargetingForGPTAsync()` to handle all the targeting for all bidders. 
 

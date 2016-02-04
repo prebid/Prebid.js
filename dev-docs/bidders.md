@@ -50,13 +50,13 @@ These parameters in the bidReponse object are common across all bidders.
 
 <div class="bs-docs-section" markdown="1">
 
-#AOL
+# AOL
 
-###bidder code: 
+### bidder code: 
 
 `aol`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -73,13 +73,13 @@ These parameters in the bidReponse object are common across all bidders.
 
 <div class="bs-docs-section" markdown="1">
 
-#AppNexus
+# AppNexus
 
-###bidder code: 
+### bidder code: 
 
 `appnexus`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -146,13 +146,13 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 <div class="bs-docs-section" markdown="1">
 
-#Casale (Index)
+# Casale (Index)
 
-###bidder code: 
+### bidder code: 
 
 `indexExchange`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -171,13 +171,13 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 <div class="bs-docs-section" markdown="1">
 
-#Criteo
+# Criteo
 
-###bidder code: 
+### bidder code: 
 
 `criteo`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -186,7 +186,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 | `cookiename` | required | The cookie name for Criteo. | "ckn_pub" |
 | `varname` | optional | The default is `crtg_content`. | "crtg_content" |
 
-###Caveats
+### Caveats
 
 ##### No price back
 
@@ -198,13 +198,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#OpenX
+# OpenX
 
-###bidder code: 
+### bidder code: 
 
 `openx`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -218,13 +218,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#Pubmatic
+# Pubmatic
 
-###bidder code: 
+### bidder code: 
 
 `pubmatic`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -237,13 +237,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#Rubicon
+# Rubicon
 
-###bidder code: 
+### bidder code: 
 
 `rubicon`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -259,13 +259,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#Sovrn
+# Sovrn
 
-###bidder code: 
+### bidder code: 
 
 `sovrn`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -280,13 +280,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#Yieldbot
+# Yieldbot
 
-###bidder code: 
+### bidder code: 
 
 `yieldbot`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
@@ -299,13 +299,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-#PulsePoint
+# PulsePoint
 
-###bidder code: 
+### bidder code: 
 
 `pulsepoint`
 
-###bid params
+### bid params
 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |

@@ -13,7 +13,7 @@ nav_section: intro
 
 <div class="bs-docs-section" markdown="1">
 
-#Overview
+# Overview
 
 ### What is Prebid.js?
 
