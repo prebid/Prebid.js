@@ -11,7 +11,7 @@ nav_section: reference
 
 <div class="bs-docs-section" markdown="1">
 
-#Summary
+# Summary
 
 In this page, you can find the below information:
 
@@ -24,11 +24,11 @@ In this page, you can find the below information:
 
 <div class="bs-docs-section" markdown="1">
 
-#Common
+# Common
 
 <a name="common-bidresponse"></a>
 
-###bidResponse
+### bidResponse
 
 These parameters in the bidReponse object are common across all bidders.
 

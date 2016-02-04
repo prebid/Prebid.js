@@ -7,12 +7,12 @@ top_nav_section: dev_docs
 nav_section: reference
 
 pid: 10
----
 
+---
 
 <div class="bs-docs-section" markdown="1">
 
-#Function Reference
+# Function Reference
 
 Version 0.3.1
 
