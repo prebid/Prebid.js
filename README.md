@@ -1,3 +1,6 @@
+# HEY DEVELOPERS!
+### `rm -rf ./node_modules && npm cache clean && npm install`
+With [this commit](http://bit.ly/1Ran76T) we have changed the build system to use Webpack, Karma and Istanbul. This change was made to   support improved unit test coverage and reporting. Reinstalling Prebid.js is necessary as many node modules changed, and you are likely   to experience errors otherwise. After pulling down latest master please `rm -rf ./node_modules && npm cache clean && npm install`.
 Prebid.js
 ========
 
