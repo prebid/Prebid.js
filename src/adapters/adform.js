@@ -57,7 +57,9 @@ function AdformAdapter() {
             for(var i = 0, l = adItems.length; i < l; i++){
                 adItem = adItems[i];
                 bid = bids[i];
-                if (adItem && adItem.response == 'banner') {
+                if (adItem && adItem.response == 'banner' &&
+                    verifySize(adItem, bid.sizes)) {
+
                     bidObject = bidfactory.createBid(1);
                     bidObject.bidderCode = bidder;
                     bidObject.cpm = adItem.win_bid;
@@ -73,6 +75,16 @@ function AdformAdapter() {
                 }
             }
         };
+
+        function verifySize(adItem, validSizes) {
+            for (var j = 0, k = validSizes.length; j < k; j++) {
+                if (adItem.width == validSizes[j][0] &&
+                    adItem.height == validSizes[j][1]) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     function encode64(input) {

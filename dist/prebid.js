@@ -1,5 +1,5 @@
 /* prebid.js v0.5.0 
-Updated : 2016-02-04 */
+Updated : 2016-02-05 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @module adaptermanger */
 
@@ -190,7 +190,9 @@ function AdformAdapter() {
             for(var i = 0, l = adItems.length; i < l; i++){
                 adItem = adItems[i];
                 bid = bids[i];
-                if (adItem && adItem.response == 'banner') {
+                if (adItem && adItem.response == 'banner' &&
+                    verifySize(adItem, bid.sizes)) {
+
                     bidObject = bidfactory.createBid(1);
                     bidObject.bidderCode = bidder;
                     bidObject.cpm = adItem.win_bid;
@@ -206,6 +208,16 @@ function AdformAdapter() {
                 }
             }
         };
+
+        function verifySize(adItem, validSizes) {
+            for (var j = 0, k = validSizes.length; j < k; j++) {
+                if (adItem.width == validSizes[j][0] &&
+                    adItem.height == validSizes[j][1]) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     function encode64(input) {
