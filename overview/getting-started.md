@@ -17,15 +17,15 @@ nav_section: intro
 
 # Getting Started
 
-> Implementing header bidding requires close collaboration between dev and adops. 
+> Implementing header bidding requires close collaboration between dev and adops.
 
 #### From start to finish:
 
-1. Developer [gets started with Prebid.js](/dev-docs/getting-started.html) and downloads an example Prebid.js implementation page at [Develoepr Code Examples](/dev-docs/examples/basic-example.html). 
+1. Developer [gets started with Prebid.js](/dev-docs/getting-started.html) and downloads an example Prebid.js implementation page at [Developer Code Examples](/dev-docs/examples/basic-example.html).
 
 2. Adops follow the steps at [Adops Getting Started Guide](/adops.html). Create the bare minimum line items and creatives for developers to test with.
 
-3. Developer starts implementing the Prebid framework to the site properties. 
+3. Developer starts implementing the Prebid framework to the site properties.
 
 4. Adops creates production ready line items and creatives in the ad server.
 
@@ -33,7 +33,7 @@ nav_section: intro
 
 #### To get started:
 
-- If you are a developer, come to the [Develoepr Getting Started Guide](/dev-docs/getting-started.html).
+- If you are a developer, come to the [Developer Getting Started Guide](/dev-docs/getting-started.html).
 
 - If you are in adops, come to the [Adops Getting Started Guide](/adops.html).
 

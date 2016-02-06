@@ -80,7 +80,7 @@ At a high level, header bidding involves just a few steps:
 * When bids are received, prebid.js adds the price and creative identifier to your ad server’s call as a set of query string parameters.
 
 ##### 4. Line items
-* Within your ad server, line items are setup to target the various bid prices, allowing the bidders’ programmatic demand compete with other line items or integrated exchanges (like Google Ad Exchange) based on price. 
+* Within your ad server, line items are setup to target the various bid prices, allowing the bidders’ programmatic demand to compete with other line items or integrated exchanges (like Google Ad Exchange) based on price.
 
 ##### 5. Creative
 * A small snippet of JavaScript is setup as a creative on each pre-bid line item. When a programmatic line item is picked by your ad server, the “creative” JS snippet tells prebid.js which bidder to serve. The short code snippet documented here handles all bidders and all sizes.

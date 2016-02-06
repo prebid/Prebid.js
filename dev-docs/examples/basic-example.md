@@ -6,10 +6,10 @@ description: Basic Prebid.js Example with DFP GPT
 top_nav_section: dev_docs
 nav_section: quick-start
 
-about: 
+about:
 - Integration with DFP's GPT single request asynchronous mode.
 - One set of line items for all bidders
-- Standard keyword targeting setup (<a href="http://local/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
+- Standard keyword targeting setup (<a href="http://prebid.org/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/9ow4k8j6/2/embedded/html,result
@@ -48,7 +48,7 @@ Because GPT sends out all of the the impressions at the first `googletag.display
 
 #### Line 25 to 34: Load the Prebid.js library Asynchronously
 
-Line 26 defines an command queue for prebid.js, so that prebid commands can be added before the prebid.js library loads. 
+Line 26 defines an command queue for prebid.js, so that prebid commands can be added before the prebid.js library loads.
 
 This code pulls down the prebid.js library asynchronously from the appropriate CDN and inserts it into the page.
 

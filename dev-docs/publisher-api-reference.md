@@ -456,9 +456,9 @@ The below code snippet is the **default** setting for ad server targeting. For e
 
 If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. **Note** that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly.
 
-By default, only the winning bid (bid with the highest cpm) will be send to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with prebid partner not returning a cpm Value (ie: Criteo).
+By default, only the winning bid (bid with the highest cpm) will be sent to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with a prebid partner not returning a cpm Value (ie: Criteo).
 
-The bidderSettings object can also be really useful to define your own price bucket function to define the price bucket sent to the ad server.
+The bidderSettings object can also be really useful to specify your own price bucket function to define the price bucket sent to the ad server.
 
 <a name="bidderSettingsDefault"></a>
 
@@ -508,7 +508,7 @@ pbjs.bidderSettings = {
 #### 2. Keyword targeting for a specific bidder
 
 If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so.
-Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example, which overwrites the default AppNexus query string targeting.
+Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example shows, which overwrites the default AppNexus query string targeting.
 
 **Note that the line item setup has to match the targeting change**.
 
@@ -534,10 +534,10 @@ pbjs.bidderSettings = {
 {% endhighlight %}
 
 
-The bidder setting for AppNexus is saying: send 2 pairs of key value string targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html).
+The bidder setting for AppNexus is saying: send 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html).
 
-Now let's say you would like Criteo bid to always be send to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
-You could define your own bidderSetting, only for criteo bidder, that would setup Criteo bid to always be send to the adserver and not be evaluate against other bids
+Now let's say you would like Criteo bids to always be sent to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
+You could define your own bidderSetting, only for criteo bidder, that would setup Criteo bid to always be sent to the adserver and not be evaluated against other bids.
 
 {% highlight js %}
 
@@ -555,7 +555,7 @@ pbjs.bidderSettings = {
 
 {% endhighlight %}
 
-Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example:
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows:
 
 **Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
 
@@ -604,7 +604,7 @@ pbjs.bidderSettings = {
 
 #### 3. Adjust bid price for a specific bidder
 
-Some bidders return gross prices, instead of the net prices (what the publisher will actually get paid for). For example, a publisher's net price might be 15% below the returned gross price. In this case, the publisher may want to adjust the bidder's returned price to run a true header bidding auction. Otherwise, this bidder's gross price will unfairly win over your other demand sources who report the real price.
+Some bidders return gross prices, instead of the net prices (what the publisher will actually get paid). For example, a publisher's net price might be 15% below the returned gross price. In this case, the publisher may want to adjust the bidder's returned price to run a true header bidding auction. Otherwise, this bidder's gross price will unfairly win over your other demand sources who report the real price.
 
 {% highlight js %}
 
@@ -637,7 +637,7 @@ Note that in the above example, the AOL bidder will inherit from "standard" adse
 |   Name |   Type | Description | Example
 | :----  |:--------| :-------| :-------|
 | `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
-| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
+| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](http://prebid.org/adops/step-by-step.html). | `123` |
 | `pbLg` | String | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
 | `pbMg` | String | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
 | `pbHg` | String | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
