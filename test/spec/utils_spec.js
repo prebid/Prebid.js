@@ -162,25 +162,25 @@ describe("Utils", function() {
 		it('should return query string using multi size array',function(){
 			var sizes = [[728, 90], [970, 90]];
 			var output = utils.parseSizesInput(sizes);
-			assert.equal(output,'size=728x90&promo_sizes=970x90');
+			assert.deepEqual(output,['728x90', '970x90']);
 		});
 
 		it('should return query string using single size array',function(){
 			var sizes = [728, 90];
 			var output = utils.parseSizesInput(sizes);
-			assert.equal(output,'size=728x90');
+			assert.deepEqual(output,['728x90']);
 		});
 
 		it('should return query string using string input',function(){
 			var sizes = '300x250,970x90';
 			var output = utils.parseSizesInput(sizes);
-			assert.equal(output,'size=300x250&promo_sizes=970x90');
+			assert.deepEqual(output,['300x250', '970x90']);
 		});
 
 		it('return undefined if input array is empty',function(){
 			var sizes =[];
 			var output = utils.parseSizesInput(sizes);
-			assert.equal(output,undefined);
+			assert.deepEqual(output,[]);
 		});
 	});
 

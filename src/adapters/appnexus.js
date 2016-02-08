@@ -111,7 +111,29 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 
 		//sizes takes a bit more logic
-		var sizeQueryString = utils.parseSizesInput(bid.sizes);
+		var sizeQueryString = '';
+		var parsedSizes = utils.parseSizesInput(bid.sizes);
+
+		//combine string into proper querystring for impbus
+		var parsedSizesLength = parsedSizes.length;
+		if (parsedSizesLength > 0) {
+			//first value should be "size"
+			sizeQueryString = 'size=' + parsedSizes[0];
+			if (parsedSizesLength > 1) {
+				//any subsequent values should be "promo_sizes"
+				sizeQueryString += '&promo_sizes=';
+				for (var j = 1; j < parsedSizesLength; j++) {
+					sizeQueryString += parsedSizes[j] += ',';
+				}
+				//remove trailing comma
+				if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
+					sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
+				}
+			}
+		}
+
+		console.log(sizeQueryString);
+
 		if (sizeQueryString) {
 			jptCall += sizeQueryString + '&';
 		}
