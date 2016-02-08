@@ -59,17 +59,13 @@ pbjs.que.push = function(cmd) {
 };
 
 function processQue() {
-	for (var i = 0; i < pbjs.que.length; i++) {
-		if (typeof pbjs.que[i].called === objectType_undefined) {
-			try{
-				pbjs.que[i].call();
-				pbjs.que[i].called = true;
-			}
-			catch(e){
-				utils.logError('Error processing command :', 'prebid.js', e);
-			}
-			
-		}
+	try{
+		var q = pbjs.que;
+		q.reverse();
+		while(q.length) q.pop()();
+	}
+	catch(e){
+		utils.logError('Error processing command :', 'prebid.js', e);
 	}
 }
 
