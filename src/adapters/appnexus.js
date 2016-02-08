@@ -132,8 +132,6 @@ var AppNexusAdapter = function AppNexusAdapter() {
 			}
 		}
 
-		console.log(sizeQueryString);
-
 		if (sizeQueryString) {
 			jptCall += sizeQueryString + '&';
 		}
