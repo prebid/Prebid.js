@@ -169,6 +169,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 </div>
 
+<!-- 
 <div class="bs-docs-section" markdown="1">
 
 # Criteo
@@ -194,7 +195,7 @@ Criteo doesn't return the price back directly through their pre-bid API. Prebid.
 
 When Criteo supports bid price through their API, we will support Criteo in the same manner as the other bidders.
 
-</div>
+</div> -->
 
 <div class="bs-docs-section" markdown="1">
 
