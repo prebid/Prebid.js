@@ -154,6 +154,30 @@ var RubiconAdapter = function RubiconAdapter() {
     }
 
     /**
+     * map the sizes in `bid.sizes` to Rubicon specific keys
+     * @param  {object} array of bids
+     * @return {[type]}      [description]
+     */
+    function _mapSizes(bids){
+        utils._each(bids, function(bid){
+            if(bid.params.sizes){
+                return;
+            }
+             //return array like ['300x250', '728x90']
+            var parsedSizes = utils.parseSizesInput(bid.sizes);
+            //iterate the bid.sizes array to lookup codes
+            var tempSize = [];
+            for(var i =0; i < parsedSizes.length; i++){
+                var rubiconKey = RUBICON_SIZE_MAP[parsedSizes[i]];
+                if(rubiconKey){
+                    tempSize.push(rubiconKey);
+                }
+            }
+            bid.params.sizes = tempSize;
+        });
+    }
+
+    /**
      * Define the slot using the rubicontag.defineSlot API
      * @param {Object} Bidrequest
      */
@@ -194,6 +218,8 @@ var RubiconAdapter = function RubiconAdapter() {
         // start the timer; want to measure from
         // even just loading the SDK
         _bidStart = (new Date).getTime();
+
+        _mapSizes(params.bids);
 
         utils._each(params.bids, function (bid, index) {
             // on the first bid, set up the SDK
