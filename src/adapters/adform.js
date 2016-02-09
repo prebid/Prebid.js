@@ -57,7 +57,7 @@ function AdformAdapter() {
             for(var i = 0, l = adItems.length; i < l; i++){
                 adItem = adItems[i];
                 bid = bids[i];
-                if (adItem && adItem.response == 'banner' &&
+                if (adItem && adItem.response === 'banner' &&
                     verifySize(adItem, bid.sizes)) {
 
                     bidObject = bidfactory.createBid(1);
