@@ -38,7 +38,7 @@
     (function() {
         var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
         pbs.type = "text/javascript";
-        pbs.src = 'prebid.0.3.2.min.js';
+        pbs.src = '/build/dist/prebid.js';
         var target = document.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -81,12 +81,6 @@
                 params: {
                     publisherId: 'TO ADD',
                     adSlot: 'TO ADD@300x600'
-                }
-            }, {
-                bidder: 'criteo',
-                params: {
-                    nid: "TO ADD",
-                    cookiename: "cto_test"
                 }
             }]
     },{

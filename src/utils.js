@@ -109,10 +109,12 @@ exports.extend = function(target, source){
 	return target;
 };
 
-//parse a GPT-Style General Size Array or a string like "300x250" into a format
-//suitable for passing to a GPT tag, may include size and/or promo sizes
+/**
+ * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
+ * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
+ * @return {array[string]}	Array of strings like `["300x250"]` or `["300x250", "728x90"]`
+ */
 exports.parseSizesInput = function(sizeObj) {
-	var sizeQueryString;
 	var parsedSizes = [];
 
 	//if a string for now we can assume it is a single size, like "300x250"
@@ -146,26 +148,7 @@ exports.parseSizesInput = function(sizeObj) {
 		}
 	}
 
-
-	//combine string into proper querystring for impbus
-	var parsedSizesLength = parsedSizes.length;
-	if (parsedSizesLength > 0) {
-		//first value should be "size"
-		sizeQueryString = 'size=' + parsedSizes[0];
-		if (parsedSizesLength > 1) {
-			//any subsequent values should be "promo_sizes"
-			sizeQueryString += '&promo_sizes=';
-			for (var j = 1; j < parsedSizesLength; j++) {
-				sizeQueryString += parsedSizes[j] += ',';
-			}
-			//remove trailing comma
-			if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
-				sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
-			}
-		}
-	}
-
-	return sizeQueryString;
+	return parsedSizes;
 
 };
 

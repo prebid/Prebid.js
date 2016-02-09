@@ -1,5 +1,12 @@
+# Built Files
 node_modules/
+build
 
+# Test Files
+test/app
+
+# Dev File
+integrationExamples/gpt/gpt.html
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
 
