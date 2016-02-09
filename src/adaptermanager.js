@@ -99,3 +99,5 @@ this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
 this.registerBidAdapter(AolAdapter(), 'aol');
 this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+//default bidder alias
+this.aliasBidAdapter('appnexus', 'brealtime');
