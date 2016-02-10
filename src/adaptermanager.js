@@ -10,6 +10,8 @@ var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
 var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var SpringServeAdapter = require('./adapters/springserve.js');
+var AdformAdapter = require('./adapters/adform');
+var Aol = require('./adapters/aol');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -95,9 +97,14 @@ this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
+<<<<<<< HEAD
 this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
 this.registerBidAdapter(AolAdapter(), 'aol');
 this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
 //default bidder alias
 this.aliasBidAdapter('appnexus', 'brealtime');
+=======
+this.registerBidAdapter(Aol(), 'aol');
+this.registerBidAdapter(AdformAdapter(), 'adform');
+>>>>>>> f8cd017... Adform adapter added
