@@ -10,6 +10,7 @@ var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
 var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var SpringServeAdapter = require('./adapters/springserve.js');
+var AdequantAdapter = require('./adapters/adequant.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -99,5 +100,6 @@ this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
 this.registerBidAdapter(AolAdapter(), 'aol');
 this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+this.registerBidAdapter(new AdequantAdapter(),'adequant');
 //default bidder alias
 this.aliasBidAdapter('appnexus', 'brealtime');
