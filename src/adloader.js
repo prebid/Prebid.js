@@ -1,7 +1,7 @@
 var utils = require('./utils');
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
-	if(!tagSrc){
+	if(!tagSrc) {
 		utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
 		return;
 	}
@@ -42,9 +42,14 @@ exports.loadScript = function(tagSrc, callback) {
 //TODO: Decide if tracking via AJAX is sufficent, or do we need to
 //run impression trackers via page pixels?
 exports.trackPixel = function(pixelUrl) {
-	if (!pixelUrl) {
-		throw new TypeError('pixelUrl is required');
+	var delimiter, trackingPixel;
+	if (!pixelUrl || typeof(pixelUrl) !== 'string') {
+		utils.logMessage('Missing or invalid pixelUrl.');
+		return;
 	}
+	delimiter = pixelUrl.indexOf('?') > 0 ? '&' : '?';
 	//add a cachebuster so we don't end up dropping any impressions
-	(new Image()).src = pixelUrl + '&rnd=' + Math.random() * 100;
+	trackingPixel = pixelUrl + delimiter + 'rnd=' + Math.floor(Math.random() * 1E7);
+	(new Image()).src = trackingPixel;
+	return trackingPixel;
 };
