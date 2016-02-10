@@ -87,6 +87,13 @@ var PubmaticAdapter = function PubmaticAdapter() {
 			adUnit = bidResponseMap[bid.adSlot] || {};
 
 			// adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
+
+			// if using DFP GPT, the params string comes in the format "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
+			// the code below detects and handles this.
+			if(bidInfoMap[bid.adSlot].indexOf('=')===-1){
+				bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+			};
+
 			adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(result, pair) {
 				var parts = pair.split('=');
 				result[parts[0]] = parts[1];
