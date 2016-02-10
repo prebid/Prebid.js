@@ -97,14 +97,11 @@ this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
-<<<<<<< HEAD
 this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
 this.registerBidAdapter(AolAdapter(), 'aol');
 this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
 //default bidder alias
 this.aliasBidAdapter('appnexus', 'brealtime');
-=======
 this.registerBidAdapter(Aol(), 'aol');
 this.registerBidAdapter(AdformAdapter(), 'adform');
->>>>>>> f8cd017... Adform adapter added
