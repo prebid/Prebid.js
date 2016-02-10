@@ -61,7 +61,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 			return "'" + adSlot + "'";
 		}).join(',');
 
-		content += '<scr' + 'ipt src="//ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
+		content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
 		content += '<scr' + 'ipt>';
 		content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap, bidDetailsMap: bidDetailsMap})';
 		content += '</scr' + 'ipt>';
