@@ -17,7 +17,7 @@ In this page, you can find the below information:
 
 * bidder code: this is the code prebid.js uses to identify bidders.
 * bid params: ad request parameters for a bidder. For example, tag Id, site ID, query string parameters. Your page should fill out the required bid params for a bidder to succesfully get a bid back.
-* bidder specific bidResponse: in addition to 
+* bidder specific bidResponse: in addition to
 * Caveats: every bidder is different. In addition to the standardized bidResponse object we propose, there might be caveats that you should know about.
 
 </div>
@@ -52,7 +52,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 # AOL
 
-### bidder code: 
+### bidder code:
 
 `aol`
 
@@ -75,7 +75,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 # AppNexus
 
-### bidder code: 
+### bidder code:
 
 `appnexus`
 
@@ -100,7 +100,7 @@ These parameters in the bidReponse object are common across all bidders.
 <div class="bs-docs-section" markdown="1">
 #Amazon
 
-###bidder code: 
+###bidder code:
 `amazon`
 
 ###bid params
@@ -148,7 +148,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 # Casale (Index)
 
-### bidder code: 
+### bidder code:
 
 `indexExchange`
 
@@ -169,12 +169,12 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 </div>
 
-<!-- 
+<!--
 <div class="bs-docs-section" markdown="1">
 
 # Criteo
 
-### bidder code: 
+### bidder code:
 
 `criteo`
 
@@ -201,7 +201,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # OpenX
 
-### bidder code: 
+### bidder code:
 
 `openx`
 
@@ -221,7 +221,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Pubmatic
 
-### bidder code: 
+### bidder code:
 
 `pubmatic`
 
@@ -240,7 +240,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Rubicon
 
-### bidder code: 
+### bidder code:
 
 `rubicon`
 
@@ -249,9 +249,10 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `rp_account` | required | The publisher account ID | "4934" |
-| `rp_site` | required | The site ID | "13945" |
-| `rp_zonesize` | required | The concatenation of zone and size | "23948-15" |
+| `accountId` | required | The publisher account ID | "4934" |
+| `siteId` | required | The site ID | "13945" |
+| `zoneId` | required | The zone ID | "23948" |
+| `sizes` | required | Array of RubiconProject size IDs | [15] |
 
 
 </div>
@@ -262,7 +263,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Sovrn
 
-### bidder code: 
+### bidder code:
 
 `sovrn`
 
@@ -273,17 +274,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | :--- | :---- | :---------- | :------ |
 | `tag_id` | required | The sovrn Ad Tag ID | "315045" |
 
-
 </div>
-
-
-
 
 <div class="bs-docs-section" markdown="1">
 
 # Yieldbot
 
-### bidder code: 
+### bidder code:
 
 `yieldbot`
 
@@ -295,14 +292,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | `psn` | required | The publisher ID |  |
 | `slot` | required | The slot |  |
 
-
 </div>
 
 <div class="bs-docs-section" markdown="1">
 
 # PulsePoint
 
-### bidder code: 
+### bidder code:
 
 `pulsepoint`
 
@@ -311,9 +307,61 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `cf` | required | String, adSize identifier | `"300X250"` |
-| `cp` | required | Number, Publisher Id | `12345` |
-| `ct` | required | Number, Ad Tag Id | `12345` |
+| `cf` | required | Ad size identifier | `"300X250"` |
+| `cp` | required | Publisher Id | `12345` |
+| `ct` | required | Ad Tag Id | `12345` |
 
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+# BRealTime
+
+### bidder code:
+
+`brealtime`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `placementId` | required | The placement ID from BRealTime | `"1234567"` |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+#  Adform
+
+### bidder code:
+
+`adform`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `mid` | required | | `12345` |
+| `adxDomain` | optional | The Adform domain | `"adx.adform.net"` |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+#  SpringServe
+
+### bidder code:
+
+`springserve`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `impId` | required | The impression ID | `12345` |
+| `supplyPartnerId` | required | The supply partner ID | `1` |
 
 </div>

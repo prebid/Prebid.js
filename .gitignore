@@ -2,3 +2,5 @@
 Gemfile.lock
 /dist/bootstrap
 /dist/jquery
+/.idea
+.DS_Store
