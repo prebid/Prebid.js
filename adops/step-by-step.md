@@ -9,7 +9,7 @@ nav_section: tutorials
 
 ---
 
-<div class="bs-docs-section demo-setup" markdown="1">
+<div class="bs-docs-section" markdown="1">
 
 # Step by step guide to DFP setup
 
@@ -19,8 +19,6 @@ nav_section: tutorials
   <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
   <span class="sr-only">Correction:</span>
   Correction: in your Line Item settings, 'Display Creative' should be set to 'One or More', not 'As Many as Possible' as described in the video.
-</div>
-
 </div>
 
 * TOC

@@ -118,6 +118,14 @@ img {
   margin-bottom: 5px;
 }
 
+.bs-docs-section {
+    text-align: justify;
+    text-indent: auto;
+    hyphens: auto;
+    line-height: 1.45;
+    font-size: 18px;
+}
+
 .bs-docs-section h1 {
   padding-bottom: 9px;
   margin: 40px 0 20px;
@@ -201,7 +209,10 @@ img {
 }
 
 .pb-md-img {
-  max-width: 450px;
+    max-width: 44%;
+    box-shadow: 6px 6px 2px #CCC;
+    padding-top: 2em;
+    padding-bottom: 2em;
 }
 
 .blog-related-posts {
@@ -236,8 +247,6 @@ img {
 #chart_div {
   height: 400px;
 }
-
-
 
 .docs-sidebar {
   margin-top: 20px;
