@@ -9,7 +9,7 @@ module.exports = function() {
         var req_url = [];
         var publisher_id = null;
         var sizes = [];
-        var cats = [];
+        var cats = null;
         var replies = [];
         var placements = {};
         
