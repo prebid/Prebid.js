@@ -8,7 +8,7 @@ var adloader = require('../adloader');
 
 /**
  * @class RubiconAdapter
- * Prebid adapter for Rubicon's Rubicon
+ * Prebid adapter for Rubicon's header bidding client
  */
 var RubiconAdapter = function RubiconAdapter() {
     var RUBICONTAG_URL = (window.location.protocol) + '//ads.rubiconproject.com/header/';
@@ -23,6 +23,7 @@ var RubiconAdapter = function RubiconAdapter() {
         "300x1050": 54,
         "970x250": 57
     };
+    var RUBICON_INITIALIZED = 0;
 
     // the fastlane creative code
     var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (w, fe) { w.rubicontag.renderCreative(fe, "';
@@ -121,7 +122,6 @@ var RubiconAdapter = function RubiconAdapter() {
      * @param {Object} response -- AJAX response from fastlane
      */
     function _addBid(response, ads) {
-
         // get the bid for the placement code
         var bid;
         if (!ads || ads.length === 0) {
@@ -149,6 +149,8 @@ var RubiconAdapter = function RubiconAdapter() {
      * @param {Function} callback
      */
     function _initSDK(options, done) {
+        if (RUBICON_INITIALIZED) return;
+        RUBICON_INITIALIZED = 1;
         var accountId = options.accountId;
         adloader.loadScript(RUBICONTAG_URL + accountId + '.js', done);
     }
@@ -183,12 +185,37 @@ var RubiconAdapter = function RubiconAdapter() {
      */
     function _defineSlot(bid) {
         _rready(function () {
-            window.rubicontag.defineSlot({
+            var newSlot=window.rubicontag.defineSlot({
                 siteId: bid.params.siteId,
                 zoneId: bid.params.zoneId,
                 id: bid.placementCode,
                 sizes: bid.params.sizes
             });
+            if (bid.params.position) {
+                newSlot.setPosition(bid.params.position);
+            }
+            if (bid.params.userId) {
+                window.rubicontag.setUserKey(bid.params.userId);
+            }
+            if (bid.params.keywords) {
+                for(var i=0; i < bid.params.keywords.length; i++){
+                    newSlot.addKW(bid.params.keywords[i]);
+                }
+            }
+            if (bid.params.inventory) {
+                for (var p in bid.params.inventory) {
+                    if (bid.params.inventory.hasOwnProperty(p)) {
+                        newSlot.addFPI(p,bid.params.inventory[p]);
+                    }
+                }
+            }
+            if (bid.params.visitor) {
+                for (var p in bid.params.visitor) {
+                    if (bid.params.visitor.hasOwnProperty(p)) {
+                        newSlot.addFPV(p,bid.params.visitor[p]);
+                    }
+                }
+            }
         });
     }
 

@@ -32,7 +32,9 @@ var AppNexusAdapter = function AppNexusAdapter() {
 
 		//determine tag params
 		var placementId = utils.getBidIdParamater('placementId', bid.params);
+		//memberId will be deprecated, use member instead
 		var memberId = utils.getBidIdParamater('memberId', bid.params);
+		var member = utils.getBidIdParamater('member', bid.params);
 		var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
 		var query = utils.getBidIdParamater('query', bid.params);
 		var referrer = utils.getBidIdParamater('referrer', bid.params);
@@ -46,7 +48,13 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
 		jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
 		jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
-		jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
+		if(member){
+			jptCall = utils.tryAppendQueryString(jptCall, 'member_id', member);
+		}else if(memberId){
+			jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
+			utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
+		}
+		jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 		jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
 
@@ -94,6 +102,7 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		delete paramsCopy.query;
 		delete paramsCopy.referrer;
 		delete paramsCopy.alt_referrer;
+		delete paramsCopy.member;
 
 		//get the reminder
 		var queryParams = utils.parseQueryStringParameters(paramsCopy);

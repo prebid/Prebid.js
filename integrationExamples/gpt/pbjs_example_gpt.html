@@ -80,7 +80,17 @@
                     publisherId: 'TO ADD',
                     adSlot: 'TO ADD@300x600'
                 }
-            }, {
+            },
+            {
+                bidder: 'adform',
+                // available params: [ 'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp', 'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test' ]
+                params: {
+                    adxDomain: 'adx.adform.net', //optional
+                    mid: 74042,
+                    test: 1
+                }
+            },
+            {
                 bidder: 'yieldbot',
                 params: {
                     psn: 'TO ADD',
@@ -134,12 +144,20 @@
             },{
                 bidder: 'rubicon',
                 params: {
-                   rp_account : 'TO ADD',
-                   rp_site: 'TO ADD',
-                   rp_zonesize : 'TO ADD',
-                   rp_tracking : 'TO ADD',
-                   rp_inventory : 'TO ADD',
-                   rp_floor : '0.1'
+                   accountId: "1234",          //String - required
+                   siteId: "1234",             //String - required
+                    zoneId: "1234",           //String - required
+                    sizes: [15],                //Array[Number] - optional
+                    userId: "12345",            //String - optional
+                    keywords: ["a","b","c"],    //Array[String] - optional       
+                    inventory: {                //Object - optional
+                        rating:"5-star", 
+                        prodtype:"tech"
+                    },
+                    visitor: {                  //Object - optional
+                        ucat:"new", 
+                        search:"iphone"
+                    }
                 }
             },{
               bidder: 'yieldbot',
@@ -151,11 +169,11 @@
               {
                 bidder: 'indexExchange',
                 params: {
-                    id: 'TO ADD',        //String - required
-                	siteID: TO ADD,      //Number - required
-                	timeout: TO ADD,     //Number - Optional
-                	tier2SiteID: TO ADD, //Number - Optional
-                	tier3SiteID: TO ADD  //Number - Optional
+                    id: 'TO ADD',      //String - required
+                	siteID: 123,       //Number - required
+                	timeout: 456,      //Number - Optional
+                	tier2SiteID: 789,  //Number - Optional
+                	tier3SiteID: 1234  //Number - Optional
                 }
             }]
     }];

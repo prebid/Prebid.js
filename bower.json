@@ -6,7 +6,7 @@
     "Paul Yang"
   ],
   "description": "Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free",
-  "main": "dist/prebid.min.js",
+  "main": "build/dist/prebid.js",
   "keywords": [
     "Prebid"
   ],
