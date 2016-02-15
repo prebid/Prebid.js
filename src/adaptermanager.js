@@ -9,9 +9,9 @@ var YieldbotAdapter = require('./adapters/yieldbot');
 var IndexExchange = require('./adapters/indexExchange');
 var Sovrn = require('./adapters/sovrn');
 var PulsePointAdapter = require('./adapters/pulsepoint.js');
+var WideOrbitAdapter = require('./adapters/wideorbit.js');
 var SpringServeAdapter = require('./adapters/springserve.js');
 var AdformAdapter = require('./adapters/adform');
-var WideOrbitAdapter = require('./adapters/wideorbit.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -61,7 +61,7 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
 		} else {
 			utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
 		}
-
+		
 	} else {
 		utils.logError('bidAdaptor or bidderCode not specified');
 	}

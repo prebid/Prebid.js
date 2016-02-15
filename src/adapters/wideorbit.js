@@ -13,7 +13,7 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 	
     function _fixParamNames(param) {
         var properties = ["site", "page", "width", "height", "rank", "referrer", "subPublisher",
-                          "ecpm", "atf", "pId", "pbId", "referrer", "atf", "tagId", "ecpm"], i, prop, correctName;
+                          "ecpm", "atf", "pId", "pbId", "referrer", "atf", "tagId", "ecpm"], prop;
 
         if (!param) {
             return;
@@ -193,6 +193,6 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 	return {
 		callBids: _callBids
 	};
-}
+};
 
 module.exports = WideOrbitAdapter;
