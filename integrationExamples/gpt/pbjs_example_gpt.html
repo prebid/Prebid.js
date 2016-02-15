@@ -119,6 +119,22 @@
                         }
                     },
                     {
+                        bidder: 'adgear',
+                        /*
+                         * Required params: [ 'tagId' ]
+                         *  - tagId is required and is a string identifying the website in AdGear to request ads for
+                         *
+                         * Optional params: [ 'url', 'sizes' ]
+                         * - url is used to optionally override the default window.location.href passed as the declared url
+                         * - sizes has the same format as the sizes array of arrays in the adUnit itself and is optionally used
+                         *   to override the sizes to request ads for from adgear for the adUnit (e.g., just request [[300,250]]
+                         *   instead of [[300,250],[300,600]], or vice-versa)
+                         */
+                        params: {
+                            tagId: '0d3d1ad2fefc4210ab9e51a7b038ede0'
+                        }
+                    },
+                    {
                         bidder: 'yieldbot',
                         params: {
                             psn: 'TO ADD',
