@@ -19,11 +19,11 @@ var AppNexusAdapter = function AppNexusAdapter() {
 		bidmanager.setExpectedBidsCount(bidCode,bidsCount);
 
 		for (var i = 0; i < bidsCount; i++) {
-			var bidReqeust = anArr[i];
+			var bidRequest = anArr[i];
 			var callbackId = utils.getUniqueIdentifierStr();
 			adloader.loadScript(buildJPTCall(bidReqeust, callbackId));
 			//store a reference to the bidRequest from the callback id
-			bidmanager.pbCallbackMap[callbackId] = bidReqeust;
+			bidmanager.pbCallbackMap[callbackId] = bidRequest;
 		}
 	};
 
