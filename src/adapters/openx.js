@@ -77,7 +77,16 @@ var OpenxAdapter = function OpenxAdapter(options) {
 							adResponse.bidderCode = 'openx';
 							adResponse.ad_id = adUnit.get('ad_id');
 							adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+
 							adResponse.ad = adUnit.get('html');
+							// Add record/impression pixel to the creative HTML
+							var recordPixel = OX.utils.template(response.getRecordTemplate(), {
+								medium : OX.utils.getMedium(),
+								rtype : OX.Resources.RI,
+								txn_state : adUnit.get('ts')
+							});
+							adResponse.ad += '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="' + recordPixel + '"></div>';
+
 							adResponse.adUrl = adUnit.get('ad_url');
 							adResponse.width = adUnit.get('width');
 							adResponse.height = adUnit.get('height');

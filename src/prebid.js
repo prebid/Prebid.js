@@ -128,9 +128,8 @@ function timeOutBidders(){
 
 function sortAndCallBids(sortFunc) {
 	//Translate the bidder map into array so we can sort later if wanted
-	var pbArr = Object.keys(pb_bidderMap).map(function(key) {
-		return pb_bidderMap[key];
-	});
+	var pbArr = utils._map(pb_bidderMap, function(v, k) { return v; });
+
 	if (typeof sortFunc === objectType_function) {
 		pbArr.sort(sortFunc);
 	}
