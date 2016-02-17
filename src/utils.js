@@ -1,4 +1,6 @@
 var CONSTANTS = require('./constants.json');
+var polyfills = require('./polyfills');
+
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
@@ -99,7 +101,7 @@ exports.transformAdServerTargetingObj = function(adServerTargeting) {
 exports.extend = function(target, source){
 	target = target || {};
 
-	this._each(source,function(value,prop){    
+	this._each(source,function(value,prop){
 		if (typeof source[prop] === objectType_object) {
 			target[prop] = this.extend(target[prop], source[prop]);
 		} else {
@@ -388,6 +390,13 @@ exports.contains = function(a, obj) {
     }
     return false;
 };
+
+exports.indexOf = (function() {
+	if(Array.prototype.indexOf) {
+		return Array.prototype.indexOf;
+	}
+	return polyfills.indexOf;
+}());
 
 /**
  * Map an array or object into another array

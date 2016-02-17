@@ -17,7 +17,8 @@
 	"CB" : {
 		"TYPE" : {
 			"ALL_BIDS_BACK" : "allRequestedBidsBack",
-			"AD_UNIT_BIDS_BACK" : "adUnitBidsBack"
+			"AD_UNIT_BIDS_BACK" : "adUnitBidsBack",
+			"BID_WON": "bidWon"
 		}
 	},
 	"objectType_function" : "function",
@@ -33,5 +34,8 @@
 		"BID_REQUESTED" : "bidRequested",
 		"BID_RESPONSE" : "bidResponse",
 		"BID_WON" : "bidWon"
+	},
+	"EVENT_ID_PATHS": {
+		"bidWon": "adUnitCode"
 	}
 }
