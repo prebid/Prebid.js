@@ -94,6 +94,7 @@ this.registerBidAdapter(RubiconAdapter(), 'rubicon');
 this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
 this.registerBidAdapter(OpenxAdapter(), 'openx');
 this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
+this.registerBidAdapter(CriteoAdapter(), 'criteo');
 this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
 this.registerBidAdapter(IndexExchange(), 'indexExchange');
 this.registerBidAdapter(SpringServeAdapter(), 'springserve');
