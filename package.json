@@ -2,7 +2,7 @@
   "name": "prebid.js",
   "version": "0.6.0",
   "description": "Header Bidding Management Library",
-  "main": "prebid.js",
+  "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test"
   },
