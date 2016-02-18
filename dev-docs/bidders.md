@@ -85,7 +85,7 @@ These parameters in the bidReponse object are common across all bidders.
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `placementId` | required | The placement ID from AppNexus. | "234234" |
-| `randomeKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. Multiple key value pairs can be added here. | `randomKey` => `randomVal` |
+| `randomKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. These values map to querystring segments for enhanced targeting on the buy side. Multiple key value pairs can be added here. | `randomKey` => `randomVal`. |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
