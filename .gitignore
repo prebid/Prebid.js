@@ -11,6 +11,9 @@ gpt.html
 integrationExamples/gpt/gpt.html
 integrationExamples/implementations/
 
+# Coverage reports
+build/coverage/
+
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
 
 *.iml
