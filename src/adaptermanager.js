@@ -1,17 +1,13 @@
 /** @module adaptermanger */
 
-var RubiconAdapter = require('./adapters/rubicon.js');
 var AppNexusAdapter = require('./adapters/appnexus.js');
-var AolAdapter = require('./adapters/aol');
-var OpenxAdapter = require('./adapters/openx');
-var PubmaticAdapter = require('./adapters/pubmatic.js');
-var YieldbotAdapter = require('./adapters/yieldbot');
-var IndexExchange = require('./adapters/indexExchange');
+
 var Sovrn = require('./adapters/sovrn');
-var PulsePointAdapter = require('./adapters/pulsepoint.js');
-var SpringServeAdapter = require('./adapters/springserve.js');
-var AdformAdapter = require('./adapters/adform');
+
 var CriteoAdapter = require('./adapters/criteo');
+
+var OpenxDynamicLastLookAdapter = require('./adapters/openxDynamicLastLook.js');
+
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -91,18 +87,19 @@ exports.aliasBidAdapter = function(bidderCode, alias){
 
 
 // Register the bid adaptors here
-this.registerBidAdapter(RubiconAdapter(), 'rubicon');
+// this.registerBidAdapter(RubiconAdapter(), 'rubicon');
 this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
-this.registerBidAdapter(OpenxAdapter(), 'openx');
-this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
-this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
-this.registerBidAdapter(IndexExchange(), 'indexExchange');
-this.registerBidAdapter(SpringServeAdapter(), 'springserve');
+// this.registerBidAdapter(OpenxAdapter(), 'openx');
+// this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
+// this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
+// this.registerBidAdapter(IndexExchange(), 'indexExchange');
+// this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
-this.registerBidAdapter(AolAdapter(), 'aol');
-this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
-//default bidder alias
-this.aliasBidAdapter('appnexus', 'brealtime');
-this.registerBidAdapter(AdformAdapter(), 'adform');
+// this.registerBidAdapter(AolAdapter(), 'aol');
+// this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+// //default bidder alias
+// this.aliasBidAdapter('appnexus', 'brealtime');
+// this.registerBidAdapter(AdformAdapter(), 'adform');
 this.registerBidAdapter(CriteoAdapter(), 'criteo');
+this.registerBidAdapter(OpenxDynamicLastLookAdapter(), 'openx_dll');
 
