@@ -86,13 +86,11 @@ These parameters in the bidReponse object are common across all bidders.
 | :--- | :---- | :---------- | :------ |
 | `placementId` | required | The placement ID from AppNexus. | "234234" |
 | `randomKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. These values map to querystring segments for enhanced targeting on the buy side. Multiple key value pairs can be added here. | `randomKey` => `randomVal`. |
+| `invCode` | optional | The inventory code from AppNexus. Must be used with `member` | "abc123" |
+| `member` | optional | The member ID  from AppNexus. Must be used with `invCode` | "12345" |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
-<!--
-| `invCode` | optional | The inventory code you set up in a placement. Has to be used together with memberId. | "code234234" |
-| `memberId` | optional | Your member ID in AppNexus. Only useful to be used together with invCode. | "123" |
--->
 
 </div>
 
@@ -272,7 +270,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `tag_id` | required | The sovrn Ad Tag ID | "315045" |
+| `tagid` | required | The sovrn Ad Tag ID | "315045" |
 
 </div>
 
