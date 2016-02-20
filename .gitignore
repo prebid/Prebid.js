@@ -1,6 +1,6 @@
 # Built Files
 node_modules/
-build/coverage
+build
 
 # Test Files
 test/app
