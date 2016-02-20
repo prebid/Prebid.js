@@ -1,5 +1,5 @@
 /* prebid.js v0.6.0 
-Updated : 2016-02-11 */
+Updated : 2016-02-16 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
