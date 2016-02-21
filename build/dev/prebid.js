@@ -86,6 +86,7 @@ Updated : 2016-02-16 */
 	var PulsePointAdapter = __webpack_require__(17);
 	var SpringServeAdapter = __webpack_require__(18);
 	var AdformAdapter = __webpack_require__(19);
+	var NginAdAdapter = __webpack_require__(23);
 	var bidmanager = __webpack_require__(5);
 	var utils = __webpack_require__(3);
 	var CONSTANTS = __webpack_require__(4);
@@ -178,6 +179,7 @@ Updated : 2016-02-16 */
 	//default bidder alias
 	this.aliasBidAdapter('appnexus', 'brealtime');
 	this.registerBidAdapter(AdformAdapter(), 'adform');
+	this.registerBidAdapter(NginAdAdapter(),'nginad');
 
 
 /***/ },
@@ -4727,6 +4729,191 @@ Updated : 2016-02-16 */
 	};
 
 	module.exports = RubiconAdapter;
+	
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
 
+	var CONSTANTS = __webpack_require__(4);
+	var utils = __webpack_require__(3);
+	var bidfactory = __webpack_require__(7);
+	var bidmanager = __webpack_require__(5);
+	var adloader = __webpack_require__(8);
+
+	var defaultPlacementForBadBid = '';
+
+	/**
+	 * Adapter for requesting bids from NginAd
+	 */
+	var NginAdAdapter = function NginAdAdapter() {
+
+		var rtbServerDomain = 'placeholder.for.nginad.server.com';
+
+		function _callBids(params) {
+			var nginadBids = params.bids || [];
+			// De-dupe by tagid then issue single bid request for all bids
+			_requestBids(_getUniqueTagids(nginadBids));
+		}
+
+		// filter bids to de-dupe them?
+		function _getUniqueTagids(bids) {
+			var key;
+			var map = {};
+			var PubZoneIds = [];
+			bids.forEach(function(bid) {
+				map[utils.getBidIdParamater('pzoneid', bid.params)] = bid;
+			});
+			for (key in map) {
+				if (map.hasOwnProperty(key)) {
+					PubZoneIds.push(map[key]);
+				}
+			}
+			return PubZoneIds;
+		}
+
+		function getWidthAndHeight(bid) {
+				
+			var adW = null, adH = null;
+				
+			var sizeArrayLength = bid.sizes.length;
+			if (sizeArrayLength === 2 
+					&& typeof bid.sizes[0] === 'number' 
+					&& typeof bid.sizes[1] === 'number') {
+				adW=bid.sizes[0];
+				adH=bid.sizes[1];
+			} else {
+				adW=bid.sizes[0][0];
+				adH=bid.sizes[0][1];
+			}
+			return [adW, adH];
+		}
+			
+		function _requestBids(bidReqs) {
+			// build bid request object
+			var domain = window.location.host;
+			var page = window.location.pathname + location.search + location.hash;
+
+			var nginadImps = [];
+			//assign the first adUnit (placement) for bad bids;
+			defaultPlacementForBadBid  = bidReqs[0].placementCode;
+
+			//build impression array for nginad
+			utils._each(bidReqs, function(bid) {
+				var tagId = utils.getBidIdParamater('pzoneid', bid.params);
+				var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+				var adW=0,adH=0;
+
+				var whArr = getWidthAndHeight(bid);
+				var adW = whArr[0];
+				var adH = whArr[1];
+					
+				imp = {
+					id: utils.getUniqueIdentifierStr(),
+					banner: {
+						w: adW,
+						h: adH
+					},
+					tagid: tagId,
+					bidfloor: bidFloor
+				};
+
+				nginadImps.push(imp);
+				bidmanager.pbCallbackMap[imp.id] = bid;
+								
+				rtbServerDomain = bid.params.nginad_domain;
+				
+			});
+
+			// build bid request with impressions
+			var nginadBidReq = {
+				id: utils.getUniqueIdentifierStr(),
+				imp: nginadImps,
+				site:{
+					domain: domain,
+					page: page
+				}
+			};
+
+			var scriptUrl = '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
+				'&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
+
+			adloader.loadScript(scriptUrl, null);
+		}
+
+		function handleErrorResponse(bidReqs, id) {
+			//no response data
+			bid = bidfactory.createBid(2);
+			bid.bidderCode = 'nginad';
+			bidmanager.addBidResponse(id, bid);
+		}
+			
+		//expose the callback to the global object:
+		pbjs.nginadResponse = function(nginadResponseObj) {
+			var bid = {};
+			// valid object?
+			if (!nginadResponseObj || !nginadResponseObj.id) {
+				return handleErrorResponse(nginadResponseObj);
+			}
+
+			if (!nginadResponseObj.seatbid 
+					|| nginadResponseObj.seatbid.length === 0 
+					|| !nginadResponseObj.seatbid[0].bid 
+					|| nginadResponseObj.seatbid[0].bid.length === 0) {
+				return handleErrorResponse(nginadResponseObj);
+			}
+				
+			nginadResponseObj.seatbid[0].bid.forEach(function(nginadBid){
+
+				var responseCPM;
+				var placementCode = '';
+				var id = nginadBid.impid;
+
+				// try to fetch the bid request we sent NginAd
+				var	bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+				if (!bidObj){
+					return handleErrorResponse(nginadBid, id);
+				}
+
+				placementCode = bidObj.placementCode;
+				bidObj.status = CONSTANTS.STATUS.GOOD;
+
+				//place ad response on bidmanager._adResponsesByBidderId
+				responseCPM = parseFloat(nginadBid.price);
+
+				if(responseCPM === 0) {
+					handleErrorResponse(nginadBid);
+				}
+
+				nginadBid.placementCode = placementCode;
+				nginadBid.size = bidObj.sizes;
+				var responseAd = nginadBid.adm;
+
+				//store bid response
+				//bid status is good (indicating 1)
+				bid = bidfactory.createBid(1);
+				bid.creative_id = nginadBid.Id;
+				bid.bidderCode = 'nginad';
+				bid.cpm = responseCPM;
+
+				//The bid is a mock bid, the true bidding process happens after the publisher tag is called
+				bid.ad = decodeURIComponent(responseAd);
+
+				var whArr = getWidthAndHeight(bidObj);
+				bid.width = whArr[0];
+				bid.height = whArr[1];
+
+				bidmanager.addBidResponse(placementCode, bid);
+
+			});
+
+		}; // nginadResponse
+
+		return {
+			callBids: _callBids
+		};
+	};
+
+	module.exports = NginAdAdapter;
+	
 /***/ }
 /******/ ]);
