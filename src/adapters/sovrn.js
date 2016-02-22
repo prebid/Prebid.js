@@ -34,6 +34,26 @@ var SovrnAdapter = function SovrnAdapter() {
 		return Tagids;
 	}
 
+	function _getSize(bid) {
+		var size;
+
+		if ((size = utils.getBidIdParamater('size', bid.params)) && size.length > 0) {
+			// Use size from bid parameter
+			console.log(size);
+		}
+		else {
+			// Else use default bid's first defined size
+			var sizeArrayLength = bid.sizes.length;
+			if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+				size = bid.sizes;
+			}
+			else {
+				size = bid.sizes[0];
+			}
+		}
+		return size;
+	}
+
 	function _requestBids(bidReqs) {
 		// build bid request object
 		var domain = window.location.host;
@@ -46,26 +66,15 @@ var SovrnAdapter = function SovrnAdapter() {
 		{
 			var tagId = utils.getBidIdParamater('tagid', bid.params);
 			var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
-			var adW=0,adH=0;
 
-			//sovrn supports only one size per tagid, so we just take the first size if there are more
-			//if we are a 2 item array of 2 numbers, we must be a SingleSize array
-			var sizeArrayLength = bid.sizes.length;
-			if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-					adW=bid.sizes[0];
-					adH=bid.sizes[1];
-				}
-			else
-				{
-					adW=bid.sizes[0][0];
-					adH=bid.sizes[0][1];
-				}
+			var size = _getSize(bid);
+
 			var imp =
 				{
 					id: utils.getUniqueIdentifierStr(),
 					banner: {
-						w: adW,
-						h: adH
+						w: size[0],
+						h: size[1]
 					},
 					tagid: tagId,
 					bidfloor: bidFloor
@@ -148,16 +157,10 @@ var SovrnAdapter = function SovrnAdapter() {
 							//set ad content + impression url
 							// sovrn returns <script> block, so use bid.ad, not bid.adurl
 							bid.ad = decodeURIComponent(responseAd+responseNurl);
-							var sizeArrayLength = bidObj.sizes.length;
-							if (sizeArrayLength === 2 && typeof bidObj.sizes[0] === 'number' && typeof bidObj.sizes[1] === 'number') {
-									bid.width = bidObj.sizes[0];
-									bid.height = bidObj.sizes[1];
-								}
-							else
-								{
-									bid.width = bidObj.sizes[0][0];
-									bid.height = bidObj.sizes[0][1];
-								}
+
+							var bidSize = _getSize(bidObj);
+							bid.width = bidSize[0];
+							bid.height = bidSize[1];
 
 							bidmanager.addBidResponse(placementCode, bid);
 
