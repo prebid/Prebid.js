@@ -3,7 +3,7 @@
 var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [{
     test: /\.js$/,
-    exclude: /(mediation-script)|(node_modules)|(test)|(polyfill)|(visibly)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
     loader: 'istanbul-instrumenter'
 }];
 
@@ -31,7 +31,7 @@ module.exports = function(config) {
         // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
         preprocessors: {
             'test/**/*_spec.js': ['webpack'],
-            'src/**/*.js': ['coverage']
+            'src/*.js': ['coverage']
         },
 
         // WebPack Related

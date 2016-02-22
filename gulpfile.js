@@ -49,11 +49,10 @@ gulp.task('webpack', function() {
         webpackConfig.output.filename = 'prebid.' + argv.tag + '.js';
     }
 
-    return gulp.src('src/**/*.js')
+    return gulp.src('src/*.js')
         .pipe(webpack(webpackConfig))
         .pipe(header(banner, {pkg: pkg}))
         .pipe(gulp.dest('build/dev'))
-        .pipe(gulp.dest('test/app'))
         .pipe(uglify())
         .pipe(gulp.dest('build/dist'))
         .pipe(connect.reload());
