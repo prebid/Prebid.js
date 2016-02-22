@@ -39,7 +39,6 @@ var SovrnAdapter = function SovrnAdapter() {
 
 		if ((size = utils.getBidIdParamater('size', bid.params)) && size.length > 0) {
 			// Use size from bid parameter
-			console.log(size);
 		}
 		else {
 			// Else use default bid's first defined size
