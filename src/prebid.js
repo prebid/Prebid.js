@@ -18,7 +18,6 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var objectType_string = 'string';
-var objectType_number = 'number';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
@@ -29,6 +28,9 @@ var pb_preBidders = [],
 	pb_keyHistoryMap = {},
 	pb_bidsTimedOut = false;
 
+var eventValidators = {
+	'bidWon': checkDefinedPlacement
+};
 
 /* Public vars */
 //default timeout for all bids
@@ -68,7 +70,7 @@ function processQue() {
 			catch(e){
 				utils.logError('Error processing command :', 'prebid.js', e);
 			}
-			
+
 		}
 	}
 }
@@ -122,7 +124,7 @@ function timeOutBidders(){
 	if(!pb_bidsTimedOut){
 		pb_bidsTimedOut = true;
 		var timedOutBidders = bidmanager.getTimedOutBidders();
-		events.emit(BID_TIMEOUT, timedOutBidders);	
+		events.emit(BID_TIMEOUT, timedOutBidders);
 	}
 }
 
@@ -248,7 +250,7 @@ function getBidResponsesByAdUnit(adunitCode) {
 	if (adunitCode) {
 		returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
 		return returnObj;
-	} 
+	}
 	else {
 		return bidmanager.pbBidResponseByPlacement;
 	}
@@ -327,6 +329,17 @@ function requestAllBids(tmout){
 	init(timeout);
 }
 
+function checkDefinedPlacement(id) {
+	var placementCodes = utils._map(pb_placements, function (placement) {
+		return placement.code;
+	});
+
+	if (!utils.contains(placementCodes, id)) {
+		utils.logError('The "' + id + '" placement is not defined.');
+		return;
+	}
+	return true;
+}
 
 //////////////////////////////////
 //								//
@@ -435,7 +448,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function(codeArr) {
 		return;
 	}
 
-	//emit bid timeout event here 
+	//emit bid timeout event here
 	timeOutBidders();
 
 	var adUnitCodesArr = codeArr;
@@ -658,7 +671,7 @@ pbjs.requestBids = function(requestObj) {
 /**
  *
  * Add adunit(s)
- * @param {(string|string[])} Array of adUnits or single adUnit Object.
+ * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
  * @alias module:pbjs.addAdUnits
  */
 pbjs.addAdUnits = function(adUnitArr) {
@@ -670,10 +683,50 @@ pbjs.addAdUnits = function(adUnitArr) {
 	}
 };
 
+/**
+ * @param {String} event the name of the event
+ * @param {Function} handler a callback to set on event
+ * @param {String} id an identifier in the context of the event
+ *
+ * This API call allows you to register a callback to handle a Prebid.js event.
+ * An optional `id` parameter provides more finely-grained event callback registration.
+ * This makes it possible to register callback events for a specific item in the
+ * event context. For example, `bidWon` events will accept an `id` for ad unit code.
+ * `bidWon` callbacks registered with an ad unit code id will be called when a bid
+ * for that ad unit code wins the auction. Without an `id` this method registers the
+ * callback for every `bidWon` event.
+ *
+ * Currently `bidWon` is the only event that accepts an `id` parameter.
+ */
+pbjs.onEvent = function(event, handler, id) {
+	if(!utils.isFn(handler)) {
+		utils.logError('The event handler provided is not a function and was not set on event "' + event + '".');
+		return;
+	}
+	if(id && !eventValidators[event].call(null, id)){
+		utils.logError('The id provided is not valid for event "' + event + '" and no handler was set.');
+		return;
+	}
+
+	events.on(event, handler, id);
+};
+
+/**
+ * @param {String} event the name of the event
+ * @param {Function} handler a callback to remove from the event
+ * @param {String} id an identifier in the context of the event (see `pbjs.onEvent`)
+ */
+pbjs.offEvent = function(event, handler, id){
+	if(id && !eventValidators[event].call(null, id)){
+		return;
+	}
+
+	events.off(event, handler, id);
+};
 
 /**
  * Add a callback event
- * @param {String} event event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
+ * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
  * @param {Function} func  function to execute. Paramaters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:pbjs.addCallback
  * @returns {String} id for callback
@@ -741,10 +794,10 @@ pbjs.registerBidAdapter = function(bidderAdaptor, bidderCode){
 		responseObj.bids.push(bid);
 		responseObj.bidsReceivedCount++;
 		bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
-	};
+	}
 
 	bidmanager.increaseBidResponseReceivedCount(bidderCode);
-}
+};
 
 /**
  * Wrapper to bidfactory.createBid()
@@ -779,7 +832,7 @@ pbjs.loadScript = function(tagSrc, callback){
  * return data for analytics
  * @param  {Function}  [description]
  * @return {[type]}    [description]
- 
+
 pbjs.getAnalyticsData = function(){
 	var returnObj = {};
 	var bidResponses = pbjs.getBidResponses();
@@ -810,7 +863,7 @@ pbjs.getAnalyticsData = function(){
 			if(bid.bidderCode!==''){
 				var returnBids = returnObj[bid.bidderCode].bids;
 				var returnIdx = 0;
-				
+
 				for(var j=0;j<returnBids.length;j++){
 					if(returnBids[j].timeout)
 						returnIdx = j;
@@ -855,7 +908,7 @@ pbjs.enableAnalytics = function(options){
 		}
 		catch(e){
 			utils.logError('Error calling GA: ', 'prebid.js', e);
-		}	
+		}
 	}
 	else if(options.provider === 'other_provider'){
 		//todo
@@ -877,7 +930,7 @@ pbjs.aliasBidder = function(bidderCode,alias){
 	else{
 		utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
 	}
-	
+
 };
 
 
