@@ -4,7 +4,7 @@ module.exports = {
         filename: 'prebid.js'
     },
     resolve: {
-        modulesDirectories: ['', 'node_modules', 'src', 'adapters']
+        modulesDirectories: ['', 'node_modules', 'src']
     },
     resolveLoader: {
         modulesDirectories: ['loaders', 'node_modules']
