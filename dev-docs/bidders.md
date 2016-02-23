@@ -252,8 +252,8 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | `zoneId` | 0.6.0 | required | The zone ID | `"23948"` |
 | `sizes` | 0.6.0 | optional | Array of Rubicon Project size IDs. If not specified, the system will try to convert from bid.sizes. | `[15]` |
 | `keywords` | 0.6.0 | optional | Array of page-specific keywords. May be referenced in Rubicon Project reports. | `["travel", "tourism"]` |
-| `inventory` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the page for use in targeting. | `{rating:"5-star", prodtype:"tech"}` |
-| `visitor` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the visitor for use in targeting. | `{ucat:"new", search:"iphone"}` |
+| `inventory` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the page for use in targeting. | `{"rating":"5-star", "prodtype":"tech"}` |
+| `visitor` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the visitor for use in targeting. | `{"ucat":"new", "search":"iphone"}` |
 | `userId` | 0.6.0 | optional | Site-specific user ID may be reflected back in creatives for analysis. Note that userId needs to be the same for all slots. | `"12345abc"` |
 | `rp_account` | 0.5.0 | obsolete | Required in 0.5.0 and before, replaced by accountId. | `"4934"` |
 | `rp_site` | 0.5.0 | obsolete | Required in 0.5.0 and before, replaced by siteId. | `"13945"` |
