@@ -1,3 +1,5 @@
+'use strict';
+
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
@@ -18,20 +20,20 @@ var header = require('gulp-header');
 var zip = require('gulp-zip');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
-var pkg = require('./package.json');
+var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var packageNameVersion = pkg.name + '_' + pkg.version;
-var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
+var packageNameVersion = prebid.name + '_' + prebid.version;
+var banner = '/* <%= prebid.name %> v<%= prebid.version %> \n' + dateString + ' */\n';
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
-gulp.task('build', ['clean', 'quality', 'webpack', 'zip']);
+gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
-  return gulp.src(['build', 'test/app/**/*.js', 'test/app/index.html'], {
+  return gulp.src(['build'], {
       read: false
     })
     .pipe(clean());
@@ -39,7 +41,7 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src('src/**/*.js')
+  return gulp.src('src/*.js')
     .pipe(webpack(webpackConfig))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
@@ -54,10 +56,10 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src('src/**/*.js')
-    .pipe(header(banner, { pkg: pkg }))
+  return gulp.src('src/*.js')
     .pipe(webpack(webpackConfig))
     .pipe(uglify())
+    .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
@@ -100,9 +102,9 @@ gulp.task('coverage', function (done) {
 // Watch Task with Live Reload
 gulp.task('watch', function () {
 
-  gulp.watch(['test/spec/**/*.js'], ['webpack', 'test']);
+  gulp.watch(['test/spec/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
-  gulp.watch(['src/**/*.js'], ['webpack', 'test']);
+  gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
     port: 9999,
     root: './',

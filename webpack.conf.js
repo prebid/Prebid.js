@@ -7,7 +7,7 @@ module.exports = {
     modulesDirectories: ['', 'node_modules', 'src']
   },
   resolveLoader: {
-    modulesDirectories: ['node_modules']
+    modulesDirectories: ['loaders', 'node_modules']
   },
   module: {
     loaders: [
@@ -22,6 +22,11 @@ module.exports = {
       {
         test: /\.json$/,
         loader: 'json'
+      },
+      {
+        test: /adaptermanager.js/,
+        include: /(src)/,
+        loader: 'adapterLoader'
       }
     ]
   }
