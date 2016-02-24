@@ -1,6 +1,7 @@
 {
-  "maxErrors": 5000,
+  "maxErrors": 100,
   "esnext": true,
-  "requireTrailingComma": false,
-  "requireCamelCaseOrUpperCaseIdentifiers": false
+  "requireTrailingComma": null,
+  "requireCamelCaseOrUpperCaseIdentifiers": null,
+  "requireSpacesInAnonymousFunctionExpression": null
 }
