@@ -150,14 +150,10 @@ var SovrnAdapter = function SovrnAdapter() {
               //set ad content + impression url
               // sovrn returns <script> block, so use bid.ad, not bid.adurl
               bid.ad = decodeURIComponent(responseAd + responseNurl);
-              var sizeArrayLength = bidObj.sizes.length;
-              if (sizeArrayLength === 2 && typeof bidObj.sizes[0] === 'number' && typeof bidObj.sizes[1] === 'number') {
-                bid.width = bidObj.sizes[0];
-                bid.height = bidObj.sizes[1];
-              } else {
-                bid.width = bidObj.sizes[0][0];
-                bid.height = bidObj.sizes[0][1];
-              }
+
+              // Set width and height from response now
+              bid.width = parseInt(sovrnBid.w);
+              bid.height = parseInt(sovrnBid.h);
 
               bidmanager.addBidResponse(placementCode, bid);
 
