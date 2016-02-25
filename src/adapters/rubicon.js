@@ -197,7 +197,6 @@ var RubiconAdapter = function RubiconAdapter() {
    * @returns {RubiconSlot} Instance of RubiconSlot
    */
   function _defineSlot(bid) {
-    var id        = bid.placementCode;
     var userId    = bid.params.userId;
     var position  = bid.params.position;
     var visitor   = bid.params.visitor || [];
@@ -207,8 +206,10 @@ var RubiconAdapter = function RubiconAdapter() {
       siteId : bid.params.siteId,
       zoneId : bid.params.zoneId,
       sizes  : bid.params.sizes,
-      id     : id
+      id     : bid.placementCode
     });
+
+    slot.clearTargeting();
 
     if (userId) {
       window.rubicontag.setUserKey(userId);
@@ -219,19 +220,11 @@ var RubiconAdapter = function RubiconAdapter() {
     }
 
     for (var key in visitor) {
-      slot.setFPV(key, visitor[key]);
+      slot.addFPV(key, visitor[key]);
     }
 
     for (var key in inventory) {
-      slot.setFPI(key, inventory[key]);
-    }
-
-    // For backwards compatibility check if function RubiconSlot#setKW exists.
-    if (slot.setKW) {
-      // reset keyword in order to handle pages re-using the same slot name
-      slot.setKW(keywords);
-
-      return slot;
+      slot.addFPI(key, inventory[key]);
     }
 
     slot.addKW(keywords);
