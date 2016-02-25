@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js'),
 	adloader = require('../adloader');
 
 var WideOrbitAdapter = function WideOrbitAdapter(){
-	var pageImpression = "JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl={fl}&vitp=&vit=&jscb={jscb}&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}",
+	var pageImpression = "JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl={fl}&vitp=&vit=&jscb={jscb}&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1",
 		pageRepeatCommonParam = "&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=",
 		pageRepeatParam = "&pId{o}={pId}&rank{o}={rank}",
 		pageRepeatParamNamed = "&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}",
@@ -177,7 +177,7 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 			
 			if (bidResponse && bidResponse.Type === "DirectHTML") {
 				bidObject = bidfactory.createBid(1);
-				bidObject.cpm = 1;
+				bidObject.cpm = bidResponse.Bid;
 				bidObject.ad = _buildAdCode(bidResponse);
 				bidObject.width = bidResponse.Width;
 				bidObject.height = bidResponse.Height;
