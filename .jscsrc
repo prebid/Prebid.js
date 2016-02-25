@@ -1,0 +1,6 @@
+{
+  "maxErrors": 5000,
+  "esnext": true,
+  "requireTrailingComma": false,
+  "requireCamelCaseOrUpperCaseIdentifiers": false
+}
