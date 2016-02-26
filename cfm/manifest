@@ -1,0 +1,9 @@
+#Cloudformation manifest file - tells TeamCity which files to use for deployment
+
+#Root Stackname: <CFM_STACK_NAME_PREFIX>-<CFM_ENVIRONMENT>
+#<CFM_ENVIRONMENT> is Set by Anthill Pro
+CFM_STACK_NAME_PREFIX=nu-cps-content-prebidjs
+
+CFM_STACK_POLICY=stackpolicy.json
+
+CFM_ROOT_TEMPLATE=nu-cps-content-prebidjs-root.json

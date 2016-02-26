@@ -1,0 +1,242 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "HostedZoneMap": {
+      "940731442544": {
+        "NAME": "Z2Y450QOY9JVY2"
+      },
+      "545735944752": {
+        "NAME": "Z3R50JSV6SHQ39"
+      },
+      "512040659177": {
+        "NAME": "Z18Q0FIQJPNVNK"
+      },
+      "028273018698": {
+        "NAME": "Z1W2WBXICHW4DK"
+      }
+    },
+    "OriginAccessMap": {
+      "940731442544": {
+        "NAME": "E3EOCGX7V9JJLL"
+      },
+      "545735944752": {
+        "NAME": "E1MSPEMTHRNF7M"
+      },
+      "512040659177": {
+        "NAME": "E3QQI55V7MPBOI"
+      },
+      "028273018698": {
+        "NAME": "E2IY4E7WCGI26C"
+      }
+    }
+  },
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Description": "The Environment type for this app or service",
+      "MaxLength": "64"
+    }
+  },
+  "Resources": {
+    "PrebidS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Join": [
+            "-",
+            [
+              "cps-prebid-ngn",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        },
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedOrigins": [ "*" ],
+              "AllowedMethods": [ "GET" ]
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain"
+    },
+    "PrebidS3BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "PrebidS3Bucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "PrebidS3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity",
+                      {
+                        "Fn::FindInMap": [
+                          "OriginAccessMap",
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          "NAME"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "PrebidCFDistribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Aliases": [
+            {
+              "Fn::Join": [
+                "",
+                [
+                  "prebid-",
+                  {
+                    "Ref": "Environment"
+                  },
+                  ".ngn-dev.ntch.co.uk"
+                ]
+              ]
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "ForwardedValues": {
+              "QueryString": true
+            },
+            "TargetOriginId": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "PrebidS3Bucket"
+                  },
+                  "origin"
+                ]
+              ]
+            },
+            "ViewerProtocolPolicy": "allow-all"
+          },
+          "Enabled": true,
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::Join": [
+                  ".",
+                  [
+                    {
+                      "Ref": "PrebidS3Bucket"
+                    },
+                    "s3.amazonaws.com"
+                  ]
+                ]
+              },
+              "Id": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "PrebidS3Bucket"
+                    },
+                    "origin"
+                  ]
+                ]
+              },
+              "S3OriginConfig": {
+                "OriginAccessIdentity": {
+                  "Fn::Join": [
+                    "/",
+                    [
+                      "origin-access-identity/cloudfront",
+                      {
+                        "Fn::FindInMap": [
+                          "OriginAccessMap",
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          "NAME"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "PrebidDNSRecordSet": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Fn::FindInMap": [
+            "HostedZoneMap",
+            {
+              "Ref": "AWS::AccountId"
+            },
+            "NAME"
+          ]
+        },
+        "Comment": "Prebid DNS Record",
+        "RecordSets": [
+          {
+            "Name": {
+              "Fn::Join": [
+                "",
+                [
+                  "prebid-",
+                  {
+                    "Ref": "Environment"
+                  },
+                  ".ngn-dev.ntch.co.uk"
+                ]
+              ]
+            },
+            "Type": "A",
+            "AliasTarget": {
+              "HostedZoneId": "Z2FDTNDATAQYW2",
+              "DNSName": {
+                "Fn::GetAtt": [
+                  "PrebidCFDistribution",
+                  "DomainName"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "DependsOn": "PrebidCFDistribution"
+    }
+  }
+}
