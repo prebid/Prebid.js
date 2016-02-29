@@ -9,7 +9,7 @@ nav_section: quick-start
 about:
 - Integration with DFP's GPT single request asynchronous mode.
 - One set of line items for all bidders
-- Standard keyword targeting setup (<a href="http://prebid.org/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
+- Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/9ow4k8j6/2/embedded/html,result
