@@ -637,7 +637,7 @@ Note that in the above example, the AOL bidder will inherit from "standard" adse
 |   Name |   Type | Description | Example
 | :----  |:--------| :-------| :-------|
 | `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
-| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](http://prebid.org/adops/step-by-step.html). | `123` |
+| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](/adops/step-by-step.html). | `123` |
 | `pbLg` | String | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
 | `pbMg` | String | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
 | `pbHg` | String | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
