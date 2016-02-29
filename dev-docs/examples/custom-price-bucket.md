@@ -46,7 +46,7 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <div markdown="1">
 #### Line 60 to 88: Customize ad server targeting keywords
 
-In this example, the keywords sent to DFP are changed from the default `hb_pb` to `bid_price`. It also customized the bid price from default `pbMg` ([docs here](http://prebid.org/dev-docs/publisher-api-reference.html#bidResponse)) to custom logic. The logic is:
+In this example, the keywords sent to DFP are changed from the default `hb_pb` to `bid_price`. It also customized the bid price from default `pbMg` ([docs here](/dev-docs/publisher-api-reference.html#bidResponse)) to custom logic. The logic is:
 
 - Send $0.01 granularity price keywords when the bid price is between $0 to $3.
 - Send $0.10 granularity price keywords when the bid price is between $3 to $5.
