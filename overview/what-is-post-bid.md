@@ -68,16 +68,16 @@ In your ad server's post-bid line item report, you’d only get an aggregated re
 | Block page content from loading? | No | No | No (with prebid.js) |
 
 
-###FAQ:
+### FAQ:
 
 ##### 1. If none of the post-bid demand sources fill, can I still passback to another tag, say from Adsense?
 
 Yes. Check out the [example](/dev-docs/examples/postbid.html).
 
 
-#Getting Started
+# Getting Started
 
-###Please refer to the [example](/dev-docs/examples/postbid.html).
+### Please refer to the [example](/dev-docs/examples/postbid.html).
 
 
 </div>
