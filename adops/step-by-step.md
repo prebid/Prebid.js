@@ -30,13 +30,13 @@ In DFP, create a new order with a $0.50 line item.
 
 Enter all of the inventory sizes that your website has.
 
-{: .pb-md-img :}
+{: .pb-img.pb-md-img :}
 ![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/inventory-sizes.png)
 
 Because header bidding partners return prices, set the Line Item
 **Type** to **Price priority** to enable them to compete on price.
 
-{: .pb-sm-img :}
+{: .pb-img.pb-sm-img :}
 ![Price Priority]({{ site.github.url }}/assets/images/demo-setup/price-priority.png)
 
 <br>
@@ -44,7 +44,7 @@ Because header bidding partners return prices, set the Line Item
 Set the **Rate** to $0.50 so that this line item will compete with
 your other demand sources at $0.50 ECPM.
 
-{: .pb-sm-img :}
+{: .pb-img.pb-sm-img :}
 ![Rate]({{ site.github.url }}/assets/images/demo-setup/rate.png)
 
 <br>
@@ -54,7 +54,7 @@ more creatives attached to this line item.
 
 Set **Rotate Creatives** to *Evenly*.
 
-{: .pb-md-img :}
+{: .pb-img.pb-md-img :}
 ![Display and Rotation]({{ site.github.url }}/assets/images/demo-setup/display-and-rotation.png)
 
 Choose the inventory that you want to run header bidding on.
@@ -66,7 +66,7 @@ This line item will capture the bids in the range from $0.50 to $1 by
 targeting the keyword `hb_pb` set to `0.50` in the **Key-values**
 section.  Be sure to use 2 decimal places.
 
-{: .pb-md-img :}
+{: .pb-img.pb-md-img :}
 ![Key-values]({{ site.github.url }}/assets/images/demo-setup/key-values.png)
 
 <br>
@@ -89,7 +89,7 @@ snippet** box.
       try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
     </script>
 
-{: .pb-lg-img :}
+{: .pb-img.pb-lg-img :}
 ![New creative]({{ site.github.url }}/assets/images/demo-setup/new-creative.png)
 
 Make sure the creative size is set to 1x1.  This allows us to set up
