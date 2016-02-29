@@ -13,7 +13,7 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 	
     function _fixParamNames(param) {
         var properties = ["site", "page", "width", "height", "rank", "referrer", "subPublisher",
-                          "ecpm", "atf", "pId", "pbId", "referrer", "atf", "tagId", "ecpm"], prop;
+                          "ecpm", "atf", "pId", "pbId", "referrer", "tagId"], prop;
 
         if (!param) {
             return;
