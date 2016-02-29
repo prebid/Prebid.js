@@ -17,7 +17,7 @@ In this page, you can find the below information:
 
 * bidder code: this is the code prebid.js uses to identify bidders.
 * bid params: ad request parameters for a bidder. For example, tag Id, site ID, query string parameters. Your page should fill out the required bid params for a bidder to succesfully get a bid back.
-* bidder specific bidResponse: in addition to 
+* bidder specific bidResponse: in addition to
 * Caveats: every bidder is different. In addition to the standardized bidResponse object we propose, there might be caveats that you should know about.
 
 </div>
@@ -52,7 +52,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 # AOL
 
-### bidder code: 
+### bidder code:
 
 `aol`
 
@@ -75,7 +75,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 # AppNexus
 
-### bidder code: 
+### bidder code:
 
 `appnexus`
 
@@ -85,14 +85,12 @@ These parameters in the bidReponse object are common across all bidders.
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `placementId` | required | The placement ID from AppNexus. | "234234" |
-| `randomeKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. Multiple key value pairs can be added here. | `randomKey` => `randomVal` |
+| `randomKey` | optional | a random key specified by the publisher to send into AppNexus. The value is a publisher specified value. These values map to querystring segments for enhanced targeting on the buy side. Multiple key value pairs can be added here. | `randomKey` => `randomVal`. |
+| `invCode` | optional | The inventory code from AppNexus. Must be used with `member` | "abc123" |
+| `member` | optional | The member ID  from AppNexus. Must be used with `invCode` | "12345" |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
-<!--
-| `invCode` | optional | The inventory code you set up in a placement. Has to be used together with memberId. | "code234234" |
-| `memberId` | optional | Your member ID in AppNexus. Only useful to be used together with invCode. | "123" |
--->
 
 </div>
 
@@ -100,7 +98,7 @@ These parameters in the bidReponse object are common across all bidders.
 <div class="bs-docs-section" markdown="1">
 #Amazon
 
-###bidder code: 
+###bidder code:
 `amazon`
 
 ###bid params
@@ -148,7 +146,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 # Casale (Index)
 
-### bidder code: 
+### bidder code:
 
 `indexExchange`
 
@@ -169,11 +167,12 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 </div>
 
+<!--
 <div class="bs-docs-section" markdown="1">
 
 # Criteo
 
-### bidder code: 
+### bidder code:
 
 `criteo`
 
@@ -194,13 +193,13 @@ Criteo doesn't return the price back directly through their pre-bid API. Prebid.
 
 When Criteo supports bid price through their API, we will support Criteo in the same manner as the other bidders.
 
-</div>
+</div> -->
 
 <div class="bs-docs-section" markdown="1">
 
 # OpenX
 
-### bidder code: 
+### bidder code:
 
 `openx`
 
@@ -220,7 +219,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Pubmatic
 
-### bidder code: 
+### bidder code:
 
 `pubmatic`
 
@@ -239,18 +238,26 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Rubicon
 
-### bidder code: 
+### bidder code:
 
 `rubicon`
 
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name | Scope | Description | Example |
-| :--- | :---- | :---------- | :------ |
-| `rp_account` | required | The publisher account ID | "4934" |
-| `rp_site` | required | The site ID | "13945" |
-| `rp_zonesize` | required | The concatenation of zone and size | "23948-15" |
+| Name | Version | Scope | Description | Example |
+| :--- | :------ | :---- | :---------- | :------ |
+| `accountId` | 0.6.0 | required | The publisher account ID | `"4934"` |
+| `siteId` | 0.6.0 | required | The site ID | `"13945"` |
+| `zoneId` | 0.6.0 | required | The zone ID | `"23948"` |
+| `sizes` | 0.6.0 | optional | Array of Rubicon Project size IDs. If not specified, the system will try to convert from bid.sizes. | `[15]` |
+| `keywords` | 0.6.0 | optional | Array of page-specific keywords. May be referenced in Rubicon Project reports. | `["travel", "tourism"]` |
+| `inventory` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the page for use in targeting. | `{"rating":"5-star", "prodtype":"tech"}` |
+| `visitor` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the visitor for use in targeting. | `{"ucat":"new", "search":"iphone"}` |
+| `userId` | 0.6.0 | optional | Site-specific user ID may be reflected back in creatives for analysis. Note that userId needs to be the same for all slots. | `"12345abc"` |
+| `rp_account` | 0.5.0 | obsolete | Required in 0.5.0 and before, replaced by accountId. | `"4934"` |
+| `rp_site` | 0.5.0 | obsolete | Required in 0.5.0 and before, replaced by siteId. | `"13945"` |
+| `rp_zonesize` | 0.5.0 | obsolete | Required in 0.5.0 and before, replaced by zoneId and sizes. | `"23948-15"` |
 
 
 </div>
@@ -261,7 +268,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 # Sovrn
 
-### bidder code: 
+### bidder code:
 
 `sovrn`
 
@@ -270,19 +277,15 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `tag_id` | required | The sovrn Ad Tag ID | "315045" |
-
+| `tagid` | required | The sovrn Ad Tag ID | "315045" |
 
 </div>
-
-
-
 
 <div class="bs-docs-section" markdown="1">
 
 # Yieldbot
 
-### bidder code: 
+### bidder code:
 
 `yieldbot`
 
@@ -294,14 +297,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 | `psn` | required | The publisher ID |  |
 | `slot` | required | The slot |  |
 
-
 </div>
 
 <div class="bs-docs-section" markdown="1">
 
 # PulsePoint
 
-### bidder code: 
+### bidder code:
 
 `pulsepoint`
 
@@ -310,9 +312,61 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `cf` | required | String, adSize identifier | `"300X250"` |
-| `cp` | required | Number, Publisher Id | `12345` |
-| `ct` | required | Number, Ad Tag Id | `12345` |
+| `cf` | required | Ad size identifier | `"300X250"` |
+| `cp` | required | Publisher Id | `12345` |
+| `ct` | required | Ad Tag Id | `12345` |
 
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+# BRealTime
+
+### bidder code:
+
+`brealtime`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `placementId` | required | The placement ID from BRealTime | `"1234567"` |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+#  Adform
+
+### bidder code:
+
+`adform`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `mid` | required | | `12345` |
+| `adxDomain` | optional | The Adform domain | `"adx.adform.net"` |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+#  SpringServe
+
+### bidder code:
+
+`springserve`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `impId` | required | The impression ID | `12345` |
+| `supplyPartnerId` | required | The supply partner ID | `1` |
 
 </div>

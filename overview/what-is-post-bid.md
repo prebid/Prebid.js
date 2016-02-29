@@ -1,6 +1,6 @@
 ---
 layout: page
-title: What is post-bid?
+title: Intro to Post-Bid & Get Started
 head_title: What is post-bid and when to use it vs. header bidding.
 
 description: What is post-bid and when to use it vs. header bidding.
@@ -8,7 +8,7 @@ description: What is post-bid and when to use it vs. header bidding.
 pid: 60
 
 top_nav_section: overview
-nav_section: studies
+nav_section: postbid
 
 ---
 
@@ -67,13 +67,17 @@ In your ad server's post-bid line item report, you’d only get an aggregated re
 | Monetization Capability | Low | Medium | High |
 | Block page content from loading? | No | No | No (with prebid.js) |
 
-### FAQ:
+
+###FAQ:
 
 ##### 1. If none of the post-bid demand sources fill, can I still passback to another tag, say from Adsense?
 
-Yes. Check out the example.
+Yes. Check out the [example](/dev-docs/examples/postbid.html).
 
-##### 2. How can I get started?
-If you need help, leave comments at the bottom of this page.
+
+#Getting Started
+
+###Please refer to the [example](/dev-docs/examples/postbid.html).
+
 
 </div>

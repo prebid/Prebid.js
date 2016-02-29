@@ -118,6 +118,14 @@ img {
   margin-bottom: 5px;
 }
 
+.bs-docs-section {
+    text-align: justify;
+    text-indent: auto;
+    hyphens: auto;
+    line-height: 1.45;
+    font-size: 16px;
+}
+
 .bs-docs-section h1 {
   padding-bottom: 9px;
   margin: 40px 0 20px;
@@ -192,6 +200,14 @@ img {
   }
 }
 
+.pb-img {
+  -webkit-box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  -moz-box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  box-shadow: 2px 2px 8px -2px rgba(0,0,0,0.35);
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .pb-sm-img {
   max-width: 200px;
 }
@@ -201,7 +217,7 @@ img {
 }
 
 .pb-md-img {
-  max-width: 450px;
+    max-width: 450px;
 }
 
 .blog-related-posts {
@@ -236,8 +252,6 @@ img {
 #chart_div {
   height: 400px;
 }
-
-
 
 .docs-sidebar {
   margin-top: 20px;

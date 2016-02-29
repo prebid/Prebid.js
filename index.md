@@ -85,9 +85,9 @@ description: A free and open source library for publishers to quickly implement 
         <h3>AppNexus</h3>
       </div>
     
-      <div class="col-xs-6 col-sm-3">
+      <!-- <div class="col-xs-6 col-sm-3">
         <h3>Criteo</h3>
-      </div>
+      </div> -->
     
       <div class="col-xs-6 col-sm-3">
         <h3>Index</h3>
@@ -109,12 +109,24 @@ description: A free and open source library for publishers to quickly implement 
         <h3>Sovrn</h3>
       </div>
 
-      <div class="col-xs-6 col-sm-3 col-sm-offset-3">
+      <div class="col-xs-6 col-sm-3" >
         <h3>Yieldbot</h3>
       </div>
 
       <div class="col-xs-6 col-sm-3">
         <h3>PulsePoint</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-3">
+        <h3>Adform</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-3">
+        <h3>bRealTime</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-3">
+        <h3>SpringServe</h3>
       </div>
     
     </div>

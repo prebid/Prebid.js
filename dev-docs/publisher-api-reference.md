@@ -162,21 +162,7 @@ This function returns the bid responses at the given moment.
           "hb_adid": "7a53a9d3",
           "hb_pb": "0.50"
         }
-      },
-      {
-        "bidderCode": "criteo",
-        "width": 0,
-        "height": 0,
-        "statusMessage": "Bid returned empty or error response",
-        "adId": "80bb5b1ab",
-        "requestTimestamp": 1444844944106,
-        "responseTimestamp": 1444844944185,
-        "timeToRespond": 79,
-        "cpm": 0,
-        "adUnitCode": "/19968336/header-bid-tag-0",
-        "bidder": "criteo"
-      },
-      {
+      },{
         "bidderCode": "pubmatic",
         "width": "300",
         "height": "250",
@@ -456,7 +442,7 @@ The below code snippet is the **default** setting for ad server targeting. For e
 
 If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. **Note** that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly.
 
-By default, only the winning bid (bid with the highest cpm) will be sent to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with a prebid partner not returning a cpm Value (ie: Criteo).
+By default, only the winning bid (bid with the highest cpm) will be sent to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with a prebid partner not returning a cpm Value.
 
 The bidderSettings object can also be really useful to specify your own price bucket function to define the price bucket sent to the ad server.
 
@@ -536,7 +522,7 @@ pbjs.bidderSettings = {
 
 The bidder setting for AppNexus is saying: send 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html).
 
-Now let's say you would like Criteo bids to always be sent to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
+<!-- Now let's say you would like Criteo bids to always be sent to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
 You could define your own bidderSetting, only for criteo bidder, that would setup Criteo bid to always be sent to the adserver and not be evaluated against other bids.
 
 {% highlight js %}
@@ -555,7 +541,9 @@ pbjs.bidderSettings = {
 
 {% endhighlight %}
 
-Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows:
+-->
+
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows: 
 
 **Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
 
