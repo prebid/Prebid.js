@@ -12,7 +12,7 @@ about:
 - Ability to <strong>refresh all ad units</strong>.
 - Integration with DFP's GPT single request asynchronous mode.
 - One set of line items for all bidders
-- Standard keyword targeting setup (<a href="http://prebid.org/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
+- Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/amg49spy/embedded/html,result
