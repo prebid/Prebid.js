@@ -98,6 +98,8 @@ exports.registerBidAdapter(new SpringServeAdapter(), 'springserve');
 exports.registerBidAdapter(new Sovrn(), 'sovrn');
 exports.registerBidAdapter(new AolAdapter(), 'aol');
 exports.registerBidAdapter(new PulsePointAdapter(), 'pulsepoint');
+exports.registerBidAdapter(new WideOrbitAdapter(), 'wideorbit');
 
 //default bidder alias
-this.registerBidAdapter(WideOrbitAdapter(),'wideorbit');
+exports.aliasBidAdapter('appnexus', 'brealtime');
+exports.registerBidAdapter(new AdformAdapter(), 'adform');
