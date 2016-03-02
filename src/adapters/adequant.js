@@ -37,14 +37,14 @@ module.exports = function() {
     }
     
     function process_bids(replies, placements) {
-        var adequant_creatives = window.adequant_creatives;
+        var placement_code, bid, adequant_creatives = window.adequant_creatives;
         if (adequant_creatives && adequant_creatives.seatbid) {
             for (var i=0; i<adequant_creatives.seatbid.length; i++) {
                 var bid_response = adequant_creatives.seatbid[i].bid[0];
-                var placement_code = replies[parseInt(bid_response.impid,10)-1];
+                placement_code = replies[parseInt(bid_response.impid,10)-1];
                 if (!placement_code || !placements[placement_code]) { continue; }
                 
-                var bid = bidfactory.createBid(1);
+                bid = bidfactory.createBid(1);
                 bid.bidderCode = 'adequant';
                 bid.cpm = bid_response.price;
                 bid.ad = bid_response.adm;
@@ -54,9 +54,9 @@ module.exports = function() {
                 placements[placement_code] = false;
             }
         }
-        for (var placement_code in placements) {
+        for (placement_code in placements) {
             if (placements[placement_code]) {
-                var bid = bidfactory.createBid(2);
+                bid = bidfactory.createBid(2);
                 bid.bidderCode = 'adequant';
                 bidmanager.addBidResponse(placement_code, bid);
             }
