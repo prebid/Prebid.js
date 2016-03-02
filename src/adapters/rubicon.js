@@ -133,7 +133,7 @@ var RubiconAdapter = function RubiconAdapter() {
       bid = _makeBid(response, ads);
     }
 
-    bidmanager.addBidResponse(response.getSlotName(), bid);
+    bidmanager.addBidResponse(response.getElementId(), bid);
   }
 
   /**
