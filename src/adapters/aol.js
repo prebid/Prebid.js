@@ -100,7 +100,7 @@ var AolAdapter = function AolAdapter() {
    * @param {ADTECHContext} context the context passed from aol
    */
   function _addErrorBid(response, context) {
-    var bid = bidsMap[context.alias || context.placement];
+    var bid = bidsMap[context.placement];
 
     if (!bid) {
       utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
