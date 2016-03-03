@@ -17,7 +17,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
             return;
         }
 
-        var properties = ['site', 'page', 'width', 'height', 'rank', 'referrer', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer', 'tagId'],
+        var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId'],
             prop;
 
         utils._each(properties, function (correctName) {
