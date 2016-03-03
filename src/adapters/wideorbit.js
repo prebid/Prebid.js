@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js'),
 	adloader = require('../adloader');
 
 var WideOrbitAdapter = function WideOrbitAdapter(){
-	var pageImpression = "JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl={fl}&vitp=&vit=&jscb={jscb}&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1",
+	var pageImpression = "JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.parent.pbjs.handleWideOrbitCallback&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1",
 		pageRepeatCommonParam = "&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=",
 		pageRepeatParam = "&pId{o}={pId}&rank{o}={rank}",
 		pageRepeatParamNamed = "&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}",
@@ -12,12 +12,13 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 		bids, adapterName = 'wideorbit';
 	
     function _fixParamNames(param) {
-        var properties = ["site", "page", "width", "height", "rank", "referrer", "subPublisher",
-                          "ecpm", "atf", "pId", "pbId", "referrer", "tagId"], prop;
 
         if (!param) {
             return;
         }
+        
+        var properties = ["site", "page", "width", "height", "rank", "referrer", "subPublisher", "ecpm", "atf", "pId", "pbId", "referrer", "tagId"],
+            prop;
 
         utils._each(properties, function(correctName) {
 			for (prop in param) {
@@ -82,8 +83,6 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 		                  [["pbId", publisherId],
 						   ["pc", placementCount],
 						   ["cts", new Date().getTime()],
-						   ["fl", 0],
-						   ["jscb", "window.parent.pbjs.handleWideOrbitCallback"],
 						   ["cb", Math.floor(Math.random() * 100000000)]]) + placementsComponent;
 	}
 	
@@ -117,7 +116,7 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 		bidUrl = _setupAdCall(publisherId, bids.length, bidUrl);
 		
 		utils.logMessage("Calling WO: " + bidUrl);
-		
+
 		adloader.loadScript(bidUrl);
 	}
 	
