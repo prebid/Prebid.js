@@ -32,6 +32,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
 
     function _setParam(str, param, value) {
         var pattern = new RegExp('{' + param + '}', 'g');
+
         if (value === true) {
             value = 1;
         }
@@ -97,7 +98,9 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     }
 
     function _callBids(params) {
-        var publisherId, i, bidUrl = '';
+        var publisherId,
+            bidUrl = '',
+            i;
 
         bids = params.bids || [];
 
@@ -120,7 +123,8 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     }
 
     function _processUserMatchings(userMatchings) {
-        var headElem = document.getElementsByTagName('head')[0], createdElem;
+        var headElem = document.getElementsByTagName('head')[0],
+            createdElem;
 
         utils._each(userMatchings, function (userMatching) {
             switch (userMatching.Type) {
@@ -163,7 +167,8 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
 
     window.pbjs = window.pbjs || {};
     window.pbjs.handleWideOrbitCallback = function (response) {
-        var bidResponse, bidObject;
+        var bidResponse,
+            bidObject;
 
         utils.logMessage('WO response. Placements: ' + response.Placements.length);
 
