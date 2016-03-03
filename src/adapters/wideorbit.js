@@ -50,6 +50,8 @@ var WideOrbitAdapter = function WideOrbitAdapter(){
 	}
 	
 	function _setCommonParams(pos, params) {
+		params.atf = params.atf ? 1001 : 0;
+			
 		return _setParams(pageRepeatCommonParam, 
 		                  [["o", pos], 
 						   ["gid", encodeURIComponent(params.tagId)], 
