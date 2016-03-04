@@ -203,10 +203,10 @@ var cygnus_index_start = function () {
       return;
     }
 
-    if (typeof _IndexRequestData === 'undefined') {
-      _IndexRequestData = {};
-      _IndexRequestData.impIDToSlotID = {};
-      _IndexRequestData.reqOptions = {};
+    if (typeof window._IndexRequestData === 'undefined') {
+      window._IndexRequestData = {};
+      window._IndexRequestData.impIDToSlotID = {};
+      window._IndexRequestData.reqOptions = {};
     }
 
     var req = new OpenRTBRequest(cygnus_index_args.siteID, cygnus_index_args.parseFn, cygnus_index_args.timeout);
@@ -251,12 +251,25 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   var firstAdUnitCode = '';
 
   function _callBids(request) {
+    /*
+    Function in order to add a slot into the list if it hasn't been created yet, else it returns the same list.
+    */
+    function mergeSlotInto(slot,slotList){
+      for(var i = 0;i<slotList.length;i++){
+        if(slot.id === slotList[i].id){
+          return slotList;
+        }
+      }
+      slotList.push(slot);
+      return slotList;
+    }
     var bidArr = request.bids;
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
       return;
     }
 
+    //Our standard is to always bid for all known slots.
     cygnus_index_args.slots = [];
     var bidCount = 0;
 
@@ -300,38 +313,37 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var slotId = bid.params[requiredParams[0]];
         slotIdMap[slotId] = bid;
 
-        if (cygnus_index_primary_request) {
-          cygnus_index_args.slots.push({
-            id: bid.params.id,
+        //Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
+        cygnus_index_args.slots = mergeSlotInto({
+          id: bid.params.id,
+          width: width,
+          height: height,
+          siteID: bid.params.siteID || cygnus_index_args.siteID
+        }, cygnus_index_args.slots);
+
+        bidCount++;
+
+        if (bid.params.tier2SiteID) {
+          cygnus_index_args.slots = mergeSlotInto({
+            id: 'T1_' + bid.params.id,
             width: width,
             height: height,
-            siteID: bid.params.siteID || cygnus_index_args.siteID
-          });
+            siteID: bid.params.tier2SiteID
+          }, cygnus_index_args.slots);
+        }
 
-          bidCount++;
-
-          if (bid.params.tier2SiteID) {
-            cygnus_index_args.slots.push({
-              id: 'T1_' + bid.params.id,
-              width: width,
-              height: height,
-              siteID: bid.params.tier2SiteID
-            });
-          }
-
-          if (bid.params.tier3SiteID) {
-            cygnus_index_args.slots.push({
-              id: 'T2_' + bid.params.id,
-              width: width,
-              height: height,
-              siteID: bid.params.tier3SiteID
-            });
-          }
+        if (bid.params.tier3SiteID) {
+          cygnus_index_args.slots = mergeSlotInto({
+            id: 'T2_' + bid.params.id,
+            width: width,
+            height: height,
+            siteID: bid.params.tier3SiteID
+          }, cygnus_index_args.slots);
         }
       }
-
-      bidmanager.setExpectedBidsCount(ADAPTER_CODE, bidCount);
     }
+
+    bidmanager.setExpectedBidsCount(ADAPTER_CODE, bidCount);
 
     cygnus_index_primary_request = false;
 
@@ -376,6 +388,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
         logErrorBidResponse();
       }
+
+      //slotIdMap is used to determine which slots will be bid on in a given request.
+      //Therefore it needs to be blanked after the request is handled, else we will submit 'bids' for the wrong ads.
+      slotIdMap={};
     };
   }
 
@@ -403,8 +419,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   return {
     callBids: _callBids
   };
-
-  //end of Rubicon bid adaptor
 };
 
 module.exports = IndexExchangeAdapter;
