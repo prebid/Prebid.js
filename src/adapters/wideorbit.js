@@ -6,7 +6,7 @@ var bidfactory = require('../bidfactory.js'),
 var WideOrbitAdapter = function WideOrbitAdapter() {
     var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.parent.pbjs.handleWideOrbitCallback&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
         pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
-        pageRepeatParam = '&pId{o}={pId}&rank{o}={rank}',
+        pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
         pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
         base = (window.location.protocol) + '//p{pbId}.atemda.com/',
         bids,
@@ -58,23 +58,27 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
         ]);
     }
 
+    function _getRankParam(rank, pos) {
+        return rank || pos;
+    }
+
     function _setupIdPlacementParameters(pos, params) {
-        return _setParams(pageRepeatParam, [
+        return _setParams(pageRepeatParamId, [
             ['o', pos],
             ['pId', params.pId],
-            ['rank', params.rank || pos]
+            ['rank', _getRankParam(params.rank, pos)]
         ]);
     }
 
     function _setupNamedPlacementParameters(pos, params) {
         return _setParams(pageRepeatParamNamed, [
             ['o', pos],
-            ['wsName', params.site],
-            ['wName', params.page],
+            ['wsName', encodeURIComponent(decodeURIComponent(params.site))],
+            ['wName', encodeURIComponent(decodeURIComponent(params.page))],
             ['width', params.width],
             ['height', params.height],
             ['subp', params.subPublisher ? encodeURIComponent(decodeURIComponent(params.subPublisher)) : ''],
-            ['rank', params.rank || pos]
+            ['rank', _getRankParam(params.rank, pos)]
         ]);
     }
 
