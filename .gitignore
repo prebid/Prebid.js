@@ -65,3 +65,6 @@ crashlytics-build.properties
 
 #zip files (for releases)
 *.zip
+
+# TypeScript typings
+typings/
