@@ -242,6 +242,9 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 `rubicon`
 
+### Note:
+The Rubicon Fastlane adapter requires setup and approval from the Rubicon Project team, even for existing Rubicon Project publishers. Please reach out to your account team or globalsupport@rubiconproject.com for more information and to enable using this adapter.
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
