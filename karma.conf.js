@@ -38,6 +38,9 @@ module.exports = function (config) {
 
     // WebPack Related
     webpack: webpackConfig,
+    webpackMiddleware: {
+      noInfo: true
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'

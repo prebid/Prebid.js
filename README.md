@@ -1,8 +1,3 @@
-# HEY DEVELOPERS!
-### `rm -rf ./node_modules && npm cache clean && npm install`
-With [this commit](http://bit.ly/1Ran76T) we have changed the build system to use Webpack, Karma and Istanbul. This change was made to   support improved unit test coverage and reporting. Reinstalling Prebid.js is necessary as many node modules changed, and you are likely   to experience errors otherwise. After pulling down latest master please `rm -rf ./node_modules && npm cache clean && npm install`.
-### Build path change
-The `./dist` and `./dev` directories have been moved to a `./build` directory -- please update your own dev and example paths to `prebid.js` accordingly. You will also find code coverage reports in the `./build/coverage` directory.
 Prebid.js
 ========
 
@@ -38,7 +33,7 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 
 ### Example code ###
 
-**Include the prebid.js libraray**
+**Include the prebid.js library**
 Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
 ```javascript
 (function() {
@@ -82,7 +77,8 @@ pbjs.que.push(function(){
 ```
 
 **See Console Debug Errors during testing**
-By default console errors are supressed. To enabled add `?pbjs_debug=true` to the end of the URL for testing. 
+By default console errors are suppressed. To enabled add `?pbjs_debug=true` to the end of the URL
+ for testing.
 
 API
 ----------
@@ -93,29 +89,103 @@ Full Developer API reference:
 Contribute
 ----------
 
-### Add an Bidder Adapter ###
+### Add a Bidder Adapter ###
 Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter. 
 
-### install ###
-    $ sudo npm install
+### Install ###
+    $ npm install
+
+If you experience errors, after a version update, try a fresh install:
+
+    $ rm -rf ./node_modules && npm cache clean && npm install
 
 ### Build ###
     $ gulp build
 
-### Configure ###
-Edit `./integrationExamples/gpt/pbjs_example_gpt.html`
+Runs code quality checks, generates prebid.js files and creates zip archive distributable:
 
-Change `{id}` values appropriately 
-    
+   `./build/dev/prebid.js` Full source code for dev and debug
+    `./build/dev/prebid.js.map` Source map for dev and debug
+    `./build/dist/prebid.js` Minified production code
+    `./prebid.js_<version>.zip` Distributable
+
+Code quality is defined by `./.jscs` and `./.jshint` files and errors are reported in the
+terminal. The build will continue with quality errors, however. If you are contributing code
+you can configure your editor with the provided .jscs and .jshint settings.
+
+### Configure ###
+Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+
+1. Change `{id}` values appropriately to set up ad units and bidders.
+
+1. Set path for prebid.js in your example file:
+   #####Development `pbs.src = './build/dev/prebid.js';` #####
+    ```javascript
+    (function() {
+            var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+            pbs.type = 'text/javascript';
+            pbs.src = ((pro === 'https:') ? 'https' : 'http') + ':./build/dev/prebid.js';
+            var target = document.getElementsByTagName('head')[0];
+            target.insertBefore(pbs, target.firstChild);
+    })();
+    ```
+   #####Test/Deploy (default) `pbs.src = './build/dist/prebid.js';`#####
+    ```javascript
+    (function() {
+            var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+            pbs.type = 'text/javascript';
+            pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
+            var target = document.getElementsByTagName('head')[0];
+            target.insertBefore(pbs, target.firstChild);
+    })();
+    ```
+1. (optional optimization) Edit `./package.json` to set the adapters you want to build with:
+
+    ```json
+        "adapters": [
+            "adform",
+            "aol",
+            "appnexus",
+            "indexExchange",
+            "openx",
+            "pubmatic",
+            "pulsepoint",
+            "rubicon",
+            "rubiconLegacy",
+            "sovrn",
+            "springserve",
+            "yieldbot"
+  ]
+    ```
+
 ### Run ###
 
     $ gulp serve
 
-Navigate to http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html to run the example file
+This runs code quality checks, generates prebid files and starts a webserver at
+`http://localhost:9999` serving from project root. Navigate to your example implementation to test,
+and if your prebid.js file is sourced from the `./build/dev` directory you will have sourcemaps
+available in browser developer tools.
+
+Navigate to `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html` to run the
+example file.
+
+Navigate to `http://localhost:9999/build/coverage/karma_html/report` to view a test coverage report.
+
+A watch is also in place that will run continuous tests in the terminal as you edit code and
+tests.
 
 ### Unit Test In the Browser ###
+    $ gulp test --watch
 
-Navigate to http://localhost:9999/build/coverage/karma_html/report to view test results.
+This will run tests and keep the Karma test browser open. If your prebid.js file is sourced from
+the build/dev directory you will also have sourcemaps available when viewing browser developer
+tools. Access the Karma debug page at:
+`http://localhost:9876/debug.html`
+View console for test results and developer tools to set breakpoints in source code.
+
+Detailed code coverage reporting can be generated explicitly with `$ gulp test --coverage` and
+results found in `./build/coverage`.
 
 ### Supported Browsers ###
 Prebid.js is supported on IE9+ and modern browsers.
