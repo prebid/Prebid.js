@@ -290,7 +290,7 @@ describe('wideorbit adapter tests', function () {
                 Bid: 1.3,
                 Width: 50,
                 Height: 100,
-                Source: '<div data-id="div-gpt-ad-12345-1">The AD itself...</div>',
+                Source: '<div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
                 TrackingCodes: [
                     'http://www.admeta.com/1.gif'
                 ]
@@ -301,7 +301,7 @@ describe('wideorbit adapter tests', function () {
                 Bid: 1.5,
                 Width: 100,
                 Height: 200,
-                Source: '<div data-id="div-gpt-ad-12345-2">The AD itself...</div>',
+                Source: '<div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
                 TrackingCodes: [
                     'http://www.admeta.com/2a.gif',
                     'http://www.admeta.com/2b.gif'
@@ -310,10 +310,10 @@ describe('wideorbit adapter tests', function () {
             {
                 ExtPlacementId: 'div-gpt-ad-12345-3',
                 Type: 'Other',
-                Bid: 1.5,
-                Width: 100,
-                Height: 200,
-                Source: '<div data-id="div-gpt-ad-12345-3">The AD itself...</div>',
+                Bid: 1.7,
+                Width: 150,
+                Height: 250,
+                Source: '<div data-id="div-gpt-ad-12345-3">The AD 3 itself...</div>',
                 TrackingCodes: [
                     'http://www.admeta.com/3.gif'
                 ]
@@ -388,7 +388,7 @@ describe('wideorbit adapter tests', function () {
 
             expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
             expect(bidObject1.cpm).to.equal(1.3);
-            expect(bidObject1.ad).to.equal('<img src="http://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD itself...</div>');
+            expect(bidObject1.ad).to.equal('<img src="http://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>');
             expect(bidObject1.width).to.equal(50);
             expect(bidObject1.height).to.equal(100);
             expect(bidObject1.getStatusCode()).to.equal(1);
@@ -396,7 +396,7 @@ describe('wideorbit adapter tests', function () {
             
             expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
             expect(bidObject2.cpm).to.equal(1.50);
-            expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif" width="0" height="0" style="position:absolute"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD itself...</div>');
+            expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif" width="0" height="0" style="position:absolute"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
             expect(bidObject2.width).to.equal(100);
             expect(bidObject2.height).to.equal(200);
             expect(bidObject2.getStatusCode()).to.equal(1);
@@ -416,7 +416,7 @@ describe('wideorbit adapter tests', function () {
 
         });
 
-        it('should append an image to the head for redirect type', function () {
+        it('should append an image to the head when type is set to redirect', function () {
 
             var response = {
                 UserMatchings: [
@@ -437,7 +437,7 @@ describe('wideorbit adapter tests', function () {
 
         });
 
-        it('should append an iframe to the head for iframe type', function () {
+        it('should append an iframe to the head when type is set to iframe', function () {
 
             var response = {
                 UserMatchings: [
@@ -458,7 +458,7 @@ describe('wideorbit adapter tests', function () {
 
         });
 
-        it('should append an script to the head for script type', function () {
+        it('should append an script to the head when type is set to javascript', function () {
 
             var response = {
                 UserMatchings: [
