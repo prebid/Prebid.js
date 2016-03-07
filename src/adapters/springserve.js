@@ -7,7 +7,7 @@ SpringServeAdapter = function SpringServeAdapter() {
 
   function buildSpringServeCall(bid) {
 
-    var spCall = 'http://bidder.springserve.com/display/hbid?';
+    var spCall = '//bidder.springserve.com/display/hbid?';
 
     //get width and height from bid attribute
     var size = bid.sizes[0];
