@@ -342,9 +342,9 @@ function checkDefinedPlacement(id) {
 }
 
 //////////////////////////////////
-//								//
-//		Start Public APIs		//
-// 								//
+//                              //
+//    Start Public APIs         //
+//                              //
 //////////////////////////////////
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
