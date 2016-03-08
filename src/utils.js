@@ -435,3 +435,14 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+
+exports.createTrackPixelHtml = function (url) {
+  if (!url) {
+    return '';
+  }
+
+  let escapedUrl = encodeURI(url);
+  let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
+  img += '<img src="' + escapedUrl + '"></div>';
+  return img;
+};
