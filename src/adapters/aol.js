@@ -74,8 +74,12 @@ var AolAdapter = function AolAdapter() {
     delete bidsMap[context.alias];
 
     var bidResponse = bidfactory.createBid(1);
+    var ad = response.getCreative();
+    if (typeof response.getPixels() !== 'undefined') {
+        ad += response.getPixels();
+    }
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-    bidResponse.ad = response.getCreative() + response.getPixels();
+    bidResponse.ad = ad;
     bidResponse.cpm = cpm;
     bidResponse.width = response.getAdWidth();
     bidResponse.height = response.getAdHeight();
