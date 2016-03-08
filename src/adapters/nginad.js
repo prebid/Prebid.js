@@ -94,7 +94,7 @@ var NginAdAdapter = function NginAdAdapter() {
 			}
 		};
 
-		var scriptUrl = document.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
+		var scriptUrl = location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
 			'&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
 
 		adloader.loadScript(scriptUrl, null);
