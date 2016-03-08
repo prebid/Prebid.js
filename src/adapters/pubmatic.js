@@ -40,8 +40,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     //insert the iframe into document
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
-    //todo make this more browser friendly
-    var iframeDoc = iframe.contentWindow.document;
+    var iframeDoc = utils.getIframeDocument(iframe);
     iframeDoc.write(_createRequestContent());
     iframeDoc.close();
   }

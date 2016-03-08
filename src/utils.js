@@ -435,7 +435,11 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
-
+/**
+ * Creates a snippet of HTML that retrieves the specified `url`
+ * @param  {string} url URL to be requested
+ * @return {string}     HTML snippet that contains the img src = set to `url`
+ */
 exports.createTrackPixelHtml = function (url) {
   if (!url) {
     return '';
@@ -445,4 +449,31 @@ exports.createTrackPixelHtml = function (url) {
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
+};
+
+/**
+ * Returns iframe document in a browser agnostic way
+ * @param  {object} iframe reference
+ * @return {object}        iframe `document` reference
+ */
+exports.getIframeDocument = function (iframe) {
+  if (!iframe) {
+    return;
+  }
+
+  let doc;
+  try {
+    if (iframe.contentWindow) {
+      doc = iframe.contentWindow.document;
+    } else if (iframe.contentDocument.document) {
+      doc = iframe.contentDocument.document;
+    } else {
+      doc = iframe.contentDocument;
+    }
+  }
+  catch (e) {
+    this.logError('Cannot get iframe document', e);
+  }
+
+  return doc;
 };
