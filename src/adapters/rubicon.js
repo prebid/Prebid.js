@@ -133,7 +133,7 @@ var RubiconAdapter = function RubiconAdapter() {
       bid = _makeBid(response, ads);
     }
 
-    bidmanager.addBidResponse(response.getSlotName(), bid);
+    bidmanager.addBidResponse(response.getElementId(), bid);
   }
 
   /**
@@ -152,10 +152,16 @@ var RubiconAdapter = function RubiconAdapter() {
    * @param {Function} callback
    */
   function _initSDK(options, done) {
-    if (RUBICON_INITIALIZED) return;
+    if (RUBICON_INITIALIZED) {
+        return;
+    }
+
     RUBICON_INITIALIZED = 1;
-    var accountId = options.accountId;
-    adloader.loadScript(RUBICONTAG_URL + accountId + '.js', done);
+
+    var accountId  = options.accountId;
+    var scripttUrl = RUBICONTAG_URL + accountId + '.js';
+
+    adloader.loadScript(scripttUrl, done);
   }
 
   /**
@@ -188,57 +194,55 @@ var RubiconAdapter = function RubiconAdapter() {
   /**
    * Define the slot using the rubicontag.defineSlot API
    * @param {Object} Bidrequest
+   * @returns {RubiconSlot} Instance of RubiconSlot
    */
   function _defineSlot(bid) {
-    _rready(function () {
-      var newSlot = window.rubicontag.defineSlot({
-        siteId: bid.params.siteId,
-        zoneId: bid.params.zoneId,
-        id: bid.placementCode,
-        sizes: bid.params.sizes
-      });
-      if (bid.params.position) {
-        newSlot.setPosition(bid.params.position);
-      }
-
-      if (bid.params.userId) {
-        window.rubicontag.setUserKey(bid.params.userId);
-      }
-
-      if (bid.params.keywords) {
-        for (var i = 0; i < bid.params.keywords.length; i++) {
-          newSlot.addKW(bid.params.keywords[i]);
-        }
-      }
-
-      if (bid.params.inventory) {
-        for (var p in bid.params.inventory) {
-          if (bid.params.inventory.hasOwnProperty(p)) {
-            newSlot.addFPI(p, bid.params.inventory[p]);
-          }
-        }
-      }
-
-      if (bid.params.visitor) {
-        for (var p in bid.params.visitor) {
-          if (bid.params.visitor.hasOwnProperty(p)) {
-            newSlot.addFPV(p, bid.params.visitor[p]);
-          }
-        }
-      }
+    var userId    = bid.params.userId;
+    var position  = bid.params.position;
+    var visitor   = bid.params.visitor || [];
+    var keywords  = bid.params.keywords || [];
+    var inventory = bid.params.inventory || [];
+    var slot      = window.rubicontag.defineSlot({
+      siteId : bid.params.siteId,
+      zoneId : bid.params.zoneId,
+      sizes  : bid.params.sizes,
+      id     : bid.placementCode
     });
+
+    slot.clearTargeting();
+
+    if (userId) {
+      window.rubicontag.setUserKey(userId);
+    }
+
+    if (position) {
+      slot.setPosition(position);
+    }
+
+    for (var key in visitor) {
+      slot.addFPV(key, visitor[key]);
+    }
+
+    for (var key in inventory) {
+      slot.addFPI(key, inventory[key]);
+    }
+
+    slot.addKW(keywords);
+
+    return slot;
   }
 
   /**
    * Handle the bids received (from rubicon)
+   * @param {array} slots
    */
-  function _bidsReady() {
+  function _bidsReady(slots) {
     // NOTE: we don't really need to do anything,
     // because right now we're shimming XMLHttpRequest.open,
     // but in the future we'll get data from rubicontag here
     utils.logMessage('Rubicon Project bidding complete: ' + ((new Date).getTime() - _bidStart));
 
-    utils._each(rubicontag.getAllSlots(), function (slot) {
+    utils._each(slots, function (slot) {
       _addBid(slot, slot.getRawResponses());
     });
   }
@@ -257,18 +261,29 @@ var RubiconAdapter = function RubiconAdapter() {
 
     _mapSizes(params.bids);
 
-    utils._each(params.bids, function (bid, index) {
-      // on the first bid, set up the SDK
-      // the config will be set on each bid
-      if (index === 0) {
-        _initSDK(bid.params);
-      }
+    if (utils.isEmpty(params.bids)) {
+      return;
+    }
 
-      _defineSlot(bid);
-    });
+    // on the first bid, set up the SDK
+    if ( ! RUBICON_INITIALIZED) {
+      _initSDK(params.bids[0].params);
+    }
 
     _rready(function () {
-      window.rubicontag.run(_bidsReady);
+      var slots = [];
+      var bids  = params.bids;
+
+      for (var key in bids) {
+        slots.push(_defineSlot(bids[key]));
+      }
+
+      var parameters = {slots : slots};
+      var callback   = function (){
+        _bidsReady(slots);
+      };
+
+      window.rubicontag.run(callback, parameters);
     });
   }
 

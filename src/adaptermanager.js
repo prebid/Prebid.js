@@ -1,17 +1,5 @@
 /** @module adaptermanger */
 
-var RubiconAdapter = require('./adapters/rubicon.js');
-var AppNexusAdapter = require('./adapters/appnexus.js');
-var AolAdapter = require('./adapters/aol');
-var OpenxAdapter = require('./adapters/openx');
-var PubmaticAdapter = require('./adapters/pubmatic.js');
-var YieldbotAdapter = require('./adapters/yieldbot');
-var IndexExchange = require('./adapters/indexExchange');
-var Sovrn = require('./adapters/sovrn');
-var PulsePointAdapter = require('./adapters/pulsepoint.js');
-var SpringServeAdapter = require('./adapters/springserve.js');
-var AdformAdapter = require('./adapters/adform');
-var AdequantAdapter = require('./adapters/adequant.js');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -87,19 +75,9 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-// Register the bid adaptors here
-exports.registerBidAdapter(new RubiconAdapter(), 'rubicon');
-exports.registerBidAdapter(new AppNexusAdapter.createNew(), 'appnexus');
-exports.registerBidAdapter(new OpenxAdapter(), 'openx');
-exports.registerBidAdapter(new PubmaticAdapter(), 'pubmatic');
-exports.registerBidAdapter(new YieldbotAdapter(), 'yieldbot');
-exports.registerBidAdapter(new IndexExchange(), 'indexExchange');
-exports.registerBidAdapter(new SpringServeAdapter(), 'springserve');
-exports.registerBidAdapter(new Sovrn(), 'sovrn');
-exports.registerBidAdapter(new AolAdapter(), 'aol');
-exports.registerBidAdapter(new PulsePointAdapter(), 'pulsepoint');
-exports.registerBidAdapter(new AdequantAdapter(), 'adequant');
+/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
+// here be adapters
+/** END INSERT ADAPTERS */
 
 //default bidder alias
 exports.aliasBidAdapter('appnexus', 'brealtime');
-exports.registerBidAdapter(new AdformAdapter(), 'adform');

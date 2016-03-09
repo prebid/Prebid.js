@@ -1,17 +1,36 @@
 {
   "name": "prebid.js",
-  "version": "0.6.0",
+  "version": "0.6.1-pre",
   "description": "Header Bidding Management Library",
-  "main": "prebid.js",
+  "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test"
   },
-  "author": [],
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/prebid/Prebid.js.git"
+  },
+  "adapters": [
+    "adform",
+    "aol",
+    "appnexus",
+    "indexExchange",
+    "openx",
+    "pubmatic",
+    "pulsepoint",
+    "rubicon",
+    "rubiconLegacy",
+    "sovrn",
+    "springserve",
+    "yieldbot"
+  ],
+  "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.5.2",
     "babel-loader": "^6.2.3",
     "babel-preset-es2015": "^6.5.0",
+    "block-loader": "^2.1.0",
     "chai": "^3.3.0",
     "chai-as-promised": "^5.1.0",
     "clone": "^0.1.17",

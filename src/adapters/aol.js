@@ -6,7 +6,6 @@ var adloader = require('../adloader');
 var AolAdapter = function AolAdapter() {
 
   // constants
-  var ADTECH_PLACEMENT_RXP = /\W/g;
   var ADTECH_URI = (window.location.protocol) + '//aka-cdn.adtechus.com/dt/common/DAC.js';
   var ADTECH_BIDDER_NAME = 'aol';
   var ADTECH_PUBAPI_CONFIG = {
@@ -31,18 +30,7 @@ var AolAdapter = function AolAdapter() {
   var bidsMap = {};
   var d = window.document;
   var h = d.getElementsByTagName('HEAD')[0];
-  var aliasCount = 0;
   var dummyUnitIdCount = 0;
-
-  /**
-   * @private Given a placementCode slot path/div id
-   * for a unit, return a unique alias
-   * @param {String} placementCode
-   * @return {String} alias
-   */
-  function _generateAlias(placementCode) {
-    return (placementCode || 'alias').replace(ADTECH_PLACEMENT_RXP, '') + (++aliasCount);
-  }
 
   /**
    * @private create a div that we'll use as the
@@ -69,7 +57,7 @@ var AolAdapter = function AolAdapter() {
    * @param {ADTECHContext} context the context passed from aol
    */
   function _addBid(response, context) {
-    var bid = bidsMap[context.placement];
+    var bid = bidsMap[context.alias];
     var cpm;
 
     if (!bid) {
@@ -82,9 +70,16 @@ var AolAdapter = function AolAdapter() {
       return _addErrorBid(response, context);
     }
 
+    // clean up--we no longer need to store the bid
+    delete bidsMap[context.alias];
+
     var bidResponse = bidfactory.createBid(1);
+    var ad = response.getCreative();
+    if (typeof response.getPixels() !== 'undefined') {
+        ad += response.getPixels();
+    }
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-    bidResponse.ad = response.getCreative() + response.getPixels();
+    bidResponse.ad = ad;
     bidResponse.cpm = cpm;
     bidResponse.width = response.getAdWidth();
     bidResponse.height = response.getAdHeight();
@@ -100,12 +95,15 @@ var AolAdapter = function AolAdapter() {
    * @param {ADTECHContext} context the context passed from aol
    */
   function _addErrorBid(response, context) {
-    var bid = bidsMap[context.placement];
+    var bid = bidsMap[context.alias];
 
     if (!bid) {
       utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
       return;
     }
+
+    // clean up--we no longer need to store the bid
+    delete bidsMap[context.alias];
 
     var bidResponse = bidfactory.createBid(2);
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
@@ -120,8 +118,10 @@ var AolAdapter = function AolAdapter() {
    * @return {Object} the bid request, formatted for the ADTECH/DAC api
    */
   function _mapUnit(bid) {
+    var alias = bid.params.alias || utils.getUniqueIdentifierStr();
+
     // save the bid
-    bidsMap[bid.params.placement] = bid;
+    bidsMap[alias] = bid;
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),
@@ -131,7 +131,7 @@ var AolAdapter = function AolAdapter() {
       secure: false,
       serviceType: 'pubapi',
       performScreenDetection: false,
-      alias: bid.params.alias || _generateAlias(bid.placementCode),
+      alias: alias,
       network: bid.params.network,
       placement: parseInt(bid.params.placement),
       gpt: {

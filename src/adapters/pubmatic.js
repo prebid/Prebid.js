@@ -47,7 +47,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
   }
 
   function _createRequestContent() {
-    var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' + 'ipt>inDapIF=true;</scr' + 'ipt></head>';
+    var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"' +
+      ' "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' +
+      'ipt>inDapIF=true;</scr' + 'ipt></head>';
     content += '<body>';
     content += '<scr' + 'ipt>';
     content += '' +
@@ -61,9 +63,10 @@ var PubmaticAdapter = function PubmaticAdapter() {
       return "'" + adSlot + "'";
     }).join(',');
 
-    content += '<scr' + 'ipt src="//ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
+    content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
     content += '<scr' + 'ipt>';
-    content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap, bidDetailsMap: bidDetailsMap})';
+    content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap,' +
+      ' bidDetailsMap: bidDetailsMap})';
     content += '</scr' + 'ipt>';
     content += '</body></html>';
     content = utils.replaceTokenInString(content, map, '%%');
@@ -87,6 +90,14 @@ var PubmaticAdapter = function PubmaticAdapter() {
       adUnit = bidResponseMap[bid.adSlot] || {};
 
       // adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
+
+      // if using DFP GPT, the params string comes in the format:
+      // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
+      // the code below detects and handles this.
+      if (bidInfoMap[bid.adSlot].indexOf('=') === -1) {
+        bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+      }
+
       adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function (result, pair) {
         var parts = pair.split('=');
         result[parts[0]] = parts[1];
