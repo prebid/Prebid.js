@@ -40,8 +40,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     //insert the iframe into document
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
-    //todo make this more browser friendly
-    var iframeDoc = iframe.contentWindow.document;
+    var iframeDoc = utils.getIframeDocument(iframe);
     iframeDoc.write(_createRequestContent());
     iframeDoc.close();
   }
@@ -111,7 +110,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
         adResponse.adSlot = bid.adSlot;
         adResponse.cpm = Number(adUnitInfo.bid);
         adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
-        adResponse.adUrl = unescape(adUnit.tracking_url); // jshint ignore:line
+        adResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(adUnit.tracking_url));
         adResponse.width = dimensions[0];
         adResponse.height = dimensions[1];
         adResponse.dealId = adUnitInfo.wdeal;
