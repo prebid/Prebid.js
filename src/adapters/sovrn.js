@@ -15,26 +15,7 @@ var SovrnAdapter = function SovrnAdapter() {
   function _callBids(params) {
     var sovrnBids = params.bids || [];
 
-    // De-dupe by tagid then issue single bid request for all bids
-    _requestBids(_getUniqueTagids(sovrnBids));
-  }
-
-  // filter bids to de-dupe them?
-  function _getUniqueTagids(bids) {
-    var key;
-    var map = {};
-    var Tagids = [];
-    bids.forEach(function (bid) {
-      map[utils.getBidIdParamater('tagid', bid.params)] = bid;
-    });
-
-    for (key in map) {
-      if (map.hasOwnProperty(key)) {
-        Tagids.push(map[key]);
-      }
-    }
-
-    return Tagids;
+    _requestBids(sovrnBids);
   }
 
   function _requestBids(bidReqs) {
