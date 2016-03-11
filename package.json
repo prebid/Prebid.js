@@ -22,7 +22,8 @@
     "rubiconLegacy",
     "sovrn",
     "springserve",
-    "yieldbot"
+    "yieldbot",
+    "nginad"
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
