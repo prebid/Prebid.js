@@ -1,5 +1,4 @@
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
+// jshint ignore:start
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
@@ -16,100 +15,106 @@ var adloader = require('../adloader');
  */
 var OpenxAdapter = function OpenxAdapter(options) {
 
-	var opts = options || {};
-	var scriptUrl;
-	var bids;
+  var opts = options || {};
+  var scriptUrl;
+  var bids;
 
-	function _callBids(params) {
-		bids = params.bids || [];
-		for (var i = 0; i < bids.length; i++) {
-			var bid = bids[i];
-			//load page options from bid request
-			if (bid.params.pageURL) {
-				opts.pageURL = bid.params.pageURL;
-			}
-			if (bid.params.refererURL) {
-				opts.refererURL = bid.params.refererURL;
-			}
-			if (bid.params.jstag_url) {
-				scriptUrl = bid.params.jstag_url;
-			}
-			if (bid.params.pgid) {
-				opts.pgid = bid.params.pgid;
-			}
-		}
-		_requestBids();
-	}
+  function _callBids(params) {
+    bids = params.bids || [];
+    for (var i = 0; i < bids.length; i++) {
+      var bid = bids[i];
 
-	function _requestBids() {
+      //load page options from bid request
+      if (bid.params.pageURL) {
+        opts.pageURL = bid.params.pageURL;
+      }
 
-		if (scriptUrl) {
-			adloader.loadScript(scriptUrl, function() {
-				var i;
-				var POX = OX();
+      if (bid.params.refererURL) {
+        opts.refererURL = bid.params.refererURL;
+      }
 
-				POX.setPageURL(opts.pageURL);
-				POX.setRefererURL(opts.refererURL);
-				POX.addPage(opts.pgid);
+      if (bid.params.jstag_url) {
+        scriptUrl = bid.params.jstag_url;
+      }
 
-				// Add each ad unit ID
-				for (i = 0; i < bids.length; i++) {
-					POX.addAdUnit(bids[i].params.unit);
-				}
+      if (bid.params.pgid) {
+        opts.pgid = bid.params.pgid;
+      }
+    }
 
-				POX.addHook(function(response) {
-					var i;
-					var bid;
-					var adUnit;
-					var adResponse;
+    _requestBids();
+  }
 
-					// Map each bid to its response
-					for (i = 0; i < bids.length; i++) {
-						bid = bids[i];
+  function _requestBids() {
 
-						// Get ad response
-						adUnit = response.getOrCreateAdUnit(bid.params.unit);
+    if (scriptUrl) {
+      adloader.loadScript(scriptUrl, function () {
+        var i;
+        var POX = OX();
 
-						// If 'pub_rev' (CPM) isn't returned we got an empty response
-						if (adUnit.get('pub_rev')) {
-							adResponse = adResponse = bidfactory.createBid(1);
+        POX.setPageURL(opts.pageURL);
+        POX.setRefererURL(opts.refererURL);
+        POX.addPage(opts.pgid);
 
-							adResponse.bidderCode = 'openx';
-							adResponse.ad_id = adUnit.get('ad_id');
-							adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+        // Add each ad unit ID
+        for (i = 0; i < bids.length; i++) {
+          POX.addAdUnit(bids[i].params.unit);
+        }
 
-							adResponse.ad = adUnit.get('html');
-							// Add record/impression pixel to the creative HTML
-							var recordPixel = OX.utils.template(response.getRecordTemplate(), {
-								medium : OX.utils.getMedium(),
-								rtype : OX.Resources.RI,
-								txn_state : adUnit.get('ts')
-							});
-							adResponse.ad += '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="' + recordPixel + '"></div>';
+        POX.addHook(function (response) {
+          var i;
+          var bid;
+          var adUnit;
+          var adResponse;
 
-							adResponse.adUrl = adUnit.get('ad_url');
-							adResponse.width = adUnit.get('width');
-							adResponse.height = adUnit.get('height');
+          // Map each bid to its response
+          for (i = 0; i < bids.length; i++) {
+            bid = bids[i];
 
-							bidmanager.addBidResponse(bid.placementCode, adResponse);
-						} else {
-							// Indicate an ad was not returned
-							adResponse = bidfactory.createBid(2);
-							adResponse.bidderCode = 'openx';
-							bidmanager.addBidResponse(bid.placementCode, adResponse);
-						}
-					}
-				}, OX.Hooks.ON_AD_RESPONSE);
+            // Get ad response
+            adUnit = response.getOrCreateAdUnit(bid.params.unit);
 
-				// Make request
-				POX.load();
-			});
-		}
-	}
+            // If 'pub_rev' (CPM) isn't returned we got an empty response
+            if (adUnit.get('pub_rev')) {
+              adResponse = adResponse = bidfactory.createBid(1);
 
-	return {
-		callBids: _callBids
-	};
+              adResponse.bidderCode = 'openx';
+              adResponse.ad_id = adUnit.get('ad_id');
+              adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+
+              adResponse.ad = adUnit.get('html');
+
+              // Add record/impression pixel to the creative HTML
+              var recordPixel = OX.utils.template(response.getRecordTemplate(), {
+                medium: OX.utils.getMedium(),
+                rtype: OX.Resources.RI,
+                txn_state: adUnit.get('ts')
+              });
+              adResponse.ad += '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="' + recordPixel + '"></div>';
+
+              adResponse.adUrl = adUnit.get('ad_url');
+              adResponse.width = adUnit.get('width');
+              adResponse.height = adUnit.get('height');
+
+              bidmanager.addBidResponse(bid.placementCode, adResponse);
+            } else {
+              // Indicate an ad was not returned
+              adResponse = bidfactory.createBid(2);
+              adResponse.bidderCode = 'openx';
+              bidmanager.addBidResponse(bid.placementCode, adResponse);
+            }
+          }
+        }, OX.Hooks.ON_AD_RESPONSE);
+
+        // Make request
+        POX.load();
+      });
+    }
+  }
+
+  return {
+    callBids: _callBids
+  };
 };
 
 module.exports = OpenxAdapter;
