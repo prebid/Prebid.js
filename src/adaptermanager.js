@@ -4,6 +4,8 @@ var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
+import { BaseAdapter } from './adapters/baseAdapter';
+
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -63,9 +65,15 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        var newAdapter = bidAdaptor.createNew();
-        newAdapter.setBidderCode(alias);
-        this.registerBidAdapter(newAdapter, alias);
+        let newAdapter = null;
+        if(bidAdaptor instanceof BaseAdapter) {
+          //newAdapter = new bidAdaptor.constructor(alias);
+          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        } else {
+          newAdapter = bidAdaptor.createNew();
+          newAdapter.setBidderCode(alias);
+          this.registerBidAdapter(newAdapter, alias);
+        }
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
