@@ -5,7 +5,7 @@ var AppNexusAdapter = require('./adapters/appnexus.js');
 var Sovrn = require('./adapters/sovrn');
 
 var CriteoAdapter = require('./adapters/criteo');
-
+var PulsePointAdapter = require('./adapters/pulsepoint.js');
 var OpenxDynamicLastLookAdapter = require('./adapters/openxDynamicLastLook.js');
 
 var bidmanager = require('./bidmanager.js');
@@ -96,7 +96,7 @@ this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
 // this.registerBidAdapter(SpringServeAdapter(), 'springserve');
 this.registerBidAdapter(Sovrn(),'sovrn');
 // this.registerBidAdapter(AolAdapter(), 'aol');
-// this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
 // //default bidder alias
 // this.aliasBidAdapter('appnexus', 'brealtime');
 // this.registerBidAdapter(AdformAdapter(), 'adform');
