@@ -1,10 +1,12 @@
 /** @module pbjs */
 
-// if pbjs already exists in global dodcument scope, use it, if not, create the object
-window.pbjs = (window.pbjs || {});
-window.pbjs.que = window.pbjs.que || [];
-var pbjs = window.pbjs;
 var CONSTANTS = require('./constants.json');
+
+// if the global var already exists in global dodcument scope, use it, if not, create the object
+window[CONSTANTS.PBJS_GLOBAL_VAR_NAME] = (window[CONSTANTS.PBJS_GLOBAL_VAR_NAME] || {});
+window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].que = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].que || [];
+var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
+
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');

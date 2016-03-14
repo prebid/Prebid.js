@@ -66,7 +66,7 @@ var OpenxDynamicLastLookAdapter = function OpenxDynamicLastLookAdapter(options) 
 
 		var scriptUrl = '//underdogmedia-d.openx.net/w/1.0/arj?auid='+ encodeURI(adUnitIds.join(',')) +
 		  '&url='  + encodeURIComponent(pageUrl) +
-		  '&callback=window.pbjs.openxDllResponse';
+		  '&callback=window.'+CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.openxDllResponse';
 
     if(adUnitFloorPairs.length > 0){
       scriptUrl += '&aumf=' + encodeURIComponent(adUnitFloorPairs.join(','));
@@ -91,7 +91,7 @@ var OpenxDynamicLastLookAdapter = function OpenxDynamicLastLookAdapter(options) 
 	}
 
 	//expose the callback to the global object:
-	pbjs.openxDllResponse = function(openxResponseObj) {
+	window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].openxDllResponse = function(openxResponseObj) {
 
     if (openxResponseObj && openxResponseObj.ads && openxResponseObj.ads.pixels){
       //openx wants us to render their pixels all the time, not just when rendering ads...

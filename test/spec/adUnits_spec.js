@@ -1,4 +1,8 @@
 describe('Publisher API _ AdUnits', function () {
+
+  var CONSTANTS = require('src/constants.json');
+
+
   var assert = require('chai').assert;
   var expect = require('chai').expect;
   var pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
@@ -41,7 +45,9 @@ describe('Publisher API _ AdUnits', function () {
                 }
             ]
     }];
-
+    var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
+    //console.log('pbjs = ');
+    //console.log(pbjs);
     pbjs.addAdUnits(adUnits);
   });
 
@@ -50,7 +56,6 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('addAdUnits', function () {
-
     var adUnits, adUnit1, bids1, adUnit2, bids2;
 
     it('should have two adUnits', function () {
@@ -98,10 +103,10 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('removeAdUnit', function () {
-
     var adUnits, adUnit2, bids2;
 
     it('the first adUnit should be not existed', function () {
+      var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
       pbjs.removeAdUnit('/1996833/slot-1');
       adUnits = pbjsTestOnly.getAdUnits();
       adUnit2 = adUnits[0];
@@ -110,6 +115,7 @@ describe('Publisher API _ AdUnits', function () {
     });
 
     it('the second adUnit should be still existed', function () {
+      var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
       assert.strictEqual(bids2[0].bidder, 'rubicon', 'adUnit2 bids1 bidder');

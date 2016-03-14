@@ -190,6 +190,7 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
+  var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
   if (pbjs.logging === false && _loggingChecked === false) {
     pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
     _loggingChecked = true;

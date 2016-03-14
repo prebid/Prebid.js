@@ -1,6 +1,9 @@
 var assert = require('chai').assert;
 var prebid = require('../../src/prebid');
 
+var CONSTANTS = require('../../src/constants.json');
+var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
+
 describe('Publisher API', function () {
   // var assert = chai.assert;
 
