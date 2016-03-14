@@ -2,7 +2,7 @@
 
 var CONSTANTS = require('./constants.json');
 
-// if the global var already exists in global dodcument scope, use it, if not, create the object
+// if the global var already exists in global document scope, use it, if not, create the object
 window[CONSTANTS.PBJS_GLOBAL_VAR_NAME] = (window[CONSTANTS.PBJS_GLOBAL_VAR_NAME] || {});
 window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].que = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].que || [];
 var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
