@@ -11,11 +11,19 @@
     "url" : "https://github.com/prebid/Prebid.js.git"
   },
   "adapters": [
+    "adform",
+    "aol",
     "appnexus",
+    "indexExchange",
+    "openx",
+    "pubmatic",
     "pulsepoint",
+    "rubicon",
     "sovrn",
-    "criteo",
-    "openxDynamicLastLook"
+    "springserve",
+    "triplelift",
+    "yieldbot",
+    "nginad"
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
