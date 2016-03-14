@@ -15,6 +15,11 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var toString = Object.prototype.toString;
+let infoLogger = null;
+try {
+  infoLogger = console.info.bind(window.console);
+}
+catch (e) {}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -172,6 +177,18 @@ exports.getTopWindowUrl = function () {
   }
 };
 
+exports.logInfo = function(msg, args) {
+  if (debugTurnedOn() && hasConsoleLogger()) {
+    if (infoLogger) {
+      if (!args || args.length === 0) {
+        args = '';
+      }
+
+      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '),  args);
+    }
+  }
+};
+
 exports.logMessage = function (msg) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     console.log('MESSAGE: ' + msg);
@@ -221,8 +238,8 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
   f.style.border = '0';
   f.scrolling = 'no';
   f.frameBorder = '0';
-  f.src = 'about:self';
-  f.style = 'display:none';
+  f.src = 'about:blank';
+  f.style.display = 'none';
   return f;
 };
 

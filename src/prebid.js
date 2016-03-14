@@ -44,6 +44,9 @@ pbjs.logging = pbjs.logging || false;
 //let the world know we are loaded
 pbjs.libLoaded = true;
 
+//TODO: this should be auto generated from build
+utils.logInfo('Prebid.js v0.7.0 loaded');
+
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
 
@@ -355,6 +358,7 @@ function checkDefinedPlacement(id) {
  * @return {array}  returnObj return bids array
  */
 pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
+  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
   // call to retrieve bids array
   if (adunitCode) {
     var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
@@ -370,6 +374,7 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * @return {object}  returnObj return bids
  */
 pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
+  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
   // call to populate pb_targetingMap
   pbjs.getBidResponses(adunitCode);
 
@@ -385,6 +390,7 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
  * @alias module:pbjs.getAdserverTargeting
  */
 pbjs.getAdserverTargeting = function () {
+  utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
   return pbjs.getAdserverTargetingForAdUnitCode();
 };
 
@@ -395,6 +401,7 @@ pbjs.getAdserverTargeting = function () {
  * @return {object}            map | object that contains the bidResponses
  */
 pbjs.getBidResponses = function (adunitCode) {
+  utils.logInfo('Invoking pbjs.getBidResponses', arguments);
   var response = {};
   var bidArray = [];
   var returnObj = {};
@@ -436,6 +443,7 @@ pbjs.getBidResponses = function (adunitCode) {
  * @return {Object}            bidResponse object
  */
 pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
+  utils.logInfo('Invoking pbjs.getBidResponsesForAdUnitCode', arguments);
   return pbjs.getBidResponses(adUnitCode);
 };
 /**
@@ -444,6 +452,7 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
 pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
+  utils.logInfo('Invoking pbjs.setTargetingForAdUnitsGPTAsync', arguments);
   if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
     utils.logError('window.googletag is not defined on the page');
     return;
@@ -519,6 +528,7 @@ function getTargetingfromGPTIdentifier(slot) {
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function (codeArr) {
+  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
   pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
@@ -528,6 +538,7 @@ pbjs.setTargetingForGPTAsync = function (codeArr) {
  * @return {bool} all bids available
  */
 pbjs.allBidsAvailable = function () {
+  utils.logInfo('Invoking pbjs.allBidsAvailable', arguments);
   return bidmanager.allBidsBack();
 };
 
@@ -538,6 +549,7 @@ pbjs.allBidsAvailable = function () {
  * @alias module:pbjs.renderAd
  */
 pbjs.renderAd = function (doc, id) {
+  utils.logInfo('Invoking pbjs.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
   if (doc && id) {
     try {
@@ -588,7 +600,7 @@ pbjs.renderAd = function (doc, id) {
 
 };
 
-/*
+/**
  *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function (adUnitCode) {
@@ -620,6 +632,7 @@ pbjs.requestBidsForAdUnits = function (adUnitsObj) {
  * @alias module:pbjs.removeAdUnit
  */
 pbjs.removeAdUnit = function (adUnitCode) {
+  utils.logInfo('Invoking pbjs.removeAdUnit', arguments);
   if (adUnitCode) {
     for (var i = 0; i < pbjs.adUnits.length; i++) {
       if (pbjs.adUnits[i].code === adUnitCode) {
@@ -639,11 +652,9 @@ pbjs.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 pbjs.requestBids = function (requestObj) {
+  utils.logInfo('Invoking pbjs.requestBids', arguments);
   if (!requestObj) {
-    //utils.logMessage('requesting all bids');
-
     requestAllBids();
-
   } else {
     var adUnitCodes = requestObj.adUnitCodes;
     var adUnits = requestObj.adUnits;
@@ -680,6 +691,7 @@ pbjs.requestBids = function (requestObj) {
  * @alias module:pbjs.addAdUnits
  */
 pbjs.addAdUnits = function (adUnitArr) {
+  utils.logInfo('Invoking pbjs.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
     //append array to existing
     pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
@@ -704,6 +716,7 @@ pbjs.addAdUnits = function (adUnitArr) {
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
 pbjs.onEvent = function (event, handler, id) {
+  utils.logInfo('Invoking pbjs.onEvent', arguments);
   if (!utils.isFn(handler)) {
     utils.logError('The event handler provided is not a function and was not set on event "' + event + '".');
     return;
@@ -723,6 +736,7 @@ pbjs.onEvent = function (event, handler, id) {
  * @param {String} id an identifier in the context of the event (see `pbjs.onEvent`)
  */
 pbjs.offEvent = function (event, handler, id) {
+  utils.logInfo('Invoking pbjs.offEvent', arguments);
   if (id && !eventValidators[event].call(null, id)) {
     return;
   }
@@ -738,6 +752,7 @@ pbjs.offEvent = function (event, handler, id) {
  * @returns {String} id for callback
  */
 pbjs.addCallback = function (eventStr, func) {
+  utils.logInfo('Invoking pbjs.addCallback', arguments);
   var id = null;
   if (!eventStr || !func || typeof func !== objectType_function) {
     utils.logError('error registering callback. Check method signature');
@@ -767,6 +782,7 @@ pbjs.removeCallback = function (/* cbId */) {
  * @return {[type]}               [description]
  */
 pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
+  utils.logInfo('Invoking pbjs.registerBidAdapter', arguments);
   try {
     adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
   }
@@ -779,7 +795,7 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
  *
  */
 pbjs.bidsAvailableForAdapter = function (bidderCode) {
-
+utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
   //TODO getAd
   var bids = pb_bidderMap[bidderCode].bids;
 
@@ -814,6 +830,7 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
  * @return {[type]}            [description]
  */
 pbjs.createBid = function (statusCode) {
+  utils.logInfo('Invoking pbjs.createBid', arguments);
   return bidfactory.createBid(statusCode);
 };
 
@@ -823,6 +840,7 @@ pbjs.createBid = function (statusCode) {
  * @param {[type]} bid        [description]
  */
 pbjs.addBidResponse = function (adUnitCode, bid) {
+  utils.logInfo('Invoking pbjs.addBidResponse', arguments);
   bidmanager.addBidResponse(adUnitCode, bid);
 };
 
@@ -832,8 +850,9 @@ pbjs.addBidResponse = function (adUnitCode, bid) {
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
-pbjs.loadScript = function (tagSrc, callback) {
-  adloader.loadScript(tagSrc, callback);
+pbjs.loadScript = function (tagSrc, callback, useCache) {
+  utils.logInfo('Invoking pbjs.loadScript', arguments);
+  adloader.loadScript(tagSrc, callback, useCache);
 };
 
 /**
@@ -906,6 +925,7 @@ pbjs.loadScript = function (tagSrc, callback) {
  * @param  {object} options object {provider : 'string', options : {}}
  */
 pbjs.enableAnalytics = function (options) {
+  utils.logInfo('Invoking pbjs.enableAnalytics', arguments);
   if (!options) {
     utils.logError('pbjs.enableAnalytics should be called with option {}', 'prebid.js');
     return;
@@ -928,11 +948,12 @@ pbjs.enableAnalytics = function (options) {
  * This will tell analytics that all bids received after are "timed out"
  */
 pbjs.sendTimeoutEvent = function () {
+  utils.logInfo('Invoking pbjs.sendTimeoutEvent', arguments);
   timeOutBidders();
 };
 
 pbjs.aliasBidder = function (bidderCode, alias) {
-
+  utils.logInfo('Invoking pbjs.aliasBidder', arguments);
   if (bidderCode && alias) {
     adaptermanager.aliasBidAdapter(bidderCode, alias);
   } else {

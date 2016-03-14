@@ -31,6 +31,11 @@ var options = {
 
     inserts = inserts.length ? inserts : files;
     return inserts.map((adapter) => {
+      if (adapter === 'appnexusAst') {
+        return `import { AppnexusAst } from './adapters/appnexusAst';\n` +
+          `exports.registerBidAdapter(new AppnexusAst('appnexus'), 'appnexus');\n`;
+      }
+
       return `var ${adapterName(adapter)} = require('./adapters/${adapter}.js');\n` +
         `exports.registerBidAdapter(new ${adapterName(adapter)}` +
         `${useCreateNew(adapter)}(), '${adapter}');\n`;
