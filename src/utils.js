@@ -237,8 +237,8 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
   f.style.border = '0';
   f.scrolling = 'no';
   f.frameBorder = '0';
-  f.src = 'about:self';
-  f.style = 'display:none';
+  f.src = 'about:blank';
+  f.style.display = 'none';
   return f;
 };
 
