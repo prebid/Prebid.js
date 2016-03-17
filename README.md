@@ -3,13 +3,13 @@ Prebid.js
 
 > Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
 
-Many SSPs, bidders, and publishers have all contributed to this project. 
+Many SSPs, bidders, and publishers have all contributed to this project.
 
-Check out the overview and documentation at http://prebid.org. 
+Check out the overview and documentation at http://prebid.org.
 
 No more week-long development. Header bidding is made easy by prebid.js :)
 
-**Table of Contents** 
+**Table of Contents**
 
 - [Prebid.js](#)
     - [Usage](#usage)
@@ -23,10 +23,10 @@ No more week-long development. Header bidding is made easy by prebid.js :)
         - [Configure](#configure)
         - [Run](#run)
 
-    
+
 Usage
 ----------
-Download the integration example [here](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/pbjs_example_gpt.html). 
+Download the integration example [here](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/pbjs_example_gpt.html).
 
 ### Download the latest released code ###
 [See the releases page here](https://github.com/prebid/Prebid.js/releases) and download a copy.
@@ -88,9 +88,10 @@ Full Developer API reference:
 
 Contribute
 ----------
+**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands. 
 
 ### Add a Bidder Adapter ###
-Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter. 
+Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter.
 
 ### Install ###
     $ npm install
