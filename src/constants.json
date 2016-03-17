@@ -1,4 +1,5 @@
 {
+  "PBJS_GLOBAL_VAR_NAME": "pbjs",
   "JSON_MAPPING": {
     "PL_CODE": "code",
     "PL_SIZE": "sizes",

@@ -45,7 +45,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
+    jptCall = utils.tryAppendQueryString(jptCall, 'callback', CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -140,7 +140,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.handleAnCB = function (jptResponseObj) {
+  window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].handleAnCB = function (jptResponseObj) {
 
     var bidCode;
 

@@ -37,7 +37,7 @@ function buildTLCall(bid, callbackId) {
 	var tlURI = '//tlx.3lift.com/header/auction?';
 	var tlCall = document.location.protocol + tlURI;
 
-	tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
+	tlCall = utils.tryAppendQueryString(tlCall, 'callback', CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.TLCB');
 	tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
 	tlCall = utils.tryAppendQueryString(tlCall, 'lib', '0.5.0');
 	tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
@@ -52,7 +52,7 @@ function buildTLCall(bid, callbackId) {
 	//append referrer
 	var referrer = utils.getTopWindowUrl();
 	tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
-	
+
 	//remove the trailing "&"
 	if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
 		tlCall = tlCall.substring(0, tlCall.length - 1);
@@ -71,7 +71,7 @@ function buildTLCall(bid, callbackId) {
 
 
 //expose the callback to the global object:
-pbjs.TLCB = function(tlResponseObj) {
+window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].TLCB = function(tlResponseObj) {
 	if (tlResponseObj && tlResponseObj.callback_id) {
 		var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
 			placementCode = bidObj.placementCode;

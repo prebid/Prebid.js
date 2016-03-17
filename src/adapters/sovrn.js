@@ -69,7 +69,7 @@ var SovrnAdapter = function SovrnAdapter() {
       }
     };
 
-    var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
+    var scriptUrl = '//' + sovrnUrl + '?callback=window.'+CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.sovrnResponse' +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
   }
@@ -90,7 +90,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.sovrnResponse = function (sovrnResponseObj) {
+  window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].sovrnResponse = function (sovrnResponseObj) {
     // valid object?
     if (sovrnResponseObj && sovrnResponseObj.id) {
       // valid object w/ bid responses?

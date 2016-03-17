@@ -100,7 +100,7 @@ var NginAdAdapter = function NginAdAdapter() {
       }
     };
 
-    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
+    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.'+CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.nginadResponse' +
       '&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
 
     adloader.loadScript(scriptUrl, null);
@@ -119,7 +119,7 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.nginadResponse = function(nginadResponseObj) {
+  window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].nginadResponse = function(nginadResponseObj) {
     var bid = {};
     var key;
 
