@@ -1,6 +1,13 @@
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
+var helpers = require('./gulpHelpers');
+var argv = require('yargs').argv;
+// Pass your browsers by using --browsers=chrome,firefox,ie9
+// Run CI by passing --watch
+var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome']
+var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
@@ -38,9 +45,6 @@ module.exports = function (config) {
 
     // WebPack Related
     webpack: webpackConfig,
-    webpackMiddleware: {
-      noInfo: true
-    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -78,16 +82,15 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
+    autoWatch: (argv.watch) ? true : false,
 
     // start these browsers
-    // NOTE: these get defined again in gulpfile.js for the gulp tasks
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox'],
+    browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: (argv.watch) ? false : true,
 
     plugins: [
       'karma-phantomjs-launcher',

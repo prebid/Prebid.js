@@ -1,13 +1,19 @@
+var argv = require('yargs').argv;
+
 module.exports = {
+  entry: [
+    'src/prebid.js'
+  ],
   output: {
+    path: 'build/dist/',
     filename: 'prebid.js'
   },
-  devtool: 'source-map',
+  devtool: argv.devtool && argv.devtool.length ?  argv.devtool : 'source-maps',
   resolve: {
     modulesDirectories: ['', 'node_modules', 'src']
   },
   resolveLoader: {
-    modulesDirectories: ['loaders', 'node_modules']
+    modulesDirectories: ['node_modules']
   },
   module: {
     loaders: [
@@ -22,11 +28,6 @@ module.exports = {
       {
         test: /\.json$/,
         loader: 'json'
-      },
-      {
-        test: /adaptermanager.js/,
-        include: /(src)/,
-        loader: 'adapterLoader'
       }
     ]
   }
