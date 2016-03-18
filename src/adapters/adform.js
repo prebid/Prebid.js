@@ -2,6 +2,7 @@ var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
+var CONSTANTS = require('../constants.json');
 
 function AdformAdapter() {
 
@@ -30,8 +31,8 @@ function AdformAdapter() {
       request.unshift('//adx.adform.net/adx/?rp=4');
     }
 
-    pbjs[callbackName] = handleCallback(bids);
-    request.push('callback=pbjs.' + callbackName);
+    window[CONSTANTS.PBJS_GLOBAL_VAR_NAME][callbackName] = handleCallback(bids);
+    request.push('callback='+CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.' + callbackName);
 
     adloader.loadScript(request.join('&'));
   }

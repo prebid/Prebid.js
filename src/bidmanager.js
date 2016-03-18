@@ -2,6 +2,8 @@ var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
 
+var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
+
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 
