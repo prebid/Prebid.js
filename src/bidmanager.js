@@ -220,8 +220,8 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
   }
 
-  //3) set the keys from "standard" setting or from prebid defaults
-  else if (custBidObj && bidder_settings) {
+  //3) always set the keys from "standard" setting or from prebid defaults
+  if (custBidObj && bidder_settings) {
     if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
       bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
         adserverTargeting: [
