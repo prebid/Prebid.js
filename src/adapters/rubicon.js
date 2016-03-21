@@ -29,7 +29,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
   // the fastlane creative code
   var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (w, fe) { w.rubicontag.renderCreative(fe, "';
-  var RUBICON_CREATIVE_END = '"); }(window.top, (document.body || document.documentElement)));</script>';
+  var RUBICON_CREATIVE_END = '"); }((parent.window.rubicontag || window.top.rubicontag), (document.body || document.documentElement)));</script>';
 
   // pre-initialize the rubicon object
   // needs to be attached to the window
