@@ -28,8 +28,8 @@ var RubiconAdapter = function RubiconAdapter() {
   var RUBICON_INITIALIZED = 0;
 
   // the fastlane creative code
-  var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (w, fe) { w.rubicontag.renderCreative(fe, "';
-  var RUBICON_CREATIVE_END = '"); }(window.top, (document.body || document.documentElement)));</script>';
+  var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (rt, fe) { rt.renderCreative(fe, "';
+  var RUBICON_CREATIVE_END = '"); }((parent.window.rubicontag || window.top.rubicontag), (document.body || document.documentElement)));</script>';
 
   // pre-initialize the rubicon object
   // needs to be attached to the window
@@ -153,7 +153,7 @@ var RubiconAdapter = function RubiconAdapter() {
    */
   function _initSDK(options, done) {
     if (RUBICON_INITIALIZED) {
-        return;
+      return;
     }
 
     RUBICON_INITIALIZED = 1;
@@ -203,10 +203,10 @@ var RubiconAdapter = function RubiconAdapter() {
     var keywords  = bid.params.keywords || [];
     var inventory = bid.params.inventory || [];
     var slot      = window.rubicontag.defineSlot({
-      siteId : bid.params.siteId,
-      zoneId : bid.params.zoneId,
-      sizes  : bid.params.sizes,
-      id     : bid.placementCode
+      siteId: bid.params.siteId,
+      zoneId: bid.params.zoneId,
+      sizes: bid.params.sizes,
+      id: bid.placementCode
     });
 
     slot.clearTargeting();
@@ -266,7 +266,7 @@ var RubiconAdapter = function RubiconAdapter() {
     }
 
     // on the first bid, set up the SDK
-    if ( ! RUBICON_INITIALIZED) {
+    if (!RUBICON_INITIALIZED) {
       _initSDK(params.bids[0].params);
     }
 
@@ -278,8 +278,8 @@ var RubiconAdapter = function RubiconAdapter() {
         slots.push(_defineSlot(bids[key]));
       }
 
-      var parameters = {slots : slots};
-      var callback   = function (){
+      var parameters = { slots: slots };
+      var callback   = function () {
         _bidsReady(slots);
       };
 
