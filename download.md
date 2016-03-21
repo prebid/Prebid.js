@@ -191,7 +191,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <div class="bs-docs-section" markdown="1">
 
-### Build from Github (More Advanced)
+### Build from Source Code (More Advanced)
 
 {: .lead :}
 Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release. 
