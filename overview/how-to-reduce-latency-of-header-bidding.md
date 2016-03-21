@@ -55,7 +55,7 @@ Here're a few screenshots of websites' network calls after implemented header bi
 
 * ##### Timeout at 400ms is respected.
 
-	We set the timeout to 400ms. As you can see from the graph, the GPT tag (gpt.js) is loaded at around 500ms. The reason that GPT didn't get loaded exactly at 400ms is Javascript's timer is underterministic. Some partners take longer than the others. The ones that took longer than the timeout setting did not get a chance to bid due to latency concerns.
+	We set the timeout to 400ms. As you can see from the graph, the GPT tag (gpt.js) is loaded at around 500ms. The reason that GPT didn't get loaded exactly at 400ms is Javascript's timer is nondeterministic. Some partners take longer than the others. The ones that took longer than the timeout setting did not get a chance to bid due to latency concerns.
 
 * ##### Rotate order of bidders
 
