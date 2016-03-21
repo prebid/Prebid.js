@@ -96,6 +96,10 @@ nav_sections:
     code: support
     name: SUPPORT
 
+  - top_nav: download
+    code: download
+    name: DOWNLOAD
+
 
 port: 80
 
