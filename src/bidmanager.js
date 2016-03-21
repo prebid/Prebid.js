@@ -266,7 +266,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     var value = kvPair.val;
 
     if (keyValues[key]) {
-      utils.logMessage('Warning setting keys (overwriting existing KVP)', 'bidmanager.js', keyValues[key], value);
+      utils.logMessage('Warning setting keys (overwriting existing KVP)', 'bidmanager.js', key, keyValues[key], value);
     }
 
     if (utils.isFn(value)) {
