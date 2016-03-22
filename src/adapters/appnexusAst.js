@@ -10,26 +10,25 @@ const AST_URL = 'https://acdn.adnxs.com/ast/alpha/ast.js';
 export class AppnexusAst extends BaseAdapter {
   constructor(code) {
     super(code);
-    this._bidRequests = null;
   }
 
-  callBids(params) {
+  callBids(params, requestContext) {
     window.apntag = window.apntag || {};
     window.apntag.anq = window.apntag.anq || [];
-    this._bidRequests = params.bids;
+    var bidRequests = params.bids;
     adloader.loadScript(AST_URL, () => {
-      this._requestAds(this.code);
+      this._requestAds(this.code, bidRequests, requestContext);
     }, true);
   }
 
-  _requestAds(code) {
+  _requestAds(code, bidRequests, requestContext) {
     if (utils.debugTurnedOn()) {
       window.apntag.debug = true;
     }
 
     window.apntag.clearRequest();
 
-    for (let bidRequest of this._bidRequests) {
+    for (let bidRequest of bidRequests) {
       const astTag = this._buildTag(bidRequest);
       const requestTag = window.apntag.defineTag(astTag);
       const placementCode = bidRequest.placementCode;
@@ -53,7 +52,7 @@ export class AppnexusAst extends BaseAdapter {
 
         bid.width = ad.banner.width;
         bid.height = ad.banner.height;
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse(requestContext, placementCode, bid);
       });
 
       //no bid
@@ -61,7 +60,7 @@ export class AppnexusAst extends BaseAdapter {
         const bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.code = code;
         bid.bidderCode = code;
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse(requestContext, placementCode, bid);
       });
     }
 

@@ -26,7 +26,6 @@ var AolAdapter = function AolAdapter() {
     pubApiER: _addErrorBid
   };
 
-  var bids;
   var bidsMap = {};
   var d = window.document;
   var h = d.getElementsByTagName('HEAD')[0];
@@ -86,7 +85,7 @@ var AolAdapter = function AolAdapter() {
     bidResponse.creativeId = response.getCreativeId();
 
     // add it to the bid manager
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    bidmanager.addBidResponse(bid.context, bid.placementCode, bidResponse);
   }
 
   /**
@@ -109,7 +108,7 @@ var AolAdapter = function AolAdapter() {
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
     bidResponse.reason = response.getNbr();
     bidResponse.raw = response.getResponse();
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    bidmanager.addBidResponse(bid.context, bid.placementCode, bidResponse);
   }
 
   /**
@@ -151,7 +150,7 @@ var AolAdapter = function AolAdapter() {
    * @private once ADTECH is loaded, request bids by
    * calling ADTECH.loadAd
    */
-  function _reqBids() {
+  function _reqBids(bids, requestContext) {
     if (!window.ADTECH) {
       utils.logError('window.ADTECH is not present!', ADTECH_BIDDER_NAME);
       return;
@@ -159,6 +158,7 @@ var AolAdapter = function AolAdapter() {
 
     // get the bids
     utils._each(bids, function (bid) {
+      bid.context = requestContext;
       var bidreq = _mapUnit(bid);
       window.ADTECH.loadAd(bidreq);
     });
@@ -171,10 +171,10 @@ var AolAdapter = function AolAdapter() {
    * @param {Object} params
    * @param {Array} params.bids the bids to be requested
    */
-  function _callBids(params) {
-    bids = params.bids;
+  function _callBids(params, requestContext) {
+    var bids = params.bids;
     if (!bids || !bids.length) return;
-    adloader.loadScript(ADTECH_URI, _reqBids);
+    adloader.loadScript(ADTECH_URI, _reqBids(bids, requestContext));
   }
 
   return {

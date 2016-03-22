@@ -53,10 +53,11 @@ SpringServeAdapter = function SpringServeAdapter() {
     return spCall;
   }
 
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
     var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
+      params.context = requestContext;
       bidmanager.pbCallbackMap[bid.params.impId] = params;
       adloader.loadScript(buildSpringServeCall(bid));
     }
@@ -94,7 +95,7 @@ SpringServeAdapter = function SpringServeAdapter() {
         bid.bidderCode = 'springserve';
       }
 
-      bidmanager.addBidResponse(placementCode, bid);
+      bidmanager.addBidResponse(requestObj.context, placementCode, bid);
     }
   };
 

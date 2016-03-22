@@ -7,18 +7,19 @@ var PulsePointAdapter = function PulsePointAdapter() {
   var getJsStaticUrl = window.location.protocol + '//tag.contextweb.com/getjs.static.js';
   var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag';
 
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
     if (typeof window.pp === 'undefined') {
-      adloader.loadScript(getJsStaticUrl, function () { bid(params); });
+      adloader.loadScript(getJsStaticUrl, function () { bid(params, requestContext); });
     } else {
-      bid(params);
+      bid(params, requestContext);
     }
   }
 
-  function bid(params) {
+  function bid(params, requestContext) {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
+      bidRequest.context = requestContext;
       var callback = bidResponseCallback(bidRequest);
       var ppBidRequest = new window.pp.Ad({
         cf: bidRequest.params.cf,
@@ -49,11 +50,11 @@ var PulsePointAdapter = function PulsePointAdapter() {
       bid.ad = bidResponse.html;
       bid.width = adSize[0];
       bid.height = adSize[1];
-      bidmanager.addBidResponse(bidRequest.placementCode, bid);
+      bidmanager.addBidResponse(bidRequest.context, bidRequest.placementCode, bid);
     } else {
       var passback = bidfactory.createBid(2);
       passback.bidderCode = bidRequest.bidder;
-      bidmanager.addBidResponse(bidRequest.placementCode, passback);
+      bidmanager.addBidResponse(bidRequest.context, bidRequest.placementCode, passback);
     }
   }
 

@@ -13,11 +13,11 @@ var NginAdAdapter = function NginAdAdapter() {
 
   var rtbServerDomain = 'placeholder.for.nginad.server.com';
 
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
     var nginadBids = params.bids || [];
 
     // De-dupe by tagid then issue single bid request for all bids
-    _requestBids(_getUniqueTagids(nginadBids));
+    _requestBids(_getUniqueTagids(nginadBids), requestContext);
   }
 
   // filter bids to de-dupe them?
@@ -56,7 +56,7 @@ var NginAdAdapter = function NginAdAdapter() {
     return [adW, adH];
   }
 
-  function _requestBids(bidReqs) {
+  function _requestBids(bidReqs, requestContext) {
     // build bid request object
     var domain = window.location.host;
     var page = window.location.pathname + location.search + location.hash;
@@ -84,6 +84,7 @@ var NginAdAdapter = function NginAdAdapter() {
       };
 
       nginadImps.push(imp);
+      bid.context = requestContext;
       bidmanager.pbCallbackMap[imp.id] = bid;
 
       rtbServerDomain = bid.params.nginadDomain;
@@ -115,7 +116,7 @@ var NginAdAdapter = function NginAdAdapter() {
 
     var bid = bidfactory.createBid(2);
     bid.bidderCode = 'nginad';
-    bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
+    bidmanager.addBidResponse({/*request context?*/}, defaultPlacementForBadBid, bid);
   }
 
   //expose the callback to the global object:
@@ -174,7 +175,7 @@ var NginAdAdapter = function NginAdAdapter() {
       bid.width = whArr[0];
       bid.height = whArr[1];
 
-      bidmanager.addBidResponse(placementCode, bid);
+      bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 
     }
 

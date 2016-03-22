@@ -12,13 +12,13 @@ var allPlacementCodes;
 var SovrnAdapter = function SovrnAdapter() {
   var sovrnUrl = 'ap.lijit.com/rtb/bid';
 
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
     var sovrnBids = params.bids || [];
 
-    _requestBids(sovrnBids);
+    _requestBids(sovrnBids, requestContext);
   }
 
-  function _requestBids(bidReqs) {
+  function _requestBids(bidReqs, requestContext) {
     // build bid request object
     var domain = window.location.host;
     var page = window.location.pathname + location.search + location.hash;
@@ -55,6 +55,7 @@ var SovrnAdapter = function SovrnAdapter() {
         bidfloor: bidFloor
       };
       sovrnImps.push(imp);
+      bid.context = requestContext;
       bidmanager.pbCallbackMap[imp.id] = bid;
       allPlacementCodes.push(bid.placementCode);
     });
@@ -84,7 +85,7 @@ var SovrnAdapter = function SovrnAdapter() {
         var bid = {};
         bid = bidfactory.createBid(2);
         bid.bidderCode = 'sovrn';
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse({/*no context?*/}, placementCode, bid);
       }
     });
   }
@@ -136,21 +137,21 @@ var SovrnAdapter = function SovrnAdapter() {
               bid.width = parseInt(sovrnBid.w);
               bid.height = parseInt(sovrnBid.h);
 
-              bidmanager.addBidResponse(placementCode, bid);
+              bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 
             } else {
               //0 price bid
               //indicate that there is no bid for this placement
               bid = bidfactory.createBid(2);
               bid.bidderCode = 'sovrn';
-              bidmanager.addBidResponse(placementCode, bid);
+              bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 
             }
           } else { // bid not found, we never asked for this?
             //no response data
             bid = bidfactory.createBid(2);
             bid.bidderCode = 'sovrn';
-            bidmanager.addBidResponse(placementCode, bid);
+            bidmanager.addBidResponse({/*no context?*/}, placementCode, bid);
           }
         });
 

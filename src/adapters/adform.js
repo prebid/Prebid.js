@@ -9,7 +9,7 @@ function AdformAdapter() {
     callBids: _callBids
   };
 
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
     var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
     var bid;
     var noDomain = true;
@@ -30,7 +30,7 @@ function AdformAdapter() {
       request.unshift('//adx.adform.net/adx/?rp=4');
     }
 
-    pbjs[callbackName] = handleCallback(bids);
+    pbjs[callbackName] = handleCallback(bids, requestContext);
     request.push('callback=pbjs.' + callbackName);
 
     adloader.loadScript(request.join('&'));
@@ -54,7 +54,7 @@ function AdformAdapter() {
     return encode64(url.join(''));
   }
 
-  function handleCallback(bids) {
+  function handleCallback(bids, requestContext) {
     return function handleResponse(adItems) {
       var bidObject;
       var bidder = 'adform';
@@ -73,11 +73,11 @@ function AdformAdapter() {
           bidObject.ad = adItem.banner;
           bidObject.width = adItem.width;
           bidObject.height = adItem.height;
-          bidmanager.addBidResponse(bid.placementCode, bidObject);
+          bidmanager.addBidResponse(requestContext, bid.placementCode, bidObject);
         } else {
           bidObject = bidfactory.createBid(2);
           bidObject.bidderCode = bidder;
-          bidmanager.addBidResponse(bid.placementCode, bidObject);
+          bidmanager.addBidResponse(requestContext, bid.placementCode, bidObject);
         }
       }
     };

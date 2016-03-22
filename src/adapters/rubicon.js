@@ -124,7 +124,7 @@ var RubiconAdapter = function RubiconAdapter() {
    * on the response from rubicon
    * @param {Object} response -- AJAX response from fastlane
    */
-  function _addBid(response, ads) {
+  function _addBid(response, ads, requestContext) {
     // get the bid for the placement code
     var bid;
     if (!ads || ads.length === 0) {
@@ -133,7 +133,7 @@ var RubiconAdapter = function RubiconAdapter() {
       bid = _makeBid(response, ads);
     }
 
-    bidmanager.addBidResponse(response.getElementId(), bid);
+    bidmanager.addBidResponse(requestContext, response.getElementId(), bid);
   }
 
   /**
@@ -236,14 +236,14 @@ var RubiconAdapter = function RubiconAdapter() {
    * Handle the bids received (from rubicon)
    * @param {array} slots
    */
-  function _bidsReady(slots) {
+  function _bidsReady(slots, requestContext) {
     // NOTE: we don't really need to do anything,
     // because right now we're shimming XMLHttpRequest.open,
     // but in the future we'll get data from rubicontag here
     utils.logMessage('Rubicon Project bidding complete: ' + ((new Date).getTime() - _bidStart));
 
     utils._each(slots, function (slot) {
-      _addBid(slot, slot.getRawResponses());
+      _addBid(slot, slot.getRawResponses(), requestContext);
     });
   }
 
@@ -253,7 +253,7 @@ var RubiconAdapter = function RubiconAdapter() {
    * @param {Object} params the bidder-level params (from prebid)
    * @param {Array} params.bids the bids requested
    */
-  function _callBids(params) {
+  function _callBids(params, requestContext) {
 
     // start the timer; want to measure from
     // even just loading the SDK
@@ -280,7 +280,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
       var parameters = {slots : slots};
       var callback   = function (){
-        _bidsReady(slots);
+        _bidsReady(slots, requestContext);
       };
 
       window.rubicontag.run(callback, parameters);

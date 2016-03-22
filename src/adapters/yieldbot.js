@@ -78,7 +78,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
      * @param {Object} params - Adapter bid configuration object
      * @private
      */
-    callBids: function (params) {
+    callBids: function (params, requestContext) {
 
       var bids = params.bids || [];
       var ybotq = window.ybotq || [];
@@ -106,7 +106,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
       });
 
       ybotq.push(function () {
-        ybotlib.handleUpdateState();
+        ybotlib.handleUpdateState(requestContext);
       });
 
       adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
@@ -117,7 +117,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
      * @see {@link YieldbotAdapter~_callBids}
      * @private
      */
-    handleUpdateState: function () {
+    handleUpdateState: function (requestContext) {
       var yieldbot = window.yieldbot;
 
       utils._each(ybotlib.definedSlots, function (v) {
@@ -133,7 +133,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         placementCode = adapterConfig.placementCode || 'ERROR_YB_NO_PLACEMENT';
         var bid = ybotlib.buildBid(criteria);
 
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse(requestContext, placementCode, bid);
 
       });
     }

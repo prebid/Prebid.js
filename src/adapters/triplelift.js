@@ -11,15 +11,16 @@ var bidfactory = require('../bidfactory.js');
 
 var TripleLiftAdapter = function TripleLiftAdapter() {
 
-function _callBids(params) {
+function _callBids(params, requestContext) {
 	var tlReq = params.bids;
 	var bidsCount = tlReq.length;
 
 	//set expected bids count for callback execution
-	bidmanager.setExpectedBidsCount('triplelift',bidsCount);
+	bidmanager.setExpectedBidsCount(requestContext, 'triplelift', bidsCount);
 
 	for (var i = 0; i < bidsCount; i++) {
 		var bidReqeust = tlReq[i];
+        bidReqeust.context = requestContext;
 		var callbackId = utils.getUniqueIdentifierStr();
 		adloader.loadScript(buildTLCall(bidReqeust, callbackId));
 		//store a reference to the bidRequest from the callback id
@@ -90,7 +91,7 @@ pbjs.TLCB = function(tlResponseObj) {
 			bid.width = tlResponseObj.width;
 			bid.height = tlResponseObj.height;
 			bid.dealId = tlResponseObj.deal_id;
-			bidmanager.addBidResponse(placementCode, bid);
+			bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 
 		} else {
 			//no response data
@@ -99,7 +100,7 @@ pbjs.TLCB = function(tlResponseObj) {
 			// @endif
 			bid = bidfactory.createBid(2);
 			bid.bidderCode = 'triplelift';
-			bidmanager.addBidResponse(placementCode, bid);
+			bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 		}
 
 	} else {
