@@ -23,11 +23,7 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_preBidders = [];
-var pb_placements = [];
-var pb_bidderMap = {};
-var pb_targetingMap = {};
 var pb_keyHistoryMap = {};
-var pb_bidsTimedOut = false;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -82,7 +78,7 @@ function processQue() {
 /*
  *   Main method entry point method
  */
-function init(timeout, adUnitCodeArr) {
+function init(bidRequest, timeout, adUnitCodeArr) {
   var cbTimeout = 0;
   if (typeof timeout === objectType_undefined || timeout === null) {
     cbTimeout = pbjs.bidderTimeout;
@@ -96,28 +92,28 @@ function init(timeout, adUnitCodeArr) {
   }
 
   //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  setTimeout(function(){bidmanager.executeCallback(bidRequest.bidResponses);}, cbTimeout);
 
   //parse settings into internal vars
   if (adUnitCodeArr && utils.isArray(adUnitCodeArr)) {
     for (var k = 0; k < adUnitCodeArr.length; k++) {
       for (var i = 0; i < pbjs.adUnits.length; i++) {
         if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-          pb_placements.push(pbjs.adUnits[i]);
+            bidRequest.pb_placements.push(pbjs.adUnits[i]);
         }
       }
     }
 
-    loadPreBidders();
-    sortAndCallBids();
+    loadPreBidders(bidRequest);
+    sortAndCallBids(bidRequest);
   } else {
-    pb_placements = pbjs.adUnits;
+      bidRequest.pb_placements = pbjs.adUnits;
 
-    //Aggregrate prebidders by their codes
-    loadPreBidders();
+    //Aggregate prebidders by their codes
+    loadPreBidders(bidRequest);
 
     //sort and call // default no sort
-    sortAndCallBids();
+    sortAndCallBids(bidRequest);
   }
 }
 
@@ -126,17 +122,17 @@ function isValidAdUnitSetting() {
 
 }
 
-function timeOutBidders() {
-  if (!pb_bidsTimedOut) {
-    pb_bidsTimedOut = true;
-    var timedOutBidders = bidmanager.getTimedOutBidders();
+function timeOutBidders(bidResponses) {
+  if (!bidResponses.pb_bidsTimedOut) {
+      bidResponses.pb_bidsTimedOut = true;
+    var timedOutBidders = bidmanager.getTimedOutBidders(bidResponses);
     events.emit(BID_TIMEOUT, timedOutBidders);
   }
 }
 
-function sortAndCallBids(sortFunc) {
+function sortAndCallBids(bidRequest, sortFunc) {
   //Translate the bidder map into array so we can sort later if wanted
-  var pbArr = utils._map(pb_bidderMap, function (v) {
+  var pbArr = utils._map(bidRequest.pb_bidderMap, function (v) {
     return v;
   });
 
@@ -144,18 +140,18 @@ function sortAndCallBids(sortFunc) {
     pbArr.sort(sortFunc);
   }
 
-  adaptermanager.callBids(pbArr);
+  adaptermanager.callBids(bidRequest, pbArr);
 }
 
-function loadPreBidders() {
+function loadPreBidders(bidRequest) {
 
-  for (var i = 0; i < pb_placements.length; i++) {
-    var bids = pb_placements[i][CONSTANTS.JSON_MAPPING.PL_BIDS];
-    var placementCode = pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE];
-    storeBidRequestByBidder(pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE], pb_placements[i][CONSTANTS.JSON_MAPPING.PL_SIZE], bids);
+  for (var i = 0; i < bidRequest.pb_placements.length; i++) {
+    var bids = bidRequest.pb_placements[i][CONSTANTS.JSON_MAPPING.PL_BIDS];
+    var placementCode = bidRequest.pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE];
+    storeBidRequestByBidder(bidRequest, bidRequest.pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE], bidRequest.pb_placements[i][CONSTANTS.JSON_MAPPING.PL_SIZE], bids);
 
     //store pending response by placement
-    bidmanager.addBidResponse(placementCode);
+    bidmanager.addBidResponse(bidRequest.bidResponses, placementCode);
   }
 
   for (i = 0; i < pb_preBidders.length; i++) {
@@ -163,10 +159,10 @@ function loadPreBidders() {
   }
 
   //send a reference to bidmanager
-  bidmanager.setBidderMap(pb_bidderMap);
+  bidmanager.setBidderMap(bidRequest.pb_bidderMap);
 }
 
-function storeBidRequestByBidder(placementCode, sizes, bids) {
+function storeBidRequestByBidder(bidRequest, placementCode, sizes, bids) {
   for (var i = 0; i < bids.length; i++) {
 
     var currentBid = bids[i];
@@ -175,7 +171,7 @@ function storeBidRequestByBidder(placementCode, sizes, bids) {
 
     //look up bidder on map
     var bidderName = bids[i][CONSTANTS.JSON_MAPPING.BD_BIDDER];
-    var bidderObj = pb_bidderMap[bidderName];
+    var bidderObj = bidRequest.pb_bidderMap[bidderName];
     if (typeof bidderObj === objectType_undefined) {
       //bid not found
       var partnerBids = {
@@ -185,7 +181,7 @@ function storeBidRequestByBidder(placementCode, sizes, bids) {
       partnerBids.bids.push(currentBid);
 
       //put bidder on map with bids
-      pb_bidderMap[bidderName] = partnerBids;
+        bidRequest.pb_bidderMap[bidderName] = partnerBids;
     } else {
       bidderObj.bids.push(currentBid);
     }
@@ -210,9 +206,9 @@ function getWinningBid(bidArray) {
   return winningBid.bid;
 }
 
-function setGPTAsyncTargeting(code, slot) {
+function setGPTAsyncTargeting(bidResponses, code, slot) {
   //get the targeting that is already configured
-  var keyStrings = getTargetingfromGPTIdentifier(slot);
+  var keyStrings = getTargetingfromGPTIdentifier(bidResponses, slot);
 
   //copy keyStrings into pb_keyHistoryMap by code
   if (!pb_keyHistoryMap[code]) {
@@ -244,20 +240,20 @@ function setGPTAsyncTargeting(code, slot) {
  *   This function returns the object map of placements or
  *   if placement code is specified return just 1 placement bids
  */
-function getBidResponsesByAdUnit(adunitCode) {
+function getBidResponsesByAdUnit(bidResponses, adunitCode) {
   var returnObj = {};
   if (adunitCode) {
-    returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+    returnObj = bidResponses.pbBidResponseByPlacement[adunitCode];
     return returnObj;
   } else {
-    return bidmanager.pbBidResponseByPlacement;
+    return bidResponses.pbBidResponseByPlacement;
   }
 }
 
 /*
  *	Copies bids into a bidArray response
  */
-function buildBidResponse(bidArray) {
+function buildBidResponse(bidResponses, bidArray) {
   var bidResponseArray = [];
   var adUnitCode = '';
 
@@ -267,7 +263,7 @@ function buildBidResponse(bidArray) {
   if (bidArray && bidArray[0] && bidArray[0].adUnitCode) {
     // init the pb_targetingMap for the adUnitCode
     adUnitCode = bidArray[0] && bidArray[0].adUnitCode;
-    pb_targetingMap[adUnitCode] = {};
+    bidResponses.pb_targetingMap[adUnitCode] = {};
     for (var i = 0; i < bidArray.length; i++) {
       var bid = bidArray[i];
 
@@ -276,7 +272,7 @@ function buildBidResponse(bidArray) {
 
       if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
         // push key into targeting
-        pb_targetingMap[bidClone.adUnitCode] = utils.extend(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
+        bidResponses.pb_targetingMap[bidClone.adUnitCode] = utils.extend(bidResponses.pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
       } else if (bid.cpm && bid.cpm > 0) {
         //else put into auction array if cpm > 0
         bidArrayTargeting.push({
@@ -294,7 +290,7 @@ function buildBidResponse(bidArray) {
   if (adUnitCode && bidArrayTargeting.length !== 0) {
     var winningBid = getWinningBid(bidArrayTargeting);
     var keyValues = winningBid.adserverTargeting;
-    pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
+    bidResponses.pb_targetingMap[adUnitCode] = utils.extend(bidResponses.pb_targetingMap[adUnitCode], keyValues);
   }
 
   return bidResponseArray;
@@ -317,33 +313,34 @@ function getCloneBid(bid) {
   return bidClone;
 }
 
-function resetBids() {
-  bidmanager.clearAllBidResponses();
-  pb_bidderMap = {};
-  pb_placements = [];
-  pb_targetingMap = {};
-  pb_bidsTimedOut = false;
+function resetBids(bidsBackHandler) {
+    return {
+        bidResponses: bidmanager.clearAllBidResponses(bidsBackHandler),
+        pb_bidderMap: {},
+        pb_placements: []
+    };
 }
 
 function requestAllBids(tmout) {
   var timeout = tmout;
-  resetBids();
-  init(timeout);
+  var bidRequest = resetBids();
+  init(bidRequest, timeout);
 }
-
 function checkDefinedPlacement(id) {
-  var placementCodes = utils._map(pb_placements, function (placement) {
-    return placement.code;
-  });
 
-  if (!utils.contains(placementCodes, id)) {
-    utils.logError('The "' + id + '" placement is not defined.');
-    return;
-  }
+    //var placementCodes = utils._map(pb_placements, function (placement) {
+    //    return placement.code;
+    //});
+    //
+    //if (!utils.contains(placementCodes, id)) {
+    //    utils.logError('The "' + id + '" placement is not defined.');
+    //    return;
+    //}
 
-  return true;
+    utils.logInfo('checkDefinedPlacement called');
+
+    return true;
 }
-
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -355,11 +352,11 @@ function checkDefinedPlacement(id) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
  * @return {array}  returnObj return bids array
  */
-pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
+pbjs.getAdserverTargetingForAdUnitCodeStr = function (bidResponses, adunitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
   // call to retrieve bids array
   if (adunitCode) {
-    var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
+    var res = pbjs.getAdserverTargetingForAdUnitCode(bidResponses, adunitCode);
     return utils.transformAdServerTargetingObj(res);
   } else {
     utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -371,25 +368,25 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @return {object}  returnObj return bids
  */
-pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
+pbjs.getAdserverTargetingForAdUnitCode = function (bidResponses, adunitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
   // call to populate pb_targetingMap
-  pbjs.getBidResponses(adunitCode);
+  pbjs.getBidResponses(bidResponses, adunitCode);
 
   if (adunitCode) {
-    return pb_targetingMap[adunitCode];
+    return bidResponses.pb_targetingMap[adunitCode];
   }
 
-  return pb_targetingMap;
+  return bidResponses.pb_targetingMap;
 };
 /**
  * returns all ad server targeting for all ad units
  * @return {object} Map of adUnitCodes and targeting values []
  * @alias module:pbjs.getAdserverTargeting
  */
-pbjs.getAdserverTargeting = function () {
+pbjs.getAdserverTargeting = function (bidResponses) {
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return pbjs.getAdserverTargetingForAdUnitCode();
+  return pbjs.getAdserverTargetingForAdUnitCode(bidResponses);
 };
 
 /**
@@ -398,17 +395,17 @@ pbjs.getAdserverTargeting = function () {
  * @alias module:pbjs.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
-pbjs.getBidResponses = function (adunitCode) {
+pbjs.getBidResponses = function (bidResponses, adunitCode) {
   utils.logInfo('Invoking pbjs.getBidResponses', arguments);
   var response = {};
   var bidArray = [];
   var returnObj = {};
 
   if (adunitCode) {
-    response = getBidResponsesByAdUnit(adunitCode);
+    response = getBidResponsesByAdUnit(bidResponses, adunitCode);
     bidArray = [];
     if (response && response.bids) {
-      bidArray = buildBidResponse(response.bids);
+      bidArray = buildBidResponse(bidResponses, response.bids);
     }
 
     returnObj = {
@@ -416,11 +413,11 @@ pbjs.getBidResponses = function (adunitCode) {
     };
 
   } else {
-    response = getBidResponsesByAdUnit();
+    response = getBidResponsesByAdUnit(bidResponses);
     for (var adUnit in response) {
       if (response.hasOwnProperty(adUnit)) {
         if (response && response[adUnit] && response[adUnit].bids) {
-          bidArray = buildBidResponse(response[adUnit].bids);
+          bidArray = buildBidResponse(bidResponses, response[adUnit].bids);
         }
 
         returnObj[adUnit] = {
@@ -449,7 +446,7 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * @param {array} [codeArr] an array of adUnitodes to set targeting for.
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
-pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
+pbjs.setTargetingForAdUnitsGPTAsync = function (bidResponses, codeArr) {
   utils.logInfo('Invoking pbjs.setTargetingForAdUnitsGPTAsync', arguments);
   if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
     utils.logError('window.googletag is not defined on the page');
@@ -457,7 +454,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
   }
 
   //emit bid timeout event here
-  timeOutBidders();
+  timeOutBidders(bidResponses);
 
   var adUnitCodesArr = codeArr;
 
@@ -480,8 +477,8 @@ pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
       for (var k = 0; k < slots.length; k++) {
 
         if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
-          placementBids = getBidResponsesByAdUnit(code);
-          setGPTAsyncTargeting(code, slots[k]);
+          placementBids = getBidResponsesByAdUnit(bidResponses, code);
+          setGPTAsyncTargeting(bidResponses, code, slots[k]);
         }
       }
     }
@@ -492,7 +489,7 @@ pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
       var adUnitCode = slots[i].getSlotElementId();
       if (adUnitCode) {
         //placementBids = getBidsFromGTPIdentifier(slots[i]);
-        setGPTAsyncTargeting(adUnitCode, slots[i]);
+        setGPTAsyncTargeting(bidResponses, adUnitCode, slots[i]);
       }
     }
   }
@@ -503,15 +500,15 @@ pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
  * @param  {[type]} slot [description]
  * @return {[type]}      [description]
  */
-function getTargetingfromGPTIdentifier(slot) {
+function getTargetingfromGPTIdentifier(bidResponses, slot) {
   var targeting = null;
   if (slot) {
     //first get by elementId
-    targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
+    targeting = pbjs.getAdserverTargetingForAdUnitCode(bidResponses, slot.getSlotElementId());
 
     //if not available, try by adUnitPath
     if (!targeting) {
-      targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
+      targeting = pbjs.getAdserverTargetingForAdUnitCode(bidResponses, slot.getAdUnitPath());
     }
   }
 
@@ -525,9 +522,9 @@ function getTargetingfromGPTIdentifier(slot) {
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function (codeArr) {
+pbjs.setTargetingForGPTAsync = function (bidResponses, codeArr) {
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
-  pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
+  pbjs.setTargetingForAdUnitsGPTAsync(bidResponses, codeArr);
 };
 
 /**
@@ -602,8 +599,8 @@ pbjs.renderAd = function (doc, id) {
  *	@deprecated - will be removed next release. Use pbjs.requestBids
  */
 pbjs.requestBidsForAdUnit = function (adUnitCode) {
-  resetBids();
-  init(adUnitCode);
+  var bidRequest = resetBids();
+  init(bidRequest, adUnitCode);
 
 };
 
@@ -616,10 +613,10 @@ pbjs.requestBidsForAdUnits = function (adUnitsObj) {
     return;
   }
 
-  resetBids();
+  var bidRequest = resetBids();
   var adUnitBackup = pbjs.adUnits.slice(0);
   pbjs.adUnits = adUnitsObj;
-  init();
+  init(bidRequest);
   pbjs.adUnits = adUnitBackup;
 
 };
@@ -660,18 +657,12 @@ pbjs.requestBids = function (requestObj) {
     var bidsBackHandler = requestObj.bidsBackHandler;
     var adUnitBackup = pbjs.adUnits.slice(0);
 
-    if (typeof bidsBackHandler === objectType_function) {
-      bidmanager.addOneTimeCallback(bidsBackHandler);
-    }
-
     if (adUnitCodes && utils.isArray(adUnitCodes)) {
-      resetBids();
-      init(timeout, adUnitCodes);
+      init(resetBids(bidsBackHandler), timeout, adUnitCodes);
 
     } else if (adUnits && utils.isArray(adUnits)) {
-      resetBids();
       pbjs.adUnits = adUnits;
-      init(timeout);
+      init(resetBids(bidsBackHandler), timeout);
     } else {
       //request all ads
       requestAllBids(timeout);
@@ -792,35 +783,35 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 /**
  *
  */
-pbjs.bidsAvailableForAdapter = function (bidderCode) {
-utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
-  //TODO getAd
-  var bids = pb_bidderMap[bidderCode].bids;
-
-  for (var i = 0; i < bids.length; i++) {
-    var adunitCode = bids[i].placementCode;
-    var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-
-    var bid = bidfactory.createBid(1);
-
-    // bid.creative_id = adId;
-    bid.bidderCode = bidderCode;
-    bid.adUnitCode = adunitCode;
-    bid.bidder = bidderCode;
-
-    // bid.cpm = responseCPM;
-    // bid.adUrl = jptResponseObj.result.ad;
-    // bid.width = jptResponseObj.result.width;
-    // bid.height = jptResponseObj.result.height;
-    // bid.dealId = jptResponseObj.result.deal_id;
-
-    responseObj.bids.push(bid);
-    responseObj.bidsReceivedCount++;
-    bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
-  }
-
-  bidmanager.increaseBidResponseReceivedCount(bidderCode);
-};
+//pbjs.bidsAvailableForAdapter = function (bidderCode) {
+//utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
+//  //TODO getAd
+//  var bids = pb_bidderMap[bidderCode].bids;
+//
+//  for (var i = 0; i < bids.length; i++) {
+//    var adunitCode = bids[i].placementCode;
+//    var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+//
+//    var bid = bidfactory.createBid(1);
+//
+//    // bid.creative_id = adId;
+//    bid.bidderCode = bidderCode;
+//    bid.adUnitCode = adunitCode;
+//    bid.bidder = bidderCode;
+//
+//    // bid.cpm = responseCPM;
+//    // bid.adUrl = jptResponseObj.result.ad;
+//    // bid.width = jptResponseObj.result.width;
+//    // bid.height = jptResponseObj.result.height;
+//    // bid.dealId = jptResponseObj.result.deal_id;
+//
+//    responseObj.bids.push(bid);
+//    responseObj.bidsReceivedCount++;
+//    bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
+//  }
+//
+//  bidmanager.increaseBidResponseReceivedCount(bidderCode);
+//};
 
 /**
  * Wrapper to bidfactory.createBid()

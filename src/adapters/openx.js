@@ -17,10 +17,9 @@ var OpenxAdapter = function OpenxAdapter(options) {
 
   var opts = options || {};
   var scriptUrl;
-  var bids;
 
-  function _callBids(params) {
-    bids = params.bids || [];
+  function _callBids(params, requestContext) {
+    var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
 
@@ -42,10 +41,10 @@ var OpenxAdapter = function OpenxAdapter(options) {
       }
     }
 
-    _requestBids();
+    _requestBids(bids, requestContext);
   }
 
-  function _requestBids() {
+  function _requestBids(bids, requestContext) {
 
     if (scriptUrl) {
       adloader.loadScript(scriptUrl, function () {
@@ -96,12 +95,12 @@ var OpenxAdapter = function OpenxAdapter(options) {
               adResponse.width = adUnit.get('width');
               adResponse.height = adUnit.get('height');
 
-              bidmanager.addBidResponse(bid.placementCode, adResponse);
+              bidmanager.addBidResponse(requestContext.bidResponses, bid.placementCode, adResponse);
             } else {
               // Indicate an ad was not returned
               adResponse = bidfactory.createBid(2);
               adResponse.bidderCode = 'openx';
-              bidmanager.addBidResponse(bid.placementCode, adResponse);
+              bidmanager.addBidResponse(requestContext.bidResponses, bid.placementCode, adResponse);
             }
           }
         }, OX.Hooks.ON_AD_RESPONSE);

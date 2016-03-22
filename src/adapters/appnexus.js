@@ -9,17 +9,18 @@ var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
 
-  baseAdapter.callBids = function (params) {
+  baseAdapter.callBids = function (params, requestContext) {
     var bidCode = baseAdapter.getBidderCode();
 
     var anArr = params.bids;
     var bidsCount = anArr.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount(bidCode, bidsCount);
+    bidmanager.setExpectedBidsCount(requestContext.bidResponses, bidCode, bidsCount);
 
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = anArr[i];
+      bidRequest.context = requestContext;
       var callbackId = utils.getUniqueIdentifierStr();
       adloader.loadScript(buildJPTCall(bidRequest, callbackId));
 
@@ -185,7 +186,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.height = jptResponseObj.result.height;
         bid.dealId = jptResponseObj.result.deal_id;
 
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse(bidObj.context, placementCode, bid);
 
       } else {
         //no response data
@@ -196,7 +197,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //indicate that there is no bid for this placement
         bid = bidfactory.createBid(2);
         bid.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bid);
+        bidmanager.addBidResponse(bidObj.context, placementCode, bid);
       }
 
     } else {

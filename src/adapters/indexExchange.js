@@ -14,6 +14,8 @@ var cygnus_index_parse_res = function () {
 
 window.cygnus_index_args = {};
 
+var _IndexRequestData = {};
+
 var cygnus_index_adunits =  [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
 
 var cygnus_index_start = function () {
@@ -237,6 +239,7 @@ var cygnus_index_start = function () {
 
     return req.buildRequest();
   } catch (e) {
+      utils.logError('Error calling index adapter', ADAPTER_NAME, e);
   }
 };
 
@@ -250,7 +253,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   ];
   var firstAdUnitCode = '';
 
-  function _callBids(request) {
+  function _callBids(request, requestContext) {
     var bidArr = request.bids;
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
@@ -330,7 +333,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         }
       }
 
-      bidmanager.setExpectedBidsCount(ADAPTER_CODE, bidCount);
+      bidmanager.setExpectedBidsCount(requestContext.bidResponses, ADAPTER_CODE, bidCount);
     }
 
     cygnus_index_primary_request = false;
@@ -345,7 +348,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         if (utils.isEmpty(indexObj)) {
           var bid = bidfactory.createBid(2);
           bid.bidderCode = ADAPTER_CODE;
-          logErrorBidResponse();
+          logErrorBidResponse(requestContext);
           return;
         }
 
@@ -368,13 +371,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
 
-              bidmanager.addBidResponse(adUnitCode, bid);
+              bidmanager.addBidResponse(requestContext.bidResponses, adUnitCode, bid);
             }
           });
         });
       } catch (e) {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
-        logErrorBidResponse();
+        logErrorBidResponse(requestContext);
       }
     };
   }
@@ -391,13 +394,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     return returnObj;
   }
 
-  function logErrorBidResponse() {
+  function logErrorBidResponse(requestContext) {
     //no bid response
     var bid = bidfactory.createBid(2);
     bid.bidderCode = ADAPTER_CODE;
 
     //log error to first add unit
-    bidmanager.addBidResponse(firstAdUnitCode, bid);
+    bidmanager.addBidResponse(requestContext.bidResponses, firstAdUnitCode, bid);
   }
 
   return {

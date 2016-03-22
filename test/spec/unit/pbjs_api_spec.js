@@ -4,7 +4,7 @@ var prebid = require('src/prebid');
 var utils = require('src/utils');
 var bidmanager = require('src/bidmanager');
 
-var bidResponses = require('test/fixtures/bid-responses.json');
+var bidResponseByPlacement = require('test/fixtures/bid-responses.json');
 var targetingMap = require('test/fixtures/targeting-map.json');
 var config = require('test/fixtures/config.json');
 var targetingString = 'hb_bidder=rubicon&hb_adid=148018fe5e&hb_pb=10.00&foobar=300x250&';
@@ -51,7 +51,9 @@ window.googletag = {
   }
 };
 
-bidmanager.pbBidResponseByPlacement = bidResponses;
+var bidmanagerContext = bidmanager.clearAllBidResponses();
+bidmanagerContext.pbBidResponseByPlacement = bidResponseByPlacement;
+bidmanagerContext.pb_targetingMap = targetingMap;
 
 after(function () {
   utils.logMessage.restore();
@@ -60,12 +62,12 @@ after(function () {
 describe('Unit: Prebid API', function () {
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     it('should return targeting info as a string', function () {
-      var result = pbjs.getAdserverTargetingForAdUnitCodeStr(config.adUnitCodes[0]);
+      var result = pbjs.getAdserverTargetingForAdUnitCodeStr(bidmanagerContext, config.adUnitCodes[0]);
       assert.equal(result, targetingString, 'returns expected string of ad targeting info');
     });
 
     it('should log message if adunitCode param is falsey', function () {
-      var result = pbjs.getAdserverTargetingForAdUnitCodeStr();
+      var result = pbjs.getAdserverTargetingForAdUnitCodeStr(bidmanagerContext);
       assert.ok(spyLogMessage.calledWith('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode'), 'expected message was logged');
       assert.equal(result, undefined, 'result is undefined');
     });
@@ -73,12 +75,12 @@ describe('Unit: Prebid API', function () {
 
   describe('getAdserverTargetingForAdUnitCode', function () {
     it('should return targeting info as an object', function () {
-      var result = pbjs.getAdserverTargetingForAdUnitCode(config.adUnitCodes[0]);
+      var result = pbjs.getAdserverTargetingForAdUnitCode(bidmanagerContext, config.adUnitCodes[0]);
       assert.deepEqual(result, targetingMap[config.adUnitCodes[0]], 'returns expected targeting info object');
     });
 
     it('should return full targeting map object if adunitCode is falsey', function () {
-      var result = pbjs.getAdserverTargetingForAdUnitCode();
+      var result = pbjs.getAdserverTargetingForAdUnitCode(bidmanagerContext);
       assert.deepEqual(result, targetingMap, 'the complete targeting map object is returned');
     });
   });
@@ -86,7 +88,7 @@ describe('Unit: Prebid API', function () {
   describe('getAdServerTargeting', function () {
     it('should call getAdServerTargetingForAdUnitCode', function () {
       var spyGetAdServerTargetingForAdUnitCode = sinon.spy(pbjs, 'getAdserverTargetingForAdUnitCode');
-      pbjs.getAdserverTargeting();
+      pbjs.getAdserverTargeting(bidmanagerContext);
       assert.ok(spyGetAdServerTargetingForAdUnitCode.calledOnce, 'called the expected function');
       pbjs.getAdserverTargetingForAdUnitCode.restore();
     });
@@ -94,14 +96,14 @@ describe('Unit: Prebid API', function () {
 
   describe('getBidResponses', function () {
     it('should return expected bid responses when passed an adunitCode', function () {
-      var result = pbjs.getBidResponses(config.adUnitCodes[0]);
+      var result = pbjs.getBidResponses(bidmanagerContext, config.adUnitCodes[0]);
       var compare = require('test/fixtures/bid-responses-cloned.json')[config.adUnitCodes[0]];
 
       assert.deepEqual(result, compare);
     });
 
     it('should return expected bid responses when not passed an adunitCode', function () {
-      var result = pbjs.getBidResponses();
+      var result = pbjs.getBidResponses(bidmanagerContext);
       var compare = require('test/fixtures/bid-responses-cloned.json');
 
       assert.deepEqual(result, compare);
@@ -124,7 +126,7 @@ describe('Unit: Prebid API', function () {
       var pubads = window.googletag.pubads;
 
       window.googletag.pubads = undefined;
-      pbjs.setTargetingForAdUnitsGPTAsync();
+      pbjs.setTargetingForAdUnitsGPTAsync(bidmanagerContext);
       spyLogMessage.calledWith('window.googletag is not defined on the page');
       window.googletag.pubads = pubads;
     });
@@ -133,7 +135,7 @@ describe('Unit: Prebid API', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      pbjs.setTargetingForGPTAsync(config.adUnitCodes);
+      pbjs.setTargetingForGPTAsync(bidmanagerContext, config.adUnitCodes);
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', ''), 'clears hb_bidder param');
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', ''), 'clears hb_adid param');
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', ''), 'clears hb_pb param');
@@ -148,7 +150,7 @@ describe('Unit: Prebid API', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      pbjs.setTargetingForGPTAsync();
+      pbjs.setTargetingForGPTAsync(bidmanagerContext);
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', ''), 'clears hb_bidder param');
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', ''), 'clears hb_adid param');
       assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', ''), 'clears hb_pb param');
