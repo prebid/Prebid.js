@@ -28,7 +28,7 @@ var RubiconAdapter = function RubiconAdapter() {
   var RUBICON_INITIALIZED = 0;
 
   // the fastlane creative code
-  var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (w, fe) { w.rubicontag.renderCreative(fe, "';
+  var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (rt, fe) { rt.renderCreative(fe, "';
   var RUBICON_CREATIVE_END = '"); }((parent.window.rubicontag || window.top.rubicontag), (document.body || document.documentElement)));</script>';
 
   // pre-initialize the rubicon object
