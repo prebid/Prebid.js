@@ -4,8 +4,6 @@ var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
-var allPlacementCodes;
-
 /**
  * Adapter for requesting bids from Sovrn
  */
@@ -24,7 +22,7 @@ var SovrnAdapter = function SovrnAdapter() {
     var page = window.location.pathname + location.search + location.hash;
 
     var sovrnImps = [];
-    allPlacementCodes = [];
+    requestContext.sovrn_allPlacementCodes = [];
 
     //build impression array for sovrn
     utils._each(bidReqs, function (bid) {
@@ -55,9 +53,8 @@ var SovrnAdapter = function SovrnAdapter() {
         bidfloor: bidFloor
       };
       sovrnImps.push(imp);
-      bid.context = requestContext;
       bidmanager.pbCallbackMap[imp.id] = bid;
-      allPlacementCodes.push(bid.placementCode);
+      requestContext.sovrn_allPlacementCodes.push(bid.placementCode);
     });
 
     // build bid request with impressions
@@ -70,13 +67,15 @@ var SovrnAdapter = function SovrnAdapter() {
       }
     };
 
+    bidmanager.pbCallbackMap[sovrnBidReq.id] = requestContext;
+
     var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
   }
 
-  function addBlankBidResponsesForAllPlacementsExceptThese(placementsWithBidsBack) {
-    utils._each(allPlacementCodes, function (placementCode) {
+  function addBlankBidResponsesForAllPlacementsExceptThese(requestContext, placementsWithBidsBack) {
+    utils._each(requestContext.sovrn_allPlacementCodes, function (placementCode) {
       if (utils.contains(placementsWithBidsBack, placementCode)) {
         // A bid was returned for this placement already
         return null;
@@ -85,7 +84,7 @@ var SovrnAdapter = function SovrnAdapter() {
         var bid = {};
         bid = bidfactory.createBid(2);
         bid.bidderCode = 'sovrn';
-        bidmanager.addBidResponse({/*no context?*/}, placementCode, bid);
+        bidmanager.addBidResponse(requestContext, placementCode, bid);
       }
     });
   }
@@ -94,6 +93,8 @@ var SovrnAdapter = function SovrnAdapter() {
   pbjs.sovrnResponse = function (sovrnResponseObj) {
     // valid object?
     if (sovrnResponseObj && sovrnResponseObj.id) {
+      var requestContext = bidmanager.getPlacementIdByCBIdentifer(sovrnResponseObj.id);
+
       // valid object w/ bid responses?
       if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
         var placementsWithBidsBack = [];
@@ -137,32 +138,32 @@ var SovrnAdapter = function SovrnAdapter() {
               bid.width = parseInt(sovrnBid.w);
               bid.height = parseInt(sovrnBid.h);
 
-              bidmanager.addBidResponse(bidObj.context, placementCode, bid);
+              bidmanager.addBidResponse(requestContext, placementCode, bid);
 
             } else {
               //0 price bid
               //indicate that there is no bid for this placement
               bid = bidfactory.createBid(2);
               bid.bidderCode = 'sovrn';
-              bidmanager.addBidResponse(bidObj.context, placementCode, bid);
+              bidmanager.addBidResponse(requestContext, placementCode, bid);
 
             }
           } else { // bid not found, we never asked for this?
             //no response data
             bid = bidfactory.createBid(2);
             bid.bidderCode = 'sovrn';
-            bidmanager.addBidResponse({/*no context?*/}, placementCode, bid);
+            bidmanager.addBidResponse(requestContext, placementCode, bid);
           }
         });
 
-        addBlankBidResponsesForAllPlacementsExceptThese(placementsWithBidsBack);
+        addBlankBidResponsesForAllPlacementsExceptThese(requestContext, placementsWithBidsBack);
       } else {
         //no response data for any placements
-        addBlankBidResponsesForAllPlacementsExceptThese([]);
+        addBlankBidResponsesForAllPlacementsExceptThese(requestContext, []);
       }
     } else {
       //no response data for any placements
-      addBlankBidResponsesForAllPlacementsExceptThese([]);
+      addBlankBidResponsesForAllPlacementsExceptThese(null, []);
     }
 
   }; // sovrnResponse

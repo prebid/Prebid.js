@@ -17,7 +17,7 @@ var CriteoAdapter = function CriteoAdapter() {
 
 		// Only make one request per "nid"
 		_getUniqueNids(bids).forEach(function(bid){
-            _requestBid(bid, requestContext);
+            _requestBid(bids, bid, requestContext);
         });
 	}
 
@@ -36,7 +36,7 @@ var CriteoAdapter = function CriteoAdapter() {
 		return nids;
 	}
 
-	function _requestBid(bid, requestContext) {
+	function _requestBid(bids, bid, requestContext) {
 		var varname = bid.params.varname;
 		var scriptUrl = '//rtax.criteo.com/delivery/rta/rta.js?netId=' + encodeURI(bid.params.nid) +
 			'&cookieName=' + encodeURI(bid.params.cookiename) +

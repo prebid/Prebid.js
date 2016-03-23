@@ -16,7 +16,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var bidsCount = anArr.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount(requestContext.bidResponses, bidCode, bidsCount);
+    bidmanager.setExpectedBidsCount(requestContext, bidCode, bidsCount);
 
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = anArr[i];

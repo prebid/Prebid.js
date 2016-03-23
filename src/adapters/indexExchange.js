@@ -337,7 +337,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         }
       }
 
-      bidmanager.setExpectedBidsCount(requestContext.bidResponses, ADAPTER_CODE, bidCount);
+      bidmanager.setExpectedBidsCount(requestContext, ADAPTER_CODE, bidCount);
     }
 
     cygnus_index_primary_request = false;
@@ -375,7 +375,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
 
-              bidmanager.addBidResponse(requestContext.bidResponses, adUnitCode, bid);
+              bidmanager.addBidResponse(requestContext, adUnitCode, bid);
             }
           });
         });
@@ -404,7 +404,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     bid.bidderCode = ADAPTER_CODE;
 
     //log error to first add unit
-    bidmanager.addBidResponse(requestContext.bidResponses, firstAdUnitCode, bid);
+    bidmanager.addBidResponse(requestContext, firstAdUnitCode, bid);
   }
 
   return {

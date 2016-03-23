@@ -140,7 +140,7 @@ function sortAndCallBids(bidRequest, sortFunc) {
     pbArr.sort(sortFunc);
   }
 
-  adaptermanager.callBids(bidRequest, pbArr);
+  adaptermanager.callBids(bidRequest.bidResponses, pbArr);
 }
 
 function loadPreBidders(bidRequest) {

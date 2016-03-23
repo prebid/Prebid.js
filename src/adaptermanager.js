@@ -10,7 +10,7 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-exports.callBids = function (bidRequest, bidderArr) {
+exports.callBids = function (bidResponses, bidderArr) {
   for (var i = 0; i < bidderArr.length; i++) {
     //use the bidder code to identify which function to call
     var bidder = bidderArr[i];
@@ -20,12 +20,12 @@ exports.callBids = function (bidRequest, bidderArr) {
 
       //emit 'bidRequested' event
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
-      currentBidder.callBids(bidder, bidRequest);
+      currentBidder.callBids(bidder, bidResponses);
 
       // if the bidder didn't explicitly set the number of bids
       // expected, default to the number of bids passed into the bidder
-      if (bidmanager.getExpectedBidsCount(bidRequest.bidResponses, bidder.bidderCode) === undefined) {
-        bidmanager.setExpectedBidsCount(bidRequest.bidResponses, bidder.bidderCode, bidder.bids.length);
+      if (bidmanager.getExpectedBidsCount(bidResponses, bidder.bidderCode) === undefined) {
+        bidmanager.setExpectedBidsCount(bidResponses, bidder.bidderCode, bidder.bids.length);
       }
 
       var currentTime = new Date().getTime();

@@ -96,6 +96,8 @@ var YieldbotAdapter = function YieldbotAdapter() {
           yieldbot.pub(psn);
           yieldbot.defineSlot(slot, { sizes: bid.sizes || [] });
 
+          bid.context = requestContext;
+
           var cbId = utils.getUniqueIdentifierStr();
           bidmanager.pbCallbackMap[cbId] = bid;
           ybotlib.definedSlots.push(cbId);
@@ -106,7 +108,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
       });
 
       ybotq.push(function () {
-        ybotlib.handleUpdateState(requestContext);
+        ybotlib.handleUpdateState();
       });
 
       adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
@@ -117,7 +119,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
      * @see {@link YieldbotAdapter~_callBids}
      * @private
      */
-    handleUpdateState: function (requestContext) {
+    handleUpdateState: function () {
       var yieldbot = window.yieldbot;
 
       utils._each(ybotlib.definedSlots, function (v) {
@@ -133,7 +135,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         placementCode = adapterConfig.placementCode || 'ERROR_YB_NO_PLACEMENT';
         var bid = ybotlib.buildBid(criteria);
 
-        bidmanager.addBidResponse(requestContext, placementCode, bid);
+        bidmanager.addBidResponse(adapterConfig.context, placementCode, bid);
 
       });
     }

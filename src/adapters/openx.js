@@ -95,12 +95,12 @@ var OpenxAdapter = function OpenxAdapter(options) {
               adResponse.width = adUnit.get('width');
               adResponse.height = adUnit.get('height');
 
-              bidmanager.addBidResponse(requestContext.bidResponses, bid.placementCode, adResponse);
+              bidmanager.addBidResponse(requestContext, bid.placementCode, adResponse);
             } else {
               // Indicate an ad was not returned
               adResponse = bidfactory.createBid(2);
               adResponse.bidderCode = 'openx';
-              bidmanager.addBidResponse(requestContext.bidResponses, bid.placementCode, adResponse);
+              bidmanager.addBidResponse(requestContext, bid.placementCode, adResponse);
             }
           }
         }, OX.Hooks.ON_AD_RESPONSE);
