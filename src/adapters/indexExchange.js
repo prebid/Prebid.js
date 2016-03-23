@@ -14,7 +14,10 @@ var cygnus_index_parse_res = function () {
 
 window.cygnus_index_args = {};
 
-var _IndexRequestData = {};
+var _IndexRequestData = {
+    impIDToSlotID: {},
+    reqOptions: {}
+};
 
 var cygnus_index_adunits =  [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
 
@@ -260,6 +263,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       return;
     }
 
+    cygnus_index_primary_request = true;
     cygnus_index_args.slots = [];
     var bidCount = 0;
 

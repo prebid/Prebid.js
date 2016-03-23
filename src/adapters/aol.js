@@ -174,7 +174,7 @@ var AolAdapter = function AolAdapter() {
   function _callBids(params, requestContext) {
     var bids = params.bids;
     if (!bids || !bids.length) return;
-    adloader.loadScript(ADTECH_URI, _reqBids(bids, requestContext));
+    adloader.loadScript(ADTECH_URI, function(){_reqBids(bids, requestContext);});
   }
 
   return {
