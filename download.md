@@ -82,7 +82,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> OpenX
+        <input type="checkbox" bidderCode="indexExchange" class="bidder-check-box"> Index Exchange
       </label>
     </div>
   </div>
@@ -90,7 +90,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> Pubmatic
+        <input type="checkbox" bidderCode="openx" class="bidder-check-box"> OpenX
       </label>
     </div>
   </div>
@@ -98,7 +98,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> Rubicon
+        <input type="checkbox" bidderCode="pubmatic" class="bidder-check-box"> Pubmatic
       </label>
     </div>
   </div>
@@ -106,7 +106,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> Sovrn
+        <input type="checkbox" bidderCode="rubicon" class="bidder-check-box"> Rubicon
       </label>
     </div>
   </div>
@@ -114,7 +114,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> Yieldbot
+        <input type="checkbox" bidderCode="sovrn" class="bidder-check-box"> Sovrn
       </label>
     </div>
   </div>
@@ -122,7 +122,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> PulsePoint
+        <input type="checkbox" bidderCode="yieldbot" class="bidder-check-box"> Yieldbot
       </label>
     </div>
   </div>
@@ -130,7 +130,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> Adform
+        <input type="checkbox" bidderCode="pulsepoint" class="bidder-check-box"> PulsePoint
       </label>
     </div>
   </div>
@@ -138,7 +138,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> bRealTime
+        <input type="checkbox" bidderCode="adform" class="bidder-check-box"> Adform
       </label>
     </div>
   </div>
@@ -146,7 +146,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> SpringServe
+        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box"> bRealTime
       </label>
     </div>
   </div>
@@ -154,7 +154,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> NginAd
+        <input type="checkbox" bidderCode="springserve" class="bidder-check-box"> SpringServe
       </label>
     </div>
   </div>
@@ -162,7 +162,15 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> TripleLift
+        <input type="checkbox" bidderCode="nginad" class="bidder-check-box"> NginAd
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="triplelift" class="bidder-check-box"> TripleLift
       </label>
     </div>
   </div>
