@@ -13,6 +13,43 @@ nav_section: download
 
 ---
 
+<script>
+function submit_download() {
+    var form_data = get_form_data();
+    $.ajax({
+        type: "POST",
+        url: "http://client-test.devnxs.net/prebid",
+        data: form_data,
+        success: function() {
+            $('#download-button').text('Build Request Recieved');
+            console.log('Succeeded!');
+        },
+        dataType: 'json'
+    });
+}
+
+function get_form_data() {
+    var bidders = [];
+
+    var bidder_check_boxes = $('.bidder-check-box');
+    for (var i = 0; i < bidder_check_boxes.length; i++) {
+        var box = bidder_check_boxes[i];
+        if (box.checked) {
+            bidders.push(box.getAttribute('bidderCode'));
+        }
+    }
+    console.log(bidders);
+
+    var form_data = {};
+    form_data['email'] = $('#input-email').val();
+    form_data['company'] = $('#input-company').val();
+    form_data['bidders'] = bidders;
+
+    return form_data;
+}
+
+</script>
+
 <div class="bs-docs-section" markdown="1">
 
 # Customize and Download Prebid.js
@@ -29,7 +66,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> AOL
+        <input type="checkbox" bidderCode="aol" class="bidder-check-box"> AOL
       </label>
     </div>
   </div>
@@ -37,7 +74,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox"> AppNexus
+        <input type="checkbox" bidderCode="appnexus" class="bidder-check-box"> AppNexus
       </label>
     </div>
   </div>
@@ -163,21 +200,21 @@ To improve the speed and load time of your site, build Prebid.js for only the he
       <div class="modal-body">
 
         <div class="lead">
-            You will receive an email with the download link shortly after you complete the below form.
+            You will receive an email with the download link in a few minutes after you complete the below form.
         </div>
         
 
         <div class="form-group col-md-6">
-            <label for="InputEmail">Email address</label>
-            <input type="email" class="form-control" id="InputEmail" placeholder="Email">
+            <label for="input-email">Email address</label>
+            <input type="email" class="form-control" id="input-email" placeholder="Email">
         </div>
         <div class="form-group col-md-6">
-            <label for="InputPassword">Company Name</label>
-            <input type="text" class="form-control" id="InputPassword" placeholder="Your Company">
+            <label for="input-company">Company Name</label>
+            <input type="text" class="form-control" id="input-company" placeholder="Your Company">
         </div>
 
         <div class="form-group">
-            <button type="button" class="btn btn-lg btn-primary">Send Prebid.js</button>
+            <button type="button" id="download-button" class="btn btn-lg btn-primary" onclick="submit_download()">Receive Prebid.js</button>
         </div>
 
       </div>
