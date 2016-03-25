@@ -6,7 +6,7 @@ var adloader = require('../adloader');
 var AolAdapter = function AolAdapter() {
 
   // constants
-  var ADTECH_URI = (window.location.protocol) + '//aka-cdn.adtechus.com/dt/common/DAC.js';
+  var ADTECH_URI = 'https://secure-ads.pictela.net/rm/marketplace/pubtaglib/0_4_0/pubtaglib_0_4_0.js';
   var ADTECH_BIDDER_NAME = 'aol';
   var ADTECH_PUBAPI_CONFIG = {
     pixelsDivId: 'pixelsDiv',
@@ -172,6 +172,8 @@ var AolAdapter = function AolAdapter() {
    * @param {Array} params.bids the bids to be requested
    */
   function _callBids(params) {
+    window.bidRequestConfig = window.bidRequestConfig || {};
+    window.dacBidRequestConfigs = window.dacBidRequestConfigs || {};
     bids = params.bids;
     if (!bids || !bids.length) return;
     adloader.loadScript(ADTECH_URI, _reqBids);

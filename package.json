@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.6.1-pre",
+  "version": "0.7.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -19,10 +19,11 @@
     "pubmatic",
     "pulsepoint",
     "rubicon",
-    "rubiconLegacy",
     "sovrn",
     "springserve",
-    "yieldbot"
+    "triplelift",
+    "yieldbot",
+    "nginad"
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",

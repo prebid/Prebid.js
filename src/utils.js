@@ -15,6 +15,11 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var toString = Object.prototype.toString;
+let infoLogger = null;
+try {
+  infoLogger = console.info.bind(window.console);
+}
+catch (e) {}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -172,6 +177,18 @@ exports.getTopWindowUrl = function () {
   }
 };
 
+exports.logInfo = function(msg, args) {
+  if (debugTurnedOn() && hasConsoleLogger()) {
+    if (infoLogger) {
+      if (!args || args.length === 0) {
+        args = '';
+      }
+
+      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '),  args);
+    }
+  }
+};
+
 exports.logMessage = function (msg) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     console.log('MESSAGE: ' + msg);
@@ -220,8 +237,8 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
   f.style.border = '0';
   f.scrolling = 'no';
   f.frameBorder = '0';
-  f.src = 'about:self';
-  f.style = 'display:none';
+  f.src = 'about:blank';
+  f.style.display = 'none';
   return f;
 };
 
@@ -434,4 +451,46 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   } else {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
+};
+/**
+ * Creates a snippet of HTML that retrieves the specified `url`
+ * @param  {string} url URL to be requested
+ * @return {string}     HTML snippet that contains the img src = set to `url`
+ */
+exports.createTrackPixelHtml = function (url) {
+  if (!url) {
+    return '';
+  }
+
+  let escapedUrl = encodeURI(url);
+  let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
+  img += '<img src="' + escapedUrl + '"></div>';
+  return img;
+};
+
+/**
+ * Returns iframe document in a browser agnostic way
+ * @param  {object} iframe reference
+ * @return {object}        iframe `document` reference
+ */
+exports.getIframeDocument = function (iframe) {
+  if (!iframe) {
+    return;
+  }
+
+  let doc;
+  try {
+    if (iframe.contentWindow) {
+      doc = iframe.contentWindow.document;
+    } else if (iframe.contentDocument.document) {
+      doc = iframe.contentDocument.document;
+    } else {
+      doc = iframe.contentDocument;
+    }
+  }
+  catch (e) {
+    this.logError('Cannot get iframe document', e);
+  }
+
+  return doc;
 };

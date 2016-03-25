@@ -11,8 +11,8 @@
   },
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
-    "GOOD": "good",
-    "TIMEOUT": "timed out"
+    "GOOD": 1,
+    "NO_BID": 2
   },
   "CB": {
     "TYPE": {
