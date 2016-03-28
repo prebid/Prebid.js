@@ -49,18 +49,17 @@ exports.enableAnalytics = function (gaOptions) {
     }
 
     if (eventObj.eventType === BID_REQUESTED) {
-      //bid is 1st args
-      bid = args[0];
+      bid = args;
       sendBidRequestToGa(bid);
     } else if (eventObj.eventType === BID_RESPONSE) {
       //bid is 2nd args
-      bid = args[1];
+      bid = args;
       sendBidResponseToGa(bid);
 
     } else if (eventObj.eventType === BID_TIMEOUT) {
-      _timedOutBidders = args[0];
+      _timedOutBidders = args.bidderCode;
     } else if (eventObj.eventType === BID_WON) {
-      bid = args[0];
+      bid = args;
       sendBidWonToGa(bid);
     }
   });
