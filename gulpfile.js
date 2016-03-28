@@ -41,7 +41,7 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src('src/*.js')
+  return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
@@ -56,7 +56,7 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src('src/*.js')
+  return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
