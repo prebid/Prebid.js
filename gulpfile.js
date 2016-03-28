@@ -124,7 +124,8 @@ gulp.task('jscs', function () {
   return gulp.src('src/**/*.js')
     .pipe(jscs({
       configPath: '.jscsrc'
-    }));
+    }))
+    .pipe(jscs.reporter());
 });
 
 gulp.task('clean-docs', function () {
