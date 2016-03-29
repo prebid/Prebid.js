@@ -132,6 +132,12 @@
                             bidder: 'brightcom',
                             params: {
                                 tagId: 16577 // Tag ID supplied by Brightcom - brightcom.com
+                        },
+                        {
+                            bidder: 'adequant',
+                            params: {
+                                publisher_id: 5000563,  // REQUIRED int or str publisher ID. To get one, register at https://control.adequant.com
+                                bidfloor: 0.01,         // OPTIONAL float bid floor in $ CPM
                             }
                         }
                     ]
@@ -203,7 +209,15 @@
                             params: {
                                 tagId: 16577 // Tag ID supplied by Brightcom - brightcom.com
                             }
-                        }]
+                        },
+                        {
+                            bidder: 'adequant',
+                            params: {
+                                publisher_id: 5000563,  // REQUIRED int or str publisher ID. To get one, register at https://control.adequant.com
+                                bidfloor: 0.01,         // OPTIONAL float bid floor in $ CPM
+                            }
+                        }
+                    ]
                 }
             ];
 
