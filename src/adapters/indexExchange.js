@@ -348,7 +348,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     var responded = false;
 
     // Response timed out
-    if (typeof cygnus_index_args.timeout !== 'undefined' && typeof cygnus_index_args.timeout > 0) {
+    if (typeof cygnus_index_args.timeout !== 'undefined' && cygnus_index_args.timeout > 0) {
       window.setTimeout(function() {
         if (responded) {
           return;
