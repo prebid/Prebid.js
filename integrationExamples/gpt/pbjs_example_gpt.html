@@ -127,6 +127,12 @@
                                 supplyPartnerId: 1,
                                 test: true // only include when testing
                             }
+                        },
+                        {
+                            bidder: 'brightcom',
+                            params: {
+                                tagId: 16577 // Tag ID supplied by Brightcom - brightcom.com
+                            }
                         }
                     ]
                 }, {
@@ -186,12 +192,18 @@
                                 tier3SiteID: 1234  //Number - Optional
                             }
                         },
-                    {
-                        bidder: 'triplelift',
-                        params: {
-                            inventoryCode: 'sortable_all_right_sports'
-                        }
-                    }]
+                        {
+                            bidder: 'triplelift',
+                            params: {
+                                inventoryCode: 'sortable_all_right_sports'
+                            }
+                        },
+                        {
+                            bidder: 'brightcom',
+                            params: {
+                                tagId: 16577 // Tag ID supplied by Brightcom - brightcom.com
+                            }
+                        }]
                 }
             ];
 
