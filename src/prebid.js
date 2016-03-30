@@ -573,7 +573,14 @@ pbjs.renderAd = function (doc, id) {
         //doc.body.style.width = width;
         //doc.body.style.height = height;
         else if (url) {
-          doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
+          doc.write('<IFRAME ' +
+            'SRC="' + url + '" ' +
+            'WIDTH="' + width + '" ' +
+            'HEIGHT="' + height + '" ' +
+            'DATA-BIDDER="' + adObject.bidderCode + '" ' +
+            'FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true"' +
+            '></IFRAME>'
+          );
           doc.close();
 
           if (doc.defaultView && doc.defaultView.frameElement) {
