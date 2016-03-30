@@ -189,7 +189,21 @@ var cygnus_index_start = function () {
     }
 
     var jsonURI = encodeURIComponent(this.serialize());
-    var scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+
+    var scriptSrc = '';
+    if (window.location.protocol === 'https:') {
+      if (cygnus_index_args.host && cygnus_index_args.host.https) {
+        scriptSrc = cygnus_index_args.host.https;
+      } else {
+        scriptSrc = 'https://as-sec.casalemedia.com';
+      }
+    } else {
+      if (cygnus_index_args.host && cygnus_index_args.host.http) {
+        scriptSrc = cygnus_index_args.host.http;
+      } else {
+        scriptSrc = 'http://as.casalemedia.com';
+      }
+    }
     scriptSrc += '/headertag?v=9&x3=1&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -297,6 +311,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
       if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
         cygnus_index_args.siteID = bid.params.siteID;
+      }
+
+      if (bid.params.host && typeof cygnus_index_args.host === 'undefined') {
+        cygnus_index_args.host = bid.params.host;
       }
 
       if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
