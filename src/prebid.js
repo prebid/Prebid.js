@@ -793,7 +793,7 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
  *
  */
 pbjs.bidsAvailableForAdapter = function (bidderCode) {
-utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
+  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
   //TODO getAd
   var bids = pb_bidderMap[bidderCode].bids;
 
