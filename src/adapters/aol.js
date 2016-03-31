@@ -76,7 +76,7 @@ var AolAdapter = function AolAdapter() {
     var bidResponse = bidfactory.createBid(1);
     var ad = response.getCreative();
     if (typeof response.getPixels() !== 'undefined') {
-        ad += response.getPixels();
+      ad += response.getPixels();
     }
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
     bidResponse.ad = ad;
