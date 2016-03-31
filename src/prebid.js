@@ -1,9 +1,9 @@
-/** @module pbjs */
+/** @module PrebidGlobal */
 
-// if pbjs already exists in global dodcument scope, use it, if not, create the object
-window.pbjs = (window.pbjs || {});
-window.pbjs.que = window.pbjs.que || [];
-var pbjs = window.pbjs;
+// if PrebidGlobal already exists in global dodcument scope, use it, if not, create the object
+window.PrebidGlobal = (window.PrebidGlobal || {});
+window.PrebidGlobal.que = window.PrebidGlobal.que || [];
+var PrebidGlobal = window.PrebidGlobal;
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
@@ -36,24 +36,24 @@ var eventValidators = {
 /* Public vars */
 
 //default timeout for all bids
-pbjs.bidderTimeout = pbjs.bidderTimeout || 3000;
-pbjs.logging = pbjs.logging || false;
+PrebidGlobal.bidderTimeout = PrebidGlobal.bidderTimeout || 3000;
+PrebidGlobal.logging = PrebidGlobal.logging || false;
 
 //let the world know we are loaded
-pbjs.libLoaded = true;
+PrebidGlobal.libLoaded = true;
 
 //TODO: this should be auto generated from build
 utils.logInfo('Prebid.js v0.7.0 loaded');
 
 //create adUnit array
-pbjs.adUnits = pbjs.adUnits || [];
+PrebidGlobal.adUnits = PrebidGlobal.adUnits || [];
 
 /**
  * Command queue that functions will execute once prebid.js is loaded
  * @param  {function} cmd Annoymous function to execute
- * @alias module:pbjs.que.push
+ * @alias module:PrebidGlobal.que.push
  */
-pbjs.que.push = function (cmd) {
+PrebidGlobal.que.push = function (cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -61,16 +61,16 @@ pbjs.que.push = function (cmd) {
       utils.logError('Error processing command :' + e.message);
     }
   } else {
-    utils.logError('Commands written into pbjs.que.push must wrapped in a function');
+    utils.logError('Commands written into PrebidGlobal.que.push must wrapped in a function');
   }
 };
 
 function processQue() {
-  for (var i = 0; i < pbjs.que.length; i++) {
-    if (typeof pbjs.que[i].called === objectType_undefined) {
+  for (var i = 0; i < PrebidGlobal.que.length; i++) {
+    if (typeof PrebidGlobal.que[i].called === objectType_undefined) {
       try {
-        pbjs.que[i].call();
-        pbjs.que[i].called = true;
+        PrebidGlobal.que[i].call();
+        PrebidGlobal.que[i].called = true;
       }
       catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
@@ -85,7 +85,7 @@ function processQue() {
 function init(timeout, adUnitCodeArr) {
   var cbTimeout = 0;
   if (typeof timeout === objectType_undefined || timeout === null) {
-    cbTimeout = pbjs.bidderTimeout;
+    cbTimeout = PrebidGlobal.bidderTimeout;
   } else {
     cbTimeout = timeout;
   }
@@ -101,9 +101,9 @@ function init(timeout, adUnitCodeArr) {
   //parse settings into internal vars
   if (adUnitCodeArr && utils.isArray(adUnitCodeArr)) {
     for (var k = 0; k < adUnitCodeArr.length; k++) {
-      for (var i = 0; i < pbjs.adUnits.length; i++) {
-        if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-          pb_placements.push(pbjs.adUnits[i]);
+      for (var i = 0; i < PrebidGlobal.adUnits.length; i++) {
+        if (PrebidGlobal.adUnits[i].code === adUnitCodeArr[k]) {
+          pb_placements.push(PrebidGlobal.adUnits[i]);
         }
       }
     }
@@ -111,7 +111,7 @@ function init(timeout, adUnitCodeArr) {
     loadPreBidders();
     sortAndCallBids();
   } else {
-    pb_placements = pbjs.adUnits;
+    pb_placements = PrebidGlobal.adUnits;
 
     //Aggregrate prebidders by their codes
     loadPreBidders();
@@ -122,7 +122,7 @@ function init(timeout, adUnitCodeArr) {
 }
 
 function isValidAdUnitSetting() {
-  return !!(pbjs.adUnits && pbjs.adUnits.length !== 0);
+  return !!(PrebidGlobal.adUnits && PrebidGlobal.adUnits.length !== 0);
 
 }
 
@@ -352,14 +352,14 @@ function checkDefinedPlacement(id) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
+ * @alias module:PrebidGlobal.getAdserverTargetingForAdUnitCodeStr
  * @return {array}  returnObj return bids array
  */
-pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
+PrebidGlobal.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
+  utils.logInfo('Invoking PrebidGlobal.getAdserverTargetingForAdUnitCodeStr', arguments);
   // call to retrieve bids array
   if (adunitCode) {
-    var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
+    var res = PrebidGlobal.getAdserverTargetingForAdUnitCode(adunitCode);
     return utils.transformAdServerTargetingObj(res);
   } else {
     utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -368,13 +368,13 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:pbjs.getAdserverTargetingForAdUnitCode
+ * @alias module:PrebidGlobal.getAdserverTargetingForAdUnitCode
  * @return {object}  returnObj return bids
  */
-pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
+PrebidGlobal.getAdserverTargetingForAdUnitCode = function (adunitCode) {
+  utils.logInfo('Invoking PrebidGlobal.getAdserverTargetingForAdUnitCode', arguments);
   // call to populate pb_targetingMap
-  pbjs.getBidResponses(adunitCode);
+  PrebidGlobal.getBidResponses(adunitCode);
 
   if (adunitCode) {
     return pb_targetingMap[adunitCode];
@@ -385,21 +385,21 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
 /**
  * returns all ad server targeting for all ad units
  * @return {object} Map of adUnitCodes and targeting values []
- * @alias module:pbjs.getAdserverTargeting
+ * @alias module:PrebidGlobal.getAdserverTargeting
  */
-pbjs.getAdserverTargeting = function () {
-  utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return pbjs.getAdserverTargetingForAdUnitCode();
+PrebidGlobal.getAdserverTargeting = function () {
+  utils.logInfo('Invoking PrebidGlobal.getAdserverTargeting', arguments);
+  return PrebidGlobal.getAdserverTargetingForAdUnitCode();
 };
 
 /**
  * This function returns the bid responses at the given moment.
  * @param  {string} [adunitCode] adunitCode adUnitCode to get the bid responses for
- * @alias module:pbjs.getBidResponses
+ * @alias module:PrebidGlobal.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
-pbjs.getBidResponses = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getBidResponses', arguments);
+PrebidGlobal.getBidResponses = function (adunitCode) {
+  utils.logInfo('Invoking PrebidGlobal.getBidResponses', arguments);
   var response = {};
   var bidArray = [];
   var returnObj = {};
@@ -437,20 +437,20 @@ pbjs.getBidResponses = function (adunitCode) {
 /**
  * Returns bidResponses for the specified adUnitCode
  * @param  {String} adUnitCode adUnitCode
- * @alias module:pbjs.getBidResponsesForAdUnitCode
+ * @alias module:PrebidGlobal.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
-pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  utils.logInfo('Invoking pbjs.getBidResponsesForAdUnitCode', arguments);
-  return pbjs.getBidResponses(adUnitCode);
+PrebidGlobal.getBidResponsesForAdUnitCode = function (adUnitCode) {
+  utils.logInfo('Invoking PrebidGlobal.getBidResponsesForAdUnitCode', arguments);
+  return PrebidGlobal.getBidResponses(adUnitCode);
 };
 /**
  * Set query string targeting on adUnits specified. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
  * @param {array} [codeArr] an array of adUnitodes to set targeting for.
- * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
+ * @alias module:PrebidGlobal.setTargetingForAdUnitsGPTAsync
  */
-pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
-  utils.logInfo('Invoking pbjs.setTargetingForAdUnitsGPTAsync', arguments);
+PrebidGlobal.setTargetingForAdUnitsGPTAsync = function (codeArr) {
+  utils.logInfo('Invoking PrebidGlobal.setTargetingForAdUnitsGPTAsync', arguments);
   if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
     utils.logError('window.googletag is not defined on the page');
     return;
@@ -507,11 +507,11 @@ function getTargetingfromGPTIdentifier(slot) {
   var targeting = null;
   if (slot) {
     //first get by elementId
-    targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
+    targeting = PrebidGlobal.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
 
     //if not available, try by adUnitPath
     if (!targeting) {
-      targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
+      targeting = PrebidGlobal.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
     }
   }
 
@@ -523,20 +523,20 @@ function getTargetingfromGPTIdentifier(slot) {
 
  /**
  * Set query string targeting on all GPT ad units.
- * @alias module:pbjs.setTargetingForGPTAsync
+ * @alias module:PrebidGlobal.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function (codeArr) {
-  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
-  pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
+PrebidGlobal.setTargetingForGPTAsync = function (codeArr) {
+  utils.logInfo('Invoking PrebidGlobal.setTargetingForGPTAsync', arguments);
+  PrebidGlobal.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
  * Returns a bool if all the bids have returned or timed out
- * @alias module:pbjs.allBidsAvailable
+ * @alias module:PrebidGlobal.allBidsAvailable
  * @return {bool} all bids available
  */
-pbjs.allBidsAvailable = function () {
-  utils.logInfo('Invoking pbjs.allBidsAvailable', arguments);
+PrebidGlobal.allBidsAvailable = function () {
+  utils.logInfo('Invoking PrebidGlobal.allBidsAvailable', arguments);
   return bidmanager.allBidsBack();
 };
 
@@ -544,10 +544,10 @@ pbjs.allBidsAvailable = function () {
  * This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly
  * @param  {object} doc document
  * @param  {string} id bid id to locate the ad
- * @alias module:pbjs.renderAd
+ * @alias module:PrebidGlobal.renderAd
  */
-pbjs.renderAd = function (doc, id) {
-  utils.logInfo('Invoking pbjs.renderAd', arguments);
+PrebidGlobal.renderAd = function (doc, id) {
+  utils.logInfo('Invoking PrebidGlobal.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
   if (doc && id) {
     try {
@@ -599,42 +599,42 @@ pbjs.renderAd = function (doc, id) {
 };
 
 /**
- *	@deprecated - will be removed next release. Use pbjs.requestBids
+ *	@deprecated - will be removed next release. Use PrebidGlobal.requestBids
  */
-pbjs.requestBidsForAdUnit = function (adUnitCode) {
+PrebidGlobal.requestBidsForAdUnit = function (adUnitCode) {
   resetBids();
   init(adUnitCode);
 
 };
 
 /**
- * @deprecated - will be removed next release. Use pbjs.requestBids
+ * @deprecated - will be removed next release. Use PrebidGlobal.requestBids
  */
-pbjs.requestBidsForAdUnits = function (adUnitsObj) {
+PrebidGlobal.requestBidsForAdUnits = function (adUnitsObj) {
   if (!adUnitsObj || adUnitsObj.constructor !== Array) {
     utils.logError('requestBidsForAdUnits must pass an array of adUnits');
     return;
   }
 
   resetBids();
-  var adUnitBackup = pbjs.adUnits.slice(0);
-  pbjs.adUnits = adUnitsObj;
+  var adUnitBackup = PrebidGlobal.adUnits.slice(0);
+  PrebidGlobal.adUnits = adUnitsObj;
   init();
-  pbjs.adUnits = adUnitBackup;
+  PrebidGlobal.adUnits = adUnitBackup;
 
 };
 
 /**
- * Remove adUnit from the pbjs configuration
+ * Remove adUnit from the PrebidGlobal configuration
  * @param  {String} adUnitCode the adUnitCode to remove
- * @alias module:pbjs.removeAdUnit
+ * @alias module:PrebidGlobal.removeAdUnit
  */
-pbjs.removeAdUnit = function (adUnitCode) {
-  utils.logInfo('Invoking pbjs.removeAdUnit', arguments);
+PrebidGlobal.removeAdUnit = function (adUnitCode) {
+  utils.logInfo('Invoking PrebidGlobal.removeAdUnit', arguments);
   if (adUnitCode) {
-    for (var i = 0; i < pbjs.adUnits.length; i++) {
-      if (pbjs.adUnits[i].code === adUnitCode) {
-        pbjs.adUnits.splice(i, 1);
+    for (var i = 0; i < PrebidGlobal.adUnits.length; i++) {
+      if (PrebidGlobal.adUnits[i].code === adUnitCode) {
+        PrebidGlobal.adUnits.splice(i, 1);
       }
     }
   }
@@ -647,10 +647,10 @@ pbjs.removeAdUnit = function (adUnitCode) {
  * @param {object[]} requestObj.adUnits AdUnitObjects to request. Use this or requestObj.adUnitCodes
  * @param {number} [requestObj.timeout] Timeout for requesting the bids specified in milliseconds
  * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits.
- * @alias module:pbjs.requestBids
+ * @alias module:PrebidGlobal.requestBids
  */
-pbjs.requestBids = function (requestObj) {
-  utils.logInfo('Invoking pbjs.requestBids', arguments);
+PrebidGlobal.requestBids = function (requestObj) {
+  utils.logInfo('Invoking PrebidGlobal.requestBids', arguments);
   if (!requestObj) {
     requestAllBids();
   } else {
@@ -658,7 +658,7 @@ pbjs.requestBids = function (requestObj) {
     var adUnits = requestObj.adUnits;
     var timeout = requestObj.timeout;
     var bidsBackHandler = requestObj.bidsBackHandler;
-    var adUnitBackup = pbjs.adUnits.slice(0);
+    var adUnitBackup = PrebidGlobal.adUnits.slice(0);
 
     if (typeof bidsBackHandler === objectType_function) {
       bidmanager.addOneTimeCallback(bidsBackHandler);
@@ -670,14 +670,14 @@ pbjs.requestBids = function (requestObj) {
 
     } else if (adUnits && utils.isArray(adUnits)) {
       resetBids();
-      pbjs.adUnits = adUnits;
+      PrebidGlobal.adUnits = adUnits;
       init(timeout);
     } else {
       //request all ads
       requestAllBids(timeout);
     }
 
-    pbjs.adUnits = adUnitBackup;
+    PrebidGlobal.adUnits = adUnitBackup;
   }
 
 };
@@ -686,15 +686,15 @@ pbjs.requestBids = function (requestObj) {
  *
  * Add adunit(s)
  * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
- * @alias module:pbjs.addAdUnits
+ * @alias module:PrebidGlobal.addAdUnits
  */
-pbjs.addAdUnits = function (adUnitArr) {
-  utils.logInfo('Invoking pbjs.addAdUnits', arguments);
+PrebidGlobal.addAdUnits = function (adUnitArr) {
+  utils.logInfo('Invoking PrebidGlobal.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
     //append array to existing
-    pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
+    PrebidGlobal.adUnits.push.apply(PrebidGlobal.adUnits, adUnitArr);
   } else if (typeof adUnitArr === objectType_object) {
-    pbjs.adUnits.push(adUnitArr);
+    PrebidGlobal.adUnits.push(adUnitArr);
   }
 };
 
@@ -713,8 +713,8 @@ pbjs.addAdUnits = function (adUnitArr) {
  *
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
-pbjs.onEvent = function (event, handler, id) {
-  utils.logInfo('Invoking pbjs.onEvent', arguments);
+PrebidGlobal.onEvent = function (event, handler, id) {
+  utils.logInfo('Invoking PrebidGlobal.onEvent', arguments);
   if (!utils.isFn(handler)) {
     utils.logError('The event handler provided is not a function and was not set on event "' + event + '".');
     return;
@@ -731,10 +731,10 @@ pbjs.onEvent = function (event, handler, id) {
 /**
  * @param {String} event the name of the event
  * @param {Function} handler a callback to remove from the event
- * @param {String} id an identifier in the context of the event (see `pbjs.onEvent`)
+ * @param {String} id an identifier in the context of the event (see `PrebidGlobal.onEvent`)
  */
-pbjs.offEvent = function (event, handler, id) {
-  utils.logInfo('Invoking pbjs.offEvent', arguments);
+PrebidGlobal.offEvent = function (event, handler, id) {
+  utils.logInfo('Invoking PrebidGlobal.offEvent', arguments);
   if (id && !eventValidators[event].call(null, id)) {
     return;
   }
@@ -746,11 +746,11 @@ pbjs.offEvent = function (event, handler, id) {
  * Add a callback event
  * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
  * @param {Function} func  function to execute. Paramaters passed into the function: (bidResObj), [adUnitCode]);
- * @alias module:pbjs.addCallback
+ * @alias module:PrebidGlobal.addCallback
  * @returns {String} id for callback
  */
-pbjs.addCallback = function (eventStr, func) {
-  utils.logInfo('Invoking pbjs.addCallback', arguments);
+PrebidGlobal.addCallback = function (eventStr, func) {
+  utils.logInfo('Invoking PrebidGlobal.addCallback', arguments);
   var id = null;
   if (!eventStr || !func || typeof func !== objectType_function) {
     utils.logError('error registering callback. Check method signature');
@@ -765,10 +765,10 @@ pbjs.addCallback = function (eventStr, func) {
 /**
  * Remove a callback event
  * //@param {string} cbId id of the callback to remove
- * @alias module:pbjs.removeCallback
+ * @alias module:PrebidGlobal.removeCallback
  * @returns {String} id for callback
  */
-pbjs.removeCallback = function (/* cbId */) {
+PrebidGlobal.removeCallback = function (/* cbId */) {
   //todo
   return null;
 };
@@ -779,8 +779,8 @@ pbjs.removeCallback = function (/* cbId */) {
  * @param  {[type]} bidderCode    [description]
  * @return {[type]}               [description]
  */
-pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
-  utils.logInfo('Invoking pbjs.registerBidAdapter', arguments);
+PrebidGlobal.registerBidAdapter = function (bidderAdaptor, bidderCode) {
+  utils.logInfo('Invoking PrebidGlobal.registerBidAdapter', arguments);
   try {
     adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
   }
@@ -792,8 +792,8 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 /**
  *
  */
-pbjs.bidsAvailableForAdapter = function (bidderCode) {
-  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
+PrebidGlobal.bidsAvailableForAdapter = function (bidderCode) {
+  utils.logInfo('Invoking PrebidGlobal.bidsAvailableForAdapter', arguments);
   //TODO getAd
   var bids = pb_bidderMap[bidderCode].bids;
 
@@ -827,8 +827,8 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
  * @param  {[type]} statusCode [description]
  * @return {[type]}            [description]
  */
-pbjs.createBid = function (statusCode) {
-  utils.logInfo('Invoking pbjs.createBid', arguments);
+PrebidGlobal.createBid = function (statusCode) {
+  utils.logInfo('Invoking PrebidGlobal.createBid', arguments);
   return bidfactory.createBid(statusCode);
 };
 
@@ -837,8 +837,8 @@ pbjs.createBid = function (statusCode) {
  * @param {[type]} adUnitCode [description]
  * @param {[type]} bid        [description]
  */
-pbjs.addBidResponse = function (adUnitCode, bid) {
-  utils.logInfo('Invoking pbjs.addBidResponse', arguments);
+PrebidGlobal.addBidResponse = function (adUnitCode, bid) {
+  utils.logInfo('Invoking PrebidGlobal.addBidResponse', arguments);
   bidmanager.addBidResponse(adUnitCode, bid);
 };
 
@@ -848,8 +848,8 @@ pbjs.addBidResponse = function (adUnitCode, bid) {
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
-pbjs.loadScript = function (tagSrc, callback, useCache) {
-  utils.logInfo('Invoking pbjs.loadScript', arguments);
+PrebidGlobal.loadScript = function (tagSrc, callback, useCache) {
+  utils.logInfo('Invoking PrebidGlobal.loadScript', arguments);
   adloader.loadScript(tagSrc, callback, useCache);
 };
 
@@ -859,13 +859,13 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
  * @param  {Function}  [description]
  * @return {[type]}    [description]
 
- pbjs.getAnalyticsData = function(){
+ PrebidGlobal.getAnalyticsData = function(){
 	var returnObj = {};
-	var bidResponses = pbjs.getBidResponses();
+	var bidResponses = PrebidGlobal.getBidResponses();
 
 	//create return obj for all adUnits
-	for(var i=0;i<pbjs.adUnits.length;i++){
-		var allBids = pbjs.adUnits[i].bids;
+	for(var i=0;i<PrebidGlobal.adUnits.length;i++){
+		var allBids = PrebidGlobal.adUnits[i].bids;
 		for(var j=0;j<allBids.length;j++){
 			var bid = allBids[j];
 			if(typeof returnObj[bid.bidder] === objectType_undefined){
@@ -922,10 +922,10 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
  * Will enable sendinga prebid.js to data provider specified
  * @param  {object} options object {provider : 'string', options : {}}
  */
-pbjs.enableAnalytics = function (options) {
-  utils.logInfo('Invoking pbjs.enableAnalytics', arguments);
+PrebidGlobal.enableAnalytics = function (options) {
+  utils.logInfo('Invoking PrebidGlobal.enableAnalytics', arguments);
   if (!options) {
-    utils.logError('pbjs.enableAnalytics should be called with option {}', 'prebid.js');
+    utils.logError('PrebidGlobal.enableAnalytics should be called with option {}', 'prebid.js');
     return;
   }
 
@@ -945,17 +945,17 @@ pbjs.enableAnalytics = function (options) {
 /**
  * This will tell analytics that all bids received after are "timed out"
  */
-pbjs.sendTimeoutEvent = function () {
-  utils.logInfo('Invoking pbjs.sendTimeoutEvent', arguments);
+PrebidGlobal.sendTimeoutEvent = function () {
+  utils.logInfo('Invoking PrebidGlobal.sendTimeoutEvent', arguments);
   timeOutBidders();
 };
 
-pbjs.aliasBidder = function (bidderCode, alias) {
-  utils.logInfo('Invoking pbjs.aliasBidder', arguments);
+PrebidGlobal.aliasBidder = function (bidderCode, alias) {
+  utils.logInfo('Invoking PrebidGlobal.aliasBidder', arguments);
   if (bidderCode && alias) {
     adaptermanager.aliasBidAdapter(bidderCode, alias);
   } else {
-    utils.logError('bidderCode and alias must be passed as arguments', 'pbjs.aliasBidder');
+    utils.logError('bidderCode and alias must be passed as arguments', 'PrebidGlobal.aliasBidder');
   }
 };
 

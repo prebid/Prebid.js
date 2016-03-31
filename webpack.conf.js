@@ -1,3 +1,7 @@
+var prebid = require('./package.json');
+
+var StringReplacePlugin = require("string-replace-webpack-plugin");
+
 module.exports = {
   output: {
     filename: 'prebid.js'
@@ -27,7 +31,24 @@ module.exports = {
         test: /adaptermanager.js/,
         include: /(src)/,
         loader: 'adapterLoader'
-      }
+      },
+      {
+        test: /\.js$/,
+        include: /(src|test)/,
+        loader: StringReplacePlugin.replace({
+          replacements: [
+            {
+              pattern: /PrebidGlobal/g,
+              replacement: function (match, p1, offset, string) {
+                  return prebid.globalVarName;
+              }
+            }
+          ]})
+        }
     ]
-  }
+  },
+  plugins: [
+    // an instance of the plugin must be present
+    new StringReplacePlugin()
+  ]
 };
