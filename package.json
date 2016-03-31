@@ -23,7 +23,8 @@
     "springserve",
     "triplelift",
     "yieldbot",
-    "nginad"
+    "nginad",
+    "brightcom"
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
