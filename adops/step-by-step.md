@@ -6,7 +6,6 @@ description: An overview of Prebid.js, how it works, basic templates and example
 pid: 0
 top_nav_section: adops
 nav_section: tutorials
-
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -59,12 +58,14 @@ Set **Rotate Creatives** to *Evenly*.
 
 Choose the inventory that you want to run header bidding on.
 
-By default, 'prebid.js' will send the highest bid price to DFP using
+By default, `prebid.js` will send the highest bid price to DFP using
 the keyword `hb_pb`.
 
 This line item will capture the bids in the range from $0.50 to $1 by
 targeting the keyword `hb_pb` set to `0.50` in the **Key-values**
-section.  Be sure to use 2 decimal places.
+section.
+
+**You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
 {: .pb-img.pb-md-img :}
 ![Key-values]({{ site.github.url }}/assets/images/demo-setup/key-values.png)
@@ -73,14 +74,11 @@ section.  Be sure to use 2 decimal places.
 
 ## Step 2. Add a Creative
 
-Add creatives to this $0.50 line item so it can be duplicated later.
+Next, add a creative to this $0.50 line item; we will duplicate the creative later.
 
 Choose the same advertiser we've assigned the line item to.
 
 Note that this has to be a **Third party** creative.
-
-In this example the creative name is
-"Synergy\_Prebid\_Creative".
 
 Copy this creative code snippet and paste it into the **Code
 snippet** box.
@@ -96,21 +94,27 @@ Make sure the creative size is set to 1x1.  This allows us to set up
 size override, which allows this creative to serve on all inventory
 sizes.
 
-Next, attach the creative to the $0.50 line item you created in Step
-1.
+## Step 3. Attach the Creative to the Line Item
 
-Because our creative size is 1x1, we need to disable the filtering by
-clicking on the **Show All** button in the **Use existing creatives**
-dialog.
+Next, let's attach the creative to the $0.50 line item you just created.  Click into the Line Item, then the **Creatives** tab.
 
-Click into "Synergy\_Prebid\_Creative", click the **Settings** tab,
-and override all sizes in the **Size overrides** box.
+There will be yellow box showing each ad spot that you haven't uploaded creatives for yet.  Since you've already made the creatives, click the **use existing creatives** next to each size.
+
+![Use existing creatives list]({{ site.github.url }}/assets/images/demo-setup/use-existing-creatives-01.png)
+
+In the pop-up dialog that appears, click **Show All** to remove the default size filters and see the 1x1 creatives. Include the prebid creative and click **Save**.
+
+![Use existing creatives dialog]({{ site.github.url }}/assets/images/demo-setup/use-existing-creatives-02.png)
+
+Back in the line item, go into the **Creatives** tab again, and click into the creative you just added.
+
+Then, in the creative's **Settings** tab, override all sizes in the **Size overrides** field.
 
 Save the creative and go back to the line item.
 
 <br>
 
-## Step 3. Duplicate Creatives
+## Step 4. Duplicate Creatives
 
 DFP has a constraint that one creative can be served to at most one ad
 unit in a page under GPT's single request mode.
@@ -126,7 +130,7 @@ creatives attached.
 
 <br>
 
-## Step 4. Duplicate Line Items
+## Step 5. Duplicate Line Items
 
 Now let's duplicate our line item for bids above $0.50.
 
@@ -137,9 +141,9 @@ those creatives are applied to all pre-bid line items.
 
 For example, we can duplicate 3 more line items:
 
--   $1
--   $1.50
--   $2
+- $1.00
+- $1.50
+- $2.00
 
 Let's go into each of them to update some settings.  For each
 duplicated line item:
