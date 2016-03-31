@@ -153,7 +153,7 @@ var RubiconAdapter = function RubiconAdapter() {
    */
   function _initSDK(options, done) {
     if (RUBICON_INITIALIZED) {
-        return;
+      return;
     }
 
     RUBICON_INITIALIZED = 1;
