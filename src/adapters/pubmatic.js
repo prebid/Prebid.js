@@ -1,6 +1,8 @@
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
+var CONSTANTS = require('../constants.json');
+
 
 /**
  * Adapter for requesting bids from Pubmatic.
@@ -64,7 +66,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
     content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
     content += '<scr' + 'ipt>';
-    content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap,' +
+    content += 'window.parent.'+CONSTANTS.PBJS_GLOBAL_VAR_NAME+'.handlePubmaticCallback({progKeyValueMap: progKeyValueMap,' +
       ' bidDetailsMap: bidDetailsMap})';
     content += '</scr' + 'ipt>';
     content += '</body></html>';
@@ -73,7 +75,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return content;
   }
 
-  pbjs.handlePubmaticCallback = function (response) {
+  window[CONSTANTS.PBJS_GLOBAL_VAR_NAME].handlePubmaticCallback = function (response) {
     var i;
     var adUnit;
     var adUnitInfo;

@@ -6,6 +6,9 @@ describe('Publisher API _ Alias Bidder', function () {
   var should = require('chai').should();
   var prebid = require('../../src/prebid');
 
+  var CONSTANTS = require('../../src/constants.json');
+  var pbjs = window[CONSTANTS.PBJS_GLOBAL_VAR_NAME];
+
   before(function () {
 
     var topSlotCode = '/19968336/header-bid-tag1';
