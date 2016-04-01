@@ -236,6 +236,7 @@ var cygnus_index_start = function () {
 
     return req.buildRequest();
   } catch (e) {
+    utils.logError('Error calling index adapter', ADAPTER_NAME, e);
   }
 };
 
@@ -278,6 +279,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
       slotID++;
 
+      // Create index slots for all bids and sizes
       for (var j = 0; j < bid.sizes.length; j++) {
         var validSize = false;
         for (var k = 0; k < cygnus_index_adunits.length; k++) {
@@ -299,15 +301,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
         if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
           cygnus_index_args.siteID = bid.params.siteID;
-        }
-
-        if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
-          cygnus_index_args.slots.push({
-            id: 'SPQS',
-            width: bid.params.sqps.width,
-            height: bid.params.sqps.height,
-            siteID: bid.params.sqps.siteID || cygnus_index_args.siteID
-          });
         }
 
         if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
@@ -350,8 +343,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         }
       }
     }
-    bidmanager.setExpectedBidsCount(ADAPTER_CODE, slotID);
 
+    if (cygnus_index_args.slots.length > 20) {
+        utils.logError('Error calling index adapter, too many unique slot-sizes. Only 20 supported.', ADAPTER_NAME);
+        return;
+    }
+
+    bidmanager.setExpectedBidsCount(ADAPTER_CODE, slotID);
     adloader.loadScript(cygnus_index_start());
 
     var responded = false;
@@ -392,7 +390,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var lookupObj = cygnus_index_args;
 
         // Grab all the bids for each slot
-        expected: for (var adSlotId in slotIdMap) {
+        for (var adSlotId in slotIdMap) {
           var bidObj = slotIdMap[adSlotId];
           var adUnitCode = bidObj.placementCode;
 
