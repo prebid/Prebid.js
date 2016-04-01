@@ -220,8 +220,8 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
   }
 
-  //3) set the keys from "standard" setting or from prebid defaults
-  else if (custBidObj && bidder_settings) {
+  //3) always set the keys from "standard" setting or from prebid defaults
+  if (custBidObj && bidder_settings) {
     if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
       bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
         adserverTargeting: [
@@ -265,11 +265,15 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     var key = kvPair.key;
     var value = kvPair.val;
 
+    if (keyValues[key]) {
+      utils.logMessage('Warning setting keys (overwriting existing KVP)', 'bidmanager.js', key, keyValues[key], value);
+    }
+
     if (utils.isFn(value)) {
       try {
         keyValues[key] = value(custBidObj);
       } catch (e) {
-        utils.logError('bidmanager', 'ERROR', e);
+        utils.logError('Error setting keys (failed to evaluate value function)', 'bidmanager.js', e);
       }
     } else {
       keyValues[key] = value;
