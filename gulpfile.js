@@ -25,6 +25,24 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var analyticsDirectory = '../analytics';
+
+var _options = // use for production, more info on options https://davidwalsh.name/compress-uglify
+{
+  mangle: true,
+  compress: {
+    sequences: true,
+    properties: true,
+    evaluate: true,
+    loops: true,
+    hoist_funs: true,
+    dead_code: true,
+    conditionals: true,
+    booleans: true,
+    unused: true,
+    if_return: true
+  }
+};
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
@@ -42,7 +60,7 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src(['src/prebid.js'])
+  return gulp.src(['src/prebid.js', ...helpers.getAnalyticsSources(analyticsDirectory)])
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -58,10 +76,10 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src(['src/prebid.js'])
+  return gulp.src(['src/prebid.js', ...helpers.getAnalyticsSources(analyticsDirectory)])
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
+    .pipe(uglify(_options))
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
@@ -175,4 +193,3 @@ gulp.task('docs', ['clean-docs'], function () {
     })
     .pipe(gulp.dest('docs'));
 });
-

@@ -1135,7 +1135,7 @@ export function getTargetingKeys() {
   ];
 }
 
-// Key/values used to set ad server targeting when bid landscape 
+// Key/values used to set ad server targeting when bid landscape
 // targeting is on.
 export function getTargetingKeysBidLandscape() {
   return [
@@ -1276,4 +1276,44 @@ export function getTargetingKeysBidLandscape() {
       "300x600"
     ]
   ];
+}
+
+export function getBidRequestedPayload() {
+  return {
+    "bidderCode": "adequant",
+    "requestId": "150f361b202aa8",
+    "bidderRequestId": "2b193b7a6ff421",
+    "bids": [
+      {
+        "bidder": "adequant",
+        "params": {
+          "publisher_id": "5000563",
+          "bidfloor": 0.01
+        },
+        "placementCode": "/19968336/header-bid-tag-1",
+        "sizes": [
+          [
+            300,
+            250
+          ],
+          [
+            300,
+            600
+          ],
+          [
+            300,
+            250
+          ],
+          [
+            100,
+            100
+          ]
+        ],
+        "bidId": "39032dc5c7e834",
+        "bidderRequestId": "2b193b7a6ff421",
+        "requestId": "150f361b202aa8"
+      }
+    ],
+    "start": 1465426155412
+  };
 }
