@@ -249,18 +249,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   var firstAdUnitCode = '';
 
   function _callBids(request) {
-    /*
-    Function in order to add a slot into the list if it hasn't been created yet, else it returns the same list.
-    */
-    function mergeSlotInto(slot,slotList){
-      for(var i = 0;i<slotList.length;i++){
-        if(slot.id === slotList[i].id){
-          return slotList;
-        }
-      }
-      slotList.push(slot);
-      return slotList;
-    }
     var bidArr = request.bids;
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
@@ -404,8 +392,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             var obj = slotNameAndCpm.split('_');
             var slotID = obj[0];
             var sizeID = obj[1];
+            var slotName = slotID + '_' + sizeID;
             var currentCPM = obj[2];
-            var slotObj = getSlotObj(cygnus_index_args, slotID + '_' + sizeID);
+            var slotObj = getSlotObj(cygnus_index_args, slotName);
 
             // Bid is for the current slot
             if (slotID === adSlotId) {
@@ -456,6 +445,19 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       //Therefore it needs to be blanked after the request is handled, else we will submit 'bids' for the wrong ads.
       slotIdMap={};
     };
+  }
+
+  /*
+  Function in order to add a slot into the list if it hasn't been created yet, else it returns the same list.
+  */
+  function mergeSlotInto(slot,slotList){
+    for(var i = 0; i < slotList.length; i++){
+      if(slot.id === slotList[i].id){
+        return slotList;
+      }
+    }
+    slotList.push(slot);
+    return slotList;
   }
 
   function getSlotObj(obj, id) {
