@@ -134,6 +134,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.cpm = 0;
     }
 
+    // alias the bidderCode to bidder;
+    // NOTE: this is to match documentation
+    // on custom k-v targeting
+    bid.bidder = bid.bidderCode;
+
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
@@ -149,11 +154,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //put adUnitCode into bid
     bid.adUnitCode = adUnitCode;
-
-    // alias the bidderCode to bidder;
-    // NOTE: this is to match documentation
-    // on custom k-v targeting
-    bid.bidder = bid.bidderCode;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
