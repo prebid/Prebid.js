@@ -8,7 +8,6 @@ var adloader = require('../adloader.js');
 var ADAPTER_NAME = 'INDEXEXCHANGE';
 var ADAPTER_CODE = 'indexExchange';
 
-var cygnus_index_primary_request = true;
 var cygnus_index_parse_res = function () {
 };
 
@@ -244,8 +243,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   var slotIdMap = {};
   var requiredParams = [
     /* 0 */
-    'id',
-    /* 1 */
     'siteID'
   ];
   var firstAdUnitCode = '';
@@ -272,76 +269,88 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     //Our standard is to always bid for all known slots.
     cygnus_index_args.slots = [];
 
+    var slotID = 0;
+
     //Grab the slot level data for cygnus_index_args
     for (var i = 0; i < bidArr.length; i++) {
       var bid = bidArr[i];
+      var sizeID = 0;
 
-      var width;
-      var height;
+      slotID++;
 
-      outer: for (var j = 0; j < bid.sizes.length; j++) {
-        inner: for (var k = 0; k < cygnus_index_adunits.length; k++) {
+      for (var j = 0; j < bid.sizes.length; j++) {
+        var validSize = false;
+        for (var k = 0; k < cygnus_index_adunits.length; k++) {
           if (bid.sizes[j][0] === cygnus_index_adunits[k][0] &&
-            bid.sizes[j][1] === cygnus_index_adunits[k][1]) {
-            width = bid.sizes[j][0];
-            height = bid.sizes[j][1];
-            break outer;
+              bid.sizes[j][1] === cygnus_index_adunits[k][1]
+          ) {
+            validSize = true;
+            break;
+          }
+        }
+
+        if (!validSize) {
+          continue;
+        }
+
+        if (bid.params.timeout && typeof cygnus_index_args.timeout === 'undefined') {
+          cygnus_index_args.timeout = bid.params.timeout;
+        }
+
+        if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
+          cygnus_index_args.siteID = bid.params.siteID;
+        }
+
+        if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
+          cygnus_index_args.slots.push({
+            id: 'SPQS',
+            width: bid.params.sqps.width,
+            height: bid.params.sqps.height,
+            siteID: bid.params.sqps.siteID || cygnus_index_args.siteID
+          });
+        }
+
+        if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
+          firstAdUnitCode = bid.placementCode;
+          slotIdMap[slotID] = bid;
+
+          sizeID++;
+          var size = {
+            width: bid.sizes[j][0],
+            height: bid.sizes[j][1]
+          };
+
+          var slotName = slotID + '_' + sizeID;
+
+          //Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
+          cygnus_index_args.slots = mergeSlotInto({
+            id: slotName,
+            width: size.width,
+            height: size.height,
+            siteID: bid.params.siteID || cygnus_index_args.siteID
+          }, cygnus_index_args.slots);
+
+          if (bid.params.tier2SiteID) {
+            cygnus_index_args.slots = mergeSlotInto({
+              id: 'T1_' + slotName,
+              width: size.width,
+              height: size.height,
+              siteID: bid.params.tier2SiteID
+            }, cygnus_index_args.slots);
+          }
+
+          if (bid.params.tier3SiteID) {
+            cygnus_index_args.slots = mergeSlotInto({
+              id: 'T2_' + slotName,
+              width: size.width,
+              height: size.height,
+              siteID: bid.params.tier3SiteID
+            }, cygnus_index_args.slots);
           }
         }
       }
-
-      if (bid.params.timeout && typeof cygnus_index_args.timeout === 'undefined') {
-        cygnus_index_args.timeout = bid.params.timeout;
-      }
-
-      if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
-        cygnus_index_args.siteID = bid.params.siteID;
-      }
-
-      if (bid.params.sqps && typeof cygnus_index_args.SQPS === 'undefined') {
-        cygnus_index_args.slots.push({
-          id: 'SPQS',
-          width: bid.params.sqps.width,
-          height: bid.params.sqps.height,
-          siteID: bid.params.sqps.siteID || cygnus_index_args.siteID
-        });
-      }
-
-      if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
-        firstAdUnitCode = bid.placementCode;
-        var slotId = bid.params[requiredParams[0]];
-        slotIdMap[slotId] = bid;
-
-        //Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
-        cygnus_index_args.slots = mergeSlotInto({
-          id: bid.params.id,
-          width: width,
-          height: height,
-          siteID: bid.params.siteID || cygnus_index_args.siteID
-        }, cygnus_index_args.slots);
-
-        if (bid.params.tier2SiteID) {
-          cygnus_index_args.slots = mergeSlotInto({
-            id: 'T1_' + bid.params.id,
-            width: width,
-            height: height,
-            siteID: bid.params.tier2SiteID
-          }, cygnus_index_args.slots);
-        }
-
-        if (bid.params.tier3SiteID) {
-          cygnus_index_args.slots = mergeSlotInto({
-            id: 'T2_' + bid.params.id,
-            width: width,
-            height: height,
-            siteID: bid.params.tier3SiteID
-          }, cygnus_index_args.slots);
-        }
-      }
     }
-    bidmanager.setExpectedBidsCount(ADAPTER_CODE, Object.keys(slotIdMap).length);
-
-    cygnus_index_primary_request = false;
+    bidmanager.setExpectedBidsCount(ADAPTER_CODE, slotID);
 
     adloader.loadScript(cygnus_index_start());
 
@@ -368,7 +377,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           bid.siteID = slotObj.siteID;
           bidmanager.addBidResponse(adUnitCode, bid);
         }
-      }, cygnus_index_args.timeout);
+      }, cygnus_index_args.timeout + 100); // Ad server will timeout request, give some leeway for it to return
     }
 
     // Handle response
@@ -382,16 +391,26 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var indexObj = _IndexRequestData.targetIDToBid;
         var lookupObj = cygnus_index_args;
 
+        // Grab all the bids for each slot
         expected: for (var adSlotId in slotIdMap) {
           var bidObj = slotIdMap[adSlotId];
           var adUnitCode = bidObj.placementCode;
-          var slotObj = getSlotObj(cygnus_index_args, adSlotId);
 
+          var bids = [];
+
+          // Grab the bid for current slot
           for (var cpmAndSlotId in indexObj) {
-            var obj = cpmAndSlotId.split('_');
-            var currentId = obj[0];
-            var currentCPM = obj[1];
-            if (currentId === adSlotId) {
+            var match = /(?:T\d_)?(\w+)/.exec(cpmAndSlotId);
+            var slotNameAndCpm = match[1];
+
+            var obj = slotNameAndCpm.split('_');
+            var slotID = obj[0];
+            var sizeID = obj[1];
+            var currentCPM = obj[2];
+            var slotObj = getSlotObj(cygnus_index_args, slotID + '_' + sizeID);
+
+            // Bid is for the current slot
+            if (slotID === adSlotId) {
               var bid = bidfactory.createBid(1);
               bid.cpm = currentCPM / 100;
               bid.ad = indexObj[cpmAndSlotId][0];
@@ -401,15 +420,34 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
 
-              bidmanager.addBidResponse(adUnitCode, bid);
-              continue expected;
+              bids.push(bid);
             }
           }
 
-          // Only get here if the expected bids is not in received bids
-          var bid = bidfactory.createBid(2);
-          bid.bidderCode = ADAPTER_CODE;
-          bidmanager.addBidResponse(adUnitCode, bid);
+          var currentBid = undefined;
+
+          //Pick the highest bidding price for this slot
+          if (bids.length > 0) {
+            // Choose the highest bid
+            for (var i = 0; i < bids.length; i++) {
+              var bid = bids[i];
+              if (typeof currentBid === 'undefined') {
+                currentBid = bid;
+                continue;
+              }
+
+              if (bid.cpm > currentBid.cpm) {
+                currentBid = bid;
+              }
+            }
+          // No bids for expected bid, pass bid
+          } else {
+            var bid = bidfactory.createBid(2);
+            bid.bidderCode = ADAPTER_CODE;
+            currentBid = bid;
+          }
+
+          bidmanager.addBidResponse(adUnitCode, currentBid);
         }
       } catch (e) {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
