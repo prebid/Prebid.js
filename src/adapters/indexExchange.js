@@ -386,15 +386,16 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
           // Grab the bid for current slot
           for (var cpmAndSlotId in indexObj) {
-            var match = /(?:T\d_)?(\w+)/.exec(cpmAndSlotId);
-            var slotNameAndCpm = match[1];
+            var match = /(T\d_)?(\w+)/.exec(cpmAndSlotId);
+            var tier = match[1] || '';
+            var slotNameAndCpm = match[2];
 
             var obj = slotNameAndCpm.split('_');
             var slotID = obj[0];
             var sizeID = obj[1];
             var slotName = slotID + '_' + sizeID;
             var currentCPM = obj[2];
-            var slotObj = getSlotObj(cygnus_index_args, slotName);
+            var slotObj = getSlotObj(cygnus_index_args, tier + slotName);
 
             // Bid is for the current slot
             if (slotID === adSlotId) {
