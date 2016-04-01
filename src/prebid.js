@@ -277,8 +277,10 @@ function buildBidResponse(bidArray) {
       if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
         // push key into targeting
         pb_targetingMap[bidClone.adUnitCode] = utils.extend(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
-      } else if (bid.cpm && bid.cpm > 0) {
-        //else put into auction array if cpm > 0
+      }
+
+      if (bid.cpm && bid.cpm > 0) {
+        // put into auction array if cpm > 0
         bidArrayTargeting.push({
           cpm: bid.cpm,
           bid: bid
