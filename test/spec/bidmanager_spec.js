@@ -210,7 +210,7 @@ var bidmanager = require('../../src/bidmanager');
 
             });
 
-            it('Custom bidCpmAdjustment AND custom configuration for one bidder and do NOT inherit standard', function() {
+            it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function() {
                 pbjs.bidderSettings =
                     {
                         appnexus: {
@@ -264,7 +264,38 @@ var bidmanager = require('../../src/bidmanager');
                         }
                 };
 
-                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 15.0 };
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 15.0, "hb_size":"300x250" };
+                var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+                assert.deepEqual(response, expected);
+
+            });
+
+
+            it('alwaysUseBid=true and inherit custom', function() {
+                pbjs.bidderSettings =
+                    {
+                        appnexus: {
+                            alwaysUseBid : true,
+                            adserverTargeting: [{
+                                key: "hb_bidder",
+                                val: function(bidResponse) {
+                                    return bidResponse.bidderCode;
+                                }
+                            }, {
+                                key: "hb_adid",
+                                val: function(bidResponse) {
+                                    return bidResponse.adId;
+                                }
+                            }, {
+                                key: "hb_pb",
+                                val: function(bidResponse) {
+                                  return bidResponse.pbHg;
+                                }
+                            }]
+                        }
+                };
+
+                var expected = {"hb_bidder":  bidderCode, "hb_adid": adId,"hb_pb": 5.57, "hb_size":"300x250" };
                 var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
                 assert.deepEqual(response, expected);
 

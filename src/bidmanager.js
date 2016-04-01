@@ -208,20 +208,8 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
   var keyValues = {};
   var bidder_settings = pbjs.bidderSettings || {};
 
-  //1) set keys from specific bidder setting if they exist
-  if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-    custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
-  }
-
-  //2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
-  else if (defaultBidderSettingsMap[bidderCode]) {
-    setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
-    custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
-  }
-
-  //3) set the keys from "standard" setting or from prebid defaults
-  else if (custBidObj && bidder_settings) {
+  //1) set the keys from "standard" setting or from prebid defaults
+  if (custBidObj && bidder_settings) {
     if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
       bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
         adserverTargeting: [
@@ -254,6 +242,18 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
     setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
   }
 
+  //2) set keys from specific bidder setting override if they exist
+  if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+    custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
+  }
+
+  //2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
+  else if (defaultBidderSettingsMap[bidderCode]) {
+    setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
+    custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
+  }
+
   return keyValues;
 };
 
@@ -264,6 +264,10 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   utils._each(targeting, function (kvPair) {
     var key = kvPair.key;
     var value = kvPair.val;
+
+    if (keyValues[key]) {
+      utils.logWarn('The key: ' + key + ' is getting ovewritten');
+    }
 
     if (utils.isFn(value)) {
       try {
