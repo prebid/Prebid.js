@@ -266,7 +266,29 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 </div>
 
+<div class="bs-docs-section" markdown="1">
 
+# Sonobi
+
+### bidder code:
+
+`sonobi`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `dom_id` | required | The DOM Id of the ad slot | "div-gpt-ad-1234567890123-0" |
+| `ad_unit` | optional | The ad unit ID | "/1234567/ad_unit_id" |
+| `placement_id` | optional | The placement ID | "a1b2c3de45fg67h89i01" |
+
+###Caveats
+
+* You are required to pass either an ad_unit *or* placement_id value
+* Your account manager will let you know which to use
+
+</div>
 
 <div class="bs-docs-section" markdown="1">
 
