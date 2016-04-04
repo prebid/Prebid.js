@@ -7,9 +7,6 @@
   <script> 
     var PREBID_TIMEOUT = 700;
 
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
-
     var adUnits = [{
         code: '/19968336/header-bid-tag-0',
         sizes: [[300, 250], [300,600]],
@@ -41,6 +38,9 @@
     googletag.cmd.push(function () {
         googletag.pubads().disableInitialLoad();
     });
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
 
     pbjs.que.push(function () {
       pbjs.addAdUnits(adUnits);
