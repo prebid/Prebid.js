@@ -48,5 +48,4 @@ The ad server's developer console usually provide information such as targeting,
 <br>
 
 
-
 </div>
