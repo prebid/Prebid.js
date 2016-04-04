@@ -4,6 +4,7 @@ title: Download Prebid.js
 description: Documentation on how to download Prebid.js for header bidding.
 
 pid: 0
+show_disqus: true
 
 is_top_nav: yeah
 
@@ -17,21 +18,36 @@ nav_section: download
 
 <script>
 function submit_download() {
-    $('#download-button').text('Sending Request...')
     var form_data = get_form_data();
+
+    var alertStatus = $('#download-status');
+
+    if (!(form_data['email'] && form_data['company'])) {  
+      alertStatus.html('Email and Company fields are required.');
+      alertStatus.removeClass('hide');
+      return;
+    }
+    alertStatus.addClass('hide');
+
+    $('#download-button').html('<i class="glyphicon glyphicon-send"></i> Sending Request...')
     $.ajax({
         type: "POST",
         url: "http://client-test.devnxs.net/prebid",
-        data: JSON.stringify(form_data),
-        dataType: 'json'
+        //dataType: 'json',
+        data: form_data
     })
     .done(function() {
-      $('#download-button').text('Build Request Recieved');
+      var buttn = $('#download-button');
+      buttn.addClass('btn-success');
+      buttn.html('<i class="glyphicon glyphicon-ok"></i> Build Request Recieved');
       console.log('Succeeded!');
-      alert( "success" );
     })
-    .fail(function() {
-      alert( "error" );
+    .fail(function(e) {
+      errorO = e;
+      console.log(e);
+      var buttn = $('#download-button');
+      buttn.html('<i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js')
+      alert('Ran into an issue.'); // + e.responseText
     });
 
     newDownload(form_data['email'], form_data['company'], form_data['bidders']);
@@ -232,8 +248,14 @@ To improve the speed and load time of your site, build Prebid.js for only the he
         </div>
 
         <div class="form-group">
-            <button type="button" id="download-button" class="btn btn-lg btn-primary" onclick="submit_download()">Receive Prebid.js</button>
+            <button type="button" id="download-button" class="btn btn-lg btn-primary" onclick="submit_download()"><i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js</button>
         </div>
+
+        <div class="alert alert-warning hide" role="alert" id="download-status"></div>
+
+        <p>
+        Ran into problems? Email <code>info@prebid.org</code>
+        </p>
 
       </div>
       
