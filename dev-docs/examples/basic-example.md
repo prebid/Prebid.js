@@ -13,13 +13,16 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/9ow4k8j6/30/embedded/html,result
-code_height: 1890
+
 code_lines: 101
+code_height: 2221
 
 pid: 10
 ---
 
 
+<br>
+<br>
 <br>
 <br>
 <br>
@@ -42,7 +45,12 @@ Because GPT sends out all of the the impressions at the first `googletag.display
 <br>
 <br>
 <br>
-
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
 <div markdown="1">
 
@@ -97,6 +105,10 @@ Prebid.js will send out header bidding requests to all registered bidders once `
 
 </div>
 
+<br>
+<br>
+<br>
+<br>
 <br>
 <br>
 

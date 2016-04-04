@@ -13,19 +13,28 @@ nav_section: download
 
 ---
 
+<script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+
 <script>
 function submit_download() {
+    $('#download-button').text('Sending Request...')
     var form_data = get_form_data();
     $.ajax({
         type: "POST",
         url: "http://client-test.devnxs.net/prebid",
-        data: form_data,
-        success: function() {
-            $('#download-button').text('Build Request Recieved');
-            console.log('Succeeded!');
-        },
+        data: JSON.stringify(form_data),
         dataType: 'json'
+    })
+    .done(function() {
+      $('#download-button').text('Build Request Recieved');
+      console.log('Succeeded!');
+      alert( "success" );
+    })
+    .fail(function() {
+      alert( "error" );
     });
+
+    newDownload(form_data['email'], form_data['company'], form_data['bidders']);
 }
 
 function get_form_data() {
@@ -47,6 +56,7 @@ function get_form_data() {
 
     return form_data;
 }
+
 
 </script>
 
@@ -208,17 +218,17 @@ To improve the speed and load time of your site, build Prebid.js for only the he
       <div class="modal-body">
 
         <div class="lead">
-            You will receive an email with the download link in a few minutes after you complete the below form.
+          The download link will be in your inbox in a few minutes. Check the spam folder too!
         </div>
         
 
         <div class="form-group col-md-6">
             <label for="input-email">Email address</label>
-            <input type="email" class="form-control" id="input-email" placeholder="Email">
+            <input type="email" class="form-control" id="input-email" placeholder="Email" name="email">
         </div>
         <div class="form-group col-md-6">
             <label for="input-company">Company Name</label>
-            <input type="text" class="form-control" id="input-company" placeholder="Your Company">
+            <input type="text" class="form-control" id="input-company" placeholder="Your Company" name="company_email">
         </div>
 
         <div class="form-group">

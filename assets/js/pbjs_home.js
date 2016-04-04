@@ -65,6 +65,25 @@ function newComment(comment, email, site) {
 
 }
 
+function newDownload(email, company, bidders) {
+  var Download = Parse.Object.extend("Download");
+
+  var downloadObj = new Download();
+  downloadObj.set("email", email);
+  downloadObj.set("company", company);
+  downloadObj.set("bidders", bidders)
+  
+  downloadObj.save(null, {
+    success: function(downloadObj) {
+      console.log('parse succeeded');
+    },
+    error: function(downloadObj, error) {
+      console.log('parse failed');
+    }
+  });
+
+}
+
 
 $( document ).ready(function() {
   $('#form-company').submit(function(event) {

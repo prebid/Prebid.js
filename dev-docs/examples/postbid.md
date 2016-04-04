@@ -15,7 +15,7 @@ about:
 - This post-bid creative <strong>supports passback</strong>. See more info on passbacks in the below line-by-line explanation.
 
 jsfiddle_link: jsfiddle.net/prebid/akLqdj3d/5/embedded/html,result
-code_height: 1590
+code_height: 1864
 code_lines: 84
 
 pid: 10
@@ -35,7 +35,8 @@ If your ad server's ad unit can support multiple sizes, then create multiple cre
 </div>
 
 <br><br>
-<br>
+<br><br>
+<br><br>
 
 <div markdown="1">
 #### Line 8 to 22: Enter the header bidding bids' information. 
@@ -45,7 +46,8 @@ These bids correspond to this ad unit. Refer to [Bidder Params](/dev-docs/bidder
 </div>
 
 <br><br>
-<br>
+<br><br>
+<br><br>
 
 <div markdown="1">
 

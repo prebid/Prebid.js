@@ -16,7 +16,7 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/1/embedded/html,result
-code_height: 2480
+code_height: 2893
 code_lines: 133
 
 pid: 10
@@ -36,6 +36,8 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 
 </div>
 
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>

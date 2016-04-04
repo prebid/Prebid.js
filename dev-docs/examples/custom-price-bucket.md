@@ -15,7 +15,7 @@ about:
 - One set of line items for all bidders
 
 jsfiddle_link: jsfiddle.net/prebid/bp9magow/7/embedded/html,result
-code_height: 2560
+code_height: 2977
 code_lines: 137
 
 pid: 10
@@ -42,6 +42,8 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
+<br><br><br><br><br><br>
+
 
 <div markdown="1">
 #### Line 60 to 88: Customize ad server targeting keywords
@@ -61,6 +63,7 @@ You can see the effect of this customization if you click into the Result tab of
 
 
 
+<br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>

@@ -26,11 +26,11 @@ Prebid.js is worked on full-time by AppNexus's tagging engineering team, as well
 - You have a feature request to the code base.
 - You have found a bug in the code.
 
-### Stackoverflow
+<!-- ### Stackoverflow
 
 [Submit a Stackoverflow question](http://stackoverflow.com/questions/tagged/prebid.js) (Please tag the question with "prebid.js") if:
 
-- You have coding related questions about how to implement Prebid.js.
+- You have coding related questions about how to implement Prebid.js. -->
 
 ### Reddit
 

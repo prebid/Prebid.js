@@ -18,7 +18,7 @@ about:
 
 jsfiddle_link: jsfiddle.net/prebid/hn06j4f4/2/embedded/html,result
 
-code_height: 2200
+code_height: 2536
 code_lines: 116
 
 pid: 80
@@ -47,6 +47,8 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br>
 
 <div markdown="1">
 #### Line 62 to 64: Adjust Bid Price

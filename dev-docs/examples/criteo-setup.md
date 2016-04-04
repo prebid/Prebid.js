@@ -15,7 +15,7 @@ about:
 - one set of line item must be set in the adserver to manage criteo bidder separately. <strong>Follow Criteo's RTA guideline for the line item setup</strong>.
 
 jsfiddle_link: jsfiddle.net/hqz36ew2/1/embedded/html,result
-code_height: 2240
+code_height: 2620
 code_lines: 120
 
 pid: 10

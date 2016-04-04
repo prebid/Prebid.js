@@ -19,7 +19,7 @@ The easiest way to get started with Prebid.js is using the following JSFiddle ex
 
 * **[Prebid.js JSFiddle](http://jsfiddle.net/hqhbLdxn/1/)**
 
-<iframe width="100%" height="600" src="//jsfiddle.net/prebid/hqhbLdxn/8/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="680" src="//jsfiddle.net/prebid/hqhbLdxn/8/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 <br>
 
