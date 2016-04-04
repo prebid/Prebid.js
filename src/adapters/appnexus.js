@@ -50,9 +50,9 @@ AppNexusAdapter = function AppNexusAdapter() {
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
     if (member) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member_id', member);
+      jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
     } else if (memberId) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member_id', memberId);
+      jptCall = utils.tryAppendQueryString(jptCall, 'member', memberId);
       utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
     }
 
