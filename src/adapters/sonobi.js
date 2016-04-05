@@ -8,16 +8,16 @@ var SonobiAdapter = function SonobiAdapter(){
   var cb_map = {};
 
   function _phone_in(params){
-    var trinity = '//apex.go.sonobi.com/trinity.js?key_maker=';
+    var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var bids = params.bids || [];
     adloader.loadScript(trinity + JSON.stringify(_keymaker(bids)) + '&cv=' + _operator(), null);
   }
 
   function _keymaker(bids){       //  Make keys
     var keyring = {};
-    bids.forEach(function(o){
+    bids._each(function(o){
       var sizes = [];
-      o.sizes.forEach(function(size){
+      o.sizes._each(function(size){
         sizes.push(size.join('x'));
       });
       sizes = sizes.toString();
@@ -64,7 +64,7 @@ var SonobiAdapter = function SonobiAdapter(){
   }
 
   function _get_creative(sbi_dc, sbi_aid){
-    var creative = '<scr' + 'ipt type="text/javascript"src="//' + sbi_dc;
+    var creative = '<scr' + 'ipt type="text/javascript"src="https://' + sbi_dc;
     creative += 'apex.go.sonobi.com/sbi.js?as=dfps&aid=' + sbi_aid;
     creative += '"></scr' + 'ipt>';
     return creative;
