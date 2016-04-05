@@ -198,11 +198,6 @@ var AolAdapter = function AolAdapter() {
         var win = window;
         var global = win.ADTECH;
 
-        // Avoid to redefine in case of multiple inclusion
-        if(global.loadAd) {
-          return;
-        }
-
         /**
          * The logger module provides logging information.
          * This is implemented using classes.
@@ -325,291 +320,9 @@ var AolAdapter = function AolAdapter() {
             return typeof arg === "boolean";
           }
 
-          function isStringANumber(strNumber) {
-            return /^\d*$/.test(strNumber);
-          }
-
-          function stringToObject(jsonString) {
-            var obj;
-            if(!!win.JSON) {
-              obj = win.JSON.parse(jsonString);
-            }
-            else {
-              throw new Error('JSON not found. Could not transform the string into an object');
-            }
-            return obj;
-          }
-
-          /**
-           * Copies the first level properties of the source obj to the target.
-           * No deep copy is performed.
-           * If a custom set of properties is wanted only those properties are copied.
-           * If the other parameter is set and true then all the properties not in the
-           * properties array are copied.
-           *
-           * @param target
-           * @param source
-           * @param properties
-           * @param isIgnoredSet, if true copy all the properties that are not in the custom properties list
-           */
-          function copyObject(target, source, properties, isIgnoredSet) {
-            var copyFilter, sourceProperties = {};
-            if(!properties) {
-              copyFilter = function(key, value) {
-                target[key] = value;
-              };
-            }
-            else {
-              each(properties, function(key) {
-                if(source.hasOwnProperty(key)) {
-                  sourceProperties[key] = true;
-                }
-              });
-              if(!isIgnoredSet) {
-                copyFilter = function(key) {
-                  if(sourceProperties[key]) {
-                    target[key] = source[key];
-                  }
-                };
-              }
-              else {
-                copyFilter = function(key, value) {
-                  if(!sourceProperties[key]) {
-                    target[key] = value;
-                  }
-                };
-              }
-            }
-
-            eachKey(source, copyFilter);
-          }
-
           function findAdContainer(config) {
             var injectContainer = doc.getElementById(config.adContainerId);
             return injectContainer !== null && isObject(injectContainer) && injectContainer;
-          }
-
-          function createAdContainer(requestContext) {
-            var config = requestContext.config, ieVersion = namespace.Environment.getIEVersion;
-            if( ! findAdContainer(config)) {
-              if(config.ajax && config.ajax.useajax) {
-                requestContext.logger.log(MODULE, 'createAdContainer', "<div> element with ID " +
-                config.adContainerId + " not found, creation skiped (Ajax call)");
-                return;
-              }
-
-              if( namespace.ResourceManager.isSync(requestContext.config.legacyDACLoadType, ieVersion) ) {
-                doc.write('<div id="' + config.adContainerId + '" style="padding:0;margin:0;border:0;"></div>');
-                config.adContainer = doc.getElementById(config.adContainerId);
-                requestContext.logger.log(MODULE, 'createAdContainer', "Created <div> element with ID " + config.adContainerId);
-              } else {
-                throw MODULE + "#createAdContainer Ad Container cannot be created";
-              }
-            }
-          }
-
-          function resolveContainer(config) {
-            var injectContainer = doc.getElementById(config.adContainerId);
-            if(injectContainer !== null && isObject(injectContainer)) {
-              config.adContainer = injectContainer;
-              if(!config.skipContainerClean) {
-                config.adContainer.innerHTML = '';
-              }
-            } else {
-              throw new Error(MODULE + "#resolveContainer Ad Container not found");
-            }
-          }
-
-          function generateScriptHTML(requestContext) {
-            var adtechQueueAttribute = requestContext.queueId ? ' adtechQueueId="'+requestContext.queueId+'"' : '';
-            return '<scr' + 'ipt type="text/javascript" src="' + requestContext.config.adcallUrl + '"' + adtechQueueAttribute + '></scr' + 'ipt>';
-          }
-
-          function createClosure(func, logger) {
-            return function() {
-              try {
-                func.apply(null, arguments);
-              } catch(e) {
-                if(logger) {
-                  logger.log('Exception raised: ' + e.message);
-                  if(logger.isEnabled()) {
-                    throw e;
-                  }
-                }
-              }
-            };
-          }
-
-          function rnd(max) {
-            return Math.round(Math.random() * max);
-          }
-
-          function objectsEquals(obj1, obj2, properties, ignore) {
-            if(obj1 === undefined || obj2 === undefined) {
-              return false;
-            }
-            if(properties) {
-              properties = buildObjectsProperties([obj1, obj2], properties);
-            }
-            return isObjIncluded(obj1, obj2, properties, ignore) && isObjIncluded(obj2, obj1, properties, ignore);
-          }
-
-          function extractObjectProperties(objects, propertyRegEx) {
-            var properties = [], flags = {};
-            each(objects, function(obj) {
-              eachKey(obj, function(key) {
-                if(!flags[key] && propertyRegEx.test(key)) {
-                  properties.push(key);
-                  flags[key] = true;
-                }
-              });
-            });
-            return properties;
-          }
-
-          function buildObjectsProperties(objs, properties) {
-            var propertyPool = [];
-            each(properties, function(value) {
-              if(value instanceof RegExp) {
-                var regExProperties = extractObjectProperties(objs, value);
-                if(regExProperties.length > 0) {
-                  Array.prototype.push.apply(propertyPool, regExProperties);
-                }
-              }
-              else {
-                propertyPool.push(value);
-              }
-            });
-            return propertyPool;
-          }
-
-          /**
-           * Checks if the structure of obj1 exists in obj2. The obj1 properties has to exists in the
-           * obj2 with the same values. If particular properties are objects then those are checked if they
-           * match recursively.
-           * If a property doesn't exist in both objects, the objects are considered equal for that property.
-           *
-           * @param {Object} obj1 the source object
-           * @param {Object} obj2 the target object
-           * @param {Array} properties particular properties to check from obj1 not the whole object.
-           * The custom properties are checked only on the first level of the source object.
-           * @param ignore true if the properties set in the properties parameter should be ignored
-           * @returns {boolean} true if the structure of obj1 is present in obj2
-           */
-          function isObjIncluded(obj1, obj2, properties, ignore) {
-            var i;
-
-            function pass(property) {
-              var bothMissing = !(obj1.hasOwnProperty(property) || obj2.hasOwnProperty(property));
-              if(bothMissing) {
-                return true;
-              }
-              if(ignore && isCustomProperty(properties, property)) {
-                return true;
-              }
-              else return obj1.hasOwnProperty(property) &&
-                  obj2.hasOwnProperty(property) &&
-                  ( typeof obj1[property] === 'object' ?
-                      objectEquals(obj1[property], obj2[property]) :
-                  obj1[property] === obj2[property]);
-            }
-
-            if(properties && properties.constructor === Array && !ignore) {
-              for(i=0; i<properties.length; i++) {
-                if( !pass(properties[i]) ) {
-                  return false;
-                }
-              }
-              return true;
-            } else {
-              for (i in obj1) {
-                if( obj1.hasOwnProperty(i) && !pass(i) ) {
-                  return false;
-                }
-              }
-              return true;
-            }
-          }
-
-          function isCustomProperty(properties, property) {
-            var status = false;
-            each(properties, function(customProperty) {
-              if(customProperty === property) {
-                status = true;
-              }
-            });
-            return status;
-          }
-
-          function cloneArray(array) {
-            var clone = [];
-            each(array, function(value, index) {
-              clone[index] = value;
-            });
-            return clone;
-          }
-
-          function addEventListener(source, eventType, listener) {
-            if(source.addEventListener) {
-              source.addEventListener(eventType, listener, false);
-            }
-            else if(source.attachEvent) {
-              source.attachEvent('on' + eventType, listener);
-            }
-            else {
-              source['on' + eventType] = listener;
-            }
-          }
-
-          function getViewportWidth() {
-            var docElemWidth = doc.documentElement.clientWidth;
-            var width = doc.compatMode === 'CSS1Compat' && docElemWidth || (doc.body && doc.body.clientWidth) || docElemWidth;
-            if(!doc.body && width === 0) {
-              width = doc.documentElement.scrollWidth;
-            }
-            return width;
-          }
-
-          function getViewportHeight() {
-            var height = doc.documentElement.clientHeight;
-            if(doc.compatMode !== 'CSS1Compat') {
-              height = win.innerHeight || height;
-            }
-            return height;
-          }
-
-          /**
-           * Copies a property from the source object to the target object under a different name if the property is not
-           * already set on the target object.
-           * @param source
-           * @param target
-           * @param sourcePropertyName
-           * @param targetPropertyName
-           */
-          function copyMissingProperty(source, target, sourcePropertyName, targetPropertyName) {
-            if(source[sourcePropertyName] && !target[targetPropertyName]) {
-              target[targetPropertyName] = source[sourcePropertyName];
-            }
-          }
-
-          /**
-           * Does a deep copy of the properties of one object into a clone object.
-           *
-           * @param source the source object
-           * @returns an independent object having the same state as the source
-           */
-          function cloneObject(source) {
-            var clone = {};
-            eachKey(source, function(key, value) {
-              if(isObject(value)) {
-                clone[key] = {};
-                copyObject(clone[key], value);
-              }
-              else {
-                clone[key] = value;
-              }
-            });
-            return clone;
           }
 
           /**
@@ -644,24 +357,8 @@ var AolAdapter = function AolAdapter() {
             isBoolean: isBoolean,
             isNumber: isNumber,
             isArray: isArray,
-            isStringANumber: isStringANumber,
-            copyObject: copyObject,
-            resolveContainer: resolveContainer,
-            findAdContainer: findAdContainer,
-            generateScriptHTML: generateScriptHTML,
-            stringToObject: stringToObject,
-            createClosure: createClosure,
-            createAdContainer: createAdContainer,
-            rnd: rnd,
-            objectsEquals: objectsEquals,
-            buildObjectsProperties: buildObjectsProperties,
-            cloneArray: cloneArray,
-            addEventListener: addEventListener,
-            getViewportWidth: getViewportWidth,
-            getViewportHeight: getViewportHeight,
-            copyMissingProperty: copyMissingProperty,
             resolveHostPageVariable: resolveHostPageVariable,
-            cloneObject: cloneObject
+            findAdContainer: findAdContainer
           };
           return namespace[MODULE];
         }
@@ -1376,6 +1073,7 @@ var AolAdapter = function AolAdapter() {
                 throw "pubApiConfig#is missing in configuration.";
               }
             }
+
 
             if(isObj(config.ajax)) {
               result.ajax = {useajax: config.ajax.useajax !== false};
@@ -2185,7 +1883,6 @@ var AolAdapter = function AolAdapter() {
             setConfig:setConfig,
             handleResponse:handleResponse
           };
-
         }
 
         /**
@@ -2277,11 +1974,13 @@ var AolAdapter = function AolAdapter() {
     } catch(e) {
 
     }
+
   }
 
   return {
     callBids: _callBids
   };
+
 };
 
 module.exports = AolAdapter;
