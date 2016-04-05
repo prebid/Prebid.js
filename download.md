@@ -76,6 +76,12 @@ function get_form_data() {
 
 </script>
 
+<style>
+.disabled {
+  color: #aaa;
+}
+</style>
+
 <div class="bs-docs-section" markdown="1">
 
 # Customize and Download Prebid.js
@@ -100,7 +106,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="appnexus" class="bidder-check-box"> AppNexus
+        <input type="checkbox" bidderCode="appnexus" class="bidder-check-box"> AppNexus & bRealTime
       </label>
     </div>
   </div>
@@ -172,14 +178,6 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box"> bRealTime
-      </label>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="checkbox">
-      <label>
         <input type="checkbox" bidderCode="springserve" class="bidder-check-box"> SpringServe
       </label>
     </div>
@@ -197,6 +195,38 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     <div class="checkbox">
       <label>
         <input type="checkbox" bidderCode="triplelift" class="bidder-check-box"> TripleLift
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box" disabled> bRealTime (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="sonobi" class="bidder-check-box" disabled> Sonobi (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="adequant" class="bidder-check-box" disabled> Adequant (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="brightcom" class="bidder-check-box" disabled> Brightcom (Coming)
       </label>
     </div>
   </div>
