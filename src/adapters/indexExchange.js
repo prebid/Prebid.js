@@ -267,6 +267,11 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
       slotID++;
 
+      // Expecting nested arrays for sizes
+      if (!(bid.sizes[0] instanceof Array)) {
+        bid.sizes = [bid.sizes];
+      }
+
       // Create index slots for all bids and sizes
       for (var j = 0; j < bid.sizes.length; j++) {
         var validSize = false;
