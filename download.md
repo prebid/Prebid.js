@@ -84,7 +84,7 @@ function get_form_data() {
 
 <div class="bs-docs-section" markdown="1">
 
-# Customize and Download Prebid.js
+# Customize and Download Prebid.js <span class="label label-warning" style="font-size:14px">Beta</span>
 
 {: .lead :}
 To improve the speed and load time of your site, build Prebid.js for only the header bidding partners you choose. 
