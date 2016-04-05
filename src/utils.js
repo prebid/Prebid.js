@@ -177,6 +177,12 @@ exports.getTopWindowUrl = function () {
   }
 };
 
+exports.logWarn = function (msg) {
+  if (debugTurnedOn() && console.warn) {
+    console.warn('WARNING: ' + msg);
+  }
+};
+
 exports.logInfo = function(msg, args) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     if (infoLogger) {
