@@ -3,50 +3,8 @@ var assert = require("assert");
 /* use this method to test individual files instead of the whole prebid.js project */
 
 //TODO refactor to use the spec files
-var utils = require('../src/utils');
-var bidmanager = require('../src/bidmanager');
-var appnexus = require('../src/adapters/appnexus');
-
-    describe('appnexus adapter unit tests', function(){
-
-        var adapterInstance =  null;
-        var bidRequest = {
-            bidder: "appnexus",
-            params: {
-                memberId : "123",
-                placementId: "123345",
-                invCode : 'inv_code',
-                referrer: "url.com",
-                alt_referrer: "url.com",
-                extraParam: "foobar",
-                somethingElse : 'hello',
-                query : {
-                    foo : 'bar',
-                    tasty : 'treat'
-                }
-            },
-            placementCode: "/19968336/header-bid-tag-0",
-            sizes: [
-                [300, 250],
-                [300, 600]
-            ]
-        };
-        var callbackId = 'cbId';
-
-
-        it('Get instance', function() {
-            adapterInstance = appnexus.createNew();
-            assert.ok(adapterInstance);
-        });
-
-           it('buildJPTCall()', function() {
-                var expectedUrl = 'http://ib.adnxs.com/jpt?callback=pbjs.handleAnCB&callback_uid=cbId&psa=0&id=123345&member_id=123&code=inv_code&size=300x250&promo_sizes=300x600&foo=bar&tasty=treat&extraParam=foobar&somethingElse=hello&referrer=url.com&alt_referrer=url.com';
-                var url = adapterInstance.buildJPTCall(bidRequest, callbackId);
-                assert.equal(url, expectedUrl);
-        });
-
-
-    });
+var utils = require('../../src/utils');
+var bidmanager = require('../../src/bidmanager');
 
     describe('replaceTokenInString', function(){
 
@@ -106,7 +64,7 @@ var appnexus = require('../src/adapters/appnexus');
             });
 
              it('Custom configuration for all bidders', function() {
-                pbjs.bidderSettings = 
+                pbjs.bidderSettings =
                     {
                         standard: {
                             adserverTargeting: [{
@@ -132,7 +90,7 @@ var appnexus = require('../src/adapters/appnexus');
 
                                 }
                             }]
-                            
+
                         }
                 };
 
@@ -143,7 +101,7 @@ var appnexus = require('../src/adapters/appnexus');
             });
 
             it('Custom configuration for one bidder', function() {
-                pbjs.bidderSettings = 
+                pbjs.bidderSettings =
                     {
                         appnexus: {
                             adserverTargeting: [{
@@ -169,7 +127,7 @@ var appnexus = require('../src/adapters/appnexus');
 
                                 }
                             }]
-                            
+
                         }
                 };
 
@@ -180,7 +138,7 @@ var appnexus = require('../src/adapters/appnexus');
             });
 
             it('Custom configuration for one bidder - not matched', function() {
-                pbjs.bidderSettings = 
+                pbjs.bidderSettings =
                     {
                         nonExistentBidder: {
                             adserverTargeting: [{
@@ -206,7 +164,7 @@ var appnexus = require('../src/adapters/appnexus');
 
                                 }
                             }]
-                            
+
                         }
                 };
 
@@ -217,7 +175,7 @@ var appnexus = require('../src/adapters/appnexus');
             });
 
             it('Custom bidCpmAdjustment for one bidder and inherit standard', function() {
-                pbjs.bidderSettings = 
+                pbjs.bidderSettings =
                     {
                         appnexus: {
                             bidCpmAdjustment : function(bidCpm){
@@ -242,7 +200,7 @@ var appnexus = require('../src/adapters/appnexus');
                                     return 10.00;
                                 }
                             }]
-                            
+
                         }
                 };
 
@@ -253,7 +211,7 @@ var appnexus = require('../src/adapters/appnexus');
             });
 
             it('Custom bidCpmAdjustment AND custom configuration for one bidder and do NOT inherit standard', function() {
-                pbjs.bidderSettings = 
+                pbjs.bidderSettings =
                     {
                         appnexus: {
                             bidCpmAdjustment : function(bidCpm){
@@ -302,7 +260,7 @@ var appnexus = require('../src/adapters/appnexus');
 
                                 }
                             }]
-                            
+
                         }
                 };
 
