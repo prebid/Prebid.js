@@ -274,8 +274,8 @@ var RubiconAdapter = function RubiconAdapter() {
       var slots = [];
       var bids  = params.bids;
 
-      for (var key in bids) {
-        slots.push(_defineSlot(bids[key]));
+      for (var i=0, ln=bids.length; i < ln; i++) {
+        slots.push(_defineSlot(bids[i]));
       }
 
       var parameters = { slots: slots };
