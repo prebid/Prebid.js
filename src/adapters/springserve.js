@@ -48,7 +48,7 @@ SpringServeAdapter = function SpringServeAdapter() {
 
     spCall += '&domain=';
     spCall += domain;
-    spCall += '&callback=pbjs.handleSpringServeCB';
+    spCall += '&callback=PrebidGlobal.handleSpringServeCB';
 
     return spCall;
   }
@@ -62,7 +62,7 @@ SpringServeAdapter = function SpringServeAdapter() {
     }
   }
 
-  pbjs.handleSpringServeCB = function (responseObj) {
+  PrebidGlobal.handleSpringServeCB = function (responseObj) {
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the bidmanager

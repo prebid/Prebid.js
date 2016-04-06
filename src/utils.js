@@ -213,12 +213,12 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if (pbjs.logging === false && _loggingChecked === false) {
-    pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if (PrebidGlobal.logging === false && _loggingChecked === false) {
+    PrebidGlobal.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
 
-  return !!pbjs.logging;
+  return !!PrebidGlobal.logging;
 };
 
 exports.debugTurnedOn = debugTurnedOn;

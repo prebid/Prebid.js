@@ -36,7 +36,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var tlURI = '//tlx.3lift.com/header/auction?';
     var tlCall = document.location.protocol + tlURI;
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
+    tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'PrebidGlobal.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', '0.5.0');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
@@ -70,7 +70,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
 
   //expose the callback to the global object:
-  pbjs.TLCB = function(tlResponseObj) {
+  PrebidGlobal.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
       var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
       placementCode = bidObj.placementCode;
