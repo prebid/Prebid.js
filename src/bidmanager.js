@@ -168,7 +168,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     //store by placement ID
-    if (adUnitCode && pbBidResponseByPlacement[adUnitCode]) {
+    if (adUnitCode && pbBidResponseByPlacement[adUnitCode] && !utils.isEmpty(pbBidResponseByPlacement[adUnitCode])) {
       //update bid response object
       bidResponseObj = pbBidResponseByPlacement[adUnitCode];
 

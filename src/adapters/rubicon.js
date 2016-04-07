@@ -220,11 +220,15 @@ var RubiconAdapter = function RubiconAdapter() {
     }
 
     for (var key in visitor) {
-      slot.addFPV(key, visitor[key]);
+      if (visitor.hasOwnProperty(key)) {
+        slot.addFPV(key, visitor[key]);
+      }
     }
 
     for (var key in inventory) {
-      slot.addFPI(key, inventory[key]);
+      if (inventory.hasOwnProperty(key)) {
+        slot.addFPI(key, inventory[key]);
+      }
     }
 
     slot.addKW(keywords);
