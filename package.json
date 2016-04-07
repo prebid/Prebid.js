@@ -93,6 +93,7 @@
     "requirejs": "^2.1.20",
     "run-sequence": "^1.1.4",
     "sinon": "^1.12.1",
+    "string-replace-webpack-plugin": "0.0.3",
     "uglify-js": "^2.4.15",
     "webpack": "^1.12.3",
     "webpack-stream": "^3.1.0",
