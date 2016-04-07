@@ -28,7 +28,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Get page data
     var siteDomain = window.location.host;
-    var sitePage = window.location.pathname + location.search + location.hash;
+    var sitePage = window.location.href;
 
     // Prepare impressions object
     var brightcomImps = [];
