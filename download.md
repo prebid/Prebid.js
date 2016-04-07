@@ -89,7 +89,7 @@ function get_form_data() {
 {: .lead :}
 To improve the speed and load time of your site, build Prebid.js for only the header bidding partners you choose. 
 
-### Select header bidding partners
+### Option 1: Select header bidding partners
 
 
 <form>
@@ -106,7 +106,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="appnexus" class="bidder-check-box"> AppNexus & bRealTime
+        <input type="checkbox" bidderCode="appnexus" class="bidder-check-box"> AppNexus
       </label>
     </div>
   </div>
@@ -294,11 +294,23 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   </div>
 </div>
 
+<div class="bs-docs-section" markdown="1">
 
+### Option 2: Use the pre-built Prebid.js
+
+The latest prebid.js is at version 0.7.0. File size: 57KB. This version contains all bidder adaptors in the above list. 
+
+{% highlight js %}
+
+<script src="//acdn.adnxs.com/prebid/static/0.7.0/prebid.js"></script>
+
+{% endhighlight %}
+
+</div>
 
 <div class="bs-docs-section" markdown="1">
 
-### Build from Source Code (More Advanced)
+### Option 3: Build from Source Code (More Advanced)
 
 {: .lead :}
 Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release. 
