@@ -128,7 +128,7 @@ var AolAdapter = function AolAdapter() {
       server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
       sizeid: bid.params.sizeId || 0,
       pageid: bid.params.pageId,
-      secure: false,
+      secure: document.location.protocol === 'https:',
       serviceType: 'pubapi',
       performScreenDetection: false,
       alias: alias,
