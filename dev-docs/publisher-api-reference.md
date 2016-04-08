@@ -478,18 +478,9 @@ pbjs.bidderSettings = {
 
 <a name="default-keywords">
 
-##### Default keyword targeting prebid.js sends to your ad server:
+##### Default keyword targeting prebid.js sends to your ad server
 
-
-{: .table .table-bordered .table-striped }
-|   Default Key | Scope |    Description     |   Example  |
-| :----  |:--------| :-------| :-------|
-| hb_pb | Required | The price bucket. Used by the line item to target. | `2.10` |
-| hb_adid | Required | The ad Id. Used by the ad server creative to render ad. | `234234` |
-| hb_bidder | Required | The bidder code. Useful for logging and reporting to learn about which bidder has higher fill rate/CPM. | `rubicon` |
-
-
-
+{% include default-keyword-targeting.md %}
 
 #### 2. Keyword targeting for a specific bidder
 
