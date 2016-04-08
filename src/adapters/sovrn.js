@@ -70,17 +70,9 @@ var SovrnAdapter = function SovrnAdapter() {
     };
 
     var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
-      '&src=' + _getSource() +
+      '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
-  }
-
-  function _getSource() {
-    var packageJson = require('../../package.json');
-    var repositoryUrlParts = packageJson.repository.url.split('/');
-    var source = repositoryUrlParts.length > 3 && repositoryUrlParts[3] === 'sovrn' ? 'sovrn': 'oss'; // github account
-
-    return source + '_prebid_' + packageJson.version;
   }
 
   function addBlankBidResponsesForAllPlacementsExceptThese(placementsWithBidsBack) {
