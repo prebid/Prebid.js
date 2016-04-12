@@ -20,9 +20,21 @@ In this page, you can find the below information:
 * bidder specific bidResponse: in addition to
 * Caveats: every bidder is different. In addition to the standardized bidResponse object we propose, there might be caveats that you should know about.
 
-# Bidder quick links
+# Bidders
 
 * [AOL](#aol)
+* [AppNexus](#appnexus)
+* [IndexExchange](#indexExchange)
+* [OpenX](#openx)
+* [Pubmatic](#pubmatic)
+* [Rubicon](#rubicon)
+* [Sonobi](#sonobi)
+* [Sovrn](#sovrn)
+* [Yieldbot](#yieldbot)
+* [PulsePoint](#pulsepoint)
+* [BRealTime](#brealtime)
+* [AdForm](#adform)
+* [Springserve](#springserve)
 
 </div>
 
@@ -54,7 +66,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 <div class="bs-docs-section" markdown="1">
 
-# <a name="aol"></a>AOL
+# <a name="aol">AOL</a>
 
 ### bidder code:
 
@@ -77,7 +89,7 @@ These parameters in the bidReponse object are common across all bidders.
 
 <div class="bs-docs-section" markdown="1">
 
-# AppNexus
+# <a name="appnexus">AppNexus</a>
 
 ### bidder code:
 
@@ -148,7 +160,7 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 <div class="bs-docs-section" markdown="1">
 
-# Casale (Index)
+# <a name="indexExchange">IndexExchange (Casale)</a>
 
 ### bidder code:
 
@@ -201,7 +213,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-# OpenX
+# <a name="openx">OpenX</a>
 
 ### bidder code:
 
@@ -221,7 +233,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-# Pubmatic
+# <a name="pubmatic">Pubmatic</a>
 
 ### bidder code:
 
@@ -240,7 +252,7 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 <div class="bs-docs-section" markdown="1">
 
-# Rubicon
+# <a name="rubicon">Rubicon</a>
 
 ### bidder code:
 
@@ -272,11 +284,14 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-# Sonobi
+# <a name="sonobi">Sonobi</a>
 
 ### bidder code:
 
 `sonobi`
+
+### release version:
+`0.8.0`
 
 ### bid params
 
@@ -287,7 +302,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 | `ad_unit` | optional | The ad unit ID | "/1234567/ad_unit_id" |
 | `placement_id` | optional | The placement ID | "a1b2c3de45fg67h89i01" |
 
-###Caveats
+### Caveats
 
 * You are required to pass either an ad_unit *or* placement_id value
 * Your account manager will let you know which to use
@@ -296,7 +311,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-# Sovrn
+# <a name="sovrn">Sovrn</a>
 
 ### bidder code:
 
@@ -313,7 +328,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-# Yieldbot
+# <a name="yieldbot">Yieldbot</a>
 
 ### bidder code:
 
@@ -331,7 +346,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-# PulsePoint
+# <a name="pulsepoint">PulsePoint</a>
 
 ### bidder code:
 
@@ -350,7 +365,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-# BRealTime
+# <a name="brealtime">BRealTime</a>
 
 ### bidder code:
 
@@ -367,7 +382,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-#  Adform
+# <a name="adform">AdForm</a>
 
 ### bidder code:
 
@@ -385,7 +400,7 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 <div class="bs-docs-section" markdown="1">
 
-#  SpringServe
+# <a name="springserve">Springserve</a>
 
 ### bidder code:
 
