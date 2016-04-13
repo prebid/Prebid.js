@@ -29,7 +29,7 @@ function submit_download() {
     }
     alertStatus.addClass('hide');
 
-    $('#download-button').html('<i class="glyphicon glyphicon-send"></i> Sending Request...')
+    $('#download-button').html('<i class="glyphicon glyphicon-send"></i> Sending Request...').addClass('disabled');
     $.ajax({
         type: "POST",
         url: "http://client-test.devnxs.net/prebid",
@@ -38,15 +38,16 @@ function submit_download() {
     })
     .done(function() {
       var buttn = $('#download-button');
-      buttn.addClass('btn-success');
-      buttn.html('<i class="glyphicon glyphicon-ok"></i> Build Request Recieved');
+      //buttn.addClass('btn-success');
+      buttn.html('<i class="glyphicon glyphicon-ok"></i> Email Sent!');
       console.log('Succeeded!');
     })
     .fail(function(e) {
       errorO = e;
       console.log(e);
       var buttn = $('#download-button');
-      buttn.html('<i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js')
+      buttn.html('<i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js');
+      buttn.removeClass('disabled');
       alert('Ran into an issue.'); // + e.responseText
     });
 

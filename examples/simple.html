@@ -8,7 +8,7 @@
     var PREBID_TIMEOUT = 700;
 
     var adUnits = [{
-        code: '/19968336/header-bid-tag-0',
+        code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300,600]],
         bids: [{
             bidder: 'rubicon',
@@ -17,52 +17,62 @@
                 siteId: "70608",
                 zoneId: "335918",
             }
+        }, {
+            bidder: 'pubmatic',
+            params: {
+                publisherId: 39741,
+                adSlot: '39620189@300x250'
+            }
+        }, {
+            bidder: 'appnexus',
+            params: {
+               placementId: '4799418'
+            }
         }]
     },{
-        code: '/19968336/header-bid-tag1',
-        sizes: [[300, 250]],
-        bids: [
-            {
-                bidder: 'pubmatic',
-                params: {
-                    publisherId: 39741,
-                    adSlot: '39620189@300x250'
-                }
+        code: 'div-gpt-ad-1460505661639-0',
+        sizes: [[728, 90], [970, 90]],
+        bids: [{
+            bidder: 'appnexus',
+            params: {
+               placementId: '4799418'
             }
-        ]
+        }]
     }];
 
     // ======== DO NOT EDIT BELOW THIS LINE =========== //
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
-    googletag.cmd.push(function () {
-        //googletag.pubads().disableInitialLoad();
+    googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
     });
 
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
-    pbjs.que.push(function () {
-      pbjs.addAdUnits(adUnits);
-      pbjs.requestBids({
-        bidsBackHandler: function (bidResponses) {
-            initAdserver();
-        }
-      });
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(adUnits);
+        //pbjs.usePriceGranularity('AUTO_DEFAULT');
+        pbjs.requestBids({
+            bidsBackHandler: initAdserver
+        });
     });
 
     function initAdserver() {
-        if (pbjs.initAdserverSet) { return; }
-        googletag.cmd.push(function () {
-            pbjs.que.push(function () {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function() {
+            pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
                 googletag.pubads().refresh();
             });
         });
-        pbjs.initAdserverSet = true;
     }
 
-    setTimeout(initAdserver, PREBID_TIMEOUT);
+    setTimeout(function() {
+        //pbjs.que.push(function(){ pbjs.sendRefresh() });
+        initAdserver();
+    }, PREBID_TIMEOUT);
 
     (function () {
         var d = document, pbs = d.createElement("script");
@@ -94,13 +104,12 @@
 
     <script>
         googletag.cmd.push(function () {
-            var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1438287399331-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/34972656', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
-            var topSlot = googletag.defineSlot('/19968336/header-bid-tag1', [[728, 90], [970, 90]], 'div-gpt-ad-1438287399331-1').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/34972776', [[728, 90], [970, 90]], 'div-gpt-ad-1460505661639-0').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
-            googletag.pubads().disableInitialLoad();
         });
 
 
@@ -112,24 +121,18 @@
 
 <h2>Prebid.js Test</h2>
 
-<script>
-googletag.cmd.push(function() {
-    googletag.pubads().disableInitialLoad();
-});
-</script>
-
 <h5>Div-1</h5>
-<div id='div-gpt-ad-1438287399331-0'>
+<div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-0'); });
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
     </script>
 </div>
 
 
 <h5>Div-2</h5>
-<div id='div-gpt-ad-1438287399331-1'>
+<div id='div-gpt-ad-1460505661639-0'>
     <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505661639-0'); });
     </script>
 </div>
 
