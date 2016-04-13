@@ -10,16 +10,22 @@ function AdformAdapter() {
     };
 
     function _callBids(params) {
-        var callbackName = '_adf_' + utils.getUniqueIdentifierStr(), bid, noDomain = true;
+        var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+        var bid;
+        var noDomain = true;
         var bids = params.bids;
         var request = [];
+        var adxDomain;
 
         for (var i = 0, l = bids.length; i < l; i++) {
             bid = bids[i];
-            if (bid.adxDomain && noDomain) {
+            adxDomain = bid.params.adxDomain || bid.adxDomain;
+
+            if (adxDomain && noDomain) {
                 noDomain = false;
-                request.unshift('//' + bid.adxDomain + '/adx/?rp=4');
+                request.unshift('//' + adxDomain + '/adx/?rp=4');
             }
+
             request.push(formRequestUrl(bid.params));
         }
 
