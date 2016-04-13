@@ -16,9 +16,10 @@ function AdformAdapter() {
 
         for (var i = 0, l = bids.length; i < l; i++) {
             bid = bids[i];
-            if (bid.adxDomain && noDomain) {
+            var adxDomain = bid.params.adxDomain ? bid.params.adxDomain : bid.adxDomain;
+            if (adxDomain && noDomain) {
                 noDomain = false;
-                request.unshift('//' + bid.adxDomain + '/adx/?rp=4');
+                request.unshift('//' + adxDomain + '/adx/?rp=4');
             }
             request.push(formRequestUrl(bid.params));
         }
