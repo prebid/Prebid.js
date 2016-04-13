@@ -159,11 +159,20 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
         }
     }
 
+    function _isUrl(scr) {
+        return scr.slice(0, 6) === "http:/" || scr.slice(0, 7) === "https:/" || scr.slice(0, 2) === "//";
+    }
+
     function _buildAdCode(placement) {
-        var adCode = placement.Source;
+        var adCode = placement.Source, pixelTag;
 
         utils._each(placement.TrackingCodes, function (trackingCode) {
-            adCode = '<img src="' + trackingCode + '" width="0" height="0" style="position:absolute"></img>' + adCode;
+			if (_isUrl(trackingCode)) {
+				pixelTag = '<img src="' + trackingCode + '" width="0" height="0" style="position:absolute"></img>';
+			} else {
+				pixelTag = trackingCode;
+			}
+            adCode = pixelTag + adCode;
         });
 
         return adCode;

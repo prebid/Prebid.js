@@ -292,7 +292,7 @@ describe('wideorbit adapter tests', function () {
                 Height: 100,
                 Source: '<div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
                 TrackingCodes: [
-                    'http://www.admeta.com/1.gif'
+                    'https://www.admeta.com/1.gif'
                 ]
             },
             {
@@ -304,7 +304,7 @@ describe('wideorbit adapter tests', function () {
                 Source: '<div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
                 TrackingCodes: [
                     'http://www.admeta.com/2a.gif',
-                    'http://www.admeta.com/2b.gif'
+                    '<img src="http://www.admeta.com/2b.gif"></img>'
                 ]
             },
             {
@@ -388,7 +388,7 @@ describe('wideorbit adapter tests', function () {
 
             expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
             expect(bidObject1.cpm).to.equal(1.3);
-            expect(bidObject1.ad).to.equal('<img src="http://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>');
+            expect(bidObject1.ad).to.equal('<img src="https://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>');
             expect(bidObject1.width).to.equal(50);
             expect(bidObject1.height).to.equal(100);
             expect(bidObject1.getStatusCode()).to.equal(1);
@@ -396,7 +396,7 @@ describe('wideorbit adapter tests', function () {
             
             expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
             expect(bidObject2.cpm).to.equal(1.50);
-            expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif" width="0" height="0" style="position:absolute"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
+            expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
             expect(bidObject2.width).to.equal(100);
             expect(bidObject2.height).to.equal(200);
             expect(bidObject2.getStatusCode()).to.equal(1);
