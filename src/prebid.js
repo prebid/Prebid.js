@@ -959,4 +959,12 @@ pbjs.aliasBidder = function (bidderCode, alias) {
   }
 };
 
+pbjs.setPriceGranularity = function (granularity) {
+  if (!granularity) {
+    utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
+  } else {
+    bidmanager.setPriceGranularity(granularity);
+  }
+};
+
 processQue();

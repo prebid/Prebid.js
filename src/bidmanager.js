@@ -24,11 +24,9 @@ var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
 
 var expectedBidsCount = {};
-
 var _allBidsAvailable = false;
-
 var _callbackExecuted = false;
-
+var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 var bidderStartTimes = {};
 
@@ -151,6 +149,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
+    bid.pbAg = priceStringsObj.auto;
 
     //put adUnitCode into bid
     bid.adUnitCode = adUnitCode;
@@ -226,7 +225,15 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
           }, {
             key: 'hb_pb',
             val: function (bidResponse) {
-              return bidResponse.pbMg;
+              if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+                return bidResponse.pbAg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+                return bidResponse.pbLg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+                return bidResponse.pbMg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+                return bidResponse.pbHg;
+              }
             }
           }, {
             key: 'hb_size',
@@ -282,6 +289,17 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
   return keyValues;
 }
+
+exports.setPriceGranularity = function setPriceGranularity(granularity) {
+  var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
+  if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
+    _granularity = granularity;
+  } else {
+    utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
+      ' `medium` as default.');
+    _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+  }
+};
 
 exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
