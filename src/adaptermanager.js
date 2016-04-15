@@ -6,7 +6,6 @@ var CONSTANTS = require('./constants.json');
 var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
 
-
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
@@ -66,7 +65,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
     } else {
       try {
         let newAdapter = null;
-        if(bidAdaptor instanceof BaseAdapter) {
+        if (bidAdaptor instanceof BaseAdapter) {
           //newAdapter = new bidAdaptor.constructor(alias);
           utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
         } else {
@@ -84,8 +83,6 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 };
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
+
 // here be adapters
 /** END INSERT ADAPTERS */
-
-//default bidder alias
-exports.aliasBidAdapter('appnexus', 'brealtime');
