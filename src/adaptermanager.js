@@ -86,3 +86,6 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
 // here be adapters
 /** END INSERT ADAPTERS */
+
+//default bidder alias
+exports.aliasBidAdapter('appnexus', 'brealtime');
