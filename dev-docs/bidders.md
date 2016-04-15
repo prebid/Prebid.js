@@ -81,6 +81,7 @@ These parameters in the bidReponse object are common across all bidders.
 | `network` | required | The network ID from AOL. | |
 | `sizeId` | optional | The size ID from AOL. | "170" |
 | `alias` | optional | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
+| `server` | optional | Ad Network Cluster | "adserver.adtechus.com" (default), "adserver.adtech.de" |
 
 (The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
 
