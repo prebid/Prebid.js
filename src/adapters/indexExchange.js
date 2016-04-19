@@ -357,8 +357,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     }
 
     if (cygnus_index_args.slots.length > 20) {
-      utils.logError('Error calling index adapter, too many unique slot-sizes. Only 20 supported.', ADAPTER_NAME);
-      return;
+      utils.logError('Too many unique sizes on slots, will use the first 20.', ADAPTER_NAME);
     }
 
     bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
