@@ -18,12 +18,13 @@ var concat = require('gulp-concat');
 var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
+var replace = require('gulp-replace');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
-var banner = '/* <%= prebid.name %> v<%= prebid.version %> \n' + dateString + ' */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
@@ -43,6 +44,7 @@ gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
   return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
@@ -58,6 +60,7 @@ gulp.task('webpack', function () {
 
   return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
