@@ -44,7 +44,7 @@ gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
   return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
-    .pipe(replace('%prebid.version%', prebid.version))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
@@ -60,7 +60,7 @@ gulp.task('webpack', function () {
 
   return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
-    .pipe(replace('%prebid.version%', prebid.version))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))

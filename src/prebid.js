@@ -43,7 +43,7 @@ pbjs.logging = pbjs.logging || false;
 pbjs.libLoaded = true;
 
 //version auto generated from build
-utils.logInfo('Prebid.js v%prebid.version% loaded');
+utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
 //create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
