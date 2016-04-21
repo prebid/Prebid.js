@@ -140,7 +140,8 @@ var AolAdapter = function AolAdapter() {
       },
       params: {
         cors: 'yes',
-        cmd: 'bid'
+        cmd: 'bid',
+        bidfloor: (typeof bid.params.bidFloor !== "undefined") ? bid.params.bidFloor.toString() : ''
       },
       pubApiConfig: ADTECH_PUBAPI_CONFIG,
       placementCode: bid.placementCode
