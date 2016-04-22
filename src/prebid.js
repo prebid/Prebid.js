@@ -333,8 +333,7 @@ function resetBids() {
   pb_bidsTimedOut = false;
 }
 
-function requestAllBids(tmout) {
-  var timeout = tmout;
+function requestAllBids(timeout) {
   resetBids();
   init(timeout);
 }
