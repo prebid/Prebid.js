@@ -42,5 +42,11 @@
     "MEDIUM": "medium",
     "HIGH": "high",
     "AUTO": "auto"
-  }
+  },
+  "TARGETING_KEYS": [
+    "hb_bidder",
+    "hb_adid",
+    "hb_pb",
+    "hb_size"
+  ]
 }
