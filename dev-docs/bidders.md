@@ -77,11 +77,12 @@ These parameters in the bidReponse object are common across all bidders.
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `placement` | required | The placement ID from AOL. | "23324932" |
-| `network` | required | The network ID from AOL. | |
-| `sizeId` | optional | The size ID from AOL. | "170" |
-| `alias` | optional | The placement alias from AOL. | "desktop_articlepage_something_box_300_250" |
-| `server` | optional | Ad Network Cluster | "adserver.adtechus.com" (default), "adserver.adtech.de" |
+| `placement` | required | The placement ID from AOL. | `"23324932"` |
+| `network` | required | The network ID from AOL. | `"5071.1"` |
+| `alias` | optional | The placement alias from AOL. Must be unique per page. | `"desktop_articlepage_something_box_300_250"` |
+| `server` | optional | The server domain name. Default is adserver.adtechus.com. EU customers must use adserver.adtech.de. | `"adserver.adtech.de"` |
+| `sizeId` | optional | The size ID from AOL. | `"170"` |
+| `bidfloor` | optional | Dynamic bid floor | `0.80` |
 
 (The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
 
