@@ -195,7 +195,6 @@ function storeBidRequestByBidder(placementCode, sizes, bids) {
 }
 
 function getWinningBid(bidArray) {
-  var winningBid = {};
   if (bidArray && bidArray.length !== 0) {
     bidArray.sort(function (a, b) {
       //put the highest CPM first
@@ -203,12 +202,14 @@ function getWinningBid(bidArray) {
     });
 
     //the first item has the highest cpm
-    winningBid = bidArray[0];
-
-    //TODO : if winning bid CPM === 0 - we need to indicate no targeting should be set
+    // If winning bid CPM === 0 - we need to indicate no targeting should be set
+    if (bidArray[0].cpm === 0 ) {
+      return null;
+    }
+    return bidArray[0].bid;
   }
 
-  return winningBid.bid;
+  return null;
 }
 
 function setGPTAsyncTargeting(code, slot) {
@@ -301,8 +302,10 @@ function buildBidResponse(bidArray) {
   // push the winning bid into targeting map
   if (adUnitCode && bidArrayTargeting.length !== 0) {
     var winningBid = getWinningBid(bidArrayTargeting);
-    var keyValues = winningBid.adserverTargeting;
-    pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
+    if (winningBid) {
+      var keyValues = winningBid.adserverTargeting;
+      pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
+    }
   }
 
   return bidResponseArray;
