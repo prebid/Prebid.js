@@ -15,13 +15,13 @@ about:
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
-jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/1/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/5/embedded/html,result
 code_height: 2893
 code_lines: 133
 
 pid: 10
 ---
-
+{% include dev-docs/build-from-source-warning.md %}
 
 <br>
 <br>
