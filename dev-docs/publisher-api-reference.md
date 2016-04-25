@@ -2,12 +2,9 @@
 layout: page
 title: Publisher API References
 description: Publisher API References for Prebid.js Header Bidding
-
 top_nav_section: dev_docs
 nav_section: reference
-
 pid: 10
-
 ---
 
 <div class="bs-docs-section" markdown="1">
@@ -361,51 +358,15 @@ Request bids. When `adUnits` or `adUnitCodes` are not specified, request bids fo
 <a name="module_pbjs.addAdUnits"></a>
 
 ### pbjs.addAdUnits(Array)
-Define ad units and their corresponding header bidding bidders' tag Ids.
+
+Define ad units and their corresponding header bidding bidders' tag Ids.  For usage examples, see [Getting Started]({{site.baseurl}}/dev-docs/getting-started.html).
 
 **Kind**: static method of [pbjs](#module_pbjs)
-
 
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
 | --- | --- | --- |
 | Array | `string` &#124; `Array of strings` | of adUnits or single adUnit Object. |
-
-**Example:**
-
-{% highlight js %}
-
-var adUnits = [{
-    code: "div-gpt-ad-1438287399331-0",
-    sizes: [[300, 250], [728, 90]],
-    bids: [{
-        bidder: "openx",
-        params: {
-            pgid: "2342353",
-            unit: "234234",
-            jstag_url: "http://..."
-        }
-    },{
-        bidder: "appnexus",
-        params: {
-            placementId: "234235"
-        }
-    }]
-},{
-    code: "div-gpt-ad-1438287399331-1",
-    sizes: [[468, 60]],
-    bids: [{
-        bidder: "rubicon",
-        params: {
-            rp_account: "4934",
-            rp_site: "13945",
-            rp_zonesize: "23948-15"
-        }
-    }]
-}];
-pbjs.addAdUnits(adUnits);
-
-{% endhighlight %}
 
 **adUnit**
 
@@ -478,18 +439,9 @@ pbjs.bidderSettings = {
 
 <a name="default-keywords">
 
-##### Default keyword targeting prebid.js sends to your ad server:
+##### Default keyword targeting prebid.js sends to your ad server
 
-
-{: .table .table-bordered .table-striped }
-|   Default Key | Scope |    Description     |   Example  |
-| :----  |:--------| :-------| :-------|
-| hb_pb | Required | The price bucket. Used by the line item to target. | `2.10` |
-| hb_adid | Required | The ad Id. Used by the ad server creative to render ad. | `234234` |
-| hb_bidder | Required | The bidder code. Useful for logging and reporting to learn about which bidder has higher fill rate/CPM. | `rubicon` |
-
-
-
+{% include default-keyword-targeting.md %}
 
 #### 2. Keyword targeting for a specific bidder
 

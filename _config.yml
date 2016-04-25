@@ -87,6 +87,8 @@ nav_sections:
     code: studies
     name: LATEST STUDIES
 
+  # - top_nav: beta
+  #   code: BETA PRODUCTS
 
   - top_nav: adops
     code: tutorials

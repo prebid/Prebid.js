@@ -4,6 +4,7 @@ title: Download Prebid.js
 description: Documentation on how to download Prebid.js for header bidding.
 
 pid: 0
+show_disqus: true
 
 is_top_nav: yeah
 
@@ -17,21 +18,37 @@ nav_section: download
 
 <script>
 function submit_download() {
-    $('#download-button').text('Sending Request...')
     var form_data = get_form_data();
+
+    var alertStatus = $('#download-status');
+
+    if (!(form_data['email'] && form_data['company'])) {  
+      alertStatus.html('Email and Company fields are required.');
+      alertStatus.removeClass('hide');
+      return;
+    }
+    alertStatus.addClass('hide');
+
+    $('#download-button').html('<i class="glyphicon glyphicon-send"></i> Sending Request...').addClass('disabled');
     $.ajax({
         type: "POST",
         url: "http://client-test.devnxs.net/prebid",
-        data: JSON.stringify(form_data),
-        dataType: 'json'
+        //dataType: 'json',
+        data: form_data
     })
     .done(function() {
-      $('#download-button').text('Build Request Recieved');
+      var buttn = $('#download-button');
+      //buttn.addClass('btn-success');
+      buttn.html('<i class="glyphicon glyphicon-ok"></i> Email Sent!');
       console.log('Succeeded!');
-      alert( "success" );
     })
-    .fail(function() {
-      alert( "error" );
+    .fail(function(e) {
+      errorO = e;
+      console.log(e);
+      var buttn = $('#download-button');
+      buttn.html('<i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js');
+      buttn.removeClass('disabled');
+      alert('Ran into an issue.'); // + e.responseText
     });
 
     newDownload(form_data['email'], form_data['company'], form_data['bidders']);
@@ -60,14 +77,20 @@ function get_form_data() {
 
 </script>
 
+<style>
+.disabled {
+  color: #aaa;
+}
+</style>
+
 <div class="bs-docs-section" markdown="1">
 
-# Customize and Download Prebid.js
+# Customize and Download Prebid.js <span class="label label-warning" style="font-size:14px">Beta</span>
 
 {: .lead :}
 To improve the speed and load time of your site, build Prebid.js for only the header bidding partners you choose. 
 
-### Select header bidding partners
+### Option 1: Select header bidding partners
 
 
 <form>
@@ -156,14 +179,6 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box"> bRealTime
-      </label>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="checkbox">
-      <label>
         <input type="checkbox" bidderCode="springserve" class="bidder-check-box"> SpringServe
       </label>
     </div>
@@ -181,6 +196,38 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     <div class="checkbox">
       <label>
         <input type="checkbox" bidderCode="triplelift" class="bidder-check-box"> TripleLift
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box" disabled> bRealTime (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="sonobi" class="bidder-check-box" disabled> Sonobi (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="adequant" class="bidder-check-box" disabled> Adequant (Coming)
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox disabled">
+      <label>
+        <input type="checkbox" bidderCode="brightcom" class="bidder-check-box" disabled> Brightcom (Coming)
       </label>
     </div>
   </div>
@@ -232,8 +279,14 @@ To improve the speed and load time of your site, build Prebid.js for only the he
         </div>
 
         <div class="form-group">
-            <button type="button" id="download-button" class="btn btn-lg btn-primary" onclick="submit_download()">Receive Prebid.js</button>
+            <button type="button" id="download-button" class="btn btn-lg btn-primary" onclick="submit_download()"><i class="glyphicon glyphicon-envelope"></i> Receive Prebid.js</button>
         </div>
+
+        <div class="alert alert-warning hide" role="alert" id="download-status"></div>
+
+        <p>
+        Ran into problems? Email <code>info@prebid.org</code>
+        </p>
 
       </div>
       
@@ -242,11 +295,23 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   </div>
 </div>
 
+<div class="bs-docs-section" markdown="1">
 
+### Option 2: Use the pre-built Prebid.js
+
+The latest prebid.js is at version 0.7.0. File size: 57KB. This version contains all bidder adaptors in the above list. 
+
+{% highlight js %}
+
+<script src="//acdn.adnxs.com/prebid/static/0.7.0/prebid.js"></script>
+
+{% endhighlight %}
+
+</div>
 
 <div class="bs-docs-section" markdown="1">
 
-### Build from Source Code (More Advanced)
+### Option 3: Build from Source Code (More Advanced)
 
 {: .lead :}
 Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release. 

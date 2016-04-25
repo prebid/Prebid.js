@@ -4,7 +4,7 @@
 
 <script>
 
-    var PREBID_TIMEOUT = 600;
+    var PREBID_TIMEOUT = 1500;
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
@@ -39,7 +39,9 @@
         var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
         pbjsEl.async = true; 
         
-        pbjsEl.src = "//acdn.adnxs.com/prebid/anx/prebid.js";
+        //pbjsEl.src = "prebid.js";
+        //pbjsEl.src = "http://acdn.adnxs.com/prebid/static/0.4.1/prebid.js";
+        pbjsEl.src = "http://acdn.adnxs.com/prebid/prebid.js";
         var pbjsTargetEl = document.getElementsByTagName("head")[0];
         pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
     })();
@@ -60,30 +62,39 @@
         */
         var adUnits = [{
             code: '/19968336/header-bid-tag-0',
-            sizes: [[300, 250], [300, 600]],
-            bids: [
-                // 1 ad unit can be targeted by multiple bids.
-                {
-                    bidder: 'appnexus',
-                    params: {
-                       placementId: '4799418'
-                    }
+            sizes: [[300, 250], [300,600]],
+            bids: [{
+                bidder: 'rubicon',
+                params: {
+                    accountId: "14062",
+                    siteId: "70608",
+                    zoneId: "335918",
                 }
-
+            }
+                // 1 ad unit can be targeted by multiple bids.
+                // {
+                //     bidder: 'appnexus',
+                //     params: {
+                //        placementId: '4799418',
+                //        referrer: 'appnexus.com',
+                //        foo: 'ahaha'
+                //     }
+                // }
+                
             ]
         },{
             code: '/19968336/header-bid-tag1',
-            sizes: [[728, 90], [970, 90]],
+            sizes: [[300, 250]],
             bids: [
                 {
-                    bidder: 'appnexus',
+                    bidder: 'pubmatic',
                     params: {
-                       placementId: '4799418'
+                        publisherId: 39741,
+                        adSlot: '39620189@300x250'
                     }
                 }
             ]
         }];
-
         pbjs.addAdUnits(adUnits);
 
         pbjs.addCallback('adUnitBidsBack', function(adUnitCode){
@@ -227,6 +238,8 @@
             googletag.cmd.push(function() { googletag.display('div-gpt-ad-1438287399331-1'); });
         </script>
     </div>
+
+
 
 
 </body>
