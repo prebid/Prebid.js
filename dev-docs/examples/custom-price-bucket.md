@@ -14,13 +14,14 @@ about:
 - Integration with DFP's GPT single request asynchronous mode.
 - One set of line items for all bidders
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/7/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/bp9magow/11/embedded/html,result
 code_height: 2977
 code_lines: 137
 
 pid: 10
 ---
 
+{% include dev-docs/build-from-source-warning.md %}
 
 <br>
 <br>
@@ -33,7 +34,6 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 
 </div>
 
-<br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>

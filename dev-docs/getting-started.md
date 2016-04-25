@@ -19,14 +19,11 @@ nav_section: quick-start
 
 The easiest way to get started with Prebid.js is using the following JSFiddle example. Go to the "Result" tab to see the keyword targeting for this header auction.
 
-* **[Prebid.js JSFiddle](http://jsfiddle.net/hqhbLdxn/1/)**
+{% include dev-docs/build-from-source-warning.md %}
 
-<iframe width="100%" height="680" src="//jsfiddle.net/prebid/hqhbLdxn/8/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+For more information on how to setup your ad server, see the [Ad Ops Guide](/adops.html).
 
-<br>
-
-{: .bg-info :}
-Note that the above JSFiddle code is not integrated with an ad server. To move to the next section, you will **need access to your ad server** for setting up line items. For more information on how to setup your ad server, go to [Adops Guide](/adops.html).
+<iframe width="100%" height="680" src="//jsfiddle.net/prebid/hqhbLdxn/61/embedded/html,result" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 <div class="bs-docs-section" markdown="1">
 

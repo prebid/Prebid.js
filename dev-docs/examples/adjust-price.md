@@ -16,7 +16,7 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 
-jsfiddle_link: jsfiddle.net/prebid/hn06j4f4/2/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/hn06j4f4/3/embedded/html,result
 
 code_height: 2536
 code_lines: 116
@@ -24,7 +24,7 @@ code_lines: 116
 pid: 80
 ---
 
-<!-- jsfiddle.net/prebid/hn06j4f4/embedded/html,result -->
+{% include dev-docs/build-from-source-warning.md %}
 
 <br>
 <br>
@@ -48,7 +48,6 @@ Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check t
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
 <br><br><br><br><br><br>
-<br><br><br>
 
 <div markdown="1">
 #### Line 62 to 64: Adjust Bid Price
