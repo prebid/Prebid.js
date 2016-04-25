@@ -291,6 +291,10 @@ img {
   border-radius: 5px;
 }
 
+.bg-warning {
+  padding: 10px;
+  border-radius: 5px;
+}
 
 table.jsfiddle-line-number {
     width: 100%;
