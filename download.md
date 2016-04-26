@@ -88,7 +88,7 @@ function get_form_data() {
 # Customize and Download Prebid.js <span class="label label-warning" style="font-size:14px">Beta</span>
 
 {: .lead :}
-To improve the speed and load time of your site, build Prebid.js for only the header bidding partners you choose. 
+To improve the speed and load time of your site, build Prebid.js for only the header bidding partners you choose.
 
 ### Option 1: Select header bidding partners
 
@@ -201,33 +201,41 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   </div>
 
   <div class="col-md-4">
-    <div class="checkbox disabled">
+    <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box" disabled> bRealTime (Coming)
+        <input type="checkbox" bidderCode="brealtime" class="bidder-check-box"> bRealTime
       </label>
     </div>
   </div>
 
   <div class="col-md-4">
-    <div class="checkbox disabled">
+    <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="sonobi" class="bidder-check-box" disabled> Sonobi (Coming)
+        <input type="checkbox" bidderCode="sonobi" class="bidder-check-box"> Sonobi
       </label>
     </div>
   </div>
 
   <div class="col-md-4">
-    <div class="checkbox disabled">
+    <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="adequant" class="bidder-check-box" disabled> Adequant (Coming)
+        <input type="checkbox" bidderCode="adequant" class="bidder-check-box"> Adequant
       </label>
     </div>
   </div>
 
   <div class="col-md-4">
-    <div class="checkbox disabled">
+    <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="brightcom" class="bidder-check-box" disabled> Brightcom (Coming)
+        <input type="checkbox" bidderCode="brightcom" class="bidder-check-box"> Brightcom
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="pagescience" class="bidder-check-box"> Pagescience
       </label>
     </div>
   </div>
@@ -236,13 +244,13 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version: 0.7.0)
+(Version: 0.8.1)
 </p>
 
 <div class="form-group">
-    
+
   <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
-    
+
 </div>
 
 </form>
@@ -256,9 +264,9 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-      
+
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      
+
         <h4 class="modal-title" id="myModalLabel">Download Custom Built Prebid.js</h4>
       </div>
 
@@ -267,7 +275,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
         <div class="lead">
           The download link will be in your inbox in a few minutes. Check the spam folder too!
         </div>
-        
+
 
         <div class="form-group col-md-6">
             <label for="input-email">Email address</label>
@@ -289,54 +297,45 @@ To improve the speed and load time of your site, build Prebid.js for only the he
         </p>
 
       </div>
-      
+
 
     </div>
   </div>
 </div>
 
-<div class="bs-docs-section" markdown="1">
-
-### Option 2: Use the pre-built Prebid.js
-
-The latest prebid.js is at version 0.7.0. File size: 57KB. This version contains all bidder adaptors in the above list. 
-
-{% highlight js %}
-
-<script src="//acdn.adnxs.com/prebid/static/0.7.0/prebid.js"></script>
-
-{% endhighlight %}
-
-</div>
 
 <div class="bs-docs-section" markdown="1">
 
-### Option 3: Build from Source Code (More Advanced)
+### Option 2: Build from Source Code (More Advanced)
 
 {: .lead :}
-Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release. 
+Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release.
 
 Unzip the source code folder and you will find the file `package.json`. Inside `package.json` you can specify which adapters to be included in the build to optimize file size of `prebid.js`
 
 Pacakge.json:
 {% highlight js %}
 
-  "adapters": [
-    "adform",
-    "aol",
-    "appnexus",
-    "indexExchange",
-    "openx",
-    "pubmatic",
-    "pulsepoint",
-    "rubicon",
-    "rubiconLegacy",
-    "sovrn",
-    "springserve",
-    "yieldbot",
-    "nginad",
-    "triplelift"
-  ]
+"adapters": [
+  "adequant",
+  "adform",
+  "aol",
+  "appnexus",
+  "indexExchange",
+  "openx",
+  "pubmatic",
+  "pulsepoint",
+  "rubicon",
+  "sonobi",
+  "sovrn",
+  "springserve",
+  "triplelift",
+  "yieldbot",
+  "nginad",
+  "brightcom",
+  { "appnexus": {"alias": "brealtime"} },
+  { "appnexus": {"alias": "pagescience"} }
+]
 
 {% endhighlight %}
 
@@ -345,4 +344,3 @@ Pacakge.json:
 3. Get the build from `build/dist/prebid.js`
 
 **Note**: You need to have at least `node.js 4.x` or greater installed to be able to run the `gulp` commands.
-
