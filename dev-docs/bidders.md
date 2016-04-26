@@ -308,6 +308,8 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 * You are required to pass either an ad_unit *or* placement_id value
 * Your account manager will let you know which to use
+* If you require assistance with any of our open source code, please email support at github@sonobi.com
+
 
 </div>
 
