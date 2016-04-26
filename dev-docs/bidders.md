@@ -82,7 +82,7 @@ These parameters in the bidReponse object are common across all bidders.
 | `alias` | optional | The placement alias from AOL. Must be unique per page. | `"desktop_articlepage_something_box_300_250"` |
 | `server` | optional | The server domain name. Default is adserver.adtechus.com. EU customers must use adserver.adtech.de. | `"adserver.adtech.de"` |
 | `sizeId` | optional | The size ID from AOL. | `"170"` |
-| `bidfloor` | optional | Dynamic bid floor | `0.80` |
+| `bidFloor` | optional | Dynamic bid floor (added in Prebid 0.8.1) | `"0.80"` |
 
 (The first of the `sizes` set in `adUnit` object will also apply to the AOL bid requests.)
 
