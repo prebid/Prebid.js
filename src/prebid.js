@@ -22,7 +22,6 @@ var objectType_string = 'string';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
-var pb_preBidders = [];
 var pb_placements = [];
 var pb_bidderMap = {};
 var pb_targetingMap = {};
@@ -37,7 +36,7 @@ var eventValidators = {
 /* Public vars */
 
 //default timeout for all bids
-pbjs.bidderTimeout = pbjs.bidderTimeout || 3000;
+pbjs.bidderTimeout = pbjs.bidderTimeout || 5000;
 pbjs.logging = pbjs.logging || false;
 
 //let the world know we are loaded
@@ -80,117 +79,11 @@ function processQue() {
   }
 }
 
-/*
- *   Main method entry point method
- */
-function init(timeout, adUnitCodeArr) {
-  var cbTimeout = 0;
-  if (typeof timeout === objectType_undefined || timeout === null) {
-    cbTimeout = pbjs.bidderTimeout;
-  } else {
-    cbTimeout = timeout;
-  }
-
-  if (!isValidAdUnitSetting()) {
-    utils.logMessage('No adUnits configured. No bids requested.');
-    return;
-  }
-
-  //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
-
-  //parse settings into internal vars
-  if (adUnitCodeArr && utils.isArray(adUnitCodeArr)) {
-    for (var k = 0; k < adUnitCodeArr.length; k++) {
-      for (var i = 0; i < pbjs.adUnits.length; i++) {
-        if (pbjs.adUnits[i].code === adUnitCodeArr[k]) {
-          pb_placements.push(pbjs.adUnits[i]);
-        }
-      }
-    }
-
-    loadPreBidders();
-    sortAndCallBids();
-  } else {
-    pb_placements = pbjs.adUnits;
-
-    //Aggregrate prebidders by their codes
-    loadPreBidders();
-
-    //sort and call // default no sort
-    sortAndCallBids();
-  }
-}
-
-function isValidAdUnitSetting() {
-  return !!(pbjs.adUnits && pbjs.adUnits.length !== 0);
-
-}
-
 function timeOutBidders() {
   if (!pb_bidsTimedOut) {
     pb_bidsTimedOut = true;
     var timedOutBidders = bidmanager.getTimedOutBidders();
     events.emit(BID_TIMEOUT, timedOutBidders);
-  }
-}
-
-function sortAndCallBids(sortFunc) {
-  //Translate the bidder map into array so we can sort later if wanted
-  var pbArr = utils._map(pb_bidderMap, function (v) {
-    return v;
-  });
-
-  if (typeof sortFunc === objectType_function) {
-    pbArr.sort(sortFunc);
-  }
-
-  adaptermanager.callBids(pbArr);
-}
-
-function loadPreBidders() {
-
-  for (var i = 0; i < pb_placements.length; i++) {
-    var bids = pb_placements[i][CONSTANTS.JSON_MAPPING.PL_BIDS];
-    var placementCode = pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE];
-    storeBidRequestByBidder(pb_placements[i][CONSTANTS.JSON_MAPPING.PL_CODE], pb_placements[i][CONSTANTS.JSON_MAPPING.PL_SIZE], bids);
-
-    //store pending response by placement
-    bidmanager.addBidResponse(placementCode);
-  }
-
-  for (i = 0; i < pb_preBidders.length; i++) {
-    pb_preBidders[i].loadPreBid();
-  }
-
-  //send a reference to bidmanager
-  bidmanager.setBidderMap(pb_bidderMap);
-}
-
-function storeBidRequestByBidder(placementCode, sizes, bids) {
-  for (var i = 0; i < bids.length; i++) {
-
-    var currentBid = bids[i];
-    currentBid.placementCode = placementCode;
-    currentBid.sizes = sizes;
-
-    //look up bidder on map
-    var bidderName = bids[i][CONSTANTS.JSON_MAPPING.BD_BIDDER];
-    var bidderObj = pb_bidderMap[bidderName];
-    if (typeof bidderObj === objectType_undefined) {
-      //bid not found
-      var partnerBids = {
-        bidderCode: bidderName,
-        bids: []
-      };
-      partnerBids.bids.push(currentBid);
-
-      //put bidder on map with bids
-      pb_bidderMap[bidderName] = partnerBids;
-    } else {
-      bidderObj.bids.push(currentBid);
-    }
-
   }
 }
 
@@ -210,7 +103,7 @@ function getWinningBid(bidArray) {
   }
 }
 
-function setGPTAsyncTargeting(code, slot) {
+function setGPTAsyncTargeting(slot) {
   //get the targeting that is already configured
   const keyStrings = getTargetingfromGPTIdentifier(slot);
   const bids = pbjs.getBidResponses(slot.getAdUnitPath());
@@ -334,11 +227,6 @@ function resetBids() {
   pb_placements = [];
   pb_targetingMap = {};
   pb_bidsTimedOut = false;
-}
-
-function requestAllBids(timeout) {
-  resetBids();
-  init(timeout);
 }
 
 function checkDefinedPlacement(id) {
@@ -499,10 +387,11 @@ pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
     //get all the slots from google tag
     slots = window.googletag.pubads().getSlots();
     for (i = 0; i < slots.length; i++) {
-      var adUnitCode = slots[i].getSlotElementId();
-      if (adUnitCode) {
+      const adUnitCode = slots[i].getSlotElementId();
+      const adUnitPath = slots[i].getAdUnitPath();
+      if (adUnitCode || adUnitPath) {
         //placementBids = getBidsFromGTPIdentifier(slots[i]);
-        setGPTAsyncTargeting(adUnitCode, slots[i]);
+        setGPTAsyncTargeting(slots[i]);
       }
     }
   }
@@ -550,13 +439,48 @@ function getTargetingKeysAsBidder(bidArray) {
   return pairs;
 }
 
+function uniques(value, index, arry) {
+  return arry.indexOf(value) === index;
+}
+
+function getPresetTargeting() {
+  return window.googletag.pubads().getSlots().map(slot => {
+    return {
+      [slot.getAdUnitPath()]: slot.getTargeting()
+    };
+  });
+}
+
+function getWinningBidTargeting() {
+  const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
+    .filter(uniques)
+    .map(adUnitCode => pbjs._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+      .reduce((prev, curr) => prev.cpm < curr.cpm ? curr : prev,
+        {
+          adUnitCode: adUnitCode,
+          cpm: 0,
+          adserverTargeting: {}
+        }));
+  return winners.map(winner => {
+    return { [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
+      .map(key => { return { [key]: winner.adserverTargeting[key] }; }) };
+  });
+}
+
+// TODO function getBidLandscapeTargeting
 /**
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function (codeArr) {
+  var debug = Object.assign(
+  getPresetTargeting(),
+  getWinningBidTargeting()
+);
+
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
-  pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
+  //pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -670,45 +594,29 @@ pbjs.removeAdUnit = function (adUnitCode) {
 };
 
 /**
- * Request bids ad-hoc. This function does not add or remove adUnits already configured.
- * @param  {Object} requestObj
- * @param {string[]} requestObj.adUnitCodes  adUnit codes to request. Use this or requestObj.adUnits
- * @param {object[]} requestObj.adUnits AdUnitObjects to request. Use this or requestObj.adUnitCodes
- * @param {number} [requestObj.timeout] Timeout for requesting the bids specified in milliseconds
- * @param {function} [requestObj.bidsBackHandler] Callback to execute when all the bid responses are back or the timeout hits.
- * @alias module:pbjs.requestBids
+ *
+ * @param bidsBackHandler
+ * @param timeout
  */
-pbjs.requestBids = function (requestObj) {
-  utils.logInfo('Invoking pbjs.requestBids', arguments);
-  if (!requestObj) {
-    requestAllBids();
-  } else {
-    var adUnitCodes = requestObj.adUnitCodes;
-    var adUnits = requestObj.adUnits;
-    var timeout = requestObj.timeout;
-    var bidsBackHandler = requestObj.bidsBackHandler;
-    var adUnitBackup = pbjs.adUnits.slice(0);
+pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
+  const cbTimeout = timeout || pbjs.bidderTimeout;
 
-    if (typeof bidsBackHandler === objectType_function) {
-      bidmanager.addOneTimeCallback(bidsBackHandler);
-    }
-
-    if (adUnitCodes && utils.isArray(adUnitCodes)) {
-      resetBids();
-      init(timeout, adUnitCodes);
-
-    } else if (adUnits && utils.isArray(adUnits)) {
-      resetBids();
-      pbjs.adUnits = adUnits;
-      init(timeout);
-    } else {
-      //request all ads
-      requestAllBids(timeout);
-    }
-
-    pbjs.adUnits = adUnitBackup;
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler);
   }
 
+  utils.logInfo('Invoking pbjs.requestBids', arguments);
+
+  // not sure of this logic
+  if (!pbjs.adUnits && pbjs.adUnits.length !== 0) {
+    utils.logMessage('No adUnits configured. No bids requested.');
+    return;
+  }
+
+  //set timeout for all bids
+  setTimeout(bidmanager.executeCallback, cbTimeout);
+
+  adaptermanager.callBids();
 };
 
 /**
@@ -998,6 +906,12 @@ pbjs.setPriceGranularity = function (granularity) {
 
 pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
+};
+
+pbjs.getBidRequest = function (bidId) {
+  // look at optimizing this
+  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === bidId))
+    .find(bid => bid)[0];
 };
 
 processQue();

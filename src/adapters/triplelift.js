@@ -15,7 +15,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var bidsCount = tlReq.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount('triplelift',bidsCount);
+    //bidmanager.setExpectedBidsCount('triplelift',bidsCount);
 
     for (var i = 0; i < bidsCount; i++) {
       var bidReqeust = tlReq[i];

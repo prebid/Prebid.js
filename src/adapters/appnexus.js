@@ -10,17 +10,18 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
 
   baseAdapter.callBids = function (params) {
-    var bidCode = baseAdapter.getBidderCode();
+    //var bidCode = baseAdapter.getBidderCode();
 
     var anArr = params.bids;
-    var bidsCount = anArr.length;
+
+    //var bidsCount = anArr.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount(bidCode, bidsCount);
+    //bidmanager.setExpectedBidsCount(bidCode, bidsCount);
 
-    for (var i = 0; i < bidsCount; i++) {
+    for (var i = 0; i < anArr; i++) {
       var bidRequest = anArr[i];
-      var callbackId = utils.getUniqueIdentifierStr();
+      var callbackId = bidRequest.bidId;
       adloader.loadScript(buildJPTCall(bidRequest, callbackId));
 
       //store a reference to the bidRequest from the callback id
