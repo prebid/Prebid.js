@@ -482,7 +482,7 @@ describe('Utils', function () {
     });
 
     it('return iframe - src', function () {
-      assert.deepEqual(output.src, 'about:self');
+      assert.deepEqual(output.src, 'about:blank');
     });
 
     it('return iframe - style', function () {

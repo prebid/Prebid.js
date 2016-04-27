@@ -15,26 +15,7 @@ var SovrnAdapter = function SovrnAdapter() {
   function _callBids(params) {
     var sovrnBids = params.bids || [];
 
-    // De-dupe by tagid then issue single bid request for all bids
-    _requestBids(_getUniqueTagids(sovrnBids));
-  }
-
-  // filter bids to de-dupe them?
-  function _getUniqueTagids(bids) {
-    var key;
-    var map = {};
-    var Tagids = [];
-    bids.forEach(function (bid) {
-      map[utils.getBidIdParamater('tagid', bid.params)] = bid;
-    });
-
-    for (key in map) {
-      if (map.hasOwnProperty(key)) {
-        Tagids.push(map[key]);
-      }
-    }
-
-    return Tagids;
+    _requestBids(sovrnBids);
   }
 
   function _requestBids(bidReqs) {
@@ -89,6 +70,7 @@ var SovrnAdapter = function SovrnAdapter() {
     };
 
     var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
+      '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
   }
@@ -143,21 +125,17 @@ var SovrnAdapter = function SovrnAdapter() {
               //store bid response
               //bid status is good (indicating 1)
               bid = bidfactory.createBid(1);
-              bid.creative_id = sovrnBid.Id;
+              bid.creative_id = sovrnBid.id;
               bid.bidderCode = 'sovrn';
               bid.cpm = responseCPM;
 
               //set ad content + impression url
               // sovrn returns <script> block, so use bid.ad, not bid.adurl
               bid.ad = decodeURIComponent(responseAd + responseNurl);
-              var sizeArrayLength = bidObj.sizes.length;
-              if (sizeArrayLength === 2 && typeof bidObj.sizes[0] === 'number' && typeof bidObj.sizes[1] === 'number') {
-                bid.width = bidObj.sizes[0];
-                bid.height = bidObj.sizes[1];
-              } else {
-                bid.width = bidObj.sizes[0][0];
-                bid.height = bidObj.sizes[0][1];
-              }
+
+              // Set width and height from response now
+              bid.width = parseInt(sovrnBid.w);
+              bid.height = parseInt(sovrnBid.h);
 
               bidmanager.addBidResponse(placementCode, bid);
 

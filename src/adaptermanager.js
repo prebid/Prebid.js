@@ -1,21 +1,10 @@
 /** @module adaptermanger */
 
-var RubiconAdapter = require('./adapters/rubicon.js');
-var AppNexusAdapter = require('./adapters/appnexus.js');
-var AolAdapter = require('./adapters/aol');
-var OpenxAdapter = require('./adapters/openx');
-var PubmaticAdapter = require('./adapters/pubmatic.js');
-var YieldbotAdapter = require('./adapters/yieldbot');
-var IndexExchange = require('./adapters/indexExchange');
-var Sovrn = require('./adapters/sovrn');
-var PulsePointAdapter = require('./adapters/pulsepoint.js');
-var WideOrbitAdapter = require('./adapters/wideorbit.js');
-var SpringServeAdapter = require('./adapters/springserve.js');
-var AdformAdapter = require('./adapters/adform');
 var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
+import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -75,9 +64,15 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        var newAdapter = bidAdaptor.createNew();
-        newAdapter.setBidderCode(alias);
-        this.registerBidAdapter(newAdapter, alias);
+        let newAdapter = null;
+        if (bidAdaptor instanceof BaseAdapter) {
+          //newAdapter = new bidAdaptor.constructor(alias);
+          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        } else {
+          newAdapter = bidAdaptor.createNew();
+					newAdapter.setBidderCode(alias);
+					this.registerBidAdapter(newAdapter, alias);
+        }
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
@@ -87,19 +82,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-// Register the bid adaptors here
-exports.registerBidAdapter(new RubiconAdapter(), 'rubicon');
-exports.registerBidAdapter(new AppNexusAdapter.createNew(), 'appnexus');
-exports.registerBidAdapter(new OpenxAdapter(), 'openx');
-exports.registerBidAdapter(new PubmaticAdapter(), 'pubmatic');
-exports.registerBidAdapter(new YieldbotAdapter(), 'yieldbot');
-exports.registerBidAdapter(new IndexExchange(), 'indexExchange');
-exports.registerBidAdapter(new SpringServeAdapter(), 'springserve');
-exports.registerBidAdapter(new Sovrn(), 'sovrn');
-exports.registerBidAdapter(new AolAdapter(), 'aol');
-exports.registerBidAdapter(new PulsePointAdapter(), 'pulsepoint');
-exports.registerBidAdapter(new WideOrbitAdapter(), 'wideorbit');
+/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
 
-//default bidder alias
-exports.aliasBidAdapter('appnexus', 'brealtime');
-exports.registerBidAdapter(new AdformAdapter(), 'adform');
+// here be adapters
+/** END INSERT ADAPTERS */

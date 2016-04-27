@@ -1,8 +1,10 @@
+'use strict';
+
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
-var webpack = require('gulp-webpack');
+var webpack = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var jshint = require('gulp-jshint');
 var clean = require('gulp-clean');
@@ -16,27 +18,35 @@ var concat = require('gulp-concat');
 var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
-var babel = require('gulp-babel');
+var replace = require('gulp-replace');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
-var prebidSrcLocation = './src/prebid.js';
-var pkg = require('./package.json');
+var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var packageNameVersion = pkg.name + '_' + pkg.version;
-var banner = '/* <%= pkg.name %> v<%= pkg.version %> \n' + dateString + ' */\n';
+var packageNameVersion = prebid.name + '_' + prebid.version;
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
-gulp.task('serve', ['clean', 'quality', 'webpack', 'watch', 'test']);
+gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
-gulp.task('build', ['clean', 'quality', 'webpack', 'zip']);
+gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
-  return gulp.src(['build', 'test/app/**/*.js', 'test/app/index.html'], {
+  return gulp.src(['build'], {
       read: false
     })
     .pipe(clean());
+});
+
+gulp.task('devpack', function () {
+  webpackConfig.devtool = 'source-map';
+  return gulp.src(['src/prebid.js'])
+    .pipe(webpack(webpackConfig))
+    .pipe(replace('$prebid.version$', prebid.version))
+    .pipe(gulp.dest('build/dev'))
+    .pipe(connect.reload());
 });
 
 gulp.task('webpack', function () {
@@ -46,14 +56,13 @@ gulp.task('webpack', function () {
     webpackConfig.output.filename = 'prebid.' + argv.tag + '.js';
   }
 
-  return gulp.src('src/**/*.js')
-    .pipe(header(banner, { pkg: pkg }))
+  webpackConfig.devtool = null;
+
+  return gulp.src(['src/prebid.js'])
     .pipe(webpack(webpackConfig))
-    .pipe(babel({
-      presets: ['es2015']
-    }))
-    .pipe(gulp.dest('build/dev'))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
+    .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
@@ -73,9 +82,6 @@ gulp.task('test', function () {
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
   return gulp.src('lookAtKarmaConfJS')
-    .pipe(babel({
-      presets: ['es2015']
-    }))
     .pipe(karma({
       browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
       configFile: 'karma.conf.js',
@@ -99,9 +105,9 @@ gulp.task('coverage', function (done) {
 // Watch Task with Live Reload
 gulp.task('watch', function () {
 
-  gulp.watch(['test/spec/**/*.js'], ['webpack', 'test']);
+  gulp.watch(['test/spec/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
-  gulp.watch(['src/**/*.js'], ['webpack', 'test']);
+  gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
     port: 9999,
     root: './',
@@ -109,8 +115,7 @@ gulp.task('watch', function () {
   });
 });
 
-gulp.task('quality', ['hint', 'jscs'], function () {
-});
+gulp.task('quality', ['hint', 'jscs']);
 
 gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
@@ -122,7 +127,8 @@ gulp.task('jscs', function () {
   return gulp.src('src/**/*.js')
     .pipe(jscs({
       configPath: '.jscsrc'
-    }));
+    }))
+    .pipe(jscs.reporter());
 });
 
 gulp.task('clean-docs', function () {

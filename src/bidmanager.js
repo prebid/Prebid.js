@@ -24,11 +24,9 @@ var bidResponseReceivedCount = {};
 exports.bidResponseReceivedCount = bidResponseReceivedCount;
 
 var expectedBidsCount = {};
-
 var _allBidsAvailable = false;
-
 var _callbackExecuted = false;
-
+var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 var bidderStartTimes = {};
 
@@ -134,6 +132,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.cpm = 0;
     }
 
+    // alias the bidderCode to bidder;
+    // NOTE: this is to match documentation
+    // on custom k-v targeting
+    bid.bidder = bid.bidderCode;
+
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
@@ -146,14 +149,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
+    bid.pbAg = priceStringsObj.auto;
 
     //put adUnitCode into bid
     bid.adUnitCode = adUnitCode;
-
-    // alias the bidderCode to bidder;
-    // NOTE: this is to match documentation
-    // on custom k-v targeting
-    bid.bidder = bid.bidderCode;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
@@ -168,7 +167,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     //store by placement ID
-    if (adUnitCode && pbBidResponseByPlacement[adUnitCode]) {
+    if (adUnitCode && pbBidResponseByPlacement[adUnitCode] && !utils.isEmpty(pbBidResponseByPlacement[adUnitCode])) {
       //update bid response object
       bidResponseObj = pbBidResponseByPlacement[adUnitCode];
 
@@ -208,20 +207,8 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
   var keyValues = {};
   var bidder_settings = pbjs.bidderSettings || {};
 
-  //1) set keys from specific bidder setting if they exist
-  if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
-    custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
-  }
-
-  //2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
-  else if (defaultBidderSettingsMap[bidderCode]) {
-    setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
-    custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
-  }
-
-  //3) set the keys from "standard" setting or from prebid defaults
-  else if (custBidObj && bidder_settings) {
+  //1) set the keys from "standard" setting or from prebid defaults
+  if (custBidObj && bidder_settings) {
     if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
       bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
         adserverTargeting: [
@@ -238,7 +225,15 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
           }, {
             key: 'hb_pb',
             val: function (bidResponse) {
-              return bidResponse.pbMg;
+              if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+                return bidResponse.pbAg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+                return bidResponse.pbLg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+                return bidResponse.pbMg;
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+                return bidResponse.pbHg;
+              }
             }
           }, {
             key: 'hb_size',
@@ -254,6 +249,18 @@ exports.getKeyValueTargetingPairs = function (bidderCode, custBidObj) {
     setKeys(keyValues, bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD], custBidObj);
   }
 
+  //2) set keys from specific bidder setting override if they exist
+  if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
+    custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
+  }
+
+  //2) set keys from standard setting. NOTE: this API doesn't seeem to be in use by any Adapter currently
+  else if (defaultBidderSettingsMap[bidderCode]) {
+    setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
+    custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
+  }
+
   return keyValues;
 };
 
@@ -264,6 +271,10 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   utils._each(targeting, function (kvPair) {
     var key = kvPair.key;
     var value = kvPair.val;
+
+    if (keyValues[key]) {
+      utils.logWarn('The key: ' + key + ' is getting ovewritten');
+    }
 
     if (utils.isFn(value)) {
       try {
@@ -278,6 +289,17 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
   return keyValues;
 }
+
+exports.setPriceGranularity = function setPriceGranularity(granularity) {
+  var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
+  if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
+    _granularity = granularity;
+  } else {
+    utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
+      ' `medium` as default.');
+    _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+  }
+};
 
 exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;

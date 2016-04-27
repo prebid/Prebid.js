@@ -15,6 +15,11 @@ var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
 var toString = Object.prototype.toString;
+let infoLogger = null;
+try {
+  infoLogger = console.info.bind(window.console);
+}
+catch (e) {}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -172,6 +177,24 @@ exports.getTopWindowUrl = function () {
   }
 };
 
+exports.logWarn = function (msg) {
+  if (debugTurnedOn() && console.warn) {
+    console.warn('WARNING: ' + msg);
+  }
+};
+
+exports.logInfo = function(msg, args) {
+  if (debugTurnedOn() && hasConsoleLogger()) {
+    if (infoLogger) {
+      if (!args || args.length === 0) {
+        args = '';
+      }
+
+      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '),  args);
+    }
+  }
+};
+
 exports.logMessage = function (msg) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     console.log('MESSAGE: ' + msg);
@@ -220,8 +243,8 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
   f.style.border = '0';
   f.scrolling = 'no';
   f.frameBorder = '0';
-  f.src = 'about:self';
-  f.style = 'display:none';
+  f.src = 'about:blank';
+  f.style.display = 'none';
   return f;
 };
 
@@ -244,34 +267,52 @@ exports.getPriceBucketString = function (cpm) {
   var low = '';
   var med = '';
   var high = '';
+  var auto = '';
+
   var cpmFloat = 0;
   var returnObj = {
     low: low,
     med: med,
-    high: high
+    high: high,
+    auto: auto
   };
   try {
     cpmFloat = parseFloat(cpm);
     if (cpmFloat) {
-      //round to closet .5
+      //round to closest .5
       if (cpmFloat > _lgPriceCap) {
         returnObj.low = _lgPriceCap.toFixed(2);
       } else {
         returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
       }
 
-      //round to closet .1
+      //round to closest .1
       if (cpmFloat > _mgPriceCap) {
         returnObj.med = _mgPriceCap.toFixed(2);
       } else {
         returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
       }
 
-      //round to closet .01
+      //round to closest .01
       if (cpmFloat > _hgPriceCap) {
         returnObj.high = _hgPriceCap.toFixed(2);
       } else {
         returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
+      }
+
+      // round auto default sliding scale
+      if (cpmFloat <= 5) {
+        // round to closest .05
+        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
+      } else if (cpmFloat <= 10) {
+        // round to closest .10
+        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
+      } else if (cpmFloat <= 20) {
+        // round to closest .50
+        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
+      } else {
+        // cap at 20.00
+        returnObj.auto = '20.00';
       }
     }
   } catch (e) {
@@ -434,4 +475,46 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   } else {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
+};
+/**
+ * Creates a snippet of HTML that retrieves the specified `url`
+ * @param  {string} url URL to be requested
+ * @return {string}     HTML snippet that contains the img src = set to `url`
+ */
+exports.createTrackPixelHtml = function (url) {
+  if (!url) {
+    return '';
+  }
+
+  let escapedUrl = encodeURI(url);
+  let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
+  img += '<img src="' + escapedUrl + '"></div>';
+  return img;
+};
+
+/**
+ * Returns iframe document in a browser agnostic way
+ * @param  {object} iframe reference
+ * @return {object}        iframe `document` reference
+ */
+exports.getIframeDocument = function (iframe) {
+  if (!iframe) {
+    return;
+  }
+
+  let doc;
+  try {
+    if (iframe.contentWindow) {
+      doc = iframe.contentWindow.document;
+    } else if (iframe.contentDocument.document) {
+      doc = iframe.contentDocument.document;
+    } else {
+      doc = iframe.contentDocument;
+    }
+  }
+  catch (e) {
+    this.logError('Cannot get iframe document', e);
+  }
+
+  return doc;
 };
