@@ -1,4 +1,5 @@
 ---
+redirect_from: "/getting-started.html"
 layout: page
 title: Getting Started
 head_title: Getting Started with Prebid.js for Header Bidding
