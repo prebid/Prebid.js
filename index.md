@@ -106,6 +106,10 @@ description: A free and open source library for publishers to quickly implement 
       </div>
 
       <div class="col-xs-6 col-sm-4">
+        <h3>Sonobi</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-4">
         <h3>Sovrn</h3>
       </div>
 
