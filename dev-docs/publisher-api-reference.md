@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Publisher API References
-description: Publisher API References for Prebid.js Header Bidding
+title: Publisher API Reference
+description: Publisher API Reference for Prebid.js Header Bidding
 top_nav_section: dev_docs
 nav_section: reference
 pid: 10
@@ -9,23 +9,23 @@ pid: 10
 
 <div class="bs-docs-section" markdown="1">
 
-# Function Reference
+# Publisher API Reference
 
-Version 0.3.1
+This page has documentation for the public API methods of Prebid.js.
 
 <a name="module_pbjs"></a>
-
 
 ## pbjs
 
 * [pbjs](#module_pbjs)
 
-  * [.getAdserverTargeting()](#module_pbjs.getAdserverTargeting) ⇒ `object`
-  * [.getAdserverTargetingForAdUnitCode([adunitCode])](#module_pbjs.getAdserverTargetingForAdUnitCode) ⇒ `object`
-  * [.getBidResponses()](#module_pbjs.getBidResponses) ⇒ `object`
+  * [.getAdserverTargeting()](#module_pbjs.getAdserverTargeting) ⇒ `Object`
+  * [.getAdserverTargetingForAdUnitCode([adUnitCode])](#module_pbjs.getAdserverTargetingForAdUnitCode) ⇒ `Object`
+  * [.getBidResponses()](#module_pbjs.getBidResponses) ⇒ `Object`
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
-  * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `bool`
+  * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
+  * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
@@ -300,6 +300,45 @@ Returns a bool if all the bids have returned or timed out
 **Kind**: static method of [pbjs](#module_pbjs)
 
 **Returns**: `bool` - all bids available
+
+<hr class="full-rule">
+
+<a name="module_pbjs.enableSendAllBids"></a>
+
+### pbjs.enableSendAllBids()
+
+(Added in version 0.8.1)
+
+This method enables Prebid.js to send information about all of the bids submitted back to the ad server by "tagging" each keyword with the name of the bidder associated with that keyword's value, e.g., `hb_bidder_triplelift`.  This allows you to log these keywords with bid information in your ad server and report on them.
+
+This method must be called before `pbjs.setTargetingForGPTAsync()`.
+
+The "tagged" targeting keyword/value pairs sent to the ad server will look like this:
+
+{% highlight js %}
+{
+  "hb_bidder": "appnexus",
+  "hb_adid": "191f4aca0c0be8",
+  "hb_pb": "10.00",
+  "hb_size": "300x250",
+  "hb_bidder_springserve": "springserve",
+  "hb_adid_springserve": "129a7ed7a6fb40e",
+  "hb_pb_springserve": "10.00",
+  "hb_size_springserve": "300x250",
+  "hb_bidder_triplelift": "triplelift",
+  "hb_adid_triplelift": "1663076dadb443d",
+  "hb_pb_triplelift": "10.00",
+  "hb_size_triplelift": "0x0",
+  "hb_bidder_appnexus": "appnexus",
+  "hb_adid_appnexus": "191f4aca0c0be8",
+  "hb_pb_appnexus": "10.00",
+  "hb_size_appnexus": "300x250",
+  "hb_bidder_pagescience": "pagescience",
+  "hb_adid_pagescience": "2024c6abebaa183",
+  "hb_pb_pagescience": "10.00",
+  "hb_size_pagescience": "300x250",
+}
+{% endhighlight %}
 
 <hr class="full-rule">
 
