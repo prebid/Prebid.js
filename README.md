@@ -1,3 +1,6 @@
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
+
 Prebid.js
 ========
 
@@ -88,7 +91,7 @@ Full Developer API reference:
 
 Contribute
 ----------
-**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands. 
+**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands.
 
 ### Add a Bidder Adapter ###
 Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter.
