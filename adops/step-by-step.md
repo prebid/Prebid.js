@@ -84,7 +84,18 @@ Copy this creative code snippet and paste it into the **Code
 snippet** box.
 
     <script>
-      try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+    var w = window;
+    for (i = 0; i < 10; i++) {
+      w = w.parent;
+      if (w.pbjs) {
+        try {
+          w.pbjs.renderAd(document, '%%PATTERN:hb_adid%%');
+          break;
+        } catch (e) {
+          continue;
+        }
+      }
+    }
     </script>
 
 {: .pb-img.pb-lg-img :}
