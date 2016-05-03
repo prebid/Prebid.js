@@ -40,12 +40,14 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 **Include the prebid.js library**
 Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
 ```javascript
-(function() {
-        var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-        pbs.type = 'text/javascript';
-        pbs.src = ((pro === 'https:') ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
-        var target = document.getElementsByTagName('head')[0];
-        target.insertBefore(pbs, target.firstChild);
+(function () {
+    var d = document;
+    var pbs = d.createElement('script');
+    pbs.type = 'text/javascript';
+    //replace with your CDN hosted version. HTTPS is strongly recommended.
+    pbs.src = '//cdn.host.com/prebid.min.js';
+    var target = d.getElementsByTagName('script')[0];
+    target.parentNode.insertBefore(pbs, target);
 })();
 ```
 
