@@ -201,15 +201,13 @@ function getWinningBid(bidArray) {
       return b.cpm - a.cpm;
     });
 
-    //the first item has the highest cpm
+    // The first item has the highest cpm
     // If winning bid CPM === 0 - we need to indicate no targeting should be set
     if (bidArray[0].cpm === 0 ) {
       return null;
     }
     return bidArray[0].bid;
   }
-
-  return null;
 }
 
 function setGPTAsyncTargeting(code, slot) {
@@ -305,6 +303,9 @@ function buildBidResponse(bidArray) {
     if (winningBid) {
       var keyValues = winningBid.adserverTargeting;
       pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
+    }
+    else {
+      utils.logWarn('No winning bids available.');
     }
   }
 
