@@ -303,8 +303,7 @@ function buildBidResponse(bidArray) {
     if (winningBid) {
       var keyValues = winningBid.adserverTargeting;
       pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
-    }
-    else {
+    } else {
       utils.logWarn('No winning bids available.');
     }
   }
