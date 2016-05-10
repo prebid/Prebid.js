@@ -33,10 +33,6 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
-function add(a, b) {
-  return a + b;
-}
-
 function bidsBackAll() {
   const requested = pbjs._bidsRequested.length;
   const received = pbjs._bidsReceived.length;
@@ -205,26 +201,7 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-//exports.registerBidRequestTime = function (bidderCode, time) {
-//  bidderStartTimes[bidderCode] = time;
-//};
-
 exports.executeCallback = function () {
-  //var params = [];
-
-  //this pbjs.registerBidCallbackHandler will be deprecated soon
-  //if (typeof pbjs.registerBidCallbackHandler === objectType_function && !_callbackExecuted) {
-  //  try {
-  //    pbjs.registerBidCallbackHandler();
-  //    _callbackExecuted = true;
-  //  } catch (e) {
-  //    _callbackExecuted = true;
-  //    utils.logError('Exception trying to execute callback handler registered : ' + e.message);
-  //  }
-  //}
-
-  //trigger allBidsBack handler
-  //todo: get args
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
@@ -232,17 +209,10 @@ exports.executeCallback = function () {
 
   //execute one time callback
   if (externalOneTimeCallback) {
-    //var responseObj = pbjs.getBidResponses();
-
     processCallbacks(externalOneTimeCallback);
     externalOneTimeCallback = null;
   }
-
 };
-
-//exports.allBidsBack = function () {
-//  return _allBidsAvailable;
-//};
 
 function triggerAdUnitCallbacks(adUnitCode) {
   //todo : get bid responses and send in args
@@ -262,69 +232,6 @@ function processCallbacks(callbackQueue) {
   }
 
 }
-
-function callFunction(func, args) {
-  if (typeof func === 'function') {
-    try {
-      func.apply(pbjs, args);
-
-      //func.executed = true;
-    }
-    catch (e) {
-      utils.logError('Error executing callback function: ' + e.message);
-    }
-  }
-}
-
-//function checkBidsBackByAdUnit(adUnitCode) {
-//  for (var i = 0; i < pbjs.adUnits.length; i++) {
-//    var adUnit = pbjs.adUnits[i];
-//    if (adUnit.code === adUnitCode) {
-//      var bidsBack = pbBidResponseByPlacement[adUnitCode].bidsReceivedCount;
-//
-//      //all bids back for ad unit
-//      if (bidsBack === adUnit.bids.length) {
-//        triggerAdUnitCallbacks(adUnitCode);
-//
-//      }
-//    }
-//  }
-//}
-
-/*
- *   This method checks if all bids have a response (bid, no bid, timeout) and will execute callback method if all bids are in
- *   TODO: Need to track bids by placement as well
- */
-
-//exports.checkIfAllBidsAreIn = function (adUnitCode) {
-//
-//  _allBidsAvailable = checkAllBidsResponseReceived();
-//
-//  //check by ad units
-//  checkBidsBackByAdUnit(adUnitCode);
-//
-//  if (_allBidsAvailable) {
-//    //execute our calback method if it exists && pbjs.initAdserverSet !== true
-//    this.executeCallback();
-//  }
-//};
-
-// check all bids response received by bidder
-//function checkAllBidsResponseReceived() {
-//  var available = true;
-//
-//  utils._each(bidResponseReceivedCount, function (count, bidderCode) {
-//    var expectedCount = getExpectedBidsCount(bidderCode);
-//
-//    // expectedCount should be set in the adapter, or it will be set
-//    // after we call adapter.callBids()
-//    if ((typeof expectedCount === objectType_undefined) || (count < expectedCount)) {
-//      available = false;
-//    }
-//  });
-//
-//  return available;
-//}
 
 /**
  * Add a one time callback, that is discarded after it is called
@@ -368,11 +275,6 @@ function adjustBids(bid) {
 }
 
 function getPriceBucketString(cpm) {
-  //var low = '';
-  //var med = '';
-  //var high = '';
-  //var auto = '';
-
   var cpmFloat = 0;
   var returnObj = {
     low: '',
@@ -424,5 +326,4 @@ function getPriceBucketString(cpm) {
   }
 
   return returnObj;
-
-};
+}
