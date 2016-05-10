@@ -12,7 +12,6 @@
   },
   "adapters": [
     "adequant",
-    "adform",
     "aol",
     "appnexus",
     "indexExchange",

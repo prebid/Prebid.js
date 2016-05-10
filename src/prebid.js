@@ -230,9 +230,9 @@ function resetBids() {
 }
 
 function checkDefinedPlacement(id) {
-  var placementCodes = utils._map(pb_placements, function (placement) {
-    return placement.code;
-  });
+  var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+    .reduce((a, b) => a.concat(b)) // flatten
+    .filter((value, index, array) => array.indexOf(value) === index); // uniques
 
   if (!utils.contains(placementCodes, id)) {
     utils.logError('The "' + id + '" placement is not defined.');
@@ -443,10 +443,16 @@ function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
 }
 
+exports.uniques = function() {
+  return uniques;
+};
+
 function getPresetTargeting() {
   return window.googletag.pubads().getSlots().map(slot => {
     return {
-      [slot.getAdUnitPath()]: slot.getTargeting()
+      [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+        return { [key]: slot.getTargeting(key) };
+      })
     };
   });
 }
@@ -464,20 +470,48 @@ function getWinningBidTargeting() {
         }));
   return winners.map(winner => {
     return { [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
-      .map(key => { return { [key]: winner.adserverTargeting[key] }; }) };
+      .map(key => { return { [key]: [winner.adserverTargeting[key]] }; }) };
   });
 }
 
-// TODO function getBidLandscapeTargeting
+function getBidLandscapeTargeting() {
+  const standardKeys = CONSTANTS.TARGETING_KEYS;
+
+  return pbjs._bidsReceived.map(bid => {
+    if (bid.adserverTargeting) {
+      return {
+        [bid.adUnitCode]: standardKeys.map(key => {
+          return {
+            [`${key}_${bid.bidderCode}`]: [bid.adserverTargeting[key]]
+          };
+        })
+      };
+    }
+  }).filter(bid => bid);
+}
+
 /**
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function (codeArr) {
-  var debug = Object.assign(
-  getPresetTargeting(),
-  getWinningBidTargeting()
-);
+  window.googletag.pubads().getSlots().forEach(slot => slot.setTargeting('pubKey', 'do not remove'));
+  const presetTargeting = getPresetTargeting();
+  const winningBidTargeting = getWinningBidTargeting();
+  const bidLandscapeTargeting = getBidLandscapeTargeting();
+
+  var debug = presetTargeting.concat(winningBidTargeting, bidLandscapeTargeting);
+  window.googletag.pubads().getSlots().forEach(slot => {
+    debug.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
+      .forEach(targeting => targeting[Object.keys(targeting)[0]].forEach(key => {
+        key[Object.keys(key)[0]].forEach(value => slot.setTargeting(Object.keys(key)[0], value));
+      }));
+  });
+
+  //var debug = Object.assign(
+  //  getPresetTargeting(),
+  //  getWinningBidTargeting()
+  //);
 
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
   //pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
@@ -505,7 +539,7 @@ pbjs.renderAd = function (doc, id) {
   if (doc && id) {
     try {
       //lookup ad by ad Id
-      var adObject = bidmanager._adResponsesByBidderId[id];
+      var adObject = pbjs._bidsReceived.find(bid => bid.adId === id);
       if (adObject) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
