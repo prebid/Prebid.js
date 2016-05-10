@@ -1,5 +1,4 @@
 var CONSTANTS = require('./constants.json');
-var polyfills = require('./polyfills');
 
 var objectType_object = 'object';
 var objectType_string = 'string';
@@ -384,7 +383,8 @@ exports.indexOf = (function () {
     return Array.prototype.indexOf;
   }
 
-  return polyfills.indexOf;
+  // ie8 no longer supported
+  //return polyfills.indexOf;
 }());
 
 /**

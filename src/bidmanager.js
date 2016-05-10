@@ -48,7 +48,7 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
-function add (a, b) {
+function add(a, b) {
   return a + b;
 }
 
@@ -181,7 +181,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
 exports.getKeyValueTargetingPairs = function() {
   return getKeyValueTargetingPairs(...arguments);
-}
+};
 
 function setKeys(keyValues, bidderSettings, custBidObj) {
   var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];

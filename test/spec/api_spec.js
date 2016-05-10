@@ -21,9 +21,9 @@ describe('Publisher API', function () {
 
   describe('has function', function () {
 
-    it('should have function pbjs.getAdserverTargeting', function () {
-      assert.isFunction(pbjs.getAdserverTargeting);
-    });
+    //it('should have function pbjs.getAdserverTargeting', function () {
+    //  assert.isFunction(pbjs.getAdserverTargeting);
+    //});
 
     //it('should have function pbjs.getAdserverTargetingForAdUnitCode', function () {
     //  assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);
