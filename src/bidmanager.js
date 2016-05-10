@@ -179,6 +179,10 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   return keyValues;
 }
 
+exports.getKeyValueTargetingPairs = function() {
+  return getKeyValueTargetingPairs(...arguments);
+}
+
 function setKeys(keyValues, bidderSettings, custBidObj) {
   var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   custBidObj.size = custBidObj.getSize();
