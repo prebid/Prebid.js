@@ -55,7 +55,7 @@ var SovrnAdapter = function SovrnAdapter() {
         bidfloor: bidFloor
       };
       sovrnImps.push(imp);
-      bidmanager.pbCallbackMap[imp.id] = bid;
+      //bidmanager.pbCallbackMap[imp.id] = bid;
       allPlacementCodes.push(bid.placementCode);
     });
 
