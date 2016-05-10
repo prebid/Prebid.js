@@ -221,13 +221,13 @@ function getCloneBid(bid) {
   return bidClone;
 }
 
-function resetBids() {
-  bidmanager.clearAllBidResponses();
-  pb_bidderMap = {};
-  pb_placements = [];
-  pb_targetingMap = {};
-  pb_bidsTimedOut = false;
+function getBid(id) {
+  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
+
+pbjs.getBid = function(id) {
+  return getBid(id);
+};
 
 function checkDefinedPlacement(id) {
   var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -524,7 +524,7 @@ pbjs.setTargetingForGPTAsync = function (codeArr) {
  */
 pbjs.allBidsAvailable = function () {
   utils.logInfo('Invoking pbjs.allBidsAvailable', arguments);
-  return bidmanager.allBidsBack();
+  return bidmanager.bidsBackAll();
 };
 
 /**
