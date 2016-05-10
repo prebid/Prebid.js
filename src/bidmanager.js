@@ -20,12 +20,27 @@ const _hgPriceCap = 20.00;
  */
 exports.getTimedOutBidders = function () {
   return pbjs._bidsRequested
-    .map(bid => bid.bidderCode)
-    .filter((bidder, index, bidders) => bidders.indexOf(bidder) === index)
-    .filter(bidder => pbjs._bidsReceived.map(bid => bid.bidder).indexOf(bidder) < 0);
+    .map(getBidderCodes)
+    .filter(uniques)
+    .filter(bidder => pbjs._bidsReceived
+      .map(getBidders)
+      .filter(uniques)
+      .indexOf(bidder) < 0);
 };
 
 function timestamp() { return new Date().getTime(); }
+
+function uniques(value, index, array) {
+  return array.indexOf(value) === index;
+}
+
+function getBidderCodes(bidSet) {
+  return bidSet.bidderCode;
+}
+
+function getBidders(bid) {
+  return bid.bidder;
+}
 
 function bidsBackAdUnit(adUnitCode) {
   const requested = pbjs.adUnits.find(unit => unit.code === adUnitCode).bids.length;
@@ -33,8 +48,12 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
+function add (a, b) {
+  return a + b;
+}
+
 function bidsBackAll() {
-  const requested = pbjs._bidsRequested.length;
+  const requested = pbjs._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
   const received = pbjs._bidsReceived.length;
   return requested === received;
 }

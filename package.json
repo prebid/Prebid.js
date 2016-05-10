@@ -12,7 +12,6 @@
   },
   "adapters": [
     "appnexus",
-    "indexExchange",
     "pubmatic",
     "rubicon",
     "triplelift",
