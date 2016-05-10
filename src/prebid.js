@@ -22,10 +22,6 @@ var objectType_string = 'string';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
-var pb_placements = [];
-var pb_bidderMap = {};
-var pb_targetingMap = {};
-var pb_keyHistoryMap = {};
 var pb_bidsTimedOut = false;
 var pb_sendAllBids = false;
 
@@ -87,146 +83,20 @@ function timeOutBidders() {
   }
 }
 
-function getWinningBid(bidArray) {
-  if (bidArray && bidArray.length !== 0) {
-    bidArray.sort(function (a, b) {
-      //put the highest CPM first
-      return b.cpm - a.cpm;
-    });
-
-    // The first item has the highest cpm
-    // If winning bid CPM === 0 - we need to indicate no targeting should be set
-    if (bidArray[0].cpm === 0 ) {
-      return null;
-    }
-    return bidArray[0].bid;
-  }
-}
-
-function setGPTAsyncTargeting(slot) {
-  //get the targeting that is already configured
-  const keyStrings = getTargetingfromGPTIdentifier(slot);
-  const bids = pbjs.getBidResponses(slot.getAdUnitPath());
-
-  //copy keyStrings into pb_keyHistoryMap by code
-  if (!pb_keyHistoryMap[code]) {
-    pb_keyHistoryMap[code] = keyStrings;
-  } else {
-    utils.extend(pb_keyHistoryMap[code], keyStrings);
-  }
-
-  if (pb_sendAllBids && bids && bids.bids && bids.bids.length) {
-    utils.extend(pb_keyHistoryMap[code], getTargetingKeysAsBidder(bids.bids));
-  }
-
-  utils._each(pb_keyHistoryMap[code], function (value, key) {
-    //since DFP doesn't support deleting a single key, we will set all to empty string
-    //This is "clear" for that key
-    slot.setTargeting(key, '');
-
-    //utils.logMessage('Attempting to clear the key : ' + key + ' to empty string for code: ' + code);
-  });
-
-  for (var key in keyStrings) {
-    if (keyStrings.hasOwnProperty(key)) {
-      try {
-        utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-        slot.setTargeting(key, keyStrings[key]);
-      } catch (e) {
-        utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
-      }
-    }
-  }
-}
-/*
- *   This function returns the object map of placements or
- *   if placement code is specified return just 1 placement bids
- */
-function getBidResponsesByAdUnit(adunitCode) {
-  var returnObj = {};
-  if (adunitCode) {
-    returnObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-    return returnObj;
-  } else {
-    return bidmanager.pbBidResponseByPlacement;
-  }
-}
-
-/*
- *	Copies bids into a bidArray response
- */
-function buildBidResponse(bidArray) {
-  var bidResponseArray = [];
-  var adUnitCode = '';
-
-  //temp array to hold auction for bids
-  var bidArrayTargeting = [];
-  var bidClone = {};
-  if (bidArray && bidArray[0] && bidArray[0].adUnitCode) {
-    // init the pb_targetingMap for the adUnitCode
-    adUnitCode = bidArray[0] && bidArray[0].adUnitCode;
-    pb_targetingMap[adUnitCode] = {};
-    for (var i = 0; i < bidArray.length; i++) {
-      var bid = bidArray[i];
-
-      //clone by json parse. This also gets rid of unwanted function properties
-      bidClone = getCloneBid(bid);
-
-      if (bid.alwaysUseBid && bidClone.adserverTargeting) { // add the bid if alwaysUse and bid has returned
-        // push key into targeting
-        pb_targetingMap[bidClone.adUnitCode] = utils.extend(pb_targetingMap[bidClone.adUnitCode], bidClone.adserverTargeting);
-      }
-
-      if (bid.cpm && bid.cpm > 0) {
-        //else put into auction array if cpm > 0
-        bidArrayTargeting.push({
-          cpm: bid.cpm,
-          bid: bid
-        });
-      }
-
-      //put all bids into bidArray by default
-      bidResponseArray.push(bidClone);
-    }
-  }
-
-  // push the winning bid into targeting map
-  if (adUnitCode && bidArrayTargeting.length !== 0) {
-    var winningBid = getWinningBid(bidArrayTargeting);
-    if (winningBid) {
-      var keyValues = winningBid.adserverTargeting;
-      pb_targetingMap[adUnitCode] = utils.extend(pb_targetingMap[adUnitCode], keyValues);
-    } else {
-      utils.logWarn('No winning bids available.');
-    }
-  }
-
-  return bidResponseArray;
-}
-
-function getCloneBid(bid) {
-  var bidClone = {};
-
-  //clone by json parse. This also gets rid of unwanted function properties
-  if (bid) {
-    var jsonBid = JSON.stringify(bid);
-    bidClone = JSON.parse(jsonBid);
-
-    //clean up bid clone
-    delete bidClone.pbLg;
-    delete bidClone.pbMg;
-    delete bidClone.pbHg;
-  }
-
-  return bidClone;
-}
-
 function getBid(id) {
   return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
 pbjs.getBid = function(id) {
   return getBid(id);
+};
+
+function flatten(a, b) {
+  return a.concat(b);
+}
+
+pbjs.flatten = function(a, b) {
+  return flatten(a, b);
 };
 
 function checkDefinedPlacement(id) {
@@ -417,28 +287,6 @@ function getTargetingfromGPTIdentifier(slot) {
   return targeting;
 }
 
-/**
- * returns targeting keys with key name appended with the bidder code
- * @param bidArray an array of current bid objects
- */
-function getTargetingKeysAsBidder(bidArray) {
-  const standardKeys = CONSTANTS.TARGETING_KEYS;
-  let pairs = {};
-
-  // this assumes no key name collisions, which should not be possible,
-  // because bidder names are constrained by the adapter filename
-  // so uniqueness is enforced by the file system.
-  utils._each(bidArray, bid => {
-    if (bid.adserverTargeting) {
-      utils._each(standardKeys, key => {
-        pairs[`${key}_${bid.bidderCode}`] = bid.adserverTargeting[key];
-      });
-    }
-  });
-
-  return pairs;
-}
-
 function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
 }
@@ -500,21 +348,15 @@ pbjs.setTargetingForGPTAsync = function (codeArr) {
   const winningBidTargeting = getWinningBidTargeting();
   const bidLandscapeTargeting = getBidLandscapeTargeting();
 
-  var debug = presetTargeting.concat(winningBidTargeting, bidLandscapeTargeting);
   window.googletag.pubads().getSlots().forEach(slot => {
-    debug.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
+    presetTargeting.concat(winningBidTargeting, bidLandscapeTargeting)
+      .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
       .forEach(targeting => targeting[Object.keys(targeting)[0]].forEach(key => {
         key[Object.keys(key)[0]].forEach(value => slot.setTargeting(Object.keys(key)[0], value));
       }));
   });
 
-  //var debug = Object.assign(
-  //  getPresetTargeting(),
-  //  getWinningBidTargeting()
-  //);
-
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
-  //pbjs.setTargetingForAdUnitsGPTAsync(codeArr);
 };
 
 /**
@@ -582,32 +424,6 @@ pbjs.renderAd = function (doc, id) {
   } else {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
-
-};
-
-/**
- *  @deprecated - will be removed next release. Use pbjs.requestBids
- */
-pbjs.requestBidsForAdUnit = function (adUnitCode) {
-  resetBids();
-  init(adUnitCode);
-
-};
-
-/**
- * @deprecated - will be removed next release. Use pbjs.requestBids
- */
-pbjs.requestBidsForAdUnits = function (adUnitsObj) {
-  if (!adUnitsObj || adUnitsObj.constructor !== Array) {
-    utils.logError('requestBidsForAdUnits must pass an array of adUnits');
-    return;
-  }
-
-  resetBids();
-  var adUnitBackup = pbjs.adUnits.slice(0);
-  pbjs.adUnits = adUnitsObj;
-  init();
-  pbjs.adUnits = adUnitBackup;
 
 };
 
@@ -823,71 +639,6 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking pbjs.loadScript', arguments);
   adloader.loadScript(tagSrc, callback, useCache);
 };
-
-/**
- * This isn't ready yet
- * return data for analytics
- * @param  {Function}  [description]
- * @return {[type]}    [description]
-
- pbjs.getAnalyticsData = function(){
-	var returnObj = {};
-	var bidResponses = pbjs.getBidResponses();
-
-	//create return obj for all adUnits
-	for(var i=0;i<pbjs.adUnits.length;i++){
-		var allBids = pbjs.adUnits[i].bids;
-		for(var j=0;j<allBids.length;j++){
-			var bid = allBids[j];
-			if(typeof returnObj[bid.bidder] === objectType_undefined){
-				returnObj[bid.bidder] = {};
-				returnObj[bid.bidder].bids = [];
-			}
-
-			var returnBids = returnObj[bid.bidder].bids;
-			var returnBidObj = {};
-			returnBidObj.timeout = true;
-			returnBids.push(returnBidObj);
-		}
-	}
-
-	utils._each(bidResponses,function(responseByUnit, adUnitCode){
-		var bids = responseByUnit.bids;
-
-		for(var i=0; i<bids.length; i++){
-
-			var bid = bids[i];
-			if(bid.bidderCode!==''){
-				var returnBids = returnObj[bid.bidderCode].bids;
-				var returnIdx = 0;
-
-				for(var j=0;j<returnBids.length;j++){
-					if(returnBids[j].timeout)
-						returnIdx = j;
-				}
-
-				var returnBidObj = {};
-
-				returnBidObj.cpm = bid.cpm;
-				returnBidObj.timeToRespond = bid.timeToRespond;
-
-				//check winning
-				if(pb_targetingMap[adUnitCode].hb_adid === bid.adId){
-					returnBidObj.win = true;
-				}else{
-					returnBidObj.win = false;
-				}
-
-				returnBidObj.timeout = false;
-				returnBids[returnIdx] = returnBidObj;
-			}
-		}
-	});
-
-	return returnObj;
-};
-
- */
 
 /**
  * Will enable sendinga prebid.js to data provider specified
