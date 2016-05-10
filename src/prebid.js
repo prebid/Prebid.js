@@ -31,6 +31,9 @@ var eventValidators = {
 
 /* Public vars */
 
+pbjs._bidsRequested = [];
+pbjs._bidsReceived = [];
+
 //default timeout for all bids
 pbjs.bidderTimeout = pbjs.bidderTimeout || 2000;
 pbjs.logging = pbjs.logging || false;
@@ -123,33 +126,33 @@ function checkDefinedPlacement(id) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
  * @return {array}  returnObj return bids array
  */
-pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
-  // call to retrieve bids array
-  if (adunitCode) {
-    var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
-    return utils.transformAdServerTargetingObj(res);
-  } else {
-    utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
-  }
-};
+//pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
+//  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
+//  // call to retrieve bids array
+//  if (adunitCode) {
+//    var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
+//    return utils.transformAdServerTargetingObj(res);
+//  } else {
+//    utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+//  }
+//};
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
  * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @return {object}  returnObj return bids
  */
-pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
-  // call to populate pb_targetingMap
-  pbjs.getBidResponses(adunitCode);
-
-  if (adunitCode) {
-    return pb_targetingMap[adunitCode];
-  }
-
-  return pb_targetingMap;
-};
+//pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
+  //utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
+  //// call to populate pb_targetingMap
+  //pbjs.getBidResponses(adunitCode);
+  //
+  //if (adunitCode) {
+  //  return pb_targetingMap[adunitCode];
+  //}
+  //
+  //return pb_targetingMap;
+//};
 /**
  * returns all ad server targeting for all ad units
  * @return {object} Map of adUnitCodes and targeting values []
@@ -166,52 +169,52 @@ pbjs.getAdserverTargeting = function () {
  * @alias module:pbjs.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
-pbjs.getBidResponses = function (adunitCode) {
-  utils.logInfo('Invoking pbjs.getBidResponses', arguments);
-  var response = {};
-  var bidArray = [];
-  var returnObj = {};
-
-  if (adunitCode) {
-    response = getBidResponsesByAdUnit(adunitCode);
-    bidArray = [];
-    if (response && response.bids) {
-      bidArray = buildBidResponse(response.bids);
-    }
-
-    returnObj = {
-      bids: bidArray
-    };
-
-  } else {
-    response = getBidResponsesByAdUnit();
-    for (var adUnit in response) {
-      if (response.hasOwnProperty(adUnit)) {
-        if (response && response[adUnit] && response[adUnit].bids) {
-          bidArray = buildBidResponse(response[adUnit].bids);
-        }
-
-        returnObj[adUnit] = {
-          bids: bidArray
-        };
-
-      }
-    }
-  }
-
-  return returnObj;
-
-};
+//pbjs.getBidResponses = function (adunitCode) {
+//  utils.logInfo('Invoking pbjs.getBidResponses', arguments);
+//  var response = {};
+//  var bidArray = [];
+//  var returnObj = {};
+//
+//  if (adunitCode) {
+//    response = getBidResponsesByAdUnit(adunitCode);
+//    bidArray = [];
+//    if (response && response.bids) {
+//      bidArray = buildBidResponse(response.bids);
+//    }
+//
+//    returnObj = {
+//      bids: bidArray
+//    };
+//
+//  } else {
+//    response = getBidResponsesByAdUnit();
+//    for (var adUnit in response) {
+//      if (response.hasOwnProperty(adUnit)) {
+//        if (response && response[adUnit] && response[adUnit].bids) {
+//          bidArray = buildBidResponse(response[adUnit].bids);
+//        }
+//
+//        returnObj[adUnit] = {
+//          bids: bidArray
+//        };
+//
+//      }
+//    }
+//  }
+//
+//  return returnObj;
+//
+//};
 /**
  * Returns bidResponses for the specified adUnitCode
  * @param  {String} adUnitCode adUnitCode
  * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
-pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  utils.logInfo('Invoking pbjs.getBidResponsesForAdUnitCode', arguments);
-  return pbjs.getBidResponses(adUnitCode);
-};
+//pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
+//  utils.logInfo('Invoking pbjs.getBidResponsesForAdUnitCode', arguments);
+//  return pbjs.getBidResponses(adUnitCode);
+//};
 /**
  * Set query string targeting on adUnits specified. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
  * @param {array} [codeArr] an array of adUnitodes to set targeting for.
@@ -342,18 +345,16 @@ function getBidLandscapeTargeting() {
   }).filter(bid => bid);
 }
 
+function getTargetingForAdUnit(adUnit) {
+
+}
 /**
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function (codeArr) {
-  window.googletag.pubads().getSlots().forEach(slot => slot.setTargeting('pubKey', 'do not remove'));
-  const presetTargeting = getPresetTargeting();
-  const winningBidTargeting = getWinningBidTargeting();
-  const bidLandscapeTargeting = getBidLandscapeTargeting();
-
+pbjs.setTargetingForGPTAsync = function () {
   window.googletag.pubads().getSlots().forEach(slot => {
-    presetTargeting.concat(winningBidTargeting, bidLandscapeTargeting)
+    getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting())
       .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
       .forEach(targeting => targeting[Object.keys(targeting)[0]].forEach(key => {
         key[Object.keys(key)[0]].forEach(value => slot.setTargeting(Object.keys(key)[0], value));
