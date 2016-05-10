@@ -70,8 +70,8 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
           utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
         } else {
           newAdapter = bidAdaptor.createNew();
-					newAdapter.setBidderCode(alias);
-					this.registerBidAdapter(newAdapter, alias);
+          newAdapter.setBidderCode(alias);
+          this.registerBidAdapter(newAdapter, alias);
         }
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
