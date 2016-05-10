@@ -110,6 +110,8 @@ At this point, either the timeout has hit or all prebid bidders have responded. 
 + `pbjs.enableSendAllBids()` logs all bid information to the ad server (not just the winning bid).  It must be called *before* calling `pbjs.setTargetingForGPTAsync()`.  This will allow you to track historical bid prices from various bidders in reporting.
 + `pbjs.setTargetingForGPTAsync()` selects the highest bid among all available ones for each ad unit, and automatically sets targeting on your ad units. Thus has to be called after all your GPT slots have been defined.
 
-If you prefer to manually set the prebid keyword targeting, you can get the bid information through `pbjs.getAdserverTargeting()` or `pbjs.getBidResponses()`.  For more information, see the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
+If you prefer to manually set the prebid keyword targeting, you can get the bid information through `pbjs.getAdserverTargeting()` or `pbjs.getBidResponses()`.
+
+For more information about these methods, see the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
 
 </div>
