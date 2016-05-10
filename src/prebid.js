@@ -36,7 +36,7 @@ var eventValidators = {
 /* Public vars */
 
 //default timeout for all bids
-pbjs.bidderTimeout = pbjs.bidderTimeout || 5000;
+pbjs.bidderTimeout = pbjs.bidderTimeout || 2000;
 pbjs.logging = pbjs.logging || false;
 
 //let the world know we are loaded
