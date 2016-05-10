@@ -126,6 +126,7 @@ function checkDefinedPlacement(id) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
  * @return {array}  returnObj return bids array
  */
+
 //pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 //  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
 //  // call to retrieve bids array
@@ -142,26 +143,28 @@ function checkDefinedPlacement(id) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @return {object}  returnObj return bids
  */
+
 //pbjs.getAdserverTargetingForAdUnitCode = function (adunitCode) {
-  //utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
-  //// call to populate pb_targetingMap
-  //pbjs.getBidResponses(adunitCode);
-  //
-  //if (adunitCode) {
-  //  return pb_targetingMap[adunitCode];
-  //}
-  //
-  //return pb_targetingMap;
+//utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
+//// call to populate pb_targetingMap
+//pbjs.getBidResponses(adunitCode);
+//
+//if (adunitCode) {
+//  return pb_targetingMap[adunitCode];
+//}
+//
+//return pb_targetingMap;
 //};
 /**
  * returns all ad server targeting for all ad units
  * @return {object} Map of adUnitCodes and targeting values []
  * @alias module:pbjs.getAdserverTargeting
  */
-pbjs.getAdserverTargeting = function () {
-  utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return pbjs.getAdserverTargetingForAdUnitCode();
-};
+
+//pbjs.getAdserverTargeting = function () {
+//  utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
+//  return pbjs.getAdserverTargetingForAdUnitCode();
+//};
 
 /**
  * This function returns the bid responses at the given moment.
@@ -169,6 +172,7 @@ pbjs.getAdserverTargeting = function () {
  * @alias module:pbjs.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
+
 //pbjs.getBidResponses = function (adunitCode) {
 //  utils.logInfo('Invoking pbjs.getBidResponses', arguments);
 //  var response = {};
@@ -211,6 +215,7 @@ pbjs.getAdserverTargeting = function () {
  * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
+
 //pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
 //  utils.logInfo('Invoking pbjs.getBidResponsesForAdUnitCode', arguments);
 //  return pbjs.getBidResponses(adUnitCode);
@@ -220,75 +225,77 @@ pbjs.getAdserverTargeting = function () {
  * @param {array} [codeArr] an array of adUnitodes to set targeting for.
  * @alias module:pbjs.setTargetingForAdUnitsGPTAsync
  */
-pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
-  utils.logInfo('Invoking pbjs.setTargetingForAdUnitsGPTAsync', arguments);
-  if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
-    utils.logError('window.googletag is not defined on the page');
-    return;
-  }
 
-  //emit bid timeout event here
-  timeOutBidders();
-
-  var adUnitCodesArr = codeArr;
-
-  if (typeof codeArr === objectType_string) {
-    adUnitCodesArr = [codeArr];
-  } else if (typeof codeArr === objectType_object) {
-    adUnitCodesArr = codeArr;
-  }
-
-  var placementBids = {};
-  var i = 0;
-  var slots;
-
-  if (adUnitCodesArr) {
-    for (i = 0; i < adUnitCodesArr.length; i++) {
-      var code = adUnitCodesArr[i];
-
-      //get all the slots from google tag
-      slots = window.googletag.pubads().getSlots();
-      for (var k = 0; k < slots.length; k++) {
-
-        if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
-          placementBids = getBidResponsesByAdUnit(code);
-          setGPTAsyncTargeting(code, slots[k]);
-        }
-      }
-    }
-  } else {
-    //get all the slots from google tag
-    slots = window.googletag.pubads().getSlots();
-    for (i = 0; i < slots.length; i++) {
-      const adUnitCode = slots[i].getSlotElementId();
-      const adUnitPath = slots[i].getAdUnitPath();
-      if (adUnitCode || adUnitPath) {
-        //placementBids = getBidsFromGTPIdentifier(slots[i]);
-        setGPTAsyncTargeting(slots[i]);
-      }
-    }
-  }
-
-};
+//pbjs.setTargetingForAdUnitsGPTAsync = function (codeArr) {
+//  utils.logInfo('Invoking pbjs.setTargetingForAdUnitsGPTAsync', arguments);
+//  if (!window.googletag || !utils.isFn(window.googletag.pubads) || !utils.isFn(window.googletag.pubads().getSlots)) {
+//    utils.logError('window.googletag is not defined on the page');
+//    return;
+//  }
+//
+//  //emit bid timeout event here
+//  timeOutBidders();
+//
+//  var adUnitCodesArr = codeArr;
+//
+//  if (typeof codeArr === objectType_string) {
+//    adUnitCodesArr = [codeArr];
+//  } else if (typeof codeArr === objectType_object) {
+//    adUnitCodesArr = codeArr;
+//  }
+//
+//  var placementBids = {};
+//  var i = 0;
+//  var slots;
+//
+//  if (adUnitCodesArr) {
+//    for (i = 0; i < adUnitCodesArr.length; i++) {
+//      var code = adUnitCodesArr[i];
+//
+//      //get all the slots from google tag
+//      slots = window.googletag.pubads().getSlots();
+//      for (var k = 0; k < slots.length; k++) {
+//
+//        if (slots[k].getSlotElementId() === code || slots[k].getAdUnitPath() === code) {
+//          placementBids = getBidResponsesByAdUnit(code);
+//          setGPTAsyncTargeting(code, slots[k]);
+//        }
+//      }
+//    }
+//  } else {
+//    //get all the slots from google tag
+//    slots = window.googletag.pubads().getSlots();
+//    for (i = 0; i < slots.length; i++) {
+//      const adUnitCode = slots[i].getSlotElementId();
+//      const adUnitPath = slots[i].getAdUnitPath();
+//      if (adUnitCode || adUnitPath) {
+//        //placementBids = getBidsFromGTPIdentifier(slots[i]);
+//        setGPTAsyncTargeting(slots[i]);
+//      }
+//    }
+//  }
+//
+//};
 /**
  * Returns a string identifier (either DivId or adUnitPath)
  * @param  {[type]} slot [description]
  * @return {[type]}      [description]
  */
-function getTargetingfromGPTIdentifier(slot) {
-  var targeting = null;
-  if (slot) {
-    //first get by elementId
-    targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
 
-    //if not available, try by adUnitPath
-    if (!targeting) {
-      targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
-    }
-  }
-
-  return targeting;
-}
+//function getTargetingfromGPTIdentifier(slot) {
+//  var targeting = null;
+//  if (slot) {
+//    //first get by elementId
+//    targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getSlotElementId());
+//
+//    //if not available, try by adUnitPath
+//    if (!targeting) {
+//      targeting = pbjs.getAdserverTargetingForAdUnitCode(slot.getAdUnitPath());
+//    }
+//  }
+//
+//  return targeting;
+//}
 
 function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
@@ -345,9 +352,6 @@ function getBidLandscapeTargeting() {
   }).filter(bid => bid);
 }
 
-function getTargetingForAdUnit(adUnit) {
-
-}
 /**
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
@@ -584,35 +588,35 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 /**
  *
  */
-pbjs.bidsAvailableForAdapter = function (bidderCode) {
-  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
-  //TODO getAd
-  var bids = pb_bidderMap[bidderCode].bids;
-
-  for (var i = 0; i < bids.length; i++) {
-    var adunitCode = bids[i].placementCode;
-    var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-
-    var bid = bidfactory.createBid(1);
-
-    // bid.creative_id = adId;
-    bid.bidderCode = bidderCode;
-    bid.adUnitCode = adunitCode;
-    bid.bidder = bidderCode;
-
-    // bid.cpm = responseCPM;
-    // bid.adUrl = jptResponseObj.result.ad;
-    // bid.width = jptResponseObj.result.width;
-    // bid.height = jptResponseObj.result.height;
-    // bid.dealId = jptResponseObj.result.deal_id;
-
-    responseObj.bids.push(bid);
-    responseObj.bidsReceivedCount++;
-    bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
-  }
-
-  bidmanager.increaseBidResponseReceivedCount(bidderCode);
-};
+//pbjs.bidsAvailableForAdapter = function (bidderCode) {
+//  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
+//  //TODO getAd
+//  var bids = pb_bidderMap[bidderCode].bids;
+//
+//  for (var i = 0; i < bids.length; i++) {
+//    var adunitCode = bids[i].placementCode;
+//    var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
+//
+//    var bid = bidfactory.createBid(1);
+//
+//    // bid.creative_id = adId;
+//    bid.bidderCode = bidderCode;
+//    bid.adUnitCode = adunitCode;
+//    bid.bidder = bidderCode;
+//
+//    // bid.cpm = responseCPM;
+//    // bid.adUrl = jptResponseObj.result.ad;
+//    // bid.width = jptResponseObj.result.width;
+//    // bid.height = jptResponseObj.result.height;
+//    // bid.dealId = jptResponseObj.result.deal_id;
+//
+//    responseObj.bids.push(bid);
+//    responseObj.bidsReceivedCount++;
+//    bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
+//  }
+//
+//  bidmanager.increaseBidResponseReceivedCount(bidderCode);
+//};
 
 /**
  * Wrapper to bidfactory.createBid()
