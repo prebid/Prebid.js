@@ -1,6 +1,5 @@
 /** @module adaptermanger */
 
-var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
@@ -13,10 +12,6 @@ exports.bidderRegistry = _bidderRegistry;
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
 
-function flatten(arrayA, arrayB) {
-  return arrayA.concat(arrayB);
-}
-
 function getBids({ bidderCode, bidCallId, bidSetId }) {
   return pbjs.adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
@@ -27,7 +22,7 @@ function getBids({ bidderCode, bidCallId, bidSetId }) {
         bidSetId,
         bidCallId
       }));
-  }).reduce(flatten, []);
+  }).reduce(pbjs.flatten, []);
 }
 
 exports.callBids = () => {
