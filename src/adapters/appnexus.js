@@ -21,7 +21,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     for (var i = 0; i < anArr.length; i++) {
       var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidSetId;
+      var callbackId = bidRequest.bidId;
       adloader.loadScript(buildJPTCall(bidRequest, callbackId));
 
       //store a reference to the bidRequest from the callback id
@@ -150,7 +150,7 @@ AppNexusAdapter = function AppNexusAdapter() {
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidSetId === id).bids.reduce((a, b) => b);
+      var bidObj = pbjs.getBid(id);
       if (bidObj) {
 
         bidCode = bidObj.bidder;
