@@ -19,7 +19,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     //set expected bids count for callback execution
     //bidmanager.setExpectedBidsCount(bidCode, bidsCount);
 
-    for (var i = 0; i < anArr; i++) {
+    for (var i = 0; i < anArr.length; i++) {
       var bidRequest = anArr[i];
       var callbackId = bidRequest.bidSetId;
       adloader.loadScript(buildJPTCall(bidRequest, callbackId));
@@ -150,7 +150,7 @@ AppNexusAdapter = function AppNexusAdapter() {
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidSetId === id).bids.reduce((a, b) => b);
       if (bidObj) {
 
         bidCode = bidObj.bidder;
