@@ -8,10 +8,6 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-// just sticking these on global object for now
-pbjs._bidsRequested = [];
-pbjs._bidsReceived = [];
-
 function getBids({ bidderCode, bidCallId, bidSetId }) {
   return pbjs.adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)

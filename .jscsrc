@@ -7,6 +7,5 @@
   "validateIndentation": 2,
   "disallowSpacesInFunctionDeclaration": {
     "beforeOpeningRoundBrace": true
-  },
-  "maximumLineLength": 160
+  }
 }
