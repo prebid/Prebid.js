@@ -3,63 +3,16 @@ var utils = require('./utils.js');
 var events = require('./events');
 
 var objectType_function = 'function';
-var objectType_undefined = 'undefined';
 
 var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
 var externalOneTimeCallback = null;
+var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+var defaultBidderSettingsMap = {};
 
 const _lgPriceCap = 5.00;
 const _mgPriceCap = 20.00;
 const _hgPriceCap = 20.00;
-
-//var pbCallbackMap = {};
-//exports.pbCallbackMap = pbCallbackMap;
-
-//var pbBidResponseByPlacement = {};
-//exports.pbBidResponseByPlacement = pbBidResponseByPlacement;
-
-//this is used to look up the bid by bid ID later
-//var _adResponsesByBidderId = {};
-//exports._adResponsesByBidderId = _adResponsesByBidderId;
-
-//var bidResponseReceivedCount = {};
-//exports.bidResponseReceivedCount = bidResponseReceivedCount;
-
-//var expectedBidsCount = {};
-var _allBidsAvailable = false;
-var _callbackExecuted = false;
-var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
-var defaultBidderSettingsMap = {};
-
-//var bidderStartTimes = {};
-
-//exports.getPlacementIdByCBIdentifer = function (id) {
-//  return pbCallbackMap[id];
-//};
-
-//exports.getBidResponseByAdUnit = function () {
-//  return pbBidResponseByPlacement;
-//
-//};
-
-//exports.clearAllBidResponses = function () {
-//  _allBidsAvailable = false;
-//  _callbackExecuted = false;
-
-  //init bid response received count
-  //initbidResponseReceivedCount();
-
-  //init expected bids count
-  //initExpectedBidsCount();
-
-  //clear the callback handler flag
-//  externalCallbackArr.called = false;
-//
-//  for (var prop in this.pbBidResponseByPlacement) {
-//    delete this.pbBidResponseByPlacement[prop];
-//  }
-//};
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -72,48 +25,6 @@ exports.getTimedOutBidders = function () {
     .filter(bidder => pbjs._bidsReceived.map(bid => bid.bidder).indexOf(bidder) < 0);
 };
 
-//function initbidResponseReceivedCount() {
-//
-//  //bidResponseReceivedCount = {};
-//  for (var prop in bidResponseReceivedCount) {
-//    delete bidResponseReceivedCount[prop];
-//  }
-//
-//  for (var i = 0; i < pbjs.adUnits.length; i++) {
-//    var bids = pbjs.adUnits[i].bids;
-//    for (var j = 0; j < bids.length; j++) {
-//      var bidder = bids[j].bidder;
-//      bidResponseReceivedCount[bidder] = 0;
-//    }
-//  }
-//}
-
-//exports.increaseBidResponseReceivedCount = function (bidderCode) {
-//  increaseBidResponseReceivedCount(bidderCode);
-//};
-
-//function increaseBidResponseReceivedCount(bidderCode) {
-//  if (typeof bidResponseReceivedCount[bidderCode] === objectType_undefined) {
-//    bidResponseReceivedCount[bidderCode] = 1;
-//  } else {
-//    bidResponseReceivedCount[bidderCode]++;
-//  }
-//}
-//
-//function initExpectedBidsCount() {
-//  expectedBidsCount = {};
-//}
-//
-//exports.setExpectedBidsCount = function (bidderCode, count) {
-//  expectedBidsCount[bidderCode] = count;
-//};
-//
-//function getExpectedBidsCount(bidderCode) {
-//  return expectedBidsCount[bidderCode];
-//}
-//
-//exports.getExpectedBidsCount = getExpectedBidsCount;
-
 function timestamp() { return new Date().getTime(); }
 
 function bidsBackAdUnit(adUnitCode) {
@@ -122,10 +33,22 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
+function add(a, b) {
+  return a + b;
+}
+
 function bidsBackAll() {
-  const requested = pbjs.adUnits.map(unit => unit.bids.length).reduce((prev, curr) => curr + prev);
+  const requested = pbjs._bidsRequested.length;
   const received = pbjs._bidsReceived.length;
   return requested === received;
+}
+
+exports.bidsBackAll = function() {
+  return bidsBackAll;
+};
+
+function getBidSetForBidder(bidder) {
+  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
 }
 
 /*
@@ -135,30 +58,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     Object.assign(bid, {
       responseTimestamp: timestamp(),
-      requestTimestamp: pbjs._bidsRequested.find(bidRequest => bidRequest.bidderCode === bid.bidderCode).start,
+      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
-
-    //record bid request and response time
-    //bid.requestTimestamp = bidderStartTimes[bid.bidderCode];
-    //bid.responseTimestamp = timestamp();
-    //bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
-
-    //increment the bid count
-    //increaseBidResponseReceivedCount(bid.bidderCode);
-
-    //get price settings here
-    //if (bid.getStatusCode() === 2) {
-    //  bid.cpm = 0;
-    //}
-
-    // alias the bidderCode to bidder;
-    // NOTE: this is to match documentation
-    // on custom k-v targeting
-    //bid.bidder = bid.bidderCode;
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
@@ -166,16 +71,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
     //emit the bidResponse event
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
-
     //append price strings
+    const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
     bid.pbAg = priceStringsObj.auto;
-
-    //put adUnitCode into bid
-    //bid.adUnitCode = adUnitCode;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
@@ -185,28 +86,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     pbjs._bidsReceived.push(bid);
-
-    //store a reference to the bidResponse by adId
-    //if (bid.adId) {
-    //  _adResponsesByBidderId[bid.adId] = bid;
-    //}
-
-    //store by placement ID
-    //if (adUnitCode && pbBidResponseByPlacement[adUnitCode] && !utils.isEmpty(pbBidResponseByPlacement[adUnitCode])) {
-    //  //update bid response object
-    //  bidResponseObj = pbBidResponseByPlacement[adUnitCode];
-    //
-    //  //bidResponseObj.status = statusCode;
-    //  bidResponseObj.bids.push(bid);
-    //
-    //  //increment bid response by placement
-    //  bidResponseObj.bidsReceivedCount++;
-    //
-    //} else {
-    //  //should never reach this code
-    //  utils.logError('Internal error in bidmanager.addBidResponse. Params: ' + adUnitCode + ' & ' + bid);
-    //}
-
   }
 
   if (bidsBackAdUnit(bid.adUnitCode)) {
@@ -222,21 +101,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
   }
-
-  //else {
-  //  //create an empty bid bid response object
-  //  bidResponseObj = {
-  //    bids: [],
-  //    allBidsAvailable: false,
-  //    bidsReceivedCount: 0
-  //  };
-  //}
-
-  //store the bidResponse in a map
-  //pbBidResponseByPlacement[adUnitCode] = bidResponseObj;
-
-  //this.checkIfAllBidsAreIn(adUnitCode);
-
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
