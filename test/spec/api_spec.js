@@ -25,17 +25,17 @@ describe('Publisher API', function () {
       assert.isFunction(pbjs.getAdserverTargeting);
     });
 
-    it('should have function pbjs.getAdserverTargetingForAdUnitCode', function () {
-      assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);
-    });
+    //it('should have function pbjs.getAdserverTargetingForAdUnitCode', function () {
+    //  assert.isFunction(pbjs.getAdserverTargetingForAdUnitCode);
+    //});
 
-    it('should have function pbjs.getBidResponses', function () {
-      assert.isFunction(pbjs.getBidResponses);
-    });
+    //it('should have function pbjs.getBidResponses', function () {
+    //  assert.isFunction(pbjs.getBidResponses);
+    //});
 
-    it('should have function pbjs.getBidResponsesForAdUnitCode', function () {
-      assert.isFunction(pbjs.getBidResponsesForAdUnitCode);
-    });
+    //it('should have function pbjs.getBidResponsesForAdUnitCode', function () {
+    //  assert.isFunction(pbjs.getBidResponsesForAdUnitCode);
+    //});
 
     it('should have function pbjs.setTargetingForGPTAsync', function () {
       assert.isFunction(pbjs.setTargetingForGPTAsync);
