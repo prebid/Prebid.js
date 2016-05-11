@@ -501,3 +501,35 @@ export function getBidResponses() {
     }
   ];
 }
+
+export function getSlotTargeting() {
+  return {
+    "/19968336/header-bid-tag-0": [
+      {
+        "hb_bidder": [
+          "appnexus"
+        ]
+      },
+      {
+        "hb_adid": [
+          "233bcbee889d46d"
+        ]
+      },
+      {
+        "hb_pb": [
+          "10.00"
+        ]
+      },
+      {
+        "hb_size": [
+          "300x250"
+        ]
+      },
+      {
+        "foobar": [
+          "300x250"
+        ]
+      }
+    ]
+  };
+}
