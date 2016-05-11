@@ -193,4 +193,87 @@ describe('Unit: Prebid Module', function () {
       bidmanager.allBidsBack.restore();
     });
   });
+
+  describe('renderAd', function () {
+    var bidId = 1;
+    var doc = {};
+    var adResponse = {};
+    var spyLogError = null;
+
+    beforeEach(function() {
+      doc = {
+        write: sinon.spy(),
+        close: sinon.spy(),
+        defaultView: {
+          frameElement: {
+            width: 0,
+            height: 0
+          }
+        }
+      };
+
+      adResponse = {
+        "width": 300,
+        "height": 250,
+      };
+      bidmanager._adResponsesByBidderId[bidId] = adResponse;
+
+      spyLogError = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function() {
+      bidmanager._adResponsesByBidderId[bidId] = null;
+      utils.logError.restore();
+    });
+
+    it('should require doc and id params', function () {
+      pbjs.renderAd();
+      var error = 'Error trying to write ad Id :undefined to the page. Missing document or adId';
+      assert.ok(spyLogError.calledWith(error), 'expected param error was logged');
+    });
+
+    it('should log message with bid id', function () {
+      pbjs.renderAd(doc, bidId);
+      var message = 'Calling renderAd with adId :' + bidId;
+      assert.ok(spyLogMessage.calledWith(message), 'expected message was logged');
+    });
+
+    it('should write the ad to the doc', function() {
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+      pbjs.renderAd(doc, bidId);
+      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+      assert.ok(doc.close.called, 'close method called');
+    });
+
+    it('should place the url inside an iframe on the doc', function() {
+      adResponse.adUrl = "http://server.example.com/ad/ad.js";
+      pbjs.renderAd(doc, bidId);
+      var iframe = '<IFRAME SRC="' + adResponse.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + adResponse.width + '" HEIGHT="' + adResponse.height + '"></IFRAME>'
+      assert.ok(doc.write.calledWith(iframe), 'url was written to iframe in doc');
+    });
+
+    it('should log an error when no ad or url', function() {
+      pbjs.renderAd(doc, bidId);
+      var error = 'Error trying to write ad. No ad for bid response id: ' + bidId;
+      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+
+    it('should catch errors thrown when trying to write ads to the page', function() {
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+
+      var error = {message: 'doc write error'};
+      doc.write = sinon.stub().throws(error);
+      pbjs.renderAd(doc, bidId);
+
+      var errorMessage = 'Error trying to write ad Id :' + bidId + ' to the page:' + error.message;
+      assert.ok(spyLogError.calledWith(errorMessage), 'expected error was logged');
+    });
+
+    it('should log an error when ad not found', function() {
+      var fakeId = 99;
+      pbjs.renderAd(doc, fakeId);
+      var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
+      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+  });
 });
