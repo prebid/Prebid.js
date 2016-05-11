@@ -12,6 +12,7 @@
   },
   "adapters": [
     "adequant",
+    "adform",
     "aol",
     "appnexus",
     "indexExchange",
@@ -20,6 +21,7 @@
     "pulsepoint",
     "rubicon",
     "sonobi",
+    "sovrn",
     "springserve",
     "triplelift",
     "yieldbot",

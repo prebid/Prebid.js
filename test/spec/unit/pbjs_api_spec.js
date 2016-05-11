@@ -9,8 +9,6 @@ var bidmanager = require('src/bidmanager');
 var bidResponses = require('test/fixtures/bid-responses.json');
 var targetingMap = require('test/fixtures/targeting-map.json');
 var config = require('test/fixtures/config.json');
-var targetingString = 'hb_bidder=rubicon&hb_adid=148018fe5e&hb_pb=10.00&foobar=300x250&';
-var spyLogMessage = sinon.spy(utils, 'logMessage');
 
 pbjs = pbjs || {};
 pbjs._bidsRequested = getBidRequests();
@@ -67,10 +65,6 @@ window.googletag = {
 
 bidmanager.pbBidResponseByPlacement = bidResponses;
 
-after(function () {
-  utils.logMessage.restore();
-});
-
 describe('Unit: Prebid Module', function () {
 
   describe('getAdserverTargetingForAdUnitCode', function () {
@@ -116,15 +110,6 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(slots[0].spySetTargeting.args[0][1], {
         testKey: ['a test targeting value']
       }, 'slot.setTargeting was called with expected key/values');
-
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', ''), 'clears hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', ''), 'clears hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', ''), 'clears hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', ''), 'clears foobar param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', 'rubicon'), 'sets hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', '148018fe5e'), 'sets hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', '10.00'), 'sets hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', '300x250'), 'sets foobar param');
     });
 
     it('should set targeting from googletag data', function () {
@@ -132,14 +117,6 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
 
       pbjs.setTargetingForGPTAsync();
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', ''), 'clears hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', ''), 'clears hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', ''), 'clears hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', ''), 'clears foobar param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', 'rubicon'), 'sets hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', '148018fe5e'), 'sets hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', '10.00'), 'sets hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', '300x250'), 'sets foobar param');
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -149,21 +126,6 @@ describe('Unit: Prebid Module', function () {
 
       pbjs.enableSendAllBids();
       pbjs.setTargetingForGPTAsync();
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', ''), 'clears hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', ''), 'clears hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', ''), 'clears hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', ''), 'clears foobar param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_bidder', 'rubicon'), 'sets hb_bidder param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_adid', '148018fe5e'), 'sets hb_adid param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('hb_pb', '10.00'), 'sets hb_pb param');
-      //assert.ok(slots[0].spySetTargeting.calledWithExactly('foobar', '300x250'), 'sets foobar param');
-      //assert.ok(slots[0].spySetTargeting.calledWith('hb_bidder_rubicon', ''), 'sets' +
-      //  ' hb_bidder_rubicon param');
-      //assert.ok(slots[0].spySetTargeting.calledWith('hb_adid_rubicon', ''), 'sets hb_adid_rubicon param');
-      //assert.ok(slots[0].spySetTargeting.calledWith('hb_pb_rubicon', ''), 'sets hb_pb_rubicon' +
-      //  ' param');
-      //assert.ok(!slots[0].spySetTargeting.calledWithExactly('foobar_rubicon', ''), 'does' +
-      //  ' not set custom keys with bidder in key name for foobar_rubicon param');
     });
   });
 
