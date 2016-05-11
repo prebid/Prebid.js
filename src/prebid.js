@@ -18,7 +18,6 @@ var events = require('./events');
 var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
-var objectType_string = 'string';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
@@ -90,22 +89,18 @@ function getBid(id) {
   return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
-pbjs.getBid = function (id) {
-  return getBid(id);
-};
-
 function flatten(a, b) {
   return a.concat(b);
 }
 
-pbjs.flatten = function (a, b) {
-  return flatten(a, b);
-};
+function uniques(value, index, arry) {
+  return arry.indexOf(value) === index;
+}
 
 function checkDefinedPlacement(id) {
   var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
-    .reduce((a, b) => a.concat(b)) // flatten
-    .filter((value, index, array) => array.indexOf(value) === index); // uniques
+    .reduce(flatten)
+    .filter(uniques);
 
   if (!utils.contains(placementCodes, id)) {
     utils.logError('The "' + id + '" placement is not defined.');
@@ -114,14 +109,6 @@ function checkDefinedPlacement(id) {
 
   return true;
 }
-
-function uniques(value, index, arry) {
-  return arry.indexOf(value) === index;
-}
-
-pbjs.uniques = function () {
-  return uniques;
-};
 
 function getPresetTargeting() {
   return window.googletag.pubads().getSlots().map(slot => {
@@ -162,7 +149,7 @@ function getBidLandscapeTargeting() {
       return {
         [bid.adUnitCode]: standardKeys.map(key => {
           return {
-            [`${key}_${bid.bidderCode}`]: [bid.adserverTargeting[key]]
+            [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
           };
         })
       };
@@ -170,11 +157,23 @@ function getBidLandscapeTargeting() {
   }).filter(bid => bid); // removes empty elements in array
 }
 
+function getAllTargeting() {
+  return getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting());
+}
+
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
 //                              //
 //////////////////////////////////
+
+pbjs.flatten = function (a, b) {
+  return flatten(a, b);
+};
+
+pbjs.uniques = function () {
+  return uniques;
+};
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -186,8 +185,7 @@ function getBidLandscapeTargeting() {
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
-  return getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting())
-    .find(targeting => Object.keys(targeting)[0] === adUnitCode);
+  return getAllTargeting().find(targeting => Object.keys(targeting)[0] === adUnitCode);
 };
 
 /**
@@ -198,7 +196,7 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 
 pbjs.getAdserverTargeting = function () {
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting());
+  return getAllTargeting();
 };
 
 /**
@@ -459,39 +457,6 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 };
 
 /**
- *
- */
-//pbjs.bidsAvailableForAdapter = function (bidderCode) {
-//  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
-//  //TODO getAd
-//  var bids = pb_bidderMap[bidderCode].bids;
-//
-//  for (var i = 0; i < bids.length; i++) {
-//    var adunitCode = bids[i].placementCode;
-//    var responseObj = bidmanager.pbBidResponseByPlacement[adunitCode];
-//
-//    var bid = bidfactory.createBid(1);
-//
-//    // bid.creative_id = adId;
-//    bid.bidderCode = bidderCode;
-//    bid.adUnitCode = adunitCode;
-//    bid.bidder = bidderCode;
-//
-//    // bid.cpm = responseCPM;
-//    // bid.adUrl = jptResponseObj.result.ad;
-//    // bid.width = jptResponseObj.result.width;
-//    // bid.height = jptResponseObj.result.height;
-//    // bid.dealId = jptResponseObj.result.deal_id;
-//
-//    responseObj.bids.push(bid);
-//    responseObj.bidsReceivedCount++;
-//    bidmanager.pbBidResponseByPlacement[adunitCode] = responseObj;
-//  }
-//
-//  bidmanager.increaseBidResponseReceivedCount(bidderCode);
-//};
-
-/**
  * Wrapper to bidfactory.createBid()
  * @param  {[type]} statusCode [description]
  * @return {[type]}            [description]
@@ -575,10 +540,12 @@ pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
 };
 
-pbjs.getBidRequest = function (bidId) {
-  // look at optimizing this
-  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === bidId))
-    .find(bid => bid)[0];
+pbjs.getBid = function (id) {
+  return getBid(id);
+};
+
+pbjs.getBidRequest = function (id) {
+  return getBid(id);
 };
 
 processQue();
