@@ -1,15 +1,10 @@
 var CONSTANTS = require('./constants.json');
-var polyfills = require('./polyfills');
 
 var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
 
 var _loggingChecked = false;
-
-var _lgPriceCap = 5.00;
-var _mgPriceCap = 20.00;
-var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array';
 var t_Str = 'String';
@@ -263,66 +258,6 @@ var getParameterByName = function (name) {
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
-exports.getPriceBucketString = function (cpm) {
-  var low = '';
-  var med = '';
-  var high = '';
-  var auto = '';
-
-  var cpmFloat = 0;
-  var returnObj = {
-    low: low,
-    med: med,
-    high: high,
-    auto: auto
-  };
-  try {
-    cpmFloat = parseFloat(cpm);
-    if (cpmFloat) {
-      //round to closest .5
-      if (cpmFloat > _lgPriceCap) {
-        returnObj.low = _lgPriceCap.toFixed(2);
-      } else {
-        returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
-      }
-
-      //round to closest .1
-      if (cpmFloat > _mgPriceCap) {
-        returnObj.med = _mgPriceCap.toFixed(2);
-      } else {
-        returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
-      }
-
-      //round to closest .01
-      if (cpmFloat > _hgPriceCap) {
-        returnObj.high = _hgPriceCap.toFixed(2);
-      } else {
-        returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
-      }
-
-      // round auto default sliding scale
-      if (cpmFloat <= 5) {
-        // round to closest .05
-        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 10) {
-        // round to closest .10
-        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.auto = '20.00';
-      }
-    }
-  } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
-  }
-
-  return returnObj;
-
-};
-
 /**
  * This function validates paramaters.
  * @param  {object[string]} paramObj          [description]
@@ -448,7 +383,8 @@ exports.indexOf = (function () {
     return Array.prototype.indexOf;
   }
 
-  return polyfills.indexOf;
+  // ie8 no longer supported
+  //return polyfills.indexOf;
 }());
 
 /**

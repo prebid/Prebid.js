@@ -84,7 +84,7 @@ var NginAdAdapter = function NginAdAdapter() {
       };
 
       nginadImps.push(imp);
-      bidmanager.pbCallbackMap[imp.id] = bid;
+      //bidmanager.pbCallbackMap[imp.id] = bid;
 
       rtbServerDomain = bid.params.nginadDomain;
 
@@ -141,7 +141,8 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      var bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
+        .filter(bid => bid.params && bid.params.impId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }

@@ -1,6 +1,5 @@
 /** @module adaptermanger */
 
-var bidmanager = require('./bidmanager.js');
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
@@ -9,34 +8,44 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-exports.callBids = function (bidderArr) {
-  for (var i = 0; i < bidderArr.length; i++) {
-    //use the bidder code to identify which function to call
-    var bidder = bidderArr[i];
-    if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
-      utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
-      var currentBidder = _bidderRegistry[bidder.bidderCode];
+function getBids({ bidderCode, bidCallId, bidSetId }) {
+  return pbjs.adUnits.map(adUnit => {
+    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
+      .map(bid => Object.assign(bid, {
+        placementCode: adUnit.code,
+        sizes: adUnit.sizes,
+        bidId: utils.getUniqueIdentifierStr(),
+        bidSetId,
+        bidCallId
+      }));
+  }).reduce(pbjs.flatten, []);
+}
 
-      //emit 'bidRequested' event
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
-      currentBidder.callBids(bidder);
+exports.callBids = () => {
+  const bidCallId = utils.getUniqueIdentifierStr();
 
-      // if the bidder didn't explicitly set the number of bids
-      // expected, default to the number of bids passed into the bidder
-      if (bidmanager.getExpectedBidsCount(bidder.bidderCode) === undefined) {
-        bidmanager.setExpectedBidsCount(bidder.bidderCode, bidder.bids.length);
-      }
-
-      var currentTime = new Date().getTime();
-      bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
-
-      if (currentBidder.defaultBidderSettings) {
-        bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
+  Object.keys(_bidderRegistry).forEach(bidderCode => {
+    const adapter = _bidderRegistry[bidderCode];
+    if (adapter) {
+      const bidSetId = utils.getUniqueIdentifierStr();
+      const bidSet = {
+        bidderCode,
+        bidCallId,
+        bidSetId,
+        bids: getBids({ bidderCode, bidCallId, bidSetId }),
+        start: new Date().getTime()
+      };
+      console.log('bid set:', bidderCode, bidSetId);
+      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+      pbjs._bidsRequested.push(bidSet);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidSet);
+      if (bidSet.bids && bidSet.bids.length) {
+        adapter.callBids(bidSet);
       }
     } else {
-      utils.logError('Adapter trying to be called which does not exist: ' + bidder.bidderCode, 'adaptermanager.callBids');
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
-  }
+  });
 };
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
