@@ -135,7 +135,7 @@ function getWinningBidTargeting() {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
         .map(key => {
-          return { [key]: [winner.adserverTargeting[key]] };
+          return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
     };
   });
@@ -173,6 +173,24 @@ pbjs.flatten = function (a, b) {
 
 pbjs.uniques = function () {
   return uniques;
+};
+
+/**
+ * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
+ * @param  {string} [adunitCode] adUnitCode to get the bid responses for
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
+ * @return {array}  returnObj return bids array
+ */
+pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
+  utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
+
+  // call to retrieve bids array
+  if (adunitCode) {
+    var res = pbjs.getAdserverTargetingForAdUnitCode(adunitCode);
+    return utils.transformAdServerTargetingObj(res);
+  } else {
+    utils.logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+  }
 };
 
 /**
@@ -229,7 +247,7 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  */
 pbjs.setTargetingForGPTAsync = function () {
   window.googletag.pubads().getSlots().forEach(slot => {
-    getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting())
+    getAllTargeting()
       .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
       .forEach(targeting => targeting[Object.keys(targeting)[0]].forEach(key => {
         key[Object.keys(key)[0]].forEach(value => slot.setTargeting(Object.keys(key)[0], value));

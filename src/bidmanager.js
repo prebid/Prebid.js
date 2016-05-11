@@ -250,10 +250,7 @@ function processCallbacks(callbackQueue) {
       var func = callbackQueue[i];
       func.call(pbjs, pbjs._bidsReceived);
     }
-  } else {
-    callbackQueue.call(pbjs, pbjs._bidsReceived);
   }
-
 }
 
 /**
