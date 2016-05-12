@@ -87,10 +87,6 @@ function timeOutBidders() {
   }
 }
 
-function getBid(id) {
-  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
-}
-
 function checkDefinedPlacement(id) {
   var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
     .reduce(flatten)
@@ -460,6 +456,20 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   }
 };
 
+pbjs.bidsAvailableForAdapter = function (bidderCode) {
+  utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
+
+  pbjs._bidsRequested.find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
+    .map(bid => {
+      return Object.assign(bid, bidfactory.createBid(1), {
+        bidderCode,
+        adUnitCode: bid.placementCode
+      });
+    })
+    .map(bid => pbjs._bidsReceived.push(bid));
+};
+
+/**
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {[type]} statusCode [description]
@@ -542,10 +552,6 @@ pbjs.setPriceGranularity = function (granularity) {
 
 pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
-};
-
-pbjs.getBidRequest = function (id) {
-  return getBid(id);
 };
 
 processQue();

@@ -1,3 +1,5 @@
+import { getBidRequest } from '../utils.js';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
@@ -150,7 +152,7 @@ AppNexusAdapter = function AppNexusAdapter() {
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = pbjs.getBidRequest(id);
+      var bidObj = getBidRequest(id);
       if (bidObj) {
 
         bidCode = bidObj.bidder;

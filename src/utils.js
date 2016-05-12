@@ -473,3 +473,7 @@ export function uniques(value, index, arry) {
 export function flatten(a, b) {
   return a.concat(b);
 }
+
+export function getBidRequest(id) {
+  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+}
