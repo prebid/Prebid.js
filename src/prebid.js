@@ -213,7 +213,11 @@ function getWinningBid(bidArray) {
 function setGPTAsyncTargeting(code, slot) {
   //get the targeting that is already configured
   const keyStrings = getTargetingfromGPTIdentifier(slot);
-  const bids = pbjs.getBidResponses(slot.getAdUnitPath());
+  //this is a temp fix until we merge the refactor
+  var bids = pbjs.getBidResponses(slot.getAdUnitPath());
+  if(bids.bids.length === 0) {
+    bids = pbjs.getBidResponses(slot.getSlotElementId());
+  }
 
   //copy keyStrings into pb_keyHistoryMap by code
   if (!pb_keyHistoryMap[code]) {
