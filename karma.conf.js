@@ -1,10 +1,12 @@
+var path = require('path');
+
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|(src\/adapters)/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -27,13 +29,13 @@ module.exports = function (config) {
     ],
 
     // list of files to exclude
-    exclude: [],
+    exclude: [path.resolve(__dirname, 'src/adapters')],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
-      'src/**/*.js': ['webpack', 'coverage']
+      'src/*.js': ['webpack', 'coverage']
     },
 
     // WebPack Related

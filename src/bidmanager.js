@@ -1,3 +1,5 @@
+import { uniques } from './utils';
+
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
@@ -29,10 +31,6 @@ exports.getTimedOutBidders = function () {
 };
 
 function timestamp() { return new Date().getTime(); }
-
-function uniques(value, index, array) {
-  return array.indexOf(value) === index;
-}
 
 function getBidderCodes(bidSet) {
   return bidSet.bidderCode;

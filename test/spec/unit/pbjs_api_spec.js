@@ -63,8 +63,6 @@ window.googletag = {
   }
 };
 
-bidmanager.pbBidResponseByPlacement = bidResponses;
-
 describe('Unit: Prebid Module', function () {
 
   describe('getAdserverTargetingForAdUnitCode', function () {
@@ -144,6 +142,7 @@ describe('Unit: Prebid Module', function () {
     var doc = {};
     var adResponse = {};
     var spyLogError = null;
+    var spyLogMessage = null;
 
     beforeEach(function() {
       doc = {
@@ -158,17 +157,20 @@ describe('Unit: Prebid Module', function () {
       };
 
       adResponse = {
+        "adId": bidId,
         "width": 300,
         "height": 250,
       };
-      bidmanager._adResponsesByBidderId[bidId] = adResponse;
+      pbjs._bidsReceived.push(adResponse);
 
       spyLogError = sinon.spy(utils, 'logError');
+      spyLogMessage = sinon.spy(utils, 'logMessage');
     });
 
     afterEach(function() {
-      bidmanager._adResponsesByBidderId[bidId] = null;
+      pbjs._bidsReceived.splice(pbjs._bidsReceived.indexOf(adResponse), 1);
       utils.logError.restore();
+      utils.logMessage.restore();
     });
 
     it('should require doc and id params', function () {

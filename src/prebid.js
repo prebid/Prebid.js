@@ -1,5 +1,7 @@
 /** @module pbjs */
 
+import { flatten, uniques } from './utils';
+
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
 window.pbjs.que = window.pbjs.que || [];
@@ -89,14 +91,6 @@ function getBid(id) {
   return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
-function flatten(a, b) {
-  return a.concat(b);
-}
-
-function uniques(value, index, arry) {
-  return arry.indexOf(value) === index;
-}
-
 function checkDefinedPlacement(id) {
   var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
     .reduce(flatten)
@@ -166,14 +160,6 @@ function getAllTargeting() {
 //    Start Public APIs         //
 //                              //
 //////////////////////////////////
-
-pbjs.flatten = function (a, b) {
-  return flatten(a, b);
-};
-
-pbjs.uniques = function () {
-  return uniques;
-};
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -556,10 +542,6 @@ pbjs.setPriceGranularity = function (granularity) {
 
 pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
-};
-
-pbjs.getBid = function (id) {
-  return getBid(id);
 };
 
 pbjs.getBidRequest = function (id) {

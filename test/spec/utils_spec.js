@@ -1,3 +1,5 @@
+import { getSlotTargeting } from 'test/fixtures/fixtures';
+
 var assert = require('assert');
 var utils = require('../../src/utils');
 
@@ -97,13 +99,10 @@ describe('Utils', function () {
 
   describe('transformAdServerTargetingObj', function () {
     it('should append query string to existing using the input obj', function () {
-      var obj = {
-        a:'1',
-        b:'2'
-      };
+      var obj = getSlotTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
+      var expectedResult = 'hb_bidder=appnexus&hb_adid=233bcbee889d46d&hb_pb=10.00&hb_size=300x250&foobar=300x250';
       assert.equal(output, expectedResult);
     });
 

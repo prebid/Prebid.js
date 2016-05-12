@@ -19,7 +19,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = tlReq[i];
-      var callbackId = bidRequest.bidSetId;
+      var callbackId = bidRequest.bidderRequestId;
       adloader.loadScript(buildTLCall(bidRequest, callbackId));
       //store a reference to the bidRequest from the callback id
       //bidmanager.pbCallbackMap[callbackId] = bidRequest;
@@ -73,7 +73,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   pbjs.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
       //var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidSetId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
+      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
       var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'

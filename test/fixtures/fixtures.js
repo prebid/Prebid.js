@@ -4,8 +4,8 @@ export function getBidRequests() {
   return [
     {
       "bidderCode": "appnexus",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "2946b569352ef2",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "2946b569352ef2",
       "bids": [
         {
           "bidder": "appnexus",
@@ -25,8 +25,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "392b5a6b05d648",
-          "bidSetId": "2946b569352ef2",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "2946b569352ef2",
+          "requestId": "1863e370099523",
           "startTime": 1462918897462,
           "status": 1
         },
@@ -47,8 +47,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "4dccdc37746135",
-          "bidSetId": "2946b569352ef2",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "2946b569352ef2",
+          "requestId": "1863e370099523",
           "startTime": 1462918897463,
           "status": 1
         }
@@ -57,8 +57,8 @@ export function getBidRequests() {
     },
     {
       "bidderCode": "pubmatic",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "5e1525bae3eb11",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "5e1525bae3eb11",
       "bids": [
         {
           "bidder": "pubmatic",
@@ -78,16 +78,16 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "6d11aa2d5b3659",
-          "bidSetId": "5e1525bae3eb11",
-          "bidCallId": "1863e370099523"
+          "bidderRequestId": "5e1525bae3eb11",
+          "requestId": "1863e370099523"
         }
       ],
       "start": 1462918897463
     },
     {
       "bidderCode": "rubicon",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "8778750ee15a77",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "8778750ee15a77",
       "bids": [
         {
           "bidder": "rubicon",
@@ -126,16 +126,16 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "96aff279720d39",
-          "bidSetId": "8778750ee15a77",
-          "bidCallId": "1863e370099523"
+          "bidderRequestId": "8778750ee15a77",
+          "requestId": "1863e370099523"
         }
       ],
       "start": 1462918897474
     },
     {
       "bidderCode": "triplelift",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "107f5e6e98dcf09",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "107f5e6e98dcf09",
       "bids": [
         {
           "bidder": "triplelift",
@@ -154,8 +154,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "1144e2f0de84363",
-          "bidSetId": "107f5e6e98dcf09",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "107f5e6e98dcf09",
+          "requestId": "1863e370099523",
           "startTime": 1462918897477
         }
       ],
@@ -163,8 +163,8 @@ export function getBidRequests() {
     },
     {
       "bidderCode": "brightcom",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "12eeded736650b4",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "12eeded736650b4",
       "bids": [
         {
           "bidder": "brightcom",
@@ -183,8 +183,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "135e89c039705da",
-          "bidSetId": "12eeded736650b4",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "12eeded736650b4",
+          "requestId": "1863e370099523",
           "status": 1
         }
       ],
@@ -192,8 +192,8 @@ export function getBidRequests() {
     },
     {
       "bidderCode": "brealtime",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "167c4d79b615948",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "167c4d79b615948",
       "bids": [
         {
           "bidder": "brealtime",
@@ -212,8 +212,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "17dd1d869bed44e",
-          "bidSetId": "167c4d79b615948",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "167c4d79b615948",
+          "requestId": "1863e370099523",
           "startTime": 1462918897480,
           "status": 1
         }
@@ -222,8 +222,8 @@ export function getBidRequests() {
     },
     {
       "bidderCode": "pagescience",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "18bed198c172a69",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "18bed198c172a69",
       "bids": [
         {
           "bidder": "pagescience",
@@ -242,8 +242,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "192c8c1df0f5d1d",
-          "bidSetId": "18bed198c172a69",
-          "bidCallId": "1863e370099523",
+          "bidderRequestId": "18bed198c172a69",
+          "requestId": "1863e370099523",
           "startTime": 1462918897481,
           "status": 1
         }
@@ -252,8 +252,8 @@ export function getBidRequests() {
     },
     {
       "bidderCode": "amazon",
-      "bidCallId": "1863e370099523",
-      "bidSetId": "20d0d30333715a7",
+      "requestId": "1863e370099523",
+      "bidderRequestId": "20d0d30333715a7",
       "bids": [
         {
           "bidder": "amazon",
@@ -272,8 +272,8 @@ export function getBidRequests() {
             ]
           ],
           "bidId": "21ae8131ec04f6e",
-          "bidSetId": "20d0d30333715a7",
-          "bidCallId": "1863e370099523"
+          "bidderRequestId": "20d0d30333715a7",
+          "requestId": "1863e370099523"
         }
       ],
       "start": 1462918897482

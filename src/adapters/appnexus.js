@@ -150,7 +150,7 @@ AppNexusAdapter = function AppNexusAdapter() {
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = pbjs.getBid(id);
+      var bidObj = pbjs.getBidRequest(id);
       if (bidObj) {
 
         bidCode = bidObj.bidder;

@@ -1,5 +1,7 @@
 /** @module adaptermanger */
 
+import { flatten } from './utils';
+
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
@@ -8,34 +10,34 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-function getBids({ bidderCode, bidCallId, bidSetId }) {
+function getBids({ bidderCode, requestId, bidderRequestId }) {
   return pbjs.adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => Object.assign(bid, {
         placementCode: adUnit.code,
         sizes: adUnit.sizes,
         bidId: utils.getUniqueIdentifierStr(),
-        bidSetId,
-        bidCallId
+        bidderRequestId,
+        requestId
       }));
-  }).reduce(pbjs.flatten, []);
+  }).reduce(flatten, []);
 }
 
 exports.callBids = () => {
-  const bidCallId = utils.getUniqueIdentifierStr();
+  const requestId = utils.getUniqueIdentifierStr();
 
   Object.keys(_bidderRegistry).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
-      const bidSetId = utils.getUniqueIdentifierStr();
+      const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidSet = {
         bidderCode,
-        bidCallId,
-        bidSetId,
-        bids: getBids({ bidderCode, bidCallId, bidSetId }),
+        requestId,
+        bidderRequestId,
+        bids: getBids({ bidderCode, requestId, bidderRequestId }),
         start: new Date().getTime()
       };
-      console.log('bid set:', bidderCode, bidSetId);
+      console.log('bid set:', bidderCode, bidderRequestId);
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
       pbjs._bidsRequested.push(bidSet);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidSet);
