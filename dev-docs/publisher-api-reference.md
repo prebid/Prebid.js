@@ -25,7 +25,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
-  * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
+  <!-- * [.enableSendAllBids()](#module_pbjs.enableSendAllBids) -->
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
@@ -303,6 +303,7 @@ Returns a bool if all the bids have returned or timed out
 
 <hr class="full-rule">
 
+<!-- 
 <a name="module_pbjs.enableSendAllBids"></a>
 
 ### pbjs.enableSendAllBids()
@@ -340,7 +341,7 @@ The "tagged" targeting keyword/value pairs sent to the ad server will look like 
 }
 {% endhighlight %}
 
-<hr class="full-rule">
+<hr class="full-rule"> -->
 
 <a name="module_pbjs.renderAd"></a>
 
