@@ -65,6 +65,22 @@ window.googletag = {
 
 describe('Unit: Prebid Module', function () {
 
+  describe('getAdserverTargetingForAdUnitCodeStr', function () {
+    it('should return targeting info as a string', function () {
+      var expected = 'hb_bidder=appnexus&hb_adid=233bcbee889d46d&hb_pb=10.00&hb_size=300x250&foobar=300x250';
+      var result = pbjs.getAdserverTargetingForAdUnitCodeStr(config.adUnitCodes[0]);
+      assert.equal(expected, result, 'returns expected string of ad targeting info');
+    });
+
+    it('should log message if adunitCode param is falsey', function () {
+      var spyLogMessage = sinon.spy(utils, 'logMessage');
+      var result = pbjs.getAdserverTargetingForAdUnitCodeStr();
+      assert.ok(spyLogMessage.calledWith('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode'), 'expected message was logged');
+      assert.equal(result, undefined, 'result is undefined');
+      utils.logMessage.restore();
+    });
+  });
+
   describe('getAdserverTargetingForAdUnitCode', function () {
     it('should return targeting info as an object', function () {
       var result = pbjs.getAdserverTargetingForAdUnitCode(config.adUnitCodes[0]);
@@ -144,7 +160,7 @@ describe('Unit: Prebid Module', function () {
     var spyLogError = null;
     var spyLogMessage = null;
 
-    beforeEach(function() {
+    beforeEach(function () {
       doc = {
         write: sinon.spy(),
         close: sinon.spy(),
@@ -167,7 +183,7 @@ describe('Unit: Prebid Module', function () {
       spyLogMessage = sinon.spy(utils, 'logMessage');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       pbjs._bidsReceived.splice(pbjs._bidsReceived.indexOf(adResponse), 1);
       utils.logError.restore();
       utils.logMessage.restore();
@@ -185,30 +201,30 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyLogMessage.calledWith(message), 'expected message was logged');
     });
 
-    it('should write the ad to the doc', function() {
+    it('should write the ad to the doc', function () {
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       pbjs.renderAd(doc, bidId);
       assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
       assert.ok(doc.close.called, 'close method called');
     });
 
-    it('should place the url inside an iframe on the doc', function() {
+    it('should place the url inside an iframe on the doc', function () {
       adResponse.adUrl = "http://server.example.com/ad/ad.js";
       pbjs.renderAd(doc, bidId);
       var iframe = '<IFRAME SRC="' + adResponse.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + adResponse.width + '" HEIGHT="' + adResponse.height + '"></IFRAME>'
       assert.ok(doc.write.calledWith(iframe), 'url was written to iframe in doc');
     });
 
-    it('should log an error when no ad or url', function() {
+    it('should log an error when no ad or url', function () {
       pbjs.renderAd(doc, bidId);
       var error = 'Error trying to write ad. No ad for bid response id: ' + bidId;
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
-    it('should catch errors thrown when trying to write ads to the page', function() {
+    it('should catch errors thrown when trying to write ads to the page', function () {
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
 
-      var error = {message: 'doc write error'};
+      var error = { message: 'doc write error' };
       doc.write = sinon.stub().throws(error);
       pbjs.renderAd(doc, bidId);
 
@@ -216,7 +232,7 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyLogError.calledWith(errorMessage), 'expected error was logged');
     });
 
-    it('should log an error when ad not found', function() {
+    it('should log an error when ad not found', function () {
       var fakeId = 99;
       pbjs.renderAd(doc, fakeId);
       var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
