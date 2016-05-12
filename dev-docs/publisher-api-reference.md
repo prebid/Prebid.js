@@ -310,18 +310,16 @@ Returns a bool if all the bids have returned or timed out
 
 (Added in version 0.8.1)
 
-This method enables Prebid.js to send information about all of the bids submitted back to the ad server by "tagging" each keyword with the name of the bidder associated with that keyword's value, e.g., `hb_bidder_triplelift`.  This allows you to log these keywords with bid information in your ad server and report on them.
+After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server. 
 
-This method must be called before `pbjs.setTargetingForGPTAsync()`.
+With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win, and generate reporting on historical bid prices from all bidders.
 
-The "tagged" targeting keyword/value pairs sent to the ad server will look like this:
+After this method is called, `pbjs.getAdserverTargeting()` will give you the below json (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the json to GPT, so that 
+
+This method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
 
 {% highlight js %}
 {
-  "hb_bidder": "appnexus",
-  "hb_adid": "191f4aca0c0be8",
-  "hb_pb": "10.00",
-  "hb_size": "300x250",
   "hb_bidder_springserve": "springserve",
   "hb_adid_springserve": "129a7ed7a6fb40e",
   "hb_pb_springserve": "10.00",
@@ -338,6 +336,11 @@ The "tagged" targeting keyword/value pairs sent to the ad server will look like 
   "hb_adid_pagescience": "2024c6abebaa183",
   "hb_pb_pagescience": "10.00",
   "hb_size_pagescience": "300x250",
+  // original ones (also attached):
+  "hb_bidder": "appnexus",
+  "hb_adid": "191f4aca0c0be8",
+  "hb_pb": "10.00",
+  "hb_size": "300x250",
 }
 {% endhighlight %}
 
