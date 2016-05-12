@@ -82,16 +82,27 @@ exports.parseQueryStringParameters = function (queryObj) {
   return result;
 };
 
+function getKeys(obj) {
+  return Object.keys(obj);
+}
+
+function getVals(obj, key) {
+  return obj[key];
+}
+
 //transform an AdServer targeting bids into a query string to send to the adserver
-//bid params should be an object such as {key: "value", key1 : "value1"}
-exports.transformAdServerTargetingObj = function (adServerTargeting) {
-  var result = '';
-  if (!adServerTargeting)
+exports.transformAdServerTargetingObj = function (targeting) {
+  // we expect to receive targeting for a single slot at a time, so start with
+  // the first key of the targeting object and test it has at least one property
+  if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
+
+    return targeting[getKeys(targeting)[0]]
+      .map(obj => getKeys(obj)
+        .map(key => getVals(obj, key)
+          .map(val => `${key}=${encodeURIComponent(val)}`))).reduce(flatten).join('&');
+  } else {
     return '';
-  for (var k in adServerTargeting)
-    if (adServerTargeting.hasOwnProperty(k))
-      result += k + '=' + encodeURIComponent(adServerTargeting[k]) + '&';
-  return result;
+  }
 };
 
 //Copy all of the properties in the source objects over to the target object
@@ -454,3 +465,11 @@ exports.getIframeDocument = function (iframe) {
 
   return doc;
 };
+
+export function uniques(value, index, arry) {
+  return arry.indexOf(value) === index;
+}
+
+export function flatten(a, b) {
+  return a.concat(b);
+}
