@@ -57,7 +57,7 @@ function bidsBackAll() {
 }
 
 exports.bidsBackAll = function() {
-  return bidsBackAll;
+  return bidsBackAll();
 };
 
 function getBidSetForBidder(bidder) {
@@ -230,7 +230,7 @@ exports.executeCallback = function () {
 
   //execute one time callback
   if (externalOneTimeCallback) {
-    processCallbacks(externalOneTimeCallback);
+    processCallbacks([externalOneTimeCallback]);
     externalOneTimeCallback = null;
   }
 };

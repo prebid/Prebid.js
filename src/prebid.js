@@ -328,7 +328,7 @@ pbjs.removeAdUnit = function (adUnitCode) {
  * @param bidsBackHandler
  * @param timeout
  */
-pbjs.requestBids = function (bidsBackHandler, timeout) {
+pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
   const cbTimeout = timeout || pbjs.bidderTimeout;
 
   if (typeof bidsBackHandler === objectType_function) {
