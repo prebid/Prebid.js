@@ -1,5 +1,3 @@
-var path = require('path');
-
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
@@ -29,13 +27,13 @@ module.exports = function (config) {
     ],
 
     // list of files to exclude
-    exclude: [path.resolve(__dirname, 'src/adapters')],
+    exclude: [],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
-      'src/*.js': ['webpack', 'coverage']
+      'src/**/*.js': ['webpack', 'coverage']
     },
 
     // WebPack Related
