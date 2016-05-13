@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten } from './utils';
+import { flatten, getBidderCodes } from './utils';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -26,7 +26,7 @@ function getBids({ bidderCode, requestId, bidderRequestId }) {
 exports.callBids = () => {
   const requestId = utils.getUniqueIdentifierStr();
 
-  Object.keys(_bidderRegistry).forEach(bidderCode => {
+  getBidderCodes().forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();

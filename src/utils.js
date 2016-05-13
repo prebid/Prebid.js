@@ -14,7 +14,8 @@ let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
 }
-catch (e) {}
+catch (e) {
+}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -181,14 +182,14 @@ exports.logWarn = function (msg) {
   }
 };
 
-exports.logInfo = function(msg, args) {
+exports.logInfo = function (msg, args) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     if (infoLogger) {
       if (!args || args.length === 0) {
         args = '';
       }
 
-      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '),  args);
+      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '), args);
     }
   }
 };
@@ -476,4 +477,10 @@ export function getKeys(obj) {
 
 export function getValue(obj, key) {
   return obj[key];
+}
+
+export function getBidderCodes() {
+  // this could memoize adUnits
+  return pbjs.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+    .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
