@@ -17,13 +17,15 @@ var events = require('src/events');
 var ga = require('src/ga');
 var CONSTANTS = require('src/constants.json');
 
-var bidResponses = require('test/fixtures/bid-responses.json');
-var targetingMap = require('test/fixtures/targeting-map.json');
+//var bidResponses = require('test/fixtures/bid-responses.json');
+//var targetingMap = require('test/fixtures/targeting-map.json');
 var config = require('test/fixtures/config.json');
 
 pbjs = pbjs || {};
-pbjs._bidsRequested = getBidRequests();
-pbjs._bidsReceived = getBidResponses();
+
+//var auction = getAuction();
+//auction.getBidderRequests = getBidRequests();
+//auction.getBidsReceived = getBidResponses();
 
 function resetAuction() {
   pbjs._sendAllBids = false;
@@ -207,7 +209,7 @@ describe('Unit: Prebid Module', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       var result = pbjs.getBidResponses();
       var compare = getBidResponses().map(bid => bid.adUnitCode)
-        .filter((v, i, a) => a.indexOf(v) === i).map(adUnitCode => pbjs._bidsReceived
+        .filter((v, i, a) => a.indexOf(v) === i).map(adUnitCode => auction.getBidsReceived()
           .filter(bid => bid.adUnitCode === adUnitCode))
         .map(bids => {
           return {
@@ -369,14 +371,14 @@ describe('Unit: Prebid Module', function () {
         "width": 300,
         "height": 250,
       };
-      pbjs._bidsReceived.push(adResponse);
+      auction.getBidsReceived().push(adResponse);
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
     });
 
     afterEach(function () {
-      pbjs._bidsReceived.splice(pbjs._bidsReceived.indexOf(adResponse), 1);
+      auction.getBidsReceived().splice(auction.getBidsReceived().indexOf(adResponse), 1);
       utils.logError.restore();
       utils.logMessage.restore();
     });
@@ -582,7 +584,7 @@ describe('Unit: Prebid Module', function () {
       const bidderCode = 'appnexus';
       pbjs.bidsAvailableForAdapter(bidderCode);
 
-      const requestedBids = pbjs._bidsRequested.find(bid => bid.bidderCode === bidderCode);
+      const requestedBids = auction.getBidderRequests().find(bid => bid.bidderCode === bidderCode);
       requestedBids.bids.forEach(bid => {
         assert.equal(bid.bidderCode, bidderCode, 'bidderCode was set');
         assert.equal(bid.statusMessage, 'Bid available', 'bid set as available');

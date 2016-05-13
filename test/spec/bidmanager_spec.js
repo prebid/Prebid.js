@@ -56,7 +56,7 @@ describe('bidmanager.js', function () {
         return this.height + 'x' + this.width;
       };
       bid.bidderCode = bidderCode;
-      bid.adId = adId;
+      bid.bidId = adId;
 
     });
 
@@ -365,29 +365,29 @@ describe('bidmanager.js', function () {
       bid.cpm = '1.99';
       let expectedIncrement = '1.99';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      // pop this bid because another test relies on global pbjs._bidsReceived
-      let registeredBid = pbjs._bidsReceived.pop();
+      // pop this bid because another test relies on global auction.getBidsReceived()
+      let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
 
       // 3 - 8 dollars
       bid.cpm = '4.39';
       expectedIncrement = '4.35';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
 
       // 8 - 20 dollars
       bid.cpm = '19.99';
       expectedIncrement = '19.50';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
 
       // 20+ dollars
       bid.cpm = '73.07';
       expectedIncrement = '20.00';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
     });
 

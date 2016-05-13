@@ -18,9 +18,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
     bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
-      //bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
       _pm_pub_id = _pm_pub_id || bid.params.publisherId;
       _pm_optimize_adslots.push(bid.params.adSlot);
+      _createHandlePubmaticCallback(bid);
     }
 
     // Load pubmatic script in an iframe, because they call document.write
@@ -73,57 +73,59 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return content;
   }
 
-  pbjs.handlePubmaticCallback = function (response) {
-    var i;
-    var adUnit;
-    var adUnitInfo;
-    var bid;
-    var bidResponseMap = (response && response.bidDetailsMap) || {};
-    var bidInfoMap = (response && response.progKeyValueMap) || {};
-    var dimensions;
+  function _createHandlePubmaticCallback(bidRequest) {
+    pbjs.handlePubmaticCallback = function (response) {
+      var i;
+      var adUnit;
+      var adUnitInfo;
+      var bid;
+      var bidResponseMap = (response && response.bidDetailsMap) || {};
+      var bidInfoMap = (response && response.progKeyValueMap) || {};
+      var dimensions;
 
-    for (i = 0; i < bids.length; i++) {
-      var adResponse;
-      bid = bids[i].params;
+      for (i = 0; i < bids.length; i++) {
+        var adResponse;
+        bid = bids[i].params;
 
-      adUnit = bidResponseMap[bid.adSlot] || {};
+        adUnit = bidResponseMap[bid.adSlot] || {};
 
-      // adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
+        // adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
 
-      // if using DFP GPT, the params string comes in the format:
-      // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
-      // the code below detects and handles this.
-      if (bidInfoMap[bid.adSlot].indexOf('=') === -1) {
-        bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+        // if using DFP GPT, the params string comes in the format:
+        // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
+        // the code below detects and handles this.
+        if (bidInfoMap[bid.adSlot].indexOf('=') === -1) {
+          bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+        }
+
+        adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function (result, pair) {
+          var parts = pair.split('=');
+          result[parts[0]] = parts[1];
+          return result;
+        }, {});
+
+        if (adUnitInfo.bidstatus === '1') {
+          dimensions = adUnitInfo.bidid.split('@')[1].split('x');
+          adResponse = bidfactory.createBid(1, bidRequest.bidId);
+          adResponse.bidderCode = 'pubmatic';
+          adResponse.adSlot = bid.adSlot;
+          adResponse.cpm = Number(adUnitInfo.bid);
+          adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
+          adResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(adUnit.tracking_url));
+          adResponse.width = dimensions[0];
+          adResponse.height = dimensions[1];
+          adResponse.dealId = adUnitInfo.wdeal;
+
+          bidmanager.addBidResponse(bids[i].placementCode, adResponse);
+        } else {
+          // Indicate an ad was not returned
+          adResponse = bidfactory.createBid(2);
+          adResponse.bidderCode = 'pubmatic';
+          bidmanager.addBidResponse(bids[i].placementCode, adResponse);
+        }
       }
-
-      adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function (result, pair) {
-        var parts = pair.split('=');
-        result[parts[0]] = parts[1];
-        return result;
-      }, {});
-
-      if (adUnitInfo.bidstatus === '1') {
-        dimensions = adUnitInfo.bidid.split('@')[1].split('x');
-        adResponse = bidfactory.createBid(1);
-        adResponse.bidderCode = 'pubmatic';
-        adResponse.adSlot = bid.adSlot;
-        adResponse.cpm = Number(adUnitInfo.bid);
-        adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
-        adResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(adUnit.tracking_url));
-        adResponse.width = dimensions[0];
-        adResponse.height = dimensions[1];
-        adResponse.dealId = adUnitInfo.wdeal;
-
-        bidmanager.addBidResponse(bids[i].placementCode, adResponse);
-      } else {
-        // Indicate an ad was not returned
-        adResponse = bidfactory.createBid(2);
-        adResponse.bidderCode = 'pubmatic';
-        bidmanager.addBidResponse(bids[i].placementCode, adResponse);
-      }
-    }
-  };
+    };
+  }
 
   return {
     callBids: _callBids

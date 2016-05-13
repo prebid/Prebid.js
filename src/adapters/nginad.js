@@ -1,3 +1,5 @@
+import { findBidderRequestByBidId } from '../utils';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -142,8 +144,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
-        .find(bid => bid.bidId === id);
+      var bidObj = findBidderRequestByBidId({ adId: id });
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }

@@ -1135,7 +1135,7 @@ export function getTargetingKeys() {
   ];
 }
 
-// Key/values used to set ad server targeting when bid landscape 
+// Key/values used to set ad server targeting when bid landscape
 // targeting is on.
 export function getTargetingKeysBidLandscape() {
   return [

@@ -1,5 +1,8 @@
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only';
 
+window.pbjs = (window.pbjs || {});
+var pbjs = window.pbjs;
+
 describe('Publisher API _ Alias Bidder', function () {
   var assert = require('chai').assert;
   var expect = require('chai').expect;

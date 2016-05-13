@@ -67,7 +67,7 @@ function AdformAdapter() {
         if (adItem && adItem.response === 'banner' &&
             verifySize(adItem, bid.sizes)) {
 
-          bidObject = bidfactory.createBid(1);
+          bidObject = bidfactory.createBid(1, bid.bidId);
           bidObject.bidderCode = bidder;
           bidObject.cpm = adItem.win_bid;
           bidObject.cur = adItem.win_cur;
@@ -76,7 +76,7 @@ function AdformAdapter() {
           bidObject.height = adItem.height;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         } else {
-          bidObject = bidfactory.createBid(2);
+          bidObject = bidfactory.createBid(2, bid.bidId);
           bidObject.bidderCode = bidder;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         }

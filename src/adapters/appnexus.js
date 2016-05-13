@@ -1,4 +1,4 @@
-import { getBidRequest } from '../utils.js';
+import { findBidRequest } from '../utils.js';
 
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -12,23 +12,10 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
 
   baseAdapter.callBids = function (params) {
-    //var bidCode = baseAdapter.getBidderCode();
-
-    var anArr = params.bids;
-
-    //var bidsCount = anArr.length;
-
-    //set expected bids count for callback execution
-    //bidmanager.setExpectedBidsCount(bidCode, bidsCount);
-
-    for (var i = 0; i < anArr.length; i++) {
-      var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
-
-      //store a reference to the bidRequest from the callback id
-      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
-    }
+    params.bids.map(bid => {
+      const callbackId = bid.bidId;
+      adloader.loadScript(buildJPTCall(bid, callbackId));
+    });
   };
 
   function buildJPTCall(bid, callbackId) {
@@ -151,7 +138,8 @@ AppNexusAdapter = function AppNexusAdapter() {
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = getBidRequest(id);
+      var bidObj = findBidRequest({ bidId: id });
+
       if (bidObj) {
 
         bidCode = bidObj.bidder;
@@ -178,7 +166,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //store bid response
         //bid status is good (indicating 1)
         var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, id);
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
@@ -196,7 +184,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
         //indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, id);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }

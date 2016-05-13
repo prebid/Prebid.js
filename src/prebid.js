@@ -1,7 +1,8 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import 'polyfill';
+import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
+import { auctionManager } from './auctionManager';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -35,9 +36,6 @@ var eventValidators = {
 
 /* Public vars */
 
-pbjs._bidsRequested = [];
-pbjs._bidsReceived = [];
-pbjs._adsReceived = [];
 pbjs._sendAllBids = false;
 
 //default timeout for all bids
@@ -92,13 +90,13 @@ function timeOutBidders() {
   }
 }
 
-function checkDefinedPlacement(id) {
-  var placementCodes = pbjs._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+function checkDefinedPlacement(id, auction) {
+  var placementCodes = auction.getBidderRequests().map(bidSet => bidSet.bids.map(bid => bid.placementCode))
     .reduce(flatten)
     .filter(uniques);
 
   if (!utils.contains(placementCodes, id)) {
-    utils.logError('The "' + id + '" placement is not defined.');
+    utils.logError(`The ${id} placement is not defined.`);
     return;
   }
 
@@ -152,9 +150,9 @@ function getPresetTargeting() {
 }
 
 function getWinningBidTargeting() {
-  let winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
+  let winners = auction.getBidsReceived().map(bid => bid.adUnitCode)
     .filter(uniques)
-    .map(adUnitCode => pbjs._bidsReceived
+    .map(adUnitCode => auction.getBidsReceived()
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
       .reduce(getHighestCpm,
         {
@@ -171,7 +169,7 @@ function getWinningBidTargeting() {
 
   winners = winners.map(winner => {
     return {
-      [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
+      [winner.adUnitCode]: Object.keys(winner.adserverTargeting)
         .map(key => {
           return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
@@ -181,8 +179,9 @@ function getWinningBidTargeting() {
   return winners;
 }
 
-function getDealTargeting() {
-  return pbjs._bidsReceived.filter(bid => bid.dealId).map(bid => {
+function getDealTargeting(auction) {
+  auction = auction || auctionManager.getSingleAuction();
+  auction.getBidsReceived().filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
       [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
@@ -198,7 +197,8 @@ function getDealTargeting() {
 /**
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
-function getAlwaysUseBidTargeting() {
+function getAlwaysUseBidTargeting(auction) {
+  auction = auction || auctionManager.getSingleAuction();
   return pbjs._bidsReceived.map(bid => {
     if (bid.alwaysUseBid) {
       const standardKeys = CONSTANTS.TARGETING_KEYS;
@@ -218,10 +218,11 @@ function getAlwaysUseBidTargeting() {
   }).filter(bid => bid); // removes empty elements in array;
 }
 
-function getBidLandscapeTargeting() {
+function getBidLandscapeTargeting(auction) {
   const standardKeys = CONSTANTS.TARGETING_KEYS;
+  auction = auction || pbjs.auctionManager.getSingleAuction();
 
-  return pbjs._bidsReceived.map(bid => {
+  return auction.getBidsReceived().map(bid => {
     if (bid.adserverTargeting) {
       return {
         [bid.adUnitCode]: standardKeys.map(key => {
@@ -234,13 +235,13 @@ function getBidLandscapeTargeting() {
   }).filter(bid => bid); // removes empty elements in array
 }
 
-function getAllTargeting() {
+function getAllTargeting(auction) {
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-  var targeting = getDealTargeting()
-    .concat(getWinningBidTargeting())
-    .concat(getAlwaysUseBidTargeting())
-    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting() : []);
+  var targeting = getDealTargeting(auction)
+    .concat(getWinningBidTargeting(auction))
+    .concat(getAlwaysUseBidTargeting(auction))
+    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting(auction) : []);
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -280,12 +281,15 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
 * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @param auction {Object} auction from which to get targeting info
  * @returns {object}  returnObj return bids
  */
-pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
+pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode, auction) {
+  auction = auction || pbjs.auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
-  return getAllTargeting().filter(targeting => getKeys(targeting)[0] === adUnitCode)
+  return getAllTargeting(auction).filter(targeting => getKeys(targeting)[0] === adUnitCode)
     .map(targeting => {
       return {
         [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
@@ -296,10 +300,10 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
           }).reduce((p, c) => Object.assign(c, p), {})
       };
     })
-    .reduce(function (accumulator, targeting) {
+    .reduce(function (allTargeting, targeting) {
       var key = Object.keys(targeting)[0];
-      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
-      return accumulator;
+      allTargeting[key] = Object.assign({}, allTargeting[key], targeting[key]);
+      return allTargeting;
     }, {})[adUnitCode];
 };
 
@@ -309,9 +313,11 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
  * @alias module:pbjs.getAdserverTargeting
  */
 
-pbjs.getAdserverTargeting = function () {
+pbjs.getAdserverTargeting = function (auction) {
+  auction = auction || pbjs.auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return getAllTargeting()
+  return getAllTargeting(auction)
     .map(targeting => {
       return {
         [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
@@ -335,11 +341,12 @@ pbjs.getAdserverTargeting = function () {
  * @return {object}            map | object that contains the bidResponses
  */
 
-pbjs.getBidResponses = function () {
+pbjs.getBidResponses = function (auction) {
   utils.logInfo('Invoking pbjs.getBidResponses', arguments);
 
-  return pbjs._bidsReceived.map(bid => bid.adUnitCode)
-    .filter(uniques).map(adUnitCode => pbjs._bidsReceived
+  auction = auction || auctionManager.getSingleAuction();
+  return auction.getBidsReceived().map(bid => bid.adUnitCode)
+    .filter(uniques).map(adUnitCode => auction.getBidsReceived()
       .filter(bid => bid.adUnitCode === adUnitCode))
     .map(bids => {
       return {
@@ -356,8 +363,8 @@ pbjs.getBidResponses = function () {
  * @return {Object}            bidResponse object
  */
 
-pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  const bids = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+pbjs.getBidResponsesForAdUnitCode = function (adUnitCode, auction) {
+  const bids = auction.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
   return {
     bids: bids
   };
@@ -367,7 +374,9 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * Set query string targeting on all GPT ad units.
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-pbjs.setTargetingForGPTAsync = function () {
+pbjs.setTargetingForGPTAsync = function (auction) {
+  auction = auction || pbjs.auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -375,10 +384,10 @@ pbjs.setTargetingForGPTAsync = function () {
   }
 
   //first reset any old targeting
-  getPresetTargeting();
-  resetPresetTargeting();
+  getPresetTargeting(auction);
+  resetPresetTargeting(auction);
   //now set new targeting keys
-  setTargeting(getAllTargeting());
+  setTargeting(getAllTargeting(auction));
 };
 
 /**
@@ -397,13 +406,15 @@ pbjs.allBidsAvailable = function () {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-pbjs.renderAd = function (doc, id) {
+pbjs.renderAd = function (doc, id, auction) {
+  auction = auction || pbjs.auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
   if (doc && id) {
     try {
       //lookup ad by ad Id
-      var adObject = pbjs._bidsReceived.find(bid => bid.adId === id);
+      var adObject = auction.getBidsReceived().find(bid => bid.adId === id);
       if (adObject) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
@@ -424,7 +435,7 @@ pbjs.renderAd = function (doc, id) {
         //doc.body.style.width = width;
         //doc.body.style.height = height;
         else if (url) {
-          doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
+          doc.write(`<IFRAME SRC=${url} FRAMEBORDER='0' SCROLLING='no' MARGINHEIGHT='0' MARGINWIDTH='0' TOPMARGIN='0' LEFTMARGIN='0' ALLOWTRANSPARENCY='true' WIDTH=${width} HEIGHT=${height}></IFRAME>`);
           doc.close();
 
           if (doc.defaultView && doc.defaultView.frameElement) {
@@ -484,14 +495,20 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes })
     return;
   } else {
     auctionRunning = true;
+    // TODO pull the following out of the auction
     pbjs._bidsRequested = [];
     pbjs._bidsReceived = [];
   }
 
+  const auction = auctionManager.getSingleAuction();
   const cbTimeout = timeout || pbjs.bidderTimeout;
+  auctionRunning = true;
+  pbjs._bidsRequested = [];
+  pbjs._bidsReceived = [];
+  resetPresetTargeting();
 
   // use adUnits provided or from pbjs global
-  adUnits = adUnits || pbjs.adUnits;
+  adUnits = adUnits || auction.getAdUnits();
 
   // if specific adUnitCodes filter adUnits for those codes
   if (adUnitCodes && adUnitCodes.length) {
@@ -512,7 +529,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes })
   //set timeout for all bids
   setTimeout(bidmanager.executeCallback, cbTimeout);
 
-  adaptermanager.callBids({ adUnits, adUnitCodes });
+  auction.callBids({ adUnits, adUnitCodes });
 };
 
 /**
@@ -522,12 +539,15 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes })
  * @alias module:pbjs.addAdUnits
  */
 pbjs.addAdUnits = function (adUnitArr) {
+  const auction = auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.addAdUnits', arguments);
+
   if (utils.isArray(adUnitArr)) {
     //append array to existing
-    pbjs.adUnits.push.apply(pbjs.adUnits, adUnitArr);
+    auction.setAdUnits(adUnitArr);
   } else if (typeof adUnitArr === objectType_object) {
-    pbjs.adUnits.push(adUnitArr);
+    auction.setAdUnits([adUnitArr]);
   }
 };
 
@@ -535,6 +555,7 @@ pbjs.addAdUnits = function (adUnitArr) {
  * @param {String} event the name of the event
  * @param {Function} handler a callback to set on event
  * @param {String} id an identifier in the context of the event
+ * @param {Object} auction the auction that triggered the event
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -546,19 +567,21 @@ pbjs.addAdUnits = function (adUnitArr) {
  *
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
-pbjs.onEvent = function (event, handler, id) {
+pbjs.onEvent = function (event, handler, id, auction) {
+  auction = auction || pbjs.auctionManager.getSingleAuction();
+
   utils.logInfo('Invoking pbjs.onEvent', arguments);
   if (!utils.isFn(handler)) {
-    utils.logError('The event handler provided is not a function and was not set on event "' + event + '".');
+    utils.logError(`The event handler provided is not a function and was not set on event ${event}.`);
     return;
   }
 
-  if (id && !eventValidators[event].call(null, id)) {
-    utils.logError('The id provided is not valid for event "' + event + '" and no handler was set.');
+  if (id && !eventValidators[event].call(null, id, auction)) {
+    utils.logError(`The id provided is not valid for event ${event} and no handler was set.`);
     return;
   }
 
-  events.on(event, handler, id);
+  events.on(event, handler, id, auction);
 };
 
 /**
@@ -577,7 +600,7 @@ pbjs.offEvent = function (event, handler, id) {
 
 /**
  * Add a callback event
- * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
+ * @param {String} eventStr event to attach callback to Options: 'allRequestedBidsBack' | 'adUnitBidsBack'
  * @param {Function} func  function to execute. Paramaters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:pbjs.addCallback
  * @returns {String} id for callback
@@ -622,17 +645,17 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   }
 };
 
-pbjs.bidsAvailableForAdapter = function (bidderCode) {
+pbjs.bidsAvailableForAdapter = function (bidderCode, auction) {
   utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
 
-  pbjs._bidsRequested.find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
+  auction.getBidderRequests().find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
     .map(bid => {
-      return Object.assign(bid, bidfactory.createBid(1), {
+      return Object.assign(bidfactory.createBid(1), bid, {
         bidderCode,
         adUnitCode: bid.placementCode
       });
     })
-    .map(bid => pbjs._bidsReceived.push(bid));
+    .map(bid => auction.getBidsReceived().push(bid));
 };
 
 /**
@@ -691,7 +714,7 @@ pbjs.enableAnalytics = function (options) {
 };
 
 /**
- * This will tell analytics that all bids received after are "timed out"
+ * This will tell analytics that all bids received after are 'timed out'
  */
 pbjs.sendTimeoutEvent = function () {
   utils.logInfo('Invoking pbjs.sendTimeoutEvent', arguments);
@@ -719,5 +742,7 @@ pbjs.setPriceGranularity = function (granularity) {
 pbjs.enableSendAllBids = function () {
   pbjs._sendAllBids = true;
 };
+
+pbjs.auctionManager = auctionManager;
 
 processQue();

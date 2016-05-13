@@ -1,3 +1,5 @@
+import { findBidRequest } from '../utils';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -55,7 +57,6 @@ var SovrnAdapter = function SovrnAdapter() {
         bidfloor: bidFloor
       };
       sovrnImps.push(imp);
-      //bidmanager.pbCallbackMap[imp.id] = bid;
       allPlacementCodes.push(bid.placementCode);
     });
 
@@ -105,8 +106,7 @@ var SovrnAdapter = function SovrnAdapter() {
           var bid = {};
 
           // try to fetch the bid request we sent Sovrn
-          var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-          .find(bid => bid.bidId === id);
+          var bidObj = findBidRequest({ bidId: id });
 
           if (bidObj) {
             placementCode = bidObj.placementCode;
