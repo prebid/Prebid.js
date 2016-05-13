@@ -23,8 +23,8 @@ function getBids({ bidderCode, requestId, bidderRequestId }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = () => {
-  const requestId = utils.getUniqueIdentifierStr();
+exports.callBids = auction => {
+  const auctionRequestId = utils.getUniqueIdentifierStr();
 
   getBidderCodes().forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
@@ -32,14 +32,14 @@ exports.callBids = () => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidderRequest = {
         bidderCode,
-        requestId,
+        auctionRequestId,
         bidderRequestId,
-        bids: getBids({ bidderCode, requestId, bidderRequestId }),
+        bids: getBids({ bidderCode, auctionRequestId, bidderRequestId }),
         start: new Date().getTime()
       };
       console.log('bid set:', bidderCode, bidderRequestId);
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      pbjs._bidsRequested.push(bidderRequest);
+      auction.setBidderRequests(auction.getBidderRequests().concat(bidderRequest));
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
         adapter.callBids(bidderRequest);
