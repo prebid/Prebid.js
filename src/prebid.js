@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques } from './utils';
+import { flatten, uniques, getKeys } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -185,7 +185,7 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
-  return getAllTargeting().find(targeting => Object.keys(targeting)[0] === adUnitCode);
+  return getAllTargeting().find(targeting => getKeys(targeting)[0] === adUnitCode);
 };
 
 /**
