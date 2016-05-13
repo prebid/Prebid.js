@@ -82,14 +82,6 @@ exports.parseQueryStringParameters = function (queryObj) {
   return result;
 };
 
-function getKeys(obj) {
-  return Object.keys(obj);
-}
-
-function getVals(obj, key) {
-  return obj[key];
-}
-
 //transform an AdServer targeting bids into a query string to send to the adserver
 exports.transformAdServerTargetingObj = function (targeting) {
   // we expect to receive targeting for a single slot at a time, so start with
@@ -98,7 +90,7 @@ exports.transformAdServerTargetingObj = function (targeting) {
 
     return targeting[getKeys(targeting)[0]]
       .map(obj => getKeys(obj)
-        .map(key => getVals(obj, key)
+        .map(key => getValue(obj, key)
           .map(val => `${key}=${encodeURIComponent(val)}`))).reduce(flatten).join('&');
   } else {
     return '';
@@ -476,4 +468,12 @@ export function flatten(a, b) {
 
 export function getBidRequest(id) {
   return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+}
+
+export function getKeys(obj) {
+  return Object.keys(obj);
+}
+
+export function getValue(obj, key) {
+  return obj[key];
 }

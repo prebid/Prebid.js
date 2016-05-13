@@ -30,7 +30,7 @@ exports.callBids = () => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
-      const bidSet = {
+      const bidderRequest = {
         bidderCode,
         requestId,
         bidderRequestId,
@@ -39,10 +39,10 @@ exports.callBids = () => {
       };
       console.log('bid set:', bidderCode, bidderRequestId);
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      pbjs._bidsRequested.push(bidSet);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidSet);
-      if (bidSet.bids && bidSet.bids.length) {
-        adapter.callBids(bidSet);
+      pbjs._bidsRequested.push(bidderRequest);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
+      if (bidderRequest.bids && bidderRequest.bids.length) {
+        adapter.callBids(bidderRequest);
       }
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);

@@ -529,6 +529,13 @@ export function getSlotTargeting() {
         "foobar": [
           "300x250"
         ]
+      },
+      {
+        "interests": [
+          "soccer",
+          "history",
+          "travel"
+        ]
       }
     ]
   };
