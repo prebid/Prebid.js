@@ -17,6 +17,16 @@
 
 <h1>{{ page.description }} </h1>
 
+{% if page.why_link %}
+
+<h4>Who should use this example:</h4>
+
+<ul>
+<li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
+</ul>
+
+{% endif %}
+
 <h4>This page contains:</h4>
 
 <ul>
@@ -42,6 +52,7 @@ Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
     <li><a href="/dev-docs/examples/basic-example.html">Basic example</a></li>
     <li><a href="/dev-docs/examples/custom-price-bucket.html">Custom price bucket granularity</a></li>
     <li><a href="/dev-docs/examples/adjust-price.html">Adjust bid price</a></li>
+    <li><a href="/dev-docs/examples/instant-load.html">Instant Load GPT</a> <span class="label label-warning">Beta</span></li>
     </ul>
   </div>
 
