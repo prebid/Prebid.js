@@ -26,6 +26,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
   <!-- * [.enableSendAllBids()](#module_pbjs.enableSendAllBids) -->
+  * [.setPriceGranularity(granularity)](#module_pbjs.setPriceGranularity)
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
@@ -345,6 +346,31 @@ This method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getA
 {% endhighlight %}
 
 <hr class="full-rule"> -->
+
+<a name="module_pbjs.setPriceGranularity"></a>
+
+### pbjs.setPriceGranularity
+
+This method is a convenience wrapper around the [`bidResponse`](#bidResponse) object's price bucket values.  It configures which price bucket is used for the `hb_pb` keyword.
+
+Accepted values:
+
++ `low`: $0.50 increments
++ `medium`: $0.10 increments (the default)
++ `high`: $0.05 increments
++ `auto`: Applies a sliding scale to determine granularity as shown in the table below.
+
+{: .table .table-bordered .table-striped }
+| CPM                 | 	Granularity                  |
+|---------------------+----------------------------------|
+| CPM < $5            | 	$0.05 increments             |
+| CPM > $5 and < $10  | 	$0.10 increments             |
+| CPM > $10 and < $20 | 	$0.50 increments             |
+| CPM > $20           | 	Caps the price bucket at $20 |
+
+For more information, see the [`bidResponse`](#bidResponse) documentation below.
+
+<hr class="full-rule">
 
 <a name="module_pbjs.renderAd"></a>
 
