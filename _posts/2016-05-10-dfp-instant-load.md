@@ -24,7 +24,7 @@ Prebid is introducing a new way of loading GPT and sending GPT requests. Compare
 
 **Example:**
 
-GPT Instant Load (left) sends GPT ad requests about 100ms faster than the previous method (right):
+GPT Instant Load (right) sends GPT ad requests about 100ms faster than the previous method (left):
 
 ![Prebid Instant Load Benefits]({{ site.github.url }}/assets/images/blog/instant-load/prebid-instant-load.png)
 
