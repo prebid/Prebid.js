@@ -5,7 +5,7 @@ var adloader = require('../adloader.js');
 module.exports = function() {
   var req_url_base = 'https://rex.adequant.com/rex/c2s_prebid?';
   
-  function _callBids(params) {
+  function _callBids(params, auction) {
     var req_url = [];
     var publisher_id = null;
     var sizes = [];
@@ -35,7 +35,7 @@ module.exports = function() {
     
     adloader.loadScript(req_url_base+req_url.join('&'), function() { process_bids(replies, placements); });
   }
-  
+
   function process_bids(replies, placements) {
     var placement_code, bid, adequant_creatives = window.adequant_creatives;
     if (adequant_creatives && adequant_creatives.seatbid) {

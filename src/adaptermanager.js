@@ -1,8 +1,9 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes } from './utils';
+import { flatten, uniques } from './utils';
 
 var utils = require('./utils.js');
+var bidfactory = require('./bidfactory.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
@@ -10,44 +11,49 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-function getBids({ bidderCode, requestId, bidderRequestId }) {
-  return pbjs.adUnits.map(adUnit => {
-    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => Object.assign(bid, {
-        placementCode: adUnit.code,
-        sizes: adUnit.sizes,
-        bidId: utils.getUniqueIdentifierStr(),
-        bidderRequestId,
-        requestId
-      }));
-  }).reduce(flatten, []);
+function makeBids({ bidderCode, bidderRequestId }) {
+  return adUnit.bids.filter(bidRequest => bidRequest.bidder === bidderCode)
+    .map(bidRequest => Object.assign(bidfactory.createBid(1), bidRequest, {
+      placementCode: adUnit.code,
+      sizes: adUnit.sizes,
+      bidderRequestId
+    }));
+}
+
+function getAuctionBidderCodes(auction) {
+  return auction.getAdUnits()
+    .map(unit => unit.bids
+      .map(bidder => bidder.bidder))
+    .reduce(flatten)
+    .filter(uniques);
+}
+
+function bidderHasAdapter(bidderCode) {
+  return _bidderRegistry[bidderCode];
 }
 
 exports.callBids = auction => {
-  const auctionRequestId = utils.getUniqueIdentifierStr();
-
-  getBidderCodes().forEach(bidderCode => {
-    const adapter = _bidderRegistry[bidderCode];
-    if (adapter) {
+  auction.setBidderRequests(getAuctionBidderCodes(auction)
+    .filter(bidderHasAdapter)
+    .map(bidderCode => {
+      const adapter = _bidderRegistry[bidderCode];
+      const prebidAuctionId = auction.getId();
       const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidderRequest = {
         bidderCode,
-        auctionRequestId,
+        prebidAuctionId,
         bidderRequestId,
-        bids: getBids({ bidderCode, auctionRequestId, bidderRequestId }),
+        bids: makeBids({ bidderCode, bidderRequestId }),
         start: new Date().getTime()
       };
-      console.log('bid set:', bidderCode, bidderRequestId);
-      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      auction.setBidderRequests(auction.getBidderRequests().concat(bidderRequest));
+      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}:`, bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
-        adapter.callBids(bidderRequest);
+        adapter.callBids(bidderRequest, auction);
       }
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
-    }
-  });
+
+      return bidderRequest;
+    }));
 };
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {

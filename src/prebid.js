@@ -3,7 +3,7 @@
 import { flatten, uniques, getKeys } from './utils';
 import { Auctioneer } from './auctioneer';
 
-var auctioneer = new Auctioneer();
+var auctioneer = Auctioneer();
 var auction1 = auctioneer.holdAuction();
 var auction2 = auctioneer.holdAuction();
 
@@ -37,7 +37,7 @@ var eventValidators = {
 
 /* Public vars */
 
-pbjs.auctions = [];
+pbjs.auctions = [ auction1, auction2 ];
 
 //pbjs._bidsRequested = [];
 //pbjs._bidsReceived = [];
@@ -354,8 +354,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
   setTimeout(bidmanager.executeCallback, cbTimeout);
 
   auction1.setAdUnits(pbjs.adUnits);
-  console.log(auction1.getAdUnits());
-  console.log(auction2.getAdUnits([
+  console.log(auction2.setAdUnits([
     {
       code: '/19968336/header-bid-tag1',
       //code : topDivId,
@@ -497,12 +496,12 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   }
 };
 
-pbjs.bidsAvailableForAdapter = function (bidderCode) {
+pbjs.bidsAvailableForAdapter = function ({ auction, bidderCode }) {
   utils.logInfo('Invoking pbjs.bidsAvailableForAdapter', arguments);
 
   pbjs._bidsRequested.find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
     .map(bid => {
-      return Object.assign(bid, bidfactory.createBid(1), {
+      return Object.assign(bidfactory.createBid(1), bid, {
         bidderCode,
         adUnitCode: bid.placementCode
       });
