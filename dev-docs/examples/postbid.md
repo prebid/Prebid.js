@@ -8,6 +8,8 @@ nav_section: quick-start
 
 hide: true
 
+why_link: /overview/what-is-post-bid.html
+
 about: 
 - Post-bid is a 3rd party tag creative you setup in your ad server. For each ad unit of your site, create one line item in DFP targeting that ad unit. This line item's <strong>creative will contain the below code</strong>.
 - If your ad unit supports multiple sizes, create multiple Post-bid creatives for each size. 
