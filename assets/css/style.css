@@ -310,3 +310,11 @@ table.jsfiddle-line-number .line-number {
     font-size: 13px;
     text-align: right;
 }
+
+.blog-date {
+  margin-top: 45px;
+  text-align: right;
+  width: 80%;
+  font-size: 20px;
+  color: #aaa;
+}
