@@ -41,7 +41,8 @@
     "LOW": "low",
     "MEDIUM": "medium",
     "HIGH": "high",
-    "AUTO": "auto"
+    "AUTO": "auto",
+    "DENSE": "dense"
   },
   "TARGETING_KEYS": [
     "hb_bidder",

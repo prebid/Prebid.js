@@ -533,3 +533,522 @@ export function getSlotTargeting() {
     ]
   };
 }
+
+export function getAdUnits() {
+  return [
+    {
+      "code": "/19968336/header-bid-tag1",
+      "sizes": [
+        [
+          728,
+          90
+        ],
+        [
+          970,
+          90
+        ]
+      ],
+      "bids": [
+        {
+          "bidder": "adequant",
+          "params": {
+            "publisher_id": "1234567",
+            "bidfloor": 0.01
+          },
+          "placementCode": "/19968336/header-bid-tag1",
+          "sizes": [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          "bidId": "3692954f816efc",
+          "bidderRequestId": "2b1a75d5e826c4",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "appnexus",
+          "params": {
+            "placementId": "543221",
+            "test": "me"
+          },
+          "placementCode": "/19968336/header-bid-tag1",
+          "sizes": [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          "bidId": "68136e1c47023d",
+          "bidderRequestId": "55e24a66bed717",
+          "requestId": "1ff753bd4ae5cb",
+          "startTime": 1463510220995,
+          "status": 1
+        }
+      ]
+    },
+    {
+      "code": "/19968336/header-bid-tag-0",
+      "sizes": [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ],
+      "bids": [
+        {
+          "bidder": "appnexus",
+          "params": {
+            "placementId": "5324321"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "7e5d6af25ed188",
+          "bidderRequestId": "55e24a66bed717",
+          "requestId": "1ff753bd4ae5cb",
+          "startTime": 1463510220996
+        },
+        {
+          "bidder": "adequant",
+          "params": {
+            "publisher_id": "12353433",
+            "bidfloor": 0.01
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "4448d80ac1374e",
+          "bidderRequestId": "2b1a75d5e826c4",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "triplelift",
+          "params": {
+            "inventoryCode": "inv_code_here"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "9514d586c52abf",
+          "bidderRequestId": "8c4f03b838d7ee",
+          "requestId": "1ff753bd4ae5cb",
+          "startTime": 1463510220997
+        },
+        {
+          "bidder": "springserve",
+          "params": {
+            "impId": 1234,
+            "supplyPartnerId": 1,
+            "test": true
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "113079fed03f58c",
+          "bidderRequestId": "1048e0df882e965",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "rubicon",
+          "params": {
+            "accountId": "123456",
+            "siteId": "345678",
+            "zoneId": "234567",
+            "userId": "12346",
+            "keywords": [
+              "a",
+              "b",
+              "c"
+            ],
+            "inventory": {
+              "rating": "5-star",
+              "prodtype": "tech"
+            },
+            "visitor": {
+              "ucat": "new",
+              "search": "iphone"
+            },
+            "sizes": [
+              15,
+              10
+            ]
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "13c2c2a79d155ea",
+          "bidderRequestId": "129e383ac549e5d",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "openx",
+          "params": {
+            "jstag_url": "http://servedbyopenx.com/w/1.0/jstag?nc=account_key",
+            "unit": 2345677
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "154f9cbf82df565",
+          "bidderRequestId": "1448569c2453b84",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "pubmatic",
+          "params": {
+            "publisherId": 1234567,
+            "adSlot": "1234567@300x250"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "17f8c3a8fb13308",
+          "bidderRequestId": "16095445eeb05e4",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "pagescience",
+          "params": {
+            "placementId": "1234567"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "2074d5757675542",
+          "bidderRequestId": "19883380ef5453a",
+          "requestId": "1ff753bd4ae5cb",
+          "startTime": 1463510221014
+        },
+        {
+          "bidder": "brealtime",
+          "params": {
+            "placementId": "1234567"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "222b6ad5a9b835d",
+          "bidderRequestId": "2163409fdf6f333",
+          "requestId": "1ff753bd4ae5cb",
+          "startTime": 1463510221015
+        },
+        {
+          "bidder": "indexExchange",
+          "params": {
+            "id": "1",
+            "siteID": 123456,
+            "timeout": 10000
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "2499961ab3f937a",
+          "bidderRequestId": "23b57a2de4ae50b",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "adform",
+          "params": {
+            "adxDomain": "adx.adform.net",
+            "mid": 123456,
+            "test": 1
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "26605265bf5e9c5",
+          "bidderRequestId": "25a0902299c17d3",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "amazon",
+          "params": {
+            "aId": 3080
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "2935d8f6764fe45",
+          "bidderRequestId": "28afa21ca9246c1",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "aol",
+          "params": {
+            "network": "112345.45",
+            "placement": 12345
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "31d1489681dc539",
+          "bidderRequestId": "30bf32da9080fdd",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "sovrn",
+          "params": {
+            "tagid": "123556"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "33c1a8028d91563",
+          "bidderRequestId": "324bcb47cfcf034",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "pulsepoint",
+          "params": {
+            "cf": "300X250",
+            "cp": 1233456,
+            "ct": 12357
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "379219f0506a26f",
+          "bidderRequestId": "360ec66bbb0719c",
+          "requestId": "1ff753bd4ae5cb"
+        },
+        {
+          "bidder": "brightcom",
+          "params": {
+            "tagId": 75423
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "sizes": [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "395cfcf496e7d6d",
+          "bidderRequestId": "38a776c7f001ea",
+          "requestId": "1ff753bd4ae5cb"
+        }
+      ]
+    },
+    {
+      "code": "/7780971/apex_sparks_300",
+      "sizes": [
+        [
+          300,
+          250
+        ]
+      ],
+      "bids": [
+        {
+          "bidder": "sonobi",
+          "params": {
+            "dom_id": "div-gpt-ad-1455548812677-0",
+            "ad_unit": "/7780971/apex_sparks_300"
+          },
+          "placementCode": "/7780971/apex_sparks_300",
+          "sizes": [
+            [
+              300,
+              250
+            ]
+          ],
+          "bidId": "43a45a2cd8c6ef9",
+          "bidderRequestId": "42e2fe519b7c653",
+          "requestId": "1ff753bd4ae5cb"
+        }
+      ]
+    },
+    {
+      "code": "/7780971/apex_sparks_skyscraper_x600",
+      "sizes": [
+        [
+          300,
+          600
+        ]
+      ],
+      "bids": [
+        {
+          "bidder": "sonobi",
+          "params": {
+            "dom_id": "div-gpt-ad-1455548812677-1",
+            "placement_id": "21d2da738fe0ba795cfb-test"
+          },
+          "placementCode": "/7780971/apex_sparks_skyscraper_x600",
+          "sizes": [
+            [
+              300,
+              600
+            ]
+          ],
+          "bidId": "44f16af92ca7607",
+          "bidderRequestId": "42e2fe519b7c653",
+          "requestId": "1ff753bd4ae5cb"
+        }
+      ]
+    },
+    {
+      "code": "/7780971/apex_sparks_banner_x90",
+      "sizes": [
+        [
+          728,
+          90
+        ]
+      ],
+      "bids": [
+        {
+          "bidder": "sonobi",
+          "params": {
+            "dom_id": "div-gpt-ad-1455548812677-2",
+            "ad_unit": "/7780971/apex_sparks_banner_x90"
+          },
+          "placementCode": "/7780971/apex_sparks_banner_x90",
+          "sizes": [
+            [
+              728,
+              90
+            ]
+          ],
+          "bidId": "45e5c0084508efb",
+          "bidderRequestId": "42e2fe519b7c653",
+          "requestId": "1ff753bd4ae5cb"
+        }
+      ]
+    }
+  ];
+}
