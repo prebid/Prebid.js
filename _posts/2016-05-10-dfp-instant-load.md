@@ -1,8 +1,8 @@
 ---
 layout: post
-title: Load DFP Ligntening Fast with Prebid
+title: Load DFP Lightning Fast with Prebid
 
-description: New way to load DFP ligntening fast with Prebid for header bidding.
+description: New way to load DFP lightning fast with Prebid for header bidding.
 
 permalink: /blog/dfp-instant-load
 
