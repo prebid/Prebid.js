@@ -99,7 +99,14 @@ describe('Unit: Prebid Module', function () {
   describe('getBidResponses', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       var result = pbjs.getBidResponses();
-      var compare = getBidResponses();
+      var compare = getBidResponses().map(bid => bid.adUnitCode)
+        .filter((v, i, a) => a.indexOf(v) === i).map(adUnitCode => pbjs._bidsReceived
+          .filter(bid => bid.adUnitCode === adUnitCode))
+        .map(bids => {
+          return {
+            [bids[0].adUnitCode]: { bids: bids }
+          };
+        });
 
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });

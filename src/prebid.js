@@ -201,7 +201,6 @@ pbjs.getAdserverTargeting = function () {
 
 /**
  * This function returns the bid responses at the given moment.
- * @param  {string} [adunitCode] adunitCode adUnitCode to get the bid responses for
  * @alias module:pbjs.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
@@ -209,7 +208,14 @@ pbjs.getAdserverTargeting = function () {
 pbjs.getBidResponses = function () {
   utils.logInfo('Invoking pbjs.getBidResponses', arguments);
 
-  return pbjs._bidsReceived;
+  return pbjs._bidsReceived.map(bid => bid.adUnitCode)
+    .filter(uniques).map(adUnitCode => pbjs._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode))
+    .map(bids => {
+      return {
+        [bids[0].adUnitCode]: { bids: bids }
+      };
+    });
 };
 
 /**
