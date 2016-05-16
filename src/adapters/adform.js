@@ -15,7 +15,7 @@ function AdformAdapter() {
     var noDomain = true;
     var bids = params.bids;
     var request = [];
-    var callbackName = utils.getUniqueIdentifierStr();
+    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
 
     for (var i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
