@@ -100,15 +100,15 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-function getPresetTargeting() {
-  return window.googletag.pubads().getSlots().map(slot => {
-    return {
-      [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
-        return { [key]: slot.getTargeting(key) };
-      })
-    };
-  });
-}
+//function getPresetTargeting() {
+//  return window.googletag.pubads().getSlots().map(slot => {
+//    return {
+//      [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+//        return { [key]: slot.getTargeting(key) };
+//      })
+//    };
+//  });
+//}
 
 function getWinningBidTargeting() {
   const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
@@ -148,7 +148,7 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  return getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting());
+  return getWinningBidTargeting().concat(getBidLandscapeTargeting());
 }
 
 //////////////////////////////////
@@ -196,7 +196,17 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 
 pbjs.getAdserverTargeting = function () {
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return getAllTargeting();
+  return getAllTargeting().map(targeting => {
+    return {
+      [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+        .map(target => {
+          return {
+            [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+          };
+        })
+        .reduce((a, b) => Object.assign(a, b), {})
+    };
+  });
 };
 
 /**
