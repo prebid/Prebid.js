@@ -121,7 +121,8 @@ describe('Unit: Prebid Module', function () {
     it('should return bid responses as expected', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const result = pbjs.getBidResponsesForAdUnitCode(adUnitCode);
-      const compare = getBidResponses().filter(bid => bid.adUnitCode === adUnitCode);
+      const bids = getBidResponses().filter(bid => bid.adUnitCode === adUnitCode);
+      const compare = { bids: bids};
       assert.deepEqual(result, compare, 'expected id responses for ad unit code are returned');
     });
   });
