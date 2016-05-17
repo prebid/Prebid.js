@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys, getValue } from './utils';
+import { flatten, uniques, getKeys } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -190,7 +190,22 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
-  return getAllTargeting().find(targeting => getKeys(targeting)[0] === adUnitCode);
+  return getAllTargeting().filter(targeting => getKeys(targeting)[0] === adUnitCode)
+    .map(targeting => {
+      return {
+        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+          .map(target => {
+            return {
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+            };
+          }).reduce((p, c) => Object.assign(c, p), {})
+      };
+    })
+    .reduce(function (accumulator, targeting) {
+      var key = Object.keys(targeting)[0];
+      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
+      return accumulator;
+    }, {})[adUnitCode];
 };
 
 /**
@@ -212,7 +227,7 @@ pbjs.getAdserverTargeting = function () {
           }).reduce((p, c) => Object.assign(c, p), {})
       };
     })
-    .reduce(function(accumulator, targeting) {
+    .reduce(function (accumulator, targeting) {
       var key = Object.keys(targeting)[0];
       accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
       return accumulator;
