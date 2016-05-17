@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys } from './utils';
+import { flatten, uniques, getKeys, getValue } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -100,27 +100,28 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-//function getPresetTargeting() {
-//  return window.googletag.pubads().getSlots().map(slot => {
-//    return {
-//      [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
-//        return { [key]: slot.getTargeting(key) };
-//      })
-//    };
-//  });
-//}
-
 function getWinningBidTargeting() {
+  const presets = (function getPresetTargeting() {
+    return window.googletag.pubads().getSlots().map(slot => {
+      return {
+        [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+          return { [key]: slot.getTargeting(key) };
+        })
+      };
+    });
+  })();
+
   const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => pbjs._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce((prev, curr) => prev.cpm < curr.cpm ? curr : prev,
+      .reduce(getHighestCpm,
         {
           adUnitCode: adUnitCode,
           cpm: 0,
           adserverTargeting: {}
         }));
+
   return winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
@@ -128,7 +129,11 @@ function getWinningBidTargeting() {
           return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
     };
-  });
+  }).concat(presets);
+
+  function getHighestCpm(previous, current) {
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 function getBidLandscapeTargeting() {
@@ -196,17 +201,22 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 
 pbjs.getAdserverTargeting = function () {
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return getAllTargeting().map(targeting => {
-    return {
-      [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
-        .map(target => {
-          return {
-            [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
-          };
-        })
-        .reduce((a, b) => Object.assign(a, b), {})
-    };
-  });
+  return getAllTargeting()
+    .map(targeting => {
+      return {
+        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+          .map(target => {
+            return {
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+            };
+          }).reduce((p, c) => Object.assign(c, p), {})
+      };
+    })
+    .reduce(function(accumulator, targeting) {
+      var key = Object.keys(targeting)[0];
+      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
+      return accumulator;
+    }, {});
 };
 
 /**
@@ -225,7 +235,8 @@ pbjs.getBidResponses = function () {
       return {
         [bids[0].adUnitCode]: { bids: bids }
       };
-    });
+    })
+    .reduce((a, b) => Object.assign(a, b), {});
 };
 
 /**
@@ -485,7 +496,6 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
     .map(bid => pbjs._bidsReceived.push(bid));
 };
 
-/**
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {[type]} statusCode [description]

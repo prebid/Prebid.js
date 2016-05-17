@@ -1,4 +1,4 @@
-import { getBidRequests, getBidResponses, getSlotTargeting} from 'test/fixtures/fixtures';
+import { getBidRequests, getBidResponses, getAdServerTargeting } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
 
@@ -91,8 +91,8 @@ describe('Unit: Prebid Module', function () {
   describe('getAdServerTargeting', function () {
     it('should return current targeting data for slots', function () {
       const targeting = pbjs.getAdserverTargeting();
-      const expected = getSlotTargeting();
-      assert.deepEqual(targeting[0], expected, 'targeting ok');
+      const expected = getAdServerTargeting();
+      assert.deepEqual(targeting, expected, 'targeting ok');
     });
   });
 
@@ -106,7 +106,8 @@ describe('Unit: Prebid Module', function () {
           return {
             [bids[0].adUnitCode]: { bids: bids }
           };
-        });
+        })
+        .reduce((a, b) => Object.assign(a, b), {});
 
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
@@ -128,9 +129,7 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
 
       pbjs.setTargetingForGPTAsync(config.adUnitCodes);
-      assert.deepEqual(slots[0].spySetTargeting.args[0][1], {
-        testKey: ['a test targeting value']
-      }, 'slot.setTargeting was called with expected key/values');
+      assert.deepEqual(slots[0].spySetTargeting.args[0], ['hb_bidder', 'appnexus'], 'slot.setTargeting was called with expected key/values');
     });
 
     it('should set targeting from googletag data', function () {
