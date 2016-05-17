@@ -42,8 +42,7 @@ function AdformAdapter() {
     function formRequestUrl(reqData) {
         var key;
         var url = [],
-        	params = [],
-        	urlWithoutEncode = [];
+        	params = [];
 
         var validProps = [
             'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
