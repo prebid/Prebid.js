@@ -247,7 +247,10 @@ pbjs.getBidResponses = function () {
  */
 
 pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  return pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  const bids = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  return {
+    bids : bids
+  };
 };
 
 /**
