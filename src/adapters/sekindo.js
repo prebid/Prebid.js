@@ -38,9 +38,9 @@ SekindoAdapter = function SekindoAdapter() {
       response = '';
     }
 
+    var bidObj = bidmanager.getPlacementIdByCBIdentifer(callbackId);
     if (response !== '')
     {
-      var bidObj = bidmanager.getPlacementIdByCBIdentifer(callbackId);
       var bid = [];
       if (bidObj)
       {
@@ -57,8 +57,6 @@ SekindoAdapter = function SekindoAdapter() {
           bid.creative_id = response.adId;
           bid.cpm = parseFloat(response.cpm);
           bid.ad = ad;
-
-          //bid.adUrl = jptResponseObj.result.ad;
           bid.width = response.width;
           bid.height = response.height;
 
@@ -75,7 +73,7 @@ SekindoAdapter = function SekindoAdapter() {
     }
     else
     {
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
+      utils.logMessage('No prebid response for placement ' + bidObj.placementCode);
     }
   };
 
