@@ -1,4 +1,4 @@
-import { uniques } from './utils';
+import { uniques, getBidderRequest } from './utils';
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -60,10 +60,6 @@ exports.bidsBackAll = function() {
   return bidsBackAll();
 };
 
-function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
-}
-
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
@@ -71,7 +67,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     Object.assign(bid, {
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: getBidderRequest(bid).start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode

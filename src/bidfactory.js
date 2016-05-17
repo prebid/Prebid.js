@@ -14,15 +14,14 @@ var utils = require('./utils.js');
  dealId,
  priceKeyString;
  */
-function Bid(statusCode) {
-  var _bidId = utils.getUniqueIdentifierStr();
+function Bid(statusCode, adId) {
   var _statusCode = statusCode || 0;
 
   this.bidderCode = '';
   this.width = 0;
   this.height = 0;
   this.statusMessage = _getStatus();
-  this.adId = _bidId;
+  this.adId = adId || utils.getUniqueIdentifierStr();
 
   function _getStatus() {
     switch (_statusCode) {
@@ -49,6 +48,6 @@ function Bid(statusCode) {
 }
 
 // Bid factory function.
-exports.createBid = function (statusCode) {
-  return new Bid(statusCode);
+exports.createBid = function (statusCode, adId) {
+  return new Bid(statusCode, adId);
 };
