@@ -26,7 +26,7 @@ function AdformAdapter() {
                 request.unshift('//' + adxDomain + '/adx/?rp=4');
             }
 
-            request.push(formRequestUrl(bid.params));
+            request = request.concat( formRequestUrl(bid.params) );
         }
 
         if (noDomain) {
@@ -42,6 +42,7 @@ function AdformAdapter() {
     function formRequestUrl(reqData) {
         var key;
         var url = [],
+        	params = [],
         	urlWithoutEncode = [];
 
         var validProps = [
@@ -49,23 +50,25 @@ function AdformAdapter() {
             'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
         ];
 
-        var validPropsWithoutEncode = [
+        var validPropsWithURIEncode = [
             'url'
         ];
 
         for (var i = 0, l = validProps.length; i < l; i++) {
             key = validProps[i];
-            if (reqData.hasOwnProperty(key))
+            if (reqData.hasOwnProperty(key)) {
                 url.push(key, '=', reqData[key], '&');
+            }
         }
+        params.push( encode64(url.join('')) );
 
-        for (var i = 0, l = validPropsWithoutEncode.length; i < l; i++) {
-            key = validPropsWithoutEncode[i];
-            if (reqData.hasOwnProperty(key))
-            	urlWithoutEncode.push(key, '=', reqData[key], '&');
+        for (var i = 0, l = validPropsWithURIEncode.length; i < l; i++) {
+            key = validPropsWithURIEncode[i];
+            if (reqData.hasOwnProperty(key)) {
+            	params.push( [key, '=', encodeURIComponent( reqData[key] )].join('') );
+            }
         }
-
-        return encode64(url.join(''))+urlWithoutEncode.join('');
+        return params;
     }
 
     function handleCallback(bids) {
