@@ -41,11 +41,16 @@ function AdformAdapter() {
 
     function formRequestUrl(reqData) {
         var key;
-        var url = [];
+        var url = [],
+        	urlWithoutEncode = [];
 
         var validProps = [
             'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
             'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
+        ];
+
+        var validPropsWithoutEncode = [
+            'url'
         ];
 
         for (var i = 0, l = validProps.length; i < l; i++) {
@@ -54,7 +59,13 @@ function AdformAdapter() {
                 url.push(key, '=', reqData[key], '&');
         }
 
-        return encode64(url.join(''));
+        for (var i = 0, l = validPropsWithoutEncode.length; i < l; i++) {
+            key = validPropsWithoutEncode[i];
+            if (reqData.hasOwnProperty(key))
+            	urlWithoutEncode.push(key, '=', reqData[key], '&');
+        }
+
+        return encode64(url.join(''))+urlWithoutEncode.join('');
     }
 
     function handleCallback(bids) {
