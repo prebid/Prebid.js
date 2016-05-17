@@ -153,7 +153,7 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  return getWinningBidTargeting().concat(getBidLandscapeTargeting());
+  return getWinningBidTargeting().concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////

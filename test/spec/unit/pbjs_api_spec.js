@@ -68,6 +68,7 @@ describe('Unit: Prebid Module', function () {
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
+      pbjs.enableSendAllBids();
       var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       var result = pbjs.getAdserverTargetingForAdUnitCodeStr(adUnitCode);
       assert.equal(expected, result, 'returns expected string of ad targeting info');
@@ -85,6 +86,7 @@ describe('Unit: Prebid Module', function () {
   describe('getAdserverTargetingForAdUnitCode', function () {
     it('should return targeting info as an object', function () {
       const adUnitCode = config.adUnitCodes[0];
+      pbjs.enableSendAllBids();
       var result = pbjs.getAdserverTargetingForAdUnitCode(adUnitCode);
       const expected = getAdServerTargeting()[adUnitCode];
       assert.deepEqual(result, expected, 'returns expected' +
@@ -96,6 +98,7 @@ describe('Unit: Prebid Module', function () {
     it('should return current targeting data for slots', function () {
       const targeting = pbjs.getAdserverTargeting();
       const expected = getAdServerTargeting();
+      pbjs.enableSendAllBids();
       assert.deepEqual(targeting, expected, 'targeting ok');
     });
   });
