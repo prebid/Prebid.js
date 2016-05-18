@@ -90,6 +90,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
     bid.pbAg = priceStringsObj.auto;
+    bid.pbDg = priceStringsObj.dense;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
@@ -140,6 +141,8 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
             val: function (bidResponse) {
               if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
                 return bidResponse.pbAg;
+              } else  if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+                return bidResponse.pbDg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
                 return bidResponse.pbLg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
@@ -298,7 +301,8 @@ function getPriceBucketString(cpm) {
     low: '',
     med: '',
     high: '',
-    auto: ''
+    auto: '',
+    dense: ''
   };
   try {
     cpmFloat = parseFloat(cpm);
@@ -337,6 +341,21 @@ function getPriceBucketString(cpm) {
       } else {
         // cap at 20.00
         returnObj.auto = '20.00';
+      }
+
+      // dense mode
+      if (cpmFloat <= 3) {
+        // round to closest .01
+        returnObj.dense = (Math.floor(cpm * 100) / 100).toFixed(2);
+      } else if (cpmFloat <= 8) {
+        // round to closest .05
+        returnObj.dense = (Math.floor(cpm * 20) / 20).toFixed(2);
+      } else if (cpmFloat <= 20) {
+        // round to closest .50
+        returnObj.dense = (Math.floor(cpm * 2) / 2).toFixed(2);
+      } else {
+        // cap at 20.00
+        returnObj.dense = '20.00';
       }
     }
   } catch (e) {

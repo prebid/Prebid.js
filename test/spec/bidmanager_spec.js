@@ -5,6 +5,8 @@ var assert = require("assert");
 //TODO refactor to use the spec files
 var utils = require('../../src/utils');
 var bidmanager = require('../../src/bidmanager');
+var bidfactory = require('../../src/bidfactory');
+var fixtures = require('../fixtures/fixtures');
 
 describe('replaceTokenInString', function () {
 
@@ -346,5 +348,47 @@ describe('bidmanager.js', function () {
 
     });
 
+  });
+
+  describe('addBidResponse', () => {
+    before(() => {
+      pbjs.adUnits = fixtures.getAdUnits();
+    });
+
+    it('should return proper price bucket increments for dense mode', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[5]
+      );
+
+      // 0 - 3 dollars
+      bid.cpm = '1.99';
+      let expectedIncrement = '1.99';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      // pop this bid because another test relies on global pbjs._bidsReceived
+      let registeredBid = pbjs._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
+
+      // 3 - 8 dollars
+      bid.cpm = '4.39';
+      expectedIncrement = '4.35';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = pbjs._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
+
+      // 8 - 20 dollars
+      bid.cpm = '19.99';
+      expectedIncrement = '19.50';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = pbjs._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
+
+      // 20+ dollars
+      bid.cpm = '73.07';
+      expectedIncrement = '20.00';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = pbjs._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
+    });
   });
 });
