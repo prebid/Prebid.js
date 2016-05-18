@@ -26,7 +26,7 @@ function AdformAdapter() {
                 request.unshift('//' + adxDomain + '/adx/?rp=4');
             }
 
-            request.push(formRequestUrl(bid.params));
+            request = request.concat( formRequestUrl(bid.params) );
         }
 
         if (noDomain) {
@@ -41,20 +41,33 @@ function AdformAdapter() {
 
     function formRequestUrl(reqData) {
         var key;
-        var url = [];
+        var url = [],
+        	params = [];
 
         var validProps = [
             'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
             'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
         ];
 
+        var validPropsWithURIEncode = [
+            'url'
+        ];
+
         for (var i = 0, l = validProps.length; i < l; i++) {
             key = validProps[i];
-            if (reqData.hasOwnProperty(key))
+            if (reqData.hasOwnProperty(key)) {
                 url.push(key, '=', reqData[key], '&');
+            }
         }
+        params.push( encode64(url.join('')) );
 
-        return encode64(url.join(''));
+        for (var i = 0, l = validPropsWithURIEncode.length; i < l; i++) {
+            key = validPropsWithURIEncode[i];
+            if (reqData.hasOwnProperty(key)) {
+            	params.push( [key, '=', encodeURIComponent( reqData[key] )].join('') );
+            }
+        }
+        return params;
     }
 
     function handleCallback(bids) {
