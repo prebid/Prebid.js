@@ -83,7 +83,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
       // Add current impression to collection
       brightcomImps.push(imp);
       // Add mapping to current bid via impression id
-      bidmanager.pbCallbackMap[imp.id] = bid;
+      //bidmanager.pbCallbackMap[imp.id] = bid;
 
       // Add current ad unit's code to tracking
       reqAdUnitsCode.push(bid.placementCode);
@@ -136,8 +136,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
 
         // Get the bid request data
-        var	bidRequest = bidmanager.getPlacementIdByCBIdentifer(curBid.impid);
-                
+        var bidRequest = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+
         // Make sure the bid exists
         if (bidRequest) {
                     

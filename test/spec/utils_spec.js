@@ -1,3 +1,5 @@
+import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+
 var assert = require('assert');
 var utils = require('../../src/utils');
 
@@ -97,14 +99,11 @@ describe('Utils', function () {
 
   describe('transformAdServerTargetingObj', function () {
     it('should append query string to existing using the input obj', function () {
-      var obj = {
-        a:'1',
-        b:'2'
-      };
+      var obj = getAdServerTargeting();
 
-      var output = utils.transformAdServerTargetingObj(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
-      assert.equal(output, expectedResult);
+      var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
+      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      assert.equal(output, expected);
     });
 
     it('should return an empty string, if input obj is empty', function () {

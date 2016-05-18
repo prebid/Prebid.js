@@ -1,15 +1,10 @@
 var CONSTANTS = require('./constants.json');
-var polyfills = require('./polyfills');
 
 var objectType_object = 'object';
 var objectType_string = 'string';
 var objectType_number = 'number';
 
 var _loggingChecked = false;
-
-var _lgPriceCap = 5.00;
-var _mgPriceCap = 20.00;
-var _hgPriceCap = 20.00;
 
 var t_Arr = 'Array';
 var t_Str = 'String';
@@ -19,7 +14,8 @@ let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
 }
-catch (e) {}
+catch (e) {
+}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -88,15 +84,15 @@ exports.parseQueryStringParameters = function (queryObj) {
 };
 
 //transform an AdServer targeting bids into a query string to send to the adserver
-//bid params should be an object such as {key: "value", key1 : "value1"}
-exports.transformAdServerTargetingObj = function (adServerTargeting) {
-  var result = '';
-  if (!adServerTargeting)
+exports.transformAdServerTargetingObj = function (targeting) {
+  // we expect to receive targeting for a single slot at a time
+  if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
+
+    return getKeys(targeting)
+      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
+  } else {
     return '';
-  for (var k in adServerTargeting)
-    if (adServerTargeting.hasOwnProperty(k))
-      result += k + '=' + encodeURIComponent(adServerTargeting[k]) + '&';
-  return result;
+  }
 };
 
 //Copy all of the properties in the source objects over to the target object
@@ -183,14 +179,14 @@ exports.logWarn = function (msg) {
   }
 };
 
-exports.logInfo = function(msg, args) {
+exports.logInfo = function (msg, args) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     if (infoLogger) {
       if (!args || args.length === 0) {
         args = '';
       }
 
-      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '),  args);
+      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '), args);
     }
   }
 };
@@ -261,66 +257,6 @@ var getParameterByName = function (name) {
   }
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
-};
-
-exports.getPriceBucketString = function (cpm) {
-  var low = '';
-  var med = '';
-  var high = '';
-  var auto = '';
-
-  var cpmFloat = 0;
-  var returnObj = {
-    low: low,
-    med: med,
-    high: high,
-    auto: auto
-  };
-  try {
-    cpmFloat = parseFloat(cpm);
-    if (cpmFloat) {
-      //round to closest .5
-      if (cpmFloat > _lgPriceCap) {
-        returnObj.low = _lgPriceCap.toFixed(2);
-      } else {
-        returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
-      }
-
-      //round to closest .1
-      if (cpmFloat > _mgPriceCap) {
-        returnObj.med = _mgPriceCap.toFixed(2);
-      } else {
-        returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
-      }
-
-      //round to closest .01
-      if (cpmFloat > _hgPriceCap) {
-        returnObj.high = _hgPriceCap.toFixed(2);
-      } else {
-        returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
-      }
-
-      // round auto default sliding scale
-      if (cpmFloat <= 5) {
-        // round to closest .05
-        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 10) {
-        // round to closest .10
-        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.auto = '20.00';
-      }
-    }
-  } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
-  }
-
-  return returnObj;
-
 };
 
 /**
@@ -448,7 +384,8 @@ exports.indexOf = (function () {
     return Array.prototype.indexOf;
   }
 
-  return polyfills.indexOf;
+  // ie8 no longer supported
+  //return polyfills.indexOf;
 }());
 
 /**
@@ -518,3 +455,29 @@ exports.getIframeDocument = function (iframe) {
 
   return doc;
 };
+
+export function uniques(value, index, arry) {
+  return arry.indexOf(value) === index;
+}
+
+export function flatten(a, b) {
+  return a.concat(b);
+}
+
+export function getBidRequest(id) {
+  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+}
+
+export function getKeys(obj) {
+  return Object.keys(obj);
+}
+
+export function getValue(obj, key) {
+  return obj[key];
+}
+
+export function getBidderCodes() {
+  // this could memoize adUnits
+  return pbjs.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+}
