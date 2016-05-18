@@ -100,27 +100,28 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-function getPresetTargeting() {
-  return window.googletag.pubads().getSlots().map(slot => {
-    return {
-      [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
-        return { [key]: slot.getTargeting(key) };
-      })
-    };
-  });
-}
-
 function getWinningBidTargeting() {
+  const presets = (function getPresetTargeting() {
+    return window.googletag.pubads().getSlots().map(slot => {
+      return {
+        [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+          return { [key]: slot.getTargeting(key) };
+        })
+      };
+    });
+  })();
+
   const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => pbjs._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce((prev, curr) => prev.cpm < curr.cpm ? curr : prev,
+      .reduce(getHighestCpm,
         {
           adUnitCode: adUnitCode,
           cpm: 0,
           adserverTargeting: {}
         }));
+
   return winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
@@ -128,7 +129,11 @@ function getWinningBidTargeting() {
           return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
     };
-  });
+  }).concat(presets);
+
+  function getHighestCpm(previous, current) {
+    return previous.cpm < current.cpm ? current : previous;
+  }
 }
 
 function getBidLandscapeTargeting() {
@@ -148,7 +153,7 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  return getPresetTargeting().concat(getWinningBidTargeting(), getBidLandscapeTargeting());
+  return getWinningBidTargeting().concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////
@@ -185,7 +190,22 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
-  return getAllTargeting().find(targeting => getKeys(targeting)[0] === adUnitCode);
+  return getAllTargeting().filter(targeting => getKeys(targeting)[0] === adUnitCode)
+    .map(targeting => {
+      return {
+        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+          .map(target => {
+            return {
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+            };
+          }).reduce((p, c) => Object.assign(c, p), {})
+      };
+    })
+    .reduce(function (accumulator, targeting) {
+      var key = Object.keys(targeting)[0];
+      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
+      return accumulator;
+    }, {})[adUnitCode];
 };
 
 /**
@@ -196,12 +216,26 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 
 pbjs.getAdserverTargeting = function () {
   utils.logInfo('Invoking pbjs.getAdserverTargeting', arguments);
-  return getAllTargeting();
+  return getAllTargeting()
+    .map(targeting => {
+      return {
+        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+          .map(target => {
+            return {
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+            };
+          }).reduce((p, c) => Object.assign(c, p), {})
+      };
+    })
+    .reduce(function (accumulator, targeting) {
+      var key = Object.keys(targeting)[0];
+      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
+      return accumulator;
+    }, {});
 };
 
 /**
  * This function returns the bid responses at the given moment.
- * @param  {string} [adunitCode] adunitCode adUnitCode to get the bid responses for
  * @alias module:pbjs.getBidResponses
  * @return {object}            map | object that contains the bidResponses
  */
@@ -209,7 +243,15 @@ pbjs.getAdserverTargeting = function () {
 pbjs.getBidResponses = function () {
   utils.logInfo('Invoking pbjs.getBidResponses', arguments);
 
-  return pbjs._bidsReceived;
+  return pbjs._bidsReceived.map(bid => bid.adUnitCode)
+    .filter(uniques).map(adUnitCode => pbjs._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode))
+    .map(bids => {
+      return {
+        [bids[0].adUnitCode]: { bids: bids }
+      };
+    })
+    .reduce((a, b) => Object.assign(a, b), {});
 };
 
 /**
@@ -220,7 +262,10 @@ pbjs.getBidResponses = function () {
  */
 
 pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  return pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  const bids = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  return {
+    bids : bids
+  };
 };
 
 /**
@@ -469,7 +514,6 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
     .map(bid => pbjs._bidsReceived.push(bid));
 };
 
-/**
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {[type]} statusCode [description]

@@ -85,14 +85,11 @@ exports.parseQueryStringParameters = function (queryObj) {
 
 //transform an AdServer targeting bids into a query string to send to the adserver
 exports.transformAdServerTargetingObj = function (targeting) {
-  // we expect to receive targeting for a single slot at a time, so start with
-  // the first key of the targeting object and test it has at least one property
+  // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
 
-    return targeting[getKeys(targeting)[0]]
-      .map(obj => getKeys(obj)
-        .map(key => getValue(obj, key)
-          .map(val => `${key}=${encodeURIComponent(val)}`))).reduce(flatten).join('&');
+    return getKeys(targeting)
+      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
   } else {
     return '';
   }
