@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys } from './utils';
+import { flatten, uniques, getKeys, isGptPubadsDefined } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -102,7 +102,7 @@ function checkDefinedPlacement(id) {
 
 function getWinningBidTargeting() {
   let presets;
-  if (utils.isGptPubadsDefined()) {
+  if (isGptPubadsDefined()) {
     presets = (function getPresetTargeting() {
       return window.googletag.pubads().getSlots().map(slot => {
         return {
@@ -283,7 +283,8 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  */
 pbjs.setTargetingForGPTAsync = function () {
   utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
-  if (!utils.isGptPubadsDefined()) {
+  if (!isGptPubadsDefined()) {
+    utils.logError('window.googletag is not defined on the page');
     return;
   }
   window.googletag.pubads().getSlots().forEach(slot => {

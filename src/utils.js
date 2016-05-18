@@ -483,8 +483,7 @@ export function getBidderCodes() {
 }
 
 export function isGptPubadsDefined() {
-  if (window.googletag && this.isFn(window.googletag.pubads) && this.isFn(window.googletag.pubads().getSlots)) {
+  if (window.googletag && exports.isFn(window.googletag.pubads) && exports.isFn(window.googletag.pubads().getSlots)) {
     return true;
   }
-  this.logWarn('window.googletag is not defined on the page');
 }
