@@ -368,7 +368,9 @@ Accepted values:
 | CPM > $10 and < $20 | 	$0.50 increments             |
 | CPM > $20           | 	Caps the price bucket at $20 |
 
-For more information, see the [`bidResponse`](#bidResponse) documentation below.
+For more information about price buckets, see the [`bidResponse`](#bidResponse) documentation below.
+
+For an example showing how to use this method, see [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
 
 <hr class="full-rule">
 
