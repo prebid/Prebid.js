@@ -481,3 +481,9 @@ export function getBidderCodes() {
   return pbjs.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
+
+export function isGptPubadsDefined() {
+  if (window.googletag && exports.isFn(window.googletag.pubads) && exports.isFn(window.googletag.pubads().getSlots)) {
+    return true;
+  }
+}

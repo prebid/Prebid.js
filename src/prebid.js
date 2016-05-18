@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys } from './utils';
+import { flatten, uniques, getKeys, isGptPubadsDefined } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -101,17 +101,20 @@ function checkDefinedPlacement(id) {
 }
 
 function getWinningBidTargeting() {
-  const presets = (function getPresetTargeting() {
-    return window.googletag.pubads().getSlots().map(slot => {
-      return {
-        [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
-          return { [key]: slot.getTargeting(key) };
-        })
-      };
-    });
-  })();
+  let presets;
+  if (isGptPubadsDefined()) {
+    presets = (function getPresetTargeting() {
+      return window.googletag.pubads().getSlots().map(slot => {
+        return {
+          [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+            return { [key]: slot.getTargeting(key) };
+          })
+        };
+      });
+    })();
+  }
 
-  const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
+  let winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => pbjs._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
@@ -122,14 +125,20 @@ function getWinningBidTargeting() {
           adserverTargeting: {}
         }));
 
-  return winners.map(winner => {
+  winners = winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
         .map(key => {
           return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
     };
-  }).concat(presets);
+  });
+
+  if(presets) {
+    winners.concat(presets);
+  }
+
+  return winners;
 
   function getHighestCpm(previous, current) {
     return previous.cpm < current.cpm ? current : previous;
@@ -273,6 +282,11 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function () {
+  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
+  if (!isGptPubadsDefined()) {
+    utils.logError('window.googletag is not defined on the page');
+    return;
+  }
   window.googletag.pubads().getSlots().forEach(slot => {
     getAllTargeting()
       .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
@@ -281,7 +295,6 @@ pbjs.setTargetingForGPTAsync = function () {
       }));
   });
 
-  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
 };
 
 /**
