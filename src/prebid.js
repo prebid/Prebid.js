@@ -587,6 +587,7 @@ pbjs.aliasBidder = function (bidderCode, alias) {
 };
 
 pbjs.setPriceGranularity = function (granularity) {
+  utils.logInfo('Invoking pbjs.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
   } else {
