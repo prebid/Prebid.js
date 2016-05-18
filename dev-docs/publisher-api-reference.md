@@ -351,14 +351,18 @@ This method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getA
 
 ### pbjs.setPriceGranularity
 
-This method is a convenience wrapper around the [`bidResponse`](#bidResponse) object's price bucket values.  It configures which price bucket is used for the `hb_pb` keyword.
+This method is used to configure which price bucket is used for the `hb_pb` keyword.  For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
 
 Accepted values:
 
-+ `low`: $0.50 increments
-+ `medium`: $0.10 increments (the default)
-+ `high`: $0.05 increments
-+ `auto`: Applies a sliding scale to determine granularity as shown in the table below.
++ `"low"`: $0.50 increments, capped at $5 CPM
++ `"medium"`: $0.10 increments, capped at $20 CPM (the default)
++ `"high"`: $0.05 increments, capped at $20 CPM
++ `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
+
+<a name="autoGranularityBucket"></a>
+
+#### Auto Granularity
 
 {: .table .table-bordered .table-striped }
 | CPM                 | 	Granularity                  |
@@ -367,10 +371,6 @@ Accepted values:
 | CPM > $5 and < $10  | 	$0.10 increments             |
 | CPM > $10 and < $20 | 	$0.50 increments             |
 | CPM > $20           | 	Caps the price bucket at $20 |
-
-For more information about price buckets, see the [`bidResponse`](#bidResponse) documentation below.
-
-For an example showing how to use this method, see [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
 
 <hr class="full-rule">
 
