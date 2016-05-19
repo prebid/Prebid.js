@@ -395,8 +395,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
 
   utils.logInfo('Invoking pbjs.requestBids', arguments);
 
-  // not sure of this logic
-  if (!pbjs.adUnits && pbjs.adUnits.length !== 0) {
+  if (!pbjs.adUnits || pbjs.adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     return;
   }

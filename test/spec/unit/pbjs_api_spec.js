@@ -5,6 +5,11 @@ var assert = require('chai').assert;
 var prebid = require('src/prebid');
 var utils = require('src/utils');
 var bidmanager = require('src/bidmanager');
+var adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
+var events = require('src/events');
+var ga = require('src/ga');
+var CONSTANTS = require('src/constants.json');
 
 var bidResponses = require('test/fixtures/bid-responses.json');
 var targetingMap = require('test/fixtures/targeting-map.json');
@@ -131,6 +136,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('setTargetingForGPTAsync', function () {
+    let logErrorSpy;
+    beforeEach(() => logErrorSpy = sinon.spy(utils, 'logError'));
+    afterEach(() => utils.logError.restore());
 
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
@@ -154,6 +162,16 @@ describe('Unit: Prebid Module', function () {
 
       pbjs.enableSendAllBids();
       pbjs.setTargetingForGPTAsync();
+    });
+
+    it('should log error when googletag is not defined on page', function () {
+      const error = 'window.googletag is not defined on the page';
+      const windowGoogletagBackup = window.googletag;
+      window.googletag = {};
+
+      pbjs.setTargetingForGPTAsync();
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      window.googletag = windowGoogletagBackup;
     });
   });
 
@@ -251,6 +269,291 @@ describe('Unit: Prebid Module', function () {
       pbjs.renderAd(doc, fakeId);
       var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+  });
+
+  describe('requestBids', () => {
+    it('should add bidsBackHandler callback to bidmanager', () => {
+      var spyAddOneTimeCallBack = sinon.spy(bidmanager, 'addOneTimeCallback');
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {}
+      };
+      pbjs.requestBids(requestObj);
+      assert.ok(spyAddOneTimeCallBack.calledWith(requestObj.bidsBackHandler),
+        'called bidmanager.addOneTimeCallback');
+      bidmanager.addOneTimeCallback.restore();
+    });
+
+    it('should log message when adUnits not configured', () => {
+      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const adUnitsBackup = pbjs.adUnits;
+
+      pbjs.adUnits = [];
+      pbjs.requestBids({});
+
+      assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
+      utils.logMessage.restore();
+      pbjs.adUnits = adUnitsBackup;
+    });
+
+    it('should execute callback after timeout', () => {
+      var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
+      var clock = sinon.useFakeTimers();
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {},
+        timeout: 2000
+      };
+
+      pbjs.requestBids(requestObj);
+
+      clock.tick(requestObj.timeout - 1);
+      assert.ok(spyExecuteCallback.notCalled, 'bidmanager.executeCallback not called');
+
+      clock.tick(1);
+      assert.ok(spyExecuteCallback.called, 'called bidmanager.executeCallback');
+
+      bidmanager.executeCallback.restore();
+      clock.restore();
+    });
+
+    it('should call callBids function on adaptermanager', () => {
+      var spyCallBids = sinon.spy(adaptermanager, 'callBids');
+      pbjs.requestBids({});
+      assert.ok(spyCallBids.called, 'called adaptermanager.callBids');
+      adaptermanager.callBids.restore();
+    });
+  });
+
+  describe('onEvent', () => {
+    it('should log an error when handler is not a function', () => {
+      var spyLogError = sinon.spy(utils, 'logError');
+      var event = 'testEvent';
+      pbjs.onEvent(event);
+      assert.ok(spyLogError.calledWith('The event handler provided is not a function and was not set on event "' + event + '".'),
+        'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should log an error when id provided is not valid for event', () => {
+      var spyLogError = sinon.spy(utils, 'logError');
+      var event = 'bidWon';
+      pbjs.onEvent(event, Function, 'testId');
+      assert.ok(spyLogError.calledWith('The id provided is not valid for event "' + event + '" and no handler was set.'),
+        'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should call events.on with valid parameters', () => {
+      var spyEventsOn = sinon.spy(events, 'on');
+      pbjs.onEvent('bidWon', Function);
+      assert.ok(spyEventsOn.calledWith('bidWon', Function));
+      events.on.restore();
+    });
+  });
+
+  describe('offEvent', () => {
+    it('should return when id provided is not valid for event', () => {
+      var spyEventsOff = sinon.spy(events, 'off');
+      pbjs.offEvent('bidWon', Function, 'testId');
+      assert.ok(spyEventsOff.notCalled);
+      events.off.restore();
+    });
+
+    it('should call events.off with valid parameters', () => {
+      var spyEventsOff = sinon.spy(events, 'off');
+      pbjs.offEvent('bidWon', Function);
+      assert.ok(spyEventsOff.calledWith('bidWon', Function));
+      events.off.restore();
+    });
+  });
+
+  describe('addCallback', () => {
+    it('should log error and return null id when error registering callback', () => {
+      var spyLogError = sinon.spy(utils, 'logError');
+      var id = pbjs.addCallback('event', 'fakeFunction');
+      assert.equal(id, null, 'id returned was null');
+      assert.ok(spyLogError.calledWith('error registering callback. Check method signature'),
+        'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should add callback to bidmanager', () => {
+      var spyAddCallback = sinon.spy(bidmanager, 'addCallback');
+      var id = pbjs.addCallback('event', Function);
+      assert.ok(spyAddCallback.calledWith(id, Function, 'event'), 'called bidmanager.addCallback');
+      bidmanager.addCallback.restore();
+    });
+  });
+
+  describe('removeCallback', () => {
+    it('should return null', () => {
+      const id = pbjs.removeCallback();
+      assert.equal(id, null);
+    });
+  });
+
+  describe('registerBidAdapter', () => {
+    it('should register bidAdaptor with adaptermanager', () => {
+      var registerBidAdapterSpy = sinon.spy(adaptermanager, 'registerBidAdapter');
+      pbjs.registerBidAdapter(Function, 'biddercode');
+      assert.ok(registerBidAdapterSpy.called, 'called adaptermanager.registerBidAdapter');
+      adaptermanager.registerBidAdapter.restore();
+    });
+
+    it('should catch thrown errors', () => {
+      var spyLogError = sinon.spy(utils, 'logError');
+      var errorObject = {message: 'bidderAdaptor error'};
+      var bidderAdaptor = sinon.stub().throws(errorObject);
+
+      pbjs.registerBidAdapter(bidderAdaptor, 'biddercode');
+
+      var errorMessage = 'Error registering bidder adapter : ' + errorObject.message;
+      assert.ok(spyLogError.calledWith(errorMessage), 'expected error was caught');
+      utils.logError.restore();
+    });
+  });
+
+  describe('bidsAvailableForAdapter', () => {
+    it('should update requested bid with status set to available', () => {
+      const bidderCode = 'appnexus';
+      pbjs.bidsAvailableForAdapter(bidderCode);
+
+      const requestedBids = pbjs._bidsRequested.find(bid => bid.bidderCode === bidderCode);
+      requestedBids.bids.forEach(bid => {
+        assert.equal(bid.bidderCode, bidderCode, 'bidderCode was set');
+        assert.equal(bid.statusMessage, 'Bid available', 'bid set as available');
+      });
+    });
+  });
+
+  describe('createBid', () => {
+    it('should return a bid object', () => {
+      const statusCode = 1;
+      const bid = pbjs.createBid(statusCode);
+      assert.isObject(bid, 'bid is an object');
+      assert.equal(bid.getStatusCode(), statusCode, 'bid has correct status');
+
+      const defaultStatusBid = pbjs.createBid();
+      assert.isObject(defaultStatusBid, 'bid is an object');
+      assert.equal(defaultStatusBid.getStatusCode(), 0, 'bid has correct status');
+    });
+  });
+
+  describe('addBidResponse', () => {
+    it('should call bidmanager.addBidResponse', () => {
+      const addBidResponseStub = sinon.stub(bidmanager, 'addBidResponse');
+      const adUnitCode = 'testcode';
+      const bid = pbjs.createBid(0);
+
+      pbjs.addBidResponse(adUnitCode, bid);
+      assert.ok(addBidResponseStub.calledWith(adUnitCode, bid), 'called bidmanager.addBidResponse');
+      bidmanager.addBidResponse.restore();
+    });
+  });
+
+  describe('loadScript', () => {
+    it('should call adloader.loadScript', () => {
+      const loadScriptSpy = sinon.spy(adloader, 'loadScript');
+      const tagSrc = 'testsrc';
+      const callback = Function;
+      const useCache = false;
+
+      pbjs.loadScript(tagSrc, callback, useCache);
+      assert.ok(loadScriptSpy.calledWith(tagSrc, callback, useCache), 'called adloader.loadScript');
+      adloader.loadScript.restore();
+    });
+  });
+
+  describe('enableAnalytics', () => {
+    let logErrorSpy;
+
+    beforeEach(() => {
+      logErrorSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log error when not passed options', () => {
+      const error = 'pbjs.enableAnalytics should be called with option {}';
+      pbjs.enableAnalytics();
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+    });
+
+    it('should call ga.enableAnalytics with options', () => {
+      const enableAnalyticsSpy = sinon.spy(ga, 'enableAnalytics');
+      const options = {'provider': 'ga'};
+      const error = 'pbjs.enableAnalytics should be called with option {}';
+
+      pbjs.enableAnalytics(options);
+      ga.enableAnalytics.restore();
+    });
+
+    it('should catch errors thrown from ga.enableAnalytics', () => {
+      const error = {message: 'Error calling GA: '};
+      const enableAnalyticsStub = sinon.stub(ga, 'enableAnalytics').throws(error);
+      const options = {'provider': 'ga'};
+
+      pbjs.enableAnalytics(options);
+      assert.ok(logErrorSpy.calledWith(error.message), 'expected error was caught');
+      ga.enableAnalytics.restore();
+    });
+
+    it('should return null for other providers', () => {
+      const options = {'provider': 'other_provider'};
+      const returnValue = pbjs.enableAnalytics(options);
+      assert.equal(returnValue, null, 'expected return value');
+    });
+  });
+
+  describe('sendTimeoutEvent', () => {
+    it('should emit BID_TIMEOUT for timed out bids', () => {
+      const eventsEmitSpy = sinon.spy(events, 'emit');
+      pbjs.sendTimeoutEvent();
+      assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
+      events.emit.restore();
+    });
+  });
+
+  describe('aliasBidder', () => {
+    it('should call adaptermanager.aliasBidder', () => {
+      const aliasBidAdapterSpy = sinon.spy(adaptermanager, 'aliasBidAdapter');
+      const bidderCode = 'testcode';
+      const alias = 'testalias';
+
+      pbjs.aliasBidder(bidderCode, alias);
+      assert.ok(aliasBidAdapterSpy.calledWith(bidderCode, alias), 'called adaptermanager.aliasBidAdapterSpy');
+      adaptermanager.aliasBidAdapter.restore();
+    });
+
+    it('should log error when not passed correct arguments', () => {
+      const logErrorSpy = sinon.spy(utils, 'logError');
+      const error = 'bidderCode and alias must be passed as arguments';
+
+      pbjs.aliasBidder();
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      utils.logError.restore();
+    });
+  });
+
+  describe('setPriceGranularity', () => {
+    it('should log error when not passed granularity', () => {
+      const logErrorSpy = sinon.spy(utils, 'logError');
+      const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
+
+      pbjs.setPriceGranularity();
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should call bidmanager.setPriceGranularity with granularity', () => {
+      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
+      const granularity = 'low';
+
+      pbjs.setPriceGranularity(granularity);
+      assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
+      bidmanager.setPriceGranularity.restore();
     });
   });
 });
