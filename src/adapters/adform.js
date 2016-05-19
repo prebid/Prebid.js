@@ -17,6 +17,12 @@ function AdformAdapter() {
         var request = [];
         var adxDomain;
 
+        var singleRequest = {},
+        	singleParam,
+        	singleParams = [
+        	    'url'
+        	];
+
         for (var i = 0, l = bids.length; i < l; i++) {
             bid = bids[i];
             adxDomain = bid.params.adxDomain || bid.adxDomain;
@@ -26,11 +32,25 @@ function AdformAdapter() {
                 request.unshift('//' + adxDomain + '/adx/?rp=4');
             }
 
-            request = request.concat( formRequestUrl(bid.params) );
+            request.push(formRequestUrl(bid.params));
+
+            for (var j = 0, k = singleParams.length; j < k; j++) {
+            	singleParam = singleParams[ j ];
+            	if ( bid.params[ singleParam ] ) {
+            		singleRequest[ singleParam ] = bid.params[ singleParam ];
+            	}
+            }
         }
 
         if (noDomain) {
             request.unshift('//adx.adform.net/adx/?rp=4');
+        }
+
+        for (var j = 0, k = singleParams.length; j < k; j++) {
+        	singleParam = singleParams[ j ];
+        	if ( singleRequest[ singleParam ] ) {
+        		request.push( singleParam + '=' + encodeURIComponent( singleRequest[ singleParam ] ) );
+        	}
         }
 
         pbjs[callbackName] = handleCallback(bids);
@@ -41,33 +61,20 @@ function AdformAdapter() {
 
     function formRequestUrl(reqData) {
         var key;
-        var url = [],
-        	params = [];
+        var url = [];
 
         var validProps = [
             'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
             'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
         ];
 
-        var validPropsWithURIEncode = [
-            'url'
-        ];
-
         for (var i = 0, l = validProps.length; i < l; i++) {
             key = validProps[i];
-            if (reqData.hasOwnProperty(key)) {
+            if (reqData.hasOwnProperty(key))
                 url.push(key, '=', reqData[key], '&');
-            }
         }
-        params.push( encode64(url.join('')) );
 
-        for (var i = 0, l = validPropsWithURIEncode.length; i < l; i++) {
-            key = validPropsWithURIEncode[i];
-            if (reqData.hasOwnProperty(key)) {
-            	params.push( [key, '=', encodeURIComponent( reqData[key] )].join('') );
-            }
-        }
-        return params;
+        return encode64(url.join(''));
     }
 
     function handleCallback(bids) {
