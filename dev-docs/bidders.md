@@ -35,6 +35,7 @@ In this page, you can find the below information:
 * [BRealTime](#brealtime)
 * [AdForm](#adform)
 * [Springserve](#springserve)
+* [WideOrbit](#wideorbit)
 
 </div>
 
@@ -417,5 +418,23 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 | :--- | :---- | :---------- | :------ |
 | `impId` | required | The impression ID | `12345` |
 | `supplyPartnerId` | required | The supply partner ID | `1` |
+
+</div>
+
+<div class="bs-docs-section" markdown="1">
+
+# <a name="wideorbit">WideOrbit</a>
+
+### bidder code:
+
+`wideorbit`
+
+### bid params
+
+{: .table .table-bordered .table-striped }
+| Name | Scope | Description | Example |
+| :--- | :---- | :---------- | :------ |
+| `pbId` | required | The publisher ID from WideOrbit Programmatic Digital | `12345` |
+| `pId` | required | The placement ID from WideOrbit Programmatic Digital  | `12345` |
 
 </div>
