@@ -359,6 +359,7 @@ Accepted values:
 + `"medium"`: $0.10 increments, capped at $20 CPM (the default)
 + `"high"`: $0.05 increments, capped at $20 CPM
 + `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
++ `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
 
 <a name="autoGranularityBucket"></a>
 
@@ -371,6 +372,19 @@ Accepted values:
 | CPM > $5 and < $10  | 	$0.10 increments             |
 | CPM > $10 and < $20 | 	$0.50 increments             |
 | CPM > $20           | 	Caps the price bucket at $20 |
+
+<a name="denseGranularityBucket"></a>
+
+#### Dense Granularity
+
+{: .table .table-bordered .table-striped }
+| CPM        | 	Granularity                  |
+|------------+-------------------------------|
+| CPM <= $3  | 	$0.01 increments             |
+| CPM <= $8  | 	$0.05 increments             |
+| CPM <= $20 | 	$0.50 increments             |
+| CPM >  $20 | 	Caps the price bucket at $20 |
+
 
 <hr class="full-rule">
 
