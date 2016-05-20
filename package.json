@@ -11,6 +11,7 @@
     "url" : "https://github.com/prebid/Prebid.js.git"
   },
   "adapters": [
+    "aardvark",
     "adequant",
     "adform",
     "aol",
