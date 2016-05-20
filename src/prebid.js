@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys } from './utils';
+import { flatten, uniques, getKeys, isGptPubadsDefined } from './utils';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
@@ -101,17 +101,20 @@ function checkDefinedPlacement(id) {
 }
 
 function getWinningBidTargeting() {
-  const presets = (function getPresetTargeting() {
-    return window.googletag.pubads().getSlots().map(slot => {
-      return {
-        [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
-          return { [key]: slot.getTargeting(key) };
-        })
-      };
-    });
-  })();
+  let presets;
+  if (isGptPubadsDefined()) {
+    presets = (function getPresetTargeting() {
+      return window.googletag.pubads().getSlots().map(slot => {
+        return {
+          [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+            return { [key]: slot.getTargeting(key) };
+          })
+        };
+      });
+    })();
+  }
 
-  const winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
+  let winners = pbjs._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => pbjs._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
@@ -122,14 +125,20 @@ function getWinningBidTargeting() {
           adserverTargeting: {}
         }));
 
-  return winners.map(winner => {
+  winners = winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
         .map(key => {
           return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
         })
     };
-  }).concat(presets);
+  });
+
+  if (presets) {
+    winners.concat(presets);
+  }
+
+  return winners;
 
   function getHighestCpm(previous, current) {
     return previous.cpm < current.cpm ? current : previous;
@@ -264,7 +273,7 @@ pbjs.getBidResponses = function () {
 pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
   return {
-    bids : bids
+    bids: bids
   };
 };
 
@@ -273,15 +282,26 @@ pbjs.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjs.setTargetingForGPTAsync = function () {
+  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
+  if (!isGptPubadsDefined()) {
+    utils.logError('window.googletag is not defined on the page');
+    return;
+  }
+
   window.googletag.pubads().getSlots().forEach(slot => {
     getAllTargeting()
-      .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath())
-      .forEach(targeting => targeting[Object.keys(targeting)[0]].forEach(key => {
-        key[Object.keys(key)[0]].forEach(value => slot.setTargeting(Object.keys(key)[0], value));
-      }));
+      .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
+        Object.keys(targeting)[0] === slot.getSlotElementId())
+      .forEach(targeting => targeting[Object.keys(targeting)[0]]
+        .forEach(key => {
+          key[Object.keys(key)[0]]
+            .map((value, index, array) => {
+              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
+              return value;
+            })
+            .forEach(value => slot.setTargeting(Object.keys(key)[0], value));
+        }));
   });
-
-  utils.logInfo('Invoking pbjs.setTargetingForGPTAsync', arguments);
 };
 
 /**
@@ -382,8 +402,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
 
   utils.logInfo('Invoking pbjs.requestBids', arguments);
 
-  // not sure of this logic
-  if (!pbjs.adUnits && pbjs.adUnits.length !== 0) {
+  if (!pbjs.adUnits || pbjs.adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     return;
   }
@@ -587,6 +606,7 @@ pbjs.aliasBidder = function (bidderCode, alias) {
 };
 
 pbjs.setPriceGranularity = function (granularity) {
+  utils.logInfo('Invoking pbjs.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
   } else {

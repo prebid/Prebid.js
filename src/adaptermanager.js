@@ -37,7 +37,6 @@ exports.callBids = () => {
         bids: getBids({ bidderCode, requestId, bidderRequestId }),
         start: new Date().getTime()
       };
-      console.log('bid set:', bidderCode, bidderRequestId);
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
       pbjs._bidsRequested.push(bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);

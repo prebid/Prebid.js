@@ -17,13 +17,23 @@ var RubiconAdapter = function RubiconAdapter() {
   var RUBICON_OK_STATUS = 'ok';
   var RUBICON_BIDDER_CODE = 'rubicon';
   var RUBICON_SIZE_MAP = {
+    '468x60': 1,
     '728x90': 2,
+    '120x600': 8,
     '160x600': 9,
     '300x600': 10,
     '300x250': 15,
+    '336x280': 16,
     '320x50': 43,
+    '300x50': 44,
     '300x1050': 54,
-    '970x250': 57
+    '970x90': 55,
+    '970x250': 57,
+    '1000x90': 58,
+    '320x480': 67,
+    '1800x1000': 68,
+    '480x320':101,
+    '768x1024': 102
   };
   var RUBICON_INITIALIZED = 0;
 
@@ -287,6 +297,7 @@ var RubiconAdapter = function RubiconAdapter() {
         _bidsReady(slots);
       };
 
+      window.rubicontag.setIntegration('pbjs');
       window.rubicontag.run(callback, parameters);
     });
   }
