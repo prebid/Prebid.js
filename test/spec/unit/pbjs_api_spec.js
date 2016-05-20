@@ -483,10 +483,15 @@ describe('Unit: Prebid Module', function () {
 
     it('should call ga.enableAnalytics with options', () => {
       const enableAnalyticsSpy = sinon.spy(ga, 'enableAnalytics');
-      const options = {'provider': 'ga'};
-      const error = 'pbjs.enableAnalytics should be called with option {}';
 
+      let options = {'provider': 'ga'};
       pbjs.enableAnalytics(options);
+      assert.ok(enableAnalyticsSpy.calledWith({}), 'ga.enableAnalytics called with empty options object');
+
+      options['options'] = 'testoptions';
+      pbjs.enableAnalytics(options);
+      assert.ok(enableAnalyticsSpy.calledWith(options.options), 'ga.enableAnalytics called with provided options');
+
       ga.enableAnalytics.restore();
     });
 
