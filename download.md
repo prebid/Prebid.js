@@ -22,7 +22,7 @@ function submit_download() {
 
     var alertStatus = $('#download-status');
 
-    if (!(form_data['email'] && form_data['company'])) {  
+    if (!(form_data['email'] && form_data['company'])) {
       alertStatus.html('Email and Company fields are required.');
       alertStatus.removeClass('hide');
       return;
@@ -244,7 +244,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version: 0.8.1)
+(Version: 0.9.1)
 </p>
 
 <div class="form-group">
