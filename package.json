@@ -6,9 +6,9 @@
   "scripts": {
     "test": "gulp test"
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/prebid/Prebid.js.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prebid/Prebid.js.git"
   },
   "adapters": [
     "adequant",
@@ -27,14 +27,23 @@
     "yieldbot",
     "nginad",
     "brightcom",
-    { "appnexus": {"alias": "brealtime"} },
-    { "appnexus": {"alias": "pagescience"} }
+    {
+      "appnexus": {
+        "alias": "brealtime"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "pagescience"
+      }
+    }
   ],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.5.2",
     "babel-loader": "^6.2.3",
+    "babel-plugin-transform-object-assign": "^6.8.0",
     "babel-preset-es2015": "^6.5.0",
     "block-loader": "^2.1.0",
     "chai": "^3.3.0",
