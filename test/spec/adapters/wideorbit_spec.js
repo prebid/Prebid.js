@@ -102,7 +102,7 @@ describe('wideorbit adapter tests', function () {
             expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
             expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
             expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-            expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.parent.pbjs.handleWideOrbitCallback');
+            expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
             expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
             expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
             expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -180,7 +180,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.parent.pbjs.handleWideOrbitCallback');
+                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -256,7 +256,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.parent.pbjs.handleWideOrbitCallback');
+                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -320,17 +320,13 @@ describe('wideorbit adapter tests', function () {
             }
         ];
 
-        afterEach(function () {
-            bidmanager.clearAllBidResponses();
-        });
-
         it('callback function should exist', function () {
             expect(pbjs.handleWideOrbitCallback).to.exist.and.to.be.a('function');
         });
 
         it('bidmanager.addBidResponse should be called thrice with correct arguments', function () {
 
-            var spyAddBidResponse = sinon.spy(bidmanager, 'addBidResponse');
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var params = {
                 bidderCode: 'wideorbit',
@@ -379,12 +375,12 @@ describe('wideorbit adapter tests', function () {
             adapter().callBids(params);
             pbjs.handleWideOrbitCallback(response);
 
-            var bidPlacementCode1 = spyAddBidResponse.getCall(0).args[0];
-            var bidObject1 = spyAddBidResponse.getCall(0).args[1];
-            var bidPlacementCode2 = spyAddBidResponse.getCall(1).args[0];
-            var bidObject2 = spyAddBidResponse.getCall(1).args[1];
-            var bidPlacementCode3 = spyAddBidResponse.getCall(2).args[0];
-            var bidObject3 = spyAddBidResponse.getCall(2).args[1];
+            var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
+            var bidObject1 = stubAddBidResponse.getCall(0).args[1];
+            var bidPlacementCode2 = stubAddBidResponse.getCall(1).args[0];
+            var bidObject2 = stubAddBidResponse.getCall(1).args[1];
+            var bidPlacementCode3 = stubAddBidResponse.getCall(2).args[0];
+            var bidObject3 = stubAddBidResponse.getCall(2).args[1];
 
             expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
             expect(bidObject1.cpm).to.equal(1.3);
@@ -406,17 +402,19 @@ describe('wideorbit adapter tests', function () {
             expect(bidObject3.getStatusCode()).to.equal(2);
             expect(bidObject3.bidderCode).to.equal('wideorbit');
 
-            sinon.assert.calledWith(spyAddBidResponse, bidPlacementCode1, bidObject1);
-            sinon.assert.calledWith(spyAddBidResponse, bidPlacementCode2, bidObject2);
-            sinon.assert.calledWith(spyAddBidResponse, bidPlacementCode3, bidObject3);
+            sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode1, bidObject1);
+            sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode2, bidObject2);
+            sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode3, bidObject3);
 
-            sinon.assert.calledThrice(spyAddBidResponse);
+            sinon.assert.calledThrice(stubAddBidResponse);
 
-            spyAddBidResponse.restore();
+            stubAddBidResponse.restore();
 
         });
 
         it('should append an image to the head when type is set to redirect', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
@@ -435,9 +433,12 @@ describe('wideorbit adapter tests', function () {
             expect(imgElement).to.exist;
             expect(imgElement.src).to.equal('http://www.admeta.com/1.gif');
 
+            stubAddBidResponse.restore();
         });
 
         it('should append an iframe to the head when type is set to iframe', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
@@ -456,9 +457,13 @@ describe('wideorbit adapter tests', function () {
             expect(iframeElement).to.exist;
             expect(iframeElement.src).to.equal('http://www.admeta.com/1.ashx');
 
-        });
+            stubAddBidResponse.restore();
+
+		});
 
         it('should append an script to the head when type is set to javascript', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
@@ -477,6 +482,7 @@ describe('wideorbit adapter tests', function () {
             expect(scriptElement).to.exist;
             expect(scriptElement.src).to.equal('http://www.admeta.com/1.js');
 
+            stubAddBidResponse.restore();
         });
 
     });
