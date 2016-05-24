@@ -141,7 +141,7 @@ function getWinningBidTargeting() {
   return winners;
 
   function getHighestCpm(previous, current) {
-    if (previous.cpm == current.cpm) {
+    if (previous.cpm === current.cpm) {
       return previous.timeToRespond > current.timeToRespond ? current : previous;
     }
     return previous.cpm < current.cpm ? current : previous;
