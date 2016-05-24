@@ -19,8 +19,14 @@ var AardvarkAdapter = function AardvarkAdapter() {
   }
 
   function _requestBids(bidReqs) {
-    // build bid request object
-    var ref = window.top.location.host;
+
+    try {
+      var ref = window.top.location.host;
+    }
+    catch (err) {
+      var ref = "thor.rtk.io";
+
+    }
     var ai = "";
     var shortcodes = [];
 
@@ -40,7 +46,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
     }
 
     var scriptUrl = '//thor.rtk.io/' + ai + "/" + scURL + "/aardvark/?jsonp=window.pbjs.aardvarkResponse&rtkreferer=" + ref;
-    adloader.loadScript(scriptUrl, null);
+    adloader.loadScript(scriptUrl);
   }
 
   //expose the callback to the global object:
