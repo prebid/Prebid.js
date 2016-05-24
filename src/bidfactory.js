@@ -49,6 +49,6 @@ function Bid(statusCode) {
 }
 
 // Bid factory function.
-exports.createBid = function (statusCde) {
-  return new Bid(statusCde);
+exports.createBid = function (statusCode) {
+  return new Bid(statusCode);
 };
