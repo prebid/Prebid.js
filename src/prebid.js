@@ -294,7 +294,7 @@ pbjs.setTargetingForGPTAsync = function () {
       .forEach(targeting => targeting[Object.keys(targeting)[0]]
         .forEach(key => {
           key[Object.keys(key)[0]]
-            .map((value, index, array) => {
+            .map((value) => {
               utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
               return value;
             })
