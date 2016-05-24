@@ -1,4 +1,4 @@
-/** @module pbjs
+/** @module polyfill
 Misc polyfills
 */
 
