@@ -33,6 +33,7 @@ var eventValidators = {
 
 /* Public vars */
 
+pbjs._auctionRunning = false;
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
 
@@ -387,6 +388,13 @@ pbjs.removeAdUnit = function (adUnitCode) {
   }
 };
 
+pbjs.clearAuction = function() {
+  pbjs._bidsRequested = [];
+  pbjs._bidsReceived = [];
+  pbjs._auctionRunning = false;
+  utils.logMessage('Prebid auction cleared');
+};
+
 /**
  *
  * @param bidsBackHandler
@@ -394,6 +402,14 @@ pbjs.removeAdUnit = function (adUnitCode) {
  */
 pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
   const cbTimeout = timeout || pbjs.bidderTimeout;
+
+  if (pbjs._auctionRunning) {
+    utils.logError('Prebid Error: `pbjs.requestBids` was called while a previous auction was' +
+      ' still running. Resubmit this request.');
+    return;
+  } else {
+    pbjs._auctionRunning = true;
+  }
 
   if (typeof bidsBackHandler === objectType_function) {
     bidmanager.addOneTimeCallback(bidsBackHandler);
