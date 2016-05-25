@@ -36,6 +36,7 @@ var eventValidators = {
 pbjs._auctionRunning = false;
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
+pbjs._adsReceived = [];
 
 //default timeout for all bids
 pbjs.bidderTimeout = pbjs.bidderTimeout || 2000;
@@ -389,8 +390,6 @@ pbjs.removeAdUnit = function (adUnitCode) {
 };
 
 pbjs.clearAuction = function() {
-  pbjs._bidsRequested = [];
-  pbjs._bidsReceived = [];
   pbjs._auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
 };
@@ -409,6 +408,8 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
     return;
   } else {
     pbjs._auctionRunning = true;
+    pbjs._bidsRequested = [];
+    pbjs._bidsReceived = [];
   }
 
   if (typeof bidsBackHandler === objectType_function) {

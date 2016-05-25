@@ -236,6 +236,8 @@ exports.executeCallback = function () {
     processCallbacks([externalOneTimeCallback]);
     externalOneTimeCallback = null;
   }
+
+  pbjs.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
