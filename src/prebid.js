@@ -101,6 +101,13 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
+var getHighestCpm = exports.getHighestCpm = function (previous, current) {
+  if (previous.cpm === current.cpm) {
+    return previous.timeToRespond > current.timeToRespond ? current : previous;
+  }
+  return previous.cpm < current.cpm ? current : previous;
+};
+
 function getWinningBidTargeting() {
   let presets;
   if (isGptPubadsDefined()) {
@@ -140,10 +147,6 @@ function getWinningBidTargeting() {
   }
 
   return winners;
-
-  function getHighestCpm(previous, current) {
-    return previous.cpm < current.cpm ? current : previous;
-  }
 }
 
 function getBidLandscapeTargeting() {
