@@ -66,7 +66,6 @@ var NginAdAdapter = function NginAdAdapter() {
     //assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
 
-    var requestIdentifier = bidReqs[0].requestId;
 
     //build impression array for nginad
     utils._each(bidReqs, function(bid) {
