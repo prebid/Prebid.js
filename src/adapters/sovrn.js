@@ -105,8 +105,8 @@ var SovrnAdapter = function SovrnAdapter() {
           var bid = {};
 
           // try to fetch the bid request we sent Sovrn
-          var bidObj = pbjs._bidsRequested.filter(bidSet => bidSet.bidderCode === 'sovrn')
-            .map(bidSet => bidSet.bids.find(bid => bid.bidId === id));
+          var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+          .find(bid => bid.bidId === id);
 
           if (bidObj) {
             placementCode = bidObj.placementCode;
