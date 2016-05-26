@@ -1,8 +1,8 @@
 ---
 layout: page
-title: Log all bids to the ad server
-head_title: Log all bids to the ad server
-description: Log all bids to the ad server for reporting and data analysis.
+title: Send all bids to the ad server
+head_title: Send all bids to the ad server
+description: Send all bids to the ad server for reporting and data analysis.
 pid: 1
 top_nav_section: adops
 nav_section: tutorials
@@ -10,18 +10,23 @@ nav_section: tutorials
 
 <div class="bs-docs-section" markdown="1">
 
-# Log all bids to the ad server
+# Send all bids to the ad server
 
-## Overview
+As a publisher, you may wish to have your ad server see **all** header bidding bids (instead of seeing only the winning bids in each auction).  Reasons you might want this behavior include:
 
-By default, Prebid.js will send the highest bid price to your ad server using the `hb_pb` keyword.
++ You want your ad server to see all header bidding bids, so that your ad server can report on bid prices, instead of only winning prices
 
-This works fine if you just want to sell inventory to the highest bidder.  However, you may want to log every bid from each bidder so that you can report on historical bid prices from each bidder.  You will need to change your development and ad ops setup slightly.  Specifically:
++ You have a contractual agreement with your header bidding partner
 
-+ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [Log all bids to the ad server with Prebid.js](/dev-docs/examples/log-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
+In order to send all bids to the ad server, you will need to change your development and ad ops setup slightly.
+
+Specifically:
+
++ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
+
 + From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Triplelift](http://triplelift.com/), you would use `hb_pb_triplelift` in your line item's key-value targeting, and `hb_adid_triplelift` in the creative.
 
-This page shows how to set up your ad server so that you can log all bids and report on them.  For instructions on how to set this up from the engineering side, see [Log all bids to the ad server with Prebid.js](/dev-docs/examples/log-all-bids.html).
+This page shows how to set up your ad server so that you can send all bids and report on them.  For instructions on how to set this up from the engineering side, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html).
 
 {: .bg-info :}
 In this example we will use DFP setup to illustrate, but the steps are basically the same for any ad server.
