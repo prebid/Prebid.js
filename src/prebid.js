@@ -26,6 +26,7 @@ var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_bidsTimedOut = false;
 var pb_sendAllBids = false;
+var auctionRunning = false;
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -33,7 +34,6 @@ var eventValidators = {
 
 /* Public vars */
 
-pbjs._auctionRunning = false;
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
 pbjs._adsReceived = [];
@@ -390,7 +390,7 @@ pbjs.removeAdUnit = function (adUnitCode) {
 };
 
 pbjs.clearAuction = function() {
-  pbjs._auctionRunning = false;
+  auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
 };
 
@@ -399,15 +399,16 @@ pbjs.clearAuction = function() {
  * @param bidsBackHandler
  * @param timeout
  */
-pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
+pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits }) {
   const cbTimeout = timeout || pbjs.bidderTimeout;
+  adUnits = adUnits || pbjs.adUnits;
 
-  if (pbjs._auctionRunning) {
+  if (auctionRunning) {
     utils.logError('Prebid Error: `pbjs.requestBids` was called while a previous auction was' +
       ' still running. Resubmit this request.');
     return;
   } else {
-    pbjs._auctionRunning = true;
+    auctionRunning = true;
     pbjs._bidsRequested = [];
     pbjs._bidsReceived = [];
   }
@@ -418,7 +419,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
 
   utils.logInfo('Invoking pbjs.requestBids', arguments);
 
-  if (!pbjs.adUnits || pbjs.adUnits.length === 0) {
+  if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     return;
   }
@@ -426,7 +427,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout }) {
   //set timeout for all bids
   setTimeout(bidmanager.executeCallback, cbTimeout);
 
-  adaptermanager.callBids();
+  adaptermanager.callBids(adUnits);
 };
 
 /**
