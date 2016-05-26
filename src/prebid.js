@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import { flatten, uniques, getKeys, isGptPubadsDefined } from './utils';
+import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import 'polyfill';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
@@ -101,12 +101,6 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-var getHighestCpm = exports.getHighestCpm = function (previous, current) {
-  if (previous.cpm === current.cpm) {
-    return previous.timeToRespond > current.timeToRespond ? current : previous;
-  }
-  return previous.cpm < current.cpm ? current : previous;
-};
 
 function getWinningBidTargeting() {
   let presets;
@@ -130,7 +124,8 @@ function getWinningBidTargeting() {
         {
           adUnitCode: adUnitCode,
           cpm: 0,
-          adserverTargeting: {}
+          adserverTargeting: {},
+          timeToRespond : 0
         }));
 
   winners = winners.map(winner => {
