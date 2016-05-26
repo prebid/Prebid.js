@@ -76,7 +76,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var whArr = getWidthAndHeight(bid);
 
       var imp = {
-        id: utils.getUniqueIdentifierStr(),
+        id: bid.bidId,
         banner: {
           w: whArr[0],
           h: whArr[1]
@@ -94,7 +94,7 @@ var NginAdAdapter = function NginAdAdapter() {
 
     // build bid request with impressions
     var nginadBidReq = {
-      id: requestIdentifier,
+      id: utils.getUniqueIdentifierStr(),
       imp: nginadImps,
       site: {
         domain: domain,
@@ -144,8 +144,7 @@ var NginAdAdapter = function NginAdAdapter() {
 
       // try to fetch the bid request we sent NginAd
       var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
-        .filter(bid => bid.requestId === nginadResponseObj.id);
-      bidObj = bidObj[0];
+        .find(bid => bid.bidId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }
