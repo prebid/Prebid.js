@@ -6,6 +6,7 @@ var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 var Adapter = require('./adapter.js');
+var adUnitMap = {};
 
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
@@ -28,6 +29,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
       //store a reference to the bidRequest from the callback id
       //bidmanager.pbCallbackMap[callbackId] = bidRequest;
+      adUnitMap[callbackId] = bidRequest.placementCode;
     }
   };
 
@@ -145,23 +147,14 @@ AppNexusAdapter = function AppNexusAdapter() {
   //expose the callback to the global object:
   pbjs.handleAnCB = function (jptResponseObj) {
 
-    var bidCode;
+    var bidCode = 'appnexus';
 
     if (jptResponseObj && jptResponseObj.callback_uid) {
 
       var responseCPM;
       var id = jptResponseObj.callback_uid;
-      var placementCode = '';
+      var placementCode = adUnitMap[id];
       var bidObj = getBidRequest(id);
-      if (bidObj) {
-
-        bidCode = bidObj.bidder;
-
-        placementCode = bidObj.placementCode;
-
-        //set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
-      }
 
       // @if NODE_ENV='debug'
       utils.logMessage('JSONP callback function called for ad ID: ' + id);

@@ -3,6 +3,7 @@ import { uniques } from './utils';
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
+var bidfactory = require('./bidfactory');
 
 var objectType_function = 'function';
 
@@ -15,6 +16,38 @@ var defaultBidderSettingsMap = {};
 const _lgPriceCap = 5.00;
 const _mgPriceCap = 20.00;
 const _hgPriceCap = 20.00;
+
+setUpListener();
+
+function setUpListener() {
+  // Create IE + others compatible event handler
+  const eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+  const eventer = window[eventMethod];
+  const messageEvent = eventMethod == "attachEvent" ? "onmessage" : "message";
+
+  // Listen to message from child window
+  eventer(messageEvent,function(e) {
+    console.log('parent received message!:  ',e.data);
+    try{
+      let message = JSON.parse(e.data);
+      if(message.adUnitCode && message.bid) {
+        //generate a new bid object to replace methods lost in posting
+        var bid = bidfactory.createBid(1);
+        bid.bidderCode = message.bid.bidderCode;
+        bid.cpm = message.bid.cpm;
+        bid.adUrl = message.bid.adUrl;
+        bid.width = message.bid.width;
+        bid.height = message.bid.height;
+        bid.dealId = message.bid.dealId;
+        exports.addBidResponse(message.adUnitCode, bid, 'postMessage');
+      }
+
+    }catch(e){
+      utils.logError('Error:' + e);
+    }
+
+  },false);
+}
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -67,7 +100,19 @@ function getBidSetForBidder(bidder) {
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse = function (adUnitCode, bid, method) {
+
+  if(pbjs.sentSecurely && method !== 'postMessage') {
+    var message = {
+      adUnitCode : adUnitCode,
+      bid : bid
+    };
+    //invoke listener on parent.
+    window.parent.postMessage(JSON.stringify(message), '*');
+    console.log('child sending message: ' + message);
+    return;
+  }
+
   if (bid) {
     Object.assign(bid, {
       responseTimestamp: timestamp(),
@@ -115,6 +160,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
   }
+
+
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {

@@ -655,4 +655,18 @@ pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
 };
 
+pbjs.invokeSecureBidders = function() {
+
+  const hash = window.location.hash;
+  if(hash) {
+    console.log(window.location.hash);
+    let params = hash.substring(1, hash.length);
+    params = JSON.parse(params);
+    //overload adaptermanager for now.
+    adaptermanager.callBids(pbjs.adUnits, 'appnexus', params);
+  } else {
+    console.log('no data');
+  }
+}
+
 processQue();

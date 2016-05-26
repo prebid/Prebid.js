@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<script src = 'http://localhost:9999/build/dev/prebid.js' async=true ></script>
+</head>
+  <script>
+  var pbjs = pbjs || {};
+  pbjs.que = pbjs.que || [];
+
+  pbjs.logging=true;
+  pbjs.sentSecurely = true;
+
+  pbjs.que.push(function(){
+    pbjs.invokeSecureBidders();
+  });
+  </script>
+</body>
+</html>

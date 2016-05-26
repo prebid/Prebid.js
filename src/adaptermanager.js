@@ -7,6 +7,8 @@ var CONSTANTS = require('./constants.json');
 var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
 
+
+pbjs.useSecureLoad = true;
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
@@ -23,8 +25,21 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = ({ adUnits }) => {
+exports.callBids = ({ adUnits }, bidder, params) => {
   const requestId = utils.getUniqueIdentifierStr();
+  //path for secure load
+  if(bidder && params) {
+    const adapter = _bidderRegistry[bidder];
+    if (adapter) {
+      var bidderRequest = params[0];
+      if (bidderRequest.bids && bidderRequest.bids.length) {
+        adapter.callBids(bidderRequest);
+      }
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
+    }
+    return;
+  }
 
   getBidderCodes(adUnits).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
@@ -41,13 +56,33 @@ exports.callBids = ({ adUnits }) => {
       pbjs._bidsRequested.push(bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
-        adapter.callBids(bidderRequest);
+        if(!pbjs.useSecureLoad) {
+          adapter.callBids(bidderRequest);
+        }
+
       }
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
   });
+  if(pbjs.useSecureLoad) {
+    secureInvokeBidder(pbjs._bidsRequested);
+  }
 };
+
+function secureInvokeBidder(bidderRequests) {
+  //1 create iframe to load bidder
+  //2 construct the URL for data
+  //3 add to DOM
+  //4 wait for callback as usual
+  var iframe = utils.createInvisibleIframe();
+  var requestStr = JSON.stringify(bidderRequests);
+  //iframe.src = 'http://acdn.adnxs.com/prebid/secure.html#' + requestStr;
+  iframe.src = 'http://mkendall.devnxs.net/secure.html#' + requestStr;
+  var elToAppend = document.getElementsByTagName('head')[0];
+  elToAppend.insertBefore(iframe, elToAppend.firstChild);
+
+}
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
