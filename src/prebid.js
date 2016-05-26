@@ -1,6 +1,7 @@
 /** @module pbjs */
 
 import { flatten, uniques, getKeys, isGptPubadsDefined } from './utils';
+import 'polyfill';
 
 // if pbjs already exists in global document scope, use it, if not, create the object
 window.pbjs = (window.pbjs || {});
