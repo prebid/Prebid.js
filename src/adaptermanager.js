@@ -27,7 +27,7 @@ exports.callBids = ({ adUnits, adUnitCodes }) => {
   const requestId = utils.getUniqueIdentifierStr();
   adUnitCodes = adUnitCodes || getBidderCodes();
 
-  getBidderCodes().forEach(bidderCode => {
+  adUnitCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();

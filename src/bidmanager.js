@@ -22,7 +22,7 @@ const _hgPriceCap = 20.00;
  */
 exports.getTimedOutBidders = function () {
   return pbjs._bidsRequested
-    .map(getBidderCodes)
+    .map(getBidderCode)
     .filter(uniques)
     .filter(bidder => pbjs._bidsReceived
       .map(getBidders)
@@ -32,7 +32,7 @@ exports.getTimedOutBidders = function () {
 
 function timestamp() { return new Date().getTime(); }
 
-function getBidderCodes(bidSet) {
+function getBidderCode(bidSet) {
   return bidSet.bidderCode;
 }
 
