@@ -398,8 +398,10 @@ pbjs.clearAuction = function() {
  *
  * @param bidsBackHandler
  * @param timeout
+ * @param adUnits
+ * @param adUnitCodes
  */
-pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits }) {
+pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
   const cbTimeout = timeout || pbjs.bidderTimeout;
   adUnits = adUnits || pbjs.adUnits;
 
@@ -427,7 +429,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits }) {
   //set timeout for all bids
   setTimeout(bidmanager.executeCallback, cbTimeout);
 
-  adaptermanager.callBids(adUnits);
+  adaptermanager.callBids({ adUnits, adUnitCodes });
 };
 
 /**

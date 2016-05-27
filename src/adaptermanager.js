@@ -23,8 +23,9 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = (adUnits) => {
+exports.callBids = ({ adUnits, adUnitCodes }) => {
   const requestId = utils.getUniqueIdentifierStr();
+  adUnitCodes = adUnitCodes || getBidderCodes();
 
   getBidderCodes().forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
