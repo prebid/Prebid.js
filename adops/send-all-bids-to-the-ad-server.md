@@ -4,6 +4,7 @@ title: Send all bids to the ad server
 head_title: Send all bids to the ad server
 description: Send all bids to the ad server for reporting and data analysis.
 pid: 1
+hide: true
 top_nav_section: adops
 nav_section: tutorials
 ---
@@ -18,13 +19,13 @@ As a publisher, you may wish to have your ad server see **all** header bidding b
 
 + You have a contractual agreement with your header bidding partner
 
-In order to send all bids to the ad server, you will need to change your development and ad ops setup slightly.
+In order to send all bids to the ad server, the development and ad ops setup are slightly different from sending the top bid to the ad server.
 
 Specifically:
 
 + Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
 
-+ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Triplelift](http://triplelift.com/), you would use `hb_pb_triplelift` in your line item's key-value targeting, and `hb_adid_triplelift` in the creative.
++ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Rubicon], you would use `hb_pb_rubicon` in your line item's key-value targeting, and `hb_adid_rubicon` in the creative.
 
 This page shows how to set up your ad server so that you can send all bids and report on them.  For instructions on how to set this up from the engineering side, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html).
 
@@ -85,7 +86,7 @@ Note that this has to be a **Third party** creative.
 
 Copy this creative code snippet and paste it into the **Code snippet** box.
 
-Edit the `hb_adid_BIDDERNAME` to replace `BIDDERNAME` with the name of the bidder that will serve into this creative, e.g., `hb_adid_triplelift`.
+Edit the `hb_adid_BIDDERNAME` to replace `BIDDERNAME` with the name of the bidder that will serve into this creative, e.g., `hb_adid_rubicon`.
 
     <script>
     var w = window;
