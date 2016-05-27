@@ -1,24 +1,35 @@
 ---
 layout: page
-title: Step by step
-head_title: Getting Started with Prebid.js for Header Bidding
-description: An overview of Prebid.js, how it works, basic templates and examples, and more.
-pid: 0
+title: Send all bids to the ad server
+head_title: Send all bids to the ad server
+description: Send all bids to the ad server for reporting and data analysis.
+pid: 1
 top_nav_section: adops
 nav_section: tutorials
 ---
 
 <div class="bs-docs-section" markdown="1">
 
-# Step by step guide to DFP setup
+# Send all bids to the ad server
 
-<iframe width="853" height="480" src="https://www.youtube.com/embed/-bfI24_hwZ0?rel=0" frameborder="0" allowfullscreen="true"></iframe>
+As a publisher, you may wish to have your ad server see **all** header bidding bids (instead of seeing only the winning bids in each auction).  Reasons you might want this behavior include:
 
-<div class="alert alert-danger" role="alert">
-  <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-  <span class="sr-only">Correction:</span>
-  Correction: in your Line Item settings, 'Display Creative' should be set to 'One or More', not 'As Many as Possible' as described in the video.
-</div>
++ You want your ad server to see all header bidding bids, so that your ad server can report on bid prices, instead of only winning prices
+
++ You have a contractual agreement with your header bidding partner
+
+In order to send all bids to the ad server, you will need to change your development and ad ops setup slightly.
+
+Specifically:
+
++ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
+
++ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Triplelift](http://triplelift.com/), you would use `hb_pb_triplelift` in your line item's key-value targeting, and `hb_adid_triplelift` in the creative.
+
+This page shows how to set up your ad server so that you can send all bids and report on them.  For instructions on how to set this up from the engineering side, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html).
+
+{: .bg-info :}
+In this example we will use DFP setup to illustrate, but the steps are basically the same for any ad server.
 
 * TOC
 {:toc }
@@ -55,9 +66,7 @@ Set **Rotate Creatives** to *Evenly*.
 
 Choose the inventory that you want to run header bidding on.
 
-By default, `prebid.js` will send the highest bid price to DFP using the keyword `hb_pb`.
-
-This line item will capture the bids in the range from $0.50 to $1 by targeting the keyword `hb_pb` set to `0.50` in the **Key-values** section.
+This line item will target the bids in the range from $0.50 to $1.00 from the bidder you specify by targeting the keyword `hb_pb_BIDDERNAME` set to `0.50` in the **Key-values** section.
 
 **You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
@@ -76,13 +85,15 @@ Note that this has to be a **Third party** creative.
 
 Copy this creative code snippet and paste it into the **Code snippet** box.
 
+Edit the `hb_adid_BIDDERNAME` to replace `BIDDERNAME` with the name of the bidder that will serve into this creative, e.g., `hb_adid_triplelift`.
+
     <script>
     var w = window;
     for (i = 0; i < 10; i++) {
       w = w.parent;
       if (w.pbjs) {
         try {
-          w.pbjs.renderAd(document, '%%PATTERN:hb_adid%%');
+          w.pbjs.renderAd(document, '%%PATTERN:hb_adid_BIDDERNAME%%');
           break;
         } catch (e) {
           continue;
@@ -144,12 +155,16 @@ For example, we can duplicate 3 more line items:
 
 Let's go into each of them to update some settings.  For each duplicated line item:
 
-1.  Change the name to reflect the price, e.g., "Prebid\_1.00", "Prebid\_1.50"
+1.  Change the name to reflect the price, e.g., "Prebid\_BIDDERNAME\_1.00", "Prebid\_BIDDERNAME\_1.50"
 
 2.  Change the **Rate** to match the new price of the line item.
 
-3.  In **Key-values**, make sure to target `hb_pb` at the new price, e.g., $1.00.  Again, be sure to use 2 decimal places.
+3.  In **Key-values**, make sure to target `hb_pb_BIDDERNAME` at the new price, e.g., $1.00.  Again, be sure to use 2 decimal places.
 
 4.  (Optional) Set the start time to *Immediate* so you don't have to wait.
 
 Repeat for your other line items until you have the pricing granularity level you want.
+
+## Step 6. Create Orders for your other bidder partners
+
+Once you've created line items for `BIDDERNAME` targeting all the price buckets you want, start creating orders for each of your remaining bidder partners using the steps above.
