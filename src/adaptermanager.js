@@ -23,11 +23,10 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = ({ adUnits, adUnitCodes }) => {
+exports.callBids = ({ adUnits }) => {
   const requestId = utils.getUniqueIdentifierStr();
-  adUnitCodes = adUnitCodes || getBidderCodes();
 
-  adUnitCodes.forEach(bidderCode => {
+  getBidderCodes(adUnits).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();

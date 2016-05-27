@@ -402,9 +402,6 @@ pbjs.clearAuction = function() {
  * @param adUnitCodes
  */
 pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  const cbTimeout = timeout || pbjs.bidderTimeout;
-  adUnits = adUnits || pbjs.adUnits;
-
   if (auctionRunning) {
     utils.logError('Prebid Error: `pbjs.requestBids` was called while a previous auction was' +
       ' still running. Resubmit this request.');
@@ -413,6 +410,16 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes })
     auctionRunning = true;
     pbjs._bidsRequested = [];
     pbjs._bidsReceived = [];
+  }
+
+  const cbTimeout = timeout || pbjs.bidderTimeout;
+
+  // use adUnits provided or from pbjs global
+  adUnits = adUnits || pbjs.adUnits;
+
+  // if specific adUnitCodes filter adUnits for those codes
+  if (adUnitCodes && adUnitCodes.length) {
+    adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
 
   if (typeof bidsBackHandler === objectType_function) {
