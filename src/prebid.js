@@ -26,6 +26,7 @@ var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_bidsTimedOut = false;
 var pb_sendAllBids = false;
+var presetTargeting = [];
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -101,11 +102,33 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
+function resetPresetTargeting() {
+  window.googletag.pubads().getSlots().forEach(slot => {
+    slot.clearTargeting();
+  });
+
+  setTargeting(presetTargeting);
+}
+
+function setTargeting(targetingConfig) {
+  window.googletag.pubads().getSlots().forEach(slot => {
+    targetingConfig.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
+      Object.keys(targeting)[0] === slot.getSlotElementId())
+      .forEach(targeting => targeting[Object.keys(targeting)[0]]
+        .forEach(key => {
+          key[Object.keys(key)[0]]
+            .map((value) => {
+              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
+              return value;
+            })
+            .forEach(value => slot.setTargeting(Object.keys(key)[0], value));
+        }));
+  });
+}
 
 function getWinningBidTargeting() {
-  let presets;
   if (isGptPubadsDefined()) {
-    presets = (function getPresetTargeting() {
+    presetTargeting = (function getPresetTargeting() {
       return window.googletag.pubads().getSlots().map(slot => {
         return {
           [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
@@ -125,7 +148,7 @@ function getWinningBidTargeting() {
           adUnitCode: adUnitCode,
           cpm: 0,
           adserverTargeting: {},
-          timeToRespond : 0
+          timeToRespond: 0
         }));
 
   winners = winners.map(winner => {
@@ -137,8 +160,8 @@ function getWinningBidTargeting() {
     };
   });
 
-  if (presets) {
-    winners.concat(presets);
+  if (presetTargeting) {
+    winners.concat(presetTargeting);
   }
 
   return winners;
@@ -189,12 +212,10 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 };
 
 /**
- * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
- * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:pbjs.getAdserverTargetingForAdUnitCode
- * @return {object}  returnObj return bids
+* This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
+ * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @returns {object}  returnObj return bids
  */
-
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCode', arguments);
 
@@ -287,20 +308,7 @@ pbjs.setTargetingForGPTAsync = function () {
     return;
   }
 
-  window.googletag.pubads().getSlots().forEach(slot => {
-    getAllTargeting()
-      .filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
-        Object.keys(targeting)[0] === slot.getSlotElementId())
-      .forEach(targeting => targeting[Object.keys(targeting)[0]]
-        .forEach(key => {
-          key[Object.keys(key)[0]]
-            .map((value, index, array) => {
-              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
-              return value;
-            })
-            .forEach(value => slot.setTargeting(Object.keys(key)[0], value));
-        }));
-  });
+  setTargeting(getAllTargeting());
 };
 
 /**
