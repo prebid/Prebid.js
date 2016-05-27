@@ -46,7 +46,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
       var imp =
       {
-        id: utils.getUniqueIdentifierStr(),
+        id: bid.bidId,
         banner: {
           w: adW,
           h: adH
@@ -105,7 +105,9 @@ var SovrnAdapter = function SovrnAdapter() {
           var bid = {};
 
           // try to fetch the bid request we sent Sovrn
-          var bidObj = pbjs._bidsRequested.map(bidSet => bidSet.bids.filter(bid => bid.params && bid.params.impId === id));
+          var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+          .find(bid => bid.bidId === id);
+
           if (bidObj) {
             placementCode = bidObj.placementCode;
             placementsWithBidsBack.push(placementCode);
