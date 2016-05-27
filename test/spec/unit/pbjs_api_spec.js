@@ -44,6 +44,10 @@ var Slot = function Slot(elementId, pathId) {
 
     getTargetingKeys: function getTargetingKeys() {
       return ['testKey'];
+    },
+
+    clearTargeting: function clearTargeting() {
+      return googletag.pubads().getSlots();
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');

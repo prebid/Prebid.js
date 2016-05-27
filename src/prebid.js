@@ -105,11 +105,13 @@ function checkDefinedPlacement(id) {
 }
 
 function resetPresetTargeting() {
-  window.googletag.pubads().getSlots().forEach(slot => {
-    slot.clearTargeting();
-  });
+  if (window.googletag && window.googletag.pubads) {
+    window.googletag.pubads().getSlots().forEach(slot => {
+      slot.clearTargeting();
+    });
 
-  setTargeting(presetTargeting);
+    setTargeting(presetTargeting);
+  }
 }
 
 function setTargeting(targetingConfig) {
@@ -418,6 +420,7 @@ pbjs.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes })
     auctionRunning = true;
     pbjs._bidsRequested = [];
     pbjs._bidsReceived = [];
+    resetPresetTargeting();
   }
 
   const cbTimeout = timeout || pbjs.bidderTimeout;
