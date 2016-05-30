@@ -96,6 +96,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
     var keyValues = {};
     if (bid.bidderCode && bid.cpm !== 0) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+
+      if (bid.dealId) {
+        keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
+      }
+
       bid.adserverTargeting = keyValues;
     }
 

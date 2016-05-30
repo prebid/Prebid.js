@@ -390,5 +390,17 @@ describe('bidmanager.js', function () {
       registeredBid = pbjs._bidsReceived.pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
     });
+
+    it('should place dealIds in adserver targeting', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[0]
+      );
+
+      bid.dealId = "test deal";
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      const addedBid = pbjs._bidsReceived.pop();
+      assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
+    });
   });
 });
