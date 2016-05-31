@@ -7,8 +7,6 @@ var CONSTANTS = require('./constants.json');
 var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
 
-
-pbjs.useSecureLoad = true;
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
@@ -27,7 +25,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
 
 exports.callBids = ({ adUnits }, bidder, params) => {
   const requestId = utils.getUniqueIdentifierStr();
-  //path for secure load
+  //path for secure load - invoked from iframe
   if(bidder && params) {
     const adapter = _bidderRegistry[bidder];
     if (adapter) {
