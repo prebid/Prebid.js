@@ -19,6 +19,12 @@ pbjs = pbjs || {};
 pbjs._bidsRequested = getBidRequests();
 pbjs._bidsReceived = getBidResponses();
 
+function resetAuction() {
+  pbjs.clearAuction();
+  pbjs._bidsRequested = getBidRequests();
+  pbjs._bidsReceived = getBidResponses();
+}
+
 var Slot = function Slot(elementId, pathId) {
   var slot = {
     getSlotElementId: function getSlotElementId() {
@@ -38,6 +44,10 @@ var Slot = function Slot(elementId, pathId) {
 
     getTargetingKeys: function getTargetingKeys() {
       return ['testKey'];
+    },
+
+    clearTargeting: function clearTargeting() {
+      return googletag.pubads().getSlots();
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
@@ -282,6 +292,7 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyAddOneTimeCallBack.calledWith(requestObj.bidsBackHandler),
         'called bidmanager.addOneTimeCallback');
       bidmanager.addOneTimeCallback.restore();
+      resetAuction();
     });
 
     it('should log message when adUnits not configured', () => {
@@ -294,6 +305,7 @@ describe('Unit: Prebid Module', function () {
       assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       utils.logMessage.restore();
       pbjs.adUnits = adUnitsBackup;
+      resetAuction();
     });
 
     it('should execute callback after timeout', () => {
@@ -314,6 +326,7 @@ describe('Unit: Prebid Module', function () {
 
       bidmanager.executeCallback.restore();
       clock.restore();
+      resetAuction();
     });
 
     it('should call callBids function on adaptermanager', () => {
@@ -321,6 +334,7 @@ describe('Unit: Prebid Module', function () {
       pbjs.requestBids({});
       assert.ok(spyCallBids.called, 'called adaptermanager.callBids');
       adaptermanager.callBids.restore();
+      resetAuction();
     });
   });
 
