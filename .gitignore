@@ -5,6 +5,7 @@ build
 # Test Files
 test/app
 gpt.html
+gpt-each-bidder3.html
 
 # Dev File
 

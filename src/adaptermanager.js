@@ -10,8 +10,8 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-function getBids({ bidderCode, requestId, bidderRequestId }) {
-  return pbjs.adUnits.map(adUnit => {
+function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+  return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => Object.assign(bid, {
         placementCode: adUnit.code,
@@ -23,10 +23,10 @@ function getBids({ bidderCode, requestId, bidderRequestId }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = () => {
+exports.callBids = ({ adUnits }) => {
   const requestId = utils.getUniqueIdentifierStr();
 
-  getBidderCodes().forEach(bidderCode => {
+  getBidderCodes(adUnits).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -34,7 +34,7 @@ exports.callBids = () => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({ bidderCode, requestId, bidderRequestId }),
+        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
         start: new Date().getTime()
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);

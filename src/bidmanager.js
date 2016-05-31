@@ -22,7 +22,7 @@ const _hgPriceCap = 20.00;
  */
 exports.getTimedOutBidders = function () {
   return pbjs._bidsRequested
-    .map(getBidderCodes)
+    .map(getBidderCode)
     .filter(uniques)
     .filter(bidder => pbjs._bidsReceived
       .map(getBidders)
@@ -32,7 +32,7 @@ exports.getTimedOutBidders = function () {
 
 function timestamp() { return new Date().getTime(); }
 
-function getBidderCodes(bidSet) {
+function getBidderCode(bidSet) {
   return bidSet.bidderCode;
 }
 
@@ -236,6 +236,8 @@ exports.executeCallback = function () {
     processCallbacks([externalOneTimeCallback]);
     externalOneTimeCallback = null;
   }
+
+  pbjs.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
@@ -249,8 +251,33 @@ function processCallbacks(callbackQueue) {
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call(pbjs, pbjs._bidsReceived);
+      func.call(pbjs, pbjs._bidsReceived.reduce(groupByPlacement, {}));
     }
+  }
+}
+
+/**
+ * groupByPlacement is a reduce function that converts an array of Bid objects
+ * to an object with placement codes as keys, with each key representing an object
+ * with an array of `Bid` objects for that placement
+ * @param prev previous value as accumulator object
+ * @param item current array item
+ * @param idx current index
+ * @param arr the array being reduced
+ * @returns {*} as { [adUnitCode]: { bids: [Bid, Bid, Bid] } }
+ */
+function groupByPlacement(prev, item, idx, arr) {
+  // this uses a standard "array to map" operation that could be abstracted further
+  if (item.adUnitCode in Object.keys(prev)) {
+    // if the adUnitCode key is present in the accumulator object, continue
+    return prev;
+  } else {
+    // otherwise add the adUnitCode key to the accumulator object and set to an object with an
+    // array of Bids for that adUnitCode
+    prev[item.adUnitCode] = {
+      bids: arr.filter(bid => bid.adUnitCode === item.adUnitCode)
+    };
+    return prev;
   }
 }
 
