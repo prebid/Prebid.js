@@ -105,7 +105,7 @@ function checkDefinedPlacement(id) {
 }
 
 function resetPresetTargeting() {
-  if (window.googletag && window.googletag.pubads) {
+  if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
       slot.clearTargeting();
     });
