@@ -72,7 +72,7 @@ Next, add a creative to this $0.50 line item; we will duplicate the creative lat
 
 Choose the same advertiser we've assigned the line item to.
 
-Note that this has to be a **Third party** creative.
+Note that this has to be a **Third party** creative. The **"Serve in Safeframe"** box has to be **UNCHECKED** (there are plans to make the below creative safeframe compatible).
 
 Copy this creative code snippet and paste it into the **Code snippet** box.
 
@@ -95,6 +95,8 @@ Copy this creative code snippet and paste it into the **Code snippet** box.
 ![New creative]({{ site.github.url }}/assets/images/demo-setup/new-creative.png)
 
 Make sure the creative size is set to 1x1.  This allows us to set up size override, which allows this creative to serve on all inventory sizes.
+
+Note that the **"Serve in Safeframe"** box has to be **UNCHECKED** (there are plans to make the creative safeframe compatible).
 
 ## Step 3. Attach the Creative to the Line Item
 
