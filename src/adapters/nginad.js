@@ -66,6 +66,7 @@ var NginAdAdapter = function NginAdAdapter() {
     //assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
 
+
     //build impression array for nginad
     utils._each(bidReqs, function(bid) {
       var tagId = utils.getBidIdParamater('pzoneid', bid.params);
@@ -74,7 +75,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var whArr = getWidthAndHeight(bid);
 
       var imp = {
-        id: utils.getUniqueIdentifierStr(),
+        id: bid.bidId,
         banner: {
           w: whArr[0],
           h: whArr[1]
@@ -84,7 +85,7 @@ var NginAdAdapter = function NginAdAdapter() {
       };
 
       nginadImps.push(imp);
-      bidmanager.pbCallbackMap[imp.id] = bid;
+      //bidmanager.pbCallbackMap[imp.id] = bid;
 
       rtbServerDomain = bid.params.nginadDomain;
 
@@ -141,7 +142,8 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      var bidObj = bidmanager.getPlacementIdByCBIdentifer(id);
+      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
+        .find(bid => bid.bidId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }
