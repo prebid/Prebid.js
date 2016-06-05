@@ -38,9 +38,9 @@ SekindoAdapter = function SekindoAdapter() {
       response = '';
     }
 
-    var bidObj = bidmanager.getPlacementIdByCBIdentifer(callbackId);
     if (response !== '')
     {
+      var bidObj = bidmanager.getPlacementIdByCBIdentifer(callbackId);
       var bid = [];
       if (bidObj)
       {
@@ -73,7 +73,7 @@ SekindoAdapter = function SekindoAdapter() {
     }
     else
     {
-      utils.logMessage('No prebid response for placement ' + bidObj.placementCode);
+      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
     }
   };
 
@@ -97,7 +97,7 @@ SekindoAdapter = function SekindoAdapter() {
     var iframe = utils.createInvisibleIframe();
     iframe.id = 'skIfr_'+callbackId;
 
-    var elToAppend = document.getElementById(bid.placementCode);
+    var elToAppend = document.getElementsByTagName('head')[0];
     //insert the iframe into document
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
