@@ -1,3 +1,4 @@
+import { getBidRequest } from '../utils.js';
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -18,29 +19,18 @@ SekindoAdapter = function SekindoAdapter() {
 
     for (var i = 0; i < bidsCount; i++) {
       var bidReqeust = bids[i];
-      var callbackId =   utils.getUniqueIdentifierStr();
+      var callbackId = bidReqeust.bidId;
       _requestBids(bidReqeust, callbackId, pubUrl);
       //store a reference to the bidRequest from the callback id
-      bidmanager.pbCallbackMap[callbackId] = bidReqeust;
+      //bidmanager.pbCallbackMap[callbackId] = bidReqeust;
     }
   }
 
-  pbjs.sekindoCB = function(callbackId, ad)
+  pbjs.sekindoCB = function(callbackId, response)
   {
-    var el = document.getElementById('skIfr_'+callbackId);
-    var response = '';
-    try
+    if (typeof (response) != 'undefined' && typeof (response.cpm) != 'undefined')
     {
-      response = el.contentWindow.displayObj;
-    }
-    catch(e)
-    {
-      response = '';
-    }
-
-    if (response !== '')
-    {
-      var bidObj = bidmanager.getPlacementIdByCBIdentifer(callbackId);
+      var bidObj = getBidRequest(callbackId);
       var bid = [];
       if (bidObj)
       {
@@ -56,7 +46,7 @@ SekindoAdapter = function SekindoAdapter() {
           bid.bidderCode = bidCode;
           bid.creative_id = response.adId;
           bid.cpm = parseFloat(response.cpm);
-          bid.ad = ad;
+          bid.ad = response.ad;
           bid.width = response.width;
           bid.height = response.height;
 
