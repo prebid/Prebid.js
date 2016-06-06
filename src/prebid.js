@@ -171,6 +171,10 @@ function getWinningBidTargeting() {
   return winners;
 }
 
+exports.getWinningBidTargeting = function() {
+  return getWinningBidTargeting(...arguments);
+};
+
 function getBidLandscapeTargeting() {
   const standardKeys = CONSTANTS.TARGETING_KEYS;
 
