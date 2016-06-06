@@ -222,7 +222,12 @@ exports.getBidLandscapeTargeting = function() {
 };
 
 function getAllTargeting() {
-  return getWinningBidTargeting().concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
+
+  // Get targeting for the winning bid. Add targeting for any bids that have
+  // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.  
+  return getWinningBidTargeting()
+    .concat(getAlwaysUseBidTargeting())
+    .concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////

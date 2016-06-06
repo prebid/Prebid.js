@@ -67,7 +67,7 @@ describe('prebid.js', function () {
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
       pbjs._bidsReceived[0]['alwaysUseBid'] = true;
       pbjs._bidsReceived[0]['adserverTargeting'] = {
-        'always_use_this_custom_key': 'abc',
+        'always_use_me': 'abc',
       };
 
       var targeting = prebid.getAlwaysUseBidTargeting();
@@ -75,7 +75,7 @@ describe('prebid.js', function () {
         {
           "/19968336/header-bid-tag-0": [
             {
-              "always_use_this_cust": [
+              "always_use_me": [
                 "abc"
               ]
             }
@@ -150,6 +150,48 @@ describe('prebid.js', function () {
 
       // Disable bid landscape targeting.
       prebid.disableSendAllBids();
+
+    });
+
+    it("should include a losing bid's custom ad targeting key when the bid has `alwaysUseBid` set to `true`", () => {
+
+      // Let's make sure we're getting the expected losing bid.
+      assert.equal(pbjs._bidsReceived[0]['bidderCode'], 'triplelift');
+      assert.equal(pbjs._bidsReceived[0]['cpm'], 0.112256);
+
+      // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
+      pbjs._bidsReceived[0]['alwaysUseBid'] = true;
+      pbjs._bidsReceived[0]['adserverTargeting'] = {
+        'always_use_me': 'abc',
+      };
+
+      var targeting = prebid.getAdserverTargeting();
+
+      // Ensure targeting for both ad placements includes the custom key. 
+      assert.equal(
+        targeting['/19968336/header-bid-tag-0'].hasOwnProperty('always_use_me'),
+        true
+      );
+
+      var expected = {
+        "/19968336/header-bid-tag-0": {
+          "foobar": "300x250",
+          "hb_size": "300x250",
+          "hb_pb": "10.00",
+          "hb_adid": "233bcbee889d46d",
+          "hb_bidder": "appnexus",
+          "always_use_me": "abc"
+        },
+        "/19968336/header-bid-tag1": {
+          "foobar": "728x90",
+          "hb_size": "728x90",
+          "hb_pb": "10.00",
+          "hb_adid": "24bd938435ec3fc",
+          "hb_bidder": "appnexus"
+        }
+      };
+
+      assert.deepEqual(targeting, expected);
 
     });
 
