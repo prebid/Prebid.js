@@ -90,4 +90,41 @@ describe('prebid.js', function () {
 
   });
 
+  describe('getAdserverTargeting', () => {
+
+    before(() => {
+      pbjs._bidsReceived = fixtures.getBidResponses();
+    });
+
+    after(() => {
+      // Reset pbjs._bidsReceived because other tests rely on it.
+      pbjs._bidsReceived = fixtures.getBidResponses();
+    });
+
+    it('should return correct targeting with default bidder settings', () => {
+
+      var targeting = prebid.getAdserverTargeting();
+
+      var expected = {
+        "/19968336/header-bid-tag-0": {
+          "foobar": "300x250",
+          "hb_size": "300x250",
+          "hb_pb": "10.00",
+          "hb_adid": "233bcbee889d46d",
+          "hb_bidder": "appnexus"
+        },
+        "/19968336/header-bid-tag1": {
+          "foobar": "728x90",
+          "hb_size": "728x90",
+          "hb_pb": "10.00",
+          "hb_adid": "24bd938435ec3fc",
+          "hb_bidder": "appnexus"
+        }
+      };
+
+      assert.deepEqual(targeting, expected);
+    });
+
+  });
+
 });

@@ -271,6 +271,10 @@ pbjs.getAdserverTargeting = function () {
     }, {});
 };
 
+exports.getAdserverTargeting = function() {
+  return pbjs.getAdserverTargeting(...arguments);
+};
+
 /**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
