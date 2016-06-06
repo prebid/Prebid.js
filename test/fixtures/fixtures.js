@@ -1314,6 +1314,7 @@ export function getBidLandscapeTargeting() {
   ];
 }
 
+// Ad server targeting when `pbjs.enableSendAllBids()` is called.
 export function getAdServerTargeting() {
   return {
     "/19968336/header-bid-tag-0": {

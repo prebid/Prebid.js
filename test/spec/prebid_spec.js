@@ -24,14 +24,14 @@ describe('prebid.js', function () {
 
       var targeting = prebid.getWinningBidTargeting();
       var expected = fixtures.getWinningBidTargeting();
-      
+
       assert.deepEqual(targeting, expected);      
 
     });
 
   });
 
-describe('getBidLandscapeTargeting', () => {
+  describe('getBidLandscapeTargeting', () => {
 
     before(() => {
       pbjs._bidsReceived = fixtures.getBidResponses();
@@ -86,6 +86,21 @@ describe('getBidLandscapeTargeting', () => {
       };
 
       assert.deepEqual(targeting, expected);
+    });
+
+    it('should return correct targeting with bid landscape targeting on', () => {
+
+      // Enable bid landscape targeting.
+      prebid.enableSendAllBids();
+
+      var targeting = prebid.getAdserverTargeting();
+      var expected = fixtures.getAdServerTargeting();
+
+      assert.deepEqual(targeting, expected);
+
+      // Disable bid landscape targeting.
+      prebid.disableSendAllBids();
+
     });
 
   });
