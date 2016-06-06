@@ -693,12 +693,16 @@ pbjs.enableSendAllBids = function () {
   pb_sendAllBids = true;
 };
 
+pbjs.disableSendAllBids = function () {
+  pb_sendAllBids = false;
+};
+
 exports.enableSendAllBids = function() {
   return pbjs.enableSendAllBids(...arguments);
 };
 
 exports.disableSendAllBids = function() {
-  pb_sendAllBids = false;
+  return pbjs.disableSendAllBids(...arguments);
 };
 
 processQue();
