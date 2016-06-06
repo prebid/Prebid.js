@@ -21,12 +21,9 @@ describe('prebid.js', function () {
     });
 
     it('should return correct winning bid targeting', () => {
-
       var targeting = prebid.getWinningBidTargeting();
       var expected = fixtures.getWinningBidTargeting();
-
-      assert.deepEqual(targeting, expected);      
-
+      assert.deepEqual(targeting, expected);
     });
 
   });
@@ -43,12 +40,9 @@ describe('prebid.js', function () {
     });
 
     it('should return correct bid landscape targeting', () => {
-
       var targeting = prebid.getBidLandscapeTargeting();
       var expected = fixtures.getBidLandscapeTargeting();
-
       assert.deepEqual(targeting, expected);
-
     });
 
   });
@@ -65,9 +59,7 @@ describe('prebid.js', function () {
     });
 
     it('should return correct targeting with default bidder settings', () => {
-
       var targeting = prebid.getAdserverTargeting();
-
       var expected = {
         "/19968336/header-bid-tag-0": {
           "foobar": "300x250",
@@ -84,7 +76,6 @@ describe('prebid.js', function () {
           "hb_bidder": "appnexus"
         }
       };
-
       assert.deepEqual(targeting, expected);
     });
 
@@ -95,7 +86,6 @@ describe('prebid.js', function () {
 
       var targeting = prebid.getAdserverTargeting();
       var expected = fixtures.getAdServerTargeting();
-
       assert.deepEqual(targeting, expected);
 
       // Disable bid landscape targeting.
