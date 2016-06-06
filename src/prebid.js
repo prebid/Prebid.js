@@ -191,6 +191,10 @@ function getBidLandscapeTargeting() {
   }).filter(bid => bid); // removes empty elements in array
 }
 
+exports.getBidLandscapeTargeting = function() {
+  return getBidLandscapeTargeting(...arguments);
+};
+
 function getAllTargeting() {
   return getWinningBidTargeting().concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
 }

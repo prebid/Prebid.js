@@ -90,6 +90,28 @@ describe('prebid.js', function () {
 
   });
 
+describe('getBidLandscapeTargeting', () => {
+
+    before(() => {
+      pbjs._bidsReceived = fixtures.getBidResponses();
+    });
+
+    after(() => {
+      // Reset pbjs._bidsReceived because other tests rely on it.
+      pbjs._bidsReceived = fixtures.getBidResponses();
+    });
+
+    it('should return correct bid landscape targeting', () => {
+
+      var targeting = prebid.getBidLandscapeTargeting();
+      var expected = fixtures.getBidLandscapeTargeting();
+
+      assert.deepEqual(targeting, expected);
+
+    });
+
+  });
+  
   describe('getAdserverTargeting', () => {
 
     before(() => {
