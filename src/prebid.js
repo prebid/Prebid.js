@@ -175,6 +175,32 @@ exports.getWinningBidTargeting = function() {
   return getWinningBidTargeting(...arguments);
 };
 
+/**
+ * Get custom targeting keys for bids that have `alwaysUseBid=true`.
+ */
+function getAlwaysUseBidTargeting() {
+  return pbjs._bidsReceived.map(bid => {
+    if (bid.alwaysUseBid) {
+      const standardKeys = CONSTANTS.TARGETING_KEYS;
+      return {
+        [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
+          
+            // Get only the non-standard keys of the losing bids, since we
+            // don't want to override the standard keys of the winning bid.
+            if (standardKeys.indexOf(key) > -1) {
+              return;
+            }
+            return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
+
+          }).filter(key => key) // remove empty elements
+      };
+    }
+  }).filter(bid => bid); // removes empty elements in array;
+}
+
+exports.getAlwaysUseBidTargeting = function() {
+  return getAlwaysUseBidTargeting(...arguments);
+};
 function getBidLandscapeTargeting() {
   const standardKeys = CONSTANTS.TARGETING_KEYS;
 
