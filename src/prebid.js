@@ -185,14 +185,14 @@ function getAlwaysUseBidTargeting() {
       return {
         [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
           
-            // Get only the non-standard keys of the losing bids, since we
-            // don't want to override the standard keys of the winning bid.
-            if (standardKeys.indexOf(key) > -1) {
-              return;
-            }
-            return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
+          // Get only the non-standard keys of the losing bids, since we
+          // don't want to override the standard keys of the winning bid.
+          if (standardKeys.indexOf(key) > -1) {
+            return;
+          }
+          return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
 
-          }).filter(key => key) // remove empty elements
+        }).filter(key => key) // remove empty elements
       };
     }
   }).filter(bid => bid); // removes empty elements in array;
