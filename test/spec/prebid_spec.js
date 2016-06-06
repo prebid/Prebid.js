@@ -23,67 +23,8 @@ describe('prebid.js', function () {
     it('should return correct winning bid targeting', () => {
 
       var targeting = prebid.getWinningBidTargeting();
-      var expected = [
-        {
-          "/19968336/header-bid-tag-0": [
-            {
-              "hb_bidder": [
-                "appnexus"
-              ]
-            },
-            {
-              "hb_adid": [
-                "233bcbee889d46d"
-              ]
-            },
-            {
-              "hb_pb": [
-                "10.00"
-              ]
-            },
-            {
-              "hb_size": [
-                "300x250"
-              ]
-            },
-            {
-              "foobar": [
-                "300x250"
-              ]
-            }
-          ]
-        },
-        {
-          "/19968336/header-bid-tag1": [
-            {
-              "hb_bidder": [
-                "appnexus"
-              ]
-            },
-            {
-              "hb_adid": [
-                "24bd938435ec3fc"
-              ]
-            },
-            {
-              "hb_pb": [
-                "10.00"
-              ]
-            },
-            {
-              "hb_size": [
-                "728x90"
-              ]
-            },
-            {
-              "foobar": [
-                "728x90"
-              ]
-            }
-          ]
-        }
-      ]
-
+      var expected = fixtures.getWinningBidTargeting();
+      
       assert.deepEqual(targeting, expected);      
 
     });
