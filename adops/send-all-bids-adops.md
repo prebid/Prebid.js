@@ -79,17 +79,17 @@ This line item will target the bids in the range from $0.50 to $1.00 from the bi
 **You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
 {: .pb-img.pb-md-img :}
-![Key-values]({{ site.github.url }}/assets/images/demo-setup/key-values.png)
+![Key-values]({{ site.github.url }}/assets/images/demo-setup/send-all-bids/key-values.png)
 
 <br>
 
-## Step 2. Add a Creative
+## Step 3. Add a Creative
 
 Next, add a creative to this $0.50 line item; we will duplicate the creative later.
 
 Choose the same advertiser we've assigned the line item to.
 
-Note that this has to be a **Third party** creative.
+Note that this has to be a **Third party** creative. The **"Serve in Safeframe"** box has to be **UNCHECKED** (there are plans to make the below creative safeframe compatible).
 
 Copy this creative code snippet and paste it into the **Code snippet** box.
 
@@ -115,7 +115,7 @@ Edit the `hb_adid_BIDDERCODE` to replace `BIDDERCODE` with the name of the bidde
 
 Make sure the creative size is set to 1x1.  This allows us to set up size override, which allows this creative to serve on all inventory sizes.
 
-## Step 3. Attach the Creative to the Line Item
+## Step 4. Attach the Creative to the Line Item
 
 Next, let's attach the creative to the $0.50 line item you just created.  Click into the Line Item, then the **Creatives** tab.
 
@@ -135,7 +135,7 @@ Save the creative and go back to the line item.
 
 <br>
 
-## Step 4. Duplicate Creatives
+## Step 5. Duplicate Creatives
 
 DFP has a constraint that one creative can be served to at most one ad unit in a page under GPT's single request mode.
 
@@ -147,7 +147,7 @@ Once that's done, we have a fully functioning line item with 4 creatives attache
 
 <br>
 
-## Step 5. Duplicate Line Items
+## Step 6. Duplicate Line Items
 
 Now let's duplicate our line item for bids above $0.50.
 
@@ -173,6 +173,6 @@ Let's go into each of them to update some settings.  For each duplicated line it
 
 Repeat for your other line items until you have the pricing granularity level you want.
 
-## Step 6. Create Orders for your other bidder partners
+## Step 7. Create Orders for your other bidder partners
 
 Once you've created line items for `BIDDERCODE` targeting all the price buckets you want, start creating orders for each of your remaining bidder partners using the steps above.
