@@ -155,6 +155,11 @@ function getWinningBidTargeting() {
           timeToRespond: 0
         }));
 
+  // winning bids with deals need an hb_deal targeting key
+  winners
+    .filter(bid => bid.dealId)
+    .map(bid => bid.adserverTargeting.hb_deal = bid.dealId);
+
   winners = winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
@@ -169,6 +174,22 @@ function getWinningBidTargeting() {
   }
 
   return winners;
+}
+
+function getDealTargeting() {
+  const dealTargeting = pbjs._bidsReceived.filter(bid => bid.dealId).map(bid => {
+    const dealKey = `hb_deal_${bid.bidderCode}`;
+    return {
+      [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
+        return {
+          [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
+        };
+      })
+      .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
+    };
+  });
+
+  return dealTargeting;
 }
 
 function getBidLandscapeTargeting() {
@@ -188,7 +209,10 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  return getWinningBidTargeting().concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
+  let targeting = getWinningBidTargeting();
+  // deals are always attached to targeting
+  targeting = getDealTargeting().concat(targeting);
+  return targeting.concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////
