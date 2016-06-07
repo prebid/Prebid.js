@@ -25,7 +25,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
-  <!-- * [.enableSendAllBids()](#module_pbjs.enableSendAllBids) -->
+  * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
   * [.setPriceGranularity(granularity)](#module_pbjs.setPriceGranularity)
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
@@ -304,39 +304,35 @@ Returns a bool if all the bids have returned or timed out
 
 <hr class="full-rule">
 
-<!-- 
+
 <a name="module_pbjs.enableSendAllBids"></a>
 
 ### pbjs.enableSendAllBids()
 
-(Added in version 0.8.1)
+(Added in version 0.9.2)
 
 After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server. 
 
-With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win, and generate reporting on historical bid prices from all bidders.
+With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win. Some ad servers, such as DFP, can then generate reporting on historical bid prices from all bidders.
 
-After this method is called, `pbjs.getAdserverTargeting()` will give you the below json (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the json to GPT, so that 
+Note that this method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
 
-This method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
+After this method is called, `pbjs.getAdserverTargeting()` will give you the below json (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the json to GPT (example below)
+
+
+{% include send-all-bids-keyword-targeting.md %} 
 
 {% highlight js %}
 {
-  "hb_bidder_springserve": "springserve",
-  "hb_adid_springserve": "129a7ed7a6fb40e",
-  "hb_pb_springserve": "10.00",
-  "hb_size_springserve": "300x250",
-  "hb_bidder_triplelift": "triplelift",
+  "hb_adid_indexExchang": "129a7ed7a6fb40e",
+  "hb_pb_indexExchange": "10.00",
+  "hb_size_indexExchang": "300x250",
   "hb_adid_triplelift": "1663076dadb443d",
   "hb_pb_triplelift": "10.00",
   "hb_size_triplelift": "0x0",
-  "hb_bidder_appnexus": "appnexus",
   "hb_adid_appnexus": "191f4aca0c0be8",
   "hb_pb_appnexus": "10.00",
   "hb_size_appnexus": "300x250",
-  "hb_bidder_pagescience": "pagescience",
-  "hb_adid_pagescience": "2024c6abebaa183",
-  "hb_pb_pagescience": "10.00",
-  "hb_size_pagescience": "300x250",
   // original ones (also attached):
   "hb_bidder": "appnexus",
   "hb_adid": "191f4aca0c0be8",
@@ -345,7 +341,7 @@ This method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getA
 }
 {% endhighlight %}
 
-<hr class="full-rule"> -->
+<hr class="full-rule">
 
 <a name="module_pbjs.setPriceGranularity"></a>
 

@@ -1,10 +1,10 @@
 ---
 layout: page
-title: Send all bids to the ad server
+title: Send All Bids to Adserver
 head_title: Send all bids to the ad server
 description: Send all bids to the ad server for reporting and data analysis.
-pid: 1
-hide: true
+pid: 2
+
 top_nav_section: adops
 nav_section: tutorials
 ---
@@ -23,9 +23,11 @@ In order to send all bids to the ad server, the development and ad ops setup are
 
 Specifically:
 
-+ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
++ Your developers will edit your JS code on the site to call the `pbjs.enableSendAllBids()` method.  For details, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html) and the description in the [Publisher API Reference](/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids).
 
-+ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Rubicon], you would use `hb_pb_rubicon` in your line item's key-value targeting, and `hb_adid_rubicon` in the creative.
++ From the ad ops side, you'll need to set up one order per bidder, so that each order can have a set of line items using targeting keywords that include the bidder's name.  For example, if you are working with [Rubicon](/dev-docs/bidders.html#rubicon), you would use `hb_pb_rubicon` in your line item's key-value targeting, and `hb_adid_rubicon` in the creative.
+
+{% include send-all-bids-keyword-targeting.md %} 
 
 This page shows how to set up your ad server so that you can send all bids and report on them.  For instructions on how to set this up from the engineering side, see [send all bids to the ad server with Prebid.js](/dev-docs/examples/send-all-bids.html).
 
@@ -35,7 +37,12 @@ In this example we will use DFP setup to illustrate, but the steps are basically
 * TOC
 {:toc }
 
-## Step 1. Add a line item
+## Step 1. Add an order
+
+In DFP, create a new order for one of the header bidding partners. Each header bidding partner should have its own DFP order. Repeat this step and the following when you are adding a new header bidding partner.
+
+
+## Step 2. Add a line item
 
 In DFP, create a new order with a $0.50 line item.
 
@@ -67,7 +74,7 @@ Set **Rotate Creatives** to *Evenly*.
 
 Choose the inventory that you want to run header bidding on.
 
-This line item will target the bids in the range from $0.50 to $1.00 from the bidder you specify by targeting the keyword `hb_pb_BIDDERNAME` set to `0.50` in the **Key-values** section.
+This line item will target the bids in the range from $0.50 to $1.00 from the bidder you specify by targeting the keyword `hb_pb_BIDDERCODE` set to `0.50` in the **Key-values** section. For example, if this order and line item is for the bidder AppNexus, the keyword would be `hb_pb_appnexus`. The `BIDDERCODE` for other bidders can be found [here](/dev-docs/bidders.html).
 
 **You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
@@ -86,7 +93,7 @@ Note that this has to be a **Third party** creative.
 
 Copy this creative code snippet and paste it into the **Code snippet** box.
 
-Edit the `hb_adid_BIDDERNAME` to replace `BIDDERNAME` with the name of the bidder that will serve into this creative, e.g., `hb_adid_rubicon`.
+Edit the `hb_adid_BIDDERCODE` to replace `BIDDERCODE` with the name of the bidder that will serve into this creative, e.g., `hb_adid_rubicon`.
 
     <script>
     var w = window;
@@ -94,7 +101,7 @@ Edit the `hb_adid_BIDDERNAME` to replace `BIDDERNAME` with the name of the bidde
       w = w.parent;
       if (w.pbjs) {
         try {
-          w.pbjs.renderAd(document, '%%PATTERN:hb_adid_BIDDERNAME%%');
+          w.pbjs.renderAd(document, '%%PATTERN:hb_adid_BIDDERCODE%%');
           break;
         } catch (e) {
           continue;
@@ -156,11 +163,11 @@ For example, we can duplicate 3 more line items:
 
 Let's go into each of them to update some settings.  For each duplicated line item:
 
-1.  Change the name to reflect the price, e.g., "Prebid\_BIDDERNAME\_1.00", "Prebid\_BIDDERNAME\_1.50"
+1.  Change the name to reflect the price, e.g., "Prebid\_BIDDERCODE\_1.00", "Prebid\_BIDDERCODE\_1.50"
 
 2.  Change the **Rate** to match the new price of the line item.
 
-3.  In **Key-values**, make sure to target `hb_pb_BIDDERNAME` at the new price, e.g., $1.00.  Again, be sure to use 2 decimal places.
+3.  In **Key-values**, make sure to target `hb_pb_BIDDERCODE` at the new price, e.g., $1.00.  Again, be sure to use 2 decimal places.
 
 4.  (Optional) Set the start time to *Immediate* so you don't have to wait.
 
@@ -168,4 +175,4 @@ Repeat for your other line items until you have the pricing granularity level yo
 
 ## Step 6. Create Orders for your other bidder partners
 
-Once you've created line items for `BIDDERNAME` targeting all the price buckets you want, start creating orders for each of your remaining bidder partners using the steps above.
+Once you've created line items for `BIDDERCODE` targeting all the price buckets you want, start creating orders for each of your remaining bidder partners using the steps above.

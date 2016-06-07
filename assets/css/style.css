@@ -119,7 +119,7 @@ img {
 }
 
 .bs-docs-section {
-    text-align: justify;
+    /*text-align: justify;*/
     text-indent: auto;
     hyphens: auto;
     line-height: 1.45;

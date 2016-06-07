@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Before you start
+title: Before You Start
 head_title: Getting Started with Prebid.js for Header Bidding
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
 pid: 0
@@ -31,14 +31,20 @@ Example:
 
 Our recommendation is to start with $1 or 10 cent granularity until you’re more comfortable with Prebid.js. At $1, you only need to setup 10-20 line items – easy. When you’re ready, get more granular with the price buckets to improve yield.
 
+Note that DFP has an order [object limits](https://support.google.com/dfp_premium/answer/1628457?hl=en#Trafficking) of containing up to 450 line items (including archived line items). If you are designing your own granularity setup, make sure you do not exceed that amount. Or, you can find the recommended pre-configured granularities [here](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
+
+{: .alert.alert-success :}
+**Action Item:** Once you have decided the price granularity, review this [example page](/dev-docs/examples/simplified-price-bucket-setup.html) with your dev team to learn how to set price granularity on the page.
+
+
 <br>
 
 ### 2: One set of line items for all bidders vs. for each bidder
 
-+ <a href="#all-bidders">One set of line items for all bidders</a>
-+ <a href="#per-bidder">One set of line items per bidder</a>
++ <a href="#all-bidders">A. One set of line items for all bidders</a>
++ <a href="#per-bidder">B. One set of line items per bidder</a>
 
-#### One set of line items for all bidders <a name="all-bidders"/>
+#### A. One set of line items for ALL bidders <a name="all-bidders"/>
 
 One set of line items for all bidders is the recommended way of setting up your line items.  Choose this option if you prefer an easier, low-maintenance setup:
 
@@ -50,19 +56,31 @@ One set of line items for all bidders is the recommended way of setting up your 
 
 {% include default-keyword-targeting.md %} 
 
-For instructions on setting up pre-bid with one set of line items for all bidders, see [Step by Step guide to DFP setup](/adops/step-by-step.html).
+{: .alert.alert-success :}
+**Action Item:** For instructions on setting up pre-bid with one set of line items for all bidders, see [Send Top Bid to Ad Server - Step by Step guide to DFP setup](/adops/step-by-step.html).
 
-#### One set of line items per bidder <a name="per-bidder"/>
+
+
+
+<br>
+
+#### B. One set of line items for EACH bidder <a name="per-bidder"/>
 
 Choose one set of line items for each bidder if you:
 
 - Have to rely on line item reporting (not query string reporting) to get winning bid by bidder analytics
-    - With one set of line items for all bidders, Prebid.js only sends the highest bid to the ad server (and is thus not able to send the other bids if you have more than 1 bidder in a header auction). This is sufficient if the winning bids matter most to you. For example, a bidder bidding 100% of time but losing in every auction still has a fill rate of 0%. However, if having access to all bid information is important to you, use one set of line items for each bidder.
+    - With one set of line items for all bidders, Prebid.js only sends the highest bid to the ad server (the decision logic of choosing the highest bid can be customized by you). This is sufficient if the winning bids matter the most to you. For example, a bidder bidding 100% of time but losing in every auction still has a fill rate of 0%. However, if having access to all bid information is important to you, use one set of line items for each bidder.
 
 - Require bid landscape data for header bidding partners
     - With one set of line items for all bidders, Prebid.js sends the bidder information (Which bidder has the highest price) via a keyword `bidder=bidder_name`. To run a report to attribute winning bids to bidders, you will need to rely on your ad server's keyword reports. DFP supports this, but some ad servers do not. DFP does not support running reports for more than 2 keywords. Therefore, if you have existing reports that already rely on keywords, and you want to add a winning bid by bidder dimension, use one set of line items for each bidder.
 
-For more information, see [How to simplify line item setup](/overview/how-to-simplify-line-item-setup.html).
+- Requires setting more keyword targeting within your ad server. The below keys are targeting are required for each of your header bidding partner.
+
+{% include send-all-bids-keyword-targeting.md %} 
+
+{: .alert.alert-success :}
+**Action Item:** For instructions on setting up pre-bid with one set of line items for each bidder, see [Send All Bids to Ad Server - Step by Step guide to DFP setup](/adops/send-all-bids-adops.html).
+
 
 <br>
 

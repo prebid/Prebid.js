@@ -115,6 +115,6 @@ At this point, either the timeout has hit or all prebid bidders have responded. 
 
 If you prefer to manually set the prebid keyword targeting, you can get the bid information through `pbjs.getAdserverTargeting()` or `pbjs.getBidResponses()`.
 
-For more information about these methods, see the [Publisher API Reference](/dev-docs/publisher-api-reference.html).
+For more information about these methods, see the [Publisher API Reference](/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids).
 
 </div>

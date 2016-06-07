@@ -72,6 +72,13 @@ These parameters in the bidReponse object are common across all bidders.
 
 `aol`
 
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_aol`
+`hb_adid_aol`
+`hb_size_aol`
+
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -96,6 +103,12 @@ These parameters in the bidReponse object are common across all bidders.
 ### bidder code:
 
 `appnexus`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_appnexus`
+`hb_adid_appnexus`
+`hb_size_appnexus`
 
 ### bid params
 
@@ -168,6 +181,13 @@ Prebid.js sends separate key-value targeting for Amazon, because only the obfusc
 
 `indexExchange`
 
+#### Send All Bids Ad Server Keys:
+(truncated to 20 chars due to [DFP limit](https://support.google.com/dfp_premium/answer/1628457?hl=en#Key-values))
+
+`hb_pb_indexExchange`
+`hb_adid_indexExchang`
+`hb_size_indexExchang`
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -221,6 +241,13 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 `openx`
 
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_openx`
+`hb_adid_openx`
+`hb_size_openx`
+
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -241,6 +268,12 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 
 `pubmatic`
 
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_pubmatic`
+`hb_adid_pubmatic`
+`hb_size_pubmatic`
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -259,6 +292,12 @@ When Criteo supports bid price through their API, we will support Criteo in the 
 ### bidder code:
 
 `rubicon`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_rubicon`
+`hb_adid_rubicon`
+`hb_size_rubicon`
 
 ### Note:
 The Rubicon Fastlane adapter requires setup and approval from the Rubicon Project team, even for existing Rubicon Project publishers. Please reach out to your account team or globalsupport@rubiconproject.com for more information and to enable using this adapter.
@@ -295,6 +334,14 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 ### release version:
 `0.8.0`
 
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_sonobi`
+`hb_adid_sonobi`
+`hb_size_sonobi`
+
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -321,6 +368,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 `sovrn`
 
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_sovrn`
+`hb_adid_sovrn`
+`hb_size_sovrn`
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -337,6 +390,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 ### bidder code:
 
 `yieldbot`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_yieldbot`
+`hb_adid_yieldbot`
+`hb_size_yieldbot`
 
 ### bid params
 
@@ -355,6 +414,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 ### bidder code:
 
 `pulsepoint`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_pulsepoint`
+`hb_adid_pulsepoint`
+`hb_size_pulsepoint`
 
 ### bid params
 
@@ -375,6 +440,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 
 `brealtime`
 
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_brealtime`
+`hb_adid_brealtime`
+`hb_size_brealtime`
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
@@ -391,6 +462,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 ### bidder code:
 
 `adform`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_adform`
+`hb_adid_adform`
+`hb_size_adform`
 
 ### bid params
 
@@ -409,6 +486,12 @@ The Rubicon Fastlane adapter requires setup and approval from the Rubicon Projec
 ### bidder code:
 
 `springserve`
+
+#### Send All Bids Ad Server Keys:
+
+`hb_pb_springserve`
+`hb_adid_springserve`
+`hb_size_springserve`
 
 ### bid params
 
