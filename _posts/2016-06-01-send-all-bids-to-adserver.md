@@ -4,7 +4,7 @@ title: Send All Bids to Ad Server
 
 description: New way to load DFP lightning fast with Prebid for header bidding.
 
-permalink: /blog/dfp-instant-load
+permalink: /blog/send-all-bids-to-adserver
 
 ---
 
