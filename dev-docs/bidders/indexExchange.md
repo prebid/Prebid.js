@@ -22,6 +22,9 @@ biddercode_longer_than_12: true
 `hb_adid_indexExchang`
 `hb_size_indexExchang`
 
+#### Default Deal ID Keys:
+`hb_deal_indexExchang`
+
 ### bid params
 
 {: .table .table-bordered .table-striped }

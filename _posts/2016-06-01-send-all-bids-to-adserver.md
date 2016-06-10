@@ -2,7 +2,7 @@
 layout: post
 title: Send All Bids to Ad Server
 
-description: New way to load DFP lightning fast with Prebid for header bidding.
+description: Send All Bids to Ad Server with Prebid for header bidding.
 
 permalink: /blog/send-all-bids-to-adserver
 

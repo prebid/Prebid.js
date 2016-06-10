@@ -77,6 +77,9 @@ These parameters in the bidReponse object are common across all bidders.
 <code>hb_adid_{{ page.biddercode }}</code>
 <code>hb_size_{{ page.biddercode }}</code>
 
+<h4> Default Deal ID Ad Server Key: </h4>
+<code>hb_deal_{{ page.biddercode }}</code>
+
 {% endif %}
 
 {{ page.content }}
