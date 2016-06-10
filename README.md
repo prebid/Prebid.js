@@ -152,6 +152,7 @@ Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
     ```json
         "adapters": [
             "adform",
+            "admedia",
             "aol",
             "appnexus",
             "indexExchange",
