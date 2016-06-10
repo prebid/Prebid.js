@@ -1,5 +1,5 @@
 ---
-layout: example
+<!-- layout: example -->
 title: Criteo Setup example
 description: Setup for Criteo bidder
 

@@ -1,6 +1,6 @@
 ---
 layout: example
-title: Examples
+title: Postbid Example
 description: Postbid Example
 
 top_nav_section: dev_docs

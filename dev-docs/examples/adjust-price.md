@@ -1,7 +1,7 @@
 ---
 layout: example
-title: Adjust Bidder Price Example
-description: Adjust Bidder Price Example with DFP GPT
+title: Adjust Price
+description: Adjust Price Example with DFP GPT
 
 top_nav_section: dev_docs
 nav_section: quick-start

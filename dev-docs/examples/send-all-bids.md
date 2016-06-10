@@ -1,6 +1,6 @@
 ---
 layout: example
-title: Send all bids
+title: Send All Bids
 description: Send all bids to the ad server with Prebid.js
 
 top_nav_section: dev_docs

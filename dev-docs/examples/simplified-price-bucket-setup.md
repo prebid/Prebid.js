@@ -1,6 +1,6 @@
 ---
 layout: example
-title: Simplified Price Bucket Setup
+title: Simplified Price Bucket
 description: Simplified Price Bucket Setup with Prebid.js
 
 top_nav_section: dev_docs

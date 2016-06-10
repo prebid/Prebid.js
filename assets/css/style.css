@@ -318,3 +318,11 @@ table.jsfiddle-line-number .line-number {
   font-size: 20px;
   color: #aaa;
 }
+
+#example-tab {
+  padding-left:10px;
+}
+
+#example-tab li {
+  margin-bottom: 6px;
+}

@@ -1,6 +1,6 @@
 ---
 layout: example
-title: Full Page Refresh Example
+title: Full Page Refresh
 description: Full Page Refresh Example with DFP GPT
 
 top_nav_section: dev_docs

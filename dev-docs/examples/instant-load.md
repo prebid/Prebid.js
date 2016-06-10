@@ -1,7 +1,7 @@
 ---
 layout: example
-title: DFP Instant Load Beta
-description: Prebid.js Instant Load Beta with DFP GPT
+title: DFP Instant Load
+description: Prebid.js Instant Load with DFP GPT
 
 top_nav_section: dev_docs
 nav_section: quick-start

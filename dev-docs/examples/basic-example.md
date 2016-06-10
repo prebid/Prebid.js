@@ -1,7 +1,7 @@
 ---
 layout: example
 title: Examples
-description: Basic Prebid.js Example with DFP GPT
+description: Basic Prebid.js Example
 
 top_nav_section: dev_docs
 nav_section: quick-start
