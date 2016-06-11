@@ -20,14 +20,10 @@ jsfiddle_link: jsfiddle.net/prebid/akLqdj3d/8/embedded/html,result
 code_height: 1864
 code_lines: 84
 
-pid: 10
+pid: 30
 ---
 
-{% include dev-docs/build-from-source-warning.md %}
 
-<br><br>
-<br><br>
-<br>
 
 
 <div markdown="1">
@@ -37,8 +33,6 @@ If your ad server's ad unit can support multiple sizes, then create multiple cre
 
 </div>
 
-<br><br>
-<br><br>
 <br><br>
 
 <div markdown="1">
@@ -60,6 +54,8 @@ Define how long your creative can wait for the bids to come back. The creative w
 
 </div>
 
+<br>
+
 <div markdown="1">
 
 #### Line 29: Set Passback Tag HTML
@@ -70,11 +66,11 @@ This generated HTML tag is most likely in iFrame or a mix of Javascript and HTML
 
 </div>
 
-<br>
+<br><br><br>
 
 <div markdown="1">
 
-#### Line 38: Do Not Edit Below This Line
+#### Line 43: Do Not Edit Below This Line
 
 If you are unfamiliar with Prebid.js or Javascript, changing the below may cause the creative unable to render. 
 

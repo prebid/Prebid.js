@@ -1,5 +1,5 @@
 ---
-layout: example
+layout: example_old
 title: DFP Instant Load
 description: Prebid.js Instant Load with DFP GPT
 

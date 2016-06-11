@@ -19,11 +19,11 @@
       </div>
 
       <div class="col-md-6">
-        <h5>All Examples</h5>
+        <h5>Old Examples</h5>
 
         <ul id="example-tab">
 
-        {% assign example_pages = (site.pages | where: "layout", "example") | sort: "pid" %}
+        {% assign example_pages = (site.pages | where: "layout", "example_old") %}
 
         {% for epage in example_pages %}
           <li>
@@ -46,7 +46,7 @@
 
   <div class="bs-docs-section" markdown="1">
 
-    <h1>{{ page.description }} </h1>
+    <h1>(OLD) {{ page.description }} </h1>
 
     {% if page.why_link %}
       <h4>Who should use this example:</h4>
@@ -111,9 +111,6 @@
 </div>
 
 <div class="col-sm-6">
-
-
-{% include dev-docs/build-from-source-warning.md %}
 
 {{content}}
 

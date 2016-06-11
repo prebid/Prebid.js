@@ -1,7 +1,7 @@
 ---
-layout: example
+layout: example_old
 title: Send All Bids
-description: Send all bids to the ad server
+description: Send all bids to the ad server with Prebid.js
 
 top_nav_section: dev_docs
 nav_section: quick-start
@@ -15,14 +15,64 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 - Standard integration with DFP's GPT single request asynchronous mode.
 
-jsfiddle_link: jsfiddle.net/prebid/qu68xoz5/3/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/qu68xoz5/2/embedded/html,result
 
-code_lines: 121
-code_height: 2641
+code_lines: 105
+code_height: 2276
 
-pid: 15
+pid: 0
 ---
 
+{% include dev-docs/build-from-source-warning.md %}
+
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
 <br />
 <br />
 <br />
@@ -53,7 +103,7 @@ pid: 15
 
 <div markdown="1">
 
-#### Line 32: Enable the mode for sending all bids to the ad server
+#### Line 75 to 76: Enable the mode for sending all bids to the ad server
 
 At this point, either the timeout has hit or all prebid bidders have responded. This is a good time to let prebid.js know that the ad server keywords it generates should be for all bids.
 

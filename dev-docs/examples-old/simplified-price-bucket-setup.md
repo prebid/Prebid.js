@@ -1,7 +1,7 @@
 ---
-layout: example
-title: Set Price Granularity
-description: Simplified Price Granularity Setup
+layout: example_old
+title: Simplified Price Bucket
+description: Simplified Price Bucket Setup with Prebid.js
 
 top_nav_section: dev_docs
 nav_section: quick-start
@@ -11,43 +11,38 @@ hide: true
 about:
 - Simplified price bucket setup with one function call to <a href="/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity"><code>pbjs.setPriceGranularity()</code></a>
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/18/embedded/html,result
-code_height: 2641
-code_lines: 121
+jsfiddle_link: jsfiddle.net/prebid/bp9magow/14/embedded/html,result
+code_height: 2400
+code_lines: 109
 
-pid: 25
+pid: 0
 ---
 
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
+{% include dev-docs/build-from-source-warning.md %}
+
+<br>
+<br>
+<br>
 
 <div markdown="1">
-#### Line 32: Set price granularity
+#### Line 1 to 59: Set timeout and define ad units
+
+Here we use the same setup as in the [Basic Example](/dev-docs/examples/basic-example.html).
+
+</div>
+
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br>
+
+<div markdown="1">
+#### Line 60: Set price granularity
 
 The simplest way to set price granularity is to use the helper method [`pbjs.setPriceGranularity`](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).  For more information about this method, see [its documentation](/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
 

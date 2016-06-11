@@ -18,3 +18,7 @@ permalink: /blog/extremely-simplified-price-bucket-setup
 | cpm > 5 and < 10 | .10 increments |
 | cpm > 10 and < 20 | .50 increments | 
 | cpm > 20 | pb capped at 20 |
+
+### How to implement it?
+
+Please follow the line by line code example [documented here](/dev-docs/examples/simplified-price-bucket-setup.html).
