@@ -494,3 +494,9 @@ export function getHighestCpm(previous, current) {
   }
   return previous.cpm < current.cpm ? current : previous;
 }
+
+export function doNotTrack(nav, win) {
+  nav = nav || navigator;
+  win = win || window;
+  return nav.doNotTrack === 'yes' || nav.doNotTrack === '1' || nav.msDoNotTrack === '1' || win.doNotTrack === '1';
+}
