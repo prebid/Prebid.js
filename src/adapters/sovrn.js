@@ -69,8 +69,11 @@ var SovrnAdapter = function SovrnAdapter() {
       }
     };
 
+    var dnt = utils.doNotTrack() ? '1' : '0';
+
     var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
       '&src=' + CONSTANTS.REPO_AND_VERSION +
+      '&dnt=' + dnt +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
   }
