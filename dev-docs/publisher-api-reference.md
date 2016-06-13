@@ -311,7 +311,7 @@ Returns a bool if all the bids have returned or timed out
 
 (Added in version 0.9.2)
 
-After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server. 
+After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server.
 
 With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win. Some ad servers, such as DFP, can then generate reporting on historical bid prices from all bidders.
 
@@ -320,7 +320,7 @@ Note that this method must be called before `pbjs.setTargetingForGPTAsync()` or 
 After this method is called, `pbjs.getAdserverTargeting()` will give you the below json (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the json to GPT (example below)
 
 
-{% include send-all-bids-keyword-targeting.md %} 
+{% include send-all-bids-keyword-targeting.md %}
 
 {% highlight js %}
 {
@@ -353,7 +353,7 @@ Accepted values:
 
 + `"low"`: $0.50 increments, capped at $5 CPM
 + `"medium"`: $0.10 increments, capped at $20 CPM (the default)
-+ `"high"`: $0.05 increments, capped at $20 CPM
++ `"high"`: $0.01 increments, capped at $20 CPM
 + `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
 + `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
 
@@ -576,7 +576,7 @@ pbjs.bidderSettings = {
 
 -->
 
-Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows: 
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows:
 
 **Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
 
