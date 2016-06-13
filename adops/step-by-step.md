@@ -96,8 +96,6 @@ Copy this creative code snippet and paste it into the **Code snippet** box.
 
 Make sure the creative size is set to 1x1.  This allows us to set up size override, which allows this creative to serve on all inventory sizes.
 
-Also, make sure to uncheck **Serve into a SafeFrame**. (there are plans to make the creative safeframe compatible).
-
 ## Step 3. Attach the Creative to the Line Item
 
 Next, let's attach the creative to the $0.50 line item you just created.  Click into the Line Item, then the **Creatives** tab.
