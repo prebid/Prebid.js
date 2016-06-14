@@ -25,7 +25,6 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_bidsTimedOut = false;
-var pb_sendAllBids = false;
 var auctionRunning = false;
 var presetTargeting = [];
 
@@ -38,6 +37,7 @@ var eventValidators = {
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
 pbjs._adsReceived = [];
+pbjs._sendAllBids = false;
 
 //default timeout for all bids
 pbjs.bidderTimeout = pbjs.bidderTimeout || 2000;
@@ -216,7 +216,7 @@ function getAllTargeting() {
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.  
   return getWinningBidTargeting()
     .concat(getAlwaysUseBidTargeting())
-    .concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
+    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////
@@ -680,11 +680,7 @@ pbjs.setPriceGranularity = function (granularity) {
 };
 
 pbjs.enableSendAllBids = function () {
-  pb_sendAllBids = true;
-};
-
-pbjs.disableSendAllBids = function () {
-  pb_sendAllBids = false;
+  pbjs._sendAllBids = true;
 };
 
 processQue();

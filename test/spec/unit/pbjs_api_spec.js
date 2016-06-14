@@ -26,7 +26,7 @@ pbjs._bidsRequested = getBidRequests();
 pbjs._bidsReceived = getBidResponses();
 
 function resetAuction() {
-  pbjs.disableSendAllBids(); // TODO: don't have this be part of public API
+  pbjs._sendAllBids = false;
   pbjs.clearAuction();
   pbjs._bidsRequested = getBidRequests();
   pbjs._bidsReceived = getBidResponses();
