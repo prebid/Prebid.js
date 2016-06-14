@@ -99,6 +99,7 @@ SekindoAdapter = function SekindoAdapter() {
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
     var iframeDoc = utils.getIframeDocument(iframe);
+    iframeDoc.open();
     iframeDoc.write(html);
     iframeDoc.close();
   }
