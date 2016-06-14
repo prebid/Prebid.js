@@ -28,9 +28,9 @@ SekindoAdapter = function SekindoAdapter() {
 
   pbjs.sekindoCB = function(callbackId, response)
   {
+    var bidObj = getBidRequest(callbackId);
     if (typeof (response) !== 'undefined' && typeof (response.cpm) !== 'undefined')
     {
-      var bidObj = getBidRequest(callbackId);
       var bid = [];
       if (bidObj)
       {
@@ -63,7 +63,14 @@ SekindoAdapter = function SekindoAdapter() {
     }
     else
     {
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
+      if (bidObj)
+      {
+        utils.logMessage('No prebid response for placement '+bidObj.placementCode);
+      }
+      else
+      {
+        utils.logMessage('sekindo callback general error');
+      }
     }
   };
 
