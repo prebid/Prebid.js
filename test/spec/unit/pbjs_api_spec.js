@@ -1,4 +1,10 @@
-import { getBidRequests, getBidResponses, getAdServerTargeting } from 'test/fixtures/fixtures';
+import {
+    getAdServerTargeting,
+    getBidRequests,
+    getBidResponses,
+    getTargetingKeys,
+    getTargetingKeysBidLandscape,
+} from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
 
@@ -250,6 +256,9 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
 
       pbjs.setTargetingForGPTAsync();
+
+      var expected = getTargetingKeys();
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -259,6 +268,9 @@ describe('Unit: Prebid Module', function () {
 
       pbjs.enableSendAllBids();
       pbjs.setTargetingForGPTAsync();
+
+      var expected = getTargetingKeysBidLandscape();
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
     });
 
     it('should set targeting for bids with `alwaysUseBid=true`', function () {
