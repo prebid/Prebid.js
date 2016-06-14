@@ -226,8 +226,16 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
-    beforeEach(() => logErrorSpy = sinon.spy(utils, 'logError'));
-    afterEach(() => utils.logError.restore());
+
+    beforeEach(() => {
+      logErrorSpy = sinon.spy(utils, 'logError');
+      resetAuction();
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+      resetAuction();
+    });
 
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
@@ -251,6 +259,57 @@ describe('Unit: Prebid Module', function () {
 
       pbjs.enableSendAllBids();
       pbjs.setTargetingForGPTAsync();
+    });
+
+    it('should set targeting for bids with `alwaysUseBid=true`', function () {
+
+      // Make sure we're getting the expected losing bid.
+      assert.equal(pbjs._bidsReceived[0]['bidderCode'], 'triplelift');
+      assert.equal(pbjs._bidsReceived[0]['cpm'], 0.112256);
+
+      // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
+      pbjs._bidsReceived[0]['alwaysUseBid'] = true;
+      pbjs._bidsReceived[0]['adserverTargeting'] = {
+        'always_use_me': 'abc',
+      };
+
+      var slots = createSlotArray();
+      window.googletag.pubads().setSlots(slots);
+
+      pbjs.setTargetingForGPTAsync(config.adUnitCodes);
+
+      var expected = [
+        [
+          "hb_bidder",
+          "appnexus"
+        ],
+        [
+          "hb_adid",
+          "233bcbee889d46d"
+        ],
+        [
+          "hb_pb",
+          "10.00"
+        ],
+        [
+          "hb_size",
+          "300x250"
+        ],
+        [
+          "foobar",
+          "300x250"
+        ],
+        [
+          "always_use_me",
+          "abc"
+        ],
+        [
+          "foobar",
+          "300x250"
+        ]
+      ];
+
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
     });
 
     it('should log error when googletag is not defined on page', function () {
