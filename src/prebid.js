@@ -171,10 +171,6 @@ function getWinningBidTargeting() {
   return winners;
 }
 
-exports.getWinningBidTargeting = function() {
-  return getWinningBidTargeting(...arguments);
-};
-
 /**
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
@@ -198,9 +194,6 @@ function getAlwaysUseBidTargeting() {
   }).filter(bid => bid); // removes empty elements in array;
 }
 
-exports.getAlwaysUseBidTargeting = function() {
-  return getAlwaysUseBidTargeting(...arguments);
-};
 function getBidLandscapeTargeting() {
   const standardKeys = CONSTANTS.TARGETING_KEYS;
 
@@ -216,10 +209,6 @@ function getBidLandscapeTargeting() {
     }
   }).filter(bid => bid); // removes empty elements in array
 }
-
-exports.getBidLandscapeTargeting = function() {
-  return getBidLandscapeTargeting(...arguments);
-};
 
 function getAllTargeting() {
 
@@ -304,10 +293,6 @@ pbjs.getAdserverTargeting = function () {
       accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
       return accumulator;
     }, {});
-};
-
-exports.getAdserverTargeting = function() {
-  return pbjs.getAdserverTargeting(...arguments);
 };
 
 /**
@@ -700,14 +685,6 @@ pbjs.enableSendAllBids = function () {
 
 pbjs.disableSendAllBids = function () {
   pb_sendAllBids = false;
-};
-
-exports.enableSendAllBids = function() {
-  return pbjs.enableSendAllBids(...arguments);
-};
-
-exports.disableSendAllBids = function() {
-  return pbjs.disableSendAllBids(...arguments);
 };
 
 processQue();
