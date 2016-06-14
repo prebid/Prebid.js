@@ -47,7 +47,7 @@ module.exports = {
       },
 			{
 				test: /\.js$/,
-				include: /(src|test)/,
+				include: /(src|test|integrationExamples)/,
 				loader: StringReplacePlugin.replace({
 					replacements: [
 						{
