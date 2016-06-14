@@ -21,7 +21,7 @@
     "before": true,
     "after": true,
     "exports": true,
-    "pbjs": true,
+    "$$PREBID_GLOBAL$$": true,
     "pbjsTestOnly": true,
     "assert": false,
     "expect": false,

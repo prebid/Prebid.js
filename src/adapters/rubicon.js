@@ -297,7 +297,7 @@ var RubiconAdapter = function RubiconAdapter() {
         _bidsReady(slots);
       };
 
-      window.rubicontag.setIntegration('pbjs');
+      window.rubicontag.setIntegration('$$PREBID_GLOBAL$$');
       window.rubicontag.run(callback, parameters);
     });
   }

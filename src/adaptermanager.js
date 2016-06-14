@@ -38,7 +38,7 @@ exports.callBids = ({ adUnits }) => {
         start: new Date().getTime()
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
         adapter.callBids(bidderRequest);

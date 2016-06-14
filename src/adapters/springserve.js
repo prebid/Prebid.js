@@ -48,7 +48,7 @@ SpringServeAdapter = function SpringServeAdapter() {
 
     spCall += '&domain=';
     spCall += domain;
-    spCall += '&callback=pbjs.handleSpringServeCB';
+    spCall += '&callback=$$PREBID_GLOBAL$$.handleSpringServeCB';
 
     return spCall;
   }
@@ -62,13 +62,13 @@ SpringServeAdapter = function SpringServeAdapter() {
     }
   }
 
-  pbjs.handleSpringServeCB = function (responseObj) {
+  $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the bidmanager
       var responseBid = responseObj.seatbid[0].bid[0];
       //var requestObj = bidmanager.getPlacementIdByCBIdentifer(responseBid.impid);
-      var requestBids = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve').bids
+      var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve').bids
         .filter(bid => bid.params && bid.params.impId === +responseBid.impid);
       var bid = bidfactory.createBid(1);
       var placementCode;
