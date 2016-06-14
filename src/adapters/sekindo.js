@@ -28,7 +28,7 @@ SekindoAdapter = function SekindoAdapter() {
 
   pbjs.sekindoCB = function(callbackId, response)
   {
-    if (typeof (response) != 'undefined' && typeof (response.cpm) != 'undefined')
+    if (typeof (response) !== 'undefined' && typeof (response.cpm) !== 'undefined')
     {
       var bidObj = getBidRequest(callbackId);
       var bid = [];
