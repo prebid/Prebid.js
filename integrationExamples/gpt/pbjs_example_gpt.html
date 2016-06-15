@@ -1,9 +1,8 @@
+<!DOCTYPE html>
 <html>
-
 <head>
-
+<title>Prebid.js integration example</title>
 <script>
-
     var PREBID_TIMEOUT = 700;
 
     var googletag = googletag || {};
@@ -39,7 +38,7 @@
         var d = document;
         var pbs = d.createElement("script");
         pbs.type = "text/javascript";
-        pbs.src = '/build/dist/prebid.js';
+        pbs.src = '/build/dev/prebid.js';
         var target = d.getElementsByTagName("head")[0];
         target.insertBefore(pbs, target.firstChild);
     })();
@@ -171,7 +170,13 @@
                         bidder: 'adequant',
                         params: {
                             publisher_id: 5000563,  // REQUIRED int or str publisher ID. To get one, register at https://control.adequant.com
-                            bidfloor: 0.01,         // OPTIONAL float bid floor in $ CPM
+                            bidfloor: 0.01          // OPTIONAL float bid floor in $ CPM
+                        }
+                    },
+                    {
+                        bidder: 'kruxlink',
+                        params: {
+                            impid: 36
                         }
                     },
 					{
@@ -234,7 +239,7 @@
                         params: {
                             id: 'TO ADD',      //String - required
                             siteID: 123,       //Number - required
-                            timeout: 456,      //Number - Optional
+                            timeout: 456       //Number - Optional
                         }
                     },
                     {
@@ -253,7 +258,13 @@
                         bidder: 'adequant',
                         params: {
                             publisher_id: 5000563,  // REQUIRED int or str publisher ID. To get one, register at https://control.adequant.com
-                            bidfloor: 0.01,         // OPTIONAL float bid floor in $ CPM
+                            bidfloor: 0.01          // OPTIONAL float bid floor in $ CPM
+                        }
+                    },
+                    {
+                        bidder: 'kruxlink',
+                        params: {
+                            impid: 37
                         }
                     },
                     {
@@ -272,7 +283,7 @@
 
         //register a callback handler
         pbjs.addCallback('adUnitBidsBack', function (adUnitCode) {
-            console.log('ad unit bids back for : ' + adUnitCode);
+            console.debug('ad unit bids back for:', adUnitCode);
         });
 
         /* Request bids for the added ad units. If adUnits or adUnitCodes are
@@ -285,7 +296,6 @@
              */
             bidsBackHandler: function (bidResponses) {
                 initAdserver();
-
             }
 
             /* You can specify specific `adUnitCodes` to only request bids
@@ -371,27 +381,18 @@
                 ]
             }
         };
-
     });
 
-</script>
-
-<script>
     googletag.cmd.push(function () {
-
-        var rightSlot = googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250],[300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
-        var topSlot = googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90],[970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
-
+        googletag.defineSlot('/9968336/header-bid-tag-0', [[300, 250],[300, 600]], 'div-gpt-ad-12345678-0').addService(googletag.pubads());
+        googletag.defineSlot('/9968336/header-bid-tag1', [[728, 90],[970, 90]], 'div-gpt-ad-12345678-1').addService(googletag.pubads());
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
-
     });
 
 
 </script>
 </head>
-
-
 <body>
 
 <h2>Prebid.js Test</h2>
@@ -405,7 +406,7 @@
 </div>
 
 
-<div id='{id}'>
+<div id='div-gpt-ad-12345678-1'>
     <script type='text/javascript'>
         googletag.cmd.push(function () {
             googletag.display('div-gpt-ad-12345678-1');
@@ -413,8 +414,6 @@
     </script>
 </div>
 
-
-</body>
 
 <script>
     (function (i, s, o, g, r, a, m) {
@@ -430,16 +429,19 @@
     })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
     ga('create', 'XXXXXX', 'auto');
+
     //Send data from prebid.js automatically
     pbjs.que.push(function () {
         pbjs.enableAnalytics({
             provider: 'ga',
             options: {
                 global: 'ga', // <string> name of GA global. Default is 'ga'
-                enableDistribution: false, // <bool> enable/disable distribution. Recommend disable to save bandwidth/calls
+                enableDistribution: false // <bool> enable/disable distribution. Recommend disable to save bandwidth/calls
             }
         });
     });
 </script>
+
+</body>
 
 </html>
