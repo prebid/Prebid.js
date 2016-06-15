@@ -170,7 +170,7 @@ function getWinningBidTargeting() {
   });
 
   if (presetTargeting) {
-    winners.concat(presetTargeting);
+    winners = winners.concat(presetTargeting);
   }
 
   return winners;
