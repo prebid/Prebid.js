@@ -26,19 +26,15 @@ SekindoAdapter = function SekindoAdapter() {
     }
   }
 
-  pbjs.sekindoCB = function(callbackId, response)
-  {
+  pbjs.sekindoCB = function(callbackId, response) {
     var bidObj = getBidRequest(callbackId);
-    if (typeof (response) !== 'undefined' && typeof (response.cpm) !== 'undefined')
-    {
+    if (typeof (response) !== 'undefined' && typeof (response.cpm) !== 'undefined') {
       var bid = [];
-      if (bidObj)
-      {
+      if (bidObj) {
         var bidCode = bidObj.bidder;
         var placementCode = bidObj.placementCode;
 
-        if (response.cpm !== undefined && response.cpm > 0)
-        {
+        if (response.cpm !== undefined && response.cpm > 0) {
 
           bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bid.adId = response.adId;
@@ -52,8 +48,7 @@ SekindoAdapter = function SekindoAdapter() {
 
           bidmanager.addBidResponse(placementCode, bid);
         }
-        else
-        {
+        else {
           bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
           bid.callback_uid = callbackId;
           bid.bidderCode = bidCode;
@@ -61,21 +56,17 @@ SekindoAdapter = function SekindoAdapter() {
         }
       }
     }
-    else
-    {
-      if (bidObj)
-      {
+    else {
+      if (bidObj) {
         utils.logMessage('No prebid response for placement '+bidObj.placementCode);
       }
-      else
-      {
+      else {
         utils.logMessage('sekindo callback general error');
       }
     }
   };
 
-  function _requestBids(bid, callbackId, pubUrl)
-  {
+  function _requestBids(bid, callbackId, pubUrl) {
     //determine tag params
     var spaceId = utils.getBidIdParamater('spaceId', bid.params);
     var bidfloor = utils.getBidIdParamater('bidfloor', bid.params);
