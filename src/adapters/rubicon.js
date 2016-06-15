@@ -33,7 +33,9 @@ var RubiconAdapter = function RubiconAdapter() {
     '320x480': 67,
     '1800x1000': 68,
     '480x320':101,
-    '768x1024': 102
+    '768x1024': 102,
+    '1000x300':113,
+    '320x100':117
   };
   var RUBICON_INITIALIZED = 0;
 
