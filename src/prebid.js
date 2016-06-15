@@ -25,7 +25,6 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_bidsTimedOut = false;
-var pb_sendAllBids = false;
 var auctionRunning = false;
 var presetTargeting = [];
 
@@ -38,6 +37,7 @@ var eventValidators = {
 pbjs._bidsRequested = [];
 pbjs._bidsReceived = [];
 pbjs._adsReceived = [];
+pbjs._sendAllBids = false;
 
 //default timeout for all bids
 pbjs.bidderTimeout = pbjs.bidderTimeout || 2000;
@@ -177,7 +177,7 @@ function getWinningBidTargeting() {
 }
 
 function getDealTargeting() {
-  const dealTargeting = pbjs._bidsReceived.filter(bid => bid.dealId).map(bid => {
+  return pbjs._bidsReceived.filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
       [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
@@ -188,8 +188,29 @@ function getDealTargeting() {
       .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
     };
   });
+}
 
-  return dealTargeting;
+/**
+ * Get custom targeting keys for bids that have `alwaysUseBid=true`.
+ */
+function getAlwaysUseBidTargeting() {
+  return pbjs._bidsReceived.map(bid => {
+    if (bid.alwaysUseBid) {
+      const standardKeys = CONSTANTS.TARGETING_KEYS;
+      return {
+        [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
+          // Get only the non-standard keys of the losing bids, since we
+          // don't want to override the standard keys of the winning bid.
+          if (standardKeys.indexOf(key) > -1) {
+            return;
+          }
+
+          return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
+
+        }).filter(key => key) // remove empty elements
+      };
+    }
+  }).filter(bid => bid); // removes empty elements in array;
 }
 
 function getBidLandscapeTargeting() {
@@ -209,10 +230,12 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  let targeting = getWinningBidTargeting();
-  // deals are always attached to targeting
-  targeting = getDealTargeting().concat(targeting);
-  return targeting.concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
+  // Get targeting for the winning bid. Add targeting for any bids that have
+  // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
+  return getDealTargeting()
+    .concat(getWinningBidTargeting())
+    .concat(getAlwaysUseBidTargeting())
+    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting() : []);
 }
 
 //////////////////////////////////
@@ -676,7 +699,7 @@ pbjs.setPriceGranularity = function (granularity) {
 };
 
 pbjs.enableSendAllBids = function () {
-  pb_sendAllBids = true;
+  pbjs._sendAllBids = true;
 };
 
 processQue();

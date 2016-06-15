@@ -48,6 +48,7 @@ SekindoAdapter = function SekindoAdapter() {
 
           bidmanager.addBidResponse(placementCode, bid);
         }
+
         else {
           bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
           bid.callback_uid = callbackId;
@@ -56,10 +57,12 @@ SekindoAdapter = function SekindoAdapter() {
         }
       }
     }
+
     else {
       if (bidObj) {
         utils.logMessage('No prebid response for placement '+bidObj.placementCode);
       }
+
       else {
         utils.logMessage('sekindo callback general error');
       }
@@ -99,7 +102,6 @@ SekindoAdapter = function SekindoAdapter() {
     callBids: _callBids
   };
 };
-
 
 module.exports = SekindoAdapter;
 
