@@ -14,6 +14,8 @@ Check out the overview and documentation at http://prebid.org.
 
 No more week-long development. Header bidding is made easy by prebid.js :)
 
+[20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js now.
+
 **Table of Contents**
 
 - [Prebid.js](#)
@@ -27,6 +29,8 @@ No more week-long development. Header bidding is made easy by prebid.js :)
         - [Build](#build)
         - [Configure](#configure)
         - [Run](#run)
+        - [Unit Test In the Browser](#unit-test-in-the-browser)
+        - [Supported Browsers](#supported-browsers)
 
 
 Usage
@@ -39,7 +43,7 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 ### Example code ###
 
 **Include the prebid.js library**
-Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
+Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js`
 ```javascript
 (function () {
     var d = document;
