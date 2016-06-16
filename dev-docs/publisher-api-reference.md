@@ -42,6 +42,8 @@ Returns all ad server targeting for all ad units. Note that some bidder's respon
 
 The targeting keys can be configured in [ad server targeting](#module_pbjs.bidderSettings).
 
+When [deals are enabled]({{site.baseurl}}/adops/deals.html), the object returned by this method may include a field `hb_deal_BIDDERCODE`, where `BIDDERCODE` is replaced by the name of the bidder, e.g., AppNexus, Rubicon, etc.
+
 **Kind**: static method of [pbjs](#module_pbjs)
 
 **Returns**: `object` - Map of adUnitCodes and targeting values []
@@ -55,10 +57,16 @@ The targeting keys can be configured in [ad server targeting](#module_pbjs.bidde
     "hb_adid": "13f44b0d3c",
     "hb_pb": "1.50"
   },
-  "/9968336/header-bid-tag1": {
+  "/9968336/header-bid-tag-1": {
     "hb_bidder": "openx",
     "hb_adid": "147ac541a",
     "hb_pb": "1.00"
+  },
+  "/9968336/header-bid-tag-2": {
+    "hb_bidder": "appnexus",
+    "hb_adid": "147ac541a",
+    "hb_pb": "2.50",
+    "hb_deal_appnexus": "ABC_123"
   }
 }
 {% endhighlight %}
@@ -96,29 +104,29 @@ This function returns the query string targeting parameters available at this mo
 <a name="module_pbjs.getBidResponses"></a>
 
 ### pbjs.getBidResponses() ⇒ `object`
+
 This function returns the bid responses at the given moment.
 
 **Kind**: static method of [pbjs](#module_pbjs).
 
 **Returns**: `object` - map | object that contains the bidResponses.
 
-
 **Returned Object Params**:
 
 {: .table .table-bordered .table-striped }
-| Param | Type | Description |
-| --- | --- | --- |
-| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
-| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
-| `width` | Integer | The width of the returned creative size. | 300 |
-| `height` | Integer | The height of the returned creative size. | 250 |
-| `cpm` | Float | The exact bid price from the bidder | 1.59 |
-| `requestTimestamp` | Integer | The time stamp when the bid request is sent out in milliseconds | 1444844944106 |
-| `responseTimestamp` | Integer | The time steamp when the bid response is received in milliseconds | 1444844944185 |
-| `timeToRespond` | Integer | The amount of time for the bidder to respond with the bid | 79 |
-| `adUnitCode` | String | adUnitCode to get the bid responses for | "/9968336/header-bid-tag-0"|
-| `statusMessage` | String | The bid's status message | "Bid returned empty or error response" or "Bid available" |
-
+| Param               | Type    | Description                                                                                                                     |                                                           |
+|---------------------+---------+---------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------|
+| `bidder`            | String  | The bidder code. Used by ad server's line items to identify bidders                                                             |                                                 `rubicon` |
+| `adId`              | String  | The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). |                                                     `123` |
+| `width`             | Integer | The width of the returned creative size.                                                                                        |                                                       300 |
+| `height`            | Integer | The height of the returned creative size.                                                                                       |                                                       250 |
+| `cpm`               | Float   | The exact bid price from the bidder                                                                                             |                                                      1.59 |
+| `requestTimestamp`  | Integer | The time stamp when the bid request is sent out in milliseconds                                                                 |                                             1444844944106 |
+| `responseTimestamp` | Integer | The time stamp when the bid response is received in milliseconds                                                               |                                             1444844944185 |
+| `timeToRespond`     | Integer | The amount of time for the bidder to respond with the bid                                                                       |                                                        79 |
+| `adUnitCode`        | String  | adUnitCode to get the bid responses for                                                                                         |                               "/9968336/header-bid-tag-0" |
+| `statusMessage`     | String  | The bid's status message                                                                                                        | "Bid returned empty or error response" or "Bid available" |
+| `dealId`            | String  | (Optional) If the bid is [associated with a Deal]({{site.baseurl}}/adops/deals.html), this field contains the deal ID.          |                                                 "ABC_123" |
 
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
@@ -317,7 +325,7 @@ With the sendAllBids mode enabled, your page can send all bid keywords to your a
 
 Note that this method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
 
-After this method is called, `pbjs.getAdserverTargeting()` will give you the below json (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the json to GPT (example below)
+After this method is called, `pbjs.getAdserverTargeting()` will give you the below JSON (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the JSON to GPT (example below)
 
 
 {% include send-all-bids-keyword-targeting.md %}
@@ -387,7 +395,7 @@ Accepted values:
 <a name="module_pbjs.renderAd"></a>
 
 ### pbjs.renderAd(doc, id)
-This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly. This function is usually used in the ad server's creative.
+This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously. This function is usually used in the ad server's creative.
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
@@ -440,7 +448,7 @@ Request bids. When `adUnits` or `adUnitCodes` are not specified, request bids fo
 
 ### pbjs.addAdUnits(Array)
 
-Define ad units and their corresponding header bidding bidders' tag Ids.  For usage examples, see [Getting Started]({{site.baseurl}}/dev-docs/getting-started.html).
+Define ad units and their corresponding header bidding bidders' tag IDs.  For usage examples, see [Getting Started]({{site.baseurl}}/dev-docs/getting-started.html).
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
@@ -681,7 +689,7 @@ Add a callback event
 | Param | Type | Description |
 | --- | --- | --- |
 | event | `String` | event to attach callback to Options: `adUnitBidsBack` |
-| func | `function` | function to execute. Paramaters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
+| func | `function` | function to execute. Parameters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
 
 <hr class="full-rule">
 

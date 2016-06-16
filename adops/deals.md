@@ -2,10 +2,10 @@
 layout: page
 title: Enable Deals
 head_title: Enable Deals in Prebid for Header Bidding
-description: Enable Deals in Prebid for Header Biddinganalysis.
+description: Enable Deals in Prebid for Header Bidding Analysis.
 pid: 4
 
-hide: true
+hide: false
 
 top_nav_section: adops
 nav_section: tutorials
@@ -14,46 +14,51 @@ nav_section: tutorials
 <div class="bs-docs-section" markdown="1">
 
 # Enable Deals in Prebid
+{:.no_toc}
 
-In order to enable deals for prebid, the ad ops setup are slightly different from the standard header bidding setup. Specifically:
+In order to enable deals for prebid, the ad ops setup is slightly different from the standard header bidding setup. Specifically:
 
-+ From the ad ops side, you'll create separate orders and line items that target the deal ID key-values. These line items will be at different priorities than your standard header bidding line items.
++ From the ad ops side, you'll create separate orders and line items that target the deal ID key-values. These line items will be at different (probably higher) priorities than your standard header bidding line items.
 
-+ From the dev side, if your page is using the standard prebid.js key-values, no change or work is required. 
++ From the dev side, if your page is using the standard prebid.js key-values, no change or work is required.
 
 {: .bg-info :}
-In this example we will use DFP setup to illustrate, but the steps are basically the same for any ad server.
+In this example we will use the DFP setup to illustrate, but the steps are basically the same for any ad server.
 
+* TOC
+{:toc}
 
 ### Step 1: Understand Key-values
 
-Whenever a bidder responds a bid with a deal ID in it, Prebid.js will generate and attach deal related key-values onto the ad server call in the below format: `hb_deal_BIDDERCODE = DEAL_ID`. Example:
+Whenever a bidder responds with a bid containing a deal ID, Prebid.js will generate and attach deal-related key-values to the ad server call in the format: `hb_deal_BIDDERCODE = DEAL_ID`.
 
-Submitted bids, prices, and deals:
+For example, given the submitted bids, prices, and deals shown here:
 
-{% highlight js %}
-bid 1: bidder = rubicon, cpm = 1.50, deal Id = RBC_123
-bid 2: bidder = appnexus, cpm = 1.20, deal Id = APN_456
-{% endhighlight %}
+```
+bid 1: Bidder = Rubicon,  CPM = 1.50, Deal ID = RBC_123
+bid 2: Bidder = AppNexus, CPM = 1.20, Deal ID = APN_456
+```
 
-Key-values attached to the ad server call (that the line items will target):
+The key-values attached to the ad server call (that the line items will target) will be:
 
-{% highlight js %}
-hb_pb_rubicon = 1.50 &
-hb_deal_rubicon = RBC_123 &
-hb_pb_appnexus = 1.20 &
+```
+hb_pb_rubicon    = 1.50
+hb_deal_rubicon  = RBC_123
+hb_pb_appnexus   = 1.20
 hb_deal_appnexus = APN_456
 // hb_adid, hb_size, and hb_adid omitted
-{% endhighlight %}
+```
 
 {: .bg-info :}
-Note that either your setup is ["Send All Bids to Ad Server"](/adops/send-all-bids-adops.html) or ["Send Top Bid to Ad Server"](/adops/step-by-step.html), Prebid.js will generate the deal key-values for every bidder. The reason is that you may want to give deals higher priorities in the ad server, which needs to see all deal enabled bids.
+Whether your Ad Ops setup [sends all bids to the ad server](/adops/send-all-bids-adops.html) or just [sends the top bid to the ad server](/adops/step-by-step.html), Prebid.js will generate the deal key-values for every bidder. The reason is that you may want to give deals higher priorities in the ad server, which needs to see all deal-enabled bids.
 
 <br>
 
 ### Step 2: Create Key-values
 
-For each header bidding partner you work with, create a keyword in the format of `hb_deal_BIDDERCODE`. You can find the complete references of deal Id key-value for each bidder [here](). Note that due to [DFP character length limit](https://support.google.com/dfp_premium/answer/1628457?hl=en#Key-values), Index Exchange's key is truncated to `hb_deal_indexExchang`.
+For each header bidding partner you work with, create a keyword in the format of `hb_deal_BIDDERCODE`, e.g., `hb_deal_pubmatic`. For more examples of the keyword format, see the [API Reference for `pbjs.getAdserverTargeting`](#module_pbjs.getAdserverTargeting).
+
+Note that due to [DFP's character length limit on keys](https://support.google.com/dfp_premium/answer/1628457?hl=en#Key-values), Index Exchange's key is truncated to `hb_deal_indexExchang`.
 <br>
 
 {: .pb-img.pb-lg-img :}
@@ -65,12 +70,12 @@ For each header bidding partner you work with, create a keyword in the format of
 
 In DFP, create a new line item.
 
-Enter all the **inventory sizes** for this deal (or deals):
+Enter all the **Inventory sizes** for your deal (or deals):
 
 {: .pb-img.pb-md-img :}
 ![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/inventory-sizes.png)
 
-<br>
+<br />
 
 Set the **priority** to the level you prefer. 
 
@@ -88,22 +93,24 @@ Set **Rotate Creatives** to *Evenly*.
 
 <br>
 
-Target the **inventory** that you want to this deal to run on.
+Then you'll need to target the **inventory** that you want to this deal to run on.
 
 <br>
 
-**Target the deal ID(s)**
+**Use Key-values targeting to target deal ID(s)**
 
-If you would like the deals have the same priority and to target the same inventory, you can include multiple deal IDs here. If not, you can create separate line items for each deal ID.
+There are two ways to target deal IDs using *Key-values* targeting:
+
+1. If you would like the deals to have the same priority and target the same inventory, you can include multiple deal IDs (as shown below). 
+2. Otherwise, you must create a separate line item for each deal ID you want to target.
 
 {: .pb-img.pb-lg-img :}
 ![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/deals/targeting.png)
 
 <br>
 
-
 ### Step 4: Attach Creatives to Line Items
 
-Please follow the [same step here](/adops/step-by-step.html#step-2-add-a-creative).
+For instructions on attaching creatives to the line item, see [Add a Creative](/adops/step-by-step.html#step-2-add-a-creative).
 
 </div>
