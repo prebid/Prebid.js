@@ -1,103 +1,98 @@
 /** @module adaptermanger */
 
-var RubiconAdapter = require('./adapters/rubicon.js');
-var AppNexusAdapter = require('./adapters/appnexus.js');
-var AolAdapter = require('./adapters/aol');
-var OpenxAdapter = require('./adapters/openx');
-var PubmaticAdapter = require('./adapters/pubmatic.js');
-var CriteoAdapter = require('./adapters/criteo');
-var YieldbotAdapter = require('./adapters/yieldbot');
-var IndexExchange = require('./adapters/indexExchange');
-var AdformAdapter = require('./adapters/adform');
-var Sovrn = require('./adapters/sovrn');
-var PulsePointAdapter = require('./adapters/pulsepoint.js');
-var bidmanager = require('./bidmanager.js');
+import { flatten, getBidderCodes } from './utils';
+
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
+import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
+function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+  return adUnits.map(adUnit => {
+    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
+      .map(bid => Object.assign(bid, {
+        placementCode: adUnit.code,
+        sizes: adUnit.sizes,
+        bidId: utils.getUniqueIdentifierStr(),
+        bidderRequestId,
+        requestId
+      }));
+  }).reduce(flatten, []);
+}
 
-exports.callBids = function(bidderArr) {
-	for (var i = 0; i < bidderArr.length; i++) {
-		//use the bidder code to identify which function to call
-		var bidder = bidderArr[i];
-		if (bidder.bidderCode && _bidderRegistry[bidder.bidderCode]) {
-			utils.logMessage('CALLING BIDDER ======= ' + bidder.bidderCode);
-			var currentBidder = _bidderRegistry[bidder.bidderCode];
-			//emit 'bidRequested' event
-			events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidder);
-			currentBidder.callBids(bidder);
+exports.callBids = ({ adUnits }) => {
+  const requestId = utils.getUniqueIdentifierStr();
 
-			// if the bidder didn't explicitly set the number of bids
-			// expected, default to the number of bids passed into the bidder
-			if (bidmanager.getExpectedBidsCount(bidder.bidderCode) === undefined) {
-				bidmanager.setExpectedBidsCount(bidder.bidderCode, bidder.bids.length);
-			}
-
-			var currentTime = new Date().getTime();
-			bidmanager.registerBidRequestTime(bidder.bidderCode, currentTime);
-
-			if (currentBidder.defaultBidderSettings) {
-				bidmanager.registerDefaultBidderSetting(bidder.bidderCode, currentBidder.defaultBidderSettings);
-			}
-		}
-		else{
-			utils.logError('Adapter trying to be called which does not exist: ' + bidder.bidderCode, 'adaptermanager.callBids');
-		}
-	}
+  getBidderCodes(adUnits).forEach(bidderCode => {
+    const adapter = _bidderRegistry[bidderCode];
+    if (adapter) {
+      const bidderRequestId = utils.getUniqueIdentifierStr();
+      const bidderRequest = {
+        bidderCode,
+        requestId,
+        bidderRequestId,
+        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
+        start: new Date().getTime()
+      };
+      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+      pbjs._bidsRequested.push(bidderRequest);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
+      if (bidderRequest.bids && bidderRequest.bids.length) {
+        adapter.callBids(bidderRequest);
+      }
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
+    }
+  });
 };
 
+exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+  if (bidAdaptor && bidderCode) {
 
-exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
-	if (bidAdaptor && bidderCode) {
+    if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
+      _bidderRegistry[bidderCode] = bidAdaptor;
 
-		if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
-			_bidderRegistry[bidderCode] = bidAdaptor;
+    } else {
+      utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
+    }
 
-		} else {
-			utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
-		}
-		
-	} else {
-		utils.logError('bidAdaptor or bidderCode not specified');
-	}
+  } else {
+    utils.logError('bidAdaptor or bidderCode not specified');
+  }
 };
 
-exports.aliasBidAdapter = function(bidderCode, alias){
-	var existingAlias = _bidderRegistry[alias];
+exports.aliasBidAdapter = function (bidderCode, alias) {
+  var existingAlias = _bidderRegistry[alias];
 
-	if(typeof existingAlias === CONSTANTS.objectType_undefined){
-		var bidAdaptor = _bidderRegistry[bidderCode];
+  if (typeof existingAlias === CONSTANTS.objectType_undefined) {
+    var bidAdaptor = _bidderRegistry[bidderCode];
 
-		if(typeof bidAdaptor === CONSTANTS.objectType_undefined){
-			utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
-		}else{
-			try{
-				var newAdapter = bidAdaptor.createNew();
-				newAdapter.setBidderCode(alias);
-				this.registerBidAdapter(newAdapter,alias);
-			}catch(e){
-				utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
-			}
-		}
-	}else{
-		utils.logMessage('alias name "' + alias + '" has been already specified.');
-	}
+    if (typeof bidAdaptor === CONSTANTS.objectType_undefined) {
+      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+    } else {
+      try {
+        let newAdapter = null;
+        if (bidAdaptor instanceof BaseAdapter) {
+          //newAdapter = new bidAdaptor.constructor(alias);
+          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        } else {
+          newAdapter = bidAdaptor.createNew();
+          newAdapter.setBidderCode(alias);
+          this.registerBidAdapter(newAdapter, alias);
+        }
+      } catch (e) {
+        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+      }
+    }
+  } else {
+    utils.logMessage('alias name "' + alias + '" has been already specified.');
+  }
 };
 
+/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
 
-// Register the bid adaptors here
-this.registerBidAdapter(RubiconAdapter(), 'rubicon');
-this.registerBidAdapter(AppNexusAdapter.createNew(), 'appnexus');
-this.registerBidAdapter(OpenxAdapter(), 'openx');
-this.registerBidAdapter(PubmaticAdapter(), 'pubmatic');
-this.registerBidAdapter(CriteoAdapter(), 'criteo');
-this.registerBidAdapter(YieldbotAdapter(), 'yieldbot');
-this.registerBidAdapter(IndexExchange(), 'indexExchange');
-this.registerBidAdapter(AdformAdapter(), 'adform');
-this.registerBidAdapter(Sovrn(),'sovrn');
-this.registerBidAdapter(AolAdapter(), 'aol');
-this.registerBidAdapter(PulsePointAdapter(),'pulsepoint');
+// here be adapters
+/** END INSERT ADAPTERS */

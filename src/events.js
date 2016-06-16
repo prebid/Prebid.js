@@ -1,53 +1,98 @@
 /**
  * events.js
  */
-var utils = require('./utils'),
-CONSTANTS = require('./constants'),
-  slice = Array.prototype.slice;
+var utils = require('./utils');
+var CONSTANTS = require('./constants');
+var slice = Array.prototype.slice;
+var push = Array.prototype.push;
 
 //define entire events
 //var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
-var allEvents = utils._map(CONSTANTS.EVENTS, function (v){ return v; });
+var allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
+  return v;
+});
+
+var idPaths = CONSTANTS.EVENT_ID_PATHS;
+
 //keep a record of all events fired
 var eventsFired = [];
 
-module.exports = (function (){
+module.exports = (function () {
 
-  var _handlers = {},
-      _public = {};
+  var _handlers = {};
+  var _public = {};
 
-  function _dispatch(event, args) {
-    utils.logMessage('Emitting event for: ' + event  );
+  /**
+   *
+   * @param {String} eventString  The name of the event.
+   * @param {Array} args  The payload emitted with the event.
+   * @private
+   */
+  function _dispatch(eventString, args) {
+    utils.logMessage('Emitting event for: ' + eventString);
+
+    var eventPayload = args[0];
+    var idPath = idPaths[eventString];
+    var key = eventPayload[idPath];
+    var event = _handlers[eventString] || { que: [] };
+    var eventKeys = utils._map(event, function (v, k) {
+      return k;
+    });
+
+    var callbacks = [];
+
     //record the event:
     eventsFired.push({
-      eventType : event,
-      args : args
+      eventType: eventString,
+      args: eventPayload,
+      id: key
     });
-    utils._each(_handlers[event], function (fn) {
-        if (!fn) return;
-        try{
-          fn.apply(null, args);
-        }
-        catch(e){
-          utils.logError('Error executing handler:', 'events.js', e);
-        }
-        
+
+    /** Push each specific callback to the `callbacks` array.
+     * If the `event` map has a key that matches the value of the
+     * event payload id path, e.g. `eventPayload[idPath]`, then apply
+     * each function in the `que` array as an argument to push to the
+     * `callbacks` array
+     * */
+    if (key && utils.contains(eventKeys, key)) {
+      push.apply(callbacks, event[key].que);
+    }
+
+    /** Push each general callback to the `callbacks` array. */
+    push.apply(callbacks, event.que);
+
+    /** call each of the callbacks */
+    utils._each(callbacks, function (fn) {
+      if (!fn) return;
+      try {
+        fn.apply(null, args);
+      }
+      catch (e) {
+        utils.logError('Error executing handler:', 'events.js', e);
+      }
     });
   }
 
-  function _checkAvailableEvent(event){
-    return utils.contains(allEvents,event);
+  function _checkAvailableEvent(event) {
+    return utils.contains(allEvents, event);
   }
 
-  _public.on = function (event, handler) {
+  _public.on = function (eventString, handler, id) {
 
     //check whether available event or not
-    if(_checkAvailableEvent(event)){
-      _handlers[event] = _handlers[event] || [];
-      _handlers[event].push(handler);
-    }
-    else{
-      utils.logError('Wrong event name : ' + event + ' Valid event names :' + allEvents);
+    if (_checkAvailableEvent(eventString)) {
+      var event = _handlers[eventString] || { que: [] };
+
+      if (id) {
+        event[id] = event[id] || { que: [] };
+        event[id].que.push(handler);
+      } else {
+        event.que.push(handler);
+      }
+
+      _handlers[eventString] = event;
+    } else {
+      utils.logError('Wrong event name : ' + eventString + ' Valid event names :' + allEvents);
     }
   };
 
@@ -56,34 +101,51 @@ module.exports = (function (){
     _dispatch(event, args);
   };
 
-  _public.off = function (event, id, handler) {
-    if (utils.isEmpty(_handlers[event])) {
+  _public.off = function (eventString, handler, id) {
+    var event = _handlers[eventString];
+
+    if (utils.isEmpty(event) || utils.isEmpty(event.que) && utils.isEmpty(event[id])) {
       return;
     }
 
-    utils._each(_handlers[event],function(h){
-      if(h[id] !== null && h[id] !== undefined ){
-        if(typeof handler === 'undefined' || h[id] === handler){
-          h[id] = null;
+    if (id && (utils.isEmpty(event[id]) || utils.isEmpty(event[id].que))) {
+      return;
+    }
+
+    if (id) {
+      utils._each(event[id].que, function (_handler) {
+        var que = event[id].que;
+        if (_handler === handler) {
+          que.splice(utils.indexOf.call(que, _handler), 1);
         }
-      }
-    });
+      });
+    } else {
+      utils._each(event.que, function (_handler) {
+        var que = event.que;
+        if (_handler === handler) {
+          que.splice(utils.indexOf.call(que, _handler), 1);
+        }
+      });
+    }
+
+    _handlers[eventString] = event;
   };
 
-  _public.get = function(){
+  _public.get = function () {
     return _handlers;
   };
 
   /**
-   * This method can return a copy of all the events fired 
-   * @return {array[object]} array of events fired
+   * This method can return a copy of all the events fired
+   * @return {Array} array of events fired
    */
-  _public.getEvents = function(){
+  _public.getEvents = function () {
     var arrayCopy = [];
-    utils._each(eventsFired, function(value){
-        var newProp = utils.extend({}, value);
-        arrayCopy.push(newProp);
+    utils._each(eventsFired, function (value) {
+      var newProp = utils.extend({}, value);
+      arrayCopy.push(newProp);
     });
+
     return arrayCopy;
   };
 
