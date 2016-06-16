@@ -46,7 +46,7 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     getTargeting: function getTargeting() {
-      return [{ testKey: ['a test targeting value'] }];
+      return {testKey: ['a test targeting value']}['testKey'];
     },
 
     getTargetingKeys: function getTargetingKeys() {
@@ -310,6 +310,10 @@ describe('Unit: Prebid Module', function () {
         [
           "foobar",
           "300x250"
+        ],
+        [
+          "testKey",
+          "a test targeting value"
         ],
         [
           "always_use_me",

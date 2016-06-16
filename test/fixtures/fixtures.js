@@ -1129,13 +1129,17 @@ export function getTargetingKeys() {
       "300x250"
     ],
     [
+      "testKey",
+      "a test targeting value"
+    ],
+    [
       "foobar",
       "300x250"
     ]
   ];
 }
 
-// Key/values used to set ad server targeting when bid landscape 
+// Key/values used to set ad server targeting when bid landscape
 // targeting is on.
 export function getTargetingKeysBidLandscape() {
   return [
@@ -1158,6 +1162,10 @@ export function getTargetingKeysBidLandscape() {
     [
       "foobar",
       "300x250"
+    ],
+    [
+      "testKey",
+      "a test targeting value"
     ],
     [
       "foobar",
