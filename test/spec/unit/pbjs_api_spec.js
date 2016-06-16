@@ -45,12 +45,12 @@ var Slot = function Slot(elementId, pathId) {
     setTargeting: function setTargeting(key, value) {
     },
 
-    getTargeting: function getTargeting() {
-      return [{ testKey: ['a test targeting value'] }];
+    getTargeting: function getTargeting(key) {
+      return [];
     },
 
     getTargetingKeys: function getTargetingKeys() {
-      return ['testKey'];
+      return [];
     },
 
     clearTargeting: function clearTargeting() {
