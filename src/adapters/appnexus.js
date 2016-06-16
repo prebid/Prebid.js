@@ -43,6 +43,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var query = utils.getBidIdParamater('query', bid.params);
     var referrer = utils.getBidIdParamater('referrer', bid.params);
     var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
+    var reserve = utils.getBidIdParamater('reserve', bid.params);
 
     //build our base tag, based on if we are http or https
 
@@ -59,7 +60,6 @@ AppNexusAdapter = function AppNexusAdapter() {
       utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
     }
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
     //sizes takes a bit more logic
@@ -124,6 +124,8 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
     jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
+    
+    jptCall = utils.tryAppendQueryString(jptCall, 'reserve', reserve);
 
     //remove the trailing "&"
     if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
