@@ -8,13 +8,11 @@ Prebid.js
 
 > Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
 
-Many SSPs, bidders, and publishers have all contributed to this project.
+Many SSPs, bidders, and publishers have all contributed to this project. [20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js now.
 
 Check out the overview and documentation at http://prebid.org.
 
 No more week-long development. Header bidding is made easy by prebid.js :)
-
-[20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js now.
 
 **Table of Contents**
 
