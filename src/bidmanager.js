@@ -61,7 +61,7 @@ exports.bidsBackAll = function() {
 };
 
 function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
+  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null };
 }
 
 /*

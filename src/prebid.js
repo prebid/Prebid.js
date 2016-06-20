@@ -127,7 +127,7 @@ function setTargeting(targetingConfig) {
               return value;
             })
             .forEach(value => {
-              slot.setTargeting(Object.keys(key)[0], value)
+              slot.setTargeting(Object.keys(key)[0], value);
             });
         }));
   });
