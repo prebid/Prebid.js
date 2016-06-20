@@ -52,9 +52,17 @@ var OpenxAdapter = function OpenxAdapter(options) {
         var i;
         var POX = OX();
 
-        POX.setPageURL(opts.pageURL);
-        POX.setRefererURL(opts.refererURL);
-        POX.addPage(opts.pgid);
+        if (opts.pageURL) {
+          POX.setPageURL(opts.pageURL);
+        }
+
+        if (opts.refererURL) {
+          POX.setRefererURL(opts.refererURL);
+        }
+
+        if (opts.pgid) {
+          POX.addPage(opts.pgid);
+        }
 
         // Add each ad unit ID
         for (i = 0; i < bids.length; i++) {

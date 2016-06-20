@@ -10,11 +10,12 @@ function AdformAdapter() {
   };
 
   function _callBids(params) {
-    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+    //var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
     var bid;
     var noDomain = true;
     var bids = params.bids;
     var request = [];
+    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
 
     for (var i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
