@@ -1,8 +1,6 @@
-var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
 
 /**
  * Adapter for requesting bids from Pubmatic.
@@ -12,112 +10,124 @@ var adloader = require('../adloader');
  */
 var PubmaticAdapter = function PubmaticAdapter() {
 
-	var bids;
-	var _pm_pub_id;
-	var _pm_optimize_adslots = [];
+  var bids;
+  var _pm_pub_id;
+  var _pm_optimize_adslots = [];
 
-	function _callBids(params) {
-		bids = params.bids;
-		for (var i = 0; i < bids.length; i++) {
-			var bid = bids[i];
-			bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
-			_pm_pub_id = _pm_pub_id || bid.params.publisherId;
-			_pm_optimize_adslots.push(bid.params.adSlot);
-		}
+  function _callBids(params) {
+    bids = params.bids;
+    for (var i = 0; i < bids.length; i++) {
+      var bid = bids[i];
+      //bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
+      _pm_pub_id = _pm_pub_id || bid.params.publisherId;
+      _pm_optimize_adslots.push(bid.params.adSlot);
+    }
 
-		// Load pubmatic script in an iframe, because they call document.write
-		_getBids();
-	}
+    // Load pubmatic script in an iframe, because they call document.write
+    _getBids();
+  }
 
-	function _getBids() {
+  function _getBids() {
 
-		// required variables for pubmatic pre-bid call
-		window.pm_pub_id = _pm_pub_id;
-		window.pm_optimize_adslots = _pm_optimize_adslots;
+    // required variables for pubmatic pre-bid call
+    window.pm_pub_id = _pm_pub_id;
+    window.pm_optimize_adslots = _pm_optimize_adslots;
 
-		//create the iframe
-		var iframe = utils.createInvisibleIframe();
-		var elToAppend = document.getElementsByTagName('head')[0];
-		//insert the iframe into document
-		elToAppend.insertBefore(iframe, elToAppend.firstChild);
-		//todo make this more browser friendly
-		var iframeDoc = iframe.contentWindow.document;
-		iframeDoc.write(_createRequestContent());
-		iframeDoc.close();
-	}
+    //create the iframe
+    var iframe = utils.createInvisibleIframe();
+    var elToAppend = document.getElementsByTagName('head')[0];
 
-	function _createRequestContent() {
-		var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' + 'ipt>inDapIF=true;</scr' + 'ipt></head>';
-		content += '<body>';
-		content += '<scr' + 'ipt>';
-		content += '' +
-			'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
-			'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];';
-		content += '</scr' + 'ipt>';
+    //insert the iframe into document
+    elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
-		var map = {};
-		map['PM_PUB_ID'] = _pm_pub_id;
-		map['PM_OPTIMIZE_ADSLOTS'] = _pm_optimize_adslots.map(function(adSlot) {
-			return "'" + adSlot + "'";
-		}).join(',');
+    var iframeDoc = utils.getIframeDocument(iframe);
+    iframeDoc.write(_createRequestContent());
+    iframeDoc.close();
+  }
 
-		content += '<scr' + 'ipt src="//ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
-		content += '<scr' + 'ipt>';
-		content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap, bidDetailsMap: bidDetailsMap})';
-		content += '</scr' + 'ipt>';
-		content += '</body></html>';
-		content = utils.replaceTokenInString(content, map, '%%');
+  function _createRequestContent() {
+    var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"' +
+      ' "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' +
+      'ipt>inDapIF=true;</scr' + 'ipt></head>';
+    content += '<body>';
+    content += '<scr' + 'ipt>';
+    content += '' +
+      'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
+      'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];';
+    content += '</scr' + 'ipt>';
 
-		return content;
-	}
+    var map = {};
+    map.PM_PUB_ID = _pm_pub_id;
+    map.PM_OPTIMIZE_ADSLOTS = _pm_optimize_adslots.map(function (adSlot) {
+      return "'" + adSlot + "'";
+    }).join(',');
 
-	pbjs.handlePubmaticCallback = function(response) {
-		var i;
-		var adUnit;
-		var adUnitInfo;
-		var bid;
-		var bidResponseMap = (response && response.bidDetailsMap) || {};
-		var bidInfoMap = (response && response.progKeyValueMap) || {};
-		var dimensions;
+    content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
+    content += '<scr' + 'ipt>';
+    content += 'window.parent.pbjs.handlePubmaticCallback({progKeyValueMap: progKeyValueMap,' +
+      ' bidDetailsMap: bidDetailsMap})';
+    content += '</scr' + 'ipt>';
+    content += '</body></html>';
+    content = utils.replaceTokenInString(content, map, '%%');
 
-		for (i = 0; i < bids.length; i++) {
-			var adResponse;
-			bid = bids[i].params;
+    return content;
+  }
 
-			adUnit = bidResponseMap[bid.adSlot] || {};
+  pbjs.handlePubmaticCallback = function (response) {
+    var i;
+    var adUnit;
+    var adUnitInfo;
+    var bid;
+    var bidResponseMap = (response && response.bidDetailsMap) || {};
+    var bidInfoMap = (response && response.progKeyValueMap) || {};
+    var dimensions;
 
-			// adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
-			adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(result, pair) {
-				var parts = pair.split('=');
-				result[parts[0]] = parts[1];
-				return result;
-			}, {});
+    for (i = 0; i < bids.length; i++) {
+      var adResponse;
+      bid = bids[i].params;
 
-			if (adUnitInfo.bidstatus === '1') {
-				dimensions = adUnitInfo.bidid.split('@')[1].split('x');
-				adResponse = bidfactory.createBid(1);
-				adResponse.bidderCode = 'pubmatic';
-				adResponse.adSlot = bid.adSlot;
-				adResponse.cpm = Number(adUnitInfo.bid);
-				adResponse.ad = unescape(adUnit.creative_tag);
-				adResponse.adUrl = unescape(adUnit.tracking_url);
-				adResponse.width = dimensions[0];
-				adResponse.height = dimensions[1];
-				adResponse.dealId = adUnitInfo.wdeal;
+      adUnit = bidResponseMap[bid.adSlot] || {};
 
-				bidmanager.addBidResponse(bids[i].placementCode, adResponse);
-			} else {
-				// Indicate an ad was not returned
-				adResponse = bidfactory.createBid(2);
-				adResponse.bidderCode = 'pubmatic';
-				bidmanager.addBidResponse(bids[i].placementCode, adResponse);
-			}
-		}
-	};
+      // adUnitInfo example: bidstatus=0;bid=0.0000;bidid=39620189@320x50;wdeal=
 
-	return {
-		callBids: _callBids
-	};
+      // if using DFP GPT, the params string comes in the format:
+      // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
+      // the code below detects and handles this.
+      if (bidInfoMap[bid.adSlot].indexOf('=') === -1) {
+        bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+      }
+
+      adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function (result, pair) {
+        var parts = pair.split('=');
+        result[parts[0]] = parts[1];
+        return result;
+      }, {});
+
+      if (adUnitInfo.bidstatus === '1') {
+        dimensions = adUnitInfo.bidid.split('@')[1].split('x');
+        adResponse = bidfactory.createBid(1);
+        adResponse.bidderCode = 'pubmatic';
+        adResponse.adSlot = bid.adSlot;
+        adResponse.cpm = Number(adUnitInfo.bid);
+        adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
+        adResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(adUnit.tracking_url));
+        adResponse.width = dimensions[0];
+        adResponse.height = dimensions[1];
+        adResponse.dealId = adUnitInfo.wdeal;
+
+        bidmanager.addBidResponse(bids[i].placementCode, adResponse);
+      } else {
+        // Indicate an ad was not returned
+        adResponse = bidfactory.createBid(2);
+        adResponse.bidderCode = 'pubmatic';
+        bidmanager.addBidResponse(bids[i].placementCode, adResponse);
+      }
+    }
+  };
+
+  return {
+    callBids: _callBids
+  };
 
 };
 

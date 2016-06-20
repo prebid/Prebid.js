@@ -1,37 +1,53 @@
 {
-	"JSON_MAPPING": {
-		"PL_CODE": "code",
-		"PL_SIZE": "sizes",
-		"PL_BIDS": "bids",
-		"BD_BIDDER": "bidder",
-		"BD_ID": "paramsd",
-		"BD_PL_ID": "placementId",
-		"ADSERVER_TARGETING": "adserverTargeting",
-		"BD_SETTING_STANDARD" : "standard"
-	},
-	"DEBUG_MODE": "pbjs_debug",
-	"STATUS": {
-		"GOOD": "good",
-		"TIMEOUT": "timed out"
-	},
-	"CB" : {
-		"TYPE" : {
-			"ALL_BIDS_BACK" : "allRequestedBidsBack",
-			"AD_UNIT_BIDS_BACK" : "adUnitBidsBack"
-		}
-	},
-	"objectType_function" : "function",
-	"objectType_undefined" : "undefined",
-	"objectType_object" : "object",
-	"objectType_string" : "string",
-	"objectType_number" : "number",
-
-
-	"EVENTS" : {
-		"BID_ADJUSTMENT" : "bidAdjustment",
-		"BID_TIMEOUT" : "bidTimeout",
-		"BID_REQUESTED" : "bidRequested",
-		"BID_RESPONSE" : "bidResponse",
-		"BID_WON" : "bidWon"
-	}
+  "JSON_MAPPING": {
+    "PL_CODE": "code",
+    "PL_SIZE": "sizes",
+    "PL_BIDS": "bids",
+    "BD_BIDDER": "bidder",
+    "BD_ID": "paramsd",
+    "BD_PL_ID": "placementId",
+    "ADSERVER_TARGETING": "adserverTargeting",
+    "BD_SETTING_STANDARD": "standard"
+  },
+  "REPO_AND_VERSION": "%%REPO_AND_VERSION%%",
+  "DEBUG_MODE": "pbjs_debug",
+  "STATUS": {
+    "GOOD": 1,
+    "NO_BID": 2
+  },
+  "CB": {
+    "TYPE": {
+      "ALL_BIDS_BACK": "allRequestedBidsBack",
+      "AD_UNIT_BIDS_BACK": "adUnitBidsBack",
+      "BID_WON": "bidWon"
+    }
+  },
+  "objectType_function": "function",
+  "objectType_undefined": "undefined",
+  "objectType_object": "object",
+  "objectType_string": "string",
+  "objectType_number": "number",
+  "EVENTS": {
+    "BID_ADJUSTMENT": "bidAdjustment",
+    "BID_TIMEOUT": "bidTimeout",
+    "BID_REQUESTED": "bidRequested",
+    "BID_RESPONSE": "bidResponse",
+    "BID_WON": "bidWon"
+  },
+  "EVENT_ID_PATHS": {
+    "bidWon": "adUnitCode"
+  },
+  "GRANULARITY_OPTIONS": {
+    "LOW": "low",
+    "MEDIUM": "medium",
+    "HIGH": "high",
+    "AUTO": "auto",
+    "DENSE": "dense"
+  },
+  "TARGETING_KEYS": [
+    "hb_bidder",
+    "hb_adid",
+    "hb_pb",
+    "hb_size"
+  ]
 }

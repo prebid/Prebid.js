@@ -1,5 +1,19 @@
+# Built Files
 node_modules/
+build
 
+# Test Files
+test/app
+gpt.html
+gpt-each-bidder3.html
+
+# Dev File
+
+integrationExamples/gpt/gpt.html
+integrationExamples/implementations/
+
+# Coverage reports
+build/coverage/
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
 
@@ -52,3 +66,6 @@ crashlytics-build.properties
 
 #zip files (for releases)
 *.zip
+
+# TypeScript typings
+typings/
