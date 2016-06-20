@@ -117,7 +117,7 @@ function AdformAdapter() {
         var out = [];
         var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
         var i = 0;
-        var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=";
+        var _keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
 
         input = utf8_encode(input);
 
@@ -138,9 +138,9 @@ function AdformAdapter() {
                 enc4 = 64;
             }
             out.push(_keyStr.charAt(enc1), _keyStr.charAt(enc2));
-            if (enc3 != 64)
+            if (enc3 !== 64)
                 out.push(_keyStr.charAt(enc3));
-            if (enc4 != 64)
+            if (enc4 !== 64)
                 out.push(_keyStr.charAt(enc4));
         }
 
@@ -148,8 +148,8 @@ function AdformAdapter() {
     }
 
     function utf8_encode(string) {
-        string = string.replace(/\r\n/g, "\n");
-        var utftext = "";
+        string = string.replace(/\r\n/g, '\n');
+        var utftext = '';
 
         for (var n = 0; n < string.length; n++) {
 
