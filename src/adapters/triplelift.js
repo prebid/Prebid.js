@@ -15,14 +15,14 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var bidsCount = tlReq.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount('triplelift',bidsCount);
+    //bidmanager.setExpectedBidsCount('triplelift',bidsCount);
 
     for (var i = 0; i < bidsCount; i++) {
-      var bidReqeust = tlReq[i];
-      var callbackId = utils.getUniqueIdentifierStr();
-      adloader.loadScript(buildTLCall(bidReqeust, callbackId));
+      var bidRequest = tlReq[i];
+      var callbackId = bidRequest.bidderRequestId;
+      adloader.loadScript(buildTLCall(bidRequest, callbackId));
       //store a reference to the bidRequest from the callback id
-      bidmanager.pbCallbackMap[callbackId] = bidReqeust;
+      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
 
   }
@@ -72,8 +72,9 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   //expose the callback to the global object:
   pbjs.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      placementCode = bidObj.placementCode;
+      //var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
+      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
+      var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'
       utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);

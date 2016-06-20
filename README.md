@@ -1,9 +1,14 @@
+[![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
+[![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
+
 Prebid.js
 ========
 
 > Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
 
-Many SSPs, bidders, and publishers have all contributed to this project.
+Many SSPs, bidders, and publishers have all contributed to this project. [20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js now.
 
 Check out the overview and documentation at http://prebid.org.
 
@@ -17,11 +22,13 @@ No more week-long development. Header bidding is made easy by prebid.js :)
         - [Example code](#example-code)
     - [API](#api)
     - [Contribute](#contribute)
-        - [Add an Bidder Adapter](#add-an-bidder-adapter)
+        - [Add a Bidder Adapter](#add-a-bidder-adapter)
         - [install](#install)
         - [Build](#build)
         - [Configure](#configure)
         - [Run](#run)
+        - [Unit Test In the Browser](#unit-test-in-the-browser)
+        - [Supported Browsers](#supported-browsers)
 
 
 Usage
@@ -34,14 +41,16 @@ Download the integration example [here](https://github.com/prebid/Prebid.js/blob
 ### Example code ###
 
 **Include the prebid.js library**
-Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
+Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js`
 ```javascript
-(function() {
-        var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-        pbs.type = 'text/javascript';
-        pbs.src = ((pro === 'https:') ? 'https' : 'http') + '://cdn.host.com/prebid.min.js';
-        var target = document.getElementsByTagName('head')[0];
-        target.insertBefore(pbs, target.firstChild);
+(function () {
+    var d = document;
+    var pbs = d.createElement('script');
+    pbs.type = 'text/javascript';
+    //replace with your CDN hosted version. HTTPS is strongly recommended.
+    pbs.src = '//cdn.host.com/prebid.min.js';
+    var target = d.getElementsByTagName('script')[0];
+    target.parentNode.insertBefore(pbs, target);
 })();
 ```
 
@@ -88,7 +97,7 @@ Full Developer API reference:
 
 Contribute
 ----------
-**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands. 
+**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands.
 
 ### Add a Bidder Adapter ###
 Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter.
@@ -145,6 +154,7 @@ Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
     ```json
         "adapters": [
             "adform",
+            "admedia",
             "aol",
             "appnexus",
             "indexExchange",

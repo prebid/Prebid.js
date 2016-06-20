@@ -1,3 +1,20 @@
+<!-- #1 deprecated method - use preferred method below  instead-->
 <script>
     try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+</script>
+
+<!-- #2 preferred method for showing ad - handles cases when pbjs is not in the top window -->
+<script>
+var w = window;
+for (i = 0; i < 10; i++) {
+  w = w.parent;
+  if (w.pbjs) {
+    try {
+      w.pbjs.renderAd(document, '%%PATTERN:hb_adid%%');
+      break;
+    } catch (e) {
+      continue;
+    }
+  }
+}
 </script>

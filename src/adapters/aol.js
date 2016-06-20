@@ -127,7 +127,7 @@ var AolAdapter = function AolAdapter() {
       server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
       sizeid: bid.params.sizeId || 0,
       pageid: bid.params.pageId,
-      secure: false,
+      secure: document.location.protocol === 'https:',
       serviceType: 'pubapi',
       performScreenDetection: false,
       alias: alias,
@@ -139,7 +139,8 @@ var AolAdapter = function AolAdapter() {
       },
       params: {
         cors: 'yes',
-        cmd: 'bid'
+        cmd: 'bid',
+        bidfloor: (typeof bid.params.bidFloor !== "undefined") ? bid.params.bidFloor.toString() : ''
       },
       pubApiConfig: ADTECH_PUBAPI_CONFIG,
       placementCode: bid.placementCode
