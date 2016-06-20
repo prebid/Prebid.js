@@ -1,9 +1,9 @@
 ---
 layout: page
-title: Step by step
+title: Send Top Bid to Adserver
 head_title: Getting Started with Prebid.js for Header Bidding
 description: An overview of Prebid.js, how it works, basic templates and examples, and more.
-pid: 0
+pid: 1
 top_nav_section: adops
 nav_section: tutorials
 ---
@@ -32,24 +32,21 @@ Enter all of the inventory sizes that your website has.
 {: .pb-img.pb-md-img :}
 ![Inventory Sizes]({{ site.github.url }}/assets/images/demo-setup/inventory-sizes.png)
 
-Because header bidding partners return prices, set the Line Item
-**Type** to **Price priority** to enable them to compete on price.
+Because header bidding partners return prices, set the Line Item **Type** to **Price priority** to enable them to compete on price.
 
 {: .pb-img.pb-sm-img :}
 ![Price Priority]({{ site.github.url }}/assets/images/demo-setup/price-priority.png)
 
 <br>
 
-Set the **Rate** to $0.50 so that this line item will compete with
-your other demand sources at $0.50 ECPM.
+Set the **Rate** to $0.50 so that this line item will compete with your other demand sources at $0.50 ECPM.
 
 {: .pb-img.pb-sm-img :}
 ![Rate]({{ site.github.url }}/assets/images/demo-setup/rate.png)
 
 <br>
 
-Set **Display Creatives** to *One or More* since we'll have one or
-more creatives attached to this line item.
+Set **Display Creatives** to *One or More* since we'll have one or more creatives attached to this line item.
 
 Set **Rotate Creatives** to *Evenly*.
 
@@ -58,12 +55,9 @@ Set **Rotate Creatives** to *Evenly*.
 
 Choose the inventory that you want to run header bidding on.
 
-By default, `prebid.js` will send the highest bid price to DFP using
-the keyword `hb_pb`.
+By default, `prebid.js` will send the highest bid price to DFP using the keyword `hb_pb`.
 
-This line item will capture the bids in the range from $0.50 to $1 by
-targeting the keyword `hb_pb` set to `0.50` in the **Key-values**
-section.
+This line item will capture the bids in the range from $0.50 to $1 by targeting the keyword `hb_pb` set to `0.50` in the **Key-values** section.
 
 **You must enter the value to two decimal places, e.g., `1.50`.  If you don't use two decimal places, header bidding will not work.**
 
@@ -78,10 +72,9 @@ Next, add a creative to this $0.50 line item; we will duplicate the creative lat
 
 Choose the same advertiser we've assigned the line item to.
 
-Note that this has to be a **Third party** creative.
+Note that this has to be a **Third party** creative. The **"Serve in Safeframe"** box has to be **UNCHECKED** (there are plans to make the below creative safeframe compatible).
 
-Copy this creative code snippet and paste it into the **Code
-snippet** box.
+Copy this creative code snippet and paste it into the **Code snippet** box.
 
     <script>
     var w = window;
@@ -101,9 +94,7 @@ snippet** box.
 {: .pb-img.pb-lg-img :}
 ![New creative]({{ site.github.url }}/assets/images/demo-setup/new-creative.png)
 
-Make sure the creative size is set to 1x1.  This allows us to set up
-size override, which allows this creative to serve on all inventory
-sizes.
+Make sure the creative size is set to 1x1.  This allows us to set up size override, which allows this creative to serve on all inventory sizes.
 
 ## Step 3. Attach the Creative to the Line Item
 
@@ -127,17 +118,13 @@ Save the creative and go back to the line item.
 
 ## Step 4. Duplicate Creatives
 
-DFP has a constraint that one creative can be served to at most one ad
-unit in a page under GPT's single request mode.
+DFP has a constraint that one creative can be served to at most one ad unit in a page under GPT's single request mode.
 
-Let's say your page has 4 ad units.  We need to have at least 4
-creatives attached to the line item in case more than 2 bids are
-within the $0.50 range.
+Let's say your page has 4 ad units.  We need to have at least 4 creatives attached to the line item in case more than 2 bids are within the $0.50 range.
 
 Therefore, we need to duplicate our Prebid creative 4 times.
 
-Once that's done, we have a fully functioning line item with 4
-creatives attached.
+Once that's done, we have a fully functioning line item with 4 creatives attached.
 
 <br>
 
@@ -147,8 +134,7 @@ Now let's duplicate our line item for bids above $0.50.
 
 In the Prebid order page, copy the line item with shared creatives.
 
-This way you only have 4 creatives to maintain, and any updates to
-those creatives are applied to all pre-bid line items.
+This way you only have 4 creatives to maintain, and any updates to those creatives are applied to all pre-bid line items.
 
 For example, we can duplicate 3 more line items:
 
@@ -156,19 +142,14 @@ For example, we can duplicate 3 more line items:
 - $1.50
 - $2.00
 
-Let's go into each of them to update some settings.  For each
-duplicated line item:
+Let's go into each of them to update some settings.  For each duplicated line item:
 
-1.  Change the name to reflect the price, e.g., "Prebid\_1.00",
-    "Prebid\_1.50"
+1.  Change the name to reflect the price, e.g., "Prebid\_1.00", "Prebid\_1.50"
 
 2.  Change the **Rate** to match the new price of the line item.
 
-3.  In **Key-values**, make sure to target `hb_pb` at the new price,
-    e.g., $1.00.  Again, be sure to use 2 decimal places.
+3.  In **Key-values**, make sure to target `hb_pb` at the new price, e.g., $1.00.  Again, be sure to use 2 decimal places.
 
-4.  (Optional) Set the start time to *Immediate* so you don't have to
-    wait.
+4.  (Optional) Set the start time to *Immediate* so you don't have to wait.
 
-Repeat for your other line items until you have the pricing
-granularity level you want.
+Repeat for your other line items until you have the pricing granularity level you want.

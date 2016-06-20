@@ -22,7 +22,7 @@ function submit_download() {
 
     var alertStatus = $('#download-status');
 
-    if (!(form_data['email'] && form_data['company'])) {  
+    if (!(form_data['email'] && form_data['company'])) {
       alertStatus.html('Email and Company fields are required.');
       alertStatus.removeClass('hide');
       return;
@@ -244,7 +244,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version: 0.8.1)
+(Version: 0.9.2)
 </p>
 
 <div class="form-group">
@@ -313,7 +313,7 @@ Alternatively, you can build the desired Prebid.js from the source code. For rel
 
 Unzip the source code folder and you will find the file `package.json`. Inside `package.json` you can specify which adapters to be included in the build to optimize file size of `prebid.js`
 
-Pacakge.json:
+package.json:
 {% highlight js %}
 
 "adapters": [
@@ -339,7 +339,7 @@ Pacakge.json:
 
 {% endhighlight %}
 
-1. Update pacakge.json with the desired adapters
+1. Update package.json with the desired adapters
 2. Run `gulp build` or `gulp serve` to generate a new build
 3. Get the build from `build/dist/prebid.js`
 

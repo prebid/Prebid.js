@@ -48,13 +48,6 @@
 
     pbjs.que.push(function(){
        
-        pbjs.loadScript('//c.amazon-adsystem.com/aax2/amzn_ads.js', function() {
-            amznads.getAdsCallback('3080', function() {
-                //indicate bids are back here:
-                pbjs.bidsAvailableForAdapter('amazon');
-            });
-        });
-
         var A9Adaptor = function A9Adaptor() {
             return {
                 callBids: function(p) {

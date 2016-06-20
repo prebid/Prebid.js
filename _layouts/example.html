@@ -2,65 +2,80 @@
 
 {% include main_nav.html %}
 
-  <div class="container bs-docs-container">
+<div class="container bs-docs-container">
 
 
 
 <div class="row">
 
-      {% include left_nav.html %}
 
+<div class="col-md-5">
 
-<div class="col-md-9" role="main">
+  <div class="docs-sidebar">
 
-<div class="bs-docs-section" markdown="1">
+    <div class="row">
+      <div class="col-md-6">
+        {% include left_nav.html %}
+      </div>
 
-<h1>{{ page.description }} </h1>
+      <div class="col-md-6">
+        <h5>All Examples</h5>
 
-<h4>This page contains:</h4>
+        <ul id="example-tab">
 
-<ul>
+        {% assign example_pages = (site.pages | where: "layout", "example") | sort: "pid" %}
 
-{% for about_bullet in page.about %}
+        {% for epage in example_pages %}
+          <li>
+            <a href="{{ epage.url }}">{{ epage.title }}</a>
+            {% if epage.is_beta %}
+              <span class="label label-warning">Beta</span>
+            {% endif %}
+          </li>
+        {% endfor %}
 
-  <li>{{ about_bullet}}</li>
-
-{% endfor %}
-
-</ul>
-
-
-<h4>How to use this:</h4>
-
-Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
-
-<h4>Other examples:</h4>
-
-<div class="row">
-  <div class="col-md-6">
-    <ul>
-    <li><a href="/dev-docs/examples/basic-example.html">Basic example</a></li>
-    <li><a href="/dev-docs/examples/custom-price-bucket.html">Custom price bucket granularity</a></li>
-    <li><a href="/dev-docs/examples/adjust-price.html">Adjust bid price</a></li>
-    </ul>
-  </div>
-
-  <div class="col-md-6">
-    <ul>
-      <li><a href="/dev-docs/examples/full-page-refresh.html">Full page refresh</a></li>
-      <li><a href="/dev-docs/examples/adunit-refresh.html">Individual ad unit refresh</a></li>
-      <li><a href="/dev-docs/examples/postbid.html">Post-bid example</a></li>
-      <!-- <li><a href="/dev-docs/examples/criteo-setup.html">Criteo RTA Example</a></li> -->
-    </ul>
+        </ul>
+      <!-- </div> -->
+      </div>
+    </div>
   </div>
 </div>
 
 
-</ul>
+<div class="col-md-7" role="main">
 
+  <div class="bs-docs-section" markdown="1">
+
+    <h1>{{ page.description }} </h1>
+
+    {% if page.why_link %}
+      <h4>Who should use this example:</h4>
+
+      <ul>
+      <li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
+      </ul>
+    {% endif %}
+
+    <h4>This page contains:</h4>
+
+    <ul>
+      {% for about_bullet in page.about %}
+        <li>{{ about_bullet}}</li>
+      {% endfor %}
+    </ul>
+
+
+    <h4>How to use this:</h4>
+
+    Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
+
+  </div>
 </div>
 
-</div>
+
+
+
+
 
 </div>
 
@@ -96,6 +111,9 @@ Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
 </div>
 
 <div class="col-sm-6">
+
+
+{% include dev-docs/build-from-source-warning.md %}
 
 {{content}}
 

@@ -119,7 +119,7 @@ img {
 }
 
 .bs-docs-section {
-    text-align: justify;
+    /*text-align: justify;*/
     text-indent: auto;
     hyphens: auto;
     line-height: 1.45;
@@ -309,4 +309,20 @@ table.jsfiddle-line-number .line-number {
     color: #aaa;
     font-size: 13px;
     text-align: right;
+}
+
+.blog-date {
+  margin-top: 45px;
+  text-align: right;
+  width: 80%;
+  font-size: 20px;
+  color: #aaa;
+}
+
+#example-tab {
+  padding-left:10px;
+}
+
+#example-tab li {
+  margin-bottom: 6px;
 }

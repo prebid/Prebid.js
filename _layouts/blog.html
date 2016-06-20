@@ -1,0 +1,33 @@
+{% include head.html %}
+
+{% include main_nav.html %}
+
+  <!-- Header
+  =========================================== -->
+
+<!-- 
+  <div class="bs-docs-header" id="content">
+    <div class="container">
+      <h1>{{page.title}}</h1>
+      <p>{{page.description}}</p>
+    </div>
+  </div>
+ -->
+
+  <div class="container bs-docs-container">
+
+  {% if page.is_full_screen %}
+
+    {{content}}
+
+  {% else %}
+
+      {{content}}
+
+  {% endif %}
+
+
+  </div>
+
+
+{% include foot.html %}

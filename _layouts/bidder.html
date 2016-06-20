@@ -1,0 +1,56 @@
+{% include head.html %}
+
+{% include main_nav.html %}
+
+  <div class="container bs-docs-container">
+
+  {% if page.is_full_screen %}
+
+    {{content}}
+
+  {% else %}
+
+    <div class="row">
+
+
+      {% include left_nav.html %}
+
+      <div class="col-md-9" role="main">
+
+        <div class="bs-docs-section">
+
+          <h1>{{ page.title }}</h1>
+
+          <h3>bidder code:</h3>
+
+          <code>{{ page.biddercode }}</code>
+
+          {% if page.biddercode_longer_than_12 != true %}
+
+          <h4> Send All Bids Ad Server Keys: </h4>
+
+          <code>hb_pb_{{ page.biddercode }}</code>
+          <code>hb_adid_{{ page.biddercode }}</code>
+          <code>hb_size_{{ page.biddercode }}</code>
+
+          {% endif %}
+
+          {{content}}
+        </div>
+
+        {% if page.show_disqus %}
+          {% include disqus_addon.html %}
+        {% endif %}
+
+      </div>
+
+
+    </div>
+
+   {% endif %}
+
+
+  </div>
+
+
+{% include foot.html %}

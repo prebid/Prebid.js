@@ -1,7 +1,7 @@
 ---
 layout: example
-title: Full Page Refresh Example
-description: Full Page Refresh Example with DFP GPT
+title: Full Page Refresh
+description: Full Page Refresh Example
 
 top_nav_section: dev_docs
 nav_section: quick-start
@@ -15,45 +15,21 @@ about:
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
-jsfiddle_link: jsfiddle.net/prebid/amg49spy/10/embedded/html,result
-code_height: 2536
-code_lines: 116
+jsfiddle_link: jsfiddle.net/prebid/amg49spy/11/embedded/html,result
+code_height: 2662
+code_lines: 122
 
-pid: 10
+pid: 35
 ---
 
-{% include dev-docs/build-from-source-warning.md %}
-
-<br>
-<br>
-<br>
-<br>
-<br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+<br><br><br><br>
 
 <div markdown="1">
-#### Line 1 to 58: Set timeout and define ad units
-
-Same setup as in [Basic Example](/dev-docs/examples/basic-example.html). Check the basic example page for more details.
-
-</div>
-
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br><br><br><br>
-<br><br><br>
-
-<div markdown="1">
-#### Line 83 to 93: Refresh bids listener
+#### Line 31 to 41: Refresh bids listener
 
 The refresh button triggers this function call. `pbjs.requestBids` will set keyword targeting and refresh the DFP ad units when:
 

@@ -18,11 +18,20 @@ A bidder adaptor is responsible for:
 1. Given the list of all ad unit tag IDs, send out the bid requests in the most efficient way.
 2. Whenever a bid is back, register the bid to Prebid.js. 
 
+<!--
 {: .bg-info :}
 Note that you can also **alias** an existing bidder's adaptor (whitelabeling a bidder's adaptor code). Example: `pbjs.aliasBidder('original-bidder-code', 'new-bidder-code')`. The aliased bidder will use the existing adapter and require the same params as the existing adapter. 
+-->
+
+### Step 1: Prepare for a Github PR:
+
+In this PR, please provide the following contact information:
+
+- The contact email of the adaptor maintainer. 
+- A test ad unit that will consistently return test creatives. This is to ensure future Prebid.js updates do not break your adaptor.
 
 
-### Step 1: New Bidder JS file
+### Step 2: New Bidder JS file
 
 1. Create a js file under src/adapters with the name of the bidder. Example: rubicon.js
 
@@ -48,14 +57,14 @@ module.exports = BidderNameAdapter;
 
 {% endhighlight %}
 
-### Step 2: Design your bid params
+### Step 3: Design your bid params
 
 The publisher uses the `bids.params` object for defining the parameters of your ad requests. The parameters are usually the tag ID, (or/and) the site ID, etc. 
 
 Note that the placement size can be read from the `adUnit` object, so there is no need to put your own here.
 
 
-### Step 3: Send out bid requests
+### Step 4: Send out bid requests
 
 When the page asks Prebid.js to send out bid requests, your bidder's `_callBids(params)` funciton will be executed. This is a good place for you to send out bid requests to your bidder.
 
@@ -103,7 +112,7 @@ The `params` object contains information about the bids configured in the reques
 Note that you should keep track of `adUnitCode` to bid requests. In the next section this will come in handy.
 
 
-### Step 4: Register bid responses
+### Step 5: Register bid responses
 
 When the bid response(s) are available, notify Prebid.js immediately, so that your bid can get in the auction as soon as possible. The bidder's API typically has an event listener when the bid responses are back.
 

@@ -26,6 +26,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
   * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
+  * [.setPriceGranularity(granularity)](#module_pbjs.setPriceGranularity)
   * [.renderAd(doc, id)](#module_pbjs.renderAd)
   * [.removeAdUnit(adUnitCode)](#module_pbjs.removeAdUnit)
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
@@ -41,6 +42,8 @@ Returns all ad server targeting for all ad units. Note that some bidder's respon
 
 The targeting keys can be configured in [ad server targeting](#module_pbjs.bidderSettings).
 
+When [deals are enabled]({{site.baseurl}}/adops/deals.html), the object returned by this method may include a field `hb_deal_BIDDERCODE`, where `BIDDERCODE` is replaced by the name of the bidder, e.g., AppNexus, Rubicon, etc.
+
 **Kind**: static method of [pbjs](#module_pbjs)
 
 **Returns**: `object` - Map of adUnitCodes and targeting values []
@@ -54,10 +57,16 @@ The targeting keys can be configured in [ad server targeting](#module_pbjs.bidde
     "hb_adid": "13f44b0d3c",
     "hb_pb": "1.50"
   },
-  "/9968336/header-bid-tag1": {
+  "/9968336/header-bid-tag-1": {
     "hb_bidder": "openx",
     "hb_adid": "147ac541a",
     "hb_pb": "1.00"
+  },
+  "/9968336/header-bid-tag-2": {
+    "hb_bidder": "appnexus",
+    "hb_adid": "147ac541a",
+    "hb_pb": "2.50",
+    "hb_deal_appnexus": "ABC_123"
   }
 }
 {% endhighlight %}
@@ -95,29 +104,29 @@ This function returns the query string targeting parameters available at this mo
 <a name="module_pbjs.getBidResponses"></a>
 
 ### pbjs.getBidResponses() ⇒ `object`
+
 This function returns the bid responses at the given moment.
 
 **Kind**: static method of [pbjs](#module_pbjs).
 
 **Returns**: `object` - map | object that contains the bidResponses.
 
-
 **Returned Object Params**:
 
 {: .table .table-bordered .table-striped }
-| Param | Type | Description |
-| --- | --- | --- |
-| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
-| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). | `123` |
-| `width` | Integer | The width of the returned creative size. | 300 |
-| `height` | Integer | The height of the returned creative size. | 250 |
-| `cpm` | Float | The exact bid price from the bidder | 1.59 |
-| `requestTimestamp` | Integer | The time stamp when the bid request is sent out in milliseconds | 1444844944106 |
-| `responseTimestamp` | Integer | The time steamp when the bid response is received in milliseconds | 1444844944185 |
-| `timeToRespond` | Integer | The amount of time for the bidder to respond with the bid | 79 |
-| `adUnitCode` | String | adUnitCode to get the bid responses for | "/9968336/header-bid-tag-0"|
-| `statusMessage` | String | The bid's status message | "Bid returned empty or error response" or "Bid available" |
-
+| Param               | Type    | Description                                                                                                                     |                                                           |
+|---------------------+---------+---------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------|
+| `bidder`            | String  | The bidder code. Used by ad server's line items to identify bidders                                                             |                                                 `rubicon` |
+| `adId`              | String  | The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). |                                                     `123` |
+| `width`             | Integer | The width of the returned creative size.                                                                                        |                                                       300 |
+| `height`            | Integer | The height of the returned creative size.                                                                                       |                                                       250 |
+| `cpm`               | Float   | The exact bid price from the bidder                                                                                             |                                                      1.59 |
+| `requestTimestamp`  | Integer | The time stamp when the bid request is sent out in milliseconds                                                                 |                                             1444844944106 |
+| `responseTimestamp` | Integer | The time stamp when the bid response is received in milliseconds                                                               |                                             1444844944185 |
+| `timeToRespond`     | Integer | The amount of time for the bidder to respond with the bid                                                                       |                                                        79 |
+| `adUnitCode`        | String  | adUnitCode to get the bid responses for                                                                                         |                               "/9968336/header-bid-tag-0" |
+| `statusMessage`     | String  | The bid's status message                                                                                                        | "Bid returned empty or error response" or "Bid available" |
+| `dealId`            | String  | (Optional) If the bid is [associated with a Deal]({{site.baseurl}}/adops/deals.html), this field contains the deal ID.          |                                                 "ABC_123" |
 
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
@@ -303,49 +312,90 @@ Returns a bool if all the bids have returned or timed out
 
 <hr class="full-rule">
 
+
 <a name="module_pbjs.enableSendAllBids"></a>
 
 ### pbjs.enableSendAllBids()
 
-(Added in version 0.8.1)
+(Added in version 0.9.2)
 
-This method enables Prebid.js to send information about all of the bids submitted back to the ad server by "tagging" each keyword with the name of the bidder associated with that keyword's value, e.g., `hb_bidder_triplelift`.  This allows you to log these keywords with bid information in your ad server and report on them.
+After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server.
 
-This method must be called before `pbjs.setTargetingForGPTAsync()`.
+With the sendAllBids mode enabled, your page can send all bid keywords to your ad server. Your ad server will see all the bids, then make the ultimate decision on which one will win. Some ad servers, such as DFP, can then generate reporting on historical bid prices from all bidders.
 
-The "tagged" targeting keyword/value pairs sent to the ad server will look like this:
+Note that this method must be called before `pbjs.setTargetingForGPTAsync()` or `pbjs.getAdserverTargeting()`.
+
+After this method is called, `pbjs.getAdserverTargeting()` will give you the below JSON (example). `pbjs.setTargetingForGPTAsync()` will apply the below keywords in the JSON to GPT (example below)
+
+
+{% include send-all-bids-keyword-targeting.md %}
 
 {% highlight js %}
 {
+  "hb_adid_indexExchang": "129a7ed7a6fb40e",
+  "hb_pb_indexExchange": "10.00",
+  "hb_size_indexExchang": "300x250",
+  "hb_adid_triplelift": "1663076dadb443d",
+  "hb_pb_triplelift": "10.00",
+  "hb_size_triplelift": "0x0",
+  "hb_adid_appnexus": "191f4aca0c0be8",
+  "hb_pb_appnexus": "10.00",
+  "hb_size_appnexus": "300x250",
+  // original ones (also attached):
   "hb_bidder": "appnexus",
   "hb_adid": "191f4aca0c0be8",
   "hb_pb": "10.00",
   "hb_size": "300x250",
-  "hb_bidder_springserve": "springserve",
-  "hb_adid_springserve": "129a7ed7a6fb40e",
-  "hb_pb_springserve": "10.00",
-  "hb_size_springserve": "300x250",
-  "hb_bidder_triplelift": "triplelift",
-  "hb_adid_triplelift": "1663076dadb443d",
-  "hb_pb_triplelift": "10.00",
-  "hb_size_triplelift": "0x0",
-  "hb_bidder_appnexus": "appnexus",
-  "hb_adid_appnexus": "191f4aca0c0be8",
-  "hb_pb_appnexus": "10.00",
-  "hb_size_appnexus": "300x250",
-  "hb_bidder_pagescience": "pagescience",
-  "hb_adid_pagescience": "2024c6abebaa183",
-  "hb_pb_pagescience": "10.00",
-  "hb_size_pagescience": "300x250",
 }
 {% endhighlight %}
+
+<hr class="full-rule">
+
+<a name="module_pbjs.setPriceGranularity"></a>
+
+### pbjs.setPriceGranularity
+
+This method is used to configure which price bucket is used for the `hb_pb` keyword.  For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
+
+Accepted values:
+
++ `"low"`: $0.50 increments, capped at $5 CPM
++ `"medium"`: $0.10 increments, capped at $20 CPM (the default)
++ `"high"`: $0.01 increments, capped at $20 CPM
++ `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
++ `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
+
+<a name="autoGranularityBucket"></a>
+
+#### Auto Granularity
+
+{: .table .table-bordered .table-striped }
+| CPM                 | 	Granularity                  |  Example |
+|---------------------+----------------------------------+--------|
+| CPM <= $5            | 	$0.05 increments             | $1.87 floored to $1.85 |
+| CPM <= $10 and > $5  | 	$0.10 increments             | $5.09 floored to $5.00 |
+| CPM <= $20 and > $10 | 	$0.50 increments             | $14.26 floored to $14.00 |
+| CPM > $20           | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
+
+<a name="denseGranularityBucket"></a>
+
+#### Dense Granularity
+
+{: .table .table-bordered .table-striped }
+| CPM        | 	Granularity                  | Example |
+|------------+-------------------------------+---------|
+| CPM <= $3  | 	$0.01 increments             | $1.87 floored to $1.87 |
+| CPM <= $8 and >$3  | 	$0.05 increments             | $5.09 floored to $5.05 |
+| CPM <= $20 and >$8 | 	$0.50 increments             | $14.26 floored to $14.00 |
+| CPM >  $20 | 	Caps the price bucket at $20 | $24.82 floored to $20.00 |
+
 
 <hr class="full-rule">
 
 <a name="module_pbjs.renderAd"></a>
 
 ### pbjs.renderAd(doc, id)
-This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly. This function is usually used in the ad server's creative.
+This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously. This function is usually used in the ad server's creative.
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
@@ -398,7 +448,7 @@ Request bids. When `adUnits` or `adUnitCodes` are not specified, request bids fo
 
 ### pbjs.addAdUnits(Array)
 
-Define ad units and their corresponding header bidding bidders' tag Ids.  For usage examples, see [Getting Started]({{site.baseurl}}/dev-docs/getting-started.html).
+Define ad units and their corresponding header bidding bidders' tag IDs.  For usage examples, see [Getting Started]({{site.baseurl}}/dev-docs/getting-started.html).
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
@@ -534,7 +584,7 @@ pbjs.bidderSettings = {
 
 -->
 
-Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows: 
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows:
 
 **Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
 
@@ -639,7 +689,7 @@ Add a callback event
 | Param | Type | Description |
 | --- | --- | --- |
 | event | `String` | event to attach callback to Options: `adUnitBidsBack` |
-| func | `function` | function to execute. Paramaters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
+| func | `function` | function to execute. Parameters passed into the function: ((bidResObj&#124;bidResArr), [adUnitCode]); |
 
 <hr class="full-rule">
 

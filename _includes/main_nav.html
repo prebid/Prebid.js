@@ -15,6 +15,11 @@
       <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
         <ul class="nav navbar-nav">
 
+          <li {% if page.top_nav_section == 'beta' %}class="active"{% endif %}>
+            <a href="{{site.github.url}}/blog.html">What's New
+            <span class="label label-warning">Beta</span></a>
+          </li>          
+
           <li {% if page.top_nav_section == 'overview' %}class="active"{% endif %}>
             <a href="{{site.github.url}}/overview/intro.html">Overview
             </a>

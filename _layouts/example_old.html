@@ -1,0 +1,124 @@
+{% include head.html %}
+
+{% include main_nav.html %}
+
+<div class="container bs-docs-container">
+
+
+
+<div class="row">
+
+
+<div class="col-md-5">
+
+  <div class="docs-sidebar">
+
+    <div class="row">
+      <div class="col-md-6">
+        {% include left_nav.html %}
+      </div>
+
+      <div class="col-md-6">
+        <h5>Old Examples</h5>
+
+        <ul id="example-tab">
+
+        {% assign example_pages = (site.pages | where: "layout", "example_old") %}
+
+        {% for epage in example_pages %}
+          <li>
+            <a href="{{ epage.url }}">{{ epage.title }}</a>
+            {% if epage.is_beta %}
+              <span class="label label-warning">Beta</span>
+            {% endif %}
+          </li>
+        {% endfor %}
+
+        </ul>
+      <!-- </div> -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="col-md-7" role="main">
+
+  <div class="bs-docs-section" markdown="1">
+
+    <h1>(OLD) {{ page.description }} </h1>
+
+    {% if page.why_link %}
+      <h4>Who should use this example:</h4>
+
+      <ul>
+      <li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
+      </ul>
+    {% endif %}
+
+    <h4>This page contains:</h4>
+
+    <ul>
+      {% for about_bullet in page.about %}
+        <li>{{ about_bullet}}</li>
+      {% endfor %}
+    </ul>
+
+
+    <h4>How to use this:</h4>
+
+    Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
+
+  </div>
+</div>
+
+
+
+
+
+
+</div>
+
+<br>
+
+<div class="row">
+
+<div class="col-sm-6">
+
+
+<table class="jsfiddle-line-number">
+<tr>
+<td class="line-number">
+
+{% for num in (1...{{page.code_lines}}) %}
+
+{{ num }} <br>
+
+{% endfor %}
+
+</td>
+
+<td>
+
+
+<iframe width="100%" height="{{page.code_height}}" src="//{{page.jsfiddle_link}}" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+</td>
+</tr>
+</table>
+
+
+</div>
+
+<div class="col-sm-6">
+
+{{content}}
+
+</div>
+
+</div>
+
+  </div>
+
+
+{% include foot.html %}

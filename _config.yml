@@ -61,6 +61,13 @@ facebook:
 markdown: kramdown
 
 nav_sections:
+  - top_nav: beta
+    code: current
+    name: CURRENT BETA
+  - top_nav: beta
+    code: past
+    name: PAST BETA
+
   - top_nav: dev_docs
     code: quick-start
     name: QUICK START

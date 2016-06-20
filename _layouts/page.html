@@ -24,23 +24,26 @@
 
     <div class="row">
 
-      {% include left_nav.html %}
+      <div class="col-md-3">
+        <div class="docs-sidebar">
+          {% include left_nav.html %}
+        </div>
+      </div>
 
       <!-- Content
       =========================================== -->
       <div class="col-md-9" role="main">
         {{content}}
 
-        {% if page.show_disqus %}
-          {% include disqus_addon.html %}
-        {% endif %}
-
       </div>
-
-
     </div>
 
-   {% endif %}
+  {% endif %}
+
+
+ {% if page.show_disqus %}
+   {% include disqus_addon.html %}
+ {% endif %}
 
 
   </div>
