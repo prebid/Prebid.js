@@ -10,25 +10,48 @@ function AdformAdapter() {
   };
 
   function _callBids(params) {
-    //var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
     var bid;
     var noDomain = true;
     var bids = params.bids;
     var request = [];
-    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+    var adxDomain;
+    var i, j, k, l;
 
-    for (var i = 0, l = bids.length; i < l; i++) {
+    var singleRequest = {},
+      singleParam,
+      singleParams = [
+        'url'
+    ];
+
+    for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.adxDomain && noDomain) {
+      adxDomain = bid.params.adxDomain || bid.adxDomain;
+
+      if (adxDomain && noDomain) {
         noDomain = false;
-        request.unshift('//' + bid.adxDomain + '/adx/?rp=4');
+        request.unshift('//' + adxDomain + '/adx/?rp=4');
       }
 
       request.push(formRequestUrl(bid.params));
+
+      for (j = 0, k = singleParams.length; j < k; j++) {
+        singleParam = singleParams[ j ];
+        if ( bid.params[ singleParam ] ) {
+          singleRequest[ singleParam ] = bid.params[ singleParam ];
+        }
+      }
     }
 
     if (noDomain) {
       request.unshift('//adx.adform.net/adx/?rp=4');
+    }
+
+    for (i = 0, l = singleParams.length; i < l; i++) {
+      singleParam = singleParams[ i ];
+      if ( singleRequest[ singleParam ] ) {
+        request.push( singleParam + '=' + encodeURIComponent( singleRequest[ singleParam ] ) );
+      }
     }
 
     pbjs[callbackName] = handleCallback(bids);
@@ -42,14 +65,15 @@ function AdformAdapter() {
     var url = [];
 
     var validProps = [
-        'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
-        'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
+      'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
+      'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
     ];
 
     for (var i = 0, l = validProps.length; i < l; i++) {
       key = validProps[i];
-      if (reqData.hasOwnProperty(key))
-          url.push(key, '=', reqData[key], '&');
+      if (reqData.hasOwnProperty(key)) {
+        url.push(key, '=', reqData[key], '&');
+      }
     }
 
     return encode64(url.join(''));
@@ -57,15 +81,12 @@ function AdformAdapter() {
 
   function handleCallback(bids) {
     return function handleResponse(adItems) {
-      var bidObject;
-      var bidder = 'adform';
-      var adItem;
-      var bid;
-      for (var i = 0, l = adItems.length; i < l; i++) {
+      var bidObject, bidder = 'adform', adItem, bid;
+      for(var i = 0, l = adItems.length; i < l; i++){
         adItem = adItems[i];
         bid = bids[i];
         if (adItem && adItem.response === 'banner' &&
-            verifySize(adItem, bid.sizes)) {
+          verifySize(adItem, bid.sizes)) {
 
           bidObject = bidfactory.createBid(1);
           bidObject.bidderCode = bidder;
@@ -86,31 +107,23 @@ function AdformAdapter() {
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
         if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+          adItem.height === validSizes[j][1]) {
           return true;
         }
       }
-
       return false;
     }
   }
 
   function encode64(input) {
     var out = [];
-    var chr1;
-    var chr2;
-    var chr3;
-    var enc1;
-    var enc2;
-    var enc3;
-    var enc4;
+    var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
     var i = 0;
     var _keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
 
     input = utf8_encode(input);
 
     while (i < input.length) {
-
       chr1 = input.charCodeAt(i++);
       chr2 = input.charCodeAt(i++);
       chr3 = input.charCodeAt(i++);
@@ -125,14 +138,13 @@ function AdformAdapter() {
       } else if (isNaN(chr3)) {
         enc4 = 64;
       }
-
       out.push(_keyStr.charAt(enc1), _keyStr.charAt(enc2));
       if (enc3 !== 64)
-          out.push(_keyStr.charAt(enc3));
-      if (enc4 !== 64)
-          out.push(_keyStr.charAt(enc4));
+        out.push(_keyStr.charAt(enc3));
+      if (enc4 !== 64) {
+        out.push(_keyStr.charAt(enc4));
+      }
     }
-
     return out.join('');
   }
 
@@ -141,7 +153,6 @@ function AdformAdapter() {
     var utftext = '';
 
     for (var n = 0; n < string.length; n++) {
-
       var c = string.charCodeAt(n);
 
       if (c < 128) {
