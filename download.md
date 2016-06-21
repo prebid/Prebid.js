@@ -99,6 +99,13 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
+        <input type="checkbox" bidderCode="aardvark" class="bidder-check-box"> Aardvark by RTK
+      </label>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
         <input type="checkbox" bidderCode="aol" class="bidder-check-box"> AOL
       </label>
     </div>
