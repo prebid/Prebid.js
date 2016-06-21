@@ -240,6 +240,14 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="admedia" class="bidder-check-box"> AdMedia
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
@@ -319,6 +327,7 @@ package.json:
 "adapters": [
   "adequant",
   "adform",
+  "admedia",
   "aol",
   "appnexus",
   "indexExchange",
