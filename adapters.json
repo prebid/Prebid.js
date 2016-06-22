@@ -1,5 +1,4 @@
-{
-  "adapters": [
+[
     "aardvark",
     "adequant",
     "adform",
@@ -31,5 +30,4 @@
         "alias": "pagescience"
       }
     }
-  ]
-}
+]

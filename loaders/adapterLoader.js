@@ -8,7 +8,8 @@
 
 const fs = require('fs');
 const blockLoader = require('block-loader');
-const adapters = require('../build-config.json').adapters;
+
+const adapters = require('../adapters.json');
 
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
