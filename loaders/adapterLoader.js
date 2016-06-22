@@ -5,9 +5,10 @@
 
 'use strict';
 
+
 const fs = require('fs');
 const blockLoader = require('block-loader');
-const adapters = require('../package.json').adapters;
+const adapters = require('../build-config.json').adapters;
 
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
