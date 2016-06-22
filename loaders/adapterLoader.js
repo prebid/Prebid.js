@@ -9,7 +9,7 @@
 const fs = require('fs');
 const blockLoader = require('block-loader');
 
-const adapters = require('../adapters.json');
+const adapters = require('./getAdapters')('../adapters.json');
 
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
@@ -29,7 +29,7 @@ var options = {
 function insertAdapters() {
 
   if (!adapters) {
-    console.log('Prebid Warning: adapters config not found in package.json, no adapters will' +
+    console.log('Prebid Warning: adapters config not found in adapters.json, no adapters will' +
       ' be loaded');
     return '';
   }
