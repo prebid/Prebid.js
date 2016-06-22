@@ -14,8 +14,10 @@ module.exports = function getAdapters(all) {
         const stat = fs.statSync(json);
         adapters = require(json);
     } catch (e) {
-        console.log(`Prebid Warning: custom adapters config cannot be loaded from ${json}, `+
+        if (jsonPath) {
+            console.log(`Prebid Warning: custom adapters config cannot be loaded from ${json}, `+
                     'using default adapters.json');
+        }
         adapters = require(all);
     }
 
