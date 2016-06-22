@@ -114,14 +114,51 @@ If you experience errors, after a version update, try a fresh install:
 
 Runs code quality checks, generates prebid.js files and creates zip archive distributable:
 
-   `./build/dev/prebid.js` Full source code for dev and debug
-    `./build/dev/prebid.js.map` Source map for dev and debug
-    `./build/dist/prebid.js` Minified production code
-    `./prebid.js_<version>.zip` Distributable
+- `./build/dev/prebid.js` Full source code for dev and debug
+- `./build/dev/prebid.js.map` Source map for dev and debug
+- `./build/dist/prebid.js` Minified production code
+- `./prebid.js_<version>.zip` Distributable
 
 Code quality is defined by `./.jscs` and `./.jshint` files and errors are reported in the
 terminal. The build will continue with quality errors, however. If you are contributing code
 you can configure your editor with the provided .jscs and .jshint settings.
+
+### Optimisation ###
+
+The standard build output contains all the available adapters which are listed in `build-config.json`.
+
+You might want to exclude some/most of them from the final bundle and specifically define the ones you're interested in.
+
+To do so
+
+- install `prebid.js` as an `npm` dependency of your project
+- duplicate `node_modules/prebid.js/build-config.json` to under your project path
+  e.g. `config/prebidjs-custom-build-config.json`
+- remove the unnecessary adapters
+- run the `prebid.js` build
+
+```json
+// Example: path/to/your/prebidjs-custom-build-config.json
+{
+    "adapters": [
+        "openx",
+        "rubicon",
+        "sovrn"
+    ]
+}
+```
+
+After you duplicated the build config and modified it to your needs, run the following command to build your custom bundle:
+
+    $ gulp build --config path/to/your/prebidjs-custom-build-config.json
+
+This will result in a smaller, optimised bundle which might allow your pages to load faster.
+
+You might also want to specify the target folder you'd like the custom bundle to be built
+
+    $ gulp build --config path/to/your/prebidjs-custom-build-config.json --build-target path/to/your/build/folder
+
+as the bundle will be generated to `node_modules/prebid.js/build/` folder by default.
 
 ### Configure ###
 Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
@@ -148,25 +185,6 @@ Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
             var target = document.getElementsByTagName('head')[0];
             target.insertBefore(pbs, target.firstChild);
     })();
-    ```
-1. (optional optimization) Edit `./package.json` to set the adapters you want to build with:
-
-    ```json
-        "adapters": [
-            "adform",
-            "admedia",
-            "aol",
-            "appnexus",
-            "indexExchange",
-            "openx",
-            "pubmatic",
-            "pulsepoint",
-            "rubicon",
-            "rubiconLegacy",
-            "sovrn",
-            "springserve",
-            "yieldbot"
-  ]
     ```
 
 ### Run ###
