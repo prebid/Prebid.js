@@ -125,40 +125,32 @@ you can configure your editor with the provided .jscs and .jshint settings.
 
 ### Optimisation ###
 
-The standard build output contains all the available adapters which are listed in `build-config.json`.
+The standard build output contains all the available adapters which are listed in `adapters.json`.
 
 You might want to exclude some/most of them from the final bundle and specifically define the ones you're interested in.
 
 To do so
 
 - install `prebid.js` as an `npm` dependency of your project
-- duplicate `node_modules/prebid.js/build-config.json` to under your project path
-  e.g. `config/prebidjs-custom-build-config.json`
+- duplicate `node_modules/prebid.js/adapters.json` to under your project path
+  e.g. `config/your-custom-adapters.json`
 - remove the unnecessary adapters
-- run the `prebid.js` build
+- run the `prebid.js` build under `node_modules/prebid.js/` folder
 
 ```json
-// Example: path/to/your/prebidjs-custom-build-config.json
-{
-    "adapters": [
-        "openx",
-        "rubicon",
-        "sovrn"
-    ]
-}
+// Example: path/to/your/custom-adapters.json
+[
+    "openx",
+    "rubicon",
+    "sovrn"
+]
 ```
 
-After you duplicated the build config and modified it to your needs, run the following command to build your custom bundle:
+After you duplicated the adapters config and modified it to your needs, run the following command to build your custom bundle:
 
-    $ gulp build --config path/to/your/prebidjs-custom-build-config.json
+    $ gulp build --adapters path/to/your/custom-adapters.json
 
 This will result in a smaller, optimised bundle which might allow your pages to load faster.
-
-You might also want to specify the target folder you'd like the custom bundle to be built
-
-    $ gulp build --config path/to/your/prebidjs-custom-build-config.json --build-target path/to/your/build/folder
-
-as the bundle will be generated to `node_modules/prebid.js/build/` folder by default.
 
 ### Configure ###
 Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
