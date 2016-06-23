@@ -128,6 +128,12 @@ var RubiconAdapter = function RubiconAdapter() {
     bidResponse.ad = _creative(response.getElementId(), size);
     bidResponse.width = size[0];
     bidResponse.height = size[1];
+
+    // DealId
+    if (ads.deal !== undefined && ads.deal !== "") {
+      bidResponse.dealId = ads.deal;
+    }
+
     return bidResponse;
   }
 
