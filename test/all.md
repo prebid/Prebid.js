@@ -12,7 +12,9 @@ hide: true
 
 {% for tpage in test_pages %}
 
-<h2>{{tpage.title}}</h2>
+<h3>
+<a href="{{tpage.url}}">{{tpage.title}}</a>
+</h3>
 
 <iframe width="300" height="250" src="{{tpage.url}}"></iframe>
 
