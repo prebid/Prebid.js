@@ -37,7 +37,7 @@ var RubiconAdapter = function RubiconAdapter() {
     '1000x300':113,
     '320x100':117
   };
-  var RUBICON_INITIALIZED = 0;
+  var RUBICON_INITIALIZED = (window.rubicontag === undefined) ? 0 : 1;
 
   // the fastlane creative code
   var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (rt, fe) { rt.renderCreative(fe, "';
@@ -128,6 +128,12 @@ var RubiconAdapter = function RubiconAdapter() {
     bidResponse.ad = _creative(response.getElementId(), size);
     bidResponse.width = size[0];
     bidResponse.height = size[1];
+
+    // DealId
+    if (ads.deal !== undefined && ads.deal !== "") {
+      bidResponse.dealId = ads.deal;
+    }
+
     return bidResponse;
   }
 
