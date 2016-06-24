@@ -255,16 +255,40 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="wideorbit" class="bidder-check-box"> WideOrbit
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="sekindo" class="bidder-check-box"> Sekindo
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="kruxlink" class="bidder-check-box"> Krux Link
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
 <p>
-(Upgrading version - please check back in a bit!)
+(Version: 0.10.0)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary disabled" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
