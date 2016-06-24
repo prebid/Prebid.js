@@ -464,10 +464,6 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id) {
-  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
-}
-
 export function getKeys(obj) {
   return Object.keys(obj);
 }
@@ -492,5 +488,22 @@ export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
+
   return previous.cpm < current.cpm ? current : previous;
+}
+
+export function getUniqueIdentifierStr() {
+  exports.getUniqueIdentifierStr();
+}
+
+export function findBidderRequestByBidId() {
+  return pbjs.auctionManager.findBidderRequestByBidId(...arguments);
+}
+
+export function findAuctionByBidderCode() {
+  return pbjs.auctionManager.findAuctionByBidderCode(...arguments);
+}
+
+export function findBidRequest() {
+  return pbjs.auctionManager.findBidRequest(...arguments);
 }

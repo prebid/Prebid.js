@@ -1,3 +1,5 @@
+import { findBidderRequestByBidId } from '../utils';
+
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
@@ -7,26 +9,18 @@ var bidfactory = require('../bidfactory.js');
 *  Use to create a TripleLiftAdapter object
 */
 
-
 var TripleLiftAdapter = function TripleLiftAdapter() {
 
   function _callBids(params) {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
 
-    //set expected bids count for callback execution
-    //bidmanager.setExpectedBidsCount('triplelift',bidsCount);
-
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = tlReq[i];
       var callbackId = bidRequest.bidderRequestId;
       adloader.loadScript(buildTLCall(bidRequest, callbackId));
-      //store a reference to the bidRequest from the callback id
-      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
-
   }
-
 
   function buildTLCall(bid, callbackId) {
     //determine tag params
@@ -68,12 +62,10 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
   }
 
-
   //expose the callback to the global object:
   pbjs.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      //var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
+      var bidObj = findBidderRequestByBidId({ adId: tlResponseObj.callback_id });
       var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'

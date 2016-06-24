@@ -1,4 +1,4 @@
-import { uniques } from './utils';
+import { uniques, findBidderRequestByBidId } from './utils';
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -20,11 +20,11 @@ const _hgPriceCap = 20.00;
  * Returns a list of bidders that we haven't received a response yet
  * @return {array} [description]
  */
-exports.getTimedOutBidders = function () {
-  return pbjs._bidsRequested
+exports.getTimedOutBidders = function (auction) {
+  return auction.getBidderRequests()
     .map(getBidderCode)
     .filter(uniques)
-    .filter(bidder => pbjs._bidsReceived
+    .filter(bidder => auction.getBidsReceived()
       .map(getBidders)
       .filter(uniques)
       .indexOf(bidder) < 0);
@@ -32,46 +32,49 @@ exports.getTimedOutBidders = function () {
 
 function timestamp() { return new Date().getTime(); }
 
-function getBidderCode(bidSet) {
-  return bidSet.bidderCode;
+function getBidderCode(bidderRequest) {
+  return bidderRequest.bidderCode;
 }
 
 function getBidders(bid) {
   return bid.bidder;
 }
 
-function bidsBackAdUnit(adUnitCode) {
-  const requested = pbjs.adUnits.find(unit => unit.code === adUnitCode).bids.length;
-  const received = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
+function bidsBackForAdUnit(adUnitCode, auction) {
+  const requested = auction.getAdUnits().find(unit => unit.code === adUnitCode).bids.length;
+  const received = auction.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
 
-function add(a, b) {
+function sum(a, b) {
   return a + b;
 }
 
-function bidsBackAll() {
-  const requested = pbjs._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
-  const received = pbjs._bidsReceived.length;
+function bidsBackAll(auction) {
+  const requested = auction.getBidderRequests().map(bidderRequest => bidderRequest.bids.length).reduce(sum);
+  const received = auction.getBidsReceived().length;
   return requested === received;
 }
 
-exports.bidsBackAll = function() {
-  return bidsBackAll();
-};
+// exports object
 
-function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null };
-}
+exports.bidsBackForAdUnit = function() {
+  return bidsBackForAdUnit(...arguments);
+};
 
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
-  if (bid) {
+  var auction;
+
+  if (bid && bid.bidId) {
+    auction = pbjs.auctionManager.findAuctionByBidId(bid.bidId);
+    auction = auction || pbjs.auctionManager.getSingleAuction();
+
     Object.assign(bid, {
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: findBidderRequestByBidId(bid).start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -82,7 +85,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
     //emit the bidResponse event
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     //append price strings
     const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
@@ -104,21 +107,21 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.adserverTargeting = keyValues;
     }
 
-    pbjs._bidsReceived.push(bid);
+    auction.getBidsReceived().push(bid);
   }
 
-  if (bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
+  if (bidsBackForAdUnit(bid.adUnitCode, auction)) {
+    triggerAdUnitCallbacks(bid.adUnitCode, auction);
   }
 
-  if (bidsBackAll()) {
-    this.executeCallback();
+  if (bidsBackAll(auction)) {
+    this.executeCallback(auction);
   }
 
   if (bid.timeToRespond > pbjs.bidderTimeout) {
 
-    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
-    this.executeCallback();
+    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders(auction));
+    this.executeCallback(auction);
   }
 };
 
@@ -146,7 +149,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
             val: function (bidResponse) {
               if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
                 return bidResponse.pbAg;
-              } else  if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
                 return bidResponse.pbDg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
                 return bidResponse.pbLg;
@@ -230,33 +233,31 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-exports.executeCallback = function () {
+exports.executeCallback = function (auction) {
   if (externalCallbackArr.called !== true) {
-    processCallbacks(externalCallbackArr);
+    processCallbacks(externalCallbackArr, auction);
     externalCallbackArr.called = true;
   }
 
   //execute one time callback
   if (externalOneTimeCallback) {
-    processCallbacks([externalOneTimeCallback]);
+    processCallbacks([externalOneTimeCallback], auction);
     externalOneTimeCallback = null;
   }
 
   pbjs.clearAuction();
 };
 
-function triggerAdUnitCallbacks(adUnitCode) {
-  //todo : get bid responses and send in args
-  var params = [adUnitCode];
-  processCallbacks(externalCallbackByAdUnitArr, params);
+function triggerAdUnitCallbacks(adUnitCode, auction) {
+  processCallbacks(externalCallbackByAdUnitArr, auction);
 }
 
-function processCallbacks(callbackQueue) {
+function processCallbacks(callbackQueue, auction) {
   var i;
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call(pbjs, pbjs._bidsReceived.reduce(groupByPlacement, {}));
+      func.call(pbjs, auction.getBidsReceived().reduce(groupByPlacement, {}));
     }
   }
 }

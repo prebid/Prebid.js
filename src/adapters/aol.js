@@ -73,7 +73,7 @@ var AolAdapter = function AolAdapter() {
     // clean up--we no longer need to store the bid
     delete bidsMap[context.alias];
 
-    var bidResponse = bidfactory.createBid(1);
+    var bidResponse = bidfactory.createBid(1, bid.bidId);
     var ad = response.getCreative();
     if (typeof response.getPixels() !== 'undefined') {
       ad += response.getPixels();
@@ -105,7 +105,7 @@ var AolAdapter = function AolAdapter() {
     // clean up--we no longer need to store the bid
     delete bidsMap[context.alias];
 
-    var bidResponse = bidfactory.createBid(2);
+    var bidResponse = bidfactory.createBid(2, bid.bidId);
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
     bidResponse.reason = response.getNbr();
     bidResponse.raw = response.getResponse();

@@ -1,3 +1,5 @@
+import { findAuctionByBidderCode } from '../utils';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -8,7 +10,7 @@ var adloader = require('../adloader');
  * Adapter for requesting bids from Brightcom
  */
 var BrightcomAdapter = function BrightcomAdapter() {
-    
+
   // Set Brightcom Bidder URL
   var brightcomUrl = 'hb.iselephant.com/auc/ortb';
 
@@ -117,14 +119,14 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Add the call to get the bid
     adloader.loadScript(bidRequestCallUrl, null);
-    
+
   }
 
   //expose the callback to the global object:
   pbjs.brightcomResponse = function(brightcomResponseObj) {
-        
+
     var bid = {};
-        
+
     // Make sure response is valid
     if (
         (brightcomResponseObj) && (brightcomResponseObj.id) &&
@@ -133,20 +135,23 @@ var BrightcomAdapter = function BrightcomAdapter() {
     ) {
 
       // Go through the received bids
-      brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
+      brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
 
         // Get the bid request data
-        var bidRequest = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+        const auction = auction || pbjs.auctionManager.getSingleAuction();
+
+        // this assumes a single auction only
+        var bidRequest = auction.getBidderRequests().find(bidderRequest => bidderRequest.bidderCode === 'brightcom').bids[0];
 
         // Make sure the bid exists
         if (bidRequest) {
-                    
+
           var placementCode = bidRequest.placementCode;
           bidRequest.status = CONSTANTS.STATUS.GOOD;
 
           curBid.placementCode = placementCode;
           curBid.size = bidRequest.sizes;
-                    
+
           // Get the creative
           var responseCreative = curBid.adm;
           // Build the NURL element
@@ -189,7 +194,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
         }
       });
-            
+
     }
 
     // Define all unreceived ad unit codes as invalid (if Brightcom don't want to bid on an impression, it won't include it in the response)
