@@ -8,9 +8,9 @@
 
 const fs = require('fs');
 const blockLoader = require('block-loader');
+const getAdapters = require('./getAdapters');
 
-const adapters = require('./getAdapters')('../adapters.json');
-
+const adapters = getAdapters('../adapters.json');
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
 const aliases = adapters.filter(getAliases);
