@@ -22,3 +22,4 @@ biddercode_longer_than_12: false
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `tagid` | required | The sovrn Ad Tag ID | "315045" |
+| `sizes` | optional | Override the default prebid size array | [970, 250] |
