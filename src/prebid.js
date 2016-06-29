@@ -25,9 +25,9 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 
 var pb_bidsTimedOut = false;
-var pb_sendAllBids = false;
 var auctionRunning = false;
 var presetTargeting = [];
+var pbTargetingKeys = [];
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -38,6 +38,7 @@ var eventValidators = {
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
+$$PREBID_GLOBAL$$._sendAllBids = false;
 
 //default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 2000;
@@ -125,24 +126,32 @@ function setTargeting(targetingConfig) {
               utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
               return value;
             })
-            .forEach(value => slot.setTargeting(Object.keys(key)[0], value));
+            .forEach(value => {
+              slot.setTargeting(Object.keys(key)[0], value);
+            });
         }));
   });
 }
 
-function getWinningBidTargeting() {
+function isNotSetByPb(key) {
+  return pbTargetingKeys.indexOf(key) === -1;
+}
+
+function getPresetTargeting() {
   if (isGptPubadsDefined()) {
     presetTargeting = (function getPresetTargeting() {
       return window.googletag.pubads().getSlots().map(slot => {
         return {
-          [slot.getAdUnitPath()]: slot.getTargetingKeys().map(key => {
+          [slot.getAdUnitPath()]: slot.getTargetingKeys().filter(isNotSetByPb).map(key => {
             return { [key]: slot.getTargeting(key) };
           })
         };
       });
     })();
   }
+}
 
+function getWinningBidTargeting() {
   let winners = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
@@ -169,15 +178,11 @@ function getWinningBidTargeting() {
     };
   });
 
-  if (presetTargeting) {
-    winners.concat(presetTargeting);
-  }
-
   return winners;
 }
 
 function getDealTargeting() {
-  const dealTargeting = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
+  return $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
       [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
@@ -188,8 +193,29 @@ function getDealTargeting() {
       .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
     };
   });
+}
 
-  return dealTargeting;
+/**
+ * Get custom targeting keys for bids that have `alwaysUseBid=true`.
+ */
+function getAlwaysUseBidTargeting() {
+  return pbjs._bidsReceived.map(bid => {
+    if (bid.alwaysUseBid) {
+      const standardKeys = CONSTANTS.TARGETING_KEYS;
+      return {
+        [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
+          // Get only the non-standard keys of the losing bids, since we
+          // don't want to override the standard keys of the winning bid.
+          if (standardKeys.indexOf(key) > -1) {
+            return;
+          }
+
+          return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
+
+        }).filter(key => key) // remove empty elements
+      };
+    }
+  }).filter(bid => bid); // removes empty elements in array;
 }
 
 function getBidLandscapeTargeting() {
@@ -209,10 +235,22 @@ function getBidLandscapeTargeting() {
 }
 
 function getAllTargeting() {
-  let targeting = getWinningBidTargeting();
-  // deals are always attached to targeting
-  targeting = getDealTargeting().concat(targeting);
-  return targeting.concat(pb_sendAllBids ? getBidLandscapeTargeting() : []);
+  // Get targeting for the winning bid. Add targeting for any bids that have
+  // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
+  var targeting = getDealTargeting()
+    .concat(getWinningBidTargeting())
+    .concat(getAlwaysUseBidTargeting())
+    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting() : []);
+
+  //store a reference of the targeting keys
+  targeting.map(adUnitCode => {
+    Object.keys(adUnitCode).map(key => {
+      adUnitCode[key].map(targetKey => {
+        pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
+      });
+    });
+  });
+  return targeting;
 }
 
 //////////////////////////////////
@@ -336,6 +374,10 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     return;
   }
 
+  //first reset any old targeting
+  getPresetTargeting();
+  resetPresetTargeting();
+  //now set new targeting keys
   setTargeting(getAllTargeting());
 };
 
@@ -442,9 +484,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   } else {
     auctionRunning = true;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-    $$PREBID_GLOBAL$$._bidsReceived = [];
-    resetPresetTargeting();
+		$$PREBID_GLOBAL$$._bidsRequested = [];
+		$$PREBID_GLOBAL$$._bidsReceived = [];
   }
 
   const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
@@ -676,7 +717,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
 };
 
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
-  pb_sendAllBids = true;
+	$$PREBID_GLOBAL$$._sendAllBids = true;
 };
 
 processQue();

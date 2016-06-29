@@ -1,4 +1,10 @@
-import { getBidRequests, getBidResponses, getAdServerTargeting } from 'test/fixtures/fixtures';
+import {
+    getAdServerTargeting,
+    getBidRequests,
+    getBidResponses,
+    getTargetingKeys,
+    getTargetingKeysBidLandscape,
+} from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
 
@@ -20,9 +26,10 @@ $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 
 function resetAuction() {
-  $$PREBID_GLOBAL$$.clearAuction();
-  $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
-  $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+	$$PREBID_GLOBAL$$._sendAllBids = false;
+	$$PREBID_GLOBAL$$.clearAuction();
+	$$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
+	$$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -38,12 +45,12 @@ var Slot = function Slot(elementId, pathId) {
     setTargeting: function setTargeting(key, value) {
     },
 
-    getTargeting: function getTargeting() {
-      return [{ testKey: ['a test targeting value'] }];
+    getTargeting: function getTargeting(key) {
+      return [];
     },
 
     getTargetingKeys: function getTargetingKeys() {
-      return ['testKey'];
+      return [];
     },
 
     clearTargeting: function clearTargeting() {
@@ -110,11 +117,89 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getAdServerTargeting', function () {
+
+    beforeEach(() => {
+      resetAuction();
+    });
+
+    afterEach(() => {
+      resetAuction();
+    });
+
     it('should return current targeting data for slots', function () {
+			$$PREBID_GLOBAL$$.enableSendAllBids();
       const targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
       const expected = getAdServerTargeting();
-      $$PREBID_GLOBAL$$.enableSendAllBids();
       assert.deepEqual(targeting, expected, 'targeting ok');
+    });
+
+    it('should return correct targeting with default settings', () => {
+      var targeting = pbjs.getAdserverTargeting();
+      var expected = {
+        "/19968336/header-bid-tag-0": {
+          "foobar": "300x250",
+          "hb_size": "300x250",
+          "hb_pb": "10.00",
+          "hb_adid": "233bcbee889d46d",
+          "hb_bidder": "appnexus"
+        },
+        "/19968336/header-bid-tag1": {
+          "foobar": "728x90",
+          "hb_size": "728x90",
+          "hb_pb": "10.00",
+          "hb_adid": "24bd938435ec3fc",
+          "hb_bidder": "appnexus"
+        }
+      };
+      assert.deepEqual(targeting, expected);
+    });
+
+    it('should return correct targeting with bid landscape targeting on', () => {
+      pbjs.enableSendAllBids();
+      var targeting = pbjs.getAdserverTargeting();
+      var expected = getAdServerTargeting();
+      assert.deepEqual(targeting, expected);
+    });
+
+    it("should include a losing bid's custom ad targeting key when the bid has `alwaysUseBid` set to `true`", () => {
+
+      // Let's make sure we're getting the expected losing bid.
+      assert.equal(pbjs._bidsReceived[0]['bidderCode'], 'triplelift');
+      assert.equal(pbjs._bidsReceived[0]['cpm'], 0.112256);
+
+      // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
+      pbjs._bidsReceived[0]['alwaysUseBid'] = true;
+      pbjs._bidsReceived[0]['adserverTargeting'] = {
+        'always_use_me': 'abc',
+      };
+
+      var targeting = pbjs.getAdserverTargeting();
+
+      // Ensure targeting for both ad placements includes the custom key.
+      assert.equal(
+        targeting['/19968336/header-bid-tag-0'].hasOwnProperty('always_use_me'),
+        true
+      );
+
+      var expected = {
+        "/19968336/header-bid-tag-0": {
+          "foobar": "300x250",
+          "hb_size": "300x250",
+          "hb_pb": "10.00",
+          "hb_adid": "233bcbee889d46d",
+          "hb_bidder": "appnexus",
+          "always_use_me": "abc"
+        },
+        "/19968336/header-bid-tag1": {
+          "foobar": "728x90",
+          "hb_size": "728x90",
+          "hb_pb": "10.00",
+          "hb_adid": "24bd938435ec3fc",
+          "hb_bidder": "appnexus"
+        }
+      };
+
+      assert.deepEqual(targeting, expected);
     });
   });
 
@@ -147,8 +232,16 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
-    beforeEach(() => logErrorSpy = sinon.spy(utils, 'logError'));
-    afterEach(() => utils.logError.restore());
+
+    beforeEach(() => {
+      logErrorSpy = sinon.spy(utils, 'logError');
+      resetAuction();
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+      resetAuction();
+    });
 
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
@@ -162,7 +255,10 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+			$$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+
+      var expected = getTargetingKeys();
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -170,8 +266,62 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.enableSendAllBids();
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+			$$PREBID_GLOBAL$$.enableSendAllBids();
+			$$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+
+      var expected = getTargetingKeysBidLandscape();
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+    });
+
+    it('should set targeting for bids with `alwaysUseBid=true`', function () {
+
+      // Make sure we're getting the expected losing bid.
+      assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['bidderCode'], 'triplelift');
+      assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['cpm'], 0.112256);
+
+      // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
+			$$PREBID_GLOBAL$$._bidsReceived[0]['alwaysUseBid'] = true;
+			$$PREBID_GLOBAL$$._bidsReceived[0]['adserverTargeting'] = {
+        'always_use_me': 'abc',
+      };
+
+      var slots = createSlotArray();
+      window.googletag.pubads().setSlots(slots);
+
+      pbjs.setTargetingForGPTAsync(config.adUnitCodes);
+
+      var expected = [
+        [
+          "hb_bidder",
+          "appnexus"
+        ],
+        [
+          "hb_adid",
+          "233bcbee889d46d"
+        ],
+        [
+          "hb_pb",
+          "10.00"
+        ],
+        [
+          "hb_size",
+          "300x250"
+        ],
+        [
+          "foobar",
+          "300x250"
+        ],
+        [
+          "always_use_me",
+          "abc"
+        ],
+        [
+          "foobar",
+          "300x250"
+        ]
+      ];
+
+      assert.deepEqual(slots[0].spySetTargeting.args, expected);
     });
 
     it('should log error when googletag is not defined on page', function () {

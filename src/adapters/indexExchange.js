@@ -439,6 +439,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
         logErrorBidResponse();
       }
+      finally {
+        // ensure that previous targeting mapping is cleared
+        _IndexRequestData.targetIDToBid = {};
+      }
 
       //slotIdMap is used to determine which slots will be bid on in a given request.
       //Therefore it needs to be blanked after the request is handled, else we will submit 'bids' for the wrong ads.

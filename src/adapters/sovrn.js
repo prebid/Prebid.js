@@ -35,13 +35,14 @@ var SovrnAdapter = function SovrnAdapter() {
 
       //sovrn supports only one size per tagid, so we just take the first size if there are more
       //if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      var sizeArrayLength = bid.sizes.length;
-      if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-        adW = bid.sizes[0];
-        adH = bid.sizes[1];
+      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
+      var sizeArrayLength = bidSizes.length;
+      if (sizeArrayLength === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+        adW = bidSizes[0];
+        adH = bidSizes[1];
       } else {
-        adW = bid.sizes[0][0];
-        adH = bid.sizes[0][1];
+        adW = bidSizes[0][0];
+        adH = bidSizes[0][1];
       }
 
       var imp =

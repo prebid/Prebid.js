@@ -60,7 +60,6 @@ AppNexusAdapter = function AppNexusAdapter() {
     }
 
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
     //sizes takes a bit more logic
     var sizeQueryString = '';
