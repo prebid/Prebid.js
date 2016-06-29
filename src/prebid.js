@@ -199,7 +199,7 @@ function getDealTargeting() {
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
 function getAlwaysUseBidTargeting() {
-  return pbjs._bidsReceived.map(bid => {
+  return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.alwaysUseBid) {
       const standardKeys = CONSTANTS.TARGETING_KEYS;
       return {
@@ -240,7 +240,7 @@ function getAllTargeting() {
   var targeting = getDealTargeting()
     .concat(getWinningBidTargeting())
     .concat(getAlwaysUseBidTargeting())
-    .concat(pbjs._sendAllBids ? getBidLandscapeTargeting() : []);
+    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting() : []);
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -484,8 +484,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   } else {
     auctionRunning = true;
-		$$PREBID_GLOBAL$$._bidsRequested = [];
-		$$PREBID_GLOBAL$$._bidsReceived = [];
+    $$PREBID_GLOBAL$$._bidsRequested = [];
+    $$PREBID_GLOBAL$$._bidsReceived = [];
   }
 
   const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
@@ -717,7 +717,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
 };
 
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
-	$$PREBID_GLOBAL$$._sendAllBids = true;
+  $$PREBID_GLOBAL$$._sendAllBids = true;
 };
 
 processQue();

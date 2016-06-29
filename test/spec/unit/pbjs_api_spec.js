@@ -134,7 +134,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return correct targeting with default settings', () => {
-      var targeting = pbjs.getAdserverTargeting();
+      var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
       var expected = {
         "/19968336/header-bid-tag-0": {
           "foobar": "300x250",
@@ -155,8 +155,8 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return correct targeting with bid landscape targeting on', () => {
-      pbjs.enableSendAllBids();
-      var targeting = pbjs.getAdserverTargeting();
+      $$PREBID_GLOBAL$$.enableSendAllBids();
+      var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
       var expected = getAdServerTargeting();
       assert.deepEqual(targeting, expected);
     });
@@ -164,16 +164,16 @@ describe('Unit: Prebid Module', function () {
     it("should include a losing bid's custom ad targeting key when the bid has `alwaysUseBid` set to `true`", () => {
 
       // Let's make sure we're getting the expected losing bid.
-      assert.equal(pbjs._bidsReceived[0]['bidderCode'], 'triplelift');
-      assert.equal(pbjs._bidsReceived[0]['cpm'], 0.112256);
+      assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['bidderCode'], 'triplelift');
+      assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['cpm'], 0.112256);
 
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
-      pbjs._bidsReceived[0]['alwaysUseBid'] = true;
-      pbjs._bidsReceived[0]['adserverTargeting'] = {
+      $$PREBID_GLOBAL$$._bidsReceived[0]['alwaysUseBid'] = true;
+      $$PREBID_GLOBAL$$._bidsReceived[0]['adserverTargeting'] = {
         'always_use_me': 'abc',
       };
 
-      var targeting = pbjs.getAdserverTargeting();
+      var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
 
       // Ensure targeting for both ad placements includes the custom key.
       assert.equal(
@@ -288,7 +288,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      pbjs.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       var expected = [
         [
