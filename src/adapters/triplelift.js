@@ -87,6 +87,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.bidderCode = 'triplelift';
         bid.cpm = tlResponseObj.cpm;
         bid.ad = tlResponseObj.ad;
+        bid.imageUrl = tlResponseObj.imageUrl;
         bid.width = tlResponseObj.width;
         bid.height = tlResponseObj.height;
         bid.dealId = tlResponseObj.deal_id;
