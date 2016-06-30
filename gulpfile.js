@@ -27,23 +27,6 @@ var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
 
-var _options = // use for production, more info on options https://davidwalsh.name/compress-uglify
-{
-  mangle: true,
-  compress: {
-    sequences: true,
-    properties: true,
-    evaluate: true,
-    loops: true,
-    hoist_funs: true,
-    dead_code: true,
-    conditionals: true,
-    booleans: true,
-    unused: true,
-    if_return: true
-  }
-};
-
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
@@ -79,7 +62,7 @@ gulp.task('webpack', function () {
   return gulp.src([...helpers.getAnalyticsSources(analyticsDirectory), 'src/prebid.js'])
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify(_options))
+    .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
