@@ -15,13 +15,6 @@ var options = {
 
     let adapters = analyticsAdapters.map(adapter => adapter.length ? adapter : Object.keys(adapter)[0]);
 
-    // check if adapters are defined in package.json
-    if (!adapters || !adapters.length) {
-      console.log('Prebid Warning: analytics config not found in package.json,' +
-        ' building with all analytics adapters');
-      adapters = files;
-    }
-
     let inserts = adapters.filter(adapter => {
       if (files.includes(adapter)) {
         return adapter;
@@ -30,17 +23,8 @@ var options = {
       }
     });
 
-    if (!inserts.length) {
-      console.log('Prebid Warning: no matching analytics adapters found for config, building' +
-        ' with all available adapters.');
-    }
-
-    // if no matching adapters build with all adapters found
-    inserts = inserts.length ? inserts : files;
-
     // if no matching adapters and no adapter files found, exit
     if (!inserts || !inserts.length) {
-      console.log('Prebid Warning: no analytics adapters found, analytics are not available');
       return null;
     }
 
