@@ -2,16 +2,16 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('./events');
-var utils = require('./utils');
-var CONSTANTS = require('./constants.json');
+var events = require('./../../events');
+var utils = require('./../../utils');
+var CONSTANTS = require('./../../constants.json');
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 var BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 
-var _disibleInteraction = { nonInteraction: true };
+var _disableInteraction = { nonInteraction: true };
 var _analyticsQueue = [];
 var _gaGlobal = null;
 var _enableCheck = true;
@@ -23,21 +23,17 @@ var _trackerSend = null;
 
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
- * @param  {object} gaOptions to set distribution and GA global (if renamed);
+ * @param  {object} provider use to set GA global (if renamed);
+ * @param  {object} options use to configure adapter;
  * @return {[type]}    [description]
  */
-exports.enableAnalytics = function (gaOptions) {
-  if (typeof gaOptions.global !== 'undefined') {
-    _gaGlobal = gaOptions.global;
-  } else {
-    //default global is window.ga
-    _gaGlobal = 'ga';
-  }
+exports.enableAnalytics = function ({ provider, options }) {
 
-  _trackerSend = gaOptions.trackerName ? gaOptions.trackerName + '.send' : 'send';
+  _gaGlobal = provider || 'ga';
+  _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
 
-  if (typeof gaOptions.enableDistribution !== 'undefined') {
-    _enableDistribution = gaOptions.enableDistribution;
+  if (options && typeof options.enableDistribution !== 'undefined') {
+    _enableDistribution = options.enableDistribution;
   }
 
   var bid = null;
@@ -89,6 +85,11 @@ exports.enableAnalytics = function (gaOptions) {
   events.on(BID_WON, function (bid) {
     sendBidWonToGa(bid);
   });
+
+  // finally set this function to return log message, prevents multiple adapter listeners
+  this.enableAnalytics = function _enable() {
+    return utils.logMessage(`Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`);
+  };
 };
 
 exports.getTrackerSend = function getTrackerSend() {
@@ -185,7 +186,7 @@ function sendBidRequestToGa(bid) {
   if (bid && bid.bidderCode) {
     _analyticsQueue.push(function () {
       _eventCount++;
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disibleInteraction);
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
     });
   }
 
@@ -202,7 +203,7 @@ function sendBidResponseToGa(bid) {
       if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
         _eventCount++;
         var dis = getLoadTimeDistribution(bid.timeToRespond);
-        window[_gaGlobal](_trackerSend, 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1, _disibleInteraction);
+        window[_gaGlobal](_trackerSend, 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1, _disableInteraction);
       }
 
       if (bid.cpm > 0) {
@@ -210,11 +211,11 @@ function sendBidResponseToGa(bid) {
         var cpmDis = getCpmDistribution(bid.cpm);
         if (_enableDistribution) {
           _eventCount++;
-          window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disibleInteraction);
+          window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disableInteraction);
         }
 
-        window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disibleInteraction);
-        window[_gaGlobal](_trackerSend, 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disibleInteraction);
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+        window[_gaGlobal](_trackerSend, 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disableInteraction);
       }
     });
   }
@@ -230,7 +231,7 @@ function sendBidTimeouts(bid) {
       utils._each(_timedOutBidders, function (bidderCode) {
         if (bid.bidder === bidderCode) {
           _eventCount++;
-          window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disibleInteraction);
+          window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disableInteraction);
         }
       });
     });
@@ -243,7 +244,7 @@ function sendBidWonToGa(bid) {
   var cpmCents = convertToCents(bid.cpm);
   _analyticsQueue.push(function () {
     _eventCount++;
-    window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disibleInteraction);
+    window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
   });
 
   checkAnalytics();

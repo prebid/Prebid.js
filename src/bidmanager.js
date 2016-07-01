@@ -61,7 +61,7 @@ exports.bidsBackAll = function() {
 };
 
 function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null };
+  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 
 /*
@@ -75,6 +75,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.adId = bidRequest.bidId;
     }
     Object.assign(bid, {
+      requestId: getBidSetForBidder(bid.bidderCode).requestId,
       responseTimestamp: timestamp(),
       requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
       cpm: bid.cpm || 0,
