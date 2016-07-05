@@ -10,6 +10,8 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
+var _analyticsRegistry = {};
+
 function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
@@ -23,7 +25,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = ({ adUnits }) => {
+exports.callBids = ({ adUnits, cbTimeout }) => {
   const requestId = utils.getUniqueIdentifierStr();
 
   getBidderCodes(adUnits).forEach(bidderCode => {
@@ -35,7 +37,8 @@ exports.callBids = ({ adUnits }) => {
         requestId,
         bidderRequestId,
         bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
-        start: new Date().getTime()
+        start: new Date().getTime(),
+        timeout: cbTimeout
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
       pbjs._bidsRequested.push(bidderRequest);
@@ -92,7 +95,41 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
+exports.registerAnalyticsAdapter = function ({ adapter, code }) {
+  if (adapter && code) {
+
+    if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
+      adapter.code = code;
+      _analyticsRegistry[code] = adapter;
+    } else {
+      utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
+        analytics adapter must implement an enableAnalytics() function`);
+    }
+  } else {
+    utils.logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
+  }
+};
+
+exports.enableAnalytics = function (config) {
+  if (!utils.isArray(config)) {
+    config = [config];
+  }
+
+  utils._each(config, adapterConfig => {
+    var adapter = _analyticsRegistry[adapterConfig.provider];
+    if (adapter) {
+      adapter.enableAnalytics(adapterConfig);
+    } else {
+      utils.logError(`Prebid Error: no analytics adapter found in registry for
+        ${adapterConfig.provider}.`);
+    }
+  });
+};
+
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
 
-// here be adapters
 /** END INSERT ADAPTERS */
+
+/** INSERT ANALYTICS - DO NOT EDIT OR REMOVE */
+
+/** END INSERT ANALYTICS */

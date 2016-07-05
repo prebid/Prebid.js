@@ -61,7 +61,7 @@ exports.bidsBackAll = function() {
 };
 
 function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null };
+  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 
 /*
@@ -69,7 +69,13 @@ function getBidSetForBidder(bidder) {
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
+    //first lookup bid request and assign it back the bidId if it matches the adUnitCode
+    let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+    if(bidRequest && bidRequest.bidId) {
+      bid.adId = bidRequest.bidId;
+    }
     Object.assign(bid, {
+      requestId: getBidSetForBidder(bid.bidderCode).requestId,
       responseTimestamp: timestamp(),
       requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
       cpm: bid.cpm || 0,

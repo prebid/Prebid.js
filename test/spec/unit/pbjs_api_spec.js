@@ -14,11 +14,8 @@ var bidmanager = require('src/bidmanager');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
-var ga = require('src/ga');
 var CONSTANTS = require('src/constants.json');
 
-var bidResponses = require('test/fixtures/bid-responses.json');
-var targetingMap = require('test/fixtures/targeting-map.json');
 var config = require('test/fixtures/config.json');
 
 pbjs = pbjs || {};
@@ -628,53 +625,53 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('enableAnalytics', () => {
-    let logErrorSpy;
-
-    beforeEach(() => {
-      logErrorSpy = sinon.spy(utils, 'logError');
-    });
-
-    afterEach(() => {
-      utils.logError.restore();
-    });
-
-    it('should log error when not passed options', () => {
-      const error = 'pbjs.enableAnalytics should be called with option {}';
-      pbjs.enableAnalytics();
-      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
-    });
-
-    it('should call ga.enableAnalytics with options', () => {
-      const enableAnalyticsSpy = sinon.spy(ga, 'enableAnalytics');
-
-      let options = {'provider': 'ga'};
-      pbjs.enableAnalytics(options);
-      assert.ok(enableAnalyticsSpy.calledWith({}), 'ga.enableAnalytics called with empty options object');
-
-      options['options'] = 'testoptions';
-      pbjs.enableAnalytics(options);
-      assert.ok(enableAnalyticsSpy.calledWith(options.options), 'ga.enableAnalytics called with provided options');
-
-      ga.enableAnalytics.restore();
-    });
-
-    it('should catch errors thrown from ga.enableAnalytics', () => {
-      const error = {message: 'Error calling GA: '};
-      const enableAnalyticsStub = sinon.stub(ga, 'enableAnalytics').throws(error);
-      const options = {'provider': 'ga'};
-
-      pbjs.enableAnalytics(options);
-      assert.ok(logErrorSpy.calledWith(error.message), 'expected error was caught');
-      ga.enableAnalytics.restore();
-    });
-
-    it('should return null for other providers', () => {
-      const options = {'provider': 'other_provider'};
-      const returnValue = pbjs.enableAnalytics(options);
-      assert.equal(returnValue, null, 'expected return value');
-    });
-  });
+  //describe('enableAnalytics', () => {
+  //  let logErrorSpy;
+  //
+  //  beforeEach(() => {
+  //    logErrorSpy = sinon.spy(utils, 'logError');
+  //  });
+  //
+  //  afterEach(() => {
+  //    utils.logError.restore();
+  //  });
+  //
+  //  it('should log error when not passed options', () => {
+  //    const error = 'pbjs.enableAnalytics should be called with option {}';
+  //    pbjs.enableAnalytics();
+  //    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+  //  });
+  //
+  //  it('should call ga.enableAnalytics with options', () => {
+  //    const enableAnalyticsSpy = sinon.spy(ga, 'enableAnalytics');
+  //
+  //    let options = {'provider': 'ga'};
+  //    pbjs.enableAnalytics(options);
+  //    assert.ok(enableAnalyticsSpy.calledWith({}), 'ga.enableAnalytics called with empty options object');
+  //
+  //    options['options'] = 'testoptions';
+  //    pbjs.enableAnalytics(options);
+  //    assert.ok(enableAnalyticsSpy.calledWith(options.options), 'ga.enableAnalytics called with provided options');
+  //
+  //    ga.enableAnalytics.restore();
+  //  });
+  //
+  //  it('should catch errors thrown from ga.enableAnalytics', () => {
+  //    const error = {message: 'Error calling GA: '};
+  //    const enableAnalyticsStub = sinon.stub(ga, 'enableAnalytics').throws(error);
+  //    const options = {'provider': 'ga'};
+  //
+  //    pbjs.enableAnalytics(options);
+  //    assert.ok(logErrorSpy.calledWith(error.message), 'expected error was caught');
+  //    ga.enableAnalytics.restore();
+  //  });
+  //
+  //  it('should return null for other providers', () => {
+  //    const options = {'provider': 'other_provider'};
+  //    const returnValue = pbjs.enableAnalytics(options);
+  //    assert.equal(returnValue, null, 'expected return value');
+  //  });
+  //});
 
   describe('sendTimeoutEvent', () => {
     it('should emit BID_TIMEOUT for timed out bids', () => {
