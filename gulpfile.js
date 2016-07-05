@@ -43,7 +43,8 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src([...helpers.getAnalyticsSources(analyticsDirectory), 'src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -59,7 +60,8 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src([...helpers.getAnalyticsSources(analyticsDirectory), 'src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
