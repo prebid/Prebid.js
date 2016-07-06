@@ -13,7 +13,6 @@ var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
-var ga = require('./ga');
 var events = require('./events');
 
 /* private variables */
@@ -41,7 +40,7 @@ $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
 //default timeout for all bids
-$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 2000;
+$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 
 //let the world know we are loaded
@@ -512,7 +511,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   setTimeout(bidmanager.executeCallback, cbTimeout);
 
-  adaptermanager.callBids({ adUnits, adUnitCodes });
+  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
 
 /**
@@ -622,6 +621,20 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   }
 };
 
+/**
+ * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
+ * @param  {[type]} options [description]
+ */
+$$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
+  try {
+    adaptermanager.registerAnalyticsAdapter(options);
+  }
+  catch (e) {
+    utils.logError('Error registering analytics adapter : ' + e.message);
+  }
+};
+
 $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.bidsAvailableForAdapter', arguments);
 
@@ -668,25 +681,14 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 
 /**
  * Will enable sendinga prebid.js to data provider specified
- * @param  {object} options object {provider : 'string', options : {}}
+ * @param  {object} config object {provider : 'string', options : {}}
  */
-$$PREBID_GLOBAL$$.enableAnalytics = function (options) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics', arguments);
-  if (!options) {
-    utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}', 'prebid.js');
-    return;
-  }
-
-  if (options.provider === 'ga') {
-    try {
-      ga.enableAnalytics(typeof options.options === 'undefined' ? {} : options.options);
-    }
-    catch (e) {
-      utils.logError('Error calling GA: ', 'prebid.js', e);
-    }
-  } else if (options.provider === 'other_provider') {
-    //todo
-    return null;
+$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+  if (config && !utils.isEmpty(config)) {
+    utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
+    adaptermanager.enableAnalytics(config);
+  } else {
+    utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
 };
 
