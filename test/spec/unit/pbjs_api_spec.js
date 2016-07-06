@@ -637,8 +637,8 @@ describe('Unit: Prebid Module', function () {
   //  });
   //
   //  it('should log error when not passed options', () => {
-  //    const error = 'pbjs.enableAnalytics should be called with option {}';
-  //    pbjs.enableAnalytics();
+  //    const error = '$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}';
+  //    $$PREBID_GLOBAL$$.enableAnalytics();
   //    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   //  });
   //
@@ -646,11 +646,11 @@ describe('Unit: Prebid Module', function () {
   //    const enableAnalyticsSpy = sinon.spy(ga, 'enableAnalytics');
   //
   //    let options = {'provider': 'ga'};
-  //    pbjs.enableAnalytics(options);
+  //    $$PREBID_GLOBAL$$.enableAnalytics(options);
   //    assert.ok(enableAnalyticsSpy.calledWith({}), 'ga.enableAnalytics called with empty options object');
   //
   //    options['options'] = 'testoptions';
-  //    pbjs.enableAnalytics(options);
+  //    $$PREBID_GLOBAL$$.enableAnalytics(options);
   //    assert.ok(enableAnalyticsSpy.calledWith(options.options), 'ga.enableAnalytics called with provided options');
   //
   //    ga.enableAnalytics.restore();
@@ -661,14 +661,14 @@ describe('Unit: Prebid Module', function () {
   //    const enableAnalyticsStub = sinon.stub(ga, 'enableAnalytics').throws(error);
   //    const options = {'provider': 'ga'};
   //
-  //    pbjs.enableAnalytics(options);
+  //    $$PREBID_GLOBAL$$.enableAnalytics(options);
   //    assert.ok(logErrorSpy.calledWith(error.message), 'expected error was caught');
   //    ga.enableAnalytics.restore();
   //  });
   //
   //  it('should return null for other providers', () => {
   //    const options = {'provider': 'other_provider'};
-  //    const returnValue = pbjs.enableAnalytics(options);
+  //    const returnValue = $$PREBID_GLOBAL$$.enableAnalytics(options);
   //    assert.equal(returnValue, null, 'expected return value');
   //  });
   //});
