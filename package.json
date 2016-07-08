@@ -10,6 +10,7 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
+  "globalVarName": "pbjs",
   "analytics": [],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",

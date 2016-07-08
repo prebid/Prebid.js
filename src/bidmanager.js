@@ -21,10 +21,10 @@ const _hgPriceCap = 20.00;
  * @return {array} [description]
  */
 exports.getTimedOutBidders = function () {
-  return pbjs._bidsRequested
+  return $$PREBID_GLOBAL$$._bidsRequested
     .map(getBidderCode)
     .filter(uniques)
-    .filter(bidder => pbjs._bidsReceived
+    .filter(bidder => $$PREBID_GLOBAL$$._bidsReceived
       .map(getBidders)
       .filter(uniques)
       .indexOf(bidder) < 0);
@@ -41,8 +41,8 @@ function getBidders(bid) {
 }
 
 function bidsBackAdUnit(adUnitCode) {
-  const requested = pbjs.adUnits.find(unit => unit.code === adUnitCode).bids.length;
-  const received = pbjs._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
+  const requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode).bids.length;
+  const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
 
@@ -51,8 +51,8 @@ function add(a, b) {
 }
 
 function bidsBackAll() {
-  const requested = pbjs._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
-  const received = pbjs._bidsReceived.length;
+  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
   return requested === received;
 }
 
@@ -61,7 +61,7 @@ exports.bidsBackAll = function() {
 };
 
 function getBidSetForBidder(bidder) {
-  return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
+  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 
 /*
@@ -110,7 +110,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.adserverTargeting = keyValues;
     }
 
-    pbjs._bidsReceived.push(bid);
+    $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
   if (bidsBackAdUnit(bid.adUnitCode)) {
@@ -121,7 +121,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     this.executeCallback();
   }
 
-  if (bid.timeToRespond > pbjs.bidderTimeout) {
+  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
 
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
@@ -130,7 +130,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
-  var bidder_settings = pbjs.bidderSettings || {};
+  var bidder_settings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
   //1) set the keys from "standard" setting or from prebid defaults
   if (custBidObj && bidder_settings) {
@@ -248,7 +248,7 @@ exports.executeCallback = function () {
     externalOneTimeCallback = null;
   }
 
-  pbjs.clearAuction();
+  $$PREBID_GLOBAL$$.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
@@ -262,7 +262,7 @@ function processCallbacks(callbackQueue) {
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call(pbjs, pbjs._bidsReceived.reduce(groupByPlacement, {}));
+      func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
     }
   }
 }
@@ -317,10 +317,10 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
 function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
-  if (code && pbjs.bidderSettings && pbjs.bidderSettings[code]) {
-    if (typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function) {
+  if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
+    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);

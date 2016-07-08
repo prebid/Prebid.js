@@ -31,8 +31,8 @@ function AdformAdapter() {
       request.unshift('//adx.adform.net/adx/?rp=4');
     }
 
-    pbjs[callbackName] = handleCallback(bids);
-    request.push('callback=pbjs.' + callbackName);
+    $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
+    request.push('callback=$$PREBID_GLOBAL$$.' + callbackName);
 
     adloader.loadScript(request.join('&'));
   }

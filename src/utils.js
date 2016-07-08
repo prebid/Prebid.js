@@ -209,12 +209,12 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if (pbjs.logging === false && _loggingChecked === false) {
-    pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
+    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
 
-  return !!pbjs.logging;
+  return !!$$PREBID_GLOBAL$$.logging;
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -465,7 +465,7 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id) {
-  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
 export function getKeys(obj) {
@@ -478,7 +478,7 @@ export function getValue(obj, key) {
 
 export function getBidderCodes() {
   // this could memoize adUnits
-  return pbjs.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+  return $$PREBID_GLOBAL$$.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
 

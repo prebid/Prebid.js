@@ -42,7 +42,7 @@ describe('Publisher API _ AdUnits', function () {
             ]
     }];
 
-    pbjs.addAdUnits(adUnits);
+    $$PREBID_GLOBAL$$.addAdUnits(adUnits);
   });
 
   after(function () {
@@ -61,7 +61,7 @@ describe('Publisher API _ AdUnits', function () {
       bids2 = adUnit2.bids;
     });
 
-    it('the first adUnits value should be same with the adUnits that is added by pbjs.addAdUnits();', function () {
+    it('the first adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
       assert.strictEqual(adUnit1.code, '/1996833/slot-1', 'adUnit1 code');
       assert.deepEqual(adUnit1.sizes, [[300, 250], [728, 90]], 'adUnit1 sizes');
       assert.strictEqual(bids1[0].bidder, 'openx', 'adUnit1 bids1 bidder');
@@ -83,7 +83,7 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
 
-    it('the second adUnits value should be same with the adUnits that is added by pbjs.addAdUnits();', function () {
+    it('the second adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
 
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
@@ -102,7 +102,7 @@ describe('Publisher API _ AdUnits', function () {
     var adUnits, adUnit2, bids2;
 
     it('the first adUnit should be not existed', function () {
-      pbjs.removeAdUnit('/1996833/slot-1');
+      $$PREBID_GLOBAL$$.removeAdUnit('/1996833/slot-1');
       adUnits = pbjsTestOnly.getAdUnits();
       adUnit2 = adUnits[0];
       bids2 = adUnit2.bids;

@@ -26,7 +26,7 @@ SekindoAdapter = function SekindoAdapter() {
     }
   }
 
-  pbjs.sekindoCB = function(callbackId, response) {
+  $$PREBID_GLOBAL$$.sekindoCB = function(callbackId, response) {
     var bidObj = getBidRequest(callbackId);
     if (typeof (response) !== 'undefined' && typeof (response.cpm) !== 'undefined') {
       var bid = [];
@@ -80,7 +80,7 @@ SekindoAdapter = function SekindoAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'pubUrl', pubUrl);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbcb', callbackId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
-    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', pbjs.bidderTimeout);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
     var html = '<scr'+'ipt type="text/javascript" src="'+scriptSrc+'"></scr'+'ipt>';
