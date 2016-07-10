@@ -7,7 +7,7 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
     utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
     return;
   }
-
+//asdas
   if (cacheRequest) {
     if (_requestCache[tagSrc]) {
       if (_requestCache[tagSrc].loaded) {
