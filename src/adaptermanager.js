@@ -26,7 +26,13 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
 }
 
 exports.callBids = ({ adUnits, cbTimeout }) => {
-  const requestId = utils.getUniqueIdentifierStr();
+  const requestId = utils.generateUUID();
+
+  const auctionInit = {
+    timestamp: Date.now(),
+    requestId,
+  };
+  events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   getBidderCodes(adUnits).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
@@ -41,7 +47,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
         timeout: cbTimeout
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
         adapter.callBids(bidderRequest);

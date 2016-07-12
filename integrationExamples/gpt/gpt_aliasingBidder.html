@@ -11,26 +11,26 @@
         googletag.pubads().disableInitialLoad();
     });
 
-    /* pbjs.initAdserver will be called either when all bids are back, or
+    /* $$PREBID_GLOBAL$$.initAdserver will be called either when all bids are back, or
      when the timeout is reached.
      */
     function initAdserver() {
-        if (pbjs.initAdserverSet) return;
+        if ($$PREBID_GLOBAL$$.initAdserverSet) return;
 
         googletag.cmd.push(function () {
-            pbjs.que.push(function () {
-                pbjs.setTargetingForGPTAsync();
+            $$PREBID_GLOBAL$$.que.push(function () {
+                $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
                 googletag.pubads().refresh();
             });
         });
-        pbjs.initAdserverSet = true;
+        $$PREBID_GLOBAL$$.initAdserverSet = true;
     }
 
     // Load GPT when timeout is reached.
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
+    var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
+    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
 
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
@@ -54,7 +54,7 @@
         node.parentNode.insertBefore(gads, node);
     })();
 
-    pbjs.que.push(function () {
+    $$PREBID_GLOBAL$$.que.push(function () {
         var adUnits = [
             {
                 code: 'div-gpt-ad-12345678-0',
@@ -83,17 +83,17 @@
         ];
 
         //add the adUnits
-        pbjs.addAdUnits(adUnits);
+        $$PREBID_GLOBAL$$.addAdUnits(adUnits);
 
         /*  Alias Bidders (existingBidderCode, newBidderCode)    <------ New Feature
          aliased bidders will use the existing adapter and require the same params as the existing adapter. The only change is the bidderCode is updated.
          */
-        pbjs.aliasBidder('appnexus', 'brealtime')
+        $$PREBID_GLOBAL$$.aliasBidder('appnexus', 'brealtime')
 
         /* Request bids for the added ad units. If adUnits or adUnitCodes are
          not specified, the function will request bids for all added ad units.
          */
-        pbjs.requestBids({
+        $$PREBID_GLOBAL$$.requestBids({
 
             /* The bidsBack function will be called when either timeout is
              reached, or when all bids come back, whichever happens sooner.
@@ -177,8 +177,8 @@
 
     ga('create', 'XXXXXX', 'auto');
     //Send data from prebid.js automatically
-    pbjs.que.push(function () {
-        pbjs.enableAnalytics({
+    $$PREBID_GLOBAL$$.que.push(function () {
+        $$PREBID_GLOBAL$$.enableAnalytics({
             provider: 'ga',
             options: {
                 global: 'ga', // <string> name of GA global. Default is 'ga'

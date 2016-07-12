@@ -73,7 +73,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for all bidders', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         standard: {
           adserverTargeting: [
@@ -117,7 +117,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for one bidder', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           adserverTargeting: [
@@ -161,7 +161,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for one bidder - not matched', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         nonExistentBidder: {
           adserverTargeting: [
@@ -205,7 +205,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           bidCpmAdjustment: function (bidCpm) {
@@ -243,7 +243,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           bidCpmAdjustment: function (bidCpm) {
@@ -312,7 +312,7 @@ describe('bidmanager.js', function () {
     });
 
     it('alwaysUseBid=true and inherit custom', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           alwaysUseBid: true,
@@ -352,7 +352,7 @@ describe('bidmanager.js', function () {
 
   describe('addBidResponse', () => {
     before(() => {
-      pbjs.adUnits = fixtures.getAdUnits();
+      $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
 
     it('should return proper price bucket increments for dense mode', () => {
@@ -365,29 +365,29 @@ describe('bidmanager.js', function () {
       bid.cpm = '1.99';
       let expectedIncrement = '1.99';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      // pop this bid because another test relies on global pbjs._bidsReceived
-      let registeredBid = pbjs._bidsReceived.pop();
+      // pop this bid because another test relies on global $$PREBID_GLOBAL$$._bidsReceived
+      let registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
 
       // 3 - 8 dollars
       bid.cpm = '4.39';
       expectedIncrement = '4.35';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
 
       // 8 - 20 dollars
       bid.cpm = '19.99';
       expectedIncrement = '19.50';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
 
       // 20+ dollars
       bid.cpm = '73.07';
       expectedIncrement = '20.00';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = pbjs._bidsReceived.pop();
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
     });
 
@@ -399,7 +399,7 @@ describe('bidmanager.js', function () {
 
       bid.dealId = "test deal";
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      const addedBid = pbjs._bidsReceived.pop();
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
     });
   });

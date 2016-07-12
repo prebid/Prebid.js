@@ -70,7 +70,7 @@ var SovrnAdapter = function SovrnAdapter() {
       }
     };
 
-    var scriptUrl = '//' + sovrnUrl + '?callback=window.pbjs.sovrnResponse' +
+    var scriptUrl = '//' + sovrnUrl + '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
       '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl, null);
@@ -92,7 +92,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.sovrnResponse = function (sovrnResponseObj) {
+  $$PREBID_GLOBAL$$.sovrnResponse = function (sovrnResponseObj) {
     // valid object?
     if (sovrnResponseObj && sovrnResponseObj.id) {
       // valid object w/ bid responses?
@@ -106,7 +106,7 @@ var SovrnAdapter = function SovrnAdapter() {
           var bid = {};
 
           // try to fetch the bid request we sent Sovrn
-          var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+          var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
           .find(bid => bid.bidId === id);
 
           if (bidObj) {

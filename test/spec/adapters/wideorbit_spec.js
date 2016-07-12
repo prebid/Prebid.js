@@ -102,7 +102,7 @@ describe('wideorbit adapter tests', function () {
             expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
             expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
             expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-            expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
+            expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.$$PREBID_GLOBAL$$.handleWideOrbitCallback');
             expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
             expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
             expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -180,7 +180,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
+                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.$$PREBID_GLOBAL$$.handleWideOrbitCallback');
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -256,7 +256,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('cts').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('arp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('fl').and.to.equal('0');
-                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.pbjs.handleWideOrbitCallback');
+                expect(parsedBidUrlQueryString).to.have.property('jscb').and.to.equal('window.$$PREBID_GLOBAL$$.handleWideOrbitCallback');
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
@@ -321,7 +321,7 @@ describe('wideorbit adapter tests', function () {
         ];
 
         it('callback function should exist', function () {
-            expect(pbjs.handleWideOrbitCallback).to.exist.and.to.be.a('function');
+            expect($$PREBID_GLOBAL$$.handleWideOrbitCallback).to.exist.and.to.be.a('function');
         });
 
         it('bidmanager.addBidResponse should be called thrice with correct arguments', function () {
@@ -373,7 +373,7 @@ describe('wideorbit adapter tests', function () {
             };
 
             adapter().callBids(params);
-            pbjs.handleWideOrbitCallback(response);
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -426,7 +426,7 @@ describe('wideorbit adapter tests', function () {
                 Placements: placements
             };
 
-            pbjs.handleWideOrbitCallback(response);
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             var imgElement = document.querySelectorAll("head img")[0];
 
@@ -450,7 +450,7 @@ describe('wideorbit adapter tests', function () {
                 Placements: placements
             };
 
-            pbjs.handleWideOrbitCallback(response);
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             var iframeElement = document.querySelectorAll("head iframe")[0];
 
@@ -475,7 +475,7 @@ describe('wideorbit adapter tests', function () {
                 Placements: placements
             };
 
-            pbjs.handleWideOrbitCallback(response);
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             var scriptElement = document.querySelectorAll("head script")[0];
 

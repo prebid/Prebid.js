@@ -70,7 +70,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
   }
 
   //expose the callback to global object
-  pbjs.admediaHandler = function(response){
+  $$PREBID_GLOBAL$$.admediaHandler = function(response){
     var bidObject = {};
     var callback_id = response.callback_id;
     var placementCode = '';
