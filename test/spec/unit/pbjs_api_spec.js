@@ -7,6 +7,7 @@ import {
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
+var expect = require('chai').expect;
 
 var prebid = require('src/prebid');
 var utils = require('src/utils');
@@ -243,9 +244,8 @@ describe('Unit: Prebid Module', function () {
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
-
       pbjs.setTargetingForGPTAsync(config.adUnitCodes);
-      assert.deepEqual(slots[0].spySetTargeting.args[0], ['hb_bidder', 'appnexus'], 'slot.setTargeting was called with expected key/values');
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus']]);
     });
 
     it('should set targeting from googletag data', function () {
@@ -255,7 +255,7 @@ describe('Unit: Prebid Module', function () {
       pbjs.setTargetingForGPTAsync();
 
       var expected = getTargetingKeys();
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -267,7 +267,7 @@ describe('Unit: Prebid Module', function () {
       pbjs.setTargetingForGPTAsync();
 
       var expected = getTargetingKeysBidLandscape();
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('should set targeting for bids with `alwaysUseBid=true`', function () {
@@ -318,7 +318,7 @@ describe('Unit: Prebid Module', function () {
         ]
       ];
 
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('should log error when googletag is not defined on page', function () {
