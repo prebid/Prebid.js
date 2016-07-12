@@ -20,9 +20,9 @@ function _makeBidResponse(placementCode, bid) {
 
 function _makeCallback(id, placements) {
   var callback = '_kruxlink_' + id;
-  pbjs[callback] = function(response) {
+  $$PREBID_GLOBAL$$[callback] = function(response) {
     // Clean up our callback
-    delete pbjs[callback];
+    delete $$PREBID_GLOBAL$$[callback];
 
     // Add in the bid respones
     for (var i = 0; i < response.seatbid.length; i++) {
@@ -42,7 +42,7 @@ function _makeCallback(id, placements) {
     }
   };
 
-  return 'pbjs.' + callback;
+  return '$$PREBID_GLOBAL$$.' + callback;
 }
 
 function _callBids(params) {

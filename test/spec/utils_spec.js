@@ -449,10 +449,6 @@ describe('Utils', function () {
       assert.deepEqual(output.width, 0);
     });
 
-    it('return iframe - border', function () {
-      assert.deepEqual(output.border, '0px');
-    });
-
     it('return iframe - hspace', function () {
       assert.deepEqual(output.hspace, '0');
     });
@@ -469,9 +465,6 @@ describe('Utils', function () {
       assert.deepEqual(output.marginHeight, '0');
     });
 
-    //it('return iframe - style.border',function(){
-    //	assert.deepEqual(output.style.border,'0px');
-    //});
     it('return iframe - scrolling', function () {
       assert.deepEqual(output.scrolling, 'no');
     });

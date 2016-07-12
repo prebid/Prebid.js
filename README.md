@@ -114,14 +114,59 @@ If you experience errors, after a version update, try a fresh install:
 
 Runs code quality checks, generates prebid.js files and creates zip archive distributable:
 
-   `./build/dev/prebid.js` Full source code for dev and debug
-    `./build/dev/prebid.js.map` Source map for dev and debug
-    `./build/dist/prebid.js` Minified production code
-    `./prebid.js_<version>.zip` Distributable
+- `./build/dev/prebid.js` Full source code for dev and debug
+- `./build/dev/prebid.js.map` Source map for dev and debug
+- `./build/dist/prebid.js` Minified production code
+- `./prebid.js_<version>.zip` Distributable
 
 Code quality is defined by `./.jscs` and `./.jshint` files and errors are reported in the
 terminal. The build will continue with quality errors, however. If you are contributing code
 you can configure your editor with the provided .jscs and .jshint settings.
+
+### Optimisation ###
+
+The standard build output contains all the available adapters which are listed in `adapters.json`.
+
+You might want to exclude some/most of them from the final bundle and specifically define the ones you're interested in.
+
+```json
+// Example: path/to/your/list-of-adapters.json
+[
+    "openx",
+    "rubicon",
+    "sovrn"
+]
+```
+
+This will result in a smaller, optimised bundle which might allow your pages to load faster.
+
+**Build standalone prebid.js**
+
+- clone repo, run `npm install`
+- duplicate `adapters.json` to e.g. `list-of-adapters.json`
+- remove the unnecessary adapters from `list-of-adapters.json`
+- then run build
+
+    $ gulp build --adapters path/to/your/list-of-adapters.json
+
+**Build prebid.js using NPM for bundling**
+
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
+
+- install `prebid.js` as an `npm` dependency of your project
+- duplicate `node_modules/prebid.js/adapters.json` to under your project path
+  e.g. `path/to/your/list-of-adapters.json`
+- remove the unnecessary adapters
+- run the `prebid.js` build under `node_modules/prebid.js/` folder
+
+    $ gulp build --adapters path/to/your/list-of-adapters.json
+
+Most likely your custom `prebid.js` will only change when there's
+
+- a change in your list of adapters
+- a new release of `prebid.js`
+
+having said that, you are probably safe to check in your custom bundle into your project, or you can generate it in your build process.
 
 ### Configure ###
 Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
@@ -148,25 +193,6 @@ Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
             var target = document.getElementsByTagName('head')[0];
             target.insertBefore(pbs, target.firstChild);
     })();
-    ```
-1. (optional optimization) Edit `./package.json` to set the adapters you want to build with:
-
-    ```json
-        "adapters": [
-            "adform",
-            "admedia",
-            "aol",
-            "appnexus",
-            "indexExchange",
-            "openx",
-            "pubmatic",
-            "pulsepoint",
-            "rubicon",
-            "rubiconLegacy",
-            "sovrn",
-            "springserve",
-            "yieldbot"
-  ]
     ```
 
 ### Run ###

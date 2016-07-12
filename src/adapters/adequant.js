@@ -1,6 +1,8 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
+var utils = require('../utils.js');
+var CONSTANTS = require('../constants.json');
 
 module.exports = function() {
   var req_url_base = 'https://rex.adequant.com/rex/c2s_prebid?';
@@ -22,9 +24,10 @@ module.exports = function() {
       publisher_id = br_params.publisher_id.toString()    || publisher_id;
       var bidfloor = br_params.bidfloor                   || 0.01;
       cats         = br_params.cats                       || cats;
-      if (typeof(cats) === 'string') { cats = cats.split(' '); }
-      for (var j = 0; j < bid_request.sizes.length; j++) {
-        sizes.push(bid_request.sizes[j].join('x')+'_'+bidfloor);
+      if (typeof(cats) === utils.objectType_string) { cats = cats.split(' '); }
+      var br_sizes = utils.parseSizesInput(bid_request.sizes);
+      for (var j = 0; j < br_sizes.length; j++) {
+        sizes.push(br_sizes[j]+'_'+bidfloor);
         replies.push(bid_request.placementCode);
       }
     }
@@ -44,7 +47,7 @@ module.exports = function() {
         placement_code = replies[parseInt(bid_response.impid,10)-1];
         if (!placement_code || !placements[placement_code]) { continue; }
         
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
         bid.bidderCode = 'adequant';
         bid.cpm = bid_response.price;
         bid.ad = bid_response.adm;
@@ -56,9 +59,10 @@ module.exports = function() {
     }
     for (placement_code in placements) {
       if (placements[placement_code]) {
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = 'adequant';
         bidmanager.addBidResponse(placement_code, bid);
+        utils.logMessage('No bid response from Adequant for placement code ' + placement_code);
       }
     }
   }

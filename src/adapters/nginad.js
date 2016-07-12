@@ -101,7 +101,7 @@ var NginAdAdapter = function NginAdAdapter() {
       }
     };
 
-    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
+    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.$$PREBID_GLOBAL$$.nginadResponse' +
       '&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
 
     adloader.loadScript(scriptUrl, null);
@@ -120,7 +120,7 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.nginadResponse = function(nginadResponseObj) {
+  $$PREBID_GLOBAL$$.nginadResponse = function(nginadResponseObj) {
     var bid = {};
     var key;
 
@@ -142,7 +142,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
+      var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
         .find(bid => bid.bidId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);

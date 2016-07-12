@@ -45,15 +45,15 @@ var AardvarkAdapter = function AardvarkAdapter() {
       scURL = shortcodes[0];
     }
 
-    var scriptUrl = '//thor.rtk.io/' + ai + "/" + scURL + "/aardvark/?jsonp=window.pbjs.aardvarkResponse&rtkreferer=" + ref;
+    var scriptUrl = '//thor.rtk.io/' + ai + "/" + scURL + "/aardvark/?jsonp=window.$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=" + ref;
     adloader.loadScript(scriptUrl);
   }
 
   //expose the callback to the global object:
-  window.pbjs.aardvarkResponse = function (rtkResponseObj) {
+  window.$$PREBID_GLOBAL$$.aardvarkResponse = function (rtkResponseObj) {
 
     //Get all initial Aardvark Bid Objects
-    var bidsObj = pbjs._bidsRequested.filter(function (bidder) {
+    var bidsObj = $$PREBID_GLOBAL$$._bidsRequested.filter(function (bidder) {
       return bidder.bidderCode === 'aardvark';
     })[0];
 

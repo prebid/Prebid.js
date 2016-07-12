@@ -16,7 +16,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
   var brightcomBidderCode = 'brightcom';
 
   // Define the callback function
-  var brightcomCallbackFunction = 'window.pbjs=window.pbjs||window.parent.pbjs||window.top.pbjs;window.pbjs.brightcomResponse';
+  var brightcomCallbackFunction = 'window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$||window.parent.$$PREBID_GLOBAL$$||window.top.$$PREBID_GLOBAL$$;window.$$PREBID_GLOBAL$$.brightcomResponse';
 
   // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
   var reqAdUnitsCode = [],
@@ -121,7 +121,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.brightcomResponse = function(brightcomResponseObj) {
+  $$PREBID_GLOBAL$$.brightcomResponse = function(brightcomResponseObj) {
         
     var bid = {};
         
@@ -136,7 +136,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
 
         // Get the bid request data
-        var bidRequest = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+        var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
 
         // Make sure the bid exists
         if (bidRequest) {

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.9.2",
+  "version": "0.11.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -10,39 +10,8 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
-  "adapters": [
-    "aardvark",
-    "adequant",
-    "adform",
-    "admedia",
-    "aol",
-    "appnexus",
-    "indexExchange",
-    "kruxlink",
-    "openx",
-    "pubmatic",
-    "pulsepoint",
-    "rubicon",
-	"sekindo",
-    "sonobi",
-    "sovrn",
-    "springserve",
-    "triplelift",
-    "yieldbot",
-    "nginad",
-    "brightcom",
-    "wideorbit",
-    {
-      "appnexus": {
-        "alias": "brealtime"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "pagescience"
-      }
-    }
-  ],
+  "globalVarName": "pbjs",
+  "analytics": [],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
