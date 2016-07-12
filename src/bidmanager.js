@@ -88,7 +88,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
     //emit the bidResponse event
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, adUnitCode, bid);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     //append price strings
     const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
