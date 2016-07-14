@@ -88,14 +88,14 @@
                             //The RTK Ad Unit ID (shortcode)
                             sc: "TO ADD"
                         }
-                    }, 
+                    },
                     {
                         bidder:'admedia',
                         params: {
                             //Publisher ID
-                            aid: '1234' //Use 1234 for test ads 
+                            aid: '1234' //Use 1234 for test ads
                         }
-                    },  
+                    },
                     {
                         bidder: 'pubmatic',
                         params: {
@@ -259,7 +259,8 @@
                     {
                         bidder: 'triplelift',
                         params: {
-                            inventoryCode: 'sortable_all_right_sports'
+                            inventoryCode: 'sortable_all_right_sports', // TripleLift inventory code - required
+                            floor: 1.50 // Dynamic bid floor - optional
                         }
                     },
                     {
