@@ -262,19 +262,18 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
       
       var targeting = [];
-      slots[0].getTargeting().map(function(value) { 
+      slots[1].getTargeting().map(function(value) { 
         var temp = [];
         temp.push(Object.keys(value).toString());
         temp.push(value[Object.keys(value)]);
         targeting.push(temp);
       });
 
-      assert.deepEqual(slots[0].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+      assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
     });
 
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
-      console.log(slots);
       window.googletag.pubads().setSlots(slots);
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
