@@ -6,7 +6,7 @@ pid: 27
 
 top_nav_section: dev_docs
 nav_section: adaptors
-hide: false
+hide: true
 ---
 
 # Integrate with the Prebid Analytics API
