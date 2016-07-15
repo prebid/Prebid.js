@@ -7,6 +7,7 @@ import {
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
+var expect = require('chai').expect;
 
 var prebid = require('src/prebid');
 var utils = require('src/utils');
@@ -31,6 +32,7 @@ function resetAuction() {
 
 var Slot = function Slot(elementId, pathId) {
   var slot = {
+    targeting : [],
     getSlotElementId: function getSlotElementId() {
       return elementId;
     },
@@ -40,10 +42,13 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     setTargeting: function setTargeting(key, value) {
+      var obj = [];
+      obj[key] = value; 
+      this.targeting.push(obj);
     },
 
-    getTargeting: function getTargeting(key) {
-      return [];
+    getTargeting: function getTargeting() {
+      return this.targeting;
     },
 
     getTargetingKeys: function getTargetingKeys() {
@@ -65,6 +70,17 @@ var createSlotArray = function createSlotArray() {
     new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2])
   ];
 };
+
+var createSlotArrayScenario2 = function createSlotArrayScenario2() {
+  var slot1 = new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]);
+  slot1.setTargeting('pos1','750x350');
+  var slot2 = new Slot(config.adUnitElementIDs[1], config.adUnitCodes[0]);
+  slot2.setTargeting('gender',['male','female']);
+  return [
+    slot1,
+    slot2
+  ];
+}
 
 window.googletag = {
   _slots: [],
@@ -240,12 +256,28 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
+    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function() {
+      var slots = createSlotArrayScenario2();
+      window.googletag.pubads().setSlots(slots);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      
+      var targeting = [];
+      slots[1].getTargeting().map(function(value) { 
+        var temp = [];
+        temp.push(Object.keys(value).toString());
+        temp.push(value[Object.keys(value)]);
+        targeting.push(temp);
+      });
+
+      assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+    });
+
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
-      assert.deepEqual(slots[0].spySetTargeting.args[0], ['hb_bidder', 'appnexus'], 'slot.setTargeting was called with expected key/values');
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus']]);
     });
 
     it('should set targeting from googletag data', function () {
@@ -255,7 +287,7 @@ describe('Unit: Prebid Module', function () {
 			$$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = getTargetingKeys();
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -267,7 +299,7 @@ describe('Unit: Prebid Module', function () {
 			$$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = getTargetingKeysBidLandscape();
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('should set targeting for bids with `alwaysUseBid=true`', function () {
@@ -318,7 +350,7 @@ describe('Unit: Prebid Module', function () {
         ]
       ];
 
-      assert.deepEqual(slots[0].spySetTargeting.args, expected);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
     it('should log error when googletag is not defined on page', function () {
