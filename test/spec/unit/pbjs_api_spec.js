@@ -32,6 +32,7 @@ function resetAuction() {
 
 var Slot = function Slot(elementId, pathId) {
   var slot = {
+    targeting : [],
     getSlotElementId: function getSlotElementId() {
       return elementId;
     },
@@ -41,10 +42,13 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     setTargeting: function setTargeting(key, value) {
+      var obj = [];
+      obj[key] = value; 
+      this.targeting.push(obj);
     },
 
-    getTargeting: function getTargeting(key) {
-      return [];
+    getTargeting: function getTargeting() {
+      return this.targeting;
     },
 
     getTargetingKeys: function getTargetingKeys() {
@@ -66,6 +70,17 @@ var createSlotArray = function createSlotArray() {
     new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2])
   ];
 };
+
+var createSlotArrayScenario2 = function createSlotArrayScenario2() {
+  var slot1 = new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]);
+  slot1.setTargeting('pos1','750x350');
+  var slot2 = new Slot(config.adUnitElementIDs[1], config.adUnitCodes[0]);
+  slot2.setTargeting('gender',['male','female']);
+  return [
+    slot1,
+    slot2
+  ];
+}
 
 window.googletag = {
   _slots: [],
@@ -241,8 +256,25 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
+    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function() {
+      var slots = createSlotArrayScenario2();
+      window.googletag.pubads().setSlots(slots);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      
+      var targeting = [];
+      slots[0].getTargeting().map(function(value) { 
+        var temp = [];
+        temp.push(Object.keys(value).toString());
+        temp.push(value[Object.keys(value)]);
+        targeting.push(temp);
+      });
+
+      assert.deepEqual(slots[0].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+    });
+
     it('should set targeting when passed an array of ad unit codes', function () {
       var slots = createSlotArray();
+      console.log(slots);
       window.googletag.pubads().setSlots(slots);
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
