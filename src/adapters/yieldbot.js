@@ -107,7 +107,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         ybotlib.handleUpdateState();
       });
 
-      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
+      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js', function() {}, true);
     },
     /**
      * Yieldbot bid request callback handler.
