@@ -262,7 +262,12 @@ function processCallbacks(callbackQueue) {
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
+       if(arguments.length>1){//etc.......
+        //simple workaround if `triggerAdUnitCallbacks` passes the ad-unit code, the callback should receive the complete adunit-code
+        //todo: refactor global/adunit-callbacks? or use apply? 
+        func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}), arguments[1]);
+      }else
+        func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
     }
   }
 }
