@@ -11,9 +11,9 @@ describe('jcm adapter tests', function () {
     var bidmanager = require('src/bidmanager');
 
     window.pbjs = window.pbjs || {};
-    var pbjs = window.pbjs; 
-
-
+    if (typeof(pbjs)==="undefined"){
+        var pbjs = window.pbjs;
+    }	
     var spyLoadScript;
 
         beforeEach(function () {
@@ -27,9 +27,15 @@ describe('jcm adapter tests', function () {
 
     describe('creation of bid url', function () {
 
-       pbjs._bidsReceived = [];
-       pbjs._bidsRequested = [];
-       pbjs._adsReceived = [];
+       if (typeof(pbjs._bidsReceived)==="undefined"){ 
+           pbjs._bidsReceived = [];
+       }
+       if (typeof(pbjs._bidsRequested)==="undefined"){
+           pbjs._bidsRequested = [];
+       }
+       if (typeof(pbjs._adsReceived)==="undefined"){
+           pbjs._adsReceived = [];
+       }
 
         it('should be called only once', function () {
 
@@ -100,9 +106,16 @@ describe('jcm adapter tests', function () {
 
  describe('placement by size', function () {
 
-    pbjs._bidsReceived = [];
-    pbjs._bidsRequested = [];
-    pbjs._adsReceived = [];
+
+    if (typeof(pbjs._bidsReceived)==="undefined"){
+           pbjs._bidsReceived = [];
+       }
+    if (typeof(pbjs._bidsRequested)==="undefined"){
+           pbjs._bidsRequested = [];
+       }
+    if (typeof(pbjs._adsReceived)==="undefined"){
+           pbjs._adsReceived = [];
+       }
 
 
     it('should be called with specific parameters for two bids', function () {
@@ -165,9 +178,17 @@ describe('jcm adapter tests', function () {
 
   describe('handling of the callback response', function () {
 
-      pbjs._bidsReceived = [];
-      pbjs._bidsRequested = [];
-      pbjs._adsReceived = [];
+
+    if (typeof(pbjs._bidsReceived)==="undefined"){
+           pbjs._bidsReceived = [];
+       }
+    if (typeof(pbjs._bidsRequested)==="undefined"){
+           pbjs._bidsRequested = [];
+       }
+    if (typeof(pbjs._adsReceived)==="undefined"){
+           pbjs._adsReceived = [];
+       }
+
 
       var params = {
                 bidderCode: 'jcm',
@@ -216,7 +237,12 @@ describe('jcm adapter tests', function () {
        unit.sizes=[[300,250],[728,90]];
        adUnits.push(unit);
 
-       pbjs._bidsRequested = [params];
+       if (typeof(pbjs._bidsRequested)==="undefined"){
+           pbjs._bidsRequested = [params];
+       }
+       else{
+           pbjs._bidsRequested.push(params);
+       } 
        pbjs.adUnits = adUnits;
        pbjs.processJCMResponse(response);
 
