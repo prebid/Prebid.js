@@ -25,6 +25,7 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var analyticsDirectory = '../analytics';
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
@@ -42,7 +43,8 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src(['src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -58,7 +60,8 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src(['src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
@@ -80,6 +83,37 @@ gulp.task('zip', ['jscs', 'clean', 'webpack'], function () {
 gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+
+  if (argv.browserstack) {
+    browserArgs = [
+      'bs_ie_13_windows_10',
+      'bs_ie_12_windows_10',
+      'bs_ie_11_windows_10',
+      'bs_firefox_46_windows_10',
+      'bs_chrome_51_windows_10',
+      'bs_ie_11_windows_8.1',
+      'bs_firefox_46_windows_8.1',
+      'bs_chrome_51_windows_8.1',
+      'bs_ie_10_windows_8',
+      'bs_firefox_46_windows_8',
+      'bs_chrome_51_windows_8',
+      'bs_ie_11_windows_7',
+      'bs_ie_10_windows_7',
+      'bs_ie_9_windows_7',
+      'bs_firefox_46_windows_7',
+      'bs_chrome_51_windows_7',
+      'bs_safari_9.1_mac_elcapitan',
+      'bs_firefox_46_mac_elcapitan',
+      'bs_chrome_51_mac_elcapitan',
+      'bs_safari_8_mac_yosemite',
+      'bs_firefox_46_mac_yosemite',
+      'bs_chrome_51_mac_yosemite',
+      'bs_safari_7.1_mac_mavericks',
+      'bs_safari_6.2_mac_mavericks',
+      'bs_firefox_46_mac_mavericks',
+      'bs_chrome_49_mac_mavericks'
+    ];
+  }
 
   return gulp.src('lookAtKarmaConfJS')
     .pipe(karma({
@@ -144,4 +178,3 @@ gulp.task('docs', ['clean-docs'], function () {
     })
     .pipe(gulp.dest('docs'));
 });
-

@@ -11,6 +11,7 @@ gpt-each-bidder3.html
 
 integrationExamples/gpt/gpt.html
 integrationExamples/implementations/
+src/adapters/analytics/libraries
 
 # Coverage reports
 build/coverage/

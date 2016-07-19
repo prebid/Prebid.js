@@ -31,21 +31,24 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   function buildTLCall(bid, callbackId) {
     //determine tag params
     var inventoryCode = utils.getBidIdParamater('inventoryCode', bid.params);
+    var floor = utils.getBidIdParamater('floor', bid.params);
+
 
     //build our base tag, based on if we are http or https
     var tlURI = '//tlx.3lift.com/header/auction?';
     var tlCall = document.location.protocol + tlURI;
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
+    tlCall = utils.tryAppendQueryString(tlCall, 'callback', '$$PREBID_GLOBAL$$.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', '0.5.0');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
+    tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
 
     //sizes takes a bit more logic
     var sizeQueryString = utils.parseSizesInput(bid.sizes);
     if (sizeQueryString) {
-      tlCall += sizeQueryString + '&';
+      tlCall += 'size=' + sizeQueryString + '&';
     }
 
     //append referrer
@@ -70,10 +73,10 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
 
   //expose the callback to the global object:
-  pbjs.TLCB = function(tlResponseObj) {
+  $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
       //var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
+      var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
       var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'
