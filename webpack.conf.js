@@ -29,6 +29,11 @@ module.exports = {
       {
         test: /adaptermanager.js/,
         include: /(src)/,
+        loader: 'analyticsLoader'
+      },
+      {
+        test: /adaptermanager.js/,
+        include: /(src)/,
         loader: 'adapterLoader'
       },
       {
@@ -44,7 +49,21 @@ module.exports = {
             }
           ]
         })
-      }
+      },
+        {
+          test: /\.js$/,
+          include: /(src|test|integrationExamples)/,
+          loader: StringReplacePlugin.replace({
+            replacements: [
+              {
+                pattern: /\$\$PREBID_GLOBAL\$\$/g,
+                replacement: function (match, p1, offset, string) {
+                    return prebid.globalVarName;
+                }
+              }
+            ]
+          })
+        }
     ]
   },
   plugins: [

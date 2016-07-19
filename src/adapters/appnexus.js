@@ -48,7 +48,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
+    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -59,7 +59,6 @@ AppNexusAdapter = function AppNexusAdapter() {
       utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
     }
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
     //sizes takes a bit more logic
@@ -143,7 +142,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.handleAnCB = function (jptResponseObj) {
+  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
 
     var bidCode;
 

@@ -55,6 +55,19 @@ function _getUniqueIdentifierStr() {
 //generate a random string (to be used as a dynamic JSONP callback)
 exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
 
+/**
+ * Returns a random v4 UUID of the form xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx,
+ * where each x is replaced with a random hexadecimal digit from 0 to f,
+ * and y is replaced with a random hexadecimal digit from 8 to b.
+ * https://gist.github.com/jed/982883 via node-uuid
+ */
+exports.generateUUID = function generateUUID(placeholder) {
+  return placeholder ?
+    (placeholder ^ Math.random() * 16 >> placeholder/4).toString(16)
+    :
+    ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
+};
+
 exports.getBidIdParamater = function (key, paramsObj) {
   if (paramsObj && paramsObj[key]) {
     return paramsObj[key];
@@ -209,12 +222,12 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if (pbjs.logging === false && _loggingChecked === false) {
-    pbjs.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
+    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
 
-  return !!pbjs.logging;
+  return !!$$PREBID_GLOBAL$$.logging;
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -465,7 +478,7 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id) {
-  return pbjs._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
 export function getKeys(obj) {
@@ -478,7 +491,7 @@ export function getValue(obj, key) {
 
 export function getBidderCodes() {
   // this could memoize adUnits
-  return pbjs.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+  return $$PREBID_GLOBAL$$.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
 

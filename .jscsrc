@@ -6,5 +6,6 @@
   "validateIndentation": 2,
   "disallowSpacesInFunctionDeclaration": {
     "beforeOpeningRoundBrace": true
-  }
+  },
+  "disallowNewlineBeforeBlockStatements": true
 }

@@ -28,6 +28,7 @@
   "objectType_string": "string",
   "objectType_number": "number",
   "EVENTS": {
+    "AUCTION_INIT": "auctionInit",
     "BID_ADJUSTMENT": "bidAdjustment",
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",

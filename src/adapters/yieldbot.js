@@ -107,7 +107,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         ybotlib.handleUpdateState();
       });
 
-      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
+      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js', function() {}, true);
     },
     /**
      * Yieldbot bid request callback handler.
@@ -124,7 +124,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         var placementCode;
         var adapterConfig;
 
-        adapterConfig = pbjs._bidsRequested
+        adapterConfig = $$PREBID_GLOBAL$$._bidsRequested
             .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot').bids
               .find(bid => bid.bidId === v) || {};
         slot = adapterConfig.params.slot || '';
