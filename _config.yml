@@ -80,6 +80,9 @@ nav_sections:
   - top_nav: dev_docs
     code: adaptors
     name: ADAPTORS
+  - top_nav: dev_docs
+    code: hacking
+    name: HACKING ON PREBID.JS
 
   - top_nav: overview
     code: intro
