@@ -314,7 +314,7 @@ function adjustBids(bid) {
   if (code && pbjs.bidderSettings && pbjs.bidderSettings[code]) {
     if (typeof pbjs.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+        bidPriceAdjusted = pbjs.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, bid);
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
