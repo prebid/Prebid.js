@@ -72,7 +72,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
       .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
 
     missing.forEach(function (bidRequest) {
