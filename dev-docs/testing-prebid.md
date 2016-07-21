@@ -80,8 +80,8 @@ A test module might have the following general structure:
 {% highlight js %}
 
 // Import or require modules necessary for the test, e.g.:
-import { assert } from 'chai';  // may prefer 'expect' in place of 'assert'
-import { adapter } from 'src/adapters/<adapter>';
+import { expect } from 'chai';  // may prefer 'assert' in place of 'expect'
+import adapter from 'src/adapters/<adapter>';
 
 describe('<Adapter>', () => {
 
