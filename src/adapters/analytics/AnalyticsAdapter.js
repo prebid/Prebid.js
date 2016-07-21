@@ -16,7 +16,7 @@ const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
+var _timedOutBidders = []
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
   var _queue = [];

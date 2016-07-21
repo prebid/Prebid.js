@@ -154,7 +154,8 @@ gulp.task('quality', ['hint', 'jscs']);
 gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
     .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'));
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
 });
 
 gulp.task('jscs', function () {
