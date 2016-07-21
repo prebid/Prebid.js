@@ -283,7 +283,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version: 0.10.0)
+(Version: 0.11.0)
 </p>
 
 <div class="form-group">
