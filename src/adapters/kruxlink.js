@@ -69,7 +69,7 @@ function _callBids(params) {
   ];
   var url = 'https://link.krxd.net/hb?' + qs.join('&');
 
-  adloader.loadScript(url);
+  adloader.loadScript(url, null, true);
 }
 
 module.exports = function KruxAdapter() {

@@ -3,6 +3,9 @@ let _requestCache = {};
 
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function (tagSrc, callback, cacheRequest) {
+  var noop = () => {};
+
+  callback = callback || noop;
   if (!tagSrc) {
     utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
     return;

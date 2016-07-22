@@ -34,7 +34,7 @@ function AdformAdapter() {
     $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
     request.push('callback=$$PREBID_GLOBAL$$.' + callbackName);
 
-    adloader.loadScript(request.join('&'));
+    adloader.loadScript(request.join('&'), null, true);
   }
 
   function formRequestUrl(reqData) {

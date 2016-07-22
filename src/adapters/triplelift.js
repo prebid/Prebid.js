@@ -20,7 +20,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = tlReq[i];
       var callbackId = bidRequest.bidderRequestId;
-      adloader.loadScript(buildTLCall(bidRequest, callbackId));
+      adloader.loadScript(buildTLCall(bidRequest, callbackId), null, true);
       //store a reference to the bidRequest from the callback id
       //bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }

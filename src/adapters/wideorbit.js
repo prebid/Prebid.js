@@ -123,7 +123,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
 
     utils.logMessage('Calling WO: ' + bidUrl);
 
-    adloader.loadScript(bidUrl);
+    adloader.loadScript(bidUrl, null, true);
   }
 
   function _processUserMatchings(userMatchings) {

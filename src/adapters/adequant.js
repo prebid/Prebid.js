@@ -36,7 +36,7 @@ module.exports = function() {
     if (cats)         { req_url.push('c='+cats.join('+')); }
     if (sizes)        { req_url.push('s='+sizes.join('+')); }
     
-    adloader.loadScript(req_url_base+req_url.join('&'), function() { process_bids(replies, placements); });
+    adloader.loadScript(req_url_base+req_url.join('&'), function() { process_bids(replies, placements); }, true);
   }
   
   function process_bids(replies, placements) {

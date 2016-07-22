@@ -177,7 +177,7 @@ var AolAdapter = function AolAdapter() {
     window.dacBidRequestConfigs = window.dacBidRequestConfigs || {};
     bids = params.bids;
     if (!bids || !bids.length) return;
-    adloader.loadScript(ADTECH_URI, _reqBids);
+    adloader.loadScript(ADTECH_URI, _reqBids, true);
   }
 
   return {
