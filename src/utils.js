@@ -235,7 +235,7 @@ exports.debugTurnedOn = debugTurnedOn;
 exports.logError = function (msg, code, exception) {
   var errCode = code || 'ERROR';
   if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn].call(console, errCode + ': ' + msg, exception || '');
+    console[errLogFn](console, errCode + ': ' + msg, exception || '');
   }
 };
 
