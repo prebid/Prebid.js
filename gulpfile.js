@@ -32,6 +32,8 @@ gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
+gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
+
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
