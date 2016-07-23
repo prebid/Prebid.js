@@ -36,6 +36,7 @@ var eventValidators = {
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
+$$PREBID_GLOBAL$$._allReceivedBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
@@ -405,6 +406,18 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
     try {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
+      if (!adObject) {
+        //in case the _bidsReceived collaction has been cleared, but the ad wasn't rendered yet
+        //this happens when requestBids has been called, for future requests, while there were still other ads in the pipeline
+        //debugger;        
+        /*for(var i in $$PREBID_GLOBAL$$.adUnits){
+          adObject = $$PREBID_GLOBAL$$.adUnits[i].bids.find(bid => !bid.rendered && bid.bidId === id);//weird moving from adId to bidId, property name change?? TODO: figure out..
+          if(adObject){
+            break;
+          }
+        }*/
+        adObject =  $$PREBID_GLOBAL$$._allReceivedBids.find(bid =>  !bid.rendered && bid.adId === id);
+      }
       if (adObject) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
@@ -414,6 +427,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var ad = adObject.ad;
 
         if (ad) {
+          adObject.rendered = true;
           doc.write(ad);
           doc.close();
           if (doc.defaultView && doc.defaultView.frameElement) {
@@ -425,6 +439,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         //doc.body.style.width = width;
         //doc.body.style.height = height;
         else if (url) {
+          adObject.rendered = true;
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
 
@@ -484,9 +499,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       ' still running. Resubmit this request.');
     return;
   } else {
-    auctionRunning = true;
+    auctionRunning = true;    
+    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0))
     $$PREBID_GLOBAL$$._bidsRequested = [];
-    $$PREBID_GLOBAL$$._bidsReceived = [];
+    //$$PREBID_GLOBAL$$._bidsReceived = [];
   }
 
   const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
