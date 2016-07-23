@@ -86,6 +86,10 @@ gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
+  if (process.env.TRAVIS) {
+    browserArgs = ['Chrome_travis_ci'];
+  }
+
   if (argv.browserstack) {
     browserArgs = [
       'bs_ie_13_windows_10',
