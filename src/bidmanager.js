@@ -333,6 +333,10 @@ function adjustBids(bid) {
   }
 }
 
+exports.adjustBids = function() {
+  return adjustBids(...arguments);
+};
+
 function getPriceBucketString(cpm) {
   var cpmFloat = 0;
   var returnObj = {
