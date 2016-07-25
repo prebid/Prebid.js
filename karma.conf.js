@@ -216,6 +216,10 @@ module.exports = function (config) {
         browser_version: '49.0',
         device: null,
         os: 'OS X'
+      },
+      Chrome_travis_ci: {
+        base: 'Chrome',
+        flags: ['--no-sandbox']
       }
     },
 
