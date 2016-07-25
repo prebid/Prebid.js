@@ -86,7 +86,6 @@ gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
-  // test update to trigger travis
   if (process.env.TRAVIS) {
     browserArgs = ['Chrome_travis_ci'];
   }
