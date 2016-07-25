@@ -32,6 +32,8 @@ gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
+gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
+
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
@@ -83,6 +85,10 @@ gulp.task('zip', ['jscs', 'clean', 'webpack'], function () {
 gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+
+  if (process.env.TRAVIS) {
+    browserArgs = ['Chrome_travis_ci'];
+  }
 
   if (argv.browserstack) {
     browserArgs = [
