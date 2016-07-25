@@ -46,7 +46,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
     }
 
     var scriptUrl = '//thor.rtk.io/' + ai + "/" + scURL + "/aardvark/?jsonp=window.$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=" + ref;
-    adloader.loadScript(scriptUrl, null, true);
+    adloader.loadScript(scriptUrl);
   }
 
   //expose the callback to the global object:

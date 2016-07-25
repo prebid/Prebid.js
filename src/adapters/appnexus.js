@@ -24,7 +24,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     for (var i = 0; i < anArr.length; i++) {
       var bidRequest = anArr[i];
       var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId), null, true);
+      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
 
       //store a reference to the bidRequest from the callback id
       //bidmanager.pbCallbackMap[callbackId] = bidRequest;

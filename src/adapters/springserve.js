@@ -58,7 +58,7 @@ SpringServeAdapter = function SpringServeAdapter() {
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
       //bidmanager.pbCallbackMap[bid.params.impId] = params;
-      adloader.loadScript(buildSpringServeCall(bid), null, true);
+      adloader.loadScript(buildSpringServeCall(bid));
     }
   }
 

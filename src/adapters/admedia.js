@@ -65,7 +65,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       //utils.logMessage('Admedia request built: ' + endpoint);
 
-      adloader.loadScript(endpoint, null, true);
+      adloader.loadScript(endpoint);
     }
   }
 

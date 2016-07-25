@@ -61,7 +61,7 @@ var JCMAdapter = function JCMAdapter() {
 
     var JSONStr = JSON.stringify(BidRequest);
     var reqURL = document.location.protocol+"//media.adfrontiers.com/pq?t=hb&bids=" + encodeURIComponent(JSONStr);
-    adloader.loadScript(reqURL, null, true);
+    adloader.loadScript(reqURL);
   }
 
   return {
