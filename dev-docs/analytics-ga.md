@@ -40,6 +40,7 @@ pbjs.que.push(function() {
 
 1. This code snippet has to be inserted after the 'ga' param is available.
 2. This code snippet has to be inserted after pbjs.que has been defined.
+3. You must include `"ga"` in the `"analytics"` array in `package.json`.
 
 ##### Distribution Data
 
