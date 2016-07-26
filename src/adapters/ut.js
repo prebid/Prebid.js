@@ -1,17 +1,17 @@
 import { ajax } from '../ajax';
-import { generateUUID } from '../utils';
+import { generateUUID, getSizes } from '../utils';
 
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
-const UtAdapter = function UtAdapter() {
-
-  function _callBids(params) {
-    let tags = [];
-
-    for (let bid of params.bids) {
+function UtAdapter() {
+  function callBids(params) {
+    const tags = params.bids.map(bid => {
       let tag = {};
 
-      tag.sizes = bid.sizes;
+      const sizes = getSizes(bid.sizes);
+      tag.sizes = sizes;
+      tag.primary_size = sizes[0];
+
       tag.uuid = generateUUID();
       tag.id = Number.parseInt(bid.params.placementId);
       tag.prebid = true;
@@ -19,25 +19,23 @@ const UtAdapter = function UtAdapter() {
       tag.disable_psa = true;
       tag.ad_types = [0];
 
-      tags.push(tag);
-    }
+      return tag;
+    });
 
-    const payload = JSON.stringify({
+    const request = {
       tags: [...tags],
       uuid: generateUUID(),
       member_id: "none"
-    });
+    };
 
+    const payload = JSON.stringify(request);
     ajax(ENDPOINT, handleResponse, payload);
   }
 
   function handleResponse(response, xhr) {
   }
 
-  return {
-    callBids: _callBids
-  };
-
-};
+  return {callBids};
+}
 
 module.exports = UtAdapter;
