@@ -580,6 +580,7 @@ describe('Unit: Prebid Module', function () {
       var spyEventsEmit = sinon.spy(events, 'emit');
       events.emit(CONSTANTS.EVENTS.AUCTION_END);
       assert.ok(spyEventsEmit.calledWith('auctionEnd'));
+      events.emit.restore();
     });
   });
 
