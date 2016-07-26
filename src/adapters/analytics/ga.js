@@ -71,7 +71,7 @@ exports.enableAnalytics = function ({ provider, options }) {
   });
 
   //bidResponses
-  events.on(BID_RESPONSE, function (adunit, bid) {
+  events.on(BID_RESPONSE, function (bid) {
     sendBidResponseToGa(bid);
     sendBidTimeouts(bid);
   });
