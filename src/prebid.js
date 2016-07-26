@@ -22,6 +22,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var pb_bidsTimedOut = false;
 var auctionRunning = false;
@@ -469,6 +470,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
+  events.emit(AUCTION_END);
 };
 
 /**
