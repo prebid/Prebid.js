@@ -33,14 +33,6 @@ module.exports = function (config) {
         device: null,
         os: 'Windows'
       },
-      bs_ie_12_windows_10: {
-        base: 'BrowserStack',
-        os_version: '10',
-        browser: 'ie',
-        browser_version: '12.0',
-        device: null,
-        os: 'Windows'
-      },
       bs_ie_11_windows_10: {
         base: 'BrowserStack',
         os_version: '10',
@@ -206,14 +198,6 @@ module.exports = function (config) {
         os_version: 'Mavericks',
         browser: 'safari',
         browser_version: '7.1',
-        device: null,
-        os: 'OS X'
-      },
-      'bs_safari_6.2_mac_mavericks': {
-        base: 'BrowserStack',
-        os_version: 'Mavericks',
-        browser: 'safari',
-        browser_version: '6.2',
         device: null,
         os: 'OS X'
       },

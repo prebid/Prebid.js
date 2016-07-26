@@ -13,6 +13,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
   var bids;
   var _pm_pub_id;
   var _pm_optimize_adslots = [];
+  let iframeId = '';
 
   function _callBids(params) {
     bids = params.bids;
@@ -29,12 +30,10 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
   function _getBids() {
 
-    // required variables for pubmatic pre-bid call
-    window.pm_pub_id = _pm_pub_id;
-    window.pm_optimize_adslots = _pm_optimize_adslots;
 
     //create the iframe
     var iframe = utils.createInvisibleIframe();
+    iframeId = iframe.id;
     var elToAppend = document.getElementsByTagName('head')[0];
 
     //insert the iframe into document
@@ -53,7 +52,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
     content += '<scr' + 'ipt>';
     content += '' +
       'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
-      'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];';
+      'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];' +
+      'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
     content += '</scr' + 'ipt>';
 
     var map = {};
@@ -64,8 +64,6 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
     content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
     content += '<scr' + 'ipt>';
-    content += 'window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback({progKeyValueMap: progKeyValueMap,' +
-      ' bidDetailsMap: bidDetailsMap})';
     content += '</scr' + 'ipt>';
     content += '</body></html>';
     content = utils.replaceTokenInString(content, map, '%%');
@@ -73,13 +71,23 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return content;
   }
 
-  $$PREBID_GLOBAL$$.handlePubmaticCallback = function (response) {
+  $$PREBID_GLOBAL$$.handlePubmaticCallback = function () {
+    let bidDetailsMap = {};
+    let progKeyValueMap = {};
+    try {
+      bidDetailsMap = window.frames[iframeId].contentWindow.bidDetailsMap;
+      progKeyValueMap = window.frames[iframeId].contentWindow.progKeyValueMap;
+    }
+    catch(e) {
+      utils.logError(e, 'Error parsing Pubmatic response');
+    }
+
     var i;
     var adUnit;
     var adUnitInfo;
     var bid;
-    var bidResponseMap = (response && response.bidDetailsMap) || {};
-    var bidInfoMap = (response && response.progKeyValueMap) || {};
+    var bidResponseMap = bidDetailsMap;
+    var bidInfoMap = progKeyValueMap;
     var dimensions;
 
     for (i = 0; i < bids.length; i++) {
@@ -93,7 +101,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
       // if using DFP GPT, the params string comes in the format:
       // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
       // the code below detects and handles this.
-      if (bidInfoMap[bid.adSlot].indexOf('=') === -1) {
+      if (bidInfoMap[bid.adSlot] && bidInfoMap[bid.adSlot].indexOf('=') === -1) {
         bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
       }
 

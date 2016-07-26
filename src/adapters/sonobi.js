@@ -33,13 +33,14 @@ var SonobiAdapter = function SonobiAdapter(){
         case (!!o.params.placement_id && o.params.placement_id.length === 0):
           utils.logError('Sonobi unable to bid: Empty placement_id for ' + o.placementCode);
           break;
-        case (!!o.params.placement_id):     //  Morpeus style 
+        case (!!o.params.placement_id):     //  Morpeus style
           keyring[o.params.dom_id] = o.params.placement_id + (test ? '-test' : '')  + '|' + sizes;
           cb_map[o.params.dom_id] = o.placementCode;
           break;
         case (!!o.params.ad_unit && o.params.ad_unit.charAt(0) !== '/'):
           //  DFP docs do not necessarily require leading slash? - add it in if it's not there.
           o.params.ad_unit = '/' + o.params.ad_unit;
+          /* falls through */
         case (!!o.params.ad_unit):          // Cypher style
           keyring[o.params.ad_unit + '|' + o.params.dom_id] = sizes;
           cb_map[o.params.ad_unit + '|' + o.params.dom_id] = o.placementCode;

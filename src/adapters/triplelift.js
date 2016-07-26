@@ -31,6 +31,8 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   function buildTLCall(bid, callbackId) {
     //determine tag params
     var inventoryCode = utils.getBidIdParamater('inventoryCode', bid.params);
+    var floor = utils.getBidIdParamater('floor', bid.params);
+
 
     //build our base tag, based on if we are http or https
     var tlURI = '//tlx.3lift.com/header/auction?';
@@ -38,14 +40,15 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     tlCall = utils.tryAppendQueryString(tlCall, 'callback', '$$PREBID_GLOBAL$$.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', '0.5.0');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
+    tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
 
     //sizes takes a bit more logic
     var sizeQueryString = utils.parseSizesInput(bid.sizes);
     if (sizeQueryString) {
-      tlCall += sizeQueryString + '&';
+      tlCall += 'size=' + sizeQueryString + '&';
     }
 
     //append referrer
