@@ -361,7 +361,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     }
 
     //bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
-    adloader.loadScript(cygnus_index_start(), null, true);
+    adloader.loadScript(cygnus_index_start());
 
     var responded = false;
 

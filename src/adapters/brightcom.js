@@ -116,7 +116,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
         '&request=' + encodeURIComponent(JSON.stringify(brightcomBidReq));
 
     // Add the call to get the bid
-    adloader.loadScript(bidRequestCallUrl, null, true);
+    adloader.loadScript(bidRequestCallUrl);
   }
 
   //expose the callback to the global object:
