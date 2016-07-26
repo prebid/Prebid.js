@@ -1,9 +1,9 @@
 import {
-    getAdServerTargeting,
-    getBidRequests,
-    getBidResponses,
-    getTargetingKeys,
-    getTargetingKeysBidLandscape,
+  getAdServerTargeting,
+  getBidRequests,
+  getBidResponses,
+  getTargetingKeys,
+  getTargetingKeysBidLandscape,
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -256,13 +256,13 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
-    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function() {
+    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       var targeting = [];
-      slots[1].getTargeting().map(function(value) {
+      slots[1].getTargeting().map(function (value) {
         var temp = [];
         temp.push(Object.keys(value).toString());
         temp.push(value[Object.keys(value)]);
@@ -471,7 +471,8 @@ describe('Unit: Prebid Module', function () {
     it('should add bidsBackHandler callback to bidmanager', () => {
       var spyAddOneTimeCallBack = sinon.spy(bidmanager, 'addOneTimeCallback');
       var requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {}
+        bidsBackHandler: function bidsBackHandlerCallback() {
+        }
       };
       $$PREBID_GLOBAL$$.requestBids(requestObj);
       assert.ok(spyAddOneTimeCallBack.calledWith(requestObj.bidsBackHandler),
@@ -497,7 +498,8 @@ describe('Unit: Prebid Module', function () {
       var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
       var clock = sinon.useFakeTimers();
       var requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
+        bidsBackHandler: function bidsBackHandlerCallback() {
+        },
 
         timeout: 2000
       };
@@ -539,7 +541,25 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should queue bid requests when a previous bid request is in process', () => {
+      var spyCallBids = sinon.spy(adaptermanager, 'callBids');
+      var clock = sinon.useFakeTimers();
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {
+        },
 
+        timeout: 2000
+      };
+
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+      clock.tick(requestObj.timeout - 1);
+      assert.ok(spyCallBids.calledOnce, 'When two requests or bids are made only one should' +
+        ' callBids immediately');
+      clock.tick(1);
+      assert.ok(spyCallBids.calledTwice, 'The second queued request should callBids when the' +
+        ' first request has completed');
+      resetAuction();
+      adaptermanager.callBids.restore();
     });
   });
 
