@@ -70,3 +70,6 @@ crashlytics-build.properties
 
 # TypeScript typings
 typings/
+
+# MacOS system files
+.DS_Store
