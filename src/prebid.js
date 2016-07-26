@@ -22,6 +22,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var pb_bidsTimedOut = false;
 var auctionRunning = false;
@@ -107,10 +108,10 @@ function checkDefinedPlacement(id) {
 function resetPresetTargeting() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      slot.clearTargeting();
+      pbTargetingKeys.forEach(function(key){
+        slot.setTargeting(key,null);
+      });
     });
-
-    setTargeting(presetTargeting);
   }
 }
 
@@ -245,7 +246,9 @@ function getAllTargeting() {
   targeting.map(adUnitCode => {
     Object.keys(adUnitCode).map(key => {
       adUnitCode[key].map(targetKey => {
-        pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
+        if(pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
+          pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
+        }
       });
     });
   });
@@ -372,7 +375,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-
+  
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();
@@ -467,6 +470,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
+  events.emit(AUCTION_END);
 };
 
 /**
@@ -505,6 +509,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+    bidmanager.executeCallback();
     return;
   }
 

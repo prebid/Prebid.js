@@ -142,6 +142,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
+      /*jshint -W083 */
       var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
         .find(bid => bid.bidId === id);
       if (!bidObj) {

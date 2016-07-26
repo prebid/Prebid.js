@@ -19,12 +19,12 @@ var AardvarkAdapter = function AardvarkAdapter() {
   }
 
   function _requestBids(bidReqs) {
-
+    let ref;
     try {
-      var ref = window.top.location.host;
+      ref = window.top.location.host;
     }
     catch (err) {
-      var ref = "thor.rtk.io";
+      ref = "thor.rtk.io";
 
     }
     var ai = "";

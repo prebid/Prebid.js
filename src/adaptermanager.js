@@ -26,7 +26,13 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
 }
 
 exports.callBids = ({ adUnits, cbTimeout }) => {
-  const requestId = utils.getUniqueIdentifierStr();
+  const requestId = utils.generateUUID();
+
+  const auctionInit = {
+    timestamp: Date.now(),
+    requestId,
+  };
+  events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   getBidderCodes(adUnits).forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];

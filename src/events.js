@@ -31,7 +31,7 @@ module.exports = (function () {
   function _dispatch(eventString, args) {
     utils.logMessage('Emitting event for: ' + eventString);
 
-    var eventPayload = args[0];
+    var eventPayload = args[0] || {};
     var idPath = idPaths[eventString];
     var key = eventPayload[idPath];
     var event = _handlers[eventString] || { que: [] };
