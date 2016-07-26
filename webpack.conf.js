@@ -39,6 +39,7 @@ module.exports = {
       {
         test: /adapters/,
         include: /(src)/,
+        exclude: /(adapter.js|baseAdapter.js)/,
         loader: 'delimiterLoader'
       },
       {
