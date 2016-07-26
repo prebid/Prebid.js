@@ -48,7 +48,7 @@ function insertAdapters() {
     return '';
   }
 
-  return inserts.map(name => {
+  return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
     if (name === 'appnexusAst') {
       return `import { AppnexusAst } from './adapters/appnexusAst';
         exports.registerBidAdapter(new AppnexusAst('appnexus'), 'appnexus');\n`;
@@ -61,7 +61,7 @@ function insertAdapters() {
       const name = Object.keys(adapter)[0];
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
-    .join('');
+    .join('/*!ADAPTER REGISTER DELIMITER*/');
 }
 
 /**
