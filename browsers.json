@@ -1,0 +1,10 @@
+{
+  "bs_ie_11_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "ie",
+    "browser_version": "11.0",
+    "device": null,
+    "os": "Windows"
+  }
+}

@@ -19,6 +19,7 @@ var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
+var nightwatch = require('gulp-nightwatch');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -86,32 +87,7 @@ gulp.task('test', function () {
 
   if (argv.browserstack) {
     browserArgs = [
-      'bs_ie_13_windows_10',
-      'bs_ie_12_windows_10',
       'bs_ie_11_windows_10',
-      'bs_firefox_46_windows_10',
-      'bs_chrome_51_windows_10',
-      'bs_ie_11_windows_8.1',
-      'bs_firefox_46_windows_8.1',
-      'bs_chrome_51_windows_8.1',
-      'bs_ie_10_windows_8',
-      'bs_firefox_46_windows_8',
-      'bs_chrome_51_windows_8',
-      'bs_ie_11_windows_7',
-      'bs_ie_10_windows_7',
-      'bs_ie_9_windows_7',
-      'bs_firefox_46_windows_7',
-      'bs_chrome_51_windows_7',
-      'bs_safari_9.1_mac_elcapitan',
-      'bs_firefox_46_mac_elcapitan',
-      'bs_chrome_51_mac_elcapitan',
-      'bs_safari_8_mac_yosemite',
-      'bs_firefox_46_mac_yosemite',
-      'bs_chrome_51_mac_yosemite',
-      'bs_safari_7.1_mac_mavericks',
-      'bs_safari_6.2_mac_mavericks',
-      'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks'
     ];
   }
 
@@ -177,4 +153,24 @@ gulp.task('docs', ['clean-docs'], function () {
       gutil.log('jsdoc2md failed:', err.message);
     })
     .pipe(gulp.dest('docs'));
+});
+
+gulp.task('nightwatch', function(){
+  var browsers = require('./browsers.json');
+  var env = [];
+  for(var key in browsers) {
+    env.push(key);
+  }
+  
+  if(env.length == 0) {
+    env = '--env default';
+  } else {
+    env = '--env ' + env.join(',');  
+  }
+
+  return gulp.src('')
+    .pipe(nightwatch({
+      configFile: './nightwatch.conf.js',
+      cliArgs: [ env ]
+    }));
 });
