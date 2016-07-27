@@ -320,7 +320,7 @@ function adjustBids(bid) {
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
     if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, utils.extend({}, bid));
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
@@ -332,6 +332,10 @@ function adjustBids(bid) {
     bid.cpm = bidPriceAdjusted;
   }
 }
+
+exports.adjustBids = function() {
+  return adjustBids(...arguments);
+};
 
 function getPriceBucketString(cpm) {
   var cpmFloat = 0;
