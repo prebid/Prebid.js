@@ -221,7 +221,7 @@ function template(strings, ...keys) {
 }
 
 function generateAuctionId(placementId) {
-  return new Date().getTime().toString().substr(-7)
-      + placementId
-      + Math.floor(Math.random()*89999+10000);
+  return new Date().getTime().toString().substr(-7) +
+    placementId +
+    Math.floor(Math.random() * 100000);
 }
