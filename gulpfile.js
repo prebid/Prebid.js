@@ -93,7 +93,6 @@ gulp.task('test', function () {
   if (argv.browserstack) {
     browserArgs = [
       'bs_ie_13_windows_10',
-      'bs_ie_12_windows_10',
       'bs_ie_11_windows_10',
       'bs_firefox_46_windows_10',
       'bs_chrome_51_windows_10',
@@ -115,7 +114,6 @@ gulp.task('test', function () {
       'bs_firefox_46_mac_yosemite',
       'bs_chrome_51_mac_yosemite',
       'bs_safari_7.1_mac_mavericks',
-      'bs_safari_6.2_mac_mavericks',
       'bs_firefox_46_mac_mavericks',
       'bs_chrome_49_mac_mavericks'
     ];

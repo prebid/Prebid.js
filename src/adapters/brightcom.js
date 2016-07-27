@@ -8,7 +8,7 @@ var adloader = require('../adloader');
  * Adapter for requesting bids from Brightcom
  */
 var BrightcomAdapter = function BrightcomAdapter() {
-    
+
   // Set Brightcom Bidder URL
   var brightcomUrl = 'hb.iselephant.com/auc/ortb';
 
@@ -116,15 +116,14 @@ var BrightcomAdapter = function BrightcomAdapter() {
         '&request=' + encodeURIComponent(JSON.stringify(brightcomBidReq));
 
     // Add the call to get the bid
-    adloader.loadScript(bidRequestCallUrl, null);
-    
+    adloader.loadScript(bidRequestCallUrl);
   }
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.brightcomResponse = function(brightcomResponseObj) {
-        
+
     var bid = {};
-        
+
     // Make sure response is valid
     if (
         (brightcomResponseObj) && (brightcomResponseObj.id) &&
@@ -140,13 +139,13 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
         // Make sure the bid exists
         if (bidRequest) {
-                    
+
           var placementCode = bidRequest.placementCode;
           bidRequest.status = CONSTANTS.STATUS.GOOD;
 
           curBid.placementCode = placementCode;
           curBid.size = bidRequest.sizes;
-                    
+
           // Get the creative
           var responseCreative = curBid.adm;
           // Build the NURL element
@@ -189,7 +188,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
         }
       });
-            
+
     }
 
     // Define all unreceived ad unit codes as invalid (if Brightcom don't want to bid on an impression, it won't include it in the response)

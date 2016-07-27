@@ -116,7 +116,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
 
         // Make request
         POX.load();
-      });
+      }, true);
     }
   }
 
