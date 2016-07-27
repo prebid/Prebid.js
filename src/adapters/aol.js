@@ -1661,8 +1661,7 @@ var AolAdapter = function AolAdapter() {
                 if (
                     (range.from == -1 && (num <= range.to || range.to == -1)) ||
                     (range.to == -1 && num >= range.from) ||
-                    (num >= range.from && num <= range.to))
-                {
+                    (num >= range.from && num <= range.to)) {
                   cRange = range;
                   break;
                 }
