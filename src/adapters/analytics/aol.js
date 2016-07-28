@@ -29,184 +29,179 @@ let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauc
 let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
 
-export default utils.extend(adapter(
-    {
-      url: '',
-      analyticsType
-    }
-    ),
-    {
+export default utils.extend(adapter({
+    url: '',
+    analyticsType
+  }), {
 
-      enableAnalytics() {
-        var _this = this;
+    enableAnalytics() {
+      var _this = this;
 
-        //first send all events fired before enableAnalytics called
-        events.getEvents().forEach(event => {
-          if (!event) {
-            return;
-          }
+      //first send all events fired before enableAnalytics called
+      events.getEvents().forEach(event => {
+        if (!event) {
+          return;
+        }
 
-          const { eventType, args } = event;
+        const { eventType, args } = event;
 
-          if (eventType === BID_TIMEOUT) {
-            _timedOutBidders = args.bidderCode;
-          } else {
-            _enqueue.call(_this, { eventType, args });
-          }
-        });
+        if (eventType === BID_TIMEOUT) {
+          _timedOutBidders = args.bidderCode;
+        } else {
+          _enqueue.call(_this, { eventType, args });
+        }
+      });
 
-        events.on(AUCTION_COMPLETED, args => this.enqueue({ eventType: AUCTION_COMPLETED, args }));
-        events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
+      events.on(AUCTION_COMPLETED, args => this.enqueue({ eventType: AUCTION_COMPLETED, args }));
+      events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
 
-        this.enableAnalytics = function _enable() {
-          return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
-        };
-      },
+      this.enableAnalytics = function _enable() {
+        return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
+      };
+    },
 
-      // Override AnalyticsAdapter functions by supplying custom methods
-      track({ eventType, args }) {
-        switch (eventType) {
-          case AUCTION_COMPLETED:
+    //override AnalyticsAdapter functions by supplying custom methods
+    track({ eventType, args }) {
+      switch (eventType) {
+        case AUCTION_COMPLETED:
+          let bidsReceived = args.bidResponses;
+          let adUnitsConf = args.adUnits;
 
-            let bidsReceived = args.bidResponses;
-            let adUnitsConf = args.adUnits;
-
-            for (let bid of bidsReceived) {
-              let adUnit = adUnits[bid.adUnitCode];
-              if (!adUnit) {
-                adUnit = {
-                  bids: [],
-                  winner: {
-                    cpm: 0
-                  },
-                };
-                for (let adUnitConf of adUnitsConf) {
-                  if (adUnitConf.code === bid.adUnitCode) {
-                    for (let adUnitBid of adUnitConf.bids) {
-                      if (AOL_BIDDER_CODE === adUnitBid.bidder) {
-                        adUnit.aolParams = adUnitBid.params;
-                      }
+          for (let bid of bidsReceived) {
+            let adUnit = adUnits[bid.adUnitCode];
+            if (!adUnit) {
+              adUnit = {
+                bids: [],
+                winner: {
+                  cpm: 0
+                },
+              };
+              for (let adUnitConf of adUnitsConf) {
+                if (adUnitConf.code === bid.adUnitCode) {
+                  for (let adUnitBid of adUnitConf.bids) {
+                    if (AOL_BIDDER_CODE === adUnitBid.bidder) {
+                      adUnit.aolParams = adUnitBid.params;
                     }
                   }
                 }
-                adUnits[bid.adUnitCode] = adUnit;
               }
-              adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
-              adUnit.bids.push(Object.assign(bid));
+              adUnits[bid.adUnitCode] = adUnit;
             }
+            adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
+            adUnit.bids.push(Object.assign(bid));
+          }
 
-            for (let code in adUnits) {
-              if (adUnits.hasOwnProperty(code)) {
-                let adUnit = adUnits[code];
-                if (adUnit.aolParams && adUnit.winner.cpm) {
-                  let url = this.buildEndpoint(EVENTS.AUCTION, adUnit);
-                  this.reportEvent(url);
-                }
-              }
-            }
-
-            break;
-
-          case BID_WON:
-
-            let bidWon = args;
-
-            for (let code in adUnits) {
-              if (adUnits.hasOwnProperty(code)) {
-                if (bidWon.adUnitCode === code) {
-                  let url = this.buildEndpoint(EVENTS.WIN, adUnits[code]);
-                  this.reportEvent(url);
-                }
+          for (let code in adUnits) {
+            if (adUnits.hasOwnProperty(code)) {
+              let adUnit = adUnits[code];
+              if (adUnit.aolParams && adUnit.winner.cpm) {
+                let url = this.buildEndpoint(EVENTS.AUCTION, adUnit);
+                this.reportEvent(url);
               }
             }
+          }
 
-            break;
-        }
+          break;
 
-      },
+        case BID_WON:
+          let bidWon = args;
 
-      reportEvent(url) {
-        ajax(url);
-      },
-
-      getBaseSchema(eventId, adUnit) {
-        let aolParams = adUnit.aolParams;
-        return {
-          protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-          host: aolParams.server || 'adserver.adtechus.com',
-          port: aolParams.port || '',
-          tagversion: '3.0',
-          network: aolParams.network || '',
-          subnetwork: aolParams.subnetwork || '',
-          placement: aolParams.placement ,
-          site: aolParams.site || '',
-          eventid: eventId,
-          hbeventts: Date.now()
-        };
-      },
-
-      getAuctionSchema(adUnit) {
-        let aolParams = adUnit.aolParams;
-        return {
-          pubadid: '', // Is this the ad unit code?
-          hbauctionid: generateAuctionId(aolParams.placement),
-          hbwinner: adUnit.winner.bidderCode || '',
-          hbprice: adUnit.winner.cpm || '',
-          hbcur: '',
-          pubapi: ''
-        }
-      },
-
-      getWinSchema(adUnit) {
-        let auctionParams = adUnit.auctionParams;
-        return {
-          hbauctioneventts: auctionParams.hbauctioneventts,
-          pubadid: '', // Is this the ad unit code?
-          hbauctionid: auctionParams.hbauctionid,
-          hbwinner: adUnit.winner.bidderCode || '',
-          pubcpm: adUnit.winner.cpm
-        }
-      },
-
-      getBidderSchema(bid) {
-        return {
-          hbbidder: bid.bidderCode || '',
-          hbbid: bid.cpm || '',
-          hbstatus: (bid.getStatusCode) ? bid.getStatusCode() : '',
-          hbtime: bid.timeToRespond || ''
-        };
-      },
-
-      buildEndpoint(event, adUnit) {
-        let baseSchema, url;
-
-        switch (event) {
-
-          case EVENTS.AUCTION:
-
-            baseSchema = this.getBaseSchema(EVENTS.AUCTION, adUnit);
-            let auctionSchema = this.getAuctionSchema(adUnit);
-            adUnit.auctionParams = {
-              hbauctioneventts: baseSchema.hbeventts,
-              hbauctionid: auctionSchema.hbauctionid
-            };
-            url = baseSchemaTemplate(baseSchema) + auctionSchemaTemplate(auctionSchema);
-            for (let bid of adUnit.bids) {
-              url = url + bidderSchemaTemplate(this.getBidderSchema(bid));
+          for (let code in adUnits) {
+            if (adUnits.hasOwnProperty(code)) {
+              if (bidWon.adUnitCode === code) {
+                let url = this.buildEndpoint(EVENTS.WIN, adUnits[code]);
+                this.reportEvent(url);
+              }
             }
-            return url;
+          }
 
-          case EVENTS.WIN:
-
-            baseSchema = this.getBaseSchema(EVENTS.WIN, adUnit);
-            let winSchema = this.getWinSchema(adUnit);
-            url = baseSchemaTemplate(baseSchema) + winSchemaTemplate(winSchema);
-            return url;
-
-        }
+          break;
       }
 
-    });
+    },
+
+    reportEvent(url) {
+      ajax(url);
+    },
+
+    getBaseSchema(eventId, adUnit) {
+      let aolParams = adUnit.aolParams;
+      return {
+        protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+        host: aolParams.server || 'adserver.adtechus.com',
+        port: aolParams.port || '',
+        tagversion: '3.0',
+        network: aolParams.network || '',
+        subnetwork: aolParams.subnetwork || '',
+        placement: aolParams.placement ,
+        site: aolParams.site || '',
+        eventid: eventId,
+        hbeventts: Date.now()
+      };
+    },
+
+    getAuctionSchema(adUnit) {
+      let aolParams = adUnit.aolParams;
+      return {
+        pubadid: '', // Is this the ad unit code?
+        hbauctionid: generateAuctionId(aolParams.placement),
+        hbwinner: adUnit.winner.bidderCode || '',
+        hbprice: adUnit.winner.cpm || '',
+        hbcur: '',
+        pubapi: ''
+      }
+    },
+
+    getWinSchema(adUnit) {
+      let auctionParams = adUnit.auctionParams;
+      return {
+        hbauctioneventts: auctionParams.hbauctioneventts,
+        pubadid: '', // Is this the ad unit code?
+        hbauctionid: auctionParams.hbauctionid,
+        hbwinner: adUnit.winner.bidderCode || '',
+        pubcpm: adUnit.winner.cpm
+      }
+    },
+
+    getBidderSchema(bid) {
+      return {
+        hbbidder: bid.bidderCode || '',
+        hbbid: bid.cpm || '',
+        hbstatus: (bid.getStatusCode) ? bid.getStatusCode() : '',
+        hbtime: bid.timeToRespond || ''
+      };
+    },
+
+    buildEndpoint(event, adUnit) {
+      let baseSchema, url;
+
+      switch (event) {
+
+        case EVENTS.AUCTION:
+
+          baseSchema = this.getBaseSchema(EVENTS.AUCTION, adUnit);
+          let auctionSchema = this.getAuctionSchema(adUnit);
+          adUnit.auctionParams = {
+            hbauctioneventts: baseSchema.hbeventts,
+            hbauctionid: auctionSchema.hbauctionid
+          };
+          url = baseSchemaTemplate(baseSchema) + auctionSchemaTemplate(auctionSchema);
+          for (let bid of adUnit.bids) {
+            url = url + bidderSchemaTemplate(this.getBidderSchema(bid));
+          }
+          return url;
+
+        case EVENTS.WIN:
+
+          baseSchema = this.getBaseSchema(EVENTS.WIN, adUnit);
+          let winSchema = this.getWinSchema(adUnit);
+          url = baseSchemaTemplate(baseSchema) + winSchemaTemplate(winSchema);
+          return url;
+
+      }
+    }
+
+  });
 
 function template(strings, ...keys) {
   return (function(...values) {
