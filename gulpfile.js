@@ -64,7 +64,9 @@ gulp.task('webpack', function () {
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
+    .pipe(uglify({
+      preserveComments: 'some'
+    }))
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
