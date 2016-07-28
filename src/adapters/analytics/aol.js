@@ -35,8 +35,6 @@ export default utils.extend(adapter({
   }), {
 
     enableAnalytics() {
-      var _this = this;
-
       //first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
         if (!event) {
@@ -48,7 +46,7 @@ export default utils.extend(adapter({
         if (eventType === BID_TIMEOUT) {
           _timedOutBidders = args.bidderCode;
         } else {
-          _enqueue.call(_this, { eventType, args });
+          _enqueue.call(this, { eventType, args });
         }
       });
 
