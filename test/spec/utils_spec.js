@@ -520,4 +520,15 @@ describe('Utils', function () {
     });
   });
 
+  describe('polyfill test', function () {
+    it('should not add polyfill to array', function() {
+      var arr = ['hello','world'];
+      var count = 0;
+      for(var key in arr) {
+        count++;
+      }
+      assert.equal(arr.length, count, "Polyfill test fails")
+    });
+  });
+
 });

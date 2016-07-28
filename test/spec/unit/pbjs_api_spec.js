@@ -508,6 +508,21 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
+    it('should execute callback immediately if adUnits is empty', () => {
+      var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
+      const adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
+
+      $$PREBID_GLOBAL$$.adUnits = [];
+      $$PREBID_GLOBAL$$.requestBids({});
+
+      assert.ok(spyExecuteCallback.calledOnce, 'callback executed immediately when adUnits is' +
+        ' empty');
+
+      bidmanager.executeCallback.restore();
+      $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
+      resetAuction();
+    });
+
     it('should call callBids function on adaptermanager', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
       $$PREBID_GLOBAL$$.requestBids({});
@@ -557,6 +572,15 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.offEvent('bidWon', Function);
       assert.ok(spyEventsOff.calledWith('bidWon', Function));
       events.off.restore();
+    });
+  });
+
+  describe('emit', () => {
+    it('should be able to emit event without arguments', () => {
+      var spyEventsEmit = sinon.spy(events, 'emit');
+      events.emit(CONSTANTS.EVENTS.AUCTION_END);
+      assert.ok(spyEventsEmit.calledWith('auctionEnd'));
+      events.emit.restore();
     });
   });
 

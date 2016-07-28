@@ -33,6 +33,8 @@ gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
+gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
+
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
@@ -85,9 +87,36 @@ gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
+  if (process.env.TRAVIS) {
+    browserArgs = ['Chrome_travis_ci'];
+  }
+
   if (argv.browserstack) {
     browserArgs = [
+      'bs_ie_13_windows_10',
       'bs_ie_11_windows_10',
+      'bs_firefox_46_windows_10',
+      'bs_chrome_51_windows_10',
+      'bs_ie_11_windows_8.1',
+      'bs_firefox_46_windows_8.1',
+      'bs_chrome_51_windows_8.1',
+      'bs_ie_10_windows_8',
+      'bs_firefox_46_windows_8',
+      'bs_chrome_51_windows_8',
+      'bs_ie_11_windows_7',
+      'bs_ie_10_windows_7',
+      'bs_ie_9_windows_7',
+      'bs_firefox_46_windows_7',
+      'bs_chrome_51_windows_7',
+      'bs_safari_9.1_mac_elcapitan',
+      'bs_firefox_46_mac_elcapitan',
+      'bs_chrome_51_mac_elcapitan',
+      'bs_safari_8_mac_yosemite',
+      'bs_firefox_46_mac_yosemite',
+      'bs_chrome_51_mac_yosemite',
+      'bs_safari_7.1_mac_mavericks',
+      'bs_firefox_46_mac_mavericks',
+      'bs_chrome_49_mac_mavericks'
     ];
   }
 
@@ -130,7 +159,8 @@ gulp.task('quality', ['hint', 'jscs']);
 gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
     .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'));
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
 });
 
 gulp.task('jscs', function () {
