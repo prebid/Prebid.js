@@ -3,6 +3,9 @@ let _requestCache = {};
 
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function (tagSrc, callback, cacheRequest) {
+  //var noop = () => {};
+  //
+  //callback = callback || noop;
   if (!tagSrc) {
     utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
     return;
@@ -10,20 +13,25 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
 
   if (cacheRequest) {
     if (_requestCache[tagSrc]) {
-      if (_requestCache[tagSrc].loaded) {
-        //invokeCallbacks immediately
-        callback();
-      } else {
-        //queue the callback
-        _requestCache[tagSrc].callbacks.push(callback);
+      if (callback && typeof callback === 'function') {
+        if (_requestCache[tagSrc].loaded) {
+          //invokeCallbacks immediately
+          callback();
+        } else {
+          //queue the callback
+          _requestCache[tagSrc].callbacks.push(callback);
+        }
       }
     } else {
       _requestCache[tagSrc] = {
-        loaded:false,
-        callbacks:[]
+        loaded: false,
+        callbacks: []
       };
-      _requestCache[tagSrc].callbacks.push(callback);
-      requestResource(tagSrc, function() {
+      if (callback && typeof callback === 'function') {
+        _requestCache[tagSrc].callbacks.push(callback);
+      }
+
+      requestResource(tagSrc, function () {
         _requestCache[tagSrc].loaded = true;
         try {
           for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {

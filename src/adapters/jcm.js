@@ -23,21 +23,21 @@ var JCMAdapter = function JCMAdapter() {
             bidObject.width = bid.width;
             bidObject.height = bid.height;
             bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
-          } 
+          }
           else {
             bidObject = bidfactory.createBid(2);
             bidObject.bidderCode = 'jcm';
             bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
-          } 
+          }
         }
       }
     }
   };
 
   function _callBids(params) {
-        
+
     var BidRequest = {
-      bids: []	
+      bids: []
     };
 
     for (var i = 0; i < params.bids.length; i++) {
@@ -52,7 +52,7 @@ var JCMAdapter = function JCMAdapter() {
       }
 
 
-      BidRequest.bids.push({ 
+      BidRequest.bids.push({
         "callbackId"   : bid.bidId,
         "siteId"       : bid.params.siteId,
         "adSizes"	   : adSizes

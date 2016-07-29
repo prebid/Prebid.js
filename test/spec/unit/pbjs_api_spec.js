@@ -575,6 +575,15 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('emit', () => {
+    it('should be able to emit event without arguments', () => {
+      var spyEventsEmit = sinon.spy(events, 'emit');
+      events.emit(CONSTANTS.EVENTS.AUCTION_END);
+      assert.ok(spyEventsEmit.calledWith('auctionEnd'));
+      events.emit.restore();
+    });
+  });
+
   describe('addCallback', () => {
     it('should log error and return null id when error registering callback', () => {
       var spyLogError = sinon.spy(utils, 'logError');

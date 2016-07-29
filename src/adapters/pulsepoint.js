@@ -9,7 +9,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
 
   function _callBids(params) {
     if (typeof window.pp === 'undefined') {
-      adloader.loadScript(getJsStaticUrl, function () { bid(params); });
+      adloader.loadScript(getJsStaticUrl, function () { bid(params); }, true);
     } else {
       bid(params);
     }

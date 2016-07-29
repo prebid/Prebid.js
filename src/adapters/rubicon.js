@@ -179,7 +179,7 @@ var RubiconAdapter = function RubiconAdapter() {
     var accountId  = options.accountId;
     var scripttUrl = RUBICONTAG_URL + accountId + '.js';
 
-    adloader.loadScript(scripttUrl, done);
+    adloader.loadScript(scripttUrl, done, true);
   }
 
   /**
