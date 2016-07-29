@@ -19,6 +19,7 @@ var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
+var shell = require('gulp-shell');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -138,6 +139,13 @@ gulp.task('coverage', function (done) {
   });
   opens('http://localhost:' + coveragePort + '/coverage/');
   done();
+});
+
+gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test' must be finished
+  // first send results of istanbul's test coverage to coveralls.io.
+  return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
+  // have to read it.
+    .pipe(shell('cat build/coverage/lcov/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 });
 
 // Watch Task with Live Reload
