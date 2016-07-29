@@ -488,23 +488,13 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout, adUnits, adUnitCodes });
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout, adUnits });
     });
     return;
   } else {
     auctionRunning = true;
     $$PREBID_GLOBAL$$._bidsRequested = [];
     $$PREBID_GLOBAL$$._bidsReceived = [];
-  }
-
-  timeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
-
-  // use adUnits provided or from $$PREBID_GLOBAL$$ global
-  adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
-
-  // if specific adUnitCodes filter adUnits for those codes
-  if (adUnitCodes && adUnitCodes.length) {
-    adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
 
   if (typeof bidsBackHandler === objectType_function) {
