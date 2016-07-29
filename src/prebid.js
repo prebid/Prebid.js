@@ -375,7 +375,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-  
+
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();

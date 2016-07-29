@@ -119,7 +119,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
               //store bid response
               //bid status is good (indicating 1)
-              bid = bidfactory.createBid(1);
+              bid = bidfactory.createBid(1, bidObj);
               bid.creative_id = sovrnBid.id;
               bid.bidderCode = 'sovrn';
               bid.cpm = responseCPM;
