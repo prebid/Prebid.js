@@ -96,6 +96,7 @@ To configure Prebid.js to run locally, edit the example file `./integrationExamp
 2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`):
     + For development:
 
+```javascript
             (function() {
                     var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
                     pbs.type = 'text/javascript';
@@ -103,9 +104,11 @@ To configure Prebid.js to run locally, edit the example file `./integrationExamp
                     var target = document.getElementsByTagName('head')[0];
                     target.insertBefore(pbs, target.firstChild);
             })();
+```
  
     + For deployment:
 
+```javascript
             (function() {
                     var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
                     pbs.type = 'text/javascript';
@@ -113,6 +116,7 @@ To configure Prebid.js to run locally, edit the example file `./integrationExamp
                     var target = document.getElementsByTagName('head')[0];
                     target.insertBefore(pbs, target.firstChild);
             })();
+```
 
 To run the project locally, use:
 
