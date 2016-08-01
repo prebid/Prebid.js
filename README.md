@@ -93,29 +93,30 @@ Having said that, you are probably safe to check your custom bundle into your pr
 To configure Prebid.js to run locally, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
 
 1. Change `{id}` values appropriately to set up ad units and bidders
-2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`):
-    + For development:
+2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+
+For development:
 
 ```javascript
-            (function() {
-                    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-                    pbs.type = 'text/javascript';
-                    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dev/prebid.js';
-                    var target = document.getElementsByTagName('head')[0];
-                    target.insertBefore(pbs, target.firstChild);
-            })();
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dev/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
 ```
- 
-    + For deployment:
+
+For deployment:
 
 ```javascript
-            (function() {
-                    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-                    pbs.type = 'text/javascript';
-                    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
-                    var target = document.getElementsByTagName('head')[0];
-                    target.insertBefore(pbs, target.firstChild);
-            })();
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
 ```
 
 To run the project locally, use:
