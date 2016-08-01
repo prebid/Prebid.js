@@ -171,6 +171,10 @@ The results will be in
 
         ./build/coverage
 
+*Note*: Starting in June 2016, all pull requests to Prebid.js need to include tests with greater than 80% code coverage before they can be merged.  For more information, see [#421](https://github.com/prebid/Prebid.js/issues/421).
+
+For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://prebid.org/dev-docs/testing-prebid.html).
+
 ### Supported Browsers
 
 Prebid.js is supported on IE9+ and modern browsers.
