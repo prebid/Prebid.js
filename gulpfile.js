@@ -167,7 +167,7 @@ gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
     .pipe(jshint('.jshintrc'))
     .pipe(jshint.reporter('default'))
-    .pipe(jshint.reporter('fail'));
+    //.pipe(jshint.reporter('fail')); //this is a litte too strict for me, on dev..
 });
 
 gulp.task('jscs', function () {
