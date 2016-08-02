@@ -28,6 +28,13 @@ var auctionRunning = false;
 var presetTargeting = [];
 var pbTargetingKeys = [];
 
+var timeoutIds = {
+  requestBids: -1,//global timeout id
+  cleanUp: -1,//global cleanup id
+};
+var adUnitsToCleanUp = [];
+
+
 var eventValidators = {
   bidWon: checkDefinedPlacement
 };
@@ -35,6 +42,7 @@ var eventValidators = {
 /* Public vars */
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
+$$PREBID_GLOBAL$$._allRequestedBids = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._allReceivedBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
@@ -84,6 +92,91 @@ function processQue() {
   }
 }
 
+
+function cleanUp() {
+  //debugger;
+  //console.log('cleanup ');
+  var now = new Date().getTime();
+  var lifeTime = 60 * 1000;//1 minute, seems reasonable
+  for (var i = 0; i < adUnitsToCleanUp.length; i++) {
+    if (adUnitsToCleanUp[i]._lastModified && (now - adUnitsToCleanUp[i]._lastModified) >= lifeTime) {
+      for (var j = 0; j < $$PREBID_GLOBAL$$.adUnits.length; j++) {
+        if ($$PREBID_GLOBAL$$.adUnits[j] === adUnitsToCleanUp[i]) {
+          $$PREBID_GLOBAL$$.adUnits.splice(j, 1);
+          j--;
+          //debugger;
+          for (var k = 0; k < $$PREBID_GLOBAL$$._allReceivedBids.length; k++) {
+            if ($$PREBID_GLOBAL$$._allReceivedBids[k].adUnitCode ===  adUnitsToCleanUp[i].code) {
+              $$PREBID_GLOBAL$$._allReceivedBids.splice(k,1);
+              k--;
+            }
+          }
+          for (var k = 0; k < $$PREBID_GLOBAL$$._allRequestedBids.length; k++) {
+            for (var l = 0; l < $$PREBID_GLOBAL$$._allRequestedBids[k].bids.length; l++) {
+              if($$PREBID_GLOBAL$$._allRequestedBids[k].bids[l].adUnitCode === adUnitsToCleanUp[i].code){
+                $$PREBID_GLOBAL$$._allRequestedBids[k].bids.splice(l,1);
+                l--;
+              } 
+            }
+            if($$PREBID_GLOBAL$$._allRequestedBids[k].bids.length === 0){
+              $$PREBID_GLOBAL$$._allRequestedBids.splice(k,1);
+              k--;
+            }
+          }
+          
+          adUnitsToCleanUp.splice(i,1);
+          i--;
+        }
+      }
+    }
+  }
+  
+  //now check if there are any orphaned bid responses
+  
+  var adunitMap = $$PREBID_GLOBAL$$.adUnits.reduce((data,val) => {data[val.code] = val; return data;},{});
+  
+  for (var i = 0; i < $$PREBID_GLOBAL$$._allReceivedBids.length; i++) {
+    //debugger;
+    if(!adunitMap[$$PREBID_GLOBAL$$._allReceivedBids[i].adUnitCode] && (now - $$PREBID_GLOBAL$$._allReceivedBids[i].responseTimestamp) >= lifeTime){
+      //debugger;
+      for (var j = 0; j < $$PREBID_GLOBAL$$._allRequestedBids.length; j++) {
+        for (var k = 0; k < $$PREBID_GLOBAL$$._allRequestedBids[j].bids.length; k++) {
+          if($$PREBID_GLOBAL$$._allRequestedBids[j].bids[k].bidId === $$PREBID_GLOBAL$$._allReceivedBids[i].adId){
+            $$PREBID_GLOBAL$$._allRequestedBids[j].bids.splice(k,1);
+            k--;
+          }
+        }
+        if($$PREBID_GLOBAL$$._allRequestedBids[j].bids.length === 0){
+          $$PREBID_GLOBAL$$._allRequestedBids.splice(j,1);
+          j--;
+        }
+      }
+      $$PREBID_GLOBAL$$._allReceivedBids.splice(i,1);
+      i--;
+    }
+  }
+}
+function scheduleCleanUp() {
+  scheduleCleanUp.helper();
+}
+scheduleCleanUp.helper = function(level=0,max=9,time=20*1000){
+  //debugger;
+  var origTime = time;
+  if(level == 0){
+    time = 100;
+  }else if(level < 3){
+    time = 1000;
+  }
+  console.log('setting timeout '+level+' '+time);
+  clearTimeout(timeoutIds.cleanUp)
+  timeoutIds.cleanUp = setTimeout(function(){
+    cleanUp();
+    if(level<max){
+      scheduleCleanUp.helper(++level, max, origTime);
+    }
+  },time);
+}
+
 function timeOutBidders() {
   if (!pb_bidsTimedOut) {
     pb_bidsTimedOut = true;
@@ -108,8 +201,8 @@ function checkDefinedPlacement(id) {
 function resetPresetTargeting() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      pbTargetingKeys.forEach(function(key){
-        slot.setTargeting(key,null);
+      pbTargetingKeys.forEach(function (key) {
+        slot.setTargeting(key, null);
       });
     });
   }
@@ -157,12 +250,12 @@ function getWinningBidTargeting() {
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
       .reduce(getHighestCpm,
-        {
-          adUnitCode: adUnitCode,
-          cpm: 0,
-          adserverTargeting: {},
-          timeToRespond: 0
-        }));
+      {
+        adUnitCode: adUnitCode,
+        cpm: 0,
+        adserverTargeting: {},
+        timeToRespond: 0
+      }));
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -190,7 +283,7 @@ function getDealTargeting() {
           [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
         };
       })
-      .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
+        .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
     };
   });
 }
@@ -246,7 +339,7 @@ function getAllTargeting() {
   targeting.map(adUnitCode => {
     Object.keys(adUnitCode).map(key => {
       adUnitCode[key].map(targetKey => {
-        if(pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
+        if (pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
           pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
         }
       });
@@ -375,7 +468,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-  
+
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();
@@ -416,7 +509,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
             break;
           }
         }*/
-        adObject =  $$PREBID_GLOBAL$$._allReceivedBids.find(bid =>  !bid.rendered && bid.adId === id);
+        adObject = $$PREBID_GLOBAL$$._allReceivedBids.find(bid => !bid.rendered && bid.adId === id);
       }
       if (adObject) {
         //emit 'bid won' event here
@@ -462,7 +555,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   } else {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
-
+  scheduleCleanUp();
 };
 
 /**
@@ -481,9 +574,31 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 };
 
-$$PREBID_GLOBAL$$.clearAuction = function() {
+
+/**
+ * marks an adUnit for removal of $$PREBID_GLOBAL$$ configuration including possible bid requests/responses
+ * @param  {String} adUnitCode the adUnitCode to remove
+ * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
+ */
+$$PREBID_GLOBAL$$.disposeAdUnit = function (adUnitCode) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
+  if (adUnitCode) {
+    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+      if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
+        adUnitsToCleanUp.push($$PREBID_GLOBAL$$.adUnits[i]);
+      }
+    }
+  }
+  scheduleCleanUp();
+};
+
+$$PREBID_GLOBAL$$.clearAuction = function () {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
+};
+
+$$PREBID_GLOBAL$$.auctionRunning = function () {
+  return auctionRunning;
 };
 
 /**
@@ -495,13 +610,15 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
   if (auctionRunning) {
+    debugger;
     utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
       ' still running. Resubmit this request.');
     return;
   } else {
-    auctionRunning = true;    
-    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0))
-    $$PREBID_GLOBAL$$._bidsRequested = [];
+    auctionRunning = true;
+    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0));
+    $$PREBID_GLOBAL$$._allRequestedBids.push.apply($$PREBID_GLOBAL$$._allRequestedBids, $$PREBID_GLOBAL$$._bidsRequested.splice(0));
+    //$$PREBID_GLOBAL$$._bidsRequested = [];
     //$$PREBID_GLOBAL$$._bidsReceived = [];
   }
 
@@ -527,10 +644,16 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
+
+  //debugger;
+  //clear the previous timeout in case it was still running
+  clearTimeout(timeoutIds.requestBids);
   //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  timeoutIds.requestBids = setTimeout(bidmanager.executeCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+
+  scheduleCleanUp();
 };
 
 /**
@@ -547,6 +670,8 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   } else if (typeof adUnitArr === objectType_object) {
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+
+  scheduleCleanUp();
 };
 
 /**
@@ -619,9 +744,10 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * @alias module:$$PREBID_GLOBAL$$.removeCallback
  * @returns {String} id for callback
  */
-$$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
+$$PREBID_GLOBAL$$.removeCallback = function (eventStr, func, id) {
   //todo
-  return null;
+  //return null;
+  bidmanager.removeCallback(id, func, eventStr);
 };
 
 /**
