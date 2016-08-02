@@ -283,7 +283,7 @@ function getDealTargeting() {
           [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
         };
       })
-      .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
+        .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
     };
   });
 }
@@ -339,7 +339,7 @@ function getAllTargeting() {
   targeting.map(adUnitCode => {
     Object.keys(adUnitCode).map(key => {
       adUnitCode[key].map(targetKey => {
-        if(pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
+        if (pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
           pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
         }
       });

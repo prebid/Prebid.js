@@ -73,7 +73,7 @@ function bidsBackAll() {
     || received > requested;//late receivers from previous requestBids after a new requestBids 
 }
 
-exports.bidsBackAll = function() {
+exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
@@ -270,7 +270,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   return keyValues;
 }
 
-exports.getKeyValueTargetingPairs = function() {
+exports.getKeyValueTargetingPairs = function () {
   return getKeyValueTargetingPairs(...arguments);
 };
 
