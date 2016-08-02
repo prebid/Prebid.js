@@ -68,11 +68,11 @@ var SovrnAdapter = function SovrnAdapter() {
     var scriptUrl = '//' + sovrnUrl + '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
       '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
-    adloader.loadScript(scriptUrl, null);
+    adloader.loadScript(scriptUrl);
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
       .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
 
     missing.forEach(function (bidRequest) {

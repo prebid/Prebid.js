@@ -10,14 +10,14 @@ var CONSTANTS = require('../constants.json');
  *
  */
 var AdmediaAdapter = function AdmediaAdapter() {
- 
+
   function _callBids(params){
     var bids, bidderUrl = (window.location.protocol) + "//b.admedia.com/banner/prebid/bidder/?";
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
       var bid = bids[i];
-     
+
       if (bid.params.aid) {
         request_obj.aid = bid.params.aid;
       }
@@ -58,7 +58,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       request_obj.sitePage = window.location.href;
       request_obj.siteRef = document.referrer;
       request_obj.topUrl = utils.getTopWindowUrl();
-      
+
       request_obj.callbackId = bid.bidId;
 
       var endpoint = bidderUrl+utils.parseQueryStringParameters(request_obj);
