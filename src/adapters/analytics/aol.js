@@ -25,7 +25,7 @@ const EVENTS = {
 
 let adUnits = {};
 
-let baseSchemaTemplate = template `${'protocol'}://${'host'}${('port') ? `:${'port'}` : ``}/hbevent/${'tagversion'}/${'network'}/${ ('subnetwork')?`${'subnetwork'}/`:``}${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'}`;
+let baseSchemaTemplate = template `${'protocol'}://${'host'}${('port') ? `:${'port'}` : ``}/hbevent/${'tagversion'}/${'network'}/${ ('subnetwork')?`${'subnetwork'}/`:``}${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
 let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'};${ ('hbcur') ? `hbcur=${'hbcur'};` : ``}pubapi=${'pubapi'}`;
 let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
@@ -122,7 +122,7 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      ajax(url);
+      ajax(url, undefined, undefined, undefined, { skipDefaultHeaders: true });
     },
 
     getBaseSchema(eventId, adUnit) {
