@@ -24,7 +24,6 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
-var pb_bidsTimedOut = false;
 var auctionRunning = false;
 var presetTargeting = [];
 var pbTargetingKeys = [];
@@ -81,14 +80,6 @@ function processQue() {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }
-  }
-}
-
-function timeOutBidders() {
-  if (!pb_bidsTimedOut) {
-    pb_bidsTimedOut = true;
-    var timedOutBidders = bidmanager.getTimedOutBidders();
-    events.emit(BID_TIMEOUT, timedOutBidders);
   }
 }
 
@@ -697,14 +688,6 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
-};
-
-/**
- * This will tell analytics that all bids received after are "timed out"
- */
-$$PREBID_GLOBAL$$.sendTimeoutEvent = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.sendTimeoutEvent', arguments);
-  timeOutBidders();
 };
 
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
