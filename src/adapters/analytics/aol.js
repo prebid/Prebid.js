@@ -7,6 +7,7 @@
 import { ajax } from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 import adapter from 'AnalyticsAdapter';
+import BIDDERS_IDS_MAP from './aolPartnersIds.json';
 
 const events = require('src/events');
 const utils = require('../../utils');
@@ -64,7 +65,7 @@ export default utils.extend(adapter({
     track({ eventType, args }) {
       switch (eventType) {
         case AUCTION_COMPLETED:
-          let bidsReceived = args.bidResponses;
+          let bidsReceived = args.bidsReceived;
           let adUnitsConf = args.adUnits;
 
           for (let bid of bidsReceived) {
@@ -145,7 +146,7 @@ export default utils.extend(adapter({
       return {
         pubadid: '', // Is this the ad unit code?
         hbauctionid: generateAuctionId(aolParams.placement),
-        hbwinner: adUnit.winner.bidderCode || '',
+        hbwinner: getBidderId(adUnit.winner.bidderCode),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
         pubapi: ''
@@ -158,14 +159,14 @@ export default utils.extend(adapter({
         hbauctioneventts: auctionParams.hbauctioneventts,
         pubadid: '', // Is this the ad unit code?
         hbauctionid: auctionParams.hbauctionid,
-        hbwinner: adUnit.winner.bidderCode || '',
+        hbwinner: getBidderId(adUnit.winner.bidderCode),
         pubcpm: adUnit.winner.cpm
       }
     },
 
     getBidderSchema(bid) {
       return {
-        hbbidder: bid.bidderCode || '',
+        hbbidder: getBidderId(bid.bidderCode),
         hbbid: bid.cpm || '',
         hbstatus: (bid.getStatusCode) ? bid.getStatusCode() : '',
         hbtime: bid.timeToRespond || ''
@@ -219,4 +220,8 @@ function generateAuctionId(placementId) {
   return new Date().getTime().toString().substr(-7) +
     placementId +
     Math.floor(Math.random() * 100000);
+}
+
+function getBidderId(bidderCode) {
+  return BIDDERS_IDS_MAP[bidderCode] || -1;
 }
