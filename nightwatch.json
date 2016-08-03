@@ -31,6 +31,7 @@
         "os": "WINDOWS",
         "os_version": "7",
         "browser": "Chrome",
+        "browserstack.tunnel": true,
         "browserstack.selenium_version": "2.53.0",
         "browserstack.user": "${BROWSERSTACK_USERNAME}",
         "browserstack.key": "${BROWSERSTACK_KEY}"
