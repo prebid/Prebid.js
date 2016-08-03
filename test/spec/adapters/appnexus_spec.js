@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import adapter from 'src/adapters/ut';
+import Adapter from 'src/adapters/ut';
 import bidmanager from 'src/bidmanager';
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
@@ -90,7 +90,11 @@ const RESPONSE = {
 
 describe('AppNexusAdapter', () => {
 
-  describe('request', () => {
+  let adapter;
+
+  beforeEach(() => adapter = Adapter.createNew());
+
+  describe('request function', () => {
 
     let xhr;
     let requests;
@@ -104,18 +108,18 @@ describe('AppNexusAdapter', () => {
     afterEach(() => xhr.restore());
 
     it('exists and is a function', () => {
-      expect(adapter().callBids).to.exist.and.to.be.a('function');
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
     it('sends bid request to ENDPOINT via POST', () => {
-      adapter().callBids(PARAMS);
+      adapter.callBids(PARAMS);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('POST');
     });
 
   });
 
-  describe('response', () => {
+  describe('response handler', () => {
 
     let server;
 
@@ -129,10 +133,10 @@ describe('AppNexusAdapter', () => {
       bidmanager.addBidResponse.restore();
     });
 
-    it('registers bid responses', () => {
+    it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      adapter().callBids(PARAMS);
+      adapter.callBids(PARAMS);
       server.respond();
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
@@ -146,7 +150,7 @@ describe('AppNexusAdapter', () => {
         "tags": [{}]
       }));
 
-      adapter().callBids(PARAMS);
+      adapter.callBids(PARAMS);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 

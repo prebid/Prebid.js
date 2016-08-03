@@ -80,7 +80,7 @@ function adapterName(adapter) {
  * @returns {string}
  */
 function useCreateNew(adapter) {
-  return adapter === 'appnexus' ? '.createNew' : '';
+  return ['appnexus', 'ut'].includes(adapter) ? '.createNew' : '';
 }
 
 /**
