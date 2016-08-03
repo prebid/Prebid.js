@@ -144,24 +144,24 @@ export default utils.extend(adapter({
     getAuctionSchema(adUnit) {
       let aolParams = adUnit.aolParams;
       return {
-        pubadid: '', // Is this the ad unit code?
+        pubadid: adUnit.code,
         hbauctionid: generateAuctionId(aolParams.placement),
         hbwinner: getBidderId(adUnit.winner.bidderCode),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
-        pubapi: ''
-      }
+        pubapi: aolParams.id
+      };
     },
 
     getWinSchema(adUnit) {
       let auctionParams = adUnit.auctionParams;
       return {
+        pubadid: adUnit.code,
         hbauctioneventts: auctionParams.hbauctioneventts,
-        pubadid: '', // Is this the ad unit code?
         hbauctionid: auctionParams.hbauctionid,
         hbwinner: getBidderId(adUnit.winner.bidderCode),
         pubcpm: adUnit.winner.cpm
-      }
+      };
     },
 
     getBidderSchema(bid) {
