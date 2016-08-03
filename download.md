@@ -348,39 +348,4 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 ### Option 2: Build from Source Code (More Advanced)
 
 {: .lead :}
-Alternatively, you can build the desired Prebid.js from the source code. For releases above version 0.7.0, developers can go to the [Github Releases](https://github.com/prebid/Prebid.js/releases) page to download the source code of a desired release.
-
-Unzip the source code folder and you will find the file `package.json`. Inside `package.json` you can specify which adapters to be included in the build to optimize file size of `prebid.js`
-
-package.json:
-{% highlight js %}
-
-"adapters": [
-  "adequant",
-  "adform",
-  "admedia",
-  "aol",
-  "appnexus",
-  "indexExchange",
-  "openx",
-  "pubmatic",
-  "pulsepoint",
-  "rubicon",
-  "sonobi",
-  "sovrn",
-  "springserve",
-  "triplelift",
-  "yieldbot",
-  "nginad",
-  "brightcom",
-  { "appnexus": {"alias": "brealtime"} },
-  { "appnexus": {"alias": "pagescience"} }
-]
-
-{% endhighlight %}
-
-1. Update package.json with the desired adapters
-2. Run `gulp build` or `gulp serve` to generate a new build
-3. Get the build from `build/dist/prebid.js`
-
-**Note**: You need to have at least `node.js 4.x` or greater installed to be able to run the `gulp` commands.
+Alternatively, you can build Prebid.js from the source code.  For instructions, see the [Prebid.js README on GitHub](https://github.com/prebid/Prebid.js/blob/master/README.md).
