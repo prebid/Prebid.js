@@ -514,7 +514,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  const timedOut = true;
+  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
+  setTimeout(timeoutCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };

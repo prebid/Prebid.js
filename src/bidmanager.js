@@ -120,12 +120,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bidsBackAll()) {
     this.executeCallback();
   }
-
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
-
-    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
-    this.executeCallback();
-  }
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
@@ -236,10 +230,18 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-exports.executeCallback = function () {
+exports.executeCallback = function (timedOut) {
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
+
+    if (timedOut) {
+      const timedOutBidders = this.getTimedOutBidders();
+
+      if (timedOutBidders.length) {
+        events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+      }
+    }
   }
 
   //execute one time callback
