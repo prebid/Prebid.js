@@ -29,6 +29,8 @@ let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauc
 let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
 
+var _timedOutBidders = [];
+
 export default utils.extend(adapter({
     url: '',
     analyticsType
@@ -46,7 +48,7 @@ export default utils.extend(adapter({
         if (eventType === BID_TIMEOUT) {
           _timedOutBidders = args.bidderCode;
         } else {
-          _enqueue.call(this, { eventType, args });
+          this.enqueue({ eventType, args });
         }
       });
 
