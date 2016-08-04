@@ -4,7 +4,9 @@ import bidmanager from 'src/bidmanager';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
 import CONSTANTS from 'src/constants';
+
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
+const REQUIRED = ['bidderCode', 'bids'];
 
 function UtAdapter() {
 
@@ -12,6 +14,8 @@ function UtAdapter() {
   let placements = {};
 
   baseAdapter.callBids = function(params) {
+    if (!utils.hasValidBidRequest(params, REQUIRED, params.bidderCode)) {return;}
+
     placements.code = params.bidderCode;
 
     const bids = params.bids || [];
