@@ -78,7 +78,7 @@ var SovrnAdapter = function SovrnAdapter() {
     missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.
       var bid = {};
-      bid = bidfactory.createBid(2);
+      bid = bidfactory.createBid(2, bidRequest);
       bid.bidderCode = 'sovrn';
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     });
