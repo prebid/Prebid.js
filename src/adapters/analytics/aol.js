@@ -168,7 +168,7 @@ export default utils.extend(adapter({
       return {
         hbbidder: getBidderId(bid.bidderCode),
         hbbid: bid.cpm || '',
-        hbstatus: (bid.getStatusCode) ? bid.getStatusCode() : '',
+        hbstatus: getStatusCode(bid),
         hbtime: bid.timeToRespond || ''
       };
     },
@@ -205,7 +205,7 @@ export default utils.extend(adapter({
   });
 
 function template(strings, ...keys) {
-  return (function(...values) {
+  return function(...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
@@ -213,7 +213,7 @@ function template(strings, ...keys) {
       result.push(value, strings[i + 1]);
     });
     return result.join('');
-  });
+  };
 }
 
 function generateAuctionId(placementId) {
@@ -224,4 +224,30 @@ function generateAuctionId(placementId) {
 
 function getBidderId(bidderCode) {
   return BIDDERS_IDS_MAP[bidderCode] || -1;
+}
+
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function getStatusCode(bid) {
+  if (!isNumber(bid.cpm)) {
+    return 2; // VALID_OBF_BID
+  }
+
+  var prebidStatus = (bid.getStatusCode) ? bid.getStatusCode() : null;
+  switch (prebidStatus) {
+    case null:
+      return -1; // INVALID
+    case 0:
+      return -1; // INVALID
+    case 1:
+      return 0; // VALID_BID
+    case 2:
+      return 1; // VALID_NO_BID
+    case 3:
+      return 3; // ERROR_TIMEOUT
+    default:
+      return -1; // INVALID
+  }
 }
