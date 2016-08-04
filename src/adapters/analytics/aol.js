@@ -134,8 +134,8 @@ export default utils.extend(adapter({
         tagversion: '3.0',
         network: aolParams.network || '',
         subnetwork: aolParams.subnetwork || '',
-        placement: aolParams.placement ,
-        site: aolParams.site || '',
+        placement: aolParams.placement,
+        site: aolParams.pageid || 0,
         eventid: eventId,
         hbeventts: Date.now()
       };
