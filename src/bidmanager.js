@@ -244,11 +244,10 @@ exports.executeCallback = function () {
 
   //execute one time callback
   if (externalOneTimeCallback) {
+    $$PREBID_GLOBAL$$.clearAuction();
     processCallbacks([externalOneTimeCallback]);
     externalOneTimeCallback = null;
   }
-
-  $$PREBID_GLOBAL$$.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
