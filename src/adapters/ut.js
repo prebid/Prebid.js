@@ -34,19 +34,24 @@ function UtAdapter() {
       return tag;
     });
 
-    const payload = {tags: [...tags]};
-
-    ajax(ENDPOINT, handleResponse, JSON.stringify(payload));
+    if (tags) {
+      const payload = {tags: [...tags]};
+      ajax(ENDPOINT, handleResponse, JSON.stringify(payload));
+    }
   };
 
   function handleResponse(response) {
     const parsed = JSON.parse(response);
-    if (!parsed || parsed.error) {return;}
+
+    if (!parsed || parsed.error) {
+      utils.logError(`Error receiving response for ${placements.code} adapter`);
+      return;
+    }
 
     parsed.tags.forEach(tag => {
       let bid;
 
-      if (!tag.error && !utils.isEmpty(tag)) {
+      if (tag.ads && tag.ads[0].cpm && tag.ads[0].cpm !== 0) {
         bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
         const ad = tag.ads[0];
         bid.code = placements.code;
@@ -63,13 +68,13 @@ function UtAdapter() {
         }
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;
+        bidmanager.addBidResponse(placements[tag.uuid], bid);
       } else {
         bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.code = placements.code;
         bid.bidderCode = placements.code;
+        bidmanager.addBidResponse(placements[tag.uuid], bid);
       }
-
-      bidmanager.addBidResponse(placements[tag.uuid], bid);
     });
   }
 

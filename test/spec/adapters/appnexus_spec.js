@@ -159,6 +159,28 @@ describe('AppNexusAdapter', () => {
         'Bid returned empty or error response');
     });
 
+    it('handles nobid responses', () => {
+      server.respondWith(JSON.stringify({
+        "version": "0.0.1",
+        "tags": [{
+          "uuid": "8f8d44d6-b0fc-474e-a8d0-410608681f11",
+          "tag_id": 5976557,
+          "auction_id": "297492697822162468",
+          "nobid": true
+        }]
+      }));
+
+      adapter.callBids(PARAMS);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+
   });
 
 });
