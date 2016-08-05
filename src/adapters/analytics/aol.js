@@ -140,7 +140,7 @@ export default utils.extend(adapter({
         placement: aolParams.placement,
         site: aolParams.pageid || 0,
         eventid: eventId,
-        hbeventts: Date.now()
+        hbeventts: Math.floor(Date.now() / 1000) // Unix timestamp in seconds.
       };
     },
 
