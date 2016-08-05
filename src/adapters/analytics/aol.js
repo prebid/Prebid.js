@@ -74,6 +74,7 @@ export default utils.extend(adapter({
             let adUnit = adUnits[bid.adUnitCode];
             if (!adUnit) {
               adUnit = {
+                code: bid.adUnitCode,
                 bids: [],
                 winner: {
                   cpm: 0
@@ -148,7 +149,7 @@ export default utils.extend(adapter({
       return {
         pubadid: adUnit.code,
         hbauctionid: generateAuctionId(aolParams.placement),
-        hbwinner: getBidderId(adUnit.winner.bidderCode),
+        hbwinner: getBidderId(adUnit.winner.bidder),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
         pubapi: aolParams.id
@@ -161,14 +162,14 @@ export default utils.extend(adapter({
         pubadid: adUnit.code,
         hbauctioneventts: auctionParams.hbauctioneventts,
         hbauctionid: auctionParams.hbauctionid,
-        hbwinner: getBidderId(adUnit.winner.bidderCode),
+        hbwinner: getBidderId(adUnit.winner.bidder),
         pubcpm: adUnit.winner.cpm
       };
     },
 
     getBidderSchema(bid) {
       return {
-        hbbidder: getBidderId(bid.bidderCode),
+        hbbidder: getBidderId(bid.bidder),
         hbbid: bid.cpm || '',
         hbstatus: getStatusCode(bid),
         hbtime: bid.timeToRespond || ''
