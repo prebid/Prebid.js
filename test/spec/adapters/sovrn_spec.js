@@ -169,5 +169,170 @@ describe('sovrn adapter tests', function () {
       stubAddBidResponse.restore();
     });
   });
+
+  //describe('Sovrn bid response has same ID as request', () => {
+  //
+  //  let xhr;
+  //  let requests;
+  //  let server;
+  //
+  //  beforeEach(() => {
+  //    server = sinon.fakeServer.create();
+  //    sinon.stub(bidmanager, 'addBidResponse');
+  //    xhr = sinon.useFakeXMLHttpRequest();
+  //    requests = [];
+  //    xhr.onCreate = xhr => requests.push(xhr);
+  //  });
+  //
+  //  afterEach(() => {
+  //    xhr.restore();
+  //    server.restore();
+  //    bidmanager.addBidResponse.restore();
+  //  });
+  //
+  //  it('should create a bidResponse with same ID as bidRequest', (done) => {
+  //
+  //    server.respondWith(`window.pbjs.sovrnResponse({
+  //      "id" : "2738918e3c54fa7",
+  //      "seatbid" : [ {
+  //        "bid" : [ {
+  //          "id" : "a_315045_5b5792b27d0e42ccbe7801644753250e",
+  //          "impid" : "256ccac965746f",
+  //          "price" : 0.01,
+  //          "nurl" : "http://vap1sjc1.lijit.com/www/delivery/lg.php?bannerid=124612&campaignid=3313&zoneid=315045&cb=90062211&tid=a_315045_5b5792b27d0e42ccbe7801644753250e",
+  //          "adm" : "%3Ca%20href%3D%22http%3A%2F%2Fvapden1.lijit.com%2Fwww%2Fdelivery%2Fck.php%3Foaparams%3D2__bannerid%3D124612__campaignid%3D3313__zoneid%3D315045__cb%3Dc06f6e8e__tid%3Da_315045_5b5792b27d0e42ccbe7801644753250e__maxdest%3D%22%3E%0A%3Cimg%20src%3D%22http%3A%2F%2Fap.lijit.com%2Fwww%2Fimages%2Fsovrn-house-banner2-1.gif%22%20border%3D%220%22%20width%3D%22300%22%20height%3D%22250%22%3E%0A%3C%2Fa%3E",
+  //          "h" : 250,
+  //          "w" : 300,
+  //          "ext" : { }
+  //        }, {
+  //          "id" : "a_381972_c8749f371a674f9f9763e7e03c90b2bd",
+  //          "impid" : "266a58c0351705c",
+  //          "price" : 15.0,
+  //          "nurl" : "http://vap1sjc1.lijit.com/www/delivery/lg.php?bannerid=135907&campaignid=3325&zoneid=381972&cb=21077374&tid=a_381972_c8749f371a674f9f9763e7e03c90b2bd",
+  //          "adm" : "%3Cimg%20src%3D%22http%3A%2F%2Fplacehold.it%2F300x600%22%3E",
+  //          "h" : 600,
+  //          "w" : 300,
+  //          "ext" : { }
+  //        } ]
+  //      } ]
+  //    })`);
+  //
+  //    $$PREBID_GLOBAL$$.requestBids({
+  //      bidsBackHandler: () => {},
+  //      timeout: 2000,
+  //      adUnits: sovrnAdUnits
+  //    });
+  //
+  //    server.respond();
+  //
+  //    sinon.assert.calledTwice(bidmanager.addBidResponse);
+  //
+  //    const response = bidmanager.addBidResponse.firstCall.args[1];
+  //    expect(response).to.have.property('statusMessage', 'Bid available');
+  //    expect(response).to.have.property('cpm', 0.5);
+  //
+  //    done();
+  //  });
+  //});
+
+  /**
+   *  TESTING
+   */
+  describe('request function', () => {
+
+    let xhr;
+    let requests;
+
+    beforeEach(() => {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = request => requests.push(request);
+    });
+
+    afterEach(() => xhr.restore());
+
+    it('exists and is a function', () => {
+      expect($$PREBID_GLOBAL$$.requestBids).to.exist.and.to.be.a('function');
+    });
+
+    it('sends bid request to ENDPOINT via GET', () => {
+      $$PREBID_GLOBAL$$.requestBids({
+        bidsBackHandler: () => {},
+        timeout: 2000,
+        adUnits: sovrnAdUnits
+      });
+      //expect(requests[0].url).to.equal(ENDPOINT);
+      expect(requests[0].method).to.equal('GET');
+    });
+
+  });
+
+  describe('response handler', () => {
+
+    let server;
+
+    beforeEach(() => {
+      server = sinon.fakeServer.create();
+      sinon.stub(bidmanager, 'addBidResponse');
+    });
+
+    afterEach(() => {
+      server.restore();
+      bidmanager.addBidResponse.restore();
+    });
+
+    it('registers bids', () => {
+      server.respondWith('test');
+
+      $$PREBID_GLOBAL$$.requestBids({
+        bidsBackHandler: () => {},
+        timeout: 2000,
+        adUnits: sovrnAdUnits
+      });
+      server.respond();
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('cpm', 0.5);
+    });
+
+    it('handles blank bids', () => {
+      server.respondWith('test');
+
+      $$PREBID_GLOBAL$$.requestBids({
+        bidsBackHandler: () => {},
+        timeout: 2000,
+        adUnits: sovrnAdUnits
+      });
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage',
+        'Bid returned empty or error response');
+    });
+
+    it('handles nobid responses', () => {
+      server.respondWith('test');
+
+      $$PREBID_GLOBAL$$.requestBids({
+        bidsBackHandler: () => {},
+        timeout: 2000,
+        adUnits: sovrnAdUnits
+      });
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+  });
+  /**
+   * END TESTING
+   */
 });
 
