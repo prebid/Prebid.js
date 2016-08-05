@@ -26,9 +26,9 @@ var AolAdapter = function AolAdapter() {
   };
 
   var serverMap = {
-    us: 'hb-us.advertising.com',
-    eu: 'hb-eu.advertising.com',
-    as: 'hb-as.advertising.com'
+    us: 'hb-us.adtech.advertising.com',
+    eu: 'hb-eu.adtech.advertising.com',
+    as: 'hb-as.adtech.advertising.com'
   };
 
   var bids;
