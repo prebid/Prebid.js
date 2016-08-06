@@ -374,7 +374,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-  
+
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();
@@ -511,8 +511,26 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  var timeouts = [];
+  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
+
+  if (bidderSettings) {
+    for (var bidderCode in bidderSettings) {
+      if (bidderSettings.hasOwnProperty(bidderCode)) {
+        var bidderTimeout = bidderSettings[bidderCode].timeout;
+        if (bidderTimeout) {
+          timeouts.push(bidderTimeout);
+        }
+      }
+    }
+  }
+
+  timeouts = timeouts.filter(timeout => timeout > cbTimeout);
+  timeouts.sort();
+  timeouts.unshift(cbTimeout);
+
+  //set timeout(s) for all bids
+  bidmanager.setTimeouts(timeouts);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };

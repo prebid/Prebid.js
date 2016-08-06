@@ -25,6 +25,7 @@ $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 
 function resetAuction() {
 	$$PREBID_GLOBAL$$._sendAllBids = false;
+	$$PREBID_GLOBAL$$.bidderSettings = {};
 	$$PREBID_GLOBAL$$.clearAuction();
 	$$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 	$$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
@@ -43,7 +44,7 @@ var Slot = function Slot(elementId, pathId) {
 
     setTargeting: function setTargeting(key, value) {
       var obj = [];
-      obj[key] = value; 
+      obj[key] = value;
       this.targeting.push(obj);
     },
 
@@ -260,9 +261,9 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
-      
+
       var targeting = [];
-      slots[1].getTargeting().map(function(value) { 
+      slots[1].getTargeting().map(function(value) {
         var temp = [];
         temp.push(Object.keys(value).toString());
         temp.push(value[Object.keys(value)]);
@@ -504,6 +505,59 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyExecuteCallback.called, 'called bidmanager.executeCallback');
 
       bidmanager.executeCallback.restore();
+      clock.restore();
+      resetAuction();
+    });
+
+    it('should execute callback after bidder timeout greater than global timeout', () => {
+      var spyBidsBackHandler = sinon.spy();
+      var clock = sinon.useFakeTimers();
+      var requestObj = {
+        bidsBackHandler: spyBidsBackHandler,
+        timeout: 2000
+      };
+
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        aol: {
+          timeout: 3000
+        }
+      };
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+
+      clock.tick(2000 - 1);
+      assert.ok(spyBidsBackHandler.notCalled, 'bidmanager.executeCallback not called');
+
+      clock.tick(1000);
+      assert.ok(spyBidsBackHandler.notCalled, 'bidmanager.executeCallback not called');
+
+      clock.tick(1);
+      assert.ok(spyBidsBackHandler.called, 'called bidmanager.executeCallback');
+
+      clock.restore();
+      resetAuction();
+    });
+
+    it('should execute callback after global timeout if bidder timeout is smaller', () => {
+      var spyBidsBackHandler = sinon.spy();
+      var clock = sinon.useFakeTimers();
+      var requestObj = {
+        bidsBackHandler: spyBidsBackHandler,
+        timeout: 2000
+      };
+
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        aol: {
+          timeout: 1000
+        }
+      };
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+
+      clock.tick(2000 - 1);
+      assert.ok(spyBidsBackHandler.notCalled, 'bidmanager.executeCallback not called');
+
+      clock.tick(1);
+      assert.ok(spyBidsBackHandler.called, 'called bidmanager.executeCallback');
+
       clock.restore();
       resetAuction();
     });
