@@ -102,23 +102,24 @@ function getBidSetForBidder(bidder) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 /* jshint ignore:end */
-function getBidSetForBidderGlobal(bidder, adUnitCode) {
+function getBidSetForBidderGlobal(bid, adUnitCode) {
   var bidRequest;
-  var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
+  var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bid.bidderCode);
   if (bidderObj && bidderObj.bids) {
-    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.bidId || (bid.bidId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
     if (bidRequest) {
       /* jshint ignore:start */
       return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
       /* jshint ignore:end */
     }
   }
+  //debugger;
   for (var i = 0; i < $$PREBID_GLOBAL$$._allRequestedBids.length; i++) {
     bidderObj = $$PREBID_GLOBAL$$._allRequestedBids[i];
-    if (bidderObj.bidderCode === bidder) {
+    if (bidderObj.bidderCode === bid.bidderCode) {
       for (var j in bidderObj.bids) {
         bidRequest = bidderObj.bids[j];
-        if (bidderObj.bids[j].placementCode === adUnitCode) {
+        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.bidId || (bid.bidId === bidRequest.bidId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
           //debugger;
           if (bidRequest) {
             /* jshint ignore:start */
@@ -138,7 +139,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
     
-    let bidRequest = getBidSetForBidderGlobal(bid.bidderCode, adUnitCode);
+    let bidRequest = getBidSetForBidderGlobal(bid, adUnitCode);
     var origBid;
     if (bidRequest.response) {
       if (bidRequest.response.getStatusCode() === 3 && bid.getStatusCode() !== 1) {
