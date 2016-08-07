@@ -16,7 +16,7 @@ module.exports = function (config) {
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: './',
-
+    //browserNoActivityTimeout:1200*1000,
     // BrowserStack Config
     browserStack: {
       username: process.env.BROWSERSTACK_USERNAME,
@@ -225,7 +225,7 @@ module.exports = function (config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
+    frameworks: ['es5-shim', 'mocha-debug','mocha', 'expect', 'sinon'],
 
     // list of files / patterns to load in the browser
     files: [
@@ -302,6 +302,7 @@ module.exports = function (config) {
       'karma-nyan-reporter',
       'karma-coverage',
       'karma-es5-shim',
+      'karma-mocha-debug',
       'karma-mocha',
       'karma-expect',
       'karma-sinon',
@@ -316,6 +317,12 @@ module.exports = function (config) {
       'karma-script-launcher',
       'karma-requirejs',
       'karma-ie-launcher'
-    ]
+    ]/*,    
+     client: {
+      mocha: {
+        // change Karma's debug.html to the mocha web reporter
+        reporter: 'html',
+      }
+     }*/
   });
 };
