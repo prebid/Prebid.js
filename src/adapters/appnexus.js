@@ -142,8 +142,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   }
 
   //expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
-
+  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {    
     var bidCode;
 
     if (jptResponseObj && jptResponseObj.callback_uid) {
@@ -186,6 +185,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.width = jptResponseObj.result.width;
         bid.height = jptResponseObj.result.height;
         bid.dealId = jptResponseObj.result.deal_id;
+        bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
 
         bidmanager.addBidResponse(placementCode, bid);
 
@@ -198,6 +198,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //indicate that there is no bid for this placement
         bid = bidfactory.createBid(2);
         bid.bidderCode = bidCode;
+        bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
         bidmanager.addBidResponse(placementCode, bid);
       }
 
