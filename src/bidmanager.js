@@ -56,7 +56,12 @@ function updateLastModified(adUnitCode) {
 }
 
 function bidsBackAdUnit(adUnitCode) {
-  const requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode).bids.length;
+  let adunit = getAdUnit(adUnitCode);
+  if(!adunit){    
+    //debugger;
+    return false;//adUnit not found??!! throw error i suppose
+  }
+  const requested = adunit.bids.length;
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
@@ -333,29 +338,32 @@ exports.executeCallback = function () {
     debugger; 
   }*/
   //if (this !== bidmanager) {
-
-  //handling timed out bids
-  //basically find all bid requests, which don't have a corresponding bidresponse
-  //for each occurance add a dummy responsose with status=3 (time out)
-  //please note that this purposely allow late bids still to arrive and still trigger the events (see addBidResponse), but not the callbacks.
-  //the stutus of the bid currently remains status=3, even for late arravals, but will be updated with the most recent data (maybe add status=5, timeout but arrived late and is renderable or a seperate boolean, rendable)
-  //in a nuttshell this also needed to trigger the adUnitsBidsBack callback, as that will only trigger if the requested amount matches the responded amount
-  //hence we need fake/timed out responses  
-  var resultIds = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adId);
-
-  var timedoutBids = $$PREBID_GLOBAL$$._bidsRequested.reduce((arr, val) => { arr.push.apply(arr, val.bids.filter(bid => resultIds.indexOf(bid.bidId) === -1)); return arr; }, []);//.filter(bid => !resultIds.find(bid.bidId));  
-  timedoutBids.map(bid => {
-    //      debugger;
-    var bidObj = bidfactory.createBid(3);
-    bidObj.bidderCode = bid.bidder;
-    bidmanager.addBidResponse(bid.placementCode, bidObj);
-  });
-  //if (timedoutBids.length > 0)
-  //  debugger;
-  //}
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
+
+
+    //handling timed out bids
+    //basically find all bid requests, which don't have a corresponding bidresponse
+    //for each occurance add a dummy responsose with status=3 (time out)
+    //please note that this purposely allow late bids still to arrive and still trigger the events (see addBidResponse), but not the callbacks.
+    //the stutus of the bid currently remains status=3, even for late arravals, but will be updated with the most recent data (maybe add status=5, timeout but arrived late and is renderable or a seperate boolean, rendable)
+    //in a nuttshell this also needed to trigger the adUnitsBidsBack callback, as that will only trigger if the requested amount matches the responded amount
+    //hence we need fake/timed out responses  
+    var resultIds = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adId);
+
+    var timedoutBids = $$PREBID_GLOBAL$$._bidsRequested.reduce((arr, val) => { arr.push.apply(arr, val.bids.filter(bid => resultIds.indexOf(bid.bidId) === -1)); return arr; }, []);//.filter(bid => !resultIds.find(bid.bidId));  
+    timedoutBids.map(bid => {
+      //      debugger;
+      var bidObj = bidfactory.createBid(3);
+      bidObj.bidderCode = bid.bidder;
+      bidmanager.addBidResponse(bid.placementCode, bidObj);
+    });
+    //if (timedoutBids.length > 0)
+    //  debugger;
+    //}
+  
+    
   }
 
   //execute one time callback
