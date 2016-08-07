@@ -480,7 +480,7 @@ export function flatten(a, b) {
 export function getBidRequest(id) {
   var ret = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
   if (!ret) {
-    debugger;
+    //debugger;
     return $$PREBID_GLOBAL$$._allRequestedBids.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
   }
   return ret;

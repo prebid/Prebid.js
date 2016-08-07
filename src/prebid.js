@@ -93,7 +93,7 @@ function processQue() {
   }
 }
 
-
+/* jshint ignore:start */
 function cleanUp() {
   //debugger;
   //console.log('cleanup ');
@@ -130,8 +130,8 @@ function cleanUp() {
         }
       }
     }
-  }
-  
+  }  
+
   //now check if there are any orphaned bid responses
   
   var adunitMap = $$PREBID_GLOBAL$$.adUnits.reduce((data,val) => {data[val.code] = val; return data;},{});
@@ -157,27 +157,28 @@ function cleanUp() {
     }
   }
 }
+
 function scheduleCleanUp() {
   scheduleCleanUp.helper();
 }
 scheduleCleanUp.helper = function(level=0,max=9,time=20*1000){
   //debugger;
   var origTime = time;
-  if(level == 0){
+  if(level === 0){
     time = 100;
   }else if(level < 3){
     time = 1000;
   }
-  console.log('setting timeout '+level+' '+time);
-  clearTimeout(timeoutIds.cleanUp)
+  //console.log('setting timeout '+level+' '+time);
+  clearTimeout(timeoutIds.cleanUp);
   timeoutIds.cleanUp = setTimeout(function(){
     cleanUp();
     if(level<max){
       scheduleCleanUp.helper(++level, max, origTime);
     }
   },time);
-}
-
+};
+/* jshint ignore:end */
 function timeOutBidders() {
   if (!pb_bidsTimedOut) {
     pb_bidsTimedOut = true;
@@ -556,7 +557,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   } else {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
+  /* jshint ignore:start */
   scheduleCleanUp();
+  /* jshint ignore:end */
 };
 
 /**
@@ -590,7 +593,9 @@ $$PREBID_GLOBAL$$.disposeAdUnit = function (adUnitCode) {
       }
     }
   }
+  /* jshint ignore:start */
   scheduleCleanUp();
+  /* jshint ignore:end */
 };
 
 $$PREBID_GLOBAL$$.clearAuction = function () {
@@ -612,7 +617,7 @@ $$PREBID_GLOBAL$$.auctionRunning = function () {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
   if (auctionRunning) {
-    debugger;
+    //debugger;
     utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
       ' still running. Resubmit this request.');
     return;
@@ -655,7 +660,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 
+  /* jshint ignore:start */
   scheduleCleanUp();
+  /* jshint ignore:end */
 };
 
 /**
@@ -673,7 +680,9 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
 
+  /* jshint ignore:start */
   scheduleCleanUp();
+  /* jshint ignore:end */
 };
 
 /**
@@ -749,7 +758,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
 $$PREBID_GLOBAL$$.removeCallback = function (eventStr, func, id) {
   //todo
   //return null;
-  bidmanager.removeCallback(id, func, eventStr);
+  return bidmanager.removeCallback(id, func, eventStr);
 };
 
 /**
