@@ -61,22 +61,27 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
-
+/* jshint ignore:start */
 function add(a, b) {
   return a + b;
 }
+/* jshint ignore:end */
 
 function bidsBackAll() {
+  /* jshint ignore:start */
   const requested = ($$PREBID_GLOBAL$$._bidsRequested.length === 0) ? 0 : $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
+  
   return requested === received
     || received > requested;//late receivers from previous requestBids after a new requestBids 
+  /* jshint ignore:end */  
 }
 
 exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
+/* jshint ignore:start */
 function getGlobalBidResponse(request) {
   var resp = $$PREBID_GLOBAL$$._bidsReceived.find(bidSet => request.bidId === bidSet.adId);
   if (!resp) {
@@ -85,17 +90,22 @@ function getGlobalBidResponse(request) {
   }
   return resp;
 }
+/* jshint ignore:end */
 
+/* jshint ignore:start */
 function getBidSetForBidder(bidder) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
+/* jshint ignore:end */
 function getBidSetForBidderGlobal(bidder, adUnitCode) {
   var bidRequest;
   var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
   if (bidderObj && bidderObj.bids) {
     bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
     if (bidRequest) {
+      /* jshint ignore:start */
       return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+      /* jshint ignore:end */
     }
   }
   for (var i = 0; i < $$PREBID_GLOBAL$$._allRequestedBids.length; i++) {
@@ -106,7 +116,9 @@ function getBidSetForBidderGlobal(bidder, adUnitCode) {
         if (bidderObj.bids[j].placementCode === adUnitCode) {
           //debugger;
           if (bidRequest) {
+            /* jshint ignore:start */
             return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+            /* jshint ignore:end */
           }
         }
       }
@@ -120,6 +132,7 @@ function getBidSetForBidderGlobal(bidder, adUnitCode) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
+    
     let bidRequest = getBidSetForBidderGlobal(bid.bidderCode, adUnitCode);
     var origBid;
     if (bidRequest.response) {
@@ -191,7 +204,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       updateLastModified(bid.adUnitCode);
     } else {
       //debugger;
-      bidsBackAdUnit(bid.adUnitCode);
+      //bidsBackAdUnit(bid.adUnitCode);
       console.log("adunit not complete yet: " + bid.adUnitCode);
     }
   }
@@ -369,10 +382,11 @@ function processCallbacks(callbackQueue, ...params) {
         //simple workaround if `triggerAdUnitCallbacks` passes the ad-unit code, the callback should receive the complete adunit-code
         //todo: refactor global/adunit-callbacks? or use apply?
         //debugger; 
-        var x = $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {});
-        if (!(params[0] in x)) {
-          debugger;//shouldn't happen, otherwise the request might already live in _allReceivedBids
-        }
+        //var x = $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {});
+        //if (!(params[0] in x)) {
+        //  debugger;//shouldn't happen, otherwise the request might already live in _allReceivedBids
+        //}
+        //todo: groupByPlacement seems to appear on top in the profiler, see if it can be optimized?
         func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}), params[0]);
       } else
         func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
