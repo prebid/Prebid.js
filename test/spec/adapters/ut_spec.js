@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import Adapter from 'src/adapters/ut';
 import bidmanager from 'src/bidmanager';
+
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
 const REQUEST = {

@@ -1,9 +1,9 @@
 import Adapter from 'src/adapters/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
-import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
-import CONSTANTS from 'src/constants';
+import { ajax } from 'src/ajax';
+import { STATUS } from 'src/constants';
 
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
@@ -13,8 +13,9 @@ const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
  * to Prebid.js. This adapter supports alias bidding.
  */
 function UtAdapter() {
+
   let baseAdapter = Adapter.createNew('ut');
-  let placements = {};
+  let adUnitCodes = {};
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
@@ -22,24 +23,27 @@ function UtAdapter() {
     const tags = bids
       .filter(bid => valid(bid))
       .map(bid => {
-        placements[bid.bidId] = bid;
-        let tag = {};
+        // map request id to bid object to retrieve adUnit code in callback
+        adUnitCodes[bid.bidId] = bid;
 
-        const sizes = getSizes(bid.sizes);
-        tag.sizes = sizes;
-        tag.primary_size = sizes[0];
+        let tag = {};
+        tag.sizes = getSizes(bid.sizes);
+        tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
         tag.id = Number.parseInt(bid.params.placementId);
-        tag.prebid = true;
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+        tag.prebid = true;
         tag.disable_psa = true;
 
         return tag;
       });
 
     if (!utils.isEmpty(tags)) {
-      const payload = {tags: [...tags]};
-      ajax(ENDPOINT, handleResponse, JSON.stringify(payload));
+      const payload = JSON.stringify({tags: [...tags]});
+      ajax(ENDPOINT, handleResponse, payload, {
+        contentType: 'text/plain',
+        preflight: false,
+      });
     }
   };
 
@@ -54,30 +58,28 @@ function UtAdapter() {
     }
 
     if (!parsed || parsed.error) {
-      utils.logError(`Error receiving response for ${baseAdapter.getBidderCode()} adapter`);
-      bidmanager.addBidResponse(null, noBid(baseAdapter.getBidderCode()));
+      utils.logError(`Bad response for ${baseAdapter.getBidderCode()} adapter`);
+      bidmanager.addBidResponse(null, createBid(STATUS.NO_BID));
       return;
     }
 
     parsed.tags.forEach(tag => {
-      let bid;
+      const cpm = tag.ads && tag.ads[0].cpm;
+      const type = tag.ads && tag.ads[0].ad_type;
 
-      const cpm = tag.ads && tag.ads[0].cpm && tag.ads[0].cpm !== 0;
-      const type = tag.ads && tag.ads[0].ad_type === 'banner';
-
-      if (!type) {
-        const unsupported = tag.ads && tag.ads[0].ad_type || 'ad type';
-        utils.logError(`${unsupported} not supported`);
+      if (type !== 'banner') {
+        utils.logError(`${type} ad type not supported`);
       }
 
-      if (cpm && type) {
-        bid = goodBid(tag, baseAdapter.getBidderCode());
+      let bid;
+      if (cpm !== 0 && type === 'banner') {
+        bid = createBid(STATUS.GOOD, tag);
       } else {
-        bid = noBid(baseAdapter.getBidderCode());
+        bid = createBid(STATUS.NO_BID);
       }
 
       if (!utils.isEmpty(bid)) {
-        bidmanager.addBidResponse(placements[tag.uuid].placementCode, bid);
+        bidmanager.addBidResponse(adUnitCodes[tag.uuid].placementCode, bid);
       }
     });
   }
@@ -87,55 +89,54 @@ function UtAdapter() {
     if (bid.params.placementId || bid.params.memberId && bid.params.invCode) {
       return bid;
     } else {
-      utils.logError('bid requires placementId or memberId and invCode params');
+      utils.logError('bid requires placementId or (memberId and invCode) params');
     }
   }
 
   /* Turn bid request sizes into ut-compatible format */
   function getSizes(requestSizes) {
-    var sizes = [];
-    var sizeObj = {};
-    if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+    let sizes = [];
+    let sizeObj = {};
+
+    if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
+       !utils.isArray(requestSizes[0])) {
       sizeObj.width = parseInt(requestSizes[0], 10);
       sizeObj.height = parseInt(requestSizes[1], 10);
       sizes.push(sizeObj);
     } else if (typeof requestSizes === 'object') {
       for (let i = 0; i < requestSizes.length; i++) {
-        var size = requestSizes[i];
+        let size = requestSizes[i];
         sizeObj = {};
         sizeObj.width = parseInt(size[0], 10);
         sizeObj.height = parseInt(size[1], 10);
         sizes.push(sizeObj);
       }
     }
+
     return sizes;
   }
 
-  /* Create and return a valid bid object */
-  function goodBid(tag, code) {
-    let bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
-    bid.code = code;
-    bid.bidderCode = code;
-    bid.creative_id = tag.ads[0].creativeId;
-    bid.cpm = tag.ads[0].cpm;
-    bid.ad = tag.ads[0].rtb.banner.content;
-    try {
-      const url = tag.ads[0].rtb.trackers[0].impression_urls[0];
-      const tracker = utils.createTrackPixelHtml(url);
-      bid.ad += tracker;
-    } catch (e) {
-      utils.logError('Error appending tracking pixel', 'appnexusAst.js:_requestAds', e);
-    }
-    bid.width = tag.ads[0].rtb.banner.width;
-    bid.height = tag.ads[0].rtb.banner.height;
-    return bid;
-  }
+  /* Create and return a bid object based on status and tag */
+  function createBid(status, tag) {
+    let bid = bidfactory.createBid(status);
+    bid.code = baseAdapter.getBidderCode();
+    bid.bidderCode = baseAdapter.getBidderCode();
 
-  /* Create and return an invalid bid object */
-  function noBid(code) {
-    let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
-    bid.code = code;
-    bid.bidderCode = code;
+    if (status === STATUS.GOOD) {
+      bid.cpm = tag.ads[0].cpm;
+      bid.creative_id = tag.ads[0].creativeId;
+      bid.width = tag.ads[0].rtb.banner.width;
+      bid.height = tag.ads[0].rtb.banner.height;
+      bid.ad = tag.ads[0].rtb.banner.content;
+      try {
+        const url = tag.ads[0].rtb.trackers[0].impression_urls[0];
+        const tracker = utils.createTrackPixelHtml(url);
+        bid.ad += tracker;
+      } catch (error) {
+        utils.logError('Error appending tracking pixel', error);
+      }
+    }
+
     return bid;
   }
 
@@ -144,6 +145,7 @@ function UtAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
+
 }
 
 exports.createNew = () => new UtAdapter();
