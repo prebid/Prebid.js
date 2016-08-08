@@ -116,7 +116,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
-  if (bidsBackAdUnit(bid.adUnitCode)) {
+  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
@@ -124,7 +124,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     this.executeCallback();
   }
 
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
 
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
