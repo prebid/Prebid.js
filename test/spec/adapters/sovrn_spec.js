@@ -3,6 +3,91 @@ describe('sovrn adapter tests', function () {
   const adapter = require('src/adapters/sovrn');
   const bidmanager = require('src/bidmanager');
 
+  const sovrnAdUnits = [
+    {
+      code: 'div-gpt-ad-12345-1',
+      sizes: [[320, 50]],
+      bids: [
+        {
+          bidder: 'sovrn',
+          params: {
+            tagid: '315045'
+          }
+        }
+      ]
+    },
+    {
+      code: 'div-gpt-ad-12345-2',
+      sizes: [[320, 50]],
+      bids: [
+        {
+          bidder: 'sovrn',
+          params: {
+            tagid: '315046'
+          }
+        }
+      ]
+    }
+  ];
+
+  var bidderRequest = {
+    bidderCode: 'sovrn',
+    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+    bidderRequestId: '7101db09af0db2',
+    bids: [
+      {
+        bidId: 'bidId1',
+        bidder: 'sovrn',
+        params: {
+          tagid: '315045'
+        },
+        sizes: [[320, 50]],
+        placementCode: 'div-gpt-ad-12345-1'
+      },
+      {
+        bidId: 'bidId2',
+        bidder: 'sovrn',
+        params: {
+          tagid: '315046'
+        },
+        sizes: [[320, 50]],
+        placementCode: 'div-gpt-ad-12345-2'
+      },
+      {
+        bidId: 'bidId3',
+        bidder: 'sovrn',
+        params: {
+          tagid: '315047'
+        },
+        sizes: [[320, 50]],
+        placementCode: 'div-gpt-ad-12345-2'
+      }
+    ],
+    start: 1469479810130,
+    timeout: 3000
+  };
+
+  // Returning a single bid in the response.
+  var singleResponse = {
+    'id': '54321111',
+    'seatbid': [
+      {
+        'bid': [
+          {
+            'id': '1111111',
+            'impid': 'bidId2',
+            'price': 0.09,
+            'nurl': 'http://url',
+            'adm': 'ad-code',
+            'h': 250,
+            'w': 300,
+            'ext': {}
+          }
+        ]
+      }
+    ]
+  };
+
   describe('sovrnResponse', function () {
 
     it('should exist and be a function', function () {
@@ -12,39 +97,6 @@ describe('sovrn adapter tests', function () {
     it('should add empty bid responses if no bids returned', function () {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
-      var bidderRequest = {
-        bidderCode: 'sovrn',
-        bids: [
-          {
-            bidId: 'bidId1',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315045'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1'
-          },
-          {
-            bidId: 'bidId2',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315046'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2'
-          },
-          {
-            bidId: 'bidId3',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315047'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2'
-          },
-        ]
-      };
-
       // no bids returned in the response.
       var response = {
         "id": "54321",
@@ -53,7 +105,7 @@ describe('sovrn adapter tests', function () {
 
       pbjs._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
-      adapter()
+      adapter();
 
       pbjs.sovrnResponse(response);
 
@@ -84,61 +136,10 @@ describe('sovrn adapter tests', function () {
     it('should add a bid response for bids returned and empty bid responses for the rest', function () {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
-      var bidderRequest = {
-        bidderCode: 'sovrn',
-        bids: [
-          {
-            bidId: 'bidId1',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315045'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1'
-          },
-          {
-            bidId: 'bidId2',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315046'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2'
-          },
-          {
-            bidId: 'bidId3',
-            bidder: 'sovrn',
-            params: {
-              tagid: '315047'
-            },
-            sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2'
-          },
-        ]
-      };
-
-      // Returning a single bid in the response.
-      var response = {
-        "id": "54321111",
-        "seatbid": [ {
-          "bid" : [ {
-            "id" : "1111111",
-            "impid" : "bidId2",
-            "price" : 0.09,
-            "nurl" : "http://url",
-            "adm" : "ad-code",
-            "h" : 250,
-            "w" : 300,
-            "ext" : { }
-          } ]
-        } ]
-      };
-
-      pbjs._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter()
 
-      pbjs.sovrnResponse(response);
+      pbjs.sovrnResponse(singleResponse);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -170,98 +171,38 @@ describe('sovrn adapter tests', function () {
     });
   });
 
-  //describe('Sovrn bid response has same ID as request', () => {
-  //
-  //  let xhr;
-  //  let requests;
-  //  let server;
-  //
-  //  beforeEach(() => {
-  //    server = sinon.fakeServer.create();
-  //    sinon.stub(bidmanager, 'addBidResponse');
-  //    xhr = sinon.useFakeXMLHttpRequest();
-  //    requests = [];
-  //    xhr.onCreate = xhr => requests.push(xhr);
-  //  });
-  //
-  //  afterEach(() => {
-  //    xhr.restore();
-  //    server.restore();
-  //    bidmanager.addBidResponse.restore();
-  //  });
-  //
-  //  it('should create a bidResponse with same ID as bidRequest', (done) => {
-  //
-  //    server.respondWith(`window.pbjs.sovrnResponse({
-  //      "id" : "2738918e3c54fa7",
-  //      "seatbid" : [ {
-  //        "bid" : [ {
-  //          "id" : "a_315045_5b5792b27d0e42ccbe7801644753250e",
-  //          "impid" : "256ccac965746f",
-  //          "price" : 0.01,
-  //          "nurl" : "http://vap1sjc1.lijit.com/www/delivery/lg.php?bannerid=124612&campaignid=3313&zoneid=315045&cb=90062211&tid=a_315045_5b5792b27d0e42ccbe7801644753250e",
-  //          "adm" : "%3Ca%20href%3D%22http%3A%2F%2Fvapden1.lijit.com%2Fwww%2Fdelivery%2Fck.php%3Foaparams%3D2__bannerid%3D124612__campaignid%3D3313__zoneid%3D315045__cb%3Dc06f6e8e__tid%3Da_315045_5b5792b27d0e42ccbe7801644753250e__maxdest%3D%22%3E%0A%3Cimg%20src%3D%22http%3A%2F%2Fap.lijit.com%2Fwww%2Fimages%2Fsovrn-house-banner2-1.gif%22%20border%3D%220%22%20width%3D%22300%22%20height%3D%22250%22%3E%0A%3C%2Fa%3E",
-  //          "h" : 250,
-  //          "w" : 300,
-  //          "ext" : { }
-  //        }, {
-  //          "id" : "a_381972_c8749f371a674f9f9763e7e03c90b2bd",
-  //          "impid" : "266a58c0351705c",
-  //          "price" : 15.0,
-  //          "nurl" : "http://vap1sjc1.lijit.com/www/delivery/lg.php?bannerid=135907&campaignid=3325&zoneid=381972&cb=21077374&tid=a_381972_c8749f371a674f9f9763e7e03c90b2bd",
-  //          "adm" : "%3Cimg%20src%3D%22http%3A%2F%2Fplacehold.it%2F300x600%22%3E",
-  //          "h" : 600,
-  //          "w" : 300,
-  //          "ext" : { }
-  //        } ]
-  //      } ]
-  //    })`);
-  //
-  //    $$PREBID_GLOBAL$$.requestBids({
-  //      bidsBackHandler: () => {},
-  //      timeout: 2000,
-  //      adUnits: sovrnAdUnits
-  //    });
-  //
-  //    server.respond();
-  //
-  //    sinon.assert.calledTwice(bidmanager.addBidResponse);
-  //
-  //    const response = bidmanager.addBidResponse.firstCall.args[1];
-  //    expect(response).to.have.property('statusMessage', 'Bid available');
-  //    expect(response).to.have.property('cpm', 0.5);
-  //
-  //    done();
-  //  });
-  //});
-
-  /**
-   *  TESTING
-   */
   describe('request function', () => {
 
     let xhr;
     let requests;
+    let sovrnAdapter;
 
     beforeEach(() => {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
+      this.xhr = sinon.useFakeXMLHttpRequest();
+      requests = this.requests = [];
+
+      this.xhr.onCreate = request => {
+        requests.push(request);
+      };
+
+      pbjs.adUnitsBackup = pbjs.adUnits;
+      pbjs.adUnits = sovrnAdUnits;
+
+      // adapter needs to be called, in order for the stub to register.
+      sovrnAdapter = adapter();
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(() => this.xhr.restore());
+
+    pbjs.adUnits = pbjs.adUnitsBackup;
 
     it('exists and is a function', () => {
-      expect($$PREBID_GLOBAL$$.requestBids).to.exist.and.to.be.a('function');
+      expect(adapter().callBids).to.exist.and.to.be.a('function');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
-      $$PREBID_GLOBAL$$.requestBids({
-        bidsBackHandler: () => {},
-        timeout: 2000,
-        adUnits: sovrnAdUnits
-      });
-      //expect(requests[0].url).to.equal(ENDPOINT);
+      sovrnAdapter.callBids(bidderRequest);
+      expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
     });
 
@@ -270,69 +211,33 @@ describe('sovrn adapter tests', function () {
   describe('response handler', () => {
 
     let server;
+    let sovrnAdapter;
+    let stubAddBidResponse;
 
     beforeEach(() => {
+      stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       server = sinon.fakeServer.create();
-      sinon.stub(bidmanager, 'addBidResponse');
+      sovrnAdapter = adapter();
+      pbjs._bidsRequested.push(bidderRequest);
     });
 
     afterEach(() => {
       server.restore();
       bidmanager.addBidResponse.restore();
+      sovrn = undefined;
     });
 
     it('registers bids', () => {
       server.respondWith('test');
 
-      $$PREBID_GLOBAL$$.requestBids({
-        bidsBackHandler: () => {},
-        timeout: 2000,
-        adUnits: sovrnAdUnits
-      });
+      sovrnAdapter.callBids(bidderRequest);
       server.respond();
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-    });
-
-    it('handles blank bids', () => {
-      server.respondWith('test');
-
-      $$PREBID_GLOBAL$$.requestBids({
-        bidsBackHandler: () => {},
-        timeout: 2000,
-        adUnits: sovrnAdUnits
-      });
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage',
-        'Bid returned empty or error response');
-    });
-
-    it('handles nobid responses', () => {
-      server.respondWith('test');
-
-      $$PREBID_GLOBAL$$.requestBids({
-        bidsBackHandler: () => {},
-        timeout: 2000,
-        adUnits: sovrnAdUnits
-      });
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+      pbjs.adUnits = pbjs.adUnitsBackup;
     });
   });
-  /**
-   * END TESTING
-   */
 });
-
