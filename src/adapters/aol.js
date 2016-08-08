@@ -6,21 +6,11 @@ var adloader = require('../adloader');
 var AolAdapter = function AolAdapter() {
 
   // constants
+  var PUBAPI_VERSION = 2;
   var ADTECH_BIDDER_NAME = 'aol';
   var ADTECH_PUBAPI_CONFIG = {
     pixelsDivId: 'pixelsDiv',
     defaultKey: 'aolBid',
-    roundingConfig: [
-      {
-        from: 0,
-        to: 999,
-        roundFunction: 'tenCentsRound'
-      }, {
-        from: 1000,
-        to: -1,
-        roundValue: 1000
-      }
-    ],
     pubApiOK: _addBid,
     pubApiER: _addErrorBid
   };
@@ -64,9 +54,14 @@ var AolAdapter = function AolAdapter() {
       return;
     }
 
-    cpm = response.getCPM();
-    if (cpm === null || isNaN(cpm)) {
-      return _addErrorBid(response, context);
+    var encp = response.data.seatbid[0].bid[0].ext.encp;
+    if (encp) {
+      cpm = encp;
+    } else {
+      cpm = response.getCPMInCents(context.alias);
+      if (cpm === null || isNaN(cpm)) {
+        return _addErrorBid(response, context);
+      }
     }
 
     // clean up--we no longer need to store the bid
@@ -138,6 +133,7 @@ var AolAdapter = function AolAdapter() {
         size: bid.params.size || (bid.sizes || [])[0]
       },
       params: {
+        v: PUBAPI_VERSION,
         cors: 'yes',
         cmd: 'bid',
         bidfloor: (typeof bid.params.bidFloor !== "undefined") ? bid.params.bidFloor.toString() : ''
