@@ -221,9 +221,14 @@ function template(strings, ...keys) {
 }
 
 function generateAuctionId(placementId) {
-  return new Date().getTime().toString().substr(-7) +
+  return (
+    // 7 digits from the current time (milliseconds within an hour).
+    new Date().getTime().toString().substr(-7) +
+    // Full placement id, 7 digits at the time of development.
     placementId +
-    Math.floor(Math.random() * 100000);
+    // Random number, 5 digits at the time of development.
+    Math.floor(Math.random() * 100000)
+  ).substr(0, 19); // Limit to 19 digits so it doesn't exceed the LONG type.
 }
 
 function getBidderId(bidderCode) {
