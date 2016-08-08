@@ -7,18 +7,22 @@ import CONSTANTS from 'src/constants';
 
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
+/**
+ * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
+ * sends out a bid request. When a bid response is back, registers the bid
+ * to Prebid.js. This adapter supports alias bidding.
+ */
 function UtAdapter() {
   let baseAdapter = Adapter.createNew('ut');
   let placements = {};
 
+  /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-    placements.code = bidRequest.bidderCode;
-
     const bids = bidRequest.bids || [];
     const tags = bids
       .filter(bid => valid(bid))
       .map(bid => {
-        placements[bid.bidId] = bid.placementCode;
+        placements[bid.bidId] = bid;
         let tag = {};
 
         const sizes = getSizes(bid.sizes);
@@ -39,19 +43,19 @@ function UtAdapter() {
     }
   };
 
+  /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response) {
     let parsed;
 
     try {
       parsed = JSON.parse(response);
     } catch (error) {
-      console.log(error);
       utils.logError(error);
     }
 
     if (!parsed || parsed.error) {
-      utils.logError(`Error receiving response for ${placements.code} adapter`);
-      bidmanager.addBidResponse(placements[tag.uuid], noBid(placements.code));
+      utils.logError(`Error receiving response for ${baseAdapter.getBidderCode()} adapter`);
+      bidmanager.addBidResponse(null, noBid(baseAdapter.getBidderCode()));
       return;
     }
 
@@ -67,17 +71,18 @@ function UtAdapter() {
       }
 
       if (cpm && type) {
-        bid = goodBid(tag, placements.code);
+        bid = goodBid(tag, baseAdapter.getBidderCode());
       } else {
-        bid = noBid(placements.code);
+        bid = noBid(baseAdapter.getBidderCode());
       }
 
       if (!utils.isEmpty(bid)) {
-        bidmanager.addBidResponse(placements[tag.uuid], bid);
+        bidmanager.addBidResponse(placements[tag.uuid].placementCode, bid);
       }
     });
   }
 
+  /* Check that a bid has required paramters */
   function valid(bid) {
     if (bid.params.placementId || bid.params.memberId && bid.params.invCode) {
       return bid;
@@ -86,6 +91,7 @@ function UtAdapter() {
     }
   }
 
+  /* Turn bid request sizes into ut-compatible format */
   function getSizes(requestSizes) {
     var sizes = [];
     var sizeObj = {};
@@ -105,6 +111,7 @@ function UtAdapter() {
     return sizes;
   }
 
+  /* Create and return a valid bid object */
   function goodBid(tag, code) {
     let bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
     bid.code = code;
@@ -124,6 +131,7 @@ function UtAdapter() {
     return bid;
   }
 
+  /* Create and return an invalid bid object */
   function noBid(code) {
     let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
     bid.code = code;

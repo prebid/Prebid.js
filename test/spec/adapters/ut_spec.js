@@ -27,64 +27,36 @@ const REQUEST = {
 };
 
 const RESPONSE = {
-    "version": "0.0.1",
-    "tags": [{
-        "uuid": "8160b2bea694fc",
-        "tag_id": 4799418,
-        "auction_id": "2256922143947979797",
-        "no_ad_url": "http://lax1-ib.adnxs.com/no-ad",
-        "timeout_ms": 2500,
-        "ads": [{
-            "content_source": "rtb",
-            "ad_type": "banner",
-            "buyer_member_id": 958,
-            "creative_id": 33989846,
-            "media_type_id": 1,
-            "media_subtype_id": 1,
-            "cpm": 0.500000,
-            "cpm_publisher_currency": 0.500000,
-            "publisher_currency_code": "$",
-            "client_initiated_ad_counting": true,
-            "rtb": {
-                "banner": {
-                    "width": 728,
-                    "height": 90,
-                    "content": "<!-- Creative -->"
-                },
-                "trackers": [{
-                    "impression_urls": ["http://lax1-ib.adnxs.com/impression"]
-                }]
-            }
+  "version": "0.0.1",
+  "tags": [{
+    "uuid": "84ab500420319d",
+    "tag_id": 4799418,
+    "auction_id": "2256922143947979797",
+    "no_ad_url": "http://lax1-ib.adnxs.com/no-ad",
+    "timeout_ms": 2500,
+    "ads": [{
+      "content_source": "rtb",
+      "ad_type": "banner",
+      "buyer_member_id": 958,
+      "creative_id": 33989846,
+      "media_type_id": 1,
+      "media_subtype_id": 1,
+      "cpm": 0.500000,
+      "cpm_publisher_currency": 0.500000,
+      "publisher_currency_code": "$",
+      "client_initiated_ad_counting": true,
+      "rtb": {
+        "banner": {
+          "width": 728,
+          "height": 90,
+          "content": "<!-- Creative -->"
+        },
+        "trackers": [{
+          "impression_urls": ["http://lax1-ib.adnxs.com/impression"]
         }]
-    }, {
-        "uuid": "9f6e9235559e8e",
-        "tag_id": 4799418,
-        "auction_id": "5911338687906386297",
-        "no_ad_url": "http://lax1-ib.adnxs.com/no-ad",
-        "timeout_ms": 2500,
-        "ads": [{
-            "content_source": "rtb",
-            "ad_type": "banner",
-            "buyer_member_id": 958,
-            "creative_id": 29681110,
-            "media_type_id": 1,
-            "media_subtype_id": 1,
-            "cpm": 0.500000,
-            "cpm_publisher_currency": 0.500000,
-            "publisher_currency_code": "$",
-            "client_initiated_ad_counting": true,
-            "rtb": {
-                "banner": {
-                    "width": 300,
-                    "height": 250,
-                    "content": "<!-- Creative -->"
-                },
-                "trackers": [{
-                    "impression_urls": ["http://lax1-ib.adnxs.com/impression"]
-                }]
-            }
-        }]
+      }
     }]
+  }]
 };
 
 describe('AppNexusAdapter', () => {
@@ -142,32 +114,18 @@ describe('AppNexusAdapter', () => {
 
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledTwice(bidmanager.addBidResponse);
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
     });
 
-    it('handles blank bids', () => {
-      server.respondWith(JSON.stringify({
-        "tags": [{}]
-      }));
-
-      adapter.callBids(REQUEST);
-      server.respond();
-      sinon.assert.calledOnce(bidmanager.addBidResponse);
-
-      const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage',
-        'Bid returned empty or error response');
-    });
-
     it('handles nobid responses', () => {
       server.respondWith(JSON.stringify({
         "version": "0.0.1",
         "tags": [{
-          "uuid": "8f8d44d6-b0fc-474e-a8d0-410608681f11",
+          "uuid": "84ab500420319d",
           "tag_id": 5976557,
           "auction_id": "297492697822162468",
           "nobid": true
@@ -188,6 +146,7 @@ describe('AppNexusAdapter', () => {
     it('handles non-banner media responses', () => {
       server.respondWith(JSON.stringify({
         "tags": [{
+          "uuid": "84ab500420319d",
           "ads": [{
             "ad_type": "video",
             "cpm": 0.500000,
@@ -199,6 +158,20 @@ describe('AppNexusAdapter', () => {
           }]
         }]
       }));
+
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+
+    it('handles JSON.parse errors', () => {
+      server.respondWith('');
 
       adapter.callBids(REQUEST);
       server.respond();
