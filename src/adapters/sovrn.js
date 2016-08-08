@@ -78,7 +78,7 @@ var SovrnAdapter = function SovrnAdapter() {
     missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.
       var bid = {};
-      bid = bidfactory.createBid(2);
+      bid = bidfactory.createBid(2, bidRequest);
       bid.bidderCode = 'sovrn';
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     });
@@ -119,7 +119,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
               //store bid response
               //bid status is good (indicating 1)
-              bid = bidfactory.createBid(1);
+              bid = bidfactory.createBid(1, bidObj);
               bid.creative_id = sovrnBid.id;
               bid.bidderCode = 'sovrn';
               bid.cpm = responseCPM;
