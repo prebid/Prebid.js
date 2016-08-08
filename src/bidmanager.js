@@ -138,6 +138,14 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
+    /*
+    seems redundant with bidRequest.request.bidId;
+    if (!bid.adId) {
+      let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+      if (bidRequest && bidRequest.bidId) {
+        bid.adId = bidRequest.bidId;
+      }
+    }*/
     
     let bidRequest = getBidSetForBidderGlobal(bid, adUnitCode);
     var origBid;
@@ -215,11 +223,15 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
   }
 
+  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+    triggerAdUnitCallbacks(bid.adUnitCode);
+  }
+
   if (bidsBackAll()) {
     this.executeCallback();
   }
 
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
 
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();

@@ -24,10 +24,10 @@ $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 
 function resetAuction() {
-	$$PREBID_GLOBAL$$._sendAllBids = false;
-	$$PREBID_GLOBAL$$.clearAuction();
-	$$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
-	$$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+  $$PREBID_GLOBAL$$._sendAllBids = false;
+  $$PREBID_GLOBAL$$.clearAuction();
+  $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
+  $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -43,7 +43,7 @@ var Slot = function Slot(elementId, pathId) {
 
     setTargeting: function setTargeting(key, value) {
       var obj = [];
-      obj[key] = value; 
+      obj[key] = value;
       this.targeting.push(obj);
     },
 
@@ -140,7 +140,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return current targeting data for slots', function () {
-			$$PREBID_GLOBAL$$.enableSendAllBids();
+      $$PREBID_GLOBAL$$.enableSendAllBids();
       const targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
       const expected = getAdServerTargeting();
       assert.deepEqual(targeting, expected, 'targeting ok');
@@ -260,9 +260,9 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
-      
+
       var targeting = [];
-      slots[1].getTargeting().map(function(value) { 
+      slots[1].getTargeting().map(function(value) {
         var temp = [];
         temp.push(Object.keys(value).toString());
         temp.push(value[Object.keys(value)]);
