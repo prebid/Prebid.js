@@ -582,7 +582,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 /**
  * marks an adUnit for removal of $$PREBID_GLOBAL$$ configuration including possible bid requests/responses
  * @param  {String} adUnitCode the adUnitCode to remove
- * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
+ * @alias module:$$PREBID_GLOBAL$$.disposeAdUnit
  */
 $$PREBID_GLOBAL$$.disposeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
