@@ -65,7 +65,10 @@ gulp.task('webpack', function () {
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify({
-      preserveComments: 'some'
+      preserveComments: 'some',
+      compress: {
+        hoist_funs: false
+      }
     }))
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
