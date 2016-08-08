@@ -459,6 +459,26 @@ describe('Unit: Prebid Module', function () {
       var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
+
+     it('should log an error when ad not found', function () {
+      var fakeId = 99;
+      $$PREBID_GLOBAL$$.renderAd(doc, fakeId);
+      var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
+      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+
+    it('should render the ad when new bids are requested', function () {
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+      
+      $$PREBID_GLOBAL$$._allReceivedBids.push(...$$PREBID_GLOBAL$$._bidsReceived.splice($$PREBID_GLOBAL$$._bidsReceived.indexOf(adResponse), 1));
+       
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+
+      $$PREBID_GLOBAL$$._allReceivedBids.pop();
+
+      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+      assert.ok(doc.close.called, 'close method called');
+    });
   });
 
   describe('requestBids', () => {
@@ -507,6 +527,15 @@ describe('Unit: Prebid Module', function () {
       clock.restore();
       resetAuction();
     });
+
+    /* TODO: figure a reliable test for these cases
+    it('should execute adUnitBidsBack after all bids for the adUnit are back', () => {
+      
+    });
+    it('should execute adUnitBidsBack after bid requests for the adUnit timed out', () => {
+      
+    });
+    */
 
     it('should execute callback immediately if adUnits is empty', () => {
       var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
@@ -607,6 +636,17 @@ describe('Unit: Prebid Module', function () {
       const id = $$PREBID_GLOBAL$$.removeCallback();
       assert.equal(id, null);
     });
+    it('should remove the call from bidmanager', () => {
+      var spyAddCallback = sinon.spy(bidmanager, 'removeCallback');
+      var id = $$PREBID_GLOBAL$$.removeCallback('event', Function);
+      assert.ok(spyAddCallback.calledWith(id, Function, 'event'), 'called bidmanager.removeCallback');
+      bidmanager.removeCallback.restore();
+    });
+    /*TODO figure reliable test case
+    it('should not call a removed callback', () => {
+      
+    });
+    */
   });
 
   describe('registerBidAdapter', () => {
