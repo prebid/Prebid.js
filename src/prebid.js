@@ -511,23 +511,20 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  var timeouts = [];
+  var timeouts = [cbTimeout];
   var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
 
   if (bidderSettings) {
     for (var bidderCode in bidderSettings) {
       if (bidderSettings.hasOwnProperty(bidderCode)) {
         var bidderTimeout = bidderSettings[bidderCode].timeout;
-        if (bidderTimeout) {
+        if (bidderTimeout && bidderTimeout > cbTimeout) {
           timeouts.push(bidderTimeout);
         }
       }
     }
+    timeouts.sort();
   }
-
-  timeouts = timeouts.filter(timeout => timeout > cbTimeout);
-  timeouts.sort();
-  timeouts.unshift(cbTimeout);
 
   //set timeout(s) for all bids
   bidmanager.setTimeouts(timeouts);
