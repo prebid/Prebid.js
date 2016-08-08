@@ -99,8 +99,8 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
       // try to fetch the bid request we sent memeglobal
       var bidObj = $$PREBID_GLOBAL$$._bidsRequested
-        .find(bidSet >= bidSet.bidderCode === bidderName).bids
-        .find(bid >= bid.bidId === id);
+        .find(bidSet => bidSet.bidderCode === bidderName).bids
+        .find(bid => bid.bidId === id);
 
       if (bidObj) {
         var bidResponse = bidfactory.createBid(1);
