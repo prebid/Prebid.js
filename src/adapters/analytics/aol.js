@@ -7,6 +7,7 @@
 import { ajax } from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 import adapter from 'AnalyticsAdapter';
+import BIDDERS_IDS_MAP from './aolPartnersIds.json';
 
 const events = require('src/events');
 const utils = require('../../utils');
@@ -24,10 +25,12 @@ const EVENTS = {
 
 let adUnits = {};
 
-let baseSchemaTemplate = template `${'protocol'}://${'host'}${('port') ? `:${'port'}` : ``}/hbevent/${'tagversion'}/${'network'}/${ ('subnetwork')?`${'subnetwork'}/`:``}${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'}`;
+let baseSchemaTemplate = template `${'protocol'}://${'host'}${('port') ? `:${'port'}` : ``}/hbevent/${'tagversion'}/${'network'}/${ ('subnetwork')?`${'subnetwork'}/`:``}${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
 let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'};${ ('hbcur') ? `hbcur=${'hbcur'};` : ``}pubapi=${'pubapi'}`;
 let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
+
+var _timedOutBidders = [];
 
 export default utils.extend(adapter({
     url: '',
@@ -46,7 +49,7 @@ export default utils.extend(adapter({
         if (eventType === BID_TIMEOUT) {
           _timedOutBidders = args.bidderCode;
         } else {
-          _enqueue.call(this, { eventType, args });
+          this.enqueue({ eventType, args });
         }
       });
 
@@ -62,13 +65,14 @@ export default utils.extend(adapter({
     track({ eventType, args }) {
       switch (eventType) {
         case AUCTION_COMPLETED:
-          let bidsReceived = args.bidResponses;
+          let bidsReceived = args.bidsReceived;
           let adUnitsConf = args.adUnits;
 
           for (let bid of bidsReceived) {
             let adUnit = adUnits[bid.adUnitCode];
             if (!adUnit) {
               adUnit = {
+                code: bid.adUnitCode,
                 bids: [],
                 winner: {
                   cpm: 0
@@ -119,7 +123,8 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      ajax(url);
+      var pixel = new Image();
+      pixel.src = url;
     },
 
     getBaseSchema(eventId, adUnit) {
@@ -131,41 +136,41 @@ export default utils.extend(adapter({
         tagversion: '3.0',
         network: aolParams.network || '',
         subnetwork: aolParams.subnetwork || '',
-        placement: aolParams.placement ,
-        site: aolParams.site || '',
+        placement: aolParams.placement,
+        site: aolParams.pageid || 0,
         eventid: eventId,
-        hbeventts: Date.now()
+        hbeventts: Math.floor(Date.now() / 1000) // Unix timestamp in seconds.
       };
     },
 
     getAuctionSchema(adUnit) {
       let aolParams = adUnit.aolParams;
       return {
-        pubadid: '', // Is this the ad unit code?
+        pubadid: adUnit.code,
         hbauctionid: generateAuctionId(aolParams.placement),
-        hbwinner: adUnit.winner.bidderCode || '',
+        hbwinner: getBidderId(adUnit.winner.bidder),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
-        pubapi: ''
-      }
+        pubapi: aolParams.id
+      };
     },
 
     getWinSchema(adUnit) {
       let auctionParams = adUnit.auctionParams;
       return {
+        pubadid: adUnit.code,
         hbauctioneventts: auctionParams.hbauctioneventts,
-        pubadid: '', // Is this the ad unit code?
         hbauctionid: auctionParams.hbauctionid,
-        hbwinner: adUnit.winner.bidderCode || '',
+        hbwinner: getBidderId(adUnit.winner.bidder),
         pubcpm: adUnit.winner.cpm
-      }
+      };
     },
 
     getBidderSchema(bid) {
       return {
-        hbbidder: bid.bidderCode || '',
+        hbbidder: getBidderId(bid.bidder),
         hbbid: bid.cpm || '',
-        hbstatus: (bid.getStatusCode) ? bid.getStatusCode() : '',
+        hbstatus: getStatusCode(bid),
         hbtime: bid.timeToRespond || ''
       };
     },
@@ -202,7 +207,7 @@ export default utils.extend(adapter({
   });
 
 function template(strings, ...keys) {
-  return (function(...values) {
+  return function(...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
@@ -210,11 +215,46 @@ function template(strings, ...keys) {
       result.push(value, strings[i + 1]);
     });
     return result.join('');
-  });
+  };
 }
 
 function generateAuctionId(placementId) {
-  return new Date().getTime().toString().substr(-7) +
+  return (
+    // 7 digits from the current time (milliseconds within an hour).
+    new Date().getTime().toString().substr(-7) +
+    // Full placement id, 7 digits at the time of development.
     placementId +
-    Math.floor(Math.random() * 100000);
+    // Random number, 5 digits at the time of development.
+    Math.floor(Math.random() * 100000)
+  ).substr(0, 19); // Limit to 19 digits so it doesn't exceed the LONG type.
+}
+
+function getBidderId(bidderCode) {
+  return BIDDERS_IDS_MAP[bidderCode] || -1;
+}
+
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function getStatusCode(bid) {
+  if (!isNumber(bid.cpm)) {
+    return 2; // VALID_OBF_BID
+  }
+
+  var prebidStatus = (bid.getStatusCode) ? bid.getStatusCode() : null;
+  switch (prebidStatus) {
+    case null:
+      return -1; // INVALID
+    case 0:
+      return -1; // INVALID
+    case 1:
+      return 0; // VALID_BID
+    case 2:
+      return 1; // VALID_NO_BID
+    case 3:
+      return 3; // ERROR_TIMEOUT
+    default:
+      return -1; // INVALID
+  }
 }
