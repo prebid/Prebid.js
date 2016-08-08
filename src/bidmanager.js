@@ -212,7 +212,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       //abort, these callbacks are already been called, due to timeout conditions
       return;
     }
-    if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+    if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
       console.log("callback adunit complete: " + bid.adUnitCode);
       triggerAdUnitCallbacks(bid.adUnitCode);
       updateLastModified(bid.adUnitCode);
@@ -222,7 +222,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       console.log("adunit not complete yet: " + bid.adUnitCode);
     }
   }
-  
+
   if (bidsBackAll()) {
     this.executeCallback();
   }
