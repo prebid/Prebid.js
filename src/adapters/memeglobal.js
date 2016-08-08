@@ -11,7 +11,7 @@ var bidderName = 'memeglobal'
  * OpenRTB compatible
  */
 var MemeGlobalAdapter = function MemeGlobalAdapter() {
-    var bidder = 'stinger.memeglobal.com/api/v1/service/prebid';
+    var bidder = 'stinger.memeglobal.com/api/v1/services/prebid';
 
     function _callBids(params) {
         var bids = params.bids;
@@ -96,7 +96,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
             var responseCPM;
             var placementCode = '';
             var id = bid.impid;
-            var bid = {};
 
             // try to fetch the bid request we sent memeglobal
             var bidObj = $$PREBID_GLOBAL$$._bidsRequested
@@ -104,6 +103,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
                 .find(bid >= bid.bidId === id);
 
             if (bidObj) {
+                bidResponse = bidfactory.createBid(1);
                 placementCode = bidObj.placementCode;
                 bidObj.status = CONSTANTS.STATUS.GOOD;
 
@@ -114,8 +114,8 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
                     return handleErrorResponse();
                 }
 
-                bid.placementCode = placementCode;
-                bid.size = bidObj.sizes;
+                bidResponse.placementCode = placementCode;
+                bidResponse.size = bidObj.sizes;
                 var responseAd = bid.adm;
 
                 // build impression url from response
@@ -123,17 +123,16 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
                 //store bid response
                 //bid status is good (indicating 1)
-                bid = bidfactory.createBid(1);
-                bid.creative_id = bid.id;
-                bid.bidderCode = bidderName;
-                bid.cpm = responseCPM;
+                bidResponse.creative_id = bid.id;
+                bidResponse.bidderCode = bidderName;
+                bidResponse.cpm = responseCPM;
 
                 // set ad content + impression url
-                bid.ad = decodeURIComponent(responseAd + responseNurl);
+                bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
 
                 // Set width and height from response now
-                bid.width = parseInt(bid.w);
-                bid.height = parseInt(bid.h);
+                bidResponse.width = parseInt(bid.w);
+                bidResponse.height = parseInt(bid.h);
 
                 bidmanager.addBidResponse(placementCode, bid);
             }
