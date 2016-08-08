@@ -123,7 +123,8 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      ajax(url, undefined, undefined, undefined, { skipDefaultHeaders: true });
+      var pixel = new Image();
+      pixel.src = url;
     },
 
     getBaseSchema(eventId, adUnit) {

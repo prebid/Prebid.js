@@ -8,12 +8,9 @@
  * @param callback object callback
  * @param data mixed data
  * @param x null Ajax request
- * @param options
- * @param options.skipDefaultHeaders set to true to skip adding default HTTP headers
  */
 
-export const ajax = function ajax(url, callback, data, x = null,
-                                  options = { skipDefaultHeaders: false }) {
+export const ajax = function ajax(url, callback, data, x = null) {
   try {
     if (window.XMLHttpRequest) {
       x = new window.XMLHttpRequest('MSXML2.XMLHTTP.3.0');
@@ -25,10 +22,8 @@ export const ajax = function ajax(url, callback, data, x = null,
 
     //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
     x.open(data ? 'POST' : 'GET', url, 1);
-    if (!options.skipDefaultHeaders) {
-      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    }
+    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
 
     //x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     x.onreadystatechange = function () {
