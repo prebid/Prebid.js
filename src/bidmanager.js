@@ -166,7 +166,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
         statusMessage: bidClone.statusMessage,
       });
     }
-    if (bidRequest.request && bidRequest.request.bidId) {
+    if (bidRequest.request && bidRequest.request.bidId && !bid.adId) {
       bid.adId = bidRequest.request.bidId;
     }
     Object.assign(bid, {
