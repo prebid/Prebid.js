@@ -507,23 +507,3 @@ export function getHighestCpm(previous, current) {
   }
   return previous.cpm < current.cpm ? current : previous;
 }
-
-export function getSizes(requestSizes) {
-  var sizes = [];
-  var sizeObj = {};
-  if(exports.isArray(requestSizes) && requestSizes.length === 2 && !exports.isArray(requestSizes[0])){
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  }
-  else if (typeof requestSizes === 'object') {
-    for (var i = 0; i < requestSizes.length; i++) {
-      var size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-  return sizes;
-}

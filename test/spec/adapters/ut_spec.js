@@ -3,7 +3,7 @@ import Adapter from 'src/adapters/ut';
 import bidmanager from 'src/bidmanager';
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
-const PARAMS = {
+const REQUEST = {
   "bidderCode": "ut",
   "requestId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6",
   "bidderRequestId": "7101db09af0db2",
@@ -11,7 +11,7 @@ const PARAMS = {
     {
       "bidder": "ut",
       "params": {
-        "foo": "bar"
+        "placementId": "4799418",
       },
       "placementCode": "/19968336/header-bid-tag1",
       "sizes": [
@@ -23,8 +23,7 @@ const PARAMS = {
       "requestId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6"
     }
   ],
-  "start": 1469479810130,
-  "timeout": 3000
+  "start": 1469479810130
 };
 
 const RESPONSE = {
@@ -111,8 +110,13 @@ describe('AppNexusAdapter', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
+    it('requires paramters to make request', () => {
+      adapter.callBids({});
+      expect(requests).to.be.empty;
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
-      adapter.callBids(PARAMS);
+      adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('POST');
     });
@@ -136,7 +140,7 @@ describe('AppNexusAdapter', () => {
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      adapter.callBids(PARAMS);
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
@@ -150,7 +154,7 @@ describe('AppNexusAdapter', () => {
         "tags": [{}]
       }));
 
-      adapter.callBids(PARAMS);
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
@@ -170,7 +174,33 @@ describe('AppNexusAdapter', () => {
         }]
       }));
 
-      adapter.callBids(PARAMS);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+
+    it('handles non-banner media responses', () => {
+      server.respondWith(JSON.stringify({
+        "tags": [{
+          "ads": [{
+            "ad_type": "video",
+            "cpm": 0.500000,
+            "rtb": {
+              "video": {
+                "content": "<!-- Creative -->"
+              }
+            }
+          }]
+        }]
+      }));
+
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
