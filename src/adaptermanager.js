@@ -133,15 +133,15 @@ exports.enableAnalytics = function (config) {
 };
 
 //if an adapter needs to prepare anything before the ad can be delivered, give it a chance to do so.
-exports.prepareRendering = function(doc, bidderCode){
+exports.prepareRendering = function (doc, bidderCode) {
   let bidAdaptor = _bidderRegistry[bidderCode];
-  
+
   if (typeof bidAdaptor !== CONSTANTS.objectType_undefined) {
-    if(typeof bidAdaptor.prepareRendering === CONSTANTS.objectType_function){
-       bidAdaptor.prepareRendering(doc);
+    if (typeof bidAdaptor.prepareRendering === CONSTANTS.objectType_function) {
+      bidAdaptor.prepareRendering(doc);
     }
   }
-}
+};
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
 
