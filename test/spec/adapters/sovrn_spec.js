@@ -155,6 +155,7 @@ describe('sovrn adapter tests', function () {
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.width).to.equal(300);
       expect(bidObject1.ad).to.equal('ad-code<img src="http://url">');
+      expect(bidObject1.adId).to.equal('bidId2');
 
       expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-1');
       expect(bidObject2.getStatusCode()).to.equal(2);
