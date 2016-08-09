@@ -521,11 +521,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
+        //if an bidder needs to prepare anything before delivery, for example expose their own globals to the iframes scope, they have an oppertunity to do it here
+        adaptermanager.prepareRendering(doc, adObject.bidderCode);
+
         if (ad) {
           adObject.rendered = true;
           doc.write(ad);
           doc.close();
-          if (doc.defaultView && doc.defaultView.frameElement) {
+          if (width>=0 && height>=0 && doc.defaultView && doc.defaultView.frameElement) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }
