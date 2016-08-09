@@ -13,6 +13,7 @@ var externalCallbackArr = [];
 var externalOneTimeCallback = null;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
+var pushedTimedoutBids = false;
 
 const _lgPriceCap = 5.00;
 const _mgPriceCap = 20.00;
@@ -343,15 +344,9 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function () {
-  /*if (this !== bidmanager) {
-    debugger; 
-  }*/
   //if (this !== bidmanager) {
-  if (externalCallbackArr.called !== true) {
-    processCallbacks(externalCallbackArr);
-    externalCallbackArr.called = true;
-
-
+  if(!pushedTimedoutBids){
+    pushedTimedoutBids = true;
     //handling timed out bids
     //basically find all bid requests, which don't have a corresponding bidresponse
     //for each occurance add a dummy responsose with status=3 (time out)
@@ -371,8 +366,10 @@ exports.executeCallback = function () {
     //if (timedoutBids.length > 0)
     //  debugger;
     //}
-  
-    
+  }
+  if (externalCallbackArr.called !== true) {
+    processCallbacks(externalCallbackArr);
+    externalCallbackArr.called = true;
   }
 
   //execute one time callback
@@ -468,6 +465,12 @@ exports.removeCallback = function (id, callback, cbEvent) {
     }
   }
 
+};
+
+//considder calling this on callBids in the adapterManager?
+exports.resetAuctionState = function(){
+  //externalCallbackArr.called = false;
+  pushedTimedoutBids = false;
 };
 
 //register event for bid adjustment
