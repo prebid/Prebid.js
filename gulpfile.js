@@ -65,7 +65,13 @@ gulp.task('webpack', function () {
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify({
-      preserveComments: 'some'
+      preserveComments: 'some',
+      compress: {
+        // Hoisting of the functions turned off to prevent code movement.
+        // This prevents comment blocks delimiting the definition of the adapters from being moved
+        // so it fixes the extraction of the adapters during the build.
+        hoist_funs: false
+      }
     }))
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
