@@ -309,7 +309,7 @@ var RubiconAdapter = function RubiconAdapter() {
       window.rubicontag.run(callback, parameters);
     });
   }
-  //if we win the bid, and we're rendered in a iframe, expose the rubicontag global to the iframe if there is no way to resolve the global, just place a reference in the iframe so it can be resolved
+  //if we win the bid, and we're rendered in a iframe, expose the rubicontag global to the iframe if there is no way to resolve the global, just place a reference in the iframe so it can be resolved..owe and yah! make sure no different globals exists, of they won't share a state, TODO: make a check or diss globals and always reference
   function _prepareRendering(doc){
     var win = doc.defaultView || doc.parentWindow;
     
