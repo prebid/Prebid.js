@@ -83,6 +83,7 @@ export default utils.extend(adapter({
                   for (let adUnitBid of adUnitConf.bids) {
                     if (AOL_BIDDER_CODE === adUnitBid.bidder) {
                       adUnit.aolParams = adUnitBid.params;
+                      adUnit.aolParams.pubapiId = bid.pubapiId;
                     }
                   }
                 }
@@ -151,7 +152,7 @@ export default utils.extend(adapter({
         hbwinner: getBidderId(adUnit.winner.bidder),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
-        pubapi: aolParams.id
+        pubapi: aolParams.pubapiId
       };
     },
 
