@@ -2,7 +2,7 @@ var assert = require('assert');
 var utils = require('util');
 
 module.exports = {
-  'AdserverTargeting Test Case 1' : ''+function (browser) {
+  'AdserverTargeting Test Case 1' : function (browser) {
     browser
       .url('http://localhost:9999/integrationExamples/gpt/gpt_default.html')
       .waitForElementVisible('body', 3000)

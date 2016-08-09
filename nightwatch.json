@@ -10,7 +10,7 @@
 
   "selenium" : {
     "start_process" : true,
-    "server_path" : "./bin/selenium-server-standalone-2.53.1.jar",
+    "server_path" : "${SELENIUM_JAR_PATH}",
     "log_path" : "",
     "host" : "127.0.0.1",
     "port" : 4444,
@@ -25,6 +25,7 @@
       "selenium_port"  : 4444,
       "selenium_host"  : "localhost",
       "silent": true,
+      "exclude":["custom-assertions","custom-commands"],
       "screenshots" : {
         "enabled" : false,
         "path" : ""

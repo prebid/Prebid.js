@@ -96,7 +96,7 @@ gulp.task('test', function () {
 
   if (argv.browserstack) {
     browserArgs = [
-      'bs_ie_11_windows_10',
+      'bs_chrome_51_windows_10',
     ];
   }
 
@@ -173,34 +173,31 @@ gulp.task('docs', ['clean-docs'], function () {
 });
 
 gulp.task('e2etest', ['test'], function() {
-  var browsers = require('./browsers.json');
-  var env = [];
-  for(var key in browsers) {
-    env.push(key);
-  }
+  var cmd = '--env default';
+  if(argv.browserstack) {
+    var browsers = require('./browsers.json');
+    var env = [];
+    var input = 'bs';
+    for(var key in browsers) {
+      if(key.substring(0, input.length) === input) {
+        env.push(key);
+      }
+    }
 
-  if(env.length == 0) {
-    env = '--env default';
-  } else {
-    env = '--env ' + env.join(',');
+    cmd = '--env default,' + env.join(',');
   }
-
-  env = '--env default';
 
   if(argv.browserstack) {
-    env = env + ' --config nightwatch.conf.js';
+    cmd = cmd + ' --config nightwatch.conf.js';
   } else {
-    env = env + ' --config nightwatch.json';
+    cmd = cmd + ' --config nightwatch.json';
   }
-
 
   if (argv.group) {
-    //--group testcase1/pbjsapi-group
-    env = env + ' --group ' + argv.group;
+    cmd = cmd + ' --group ' + argv.group;
   }
-  console.log(env);
-  
+
   return gulp.src('')
-    .pipe(shell('nightwatch '+env));
+    .pipe(shell('nightwatch ' + cmd));
 
 });

@@ -18,6 +18,7 @@
       "selenium_port"  : 80,
       "selenium_host"  : "hub.browserstack.com",
       "silent": true,
+      "exclude":["custom-assertions","custom-commands"],
       "screenshots" : {
         "enabled" : false,
         "path" : ""
@@ -34,7 +35,8 @@
         "os_version" : "7",
         "browser" : "Chrome",
         "browser_version" : "51.0",
-        
+        "browserstack.local": true,
+        "browserstack.debug": true,
         "browserstack.selenium_version" : "2.53.0",
         "browserstack.user": "${BROWSERSTACK_USERNAME}",
         "browserstack.key": "${BROWSERSTACK_KEY}"
