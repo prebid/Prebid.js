@@ -661,6 +661,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   timeoutIds.requestBids = setTimeout(bidmanager.executeCallback, cbTimeout);
 
+  //allow bidermanger to reset any auction related state variables
+  bidmanager.resetAuctionState();
+  
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 
   /* jshint ignore:start */
