@@ -10,10 +10,10 @@ module.exports = (function(settings) {
       "browser": browsers[browser].browser,
       "browser_version": browsers[browser].browser_version,
 		};
-		
+
 		settings.test_settings[browser] = {}
 		settings.test_settings[browser]['desiredCapabilities'] = desiredCapabilities;
 	}
 	return settings;
 
-})(require('./nightwatch.json'));
+})(require('./nightwatch.browserstack.json'));

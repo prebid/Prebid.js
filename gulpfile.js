@@ -20,6 +20,7 @@ var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var nightwatch = require('gulp-nightwatch');
+var shell = require('gulp-shell');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -31,9 +32,9 @@ var analyticsDirectory = '../analytics';
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
-gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
+gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test', 'e2etest']);
 
-gulp.task('serve-nw', ['clean', 'quality', 'webpack', 'nightwatch']);
+gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
 
@@ -120,6 +121,13 @@ gulp.task('coverage', function (done) {
   done();
 });
 
+gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test' must be finished
+  // first send results of istanbul's test coverage to coveralls.io.
+  return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
+  // have to read it.
+    .pipe(shell('cat build/coverage/lcov/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+});
+
 // Watch Task with Live Reload
 gulp.task('watch', function () {
 
@@ -164,22 +172,35 @@ gulp.task('docs', ['clean-docs'], function () {
     .pipe(gulp.dest('docs'));
 });
 
-gulp.task('nightwatch', ['webpack'], function(){
+gulp.task('e2etest', ['test'], function() {
   var browsers = require('./browsers.json');
   var env = [];
   for(var key in browsers) {
     env.push(key);
   }
-  
+
   if(env.length == 0) {
     env = '--env default';
   } else {
-    env = '--env ' + env.join(',');  
+    env = '--env ' + env.join(',');
   }
 
+  env = '--env default';
+
+  if(argv.browserstack) {
+    env = env + ' --config nightwatch.conf.js';
+  } else {
+    env = env + ' --config nightwatch.json';
+  }
+
+
+  if (argv.group) {
+    //--group testcase1/pbjsapi-group
+    env = env + ' --group ' + argv.group;
+  }
+  console.log(env);
+  
   return gulp.src('')
-    .pipe(nightwatch({
-      configFile: './nightwatch.conf.js',
-      cliArgs: [ env ]
-    }));
+    .pipe(shell('nightwatch '+env));
+
 });

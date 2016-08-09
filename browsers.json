@@ -1,9 +1,9 @@
 {
-  "bs_ie_11_windows_10": {
+  "bs_chrome_51_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
-    "browser": "ie",
-    "browser_version": "11.0",
+    "browser": "chrome",
+    "browser_version": "51.0",
     "device": null,
     "os": "Windows"
   }
