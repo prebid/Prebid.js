@@ -460,13 +460,6 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
-     it('should log an error when ad not found', function () {
-      var fakeId = 99;
-      $$PREBID_GLOBAL$$.renderAd(doc, fakeId);
-      var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
-      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
-    });
-
     it('should render the ad when new bids are requested', function () {
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       
