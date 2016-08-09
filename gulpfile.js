@@ -19,7 +19,6 @@ var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
-var nightwatch = require('gulp-nightwatch');
 var shell = require('gulp-shell');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
