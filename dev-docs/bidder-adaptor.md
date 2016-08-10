@@ -22,11 +22,11 @@ A bidder adapter is responsible for:
 {:toc}
 
 
-### Step 1: Prepare for a Github PR
+### Step 1: Prepare prerequisites for a Github PR
 
-In your PR, please provide the following contact information:
+In your PR to add the new adapter, please provide the following information:
 
-- The contact email of the adapter maintainer.
+- The contact email of the adapter's maintainer.
 - A test ad unit that will consistently return test creatives. This is to ensure future Prebid.js updates do not break your adapter.
 
 
