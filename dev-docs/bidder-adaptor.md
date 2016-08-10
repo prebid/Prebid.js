@@ -171,6 +171,8 @@ The required parameters to add into `bidObject` are:
 
 Load a script asynchronously. The callback function will be executed when the script finishes loading.
 
+Use this with the `cacheRequest` argument set to `true` if the script you're loading is a library or something else that doesn't change between requests.  It will cache the script so you don't have to wait for it to load before firing the supplied callback.
+
 **Examples**
 
 Check out the bidder adapter examples in the [Github repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters).
