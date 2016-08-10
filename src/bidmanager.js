@@ -120,6 +120,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bidsBackAll()) {
     this.executeCallback();
   }
+
+  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+
+    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
+    this.executeCallback();
+  }
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
