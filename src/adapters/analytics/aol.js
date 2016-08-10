@@ -37,7 +37,9 @@ export default utils.extend(adapter({
     analyticsType
   }), {
 
-    enableAnalytics() {
+    enableAnalytics({ options }) {
+      this.server = options.server;
+
       //first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
         if (!event) {
@@ -132,7 +134,7 @@ export default utils.extend(adapter({
       let aolParams = adUnit.aolParams;
       return {
         protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-        host: aolParams.server || 'adserver.adtechus.com',
+        host: this.server || aolParams.server || 'adserver.adtechus.com',
         port: aolParams.port || '',
         tagversion: '3.0',
         network: aolParams.network || '',
