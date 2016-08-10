@@ -469,7 +469,7 @@ exports.removeCallback = function (id, callback, cbEvent) {
 
 //considder calling this on callBids in the adapterManager?
 exports.resetAuctionState = function(){
-  //externalCallbackArr.called = false;
+  //externalCallbackArr.called = false; //should proably be added as well, but unsafe as nobody expect this value to reset, as removeCallback didn't exist
   pushedTimedoutBids = false;
 };
 
