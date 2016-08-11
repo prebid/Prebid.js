@@ -37,7 +37,9 @@ export default utils.extend(adapter({
     analyticsType
   }), {
 
-    enableAnalytics() {
+    enableAnalytics({ options }) {
+      this.server = options.server;
+
       //first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
         if (!event) {
@@ -83,6 +85,7 @@ export default utils.extend(adapter({
                   for (let adUnitBid of adUnitConf.bids) {
                     if (AOL_BIDDER_CODE === adUnitBid.bidder) {
                       adUnit.aolParams = adUnitBid.params;
+                      adUnit.aolParams.pubapiId = bid.pubapiId;
                     }
                   }
                 }
@@ -123,15 +126,14 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      var pixel = new Image();
-      pixel.src = url;
+      ajax(url, null, null, null, {isTrackingRequest: true});
     },
 
     getBaseSchema(eventId, adUnit) {
       let aolParams = adUnit.aolParams;
       return {
         protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-        host: aolParams.server || 'adserver.adtechus.com',
+        host: this.server || aolParams.server || 'adserver.adtechus.com',
         port: aolParams.port || '',
         tagversion: '3.0',
         network: aolParams.network || '',
@@ -151,7 +153,7 @@ export default utils.extend(adapter({
         hbwinner: getBidderId(adUnit.winner.bidder),
         hbprice: adUnit.winner.cpm || '',
         hbcur: '',
-        pubapi: aolParams.id
+        pubapi: aolParams.pubapiId
       };
     },
 

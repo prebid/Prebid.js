@@ -1,0 +1,8 @@
+AOL Prebid 1.0.0
+----------------
+Initial release
+- optimized AOL adapter
+- region config
+- AOL analytics
+- dynamic bundling of the adapters
+- per-adapter timeouts
