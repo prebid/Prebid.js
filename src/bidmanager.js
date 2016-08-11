@@ -87,6 +87,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
+    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+      const timedOut = true;
+
+      this.executeCallback(timedOut);
+    }
+
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
@@ -122,12 +128,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   if (bidsBackAll()) {
     this.executeCallback();
-  }
-
-  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
-    const timedOut = true;
-
-    this.executeCallback(timedOut);
   }
 };
 
