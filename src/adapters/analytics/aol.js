@@ -126,8 +126,7 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      var pixel = new Image();
-      pixel.src = url;
+      ajax(url, null, null, null, {isTrackingRequest: true});
     },
 
     getBaseSchema(eventId, adUnit) {
