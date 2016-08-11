@@ -64,7 +64,7 @@ var AolAdapter = function AolAdapter() {
     if (encp) {
       cpm = encp;
     } else {
-      cpm = response.getCPMInCents(context.alias);
+      cpm = response.getCPM(context.alias);
       if (cpm === null || isNaN(cpm)) {
         return _addErrorBid(response, context);
       }
