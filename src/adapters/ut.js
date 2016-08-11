@@ -59,7 +59,13 @@ function UtAdapter() {
 
     if (!parsed || parsed.error) {
       utils.logError(`Bad response for ${baseAdapter.getBidderCode()} adapter`);
-      bidmanager.addBidResponse(null, createBid(STATUS.NO_BID));
+
+      // signal this response is complete
+      Object.keys(adUnitCodes)
+        .map(bidId => adUnitCodes[bidId].placementCode)
+        .forEach(placementCode => {
+          bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
+        });
       return;
     }
 
