@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/ut';
+import Adapter from 'src/adapters/appnexusAst';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
 
 const REQUEST = {
-  "bidderCode": "ut",
+  "bidderCode": "appnexusAst",
   "requestId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6",
   "bidderRequestId": "7101db09af0db2",
   "bids": [
     {
-      "bidder": "ut",
+      "bidder": "appnexusAst",
       "params": {
         "placementId": "4799418",
       },

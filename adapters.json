@@ -5,6 +5,7 @@
     "admedia",
     "aol",
     "appnexus",
+    "appnexusAst",
     "fan",
     "indexExchange",
     "kruxlink",
@@ -22,7 +23,6 @@
     "brightcom",
     "wideorbit",
     "jcm",
-    "ut",
     {
       "appnexus": {
         "alias": "brealtime"
