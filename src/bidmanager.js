@@ -125,9 +125,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    const timedOut = true;
 
-    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
-    this.executeCallback();
+    this.executeCallback(timedOut);
   }
 };
 
