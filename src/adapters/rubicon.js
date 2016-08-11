@@ -59,7 +59,7 @@ var RubiconAdapter = function RubiconAdapter() {
    * @return {Bid} a bid, for prebid
    */
   function _errorBid(response, ads) {
-    var bidResponse = bidfactory.createBid(2);
+    var bidResponse = bidfactory.createBid(2, response.bid);
     bidResponse.bidderCode = RUBICON_BIDDER_CODE;
 
     // use the raw ads as the 'error'
@@ -122,7 +122,7 @@ var RubiconAdapter = function RubiconAdapter() {
         utils.logError('no dimensions given', RUBICON_BIDDER_CODE, ad);
         bidResponse = _errorBid(response, ads);
       } else {
-        bidResponse = bidfactory.createBid(1);
+        bidResponse = bidfactory.createBid(1, response.bid);
 
         bidResponse.bidderCode = RUBICON_BIDDER_CODE;
         bidResponse.cpm = ad.cpm;
@@ -222,7 +222,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
   /**
    * Define the slot using the rubicontag.defineSlot API
-   * @param {Object} Bidrequest
+   * @param {Object} bid
    * @returns {RubiconSlot} Instance of RubiconSlot
    */
   function _defineSlot(bid) {
@@ -261,6 +261,8 @@ var RubiconAdapter = function RubiconAdapter() {
     }
 
     slot.addKW(keywords);
+
+    slot.bid = bid;
 
     return slot;
   }
