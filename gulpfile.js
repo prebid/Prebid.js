@@ -31,7 +31,7 @@ var analyticsDirectory = '../analytics';
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
-gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test', 'e2etest']);
+gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
 
