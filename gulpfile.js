@@ -31,7 +31,7 @@ var analyticsDirectory = '../analytics';
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
-gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test', 'e2etest']);
+gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
 
@@ -194,7 +194,7 @@ gulp.task('docs', ['clean-docs'], function () {
     .pipe(gulp.dest('docs'));
 });
 
-gulp.task('e2etest', ['test'], function() {
+gulp.task('e2etest', function() {
   var cmd = '--env default';
   if(argv.browserstack) {
     var browsers = require('./browsers.json');
