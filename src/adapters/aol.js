@@ -6,7 +6,7 @@ var adloader = require('../adloader');
 var AolAdapter = function AolAdapter() {
 
   // constants
-  var PUBAPI_VERSION = 2;
+  var PUBAPI_VERSION = '2';
   var ADTECH_BIDDER_NAME = 'aol';
   var ADTECH_PUBAPI_CONFIG = {
     pixelsDivId: 'pixelsDiv',
