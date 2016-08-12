@@ -406,6 +406,7 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(function () {
       $$PREBID_GLOBAL$$._bidsReceived.splice($$PREBID_GLOBAL$$._bidsReceived.indexOf(adResponse), 1);
+      $$PREBID_GLOBAL$$._winningBids = [];
       utils.logError.restore();
       utils.logMessage.restore();
     });
@@ -458,6 +459,11 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.renderAd(doc, fakeId);
       var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+
+    it('should save bid displayed to winning bid', function () {
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      assert.equal($$PREBID_GLOBAL$$._winningBids[0], adResponse);
     });
   });
 
@@ -776,6 +782,17 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setPriceGranularity(granularity);
       assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
       bidmanager.setPriceGranularity.restore();
+    });
+  });
+
+  describe('getAllWinningBids', () => {
+    it('should return all winning bids', () => {
+      const bids = {name: 'a winning bid'};
+      $$PREBID_GLOBAL$$._winningBids = bids;
+
+      assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids(), bids);
+
+      $$PREBID_GLOBAL$$._winningBids = [];
     });
   });
 });
