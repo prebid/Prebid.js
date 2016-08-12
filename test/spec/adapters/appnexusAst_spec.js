@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/appnexusAst';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
+const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 
 const REQUEST = {
   "bidderCode": "appnexusAst",
@@ -86,6 +86,14 @@ describe('AppNexusAdapter', () => {
     it('requires paramters to make request', () => {
       adapter.callBids({});
       expect(requests).to.be.empty;
+    });
+
+    it('requires member && invCode', () => {
+      let backup = REQUEST.bids[0].params;
+      REQUEST.bids[0].params = {member : 1234};
+      adapter.callBids(REQUEST );
+      expect(requests).to.be.empty;
+      REQUEST.bids[0].params = backup;
     });
 
     it('sends bid request to ENDPOINT via POST', () => {

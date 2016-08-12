@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = 'http://ib.adnxs.com/ut/v2';
+const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
