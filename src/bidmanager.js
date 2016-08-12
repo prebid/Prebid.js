@@ -87,6 +87,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
+    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+      const timedOut = true;
+
+      this.executeCallback(timedOut);
+    }
+
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
@@ -121,12 +127,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bidsBackAll()) {
-    this.executeCallback();
-  }
-
-  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
-
-    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
   }
 };
@@ -239,10 +239,18 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-exports.executeCallback = function () {
+exports.executeCallback = function (timedOut) {
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
+
+    if (timedOut) {
+      const timedOutBidders = this.getTimedOutBidders();
+
+      if (timedOutBidders.length) {
+        events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+      }
+    }
   }
 
   //execute one time callback

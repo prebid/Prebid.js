@@ -18,7 +18,6 @@ var _enableCheck = true;
 var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
-var _timedOutBidders = [];
 var _trackerSend = null;
 
 /**
@@ -56,7 +55,8 @@ exports.enableAnalytics = function ({ provider, options }) {
       sendBidResponseToGa(bid);
 
     } else if (eventObj.eventType === BID_TIMEOUT) {
-      _timedOutBidders = args.bidderCode;
+      const bidderArray = args;
+      sendBidTimeouts(bidderArray);
     } else if (eventObj.eventType === BID_WON) {
       bid = args;
       sendBidWonToGa(bid);
@@ -73,12 +73,11 @@ exports.enableAnalytics = function ({ provider, options }) {
   //bidResponses
   events.on(BID_RESPONSE, function (bid) {
     sendBidResponseToGa(bid);
-    sendBidTimeouts(bid);
   });
 
   //bidTimeouts
   events.on(BID_TIMEOUT, function (bidderArray) {
-    _timedOutBidders = bidderArray;
+    sendBidTimeouts(bidderArray);
   });
 
   //wins
@@ -224,18 +223,14 @@ function sendBidResponseToGa(bid) {
   checkAnalytics();
 }
 
-function sendBidTimeouts(bid) {
+function sendBidTimeouts(timedOutBidders) {
 
-  if (bid && bid.bidder) {
-    _analyticsQueue.push(function () {
-      utils._each(_timedOutBidders, function (bidderCode) {
-        if (bid.bidder === bidderCode) {
-          _eventCount++;
-          window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disableInteraction);
-        }
-      });
+  _analyticsQueue.push(function () {
+    utils._each(timedOutBidders, function (bidderCode) {
+      _eventCount++;
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, _disableInteraction);
     });
-  }
+  });
 
   checkAnalytics();
 }
