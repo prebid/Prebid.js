@@ -21,9 +21,17 @@ export const ajax = function ajax(url, callback, data, x = null) {
     }
 
     //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
-    x.open(data ? 'POST' : 'GET', url, 1);
-    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    x.open(method, url, 1);
+
+    if (options.withCredentials) {
+      x.withCredentials = true;
+    } else {
+      if (options.preflight !== false) {
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      }
+      x.setRequestHeader('Content-Type',
+        options.contentType || 'application/json;charset=UTF-8');
+    }
 
     //x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     x.onreadystatechange = function () {
