@@ -37,6 +37,7 @@ var eventValidators = {
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
+$$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
@@ -407,6 +408,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
       if (adObject) {
+        //save winning bids
+        $$PREBID_GLOBAL$$._winningBids.push(adObject);
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
         var height = adObject.height;
@@ -725,6 +728,10 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
 
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
   $$PREBID_GLOBAL$$._sendAllBids = true;
+};
+
+$$PREBID_GLOBAL$$.getAllWinningBids = function () {
+  return $$PREBID_GLOBAL$$._winningBids;
 };
 
 processQue();

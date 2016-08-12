@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
     loader: 'istanbul-instrumenter'
   }
 ];
