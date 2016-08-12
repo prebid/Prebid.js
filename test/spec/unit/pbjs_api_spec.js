@@ -738,9 +738,25 @@ describe('Unit: Prebid Module', function () {
   describe('sendTimeoutEvent', () => {
     it('should emit BID_TIMEOUT for timed out bids', () => {
       const eventsEmitSpy = sinon.spy(events, 'emit');
-      $$PREBID_GLOBAL$$.sendTimeoutEvent();
-      assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
-      events.emit.restore();
+
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {},
+        timeout: 20
+      };
+      var adUnits = [{
+        code: 'code',
+        bids: [{
+          bidder: 'appnexus',
+          params: { placementId: '123' }
+        }]
+      }];
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+
+      setTimeout(function () {
+        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
+        events.emit.restore();
+      }, 100);
     });
   });
 
