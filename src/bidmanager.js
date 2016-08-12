@@ -247,8 +247,12 @@ exports.executeCallback = function () {
 
   //execute one time callback
   if (externalOneTimeCallback) {
-    processCallbacks([externalOneTimeCallback]);
-    externalOneTimeCallback = null;
+    try {
+      processCallbacks([externalOneTimeCallback]);
+    }
+    finally {
+      externalOneTimeCallback = null;
+    }
   }
 
   $$PREBID_GLOBAL$$.clearAuction();
