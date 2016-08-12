@@ -49,13 +49,8 @@ function insertAdapters() {
   }
 
   return inserts.map(name => {
-    if (name === 'appnexusAst') {
-      return `import { AppnexusAst } from './adapters/appnexusAst';
-        exports.registerBidAdapter(new AppnexusAst('appnexus'), 'appnexus');\n`;
-    } else {
-      return `var ${adapterName(name)} = require('./adapters/${name}.js');
-        exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
-    }
+    return `var ${adapterName(name)} = require('./adapters/${name}.js');
+    exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
   })
     .concat(aliases.map(adapter => {
       const name = Object.keys(adapter)[0];
@@ -80,7 +75,7 @@ function adapterName(adapter) {
  * @returns {string}
  */
 function useCreateNew(adapter) {
-  return adapter === 'appnexus' ? '.createNew' : '';
+  return ['appnexus', 'appnexusAst'].includes(adapter) ? '.createNew' : '';
 }
 
 /**
