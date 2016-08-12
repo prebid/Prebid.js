@@ -18,7 +18,7 @@
       "selenium_port"  : 80,
       "selenium_host"  : "hub.browserstack.com",
       "silent": true,
-      "exclude":["custom-assertions","custom-commands"],
+      "exclude":["custom-assertions","custom-commands","common"],
       "screenshots" : {
         "enabled" : false,
         "path" : ""
