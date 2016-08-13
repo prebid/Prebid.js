@@ -107,7 +107,7 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
   var bidRequest;
   var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bid.bidderCode);
   if (bidderObj && bidderObj.bids) {
-    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.bidId || (bid.bidId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
                                                                                                                                                 //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?
     if (bidRequest) {
       /* jshint ignore:start */
@@ -121,7 +121,7 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
     if (bidderObj.bidderCode === bid.bidderCode) {
       for (var j in bidderObj.bids) {
         bidRequest = bidderObj.bids[j];
-        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.bidId || (bid.bidId === bidRequest.bidId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
+        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
           //debugger;
           if (bidRequest) {
             /* jshint ignore:start */

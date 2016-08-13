@@ -177,7 +177,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //store bid response
         //bid status is good (indicating 1)
         var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, {bidId: id});
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
@@ -185,7 +185,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.width = jptResponseObj.result.width;
         bid.height = jptResponseObj.result.height;
         bid.dealId = jptResponseObj.result.deal_id;
-        bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
+        //bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
 
         bidmanager.addBidResponse(placementCode, bid);
 
@@ -196,9 +196,9 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
         //indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, {bidId: id});
         bid.bidderCode = bidCode;
-        bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
+        //bid.bidId = id;//set bidId, so later on the correct response can be matched with the request, if AN is in the race multiple times for the same adUnit
         bidmanager.addBidResponse(placementCode, bid);
       }
 
