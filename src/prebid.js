@@ -610,6 +610,7 @@ $$PREBID_GLOBAL$$.auctionRunning = function () {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
   if (auctionRunning) {
+    debugger;
     utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
       ' still running. Resubmit this request.');
     return;
