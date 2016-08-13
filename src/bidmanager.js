@@ -333,6 +333,23 @@ exports.addCallback = function (id, callback, cbEvent) {
   }
 };
 
+exports.removeCallback = function (id, callback, cbEvent) {
+  var arr = [];
+  if (CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent) {
+    arr = externalCallbackArr;
+  } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
+    arr = externalCallbackByAdUnitArr;
+  }  
+  for (var i = 0; i < arr.length; i++) {
+    //id method never seems to be invoked, so it remains a function reference, ignore the id for now
+    if (/*arr[i].id === id ||*/ arr[i] === callback) {
+      arr.splice(i, 1);
+      break;//assume only 1 occurance
+    }
+  }
+
+};
+
 //register event for bid adjustment
 events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);

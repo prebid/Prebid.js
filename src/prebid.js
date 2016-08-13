@@ -737,9 +737,10 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * @alias module:$$PREBID_GLOBAL$$.removeCallback
  * @returns {String} id for callback
  */
-$$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
+$$PREBID_GLOBAL$$.removeCallback = function (eventStr, func, id) {
   //todo
-  return null;
+  //return null;
+  bidmanager.removeCallback(id, func, eventStr);
 };
 
 /**
