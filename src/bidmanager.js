@@ -66,7 +66,7 @@ function add(a, b) {
 }
 
 function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+  const requested = ($$PREBID_GLOBAL$$._bidsRequested.length === 0) ? 0 : $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
   return requested === received
     || received > requested;//late receivers from previous requestBids after a new requestBids 
