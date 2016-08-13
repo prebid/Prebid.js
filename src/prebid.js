@@ -201,8 +201,8 @@ function checkDefinedPlacement(id) {
 function resetPresetTargeting() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      pbTargetingKeys.forEach(function(key){
-        slot.setTargeting(key,null);
+      pbTargetingKeys.forEach(function (key) {
+        slot.setTargeting(key, null);
       });
     });
   }
@@ -250,12 +250,12 @@ function getWinningBidTargeting() {
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
       .reduce(getHighestCpm,
-        {
-          adUnitCode: adUnitCode,
-          cpm: 0,
-          adserverTargeting: {},
-          timeToRespond: 0
-        }));
+      {
+        adUnitCode: adUnitCode,
+        cpm: 0,
+        adserverTargeting: {},
+        timeToRespond: 0
+      }));
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -468,7 +468,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-  
+
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();
@@ -509,7 +509,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
             break;
           }
         }*/
-        adObject =  $$PREBID_GLOBAL$$._allReceivedBids.find(bid =>  !bid.rendered && bid.adId === id);
+        adObject = $$PREBID_GLOBAL$$._allReceivedBids.find(bid => !bid.rendered && bid.adId === id);
       }
       if (adObject) {
         //emit 'bid won' event here

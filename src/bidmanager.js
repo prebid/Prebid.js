@@ -61,6 +61,7 @@ function bidsBackAdUnit(adUnitCode) {
   return requested === received;
 }
 
+
 function add(a, b) {
   return a + b;
 }
@@ -230,7 +231,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
             val: function (bidResponse) {
               if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
                 return bidResponse.pbAg;
-              } else  if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
                 return bidResponse.pbDg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
                 return bidResponse.pbLg;
