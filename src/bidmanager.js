@@ -40,6 +40,19 @@ function getBidders(bid) {
   return bid.bidder;
 }
 
+function getAdUnit(adUnitCode) {
+  return $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
+}
+function updateLastModified(adUnitCode) {
+  var adUnit = getAdUnit(adUnitCode);
+  if (adUnit) {
+    //introduce a new property here for now.
+    //we could use the bidResponses to figure this value out
+    //this value will be used in the cleanup handler
+    adUnit._lastModified = timestamp();
+  }
+}
+
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode).bids.length;
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
@@ -115,6 +128,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   if (bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
+      updateLastModified(bid.adUnitCode);
   }
 
   if (bidsBackAll()) {

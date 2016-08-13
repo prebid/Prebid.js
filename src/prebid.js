@@ -30,7 +30,11 @@ var pbTargetingKeys = [];
 
 var timeoutIds = {
   requestBids: -1,//global timeout id
+  cleanUp: -1,//global cleanup id
 };
+var adUnitsToCleanUp = [];
+
+
 var eventValidators = {
   bidWon: checkDefinedPlacement
 };
@@ -85,6 +89,91 @@ function processQue() {
       }
     }
   }
+}
+
+
+function cleanUp() {
+  //debugger;
+  //console.log('cleanup ');
+  var now = new Date().getTime();
+  var lifeTime = 60 * 1000;//1 minute, seems reasonable
+  for (var i = 0; i < adUnitsToCleanUp.length; i++) {
+    if (adUnitsToCleanUp[i]._lastModified && (now - adUnitsToCleanUp[i]._lastModified) >= lifeTime) {
+      for (var j = 0; j < $$PREBID_GLOBAL$$.adUnits.length; j++) {
+        if ($$PREBID_GLOBAL$$.adUnits[j] === adUnitsToCleanUp[i]) {
+          $$PREBID_GLOBAL$$.adUnits.splice(j, 1);
+          j--;
+          //debugger;
+          for (var k = 0; k < $$PREBID_GLOBAL$$._allReceivedBids.length; k++) {
+            if ($$PREBID_GLOBAL$$._allReceivedBids[k].adUnitCode ===  adUnitsToCleanUp[i].code) {
+              $$PREBID_GLOBAL$$._allReceivedBids.splice(k,1);
+              k--;
+            }
+          }
+          for (var k = 0; k < $$PREBID_GLOBAL$$._allRequestedBids.length; k++) {
+            for (var l = 0; l < $$PREBID_GLOBAL$$._allRequestedBids[k].bids.length; l++) {
+              if($$PREBID_GLOBAL$$._allRequestedBids[k].bids[l].adUnitCode === adUnitsToCleanUp[i].code){
+                $$PREBID_GLOBAL$$._allRequestedBids[k].bids.splice(l,1);
+                l--;
+              } 
+            }
+            if($$PREBID_GLOBAL$$._allRequestedBids[k].bids.length === 0){
+              $$PREBID_GLOBAL$$._allRequestedBids.splice(k,1);
+              k--;
+            }
+          }
+          
+          adUnitsToCleanUp.splice(i,1);
+          i--;
+        }
+      }
+    }
+  }
+  
+  //now check if there are any orphaned bid responses
+  
+  var adunitMap = $$PREBID_GLOBAL$$.adUnits.reduce((data,val) => {data[val.code] = val; return data;},{});
+  
+  for (var i = 0; i < $$PREBID_GLOBAL$$._allReceivedBids.length; i++) {
+    //debugger;
+    if(!adunitMap[$$PREBID_GLOBAL$$._allReceivedBids[i].adUnitCode] && (now - $$PREBID_GLOBAL$$._allReceivedBids[i].responseTimestamp) >= lifeTime){
+      //debugger;
+      for (var j = 0; j < $$PREBID_GLOBAL$$._allRequestedBids.length; j++) {
+        for (var k = 0; k < $$PREBID_GLOBAL$$._allRequestedBids[j].bids.length; k++) {
+          if($$PREBID_GLOBAL$$._allRequestedBids[j].bids[k].bidId === $$PREBID_GLOBAL$$._allReceivedBids[i].adId){
+            $$PREBID_GLOBAL$$._allRequestedBids[j].bids.splice(k,1);
+            k--;
+          }
+        }
+        if($$PREBID_GLOBAL$$._allRequestedBids[j].bids.length === 0){
+          $$PREBID_GLOBAL$$._allRequestedBids.splice(j,1);
+          j--;
+        }
+      }
+      $$PREBID_GLOBAL$$._allReceivedBids.splice(i,1);
+      i--;
+    }
+  }
+}
+function scheduleCleanUp() {
+  scheduleCleanUp.helper();
+}
+scheduleCleanUp.helper = function(level=0,max=9,time=20*1000){
+  //debugger;
+  var origTime = time;
+  if(level == 0){
+    time = 100;
+  }else if(level < 3){
+    time = 1000;
+  }
+  console.log('setting timeout '+level+' '+time);
+  clearTimeout(timeoutIds.cleanUp)
+  timeoutIds.cleanUp = setTimeout(function(){
+    cleanUp();
+    if(level<max){
+      scheduleCleanUp.helper(++level, max, origTime);
+    }
+  },time);
 }
 
 function timeOutBidders() {
@@ -465,7 +554,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   } else {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
-
+  scheduleCleanUp();
 };
 
 /**
@@ -484,7 +573,25 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 };
 
-$$PREBID_GLOBAL$$.clearAuction = function() {
+
+/**
+ * marks an adUnit for removal of $$PREBID_GLOBAL$$ configuration including possible bid requests/responses
+ * @param  {String} adUnitCode the adUnitCode to remove
+ * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
+ */
+$$PREBID_GLOBAL$$.disposeAdUnit = function (adUnitCode) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
+  if (adUnitCode) {
+    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+      if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
+        adUnitsToCleanUp.push($$PREBID_GLOBAL$$.adUnits[i]);
+      }
+    }
+  }
+  scheduleCleanUp();
+};
+
+$$PREBID_GLOBAL$$.clearAuction = function () {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
 };
@@ -538,6 +645,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   timeoutIds.requestBids = setTimeout(bidmanager.executeCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+
+  scheduleCleanUp();
 };
 
 /**
@@ -554,6 +663,8 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   } else if (typeof adUnitArr === objectType_object) {
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+
+  scheduleCleanUp();
 };
 
 /**
