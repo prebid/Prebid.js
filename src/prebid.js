@@ -28,6 +28,9 @@ var auctionRunning = false;
 var presetTargeting = [];
 var pbTargetingKeys = [];
 
+var timeoutIds = {
+  requestBids: -1,//global timeout id
+};
 var eventValidators = {
   bidWon: checkDefinedPlacement
 };
@@ -527,8 +530,12 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
+
+  //debugger;
+  //clear the previous timeout in case it was still running
+  clearTimeout(timeoutIds.requestBids);
   //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  timeoutIds.requestBids = setTimeout(bidmanager.executeCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
