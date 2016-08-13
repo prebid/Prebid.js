@@ -42,6 +42,7 @@ var eventValidators = {
 /* Public vars */
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
+$$PREBID_GLOBAL$$._allRequestedBids = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._allReceivedBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
@@ -609,9 +610,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       ' still running. Resubmit this request.');
     return;
   } else {
-    auctionRunning = true;    
-    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0))
-    $$PREBID_GLOBAL$$._bidsRequested = [];
+    auctionRunning = true;
+    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0));
+    $$PREBID_GLOBAL$$._allRequestedBids.push.apply($$PREBID_GLOBAL$$._allRequestedBids, $$PREBID_GLOBAL$$._bidsRequested.splice(0));
+    //$$PREBID_GLOBAL$$._bidsRequested = [];
     //$$PREBID_GLOBAL$$._bidsReceived = [];
   }
 

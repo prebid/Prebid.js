@@ -75,24 +75,75 @@ exports.bidsBackAll = function() {
   return bidsBackAll();
 };
 
+function getGlobalBidResponse(request) {
+  var resp = $$PREBID_GLOBAL$$._bidsReceived.find(bidSet => request.bidId === bidSet.adId);
+  if (!resp) {
+    resp = $$PREBID_GLOBAL$$._allReceivedBids.find(bidSet => request.bidId === bidSet.adId);
+    //debugger;
+  }
+  return resp;
+}
+
 function getBidSetForBidder(bidder) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
-
+function getBidSetForBidderGlobal(bidder, adUnitCode) {
+  var bidRequest;
+  var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder);
+  if (bidderObj && bidderObj.bids) {
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+    if (bidRequest) {
+      return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+    }
+  }
+  for (var i = 0; i < $$PREBID_GLOBAL$$._allRequestedBids.length; i++) {
+    bidderObj = $$PREBID_GLOBAL$$._allRequestedBids[i];
+    if (bidderObj.bidderCode === bidder) {
+      for (var j in bidderObj.bids) {
+        bidRequest = bidderObj.bids[j];
+        if (bidderObj.bids[j].placementCode === adUnitCode) {
+          //debugger;
+          if (bidRequest) {
+            return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+          }
+        }
+      }
+    }
+  }
+  return { bidSet: { start: null, requestId: null }, request: null, response: null };
+}
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
-    let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
-    if(bidRequest && bidRequest.bidId) {
-      bid.adId = bidRequest.bidId;
+    let bidRequest = getBidSetForBidderGlobal(bid.bidderCode, adUnitCode);
+    var origBid;
+    if (bidRequest.response) {
+      if (bidRequest.response.getStatusCode() === 3 && bid.getStatusCode() !== 1) {
+        //bid already timed out, and new bid doesn't add value
+        //debugger;
+        return;
+      }
+      //if reached here, the bid was timed out before, but received a valid responsive after this time
+      //keeping the books complete, but we won't trigger the callbacks
+      //debugger;
+      origBid = bid;
+      bid = bidRequest.response;
+      var bidClone = Object.assign({}, bid);
+      Object.assign(bid, origBid);
+      Object.assign(bid, {
+        statusMessage: bidClone.statusMessage,
+      });
+    }
+    if (bidRequest.request && bidRequest.request.bidId) {
+      bid.adId = bidRequest.request.bidId;
     }
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: bidRequest.bidSet.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: bidRequest.bidSet.start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -124,13 +175,23 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
       bid.adserverTargeting = keyValues;
     }
+    //don't add if a response already exists
+    if (!bidRequest.response)
+      $$PREBID_GLOBAL$$._bidsReceived.push(bid);
 
-    $$PREBID_GLOBAL$$._bidsReceived.push(bid);
-  }
-
-  if (bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
+    if (bidRequest.response) {
+      //abort, these callbacks are already been called, due to timeout conditions
+      return;
+    }
+    if (bidsBackAdUnit(bid.adUnitCode)) {
+      console.log("callback adunit complete: " + bid.adUnitCode);
+      triggerAdUnitCallbacks(bid.adUnitCode);
       updateLastModified(bid.adUnitCode);
+    } else {
+      //debugger;
+      bidsBackAdUnit(bid.adUnitCode);
+      console.log("adunit not complete yet: " + bid.adUnitCode);
+    }
   }
 
   if (bidsBackAll()) {

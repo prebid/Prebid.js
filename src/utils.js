@@ -478,7 +478,12 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id) {
-  return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  var ret = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  if (!ret) {
+    debugger;
+    return $$PREBID_GLOBAL$$._allRequestedBids.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  }
+  return ret;
 }
 
 export function getKeys(obj) {
