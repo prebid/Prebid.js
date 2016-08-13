@@ -107,8 +107,7 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
   var bidRequest;
   var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bid.bidderCode);
   if (bidderObj && bidderObj.bids) {
-    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
-                                                                                                                                                //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?    
     if (bidRequest) {
       /* jshint ignore:start */
       return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
@@ -372,13 +371,13 @@ exports.executeCallback = function (timedOut) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
 
-     if (timedOut) {
-       const timedOutBidders = this.getTimedOutBidders();
- 
-       if (timedOutBidders.length) {
-         events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
-       }
-     }
+    if (timedOut) {
+      const timedOutBidders = this.getTimedOutBidders();
+
+      if (timedOutBidders.length) {
+        events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+      }
+    }
   }
 
   //execute one time callback

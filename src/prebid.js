@@ -178,13 +178,6 @@ scheduleCleanUp.helper = function(level=0,max=9,time=20*1000){
   },time);
 };
 /* jshint ignore:end */
-function timeOutBidders() {
-  if (!pb_bidsTimedOut) {
-    pb_bidsTimedOut = true;
-    var timedOutBidders = bidmanager.getTimedOutBidders();
-    events.emit(BID_TIMEOUT, timedOutBidders);
-  }
-}
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
