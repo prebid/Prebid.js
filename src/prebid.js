@@ -597,6 +597,10 @@ $$PREBID_GLOBAL$$.clearAuction = function () {
   utils.logMessage('Prebid auction cleared');
 };
 
+$$PREBID_GLOBAL$$.auctionRunning = function () {
+  return auctionRunning;
+};
+
 /**
  *
  * @param bidsBackHandler
