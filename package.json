@@ -80,6 +80,7 @@
     "mocha": "^1.21.4",
     "open": "0.0.5",
     "phantomjs": "^1.9.18",
+    "qs": "^6.2.1",
     "querystringify": "0.0.3",
     "raw-loader": "^0.5.1",
     "redis": "^0.12.1",
