@@ -136,8 +136,16 @@ function getBidSetForBidderGlobal(bid, adUnitCode) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
-  if (bid) {
+ if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
+    /*
+    seems redundant with bidRequest.request.bidId;
+    if (!bid.adId) {
+      let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+      if (bidRequest && bidRequest.bidId) {
+        bid.adId = bidRequest.bidId;
+      }
+    }*/
     
     let bidRequest = getBidSetForBidderGlobal(bid, adUnitCode);
     var origBid;
@@ -158,7 +166,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
         statusMessage: bidClone.statusMessage,
       });
     }
-    if (bidRequest.request && bidRequest.request.bidId) {
+    if (bidRequest.request && bidRequest.request.bidId && !bid.adId) {
       bid.adId = bidRequest.request.bidId;
     }
     Object.assign(bid, {
@@ -204,7 +212,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       //abort, these callbacks are already been called, due to timeout conditions
       return;
     }
-    if (bidsBackAdUnit(bid.adUnitCode)) {
+    if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
       console.log("callback adunit complete: " + bid.adUnitCode);
       triggerAdUnitCallbacks(bid.adUnitCode);
       updateLastModified(bid.adUnitCode);
@@ -219,7 +227,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     this.executeCallback();
   }
 
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
 
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
