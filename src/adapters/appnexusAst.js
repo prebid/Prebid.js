@@ -34,6 +34,9 @@ function AppnexusAstAdapter() {
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
         tag.prebid = true;
         tag.disable_psa = true;
+        if (!utils.isEmpty(bid.params.keywords)) {
+          tag.keywords = getKeywords(bid.params.keywords);
+        }
 
         return tag;
       });
@@ -97,6 +100,29 @@ function AppnexusAstAdapter() {
     } else {
       utils.logError('bid requires placementId or (memberId and invCode) params');
     }
+  }
+
+  /* Turn keywords parameter into ut-compatible format */
+  function getKeywords(keywords) {
+    let arrs = [];
+
+    utils._each(keywords, (v, k) => {
+      if (utils.isArray(v)) {
+        let values = [];
+        utils._each(v, (val) => {
+          val = utils.getValueString('keywords.' + k, val);
+          if (val) {values.push(val);}
+        });
+        v = values;
+      } else {
+        v = utils.getValueString('keywords.' + k, v);
+        if (utils.isStr(v)) {v = [v];}
+        else {return;} // unsuported types - don't send a key
+      }
+      arrs.push({key: k, value: v});
+    });
+
+    return arrs;
   }
 
   /* Turn bid request sizes into ut-compatible format */
