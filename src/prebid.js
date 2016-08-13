@@ -21,10 +21,8 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
-var pb_bidsTimedOut = false;
 var auctionRunning = false;
 var presetTargeting = [];
 var pbTargetingKeys = [];
@@ -662,7 +660,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //clear the previous timeout in case it was still running
   clearTimeout(timeoutIds.requestBids);
   //set timeout for all bids
-  timeoutIds.requestBids = setTimeout(bidmanager.executeCallback, cbTimeout);
+  const timedOut = true;
+  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
+  timeoutIds.requestBids = setTimeout(timeoutCallback, cbTimeout);
 
   //allow bidermanger to reset any auction related state variables
   bidmanager.resetAuctionState();
@@ -855,14 +855,6 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
-};
-
-/**
- * This will tell analytics that all bids received after are "timed out"
- */
-$$PREBID_GLOBAL$$.sendTimeoutEvent = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.sendTimeoutEvent', arguments);
-  timeOutBidders();
 };
 
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
