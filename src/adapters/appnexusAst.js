@@ -75,6 +75,7 @@ function AppnexusAstAdapter() {
     parsed.tags.forEach(tag => {
       const cpm = tag.ads && tag.ads[0].cpm;
       const type = tag.ads && tag.ads[0].ad_type;
+      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
 
       if (type !== 'banner') {
         utils.logError(`${type} ad type not supported`);
@@ -84,11 +85,11 @@ function AppnexusAstAdapter() {
       if (cpm !== 0 && type === 'banner') {
         bid = createBid(STATUS.GOOD, tag);
       } else {
-        bid = createBid(STATUS.NO_BID);
+        bid = createBid(STATUS.NO_BID, tag);
       }
 
       if (!utils.isEmpty(bid)) {
-        bidmanager.addBidResponse(adUnitCodes[tag.uuid].placementCode, bid);
+        bidmanager.addBidResponse(adUnitCodes[bid.adId].placementCode, bid);
       }
     });
   }
@@ -150,7 +151,7 @@ function AppnexusAstAdapter() {
 
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
-    let bid = bidfactory.createBid(status);
+    let bid = bidfactory.createBid(status, tag);
     bid.code = baseAdapter.getBidderCode();
     bid.bidderCode = baseAdapter.getBidderCode();
 
