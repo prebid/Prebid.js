@@ -434,7 +434,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         events.emit(BID_WON, adObject);
 
         // mark bid requests and responses for this placement in this auction as "complete"
-        //markComplete(adObject);
+        markComplete(adObject);
         var height = adObject.height;
         var width = adObject.width;
         var url = adObject.adUrl;
@@ -447,11 +447,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }
-        }
-
-        //doc.body.style.width = width;
-        //doc.body.style.height = height;
-        else if (url) {
+        } else if (url) {
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
 
@@ -525,7 +521,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   } else {
     auctionRunning = true;
-    //removeComplete();
+    removeComplete();
   }
 
   if (typeof bidsBackHandler === objectType_function) {
