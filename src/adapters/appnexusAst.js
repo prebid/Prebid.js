@@ -15,7 +15,7 @@ const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 function AppnexusAstAdapter() {
 
   let baseAdapter = Adapter.createNew('appnexusAst');
-  let adUnitCodes = {};
+  let bidRequests = {};
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
@@ -24,7 +24,7 @@ function AppnexusAstAdapter() {
       .filter(bid => valid(bid))
       .map(bid => {
         // map request id to bid object to retrieve adUnit code in callback
-        adUnitCodes[bid.bidId] = bid;
+        bidRequests[bid.bidId] = bid;
 
         let tag = {};
         tag.sizes = getSizes(bid.sizes);
@@ -64,8 +64,8 @@ function AppnexusAstAdapter() {
       utils.logError(`Bad response for ${baseAdapter.getBidderCode()} adapter`);
 
       // signal this response is complete
-      Object.keys(adUnitCodes)
-        .map(bidId => adUnitCodes[bidId].placementCode)
+      Object.keys(bidRequests)
+        .map(bidId => bidRequests[bidId].placementCode)
         .forEach(placementCode => {
           bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
         });
@@ -75,22 +75,22 @@ function AppnexusAstAdapter() {
     parsed.tags.forEach(tag => {
       const cpm = tag.ads && tag.ads[0].cpm;
       const type = tag.ads && tag.ads[0].ad_type;
-      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
 
       if (type !== 'banner') {
         utils.logError(`${type} ad type not supported`);
       }
 
-      let bid;
+      let status;
       if (cpm !== 0 && type === 'banner') {
-        bid = createBid(STATUS.GOOD, tag);
+        status = STATUS.GOOD;
       } else {
-        bid = createBid(STATUS.NO_BID, tag);
+        status = STATUS.NO_BID;
       }
 
-      if (!utils.isEmpty(bid)) {
-        bidmanager.addBidResponse(adUnitCodes[bid.adId].placementCode, bid);
-      }
+      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      const bid = createBid(status, tag);
+      const placement = bidRequests[bid.adId].placementCode;
+      bidmanager.addBidResponse(placement, bid);
     });
   }
 
