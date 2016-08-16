@@ -359,11 +359,12 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
   const responses = $$PREBID_GLOBAL$$._bidsReceived;
 
   // find the last requested id to get responses for most recent auction only
-  const currentRequestId = responses[responses.length - 1].requestId;
+  const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
 
   return responses.map(bid => bid.adUnitCode)
     .filter(uniques).map(adUnitCode => responses
       .filter(bid => bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode))
+    .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
         [bids[0].adUnitCode]: { bids: bids }

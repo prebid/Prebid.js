@@ -2,6 +2,7 @@ import {
   getAdServerTargeting,
   getBidRequests,
   getBidResponses,
+  getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
 } from 'test/fixtures/fixtures';
@@ -217,19 +218,16 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getBidResponses', function () {
-    it('should return expected bid responses when not passed an adunitCode', function () {
-      var result = $$PREBID_GLOBAL$$.getBidResponses();
-      var compare = getBidResponses().map(bid => bid.adUnitCode)
-        .filter((v, i, a) => a.indexOf(v) === i).map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-          .filter(bid => bid.adUnitCode === adUnitCode))
-        .map(bids => {
-          return {
-            [bids[0].adUnitCode]: { bids: bids }
-          };
-        })
-        .reduce((a, b) => Object.assign(a, b), {});
+    var result = $$PREBID_GLOBAL$$.getBidResponses();
+    var compare = getBidResponsesFromAPI();
 
+    it('should return expected bid responses when not passed an adunitCode', function () {
       assert.deepEqual(result, compare, 'expected bid responses are returned');
+    });
+
+    it('should return bid responses for most recent requestId only', () => {
+      const responses = $$PREBID_GLOBAL$$.getBidResponses();
+      assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
     });
   });
 
