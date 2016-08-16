@@ -99,7 +99,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
       // try to fetch the bid request we sent memeglobal
       $$PREBID_GLOBAL$$._bidsRequested.forEach(function (bidRequested) {
-        if (bidRequested.bidderCode != bidderName) return;
+        if (bidRequested.bidderCode !== bidderName) return;
 
         var bidObj = bidRequested.bids.find(b => b.bidId === bid.impid);
         if (bidObj) {
