@@ -70,10 +70,13 @@ function getBidSetForBidder(bidder) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
     //first lookup bid request and assign it back the bidId if it matches the adUnitCode
-    let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
-    if(bidRequest && bidRequest.bidId) {
-      bid.adId = bidRequest.bidId;
+    if (!bid.adId) {
+      let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+      if (bidRequest && bidRequest.bidId) {
+        bid.adId = bidRequest.bidId;
+      }
     }
+
     Object.assign(bid, {
       requestId: getBidSetForBidder(bid.bidderCode).requestId,
       responseTimestamp: timestamp(),
@@ -113,7 +116,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
-  if (bidsBackAdUnit(bid.adUnitCode)) {
+  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
@@ -121,7 +124,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     this.executeCallback();
   }
 
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
 
     events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
@@ -152,7 +155,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
             val: function (bidResponse) {
               if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
                 return bidResponse.pbAg;
-              } else  if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
                 return bidResponse.pbDg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
                 return bidResponse.pbLg;
