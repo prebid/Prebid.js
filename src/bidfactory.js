@@ -14,8 +14,8 @@ var utils = require('./utils.js');
  dealId,
  priceKeyString;
  */
-function Bid(statusCode) {
-  var _bidId = utils.getUniqueIdentifierStr();
+function Bid(statusCode, bidRequest) {
+  var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;
 
   this.bidderCode = '';
@@ -49,6 +49,6 @@ function Bid(statusCode) {
 }
 
 // Bid factory function.
-exports.createBid = function (statusCode) {
-  return new Bid(statusCode);
+exports.createBid = function () {
+  return new Bid(...arguments);
 };

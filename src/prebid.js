@@ -21,10 +21,8 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
-var pb_bidsTimedOut = false;
 var auctionRunning = false;
 var presetTargeting = [];
 var pbTargetingKeys = [];
@@ -37,6 +35,7 @@ var eventValidators = {
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
+$$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
@@ -81,14 +80,6 @@ function processQue() {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }
-  }
-}
-
-function timeOutBidders() {
-  if (!pb_bidsTimedOut) {
-    pb_bidsTimedOut = true;
-    var timedOutBidders = bidmanager.getTimedOutBidders();
-    events.emit(BID_TIMEOUT, timedOutBidders);
   }
 }
 
@@ -375,7 +366,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
-  
+
   //first reset any old targeting
   getPresetTargeting();
   resetPresetTargeting();
@@ -407,6 +398,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
       if (adObject) {
+        //save winning bids
+        $$PREBID_GLOBAL$$._winningBids.push(adObject);
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
         var height = adObject.height;
@@ -514,7 +507,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   //set timeout for all bids
-  setTimeout(bidmanager.executeCallback, cbTimeout);
+  const timedOut = true;
+  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
+  setTimeout(timeoutCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
@@ -697,14 +692,6 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   }
 };
 
-/**
- * This will tell analytics that all bids received after are "timed out"
- */
-$$PREBID_GLOBAL$$.sendTimeoutEvent = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.sendTimeoutEvent', arguments);
-  timeOutBidders();
-};
-
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
@@ -725,6 +712,10 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
 
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
   $$PREBID_GLOBAL$$._sendAllBids = true;
+};
+
+$$PREBID_GLOBAL$$.getAllWinningBids = function () {
+  return $$PREBID_GLOBAL$$._winningBids;
 };
 
 processQue();
