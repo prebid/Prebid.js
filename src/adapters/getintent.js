@@ -15,7 +15,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
   }
 
   function bid(params) {
-    var bids = params.bids;
+    var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
       var callback = bidResponseCallback(bidRequest);
