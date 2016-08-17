@@ -69,13 +69,6 @@ function getBidSetForBidder(bidder) {
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
-    //first lookup bid request and assign it back the bidId if it matches the adUnitCode
-    if (!bid.adId) {
-      let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
-      if (bidRequest && bidRequest.bidId) {
-        bid.adId = bidRequest.bidId;
-      }
-    }
 
     Object.assign(bid, {
       requestId: getBidSetForBidder(bid.bidderCode).requestId,
