@@ -92,6 +92,7 @@ describe('triplelift adapter', () => {
     it('should exist and be a function', () => {
       expect(pbjs.TLCB).to.exist.and.to.be.a('function');
     });
+
   });
 
   describe('add bids to the manager', () => {
