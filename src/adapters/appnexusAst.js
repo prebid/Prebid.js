@@ -30,7 +30,7 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        tag.id = Number.parseInt(bid.params.placementId);
+        tag.id = parseInt(bid.params.placementId, 10);
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
         tag.prebid = true;
         tag.disable_psa = true;
