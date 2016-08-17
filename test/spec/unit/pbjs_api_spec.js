@@ -834,4 +834,34 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$._winningBids = [];
     });
   });
+
+  describe('removeAdUnit', () => {
+    it('should remove given adUnit in adUnits array', () => {
+      const adUnit1 = {
+        code: 'adUnit1',
+        bids: [{
+          bidder: 'appnexus',
+          params: { placementId: '123' }
+        }]
+      };
+      const adUnit2 = {
+        code: 'adUnit2',
+        bids: [{
+          bidder: 'rubicon',
+          params: {
+            accountId: "1234",
+            siteId: "1234",
+            zoneId: "1234"
+          }
+        }]
+      };
+      const adUnits = [adUnit1, adUnit2];
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.removeAdUnit('foobar');
+      assert.deepEqual($$PREBID_GLOBAL$$.adUnits, adUnits);
+      $$PREBID_GLOBAL$$.removeAdUnit('adUnit1');
+      assert.deepEqual($$PREBID_GLOBAL$$.adUnits, [adUnit2]);
+
+    });
+  });
 });
