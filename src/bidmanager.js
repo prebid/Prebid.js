@@ -206,13 +206,25 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (utils.isFn(value)) {
       try {
-        keyValues[key] = value(custBidObj);
+        value = value(custBidObj);
       } catch (e) {
         utils.logError('bidmanager', 'ERROR', e);
       }
+    }
+
+    if (
+      typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true &&
+      (
+        utils.isEmptyStr(value) ||
+        value === null ||
+        value === undefined
+      )
+    ) {
+      utils.logInfo("suppressing empty key '" + key + "' from adserver targeting");
     } else {
       keyValues[key] = value;
     }
+
   });
 
   return keyValues;

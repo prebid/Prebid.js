@@ -357,6 +357,15 @@ exports.isEmpty = function (object) {
 };
 
 /**
+ * Return if string is empty, null, or undefined
+ * @param str string to test
+ * @returns {boolean} if string is empty
+ */
+exports.isEmptyStr = function(str) {
+  return this.isStr(str) && (!str || 0 === str.length);
+};
+
+/**
  * Iterate object with the function
  * falls back to es5 `forEach`
  * @param {Array|Object} object

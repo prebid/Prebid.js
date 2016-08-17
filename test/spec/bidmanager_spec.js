@@ -348,6 +348,32 @@ describe('bidmanager.js', function () {
 
     });
 
+    it('suppressEmptyKeys=true' , function() {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        standard: {
+          suppressEmptyKeys: true,
+          adserverTargeting: [
+            {
+              key: "aKeyWithAValue",
+              val: 42
+            },
+            {
+              key: "aKeyWithAnEmptyValue",
+              val: ""
+            }
+          ]
+        }
+      };
+
+      var expected = {
+        "aKeyWithAValue": 42
+      };
+
+      var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+      assert.deepEqual(response, expected);
+    })
+
   });
 
   describe('adjustBids', () => {
