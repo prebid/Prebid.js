@@ -24,6 +24,7 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var auctionRunning = false;
+var bidRequestQueue = [];
 var presetTargeting = [];
 var pbTargetingKeys = [];
 
@@ -246,6 +247,31 @@ function getAllTargeting() {
   return targeting;
 }
 
+function markComplete(adObject) {
+  $$PREBID_GLOBAL$$._bidsRequested.filter(request => request.requestId === adObject.requestId)
+    .forEach(request => request.bids.filter(bid => bid.placementCode === adObject.adUnitCode)
+      .forEach(bid => bid.complete = true));
+
+  $$PREBID_GLOBAL$$._bidsReceived.filter(bid => {
+    return bid.requestId === adObject.requestId && bid.adUnitCode === adObject.adUnitCode;
+  }).forEach(bid => bid.complete = true);
+}
+
+function removeComplete() {
+  let requests = $$PREBID_GLOBAL$$._bidsRequested;
+  let responses = $$PREBID_GLOBAL$$._bidsReceived;
+
+  requests.map(request => request.bids
+      .filter(bid => bid.complete))
+    .forEach(request => requests.splice(requests.indexOf(request), 1));
+
+  responses.filter(bid => bid.complete).forEach(bid => responses.splice(responses.indexOf(bid), 1));
+
+  // also remove bids that have an empty or error status so known as not pending for render
+  responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
+    .forEach(bid => responses.slice(responses.indexOf(bid), 1));
+}
+
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -330,10 +356,15 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function () {
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
+  const responses = $$PREBID_GLOBAL$$._bidsReceived;
 
-  return $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
-    .filter(uniques).map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode))
+  // find the last requested id to get responses for most recent auction only
+  const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
+
+  return responses.map(bid => bid.adUnitCode)
+    .filter(uniques).map(adUnitCode => responses
+      .filter(bid => bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode))
+    .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
         [bids[0].adUnitCode]: { bids: bids }
@@ -402,6 +433,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         $$PREBID_GLOBAL$$._winningBids.push(adObject);
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
+
+        // mark bid requests and responses for this placement in this auction as "complete"
+        markComplete(adObject);
         var height = adObject.height;
         var width = adObject.width;
         var url = adObject.adUrl;
@@ -414,11 +448,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }
-        }
-
-        //doc.body.style.width = width;
-        //doc.body.style.height = height;
-        else if (url) {
+        } else if (url) {
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
 
@@ -464,6 +494,9 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
   events.emit(AUCTION_END);
+  if (bidRequestQueue.length) {
+    bidRequestQueue.shift()();
+  }
 };
 
 /**
@@ -474,24 +507,22 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  if (auctionRunning) {
-    utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
-      ' still running. Resubmit this request.');
-    return;
-  } else {
-    auctionRunning = true;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-    $$PREBID_GLOBAL$$._bidsReceived = [];
-  }
-
   const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
-
-  // use adUnits provided or from $$PREBID_GLOBAL$$ global
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   // if specific adUnitCodes filter adUnits for those codes
   if (adUnitCodes && adUnitCodes.length) {
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
+  }
+
+  if (auctionRunning) {
+    bidRequestQueue.push(() => {
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+    });
+    return;
+  } else {
+    auctionRunning = true;
+    removeComplete();
   }
 
   if (typeof bidsBackHandler === objectType_function) {
@@ -509,7 +540,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, cbTimeout);
+  setTimeout(timeoutCallback, timeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
