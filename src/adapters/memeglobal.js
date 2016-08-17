@@ -100,7 +100,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         if (responseCPM === 0) {
           var bid = bidfactory.createBid(2);
           bid.bidderCode = bidderName;
-          bidmanager.addBidResponse(bidRequest.placementCode, bid);
+          bidmanager.addBidResponse(placementCode, bid);
           return;
         }
         bidResponse.placementCode = placementCode;
