@@ -832,24 +832,24 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids(), bids);
 
       $$PREBID_GLOBAL$$._winningBids = [];
-
     });
   });
 
   describe('emit event', () => {
     it('should call AUCTION_END only once', () => {
 
-      var clock = sinon.useFakeTimers();
+      resetAuction();
       var spyClearAuction = sinon.spy($$PREBID_GLOBAL$$, 'clearAuction');
+      var clock1 = sinon.useFakeTimers();
 
       var requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 3000,
+        timeout: 2000,
       };
 
       $$PREBID_GLOBAL$$.requestBids(requestObj);
-      clock.tick(3000);
-      assert.ok(spyClearAuction.calledOnce, 'once');
+      clock1.tick(2001);
+      assert.ok(spyClearAuction.calledOnce, true);
 
       $$PREBID_GLOBAL$$._bidsRequested = [{
         "bidderCode": "appnexus",
@@ -918,7 +918,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.addBidResponse(adUnitCode, bid);
       assert.equal(spyClearAuction.callCount,1, 'AUCTION_END event emitted more than once');
 
-      clock.restore();
+      clock1.restore();
       resetAuction();
     });
   });
