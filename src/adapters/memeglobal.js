@@ -99,8 +99,8 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         responseCPM = parseFloat(bidderBid.price);
         if (responseCPM === 0) {
           var bid = bidfactory.createBid(2);
-          bidderBid.bidderCode = bidderName;
-          bidmanager.addBidResponse(bidRequest.placementCode, bidderBid);
+          bid.bidderCode = bidderName;
+          bidmanager.addBidResponse(bidRequest.placementCode, bid);
           return;
         }
         bidResponse.placementCode = placementCode;
@@ -116,7 +116,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         bidmanager.addBidResponse(placementCode, bidResponse);
       }
     });
-  }
+  };
 
   return {
     callBids: _callBids
