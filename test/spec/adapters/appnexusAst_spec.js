@@ -91,7 +91,7 @@ describe('AppNexusAdapter', () => {
     it('requires member && invCode', () => {
       let backup = REQUEST.bids[0].params;
       REQUEST.bids[0].params = {member : 1234};
-      adapter.callBids(REQUEST );
+      adapter.callBids(REQUEST);
       expect(requests).to.be.empty;
       REQUEST.bids[0].params = backup;
     });
@@ -100,6 +100,39 @@ describe('AppNexusAdapter', () => {
       adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('POST');
+    });
+
+    it('converts keyword params to proper form and attaches to request', () => {
+      REQUEST.bids[0].params.keywords = {
+        single: 'val',
+        singleArr: ['val'],
+        singleArrNum: [5],
+        multiValMixed: ['value1', 2, 'value3'],
+        singleValNum:  123,
+        badValue: {'foo': 'bar'} // should be dropped
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody).tags[0];
+      expect(request.keywords).to.deep.equal([{
+          "key": "single",
+          "value": ["val"]
+        }, {
+          "key": "singleArr",
+          "value": ["val"]
+        }, {
+          "key": "singleArrNum",
+          "value": ["5"]
+        }, {
+          "key": "multiValMixed",
+          "value": ["value1", "2", "value3"]
+        }, {
+          "key": "singleValNum",
+          "value": ["123"]
+        }]);
+
+      delete REQUEST.bids[0].params.keywords;
     });
 
   });
