@@ -835,6 +835,94 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('emit event', () => {
+    it('should call AUCTION_END only once', () => {
+
+      resetAuction();
+      var spyClearAuction = sinon.spy($$PREBID_GLOBAL$$, 'clearAuction');
+      var clock1 = sinon.useFakeTimers();
+
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {},
+        timeout: 2000,
+      };
+
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+      clock1.tick(2001);
+      assert.ok(spyClearAuction.calledOnce, true);
+
+      $$PREBID_GLOBAL$$._bidsRequested = [{
+        "bidderCode": "appnexus",
+        "requestId": "1863e370099523",
+        "bidderRequestId": "2946b569352ef2",
+        "bids": [
+          {
+            "bidder": "appnexus",
+            "params": {
+              "placementId": "4799418",
+              "test": "me"
+            },
+            "placementCode": "/19968336/header-bid-tag1",
+            "sizes": [[728,90],[970,90]],
+            "bidId": "392b5a6b05d648",
+            "bidderRequestId": "2946b569352ef2",
+            "requestId": "1863e370099523",
+            "startTime": 1462918897462,
+            "status": 1
+          }
+        ],
+        "start": 1462918897460
+      }];
+
+      $$PREBID_GLOBAL$$._bidsReceived = [];
+
+      var bid = {
+        "bidderCode": "appnexus",
+        "width": 728,
+        "height": 90,
+        "statusMessage": "Bid available",
+        "adId": "24bd938435ec3fc",
+        "creative_id": 33989846,
+        "cpm": 0,
+        "adUrl": "http://lax1-ib.adnxs.com/ab?e=wqT_3QLyBKhyAgAAAwDWAAUBCMjAybkFEOOryfjI7rGNWhjL84KE1tzG-kkgASotCQAAAQII4D8RAQcQAADgPxkJCQjwPyEJCQjgPykRCaAwuvekAji-B0C-B0gCUNbJmhBYweAnYABokUB4mt0CgAEBigEDVVNEkgUG8ECYAdgFoAFaqAEBsAEAuAEBwAEDyAEA0AEA2AEA4AEA8AEAigI6dWYoJ2EnLCA0OTQ0NzIsIDE0NjI5MTkyNDApOwEcLHInLCAzMzk4OTg0NjYeAPBvkgLNASFwU2Y1YUFpNjBJY0VFTmJKbWhBWUFDREI0Q2N3QURnQVFBUkl2Z2RRdXZla0FsZ0FZSk1IYUFCd3lnNTRDb0FCcGh5SUFRcVFBUUdZQVFHZ0FRR29BUU93QVFDNUFRQUFBQUFBQU9BX3dRRQkMSEFEZ1A4a0JJNTJDbGs5VjB6X1oVKCRQQV80QUVBOVFFBSw8bUFLS2dNQ0NENkFDQUxVQwUVBEwwCQh0T0FDQU9nQ0FQZ0NBSUFEQVEuLpoCJSFfZ2lqYXdpMtAA8KZ3ZUFuSUFRb2lvREFnZzgu2ALoB-ACx9MB6gIfaHR0cDovL3ByZWJpZC5vcmc6OTk5OS9ncHQuaHRtbIADAIgDAZADAJgDBaADAaoDALADALgDAMADrALIAwDYAwDgAwDoAwD4AwOABACSBAQvanB0mAQAogQKMTAuMS4xMy4zN6gEi-wJsgQICAAQABgAIAC4BADABADIBADSBAsxMC4wLjgwLjI0MA..&s=1f584d32c2d7ae3ce3662cfac7ca24e710bc7fd0&referrer=http%3A%2F%2Fprebid.org%3A9999%2Fgpt.html",
+        "responseTimestamp": 1462919239342,
+        "requestTimestamp": 1462919238919,
+        "bidder": "appnexus",
+        "adUnitCode": "/19968336/header-bid-tag1",
+        "timeToRespond": 423,
+        "pbLg": "5.00",
+        "pbMg": "10.00",
+        "pbHg": "10.00",
+        "pbAg": "10.00",
+        "size": "728x90",
+        "alwaysUseBid": true,
+        "adserverTargeting": {
+          "hb_bidder": "appnexus",
+          "hb_adid": "24bd938435ec3fc",
+          "hb_pb": "10.00",
+          "hb_size": "728x90",
+          "foobar": "728x90"
+        }
+      };
+
+      var adUnits = [{
+        code: '/19968336/header-bid-tag1',
+        bids: [{
+          bidder: 'appnexus',
+          params: { placementId: '123' }
+        }]
+      }];
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+
+      const adUnitCode = '/19968336/header-bid-tag1';
+      $$PREBID_GLOBAL$$.addBidResponse(adUnitCode, bid);
+      assert.equal(spyClearAuction.callCount,1, 'AUCTION_END event emitted more than once');
+
+      clock1.restore();
+      resetAuction();
+    });
+  });
+
   describe('removeAdUnit', () => {
     it('should remove given adUnit in adUnits array', () => {
       const adUnit1 = {
@@ -864,4 +952,5 @@ describe('Unit: Prebid Module', function () {
 
     });
   });
+  
 });

@@ -482,7 +482,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
   if (adUnitCode) {
-    for (var i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
+    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
@@ -540,7 +540,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, timeout);
+  setTimeout(timeoutCallback, cbTimeout);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
