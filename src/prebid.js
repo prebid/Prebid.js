@@ -482,7 +482,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
   if (adUnitCode) {
-    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+    for (var i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
