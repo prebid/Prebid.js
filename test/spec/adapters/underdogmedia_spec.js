@@ -2,8 +2,6 @@
 
 import Adapter from '../../../src/adapters/underdogmedia';
 import bidManager from '../../../src/bidmanager';
-import {parse as parseURL} from 'url';
-import {parse as parseQuery} from 'qs';
 import {expect} from 'chai';
 
 describe('underdog media adapter test', () => {
