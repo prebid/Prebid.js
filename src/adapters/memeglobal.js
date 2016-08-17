@@ -32,7 +32,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     var page = window.location.pathname + location.search + location.hash;
 
     var tagId = utils.getBidIdParamater('tagid', bidReq.params);
-    var bidFloor = utils.getBidIdParamater('bidfloor', bidReq.params);
+    var bidFloor = Number(utils.getBidIdParamater('bidfloor', bidReq.params));
     var adW = 0;
     var adH = 0;
 
@@ -55,12 +55,15 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
           w: adW,
           h: adH
         },
-        tagid: tagId,
+        tagid: bidReq.placementCode,
         bidfloor: bidFloor
       }],
       site: {
         domain: domain,
-        page: page
+        page: page,
+        publisher: {
+          id: tagId
+        }
       }
     };
 
@@ -70,17 +73,8 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     adloader.loadScript(scriptUrl);
   }
 
-  function handleErrorResponse() {
-    //no response data
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName).bids;
-
-    missing.forEach(function (bidRequest) {
-      // Add a no-bid response for this bid request.
-      var bid = {};
-      bid = bidfactory.createBid(2);
-      bid.bidderCode = bidderName;
-      bidmanager.addBidResponse(bidRequest.placementCode, bid);
-    });
+  function getBidSetForBidder() {
+    return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
   }
 
   // expose the callback to the global object:
@@ -89,56 +83,40 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     // valid object?
     if ((!bidResp || !bidResp.id) ||
       (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
-      return handleErrorResponse();
+      return ;
     }
 
-    bidResp.seatbid[0].bid.forEach(function (bid) {
-
+    bidResp.seatbid[0].bid.forEach(function (bidderBid) {
       var responseCPM;
       var placementCode = '';
 
-      // try to fetch the bid request we sent memeglobal
-      $$PREBID_GLOBAL$$._bidsRequested.forEach(function (bidRequested) {
-        if (bidRequested.bidderCode !== bidderName) return;
-
-        var bidObj = bidRequested.bids.find(b => b.bidId === bid.impid);
-        if (bidObj) {
-          var bidResponse = bidfactory.createBid(1);
-          placementCode = bidObj.placementCode;
-          bidObj.status = CONSTANTS.STATUS.GOOD;
-
-          // place ad response on bidmanager._adResponsesByBidderId
-          responseCPM = parseFloat(bid.price);
-
-          if (responseCPM === 0) {
-            return handleErrorResponse();
-          }
-
-          bidResponse.placementCode = placementCode;
-          bidResponse.size = bidObj.sizes;
-          var responseAd = bid.adm;
-
-          // build impression url from response
-          var responseNurl = '<img src="' + bid.nurl + '">';
-
-          //store bid response
-          //bid status is good (indicating 1)
-          bidResponse.creative_id = bid.id;
-          bidResponse.bidderCode = bidderName;
-          bidResponse.cpm = responseCPM;
-
-          // set ad content + impression url
-          bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
-
-          // Set width and height from response now
-          bidResponse.width = parseInt(bid.w);
-          bidResponse.height = parseInt(bid.h);
-
-          bidmanager.addBidResponse(placementCode, bidResponse);
+      var bidSet = getBidSetForBidder();
+      var bidRequested = bidSet.bids.find(b => b.bidId === bidderBid.impid);
+      if (bidRequested) {
+        var bidResponse = bidfactory.createBid(1);
+        placementCode = bidRequested.placementCode;
+        bidRequested.status = CONSTANTS.STATUS.GOOD;
+        responseCPM = parseFloat(bidderBid.price);
+        if (responseCPM === 0) {
+          var bid = bidfactory.createBid(2);
+          bidderBid.bidderCode = bidderName;
+          bidmanager.addBidResponse(bidRequest.placementCode, bidderBid);
+          return;
         }
-      });
+        bidResponse.placementCode = placementCode;
+        bidResponse.size = bidRequested.sizes;
+        var responseAd = bidderBid.adm;
+        var responseNurl = '<img src="' + bidderBid.nurl + '">';
+        bidResponse.creative_id = bidderBid.id;
+        bidResponse.bidderCode = bidderName;
+        bidResponse.cpm = responseCPM;
+        bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
+        bidResponse.width = parseInt(bidderBid.w);
+        bidResponse.height = parseInt(bidderBid.h);
+        bidmanager.addBidResponse(placementCode, bidResponse);
+      }
     });
-  };
+  }
 
   return {
     callBids: _callBids
