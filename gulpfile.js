@@ -33,6 +33,8 @@ gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
+gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
+
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
 
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
@@ -190,4 +192,34 @@ gulp.task('docs', ['clean-docs'], function () {
       gutil.log('jsdoc2md failed:', err.message);
     })
     .pipe(gulp.dest('docs'));
+});
+
+gulp.task('e2etest', function() {
+  var cmd = '--env default';
+  if(argv.browserstack) {
+    var browsers = require('./browsers.json');
+    var env = [];
+    var input = 'bs';
+    for(var key in browsers) {
+      if(key.substring(0, input.length) === input) {
+        env.push(key);
+      }
+    }
+
+    cmd = '--env default,' + env.join(',');
+  }
+
+  if(argv.browserstack) {
+    cmd = cmd + ' --config nightwatch.conf.js';
+  } else {
+    cmd = cmd + ' --config nightwatch.json';
+  }
+
+  if (argv.group) {
+    cmd = cmd + ' --group ' + argv.group;
+  }
+
+  return gulp.src('')
+    .pipe(shell('nightwatch ' + cmd));
+
 });
