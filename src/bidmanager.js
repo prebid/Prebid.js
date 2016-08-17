@@ -78,6 +78,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bidder: bid.bidderCode,
       adUnitCode
     });
+
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
@@ -252,11 +253,10 @@ exports.executeCallback = function (timedOut) {
       processCallbacks([externalOneTimeCallback]);
     }
     finally {
+      $$PREBID_GLOBAL$$.clearAuction();
       externalOneTimeCallback = null;
     }
   }
-
-  $$PREBID_GLOBAL$$.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
