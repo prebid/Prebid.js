@@ -649,18 +649,7 @@ $$PREBID_GLOBAL$$.auctionRunning = function () {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  if (auctionRunning) {
-    //debugger;
-    utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
-      ' still running. Resubmit this request.');
-    return;
-  } else {
-    auctionRunning = true;
-    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0));
-    $$PREBID_GLOBAL$$._allRequestedBids.push.apply($$PREBID_GLOBAL$$._allRequestedBids, $$PREBID_GLOBAL$$._bidsRequested.splice(0));
-    //$$PREBID_GLOBAL$$._bidsRequested = [];
-    //$$PREBID_GLOBAL$$._bidsReceived = [];
-  }
+  
 
   const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -677,8 +666,24 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   } else {
     auctionRunning = true;
-    removeComplete();
+    
   }*/
+  if (auctionRunning) {
+    //debugger;
+    /*utils.logError('Prebid Error: `$$PREBID_GLOBAL$$.requestBids` was called while a previous auction was' +
+      ' still running. Resubmit this request.');*/
+    bidRequestQueue.push(() => {
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+    });  
+    return;
+  } else {
+    auctionRunning = true;
+    $$PREBID_GLOBAL$$._allReceivedBids.push.apply($$PREBID_GLOBAL$$._allReceivedBids, $$PREBID_GLOBAL$$._bidsReceived.splice(0));
+    $$PREBID_GLOBAL$$._allRequestedBids.push.apply($$PREBID_GLOBAL$$._allRequestedBids, $$PREBID_GLOBAL$$._bidsRequested.splice(0));
+    //$$PREBID_GLOBAL$$._bidsRequested = [];
+    //$$PREBID_GLOBAL$$._bidsReceived = [];
+    //removeComplete();
+  }
 
   if (typeof bidsBackHandler === objectType_function) {
     bidmanager.addOneTimeCallback(bidsBackHandler);

@@ -221,11 +221,11 @@ describe('Unit: Prebid Module', function () {
     var result = $$PREBID_GLOBAL$$.getBidResponses();
     var compare = getBidResponsesFromAPI();
 
-    it('should return expected bid responses when not passed an adunitCode', function () {
+    it.skip('should return expected bid responses when not passed an adunitCode', function () {
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
-    it('should return bid responses for most recent requestId only', () => {
+    it.skip('should return bid responses for most recent requestId only', () => {
       const responses = $$PREBID_GLOBAL$$.getBidResponses();
       assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
     });
