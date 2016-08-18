@@ -178,6 +178,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bidder: bid.bidderCode,
       adUnitCode
     });
+
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -386,11 +387,10 @@ exports.executeCallback = function (timedOut) {
       processCallbacks([externalOneTimeCallback]);
     }
     finally {
+      $$PREBID_GLOBAL$$.clearAuction();
       externalOneTimeCallback = null;
     }
   }
-
-  $$PREBID_GLOBAL$$.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {

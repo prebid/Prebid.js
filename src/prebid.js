@@ -334,7 +334,7 @@ function getAllTargeting() {
   targeting.map(adUnitCode => {
     Object.keys(adUnitCode).map(key => {
       adUnitCode[key].map(targetKey => {
-        if (pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
+        if(pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
           pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
         }
       });
@@ -600,7 +600,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
   if (adUnitCode) {
-    for (var i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
+    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
