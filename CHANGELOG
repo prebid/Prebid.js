@@ -1,3 +1,9 @@
+AOL Prebid 1.0.1
+----------------
+BUGFIX: Fixed pubapi parameter in AOL analytics.
+Switched to v2 server endpoint, planned for initial release.
+
+
 AOL Prebid 1.0.0
 ----------------
 Initial release
