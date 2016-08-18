@@ -353,6 +353,7 @@ function markComplete(adObject) {
   }).forEach(bid => bid.complete = true);
 }
 
+/* exported removeComplete */
 function removeComplete() {
   let requests = $$PREBID_GLOBAL$$._bidsRequested;
   let responses = $$PREBID_GLOBAL$$._bidsReceived;
@@ -367,6 +368,7 @@ function removeComplete() {
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
     .forEach(bid => responses.slice(responses.indexOf(bid), 1));
 }
+
 
 //////////////////////////////////
 //                              //
@@ -452,7 +454,9 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function () {
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = $$PREBID_GLOBAL$$._bidsReceived;
+  
+  //const responses = $$PREBID_GLOBAL$$._bidsReceived;
+  
 
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
     .filter(uniques).map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
