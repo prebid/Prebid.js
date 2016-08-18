@@ -1,7 +1,7 @@
 {
-  "name": "prebid.js",
-  "version": "0.11.0",
-  "description": "Header Bidding Management Library",
+  "name": "aol-container-tag",
+  "version": "1.0.0",
+  "description": "AOL Header Bidding Container Tag Library",
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test"
@@ -13,6 +13,10 @@
   "globalVarName": "pbjs",
   "analytics": ["aol"],
   "author": "the prebid.js contributors",
+  "contributors": [{
+    "name": "AOL Platforms",
+    "url": "http://www.aolplatforms.com/"
+  }],
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.5.2",
