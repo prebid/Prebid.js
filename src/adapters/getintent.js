@@ -42,7 +42,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
       passback.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, passback);
     } else {
-      var adSize = bidRequest.params.size.toUpperCase().split('x');
+      var adSize = bidRequest.params.size.toUpperCase().split('X');
       var bid = bidfactory.createBid(1);
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = bidResponse.cpm;
