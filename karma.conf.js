@@ -227,9 +227,16 @@ module.exports = function (config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
+    client: {
+      mocha: {
+        reporter: 'html'
+      }
+    },
+
     // list of files / patterns to load in the browser
     files: [
-      'test/**/*_spec.js'
+      'test/**/*_spec.js',
+      'test/helpers/karma-init.js'
     ],
 
     // list of files to exclude
