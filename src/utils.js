@@ -507,9 +507,9 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
-export function getBidderCodes() {
+export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
-  return $$PREBID_GLOBAL$$.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+  return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
 
