@@ -134,8 +134,8 @@ var RubiconAdapter = function RubiconAdapter() {
         bidResponse.height = size[1];
 
         // DealId
-        if (ads.deal) {
-          bidResponse.dealId = ads.deal;
+        if (ad.deal) {
+          bidResponse.dealId = ad.deal;
         }
       }
 
