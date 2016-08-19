@@ -76,15 +76,15 @@ function AppnexusAstAdapter() {
       const cpm = tag.ads && tag.ads[0].cpm;
       const type = tag.ads && tag.ads[0].ad_type;
 
-      if (type !== 'banner') {
-        utils.logError(`${type} ad type not supported`);
-      }
-
       let status;
       if (cpm !== 0 && type === 'banner') {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
+      }
+
+      if (type && type !== 'banner') {
+        utils.logError(`${type} ad type not supported`);
       }
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
