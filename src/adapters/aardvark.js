@@ -90,7 +90,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
     difference.forEach(function (bidRequest) {
       var bidResponse = bidfactory.createBid(2, bidRequest);
       bidResponse.bidderCode = "aardvark";
-      bidmanager.addBidResponse(bidRequest.placementcode, bidResponse);
+      bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
     });
 
 
