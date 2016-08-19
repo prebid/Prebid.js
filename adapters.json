@@ -33,5 +33,10 @@
       "appnexus": {
         "alias": "pagescience"
       }
+    },
+    {
+      "appnexus": {
+        "alias": "nmg"
+      }
     }
 ]
