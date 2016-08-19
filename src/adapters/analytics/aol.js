@@ -71,26 +71,33 @@ export default utils.extend(adapter({
           let adUnitsConf = args.adUnits;
 
           for (let bid of bidsReceived) {
-            let adUnit = adUnits[bid.adUnitCode];
+            const currentAdUnitCode = bid.adUnitCode;
+            let adUnit = adUnits[currentAdUnitCode];
             if (!adUnit) {
               adUnit = {
-                code: bid.adUnitCode,
+                code: currentAdUnitCode,
                 bids: [],
                 winner: {
                   cpm: 0
                 },
               };
+
+              const filteredBids = bidsReceived.filter(
+                bid => bid.bidderCode === AOL_BIDDER_CODE && bid.adUnitCode === currentAdUnitCode
+              );
+              const pubapiId = (filteredBids.length === 1) ? filteredBids[0].pubapiId : '';
+
               for (let adUnitConf of adUnitsConf) {
-                if (adUnitConf.code === bid.adUnitCode) {
+                if (adUnitConf.code === currentAdUnitCode) {
                   for (let adUnitBid of adUnitConf.bids) {
-                    if (AOL_BIDDER_CODE === adUnitBid.bidder) {
+                    if (adUnitBid.bidder === AOL_BIDDER_CODE) {
                       adUnit.aolParams = adUnitBid.params;
-                      adUnit.aolParams.pubapiId = bid.pubapiId;
+                      adUnit.aolParams.pubapiId = pubapiId;
                     }
                   }
                 }
               }
-              adUnits[bid.adUnitCode] = adUnit;
+              adUnits[currentAdUnitCode] = adUnit;
             }
             adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
             adUnit.bids.push(Object.assign(bid));
