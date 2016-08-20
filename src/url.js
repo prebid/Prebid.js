@@ -20,7 +20,7 @@ export function formatQS(query) {
     .keys(query)
     .map(k => Array.isArray(query[k]) ?
       query[k].map(v => `${k}[]=${v}`).join('&') :
-      query[k] !== false ? `${k}=${query[k]}` : '')
+      `${k}=${query[k]}`)
     .join('&');
 }
 
