@@ -1,3 +1,5 @@
+import {parse as parseURL, format as formatURL} from './url';
+
 /**
  * Simple cross-browser ajax request function
  * https://gist.github.com/Xeoncross/7663273
@@ -7,10 +9,12 @@
  * @param url string url
  * @param callback object callback
  * @param data mixed data
- * @param x null Ajax request
+ * @param options object
  */
 
-export const ajax = function ajax(url, callback, data, x = null) {
+export const ajax = function ajax(url, callback, data, options = {}) {
+  let x;
+
   try {
     if (window.XMLHttpRequest) {
       x = new window.XMLHttpRequest('MSXML2.XMLHTTP.3.0');
@@ -20,17 +24,22 @@ export const ajax = function ajax(url, callback, data, x = null) {
       x = new window.ActiveXObject('MSXML2.XMLHTTP.3.0');
     }
 
+    const method = options.method || (data ? 'POST' : 'GET');
+
+    if (method === 'GET' && data) {
+      let urlInfo = parseURL(url);
+      Object.assign(urlInfo.search, data);
+      url = formatURL(urlInfo);
+    }
+
     //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
     x.open(method, url, 1);
 
     if (options.withCredentials) {
       x.withCredentials = true;
     } else {
-      if (options.preflight !== false) {
-        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      }
-      x.setRequestHeader('Content-Type',
-        options.contentType || 'application/json;charset=UTF-8');
+      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
     }
 
     //x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
@@ -40,7 +49,7 @@ export const ajax = function ajax(url, callback, data, x = null) {
       }
     };
 
-    x.send(data);
+    x.send(method === 'POST' && data);
   } catch (e) {
     console.log(e);
   }
