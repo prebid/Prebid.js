@@ -85,7 +85,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
       var bid = [];
       if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
 
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, bidObj);
         bid.bidderCode = 'triplelift';
         bid.cpm = tlResponseObj.cpm;
         bid.ad = tlResponseObj.ad;
@@ -99,7 +99,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         // @if NODE_ENV='debug'
         utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);
         // @endif
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
