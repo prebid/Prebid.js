@@ -41,7 +41,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
   // the fastlane creative code
   var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (rt, fe) { rt.renderCreative(fe, "';
-  var RUBICON_CREATIVE_END = '"); }((parent.window.rubicontag || window.top.rubicontag), (document.body || document.documentElement)));</script>';
+  var RUBICON_CREATIVE_END = '"); }((self.rubicontag || parent.window.rubicontag || window.top.rubicontag), (document.body || document.documentElement)));</script>';
 
   // pre-initialize the rubicon object
   // needs to be attached to the window
@@ -322,13 +322,22 @@ var RubiconAdapter = function RubiconAdapter() {
       window.rubicontag.run(callback, parameters);
     });
   }
+  //if we win the bid, and we're rendered in a iframe, expose the rubicontag global to the iframe if there is no way to resolve the global, just place a reference in the iframe so it can be resolved..owe and yah! make sure no different globals exists, of they won't share a state, TODO: make a check or diss globals and always reference
+  function _prepareRendering(doc){
+    var win = doc.defaultView || doc.parentWindow;
+    
+    if(win && !win.rubicontag && !parent.window.rubicontag && !window.top.rubicontag){
+      win.rubicontag = window.rubicontag;
+    }
+  }
 
   return {
     /**
      * @public callBids
      * the interface to Prebid
      */
-    callBids: _callBids
+    callBids: _callBids,
+    prepareRendering: _prepareRendering,
   };
 };
 

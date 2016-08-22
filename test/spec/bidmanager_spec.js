@@ -8,6 +8,8 @@ var bidmanager = require('../../src/bidmanager');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 
+var pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
+
 describe('replaceTokenInString', function () {
 
   it('should replace all given tokens in a String', function () {
@@ -385,50 +387,51 @@ describe('bidmanager.js', function () {
     });
 
     it('should return proper price bucket increments for dense mode', () => {
-      const bid = Object.assign({},
-        bidfactory.createBid(2),
+      const bid = Object.assign({},        
+        bidfactory.createBid(1),
         fixtures.getBidResponses()[5]
-      );
+        
+      );      
 
       // 0 - 3 dollars
       bid.cpm = '1.99';
       let expectedIncrement = '1.99';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
       // pop this bid because another test relies on global $$PREBID_GLOBAL$$._bidsReceived
-      let registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      let registeredBid = pbjsTestOnly.popLastReceivedBid();
       assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
 
       // 3 - 8 dollars
       bid.cpm = '4.39';
       expectedIncrement = '4.35';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      registeredBid = pbjsTestOnly.popLastReceivedBid();
       assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
 
       // 8 - 20 dollars
       bid.cpm = '19.99';
       expectedIncrement = '19.50';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      registeredBid = pbjsTestOnly.popLastReceivedBid();
       assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
 
       // 20+ dollars
       bid.cpm = '73.07';
       expectedIncrement = '20.00';
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      registeredBid = pbjsTestOnly.popLastReceivedBid();
       assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
     });
 
     it('should place dealIds in adserver targeting', () => {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        bidfactory.createBid(1),
         fixtures.getBidResponses()[0]
       );
 
       bid.dealId = "test deal";
       bidmanager.addBidResponse(bid.adUnitCode, bid);
-      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      const addedBid = pbjsTestOnly.popLastReceivedBid();
       assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
     });
   });

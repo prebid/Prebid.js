@@ -3,6 +3,8 @@ import { uniques } from './utils';
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
+var bidfactory = require('./bidfactory.js');
+var bidmanager = require('./bidmanager.js');
 
 var objectType_function = 'function';
 
@@ -11,6 +13,7 @@ var externalCallbackArr = [];
 var externalOneTimeCallback = null;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
+var pushedTimedoutBids = false;
 
 const _lgPriceCap = 5.00;
 const _mgPriceCap = 20.00;
@@ -40,40 +43,137 @@ function getBidders(bid) {
   return bid.bidder;
 }
 
+function getAdUnit(adUnitCode) {
+  return $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
+}
+function updateLastModified(adUnitCode) {
+  var adUnit = getAdUnit(adUnitCode);
+  if (adUnit) {
+    //introduce a new property here for now.
+    //we could use the bidResponses to figure this value out
+    //this value will be used in the cleanup handler
+    adUnit._lastModified = timestamp();
+  }
+}
+
 function bidsBackAdUnit(adUnitCode) {
-  const requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode).bids.length;
+  let adunit = getAdUnit(adUnitCode);
+  if(!adunit){    
+    //debugger;
+    return false;//adUnit not found??!! throw error i suppose
+  }
+  const requested = adunit.bids.length;
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
 
+/* jshint ignore:start */
 function add(a, b) {
   return a + b;
 }
+/* jshint ignore:end */
 
 function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+  /* jshint ignore:start */
+  const requested = ($$PREBID_GLOBAL$$._bidsRequested.length === 0) ? 0 : $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
-  return requested === received;
+  
+  return requested === received
+    || received > requested;//late receivers from previous requestBids after a new requestBids 
+  /* jshint ignore:end */  
 }
 
-exports.bidsBackAll = function() {
+exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
+/* jshint ignore:start */
+function getGlobalBidResponse(request) {
+  var resp = $$PREBID_GLOBAL$$._bidsReceived.find(bidSet => request.bidId === bidSet.adId);
+  if (!resp) {
+    resp = $$PREBID_GLOBAL$$._allReceivedBids.find(bidSet => request.bidId === bidSet.adId);
+    //debugger;
+  }
+  return resp;
+}
+/* jshint ignore:end */
+
+/* jshint ignore:start */
 function getBidSetForBidder(bidder) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
-
+/* jshint ignore:end */
+function getBidSetForBidderGlobal(bid, adUnitCode) {
+  var bidRequest;
+  var bidderObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bid.bidderCode);
+  if (bidderObj && bidderObj.bids) {
+    bidRequest = bidderObj.bids.find(bidRequest => bidRequest.placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId)));//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit //maybe instead have a requestId, as a bidder might also have multiple responses per bidId...?    
+    if (bidRequest) {
+      /* jshint ignore:start */
+      return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+      /* jshint ignore:end */
+    }
+  }
+  //debugger;
+  for (var i = 0; i < $$PREBID_GLOBAL$$._allRequestedBids.length; i++) {
+    bidderObj = $$PREBID_GLOBAL$$._allRequestedBids[i];
+    if (bidderObj.bidderCode === bid.bidderCode) {
+      for (var j in bidderObj.bids) {
+        bidRequest = bidderObj.bids[j];
+        if (bidderObj.bids[j].placementCode === adUnitCode && (!bid.adId || (bid.adId === bidRequest.bidId))) {//if the response knows its bidId, compare it as well, usefull if multiple bidders of the same BidderCode exists for the same adUnit
+          //debugger;
+          if (bidRequest) {
+            /* jshint ignore:start */
+            return { bidSet: bidderObj, request: bidRequest, response: getGlobalBidResponse(bidRequest) };
+            /* jshint ignore:end */
+          }
+        }
+      }
+    }
+  }
+  return { bidSet: { start: null, requestId: null }, request: null, response: null };
+}
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
-
+    //first lookup bid request and assign it back the bidId if it matches the adUnitCode
+    /*
+    seems redundant with bidRequest.request.bidId;
+    if (!bid.adId) {
+      let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
+      if (bidRequest && bidRequest.bidId) {
+        bid.adId = bidRequest.bidId;
+      }
+    }*/
+    
+    let bidRequest = getBidSetForBidderGlobal(bid, adUnitCode);
+    var origBid;
+    if (bidRequest.response) {
+      if (bidRequest.response.getStatusCode() === 3 && bid.getStatusCode() !== 1) {
+        //bid already timed out, and new bid doesn't add value
+        //debugger;
+        return;
+      }
+      //if reached here, the bid was timed out before, but received a valid responsive after this time
+      //keeping the books complete, but we won't trigger the callbacks
+      //debugger;
+      origBid = bid;
+      bid = bidRequest.response;
+      var bidClone = Object.assign({}, bid);
+      Object.assign(bid, origBid);
+      Object.assign(bid, {
+        statusMessage: bidClone.statusMessage,
+      });
+    }
+    if (bidRequest.request && bidRequest.request.bidId && !bid.adId) {
+      bid.adId = bidRequest.request.bidId;
+    }
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: bidRequest.bidSet.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: bidRequest.bidSet.start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -81,11 +181,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    /*if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
       const timedOut = true;
 
       this.executeCallback(timedOut);
-    }
+    }*/
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
@@ -112,16 +212,33 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
       bid.adserverTargeting = keyValues;
     }
+    //don't add if a response already exists
+    if (!bidRequest.response)
+      $$PREBID_GLOBAL$$._bidsReceived.push(bid);
 
-    $$PREBID_GLOBAL$$._bidsReceived.push(bid);
-  }
-
-  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
+    if (bidRequest.response) {
+      //abort, these callbacks are already been called, due to timeout conditions
+      return;
+    }
+    if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+      console.log("callback adunit complete: " + bid.adUnitCode);
+      triggerAdUnitCallbacks(bid.adUnitCode);
+      updateLastModified(bid.adUnitCode);
+    } else {
+      //debugger;
+      //bidsBackAdUnit(bid.adUnitCode);
+      console.log("adunit not complete yet: " + bid.adUnitCode);
+    }
   }
 
   if (bidsBackAll()) {
     this.executeCallback();
+  }
+
+  if (bid && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+
+    const timedOut = true;
+    this.executeCallback(timedOut);
   }
 };
 
@@ -188,7 +305,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   return keyValues;
 }
 
-exports.getKeyValueTargetingPairs = function() {
+exports.getKeyValueTargetingPairs = function () {
   return getKeyValueTargetingPairs(...arguments);
 };
 
@@ -234,6 +351,29 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (timedOut) {
+  //if (this !== bidmanager) {
+  if(!pushedTimedoutBids){
+    pushedTimedoutBids = true;
+    //handling timed out bids
+    //basically find all bid requests, which don't have a corresponding bidresponse
+    //for each occurance add a dummy responsose with status=3 (time out)
+    //please note that this purposely allow late bids still to arrive and still trigger the events (see addBidResponse), but not the callbacks.
+    //the stutus of the bid currently remains status=3, even for late arravals, but will be updated with the most recent data (maybe add status=5, timeout but arrived late and is renderable or a seperate boolean, rendable)
+    //in a nuttshell this also needed to trigger the adUnitsBidsBack callback, as that will only trigger if the requested amount matches the responded amount
+    //hence we need fake/timed out responses  
+    var resultIds = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adId);
+
+    var timedoutBids = $$PREBID_GLOBAL$$._bidsRequested.reduce((arr, val) => { arr.push.apply(arr, val.bids.filter(bid => resultIds.indexOf(bid.bidId) === -1)); return arr; }, []);//.filter(bid => !resultIds.find(bid.bidId));  
+    timedoutBids.map(bid => {
+      //      debugger;
+      var bidObj = bidfactory.createBid(3);
+      bidObj.bidderCode = bid.bidder;
+      bidmanager.addBidResponse(bid.placementCode, bidObj);
+    });
+    //if (timedoutBids.length > 0)
+    //  debugger;
+    //}
+  }
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
@@ -265,12 +405,23 @@ function triggerAdUnitCallbacks(adUnitCode) {
   processCallbacks(externalCallbackByAdUnitArr, params);
 }
 
-function processCallbacks(callbackQueue) {
+function processCallbacks(callbackQueue, ...params) {
   var i;
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
+      if (params.length > 0) {//etc.......
+        //simple workaround if `triggerAdUnitCallbacks` passes the ad-unit code, the callback should receive the complete adunit-code
+        //todo: refactor global/adunit-callbacks? or use apply?
+        //debugger; 
+        //var x = $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {});
+        //if (!(params[0] in x)) {
+        //  debugger;//shouldn't happen, otherwise the request might already live in _allReceivedBids
+        //}
+        //todo: groupByPlacement seems to appear on top in the profiler, see if it can be optimized?
+        func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}), params[0]);
+      } else
+        func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
     }
   }
 }
@@ -315,6 +466,29 @@ exports.addCallback = function (id, callback, cbEvent) {
   } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
     externalCallbackByAdUnitArr.push(callback);
   }
+};
+
+exports.removeCallback = function (id, callback, cbEvent) {
+  var arr = [];
+  if (CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent) {
+    arr = externalCallbackArr;
+  } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
+    arr = externalCallbackByAdUnitArr;
+  }  
+  for (var i = 0; i < arr.length; i++) {
+    //id method never seems to be invoked, so it remains a function reference, ignore the id for now
+    if (/*arr[i].id === id ||*/ arr[i] === callback) {
+      arr.splice(i, 1);
+      break;//assume only 1 occurance
+    }
+  }
+
+};
+
+//considder calling this on callBids in the adapterManager?
+exports.resetAuctionState = function(){
+  //externalCallbackArr.called = false; //should proably be added as well, but unsafe as nobody expect this value to reset, as removeCallback didn't exist
+  pushedTimedoutBids = false;
 };
 
 //register event for bid adjustment

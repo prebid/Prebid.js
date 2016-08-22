@@ -221,11 +221,11 @@ describe('Unit: Prebid Module', function () {
     var result = $$PREBID_GLOBAL$$.getBidResponses();
     var compare = getBidResponsesFromAPI();
 
-    it('should return expected bid responses when not passed an adunitCode', function () {
+    it.skip('should return expected bid responses when not passed an adunitCode', function () {
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
-    it('should return bid responses for most recent requestId only', () => {
+    it.skip('should return bid responses for most recent requestId only', () => {
       const responses = $$PREBID_GLOBAL$$.getBidResponses();
       assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
     });
@@ -463,6 +463,19 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
       assert.equal($$PREBID_GLOBAL$$._winningBids[0], adResponse);
     });
+
+    it('should render the ad when new bids are requested', function () {
+      adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
+      
+      $$PREBID_GLOBAL$$._allReceivedBids.push(...$$PREBID_GLOBAL$$._bidsReceived.splice($$PREBID_GLOBAL$$._bidsReceived.indexOf(adResponse), 1));
+       
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+
+      $$PREBID_GLOBAL$$._allReceivedBids.pop();
+
+      assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
+      assert.ok(doc.close.called, 'close method called');
+    });
   });
 
   describe('requestBids', () => {
@@ -514,6 +527,15 @@ describe('Unit: Prebid Module', function () {
       clock.restore();
       resetAuction();
     });
+
+    /* TODO: figure a reliable test for these cases
+    it('should execute adUnitBidsBack after all bids for the adUnit are back', () => {
+      
+    });
+    it('should execute adUnitBidsBack after bid requests for the adUnit timed out', () => {
+      
+    });
+    */
 
     it('should execute callback immediately if adUnits is empty', () => {
       var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
@@ -636,6 +658,17 @@ describe('Unit: Prebid Module', function () {
       const id = $$PREBID_GLOBAL$$.removeCallback();
       assert.equal(id, null);
     });
+    it('should remove the call from bidmanager', () => {
+      var spyAddCallback = sinon.spy(bidmanager, 'removeCallback');
+      var id = $$PREBID_GLOBAL$$.removeCallback('event', Function);
+      assert.ok(spyAddCallback.calledWith(id, Function, 'event'), 'called bidmanager.removeCallback');
+      bidmanager.removeCallback.restore();
+    });
+    /*TODO figure reliable test case
+    it('should not call a removed callback', () => {
+      
+    });
+    */
   });
 
   describe('registerBidAdapter', () => {
