@@ -21,7 +21,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
     }
 	
     var getJSON = function(url, successHandler, errorHandler) {
-      var xhr = typeof XMLHttpRequest !== 'undefined'	? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+      var xhr = new XMLHttpRequest();
       xhr.open('get', url, true);
       xhr.onreadystatechange = function() {
         var status;
