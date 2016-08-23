@@ -1,6 +1,6 @@
 {
   "name": "aol-container-tag",
-  "version": "1.0.2",
+  "version": "1.0.3-rc1",
   "description": "AOL Header Bidding Container Tag Library",
   "main": "src/prebid.js",
   "scripts": {
