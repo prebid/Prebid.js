@@ -37,7 +37,11 @@ export default utils.extend(adapter({
     analyticsType
   }), {
 
-    enableAnalytics({ options }) {
+    enableAnalytics({
+      options = {
+        server: null // Internal use only. Use 'region' config option for AOL adapter.
+      }
+    }) {
       this.server = options.server;
 
       //first send all events fired before enableAnalytics called
