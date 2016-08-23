@@ -161,8 +161,8 @@ export default utils.extend(adapter({
       return {
         pubadid: adUnit.code,
         hbauctionid: generateAuctionId(aolParams.placement),
-        hbwinner: getBidderId(adUnit.winner.bidder),
-        hbprice: adUnit.winner.cpm || '',
+        hbwinner: adUnit.winner.bidder ? getBidderId(adUnit.winner.bidder) : 0,
+        hbprice: adUnit.winner.cpm || 0,
         hbcur: '',
         pubapi: aolParams.pubapiId
       };
@@ -182,7 +182,7 @@ export default utils.extend(adapter({
     getBidderSchema(bid) {
       return {
         hbbidder: getBidderId(bid.bidder),
-        hbbid: bid.cpm || '0.0',
+        hbbid: bid.cpm || 0,
         hbstatus: getStatusCode(bid),
         hbtime: bid.timeToRespond || ''
       };
