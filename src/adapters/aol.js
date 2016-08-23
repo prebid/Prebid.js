@@ -60,7 +60,14 @@ var AolAdapter = function AolAdapter() {
       return;
     }
 
-    var encp = response.data.seatbid[0].bid[0].ext.encp;
+    var encp;
+
+    try {
+      encp = response.data.seatbid[0].bid[0].ext.encp;
+    } catch(e) {
+      encp = null;
+    }
+
     if (encp) {
       cpm = encp;
     } else {
