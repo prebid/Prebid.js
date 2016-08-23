@@ -22,6 +22,28 @@ var AdsparcAdapter = function AdsparcAdapter() {
         // Only make one request per "nid"
 
     }
+	
+		var getJSON = function(url, successHandler, errorHandler) {
+			var xhr = typeof XMLHttpRequest != 'undefined'
+				? new XMLHttpRequest()
+				: new ActiveXObject('Microsoft.XMLHTTP');
+			xhr.open('get', url, true);
+			xhr.onreadystatechange = function() {
+				var status;
+				var data;
+				if (xhr.readyState == 4) { // `DONE`
+					status = xhr.status;
+					if (status == 200) {
+						data = JSON.parse(xhr.responseText);
+						successHandler && successHandler(data);
+					} else {
+						errorHandler && errorHandler(status);
+					}
+				}
+			};
+			xhr.send();
+		};
+
 
     function _getUniqueNids(bids) {
         var key;
@@ -72,12 +94,15 @@ var AdsparcAdapter = function AdsparcAdapter() {
 		}
 		var sizes = size.split("x");
         var Url = scriptUrl +'?type=1&p='+ pubId + '&sz=' + size + '&pageUrl=' + siteUrl + '&refUrl=' + refUrl;
+		
+	
+		
         var response;
-           	$.get(Url, function( data ) {
-				 response = data;				
+           	getJSON(Url, function(data) {
+						 response = data;				
                     // Add a response for each bid matching the "nid"
                         if (response) {
-							var timestamp = $.now();
+							var timestamp = Number(new Date());
                             adResponse = bidfactory.createBid(1);
                             adResponse.bidderCode = 'adsparc';
                             adResponse.cpm = Number(response.eCpm);
@@ -86,7 +111,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
 							for(var i = 0; i < replaceArray.length; i++) {
 								adcode = adcode.replace(replaceArray[i],timestamp);
 							}
-                            adResponse.ad ='<script src="' + adcode + '"></scr' + 'ipt>';
+                            adResponse.ad =adcode;
 							adResponse.width = sizes[0];
 							adResponse.height = sizes[1];
                         } else {
