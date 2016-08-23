@@ -1,3 +1,9 @@
+AOL Prebid 1.0.2
+----------------
+BUGFIX: Fixed error in AOL adapter when processing cpm from bid response.
+BUGFIX: Support for undefined options in AOL analytics.
+
+
 AOL Prebid 1.0.1
 ----------------
 BUGFIX: Fixed pubapi parameter in AOL analytics.
