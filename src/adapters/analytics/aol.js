@@ -182,7 +182,7 @@ export default utils.extend(adapter({
     getBidderSchema(bid) {
       return {
         hbbidder: getBidderId(bid.bidder),
-        hbbid: bid.cpm || '',
+        hbbid: bid.cpm || '0.0',
         hbstatus: getStatusCode(bid),
         hbtime: bid.timeToRespond || ''
       };

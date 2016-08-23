@@ -1,3 +1,8 @@
+AOL Prebid 1.0.3
+----------------
+BUGFIX: Fixed empty hbbid parameter in AOL analytics in case of invalid bid response.
+
+
 AOL Prebid 1.0.2
 ----------------
 BUGFIX: Fixed error in AOL adapter when processing cpm from bid response.
