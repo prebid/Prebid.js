@@ -20,7 +20,8 @@ var AdsparcAdapter = function AdsparcAdapter() {
 
     }
 	
-    var getJSON = function(url, successHandler, errorHandler) {
+    var getJSON = function(url) {
+     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       xhr.open('get', url, true);
       xhr.onreadystatechange = function() {
@@ -29,11 +30,14 @@ var AdsparcAdapter = function AdsparcAdapter() {
         if (xhr.readyState === 4) { // `DONE`
           status = xhr.status;
           if (status === 200) {
-            data = JSON.parse(xhr.responseText);
+            resolve(xhr.response);
+          } else {
+            reject(status);
           }
         }
       };
       xhr.send();
+     });
     };
 
 
@@ -67,7 +71,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
       var sizes = size.split("x");
       var Url = scriptUrl +'?type=1&p='+ pubId + '&sz=' + size + '&pageUrl=' + siteUrl + '&refUrl=' + refUrl;
       var response;
-      getJSON(Url, function(data) {
+      getJSON(Url).then(function(data) {
         response = data;				
         // Add a response for each bid matching the "nid"
         if (response) {
