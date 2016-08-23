@@ -13,7 +13,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
   var bids;
   var _pm_pub_id;
   var _pm_optimize_adslots = [];
-  let iframeId = '';
+  let iframe;
 
   function _callBids(params) {
     bids = params.bids;
@@ -32,8 +32,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
 
     //create the iframe
-    var iframe = utils.createInvisibleIframe();
-    iframeId = iframe.id;
+    iframe = utils.createInvisibleIframe();
+
     var elToAppend = document.getElementsByTagName('head')[0];
 
     //insert the iframe into document
@@ -75,8 +75,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
     let bidDetailsMap = {};
     let progKeyValueMap = {};
     try {
-      bidDetailsMap = window.frames[iframeId].contentWindow.bidDetailsMap;
-      progKeyValueMap = window.frames[iframeId].contentWindow.progKeyValueMap;
+      bidDetailsMap = iframe.contentWindow.bidDetailsMap;
+      progKeyValueMap = iframe.contentWindow.progKeyValueMap;
     }
     catch(e) {
       utils.logError(e, 'Error parsing Pubmatic response');
