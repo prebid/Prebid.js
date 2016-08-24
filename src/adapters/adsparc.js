@@ -1,7 +1,7 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 /**
- * Adapter for requesting bids from Pubmatic.
+ * Adapter for requesting bids from Adsparc.
  *
  * @returns {{callBids: _callBids}}
  * @constructor
