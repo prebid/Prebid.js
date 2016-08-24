@@ -26,7 +26,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
       xhr.responseType = 'json';
       xhr.onload = function() {
         var status = xhr.status;
-        if (status == 200) {
+        if (status === 200) {
           return callback(xhr.response);
 
         }else {
@@ -39,7 +39,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
 
     function _requestBid(bid) {
       var placementCode = '';
-      var scriptUrl = 'http://localhost:8080/bid/ad.json';
+      var scriptUrl = 'http://pubs.adsparc.net/bid/ad.json';
       var size;
       var pubId;
       var siteUrl;
