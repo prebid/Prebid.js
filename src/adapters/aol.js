@@ -16,9 +16,9 @@ var AolAdapter = function AolAdapter() {
   };
 
   var serverMap = {
-    us: 'hb-us.adtech.advertising.com',
-    eu: 'hb-eu.adtech.advertising.com',
-    as: 'hb-as.adtech.advertising.com'
+    us: 'adserver-us.adtech.advertising.com',
+    eu: 'adserver-eu.adtech.advertising.com',
+    as: 'adserver-as.adtech.advertising.com'
   };
 
   var bids;
@@ -132,8 +132,13 @@ var AolAdapter = function AolAdapter() {
     bidsMap[alias] = bid;
 
     const serverParam = bid.params.server;
-    const regionParam = bid.params.region;
+    var regionParam = bid.params.region || 'us';
     var server;
+
+    if (!serverMap.hasOwnProperty(regionParam)) {
+      console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
+      regionParam = 'us'; // Default region.
+    }
 
     if (serverParam) {
       console.warn(
@@ -141,16 +146,16 @@ var AolAdapter = function AolAdapter() {
         'Please use region (us, eu, ...) instead.'
       );
       server = serverParam;
-    } else if (regionParam) {
-      if (!serverMap.hasOwnProperty(regionParam)) {
-        console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
-      }
-      server = serverMap[bid.params.region];
+    } else {
+      server = serverMap[regionParam];
     }
+
+    // Set region param, used by AOL analytics.
+    bid.params.region = regionParam;
 
     return {
       adContainerId: _dummyUnit(bid.params.adContainerId),
-      server: server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
+      server: server,
       sizeid: bid.params.sizeId || 0,
       pageid: bid.params.pageId || 0,
       secure: document.location.protocol === 'https:',
