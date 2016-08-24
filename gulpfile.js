@@ -33,6 +33,8 @@ gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
+gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
+
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
 
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
@@ -93,30 +95,7 @@ gulp.task('test', function () {
 
   if (argv.browserstack) {
     browserArgs = [
-      'bs_ie_13_windows_10',
-      'bs_ie_11_windows_10',
-      'bs_firefox_46_windows_10',
-      'bs_chrome_51_windows_10',
-      'bs_ie_11_windows_8.1',
-      'bs_firefox_46_windows_8.1',
-      'bs_chrome_51_windows_8.1',
-      'bs_ie_10_windows_8',
-      'bs_firefox_46_windows_8',
-      'bs_chrome_51_windows_8',
-      'bs_ie_11_windows_7',
-      'bs_ie_10_windows_7',
-      'bs_ie_9_windows_7',
-      'bs_firefox_46_windows_7',
-      'bs_chrome_51_windows_7',
-      'bs_safari_9.1_mac_elcapitan',
-      'bs_firefox_46_mac_elcapitan',
-      'bs_chrome_51_mac_elcapitan',
-      'bs_safari_8_mac_yosemite',
-      'bs_firefox_46_mac_yosemite',
-      'bs_chrome_51_mac_yosemite',
-      'bs_safari_7.1_mac_mavericks',
-      'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks'
+      'bs_ie_11_windows_8.1'
     ];
   }
 
@@ -190,4 +169,141 @@ gulp.task('docs', ['clean-docs'], function () {
       gutil.log('jsdoc2md failed:', err.message);
     })
     .pipe(gulp.dest('docs'));
+});
+
+gulp.task('e2etest', function() {
+  var cmd = '--env default';
+  if(argv.browserstack) {
+    var browsers = require('./browsers.json');
+    var env = [];
+    var input = 'bs';
+    for(var key in browsers) {
+      if(key.substring(0, input.length) === input) {
+        env.push(key);
+      }
+    }
+
+    cmd = '--env default,' + env.join(',');
+  }
+
+  if(argv.browserstack) {
+    cmd = cmd + ' --config nightwatch.conf.js';
+  } else {
+    cmd = cmd + ' --config nightwatch.json';
+  }
+
+  if (argv.group) {
+    cmd = cmd + ' --group ' + argv.group;
+  }
+
+  return gulp.src('')
+    .pipe(shell('nightwatch ' + cmd));
+
+});
+
+var jv = require('junit-viewer');
+// this will have all of a copy of the normal fs methods as well
+var fs = require('fs.extra');
+var _ = require('lodash');
+
+const execSync = require('child_process').execSync;
+const exec = require('child_process').exec;
+
+
+gulp.task('test-report',function(){
+  var dir = './build/coverage/e2e/reports/testcase1';
+  if(argv.group) {
+    var grp = argv.group;
+    dir = dir + '/' + grp;
+  } else {
+    var files = fs.readdirSync(dir);
+    var result = _.find(files, function(item) {
+      return !/^\..*/.test(item);
+    });
+    dir = dir + '/' + result;
+  }
+
+  if(!argv.spec) {
+    //report error and return
+  }
+  var spec = argv.spec;
+
+  //get all environments from xml filenames
+  var env = [];
+  var files = fs.readdirSync(dir);
+
+  files.forEach(item => {
+      if(! /^\..*/.test(item)) {
+        var temp = item.substr(0,item.search(spec));
+        if(temp !== "") {
+          if(env.indexOf(temp) === -1) {
+            env.push(temp);
+          }
+        }
+      }
+    }
+  );
+
+  //create new directory structure
+  var targetDestinationDir = './c3';
+  fs.rmrfSync(targetDestinationDir);
+  env.forEach(item => {
+    fs.mkdirpSync(targetDestinationDir + '/' + item);
+  });
+
+
+  //move xml files to newly created directory
+  var walker = fs.walk('./build/coverage/e2e/reports');
+  walker.on("file", function (root, stat, next) {
+    env.forEach(item => {
+      if(stat.name.search(item) !== -1) {
+        var src = root + '/' + stat.name;
+        var dest = targetDestinationDir + '/' + item + '/' + stat.name;
+        fs.copy(src, dest, {replace: true}, function(err) {
+          if(err) {
+            throw err;
+          }
+        });
+      }
+    });
+    next();
+  });
+
+  //run junit-viewer to read xml and create html
+  env.forEach(item => {
+    //junit-viewer --results="./custom-reports/chrome51" --save="./chrome.html"
+    var cmd = 'junit-viewer --results="' + targetDestinationDir + '/' + item + '" --save="' + targetDestinationDir + '/' + item +'.html"';
+    exec(cmd);
+  });
+
+  //create e2e-results.html
+  var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>End to End Testing Result</title><link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css"><script src="https://code.jquery.com/jquery-1.12.4.js"></script><script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script><script>$( function() {$( "#tabs" ).tabs({heightStyle: "fill"});});</script></head><body><div id="tabs" style="height:2000px;">';
+  var li = '';
+  var tabs = '';
+  env.forEach(function(item,i) {
+    i++;
+    li = li + '<li><a href="#tabs-'+i+'">'+item+'</a></li>';
+    tabs = tabs + '<div id="tabs-'+i+'"><iframe name="'+item+'" src="http://localhost:9999/c3/'+item+'.html?i=123" frameborder="0" style="overflow:hidden;overflow-x:hidden;overflow-y:hidden;height:100%;width:100%;position:absolute;top:50px;left:0px;right:0px;bottom:0px" height="100%" width="100%"></iframe></div>';
+  });
+  html = html + '<ul>' + li + '</ul>' + tabs;
+  html = html + '</div></body></html>';
+
+  var filepath = './c3/results.html';
+  fs.openSync(filepath, 'w+');
+
+  fs.writeFileSync(filepath, html);
+
+  connect.server({
+    port: 9999,
+    root: './',
+    livereload: true
+  });
+
+  var port = '9999';
+  setTimeout(function() {
+    opens('http://localhost:' + port + '/c3/results.html')
+  }, 2000);
+
+  //var parsedData = jv.parse('./custom-reports');
+  //var renderedData = jv.render(parsedData);
 });
