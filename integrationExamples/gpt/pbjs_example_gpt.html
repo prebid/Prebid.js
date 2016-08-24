@@ -4,19 +4,27 @@
 <title>Prebid.js integration example</title>
 <script>
     var PREBID_TIMEOUT = 700;
+    var MAX_RETRIES = 20;
 
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
     googletag.cmd.push(function () {
         googletag.pubads().disableInitialLoad();
     });
+    var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
+    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
+    $$PREBID_GLOBAL$$.retries = 0;
 
     /* $$PREBID_GLOBAL$$.initAdserver will be called either when all bids are back, or
      when the timeout is reached.
      */
     function initAdserver() {
         if ($$PREBID_GLOBAL$$.initAdserverSet) return;
-
+        if(!googletag.pubadsReady && $$PREBID_GLOBAL$$.retries <= MAX_RETRIES) {
+          setTimeout(initAdserver, 50); //poll ms can be adjusted as desired.
+          $$PREBID_GLOBAL$$.retries++;
+          return;
+        }
         googletag.cmd.push(function () {
             $$PREBID_GLOBAL$$.que.push(function () {
                 $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
@@ -28,9 +36,6 @@
 
     // Load GPT when timeout is reached.
     setTimeout(initAdserver, PREBID_TIMEOUT);
-
-    var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
-    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
 
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
