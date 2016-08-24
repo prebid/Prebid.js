@@ -21,26 +21,25 @@ var AdsparcAdapter = function AdsparcAdapter() {
     }
 	
     var getJSON = function(url,callback) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('get', url, true);
-        xhr.onreadystatechange = function() {
-          var status;
-          if (xhr.readyState === 4) { // `DONE`
-            status = xhr.status;
-            if (status === 200) {
-              callback(xhr.response);
-            } else {
-              callback(status);
-            }
-          }
-        };
-        xhr.send();
+      var xhr = new XMLHttpRequest();
+      xhr.open('get', url, true);
+      xhr.responseType = 'json';
+      xhr.onload = function() {
+        var status = xhr.status;
+        if (status == 200) {
+          return callback(xhr.response);
+
+        }else {
+          return callback(status);
+        }
       };
+      xhr.send();
+    };
 
 
     function _requestBid(bid) {
       var placementCode = '';
-      var scriptUrl = 'http://pubs.adsparc.net/bid/ad.json';
+      var scriptUrl = 'http://localhost:8080/bid/ad.json';
       var size;
       var pubId;
       var siteUrl;
@@ -68,7 +67,7 @@ var AdsparcAdapter = function AdsparcAdapter() {
       var sizes = size.split("x");
       var Url = scriptUrl +'?type=1&p='+ pubId + '&sz=' + size + '&pageUrl=' + siteUrl + '&refUrl=' + refUrl;
       var response;
-      getJSON(Url).then(function(data) {
+      getJSON(Url,function(data) {
         response = data;				
         // Add a response for each bid matching the "nid"
         if (response) {
