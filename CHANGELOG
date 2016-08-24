@@ -1,3 +1,8 @@
+AOL Prebid 1.0.4
+----------------
+BUGFIX: Consolidated default parameter values for invalid bids in AOL analytics.
+
+
 AOL Prebid 1.0.3
 ----------------
 BUGFIX: Fixed empty hbbid parameter in AOL analytics in case of invalid bid response.
