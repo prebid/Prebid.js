@@ -18,6 +18,12 @@ const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AOL_BIDDER_CODE = 'aol';
 const analyticsType = 'endpoint';
 
+const serverMap = {
+  us: 'hb-us.adtech.advertising.com',
+  eu: 'hb-eu.adtech.advertising.com',
+  as: 'hb-as.adtech.advertising.com'
+};
+
 const EVENTS = {
   AUCTION: 1,
   WIN: 2
@@ -144,7 +150,7 @@ export default utils.extend(adapter({
       let aolParams = adUnit.aolParams;
       return {
         protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-        host: this.server || aolParams.server || 'adserver.adtechus.com',
+        host: this.server || serverMap[aolParams.region] || serverMap.us,
         port: aolParams.port || '',
         tagversion: '3.0',
         network: aolParams.network || '',

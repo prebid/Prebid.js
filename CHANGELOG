@@ -1,3 +1,10 @@
+AOL Prebid 1.0.4
+----------------
+BUGFIX: Fixed default server for AOL adapter & analytics.
+BUGFIX: Fixed region option to be picked up by AOL analytics.
+BUGFIX: Separate server host names used for AOL adapter & analytics.
+
+
 AOL Prebid 1.0.3
 ----------------
 BUGFIX: Fixed empty hbbid parameter in AOL analytics in case of invalid bid response.
