@@ -1,10 +1,9 @@
 import {parse as parseURL, format as formatURL} from './url';
 
-/**
- * Simple cross-browser ajax request function
- * https://gist.github.com/Xeoncross/7663273
+const XHR_DONE = 4;
 
- * IE 5.5+, Firefox, Opera, Chrome, Safari XHR object
+/**
+ * Simple IE9+ and cross-browser ajax request function
  *
  * @param url string url
  * @param callback object callback
@@ -12,45 +11,45 @@ import {parse as parseURL, format as formatURL} from './url';
  * @param options object
  */
 
-export const ajax = function ajax(url, callback, data, options = {}) {
-  let x;
+export function ajax(url, callback, data, options = {}) {
 
-  try {
-    if (window.XMLHttpRequest) {
-      x = new window.XMLHttpRequest('MSXML2.XMLHTTP.3.0');
-    }
+  let x,
+      method = options.method || (data ? 'POST' : 'GET'),
+      // For IE9 support use XDomainRequest instead of XMLHttpRequest.
+      useXDomainRequest = window.XDomainRequest &&
+        (window.XMLHttpRequest && new window.XMLHttpRequest().responseType === undefined);
 
-    if (window.ActiveXObject) {
-      x = new window.ActiveXObject('MSXML2.XMLHTTP.3.0');
-    }
+  if (useXDomainRequest) {
+    x = new window.XDomainRequest();
+    x.onload = handler;
+  } else {
+    x = new window.XMLHttpRequest();
+    x.onreadystatechange = handler;
+  }
 
-    const method = options.method || (data ? 'POST' : 'GET');
+  if (method === 'GET' && data) {
+    let urlInfo = parseURL(url);
+    Object.assign(urlInfo.search, data);
+    url = formatURL(urlInfo);
+  }
 
-    if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
-      Object.assign(urlInfo.search, data);
-      url = formatURL(urlInfo);
-    }
+  x.open(method, url);
 
-    //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
-    x.open(method, url, 1);
-
+  if (!useXDomainRequest) {
     if (options.withCredentials) {
       x.withCredentials = true;
     } else {
       x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
     }
-
-    //x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    x.onreadystatechange = function () {
-      if (x.readyState > 3 && callback) {
-        callback(x.responseText, x);
-      }
-    };
-
-    x.send(method === 'POST' && data);
-  } catch (e) {
-    console.log(e);
   }
-};
+
+  x.send(method === 'POST' && data);
+
+  function handler() {
+    if (x.readyState === XHR_DONE && callback) {
+      callback(x.responseText, x);
+    }
+  }
+
+}
