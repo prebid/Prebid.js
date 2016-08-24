@@ -7,7 +7,7 @@ var bidmanager = require('../bidmanager.js');
  * @constructor
  */
 var AdsparcAdapter = function AdsparcAdapter() {
-	
+    var bids;
     function _callBids(params) {
       bids = params.bids || [];
       for (var i = 0; i < bids.length; i++) {
@@ -20,51 +20,31 @@ var AdsparcAdapter = function AdsparcAdapter() {
 
     }
 	
-	
     var getJSON = function(url,callback) {
-    
-      var xhr = new XMLHttpRequest();
-      xhr.open('get', url, true);
-      xhr.responseType = 'json';
-      xhr.onload = function() {
-        var status = xhr.status;
-        if (status == 200) {
-          return callback(xhr.response);
-
-        }else {
-          return callback(status);
-        }
+        var xhr = new XMLHttpRequest();
+        xhr.open('get', url, true);
+        xhr.onreadystatechange = function() {
+          var status;
+          if (xhr.readyState === 4) { // `DONE`
+            status = xhr.status;
+            if (status === 200) {
+              callback(xhr.response);
+            } else {
+              callback(status);
+            }
+          }
+        };
+        xhr.send();
       };
-      xhr.send();
-    };
 
-    function _getUniqueNids(bids) {
-      var key;
-      var map = {};
-      var nids = [];
-      bids.forEach(function(bid) {
-          map[bid.params.nid] = bid;
-        });
-      for (key in map) {
-        if (map.hasOwnProperty(key)) {
-          nids.push(map[key]);
-        }
-      }
-      console.log(nids);
-      return nids;
-    }
 
     function _requestBid(bid) {
       var placementCode = '';
-      var bids;
       var scriptUrl = 'http://pubs.adsparc.net/bid/ad.json';
       var size;
       var pubId;
       var siteUrl;
       var refUrl;
-      var content = bid.params.unit;
-      var adUnit;
-      var adData;
       var adResponse;
       placementCode = bid.placementCode;
       //load page options from bid request
@@ -87,11 +67,8 @@ var AdsparcAdapter = function AdsparcAdapter() {
       }
       var sizes = size.split("x");
       var Url = scriptUrl +'?type=1&p='+ pubId + '&sz=' + size + '&pageUrl=' + siteUrl + '&refUrl=' + refUrl;
-		
-	
-		
       var response;
-      getJSON(Url,function(data) {
+      getJSON(Url).then(function(data) {
         response = data;				
         // Add a response for each bid matching the "nid"
         if (response) {
