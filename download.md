@@ -279,16 +279,40 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="jcm" class="bidder-check-box"> J Carter Marketing
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="underdogmedia" class="bidder-check-box"> Underdog Media
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="memeglobal" class="bidder-check-box"> Meme Global
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
 <p>
-+(Upgrading version - please check back in a bit!)
+(version 0.12.0)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary disabled" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
