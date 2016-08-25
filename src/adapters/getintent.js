@@ -1,43 +1,46 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
-var utils = require('../utils.js');
 
 var GetIntentAdapter = function GetIntentAdapter() {
   var headerBiddingStaticJS = window.location.protocol + '//cdn.adhigh.net/adserver/hb.js';
 
-  function _callBids(params) {
-    if (typeof window.gi_hb === 'undefined') {
-      adloader.loadScript(headerBiddingStaticJS, function () { bid(params); }, true);
-    } else {
-      bid(params);
-    }
-  }
+  function _callBids(params) { 
+    if (typeof window.gi_hb === 'undefined') {   
+      adloader.loadScript(headerBiddingStaticJS, function() {
+        bid(params);
+      }, true);  
+    } else {   
+      bid(params);  
+    } 
+  }
 
-  function bid(params) {
-    var bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var callback = bidResponseCallback(bidRequest);
-      window.gi_hb.makeBid({
+   
+  function bid(params) {  
+    var bids = params.bids || [];  
+    for (var i = 0; i < bids.length; i++) {   
+      var bidRequest = bids[i];   
+      var callback = bidResponseCallback(bidRequest);   
+      window.gi_hb.makeBid({
         pid: bidRequest.params.pid,
         tid: bidRequest.params.tid,
         cur: bidRequest.params.cur,
         size: bidRequest.params.size,
         floor: bidRequest.params.floor,
         known: 0
-      }, callback);
-    }
-  };
+      }, callback);  
+    } 
+  }
 
-  function bidResponseCallback(bid) {
-    return function(bidResponse) {
-      bidResponseAvailable(bid, bidResponse);
-    };
-  }
+   
+  function bidResponseCallback(bid) {  
+    return function(bidResponse) {   
+      bidResponseAvailable(bid, bidResponse);  
+    }; 
+  }
 
   function bidResponseAvailable(bidRequest, bidResponse) {
-    if (bidResponse.no_bid == 1) {
+    if (bidResponse.no_bid === 1) {
       var passback = bidfactory.createBid(2);
       passback.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, passback);
@@ -53,9 +56,10 @@ var GetIntentAdapter = function GetIntentAdapter() {
     }
   }
 
-  return {
-    callBids: _callBids
-  };
+   
+  return {  
+    callBids: _callBids 
+  };
 };
 
 module.exports = GetIntentAdapter;
