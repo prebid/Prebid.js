@@ -17,7 +17,7 @@ export function ajax(url, callback, data, options = {}) {
       method = options.method || (data ? 'POST' : 'GET'),
       // For IE9 support use XDomainRequest instead of XMLHttpRequest.
       useXDomainRequest = window.XDomainRequest &&
-        (window.XMLHttpRequest && new window.XMLHttpRequest().responseType === undefined);
+        (!window.XMLHttpRequest || new window.XMLHttpRequest().responseType === undefined);
 
   if (useXDomainRequest) {
     x = new window.XDomainRequest();
