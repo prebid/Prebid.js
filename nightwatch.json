@@ -25,7 +25,7 @@
       "selenium_port"  : 4444,
       "selenium_host"  : "localhost",
       "silent": true,
-      "exclude":["custom-assertions","custom-commands","common"],
+      "exclude":["custom-assertions","custom-commands","common","custom-reporter"],
       "screenshots" : {
         "enabled" : false,
         "path" : ""
