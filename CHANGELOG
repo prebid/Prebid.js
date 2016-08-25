@@ -1,3 +1,9 @@
+AOL Prebid 1.0.5
+----------------
+BUGFIX: Ensure that an event is logged in the case when there are no bids from the DSPs.
+Populate the bid object with the deal ID for private deals.
+
+
 AOL Prebid 1.0.4
 ----------------
 BUGFIX: Fixed default server for AOL adapter & analytics.
