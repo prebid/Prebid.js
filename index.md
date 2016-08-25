@@ -146,6 +146,10 @@ description: A free and open source library for publishers to quickly implement 
       </div>
 
       <div class="col-xs-6 col-sm-4">
+        <h3>WideOrbit</h3>
+      </div>
+
+      <div class="col-xs-6 col-sm-4">
         <h3>NginAd</h3>
       </div>
 
