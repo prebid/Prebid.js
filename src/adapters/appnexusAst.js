@@ -46,6 +46,7 @@ function AppnexusAstAdapter() {
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
         preflight: false,
+        withCredentials : true
       });
     }
   };
