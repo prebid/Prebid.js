@@ -22,12 +22,12 @@ var GetIntentAdapter = function GetIntentAdapter() {
       var bidRequest = bids[i];   
       var callback = bidResponseCallback(bidRequest);   
       window.gi_hb.makeBid({
-        pid: bidRequest.params.pid,
-        tid: bidRequest.params.tid,
-        cur: bidRequest.params.cur,
-        size: bidRequest.params.size,
-        floor: bidRequest.params.floor,
-        known: 0
+        pid: bidRequest.params.pid, // required
+        tid: bidRequest.params.tid, // required
+        cur: bidRequest.params.cur, // optional
+        floor: bidRequest.params.floor, // optional
+        known: bidRequest.params.known || 1, // optional
+        size: bidRequest.sizes[0].join("x"),
       }, callback);  
     } 
   }
@@ -45,7 +45,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
       passback.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, passback);
     } else {
-      var adSize = bidRequest.params.size.toUpperCase().split('X');
+      var adSize = bidResponse.size.toUpperCase().split('X');
       var bid = bidfactory.createBid(1);
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = bidResponse.cpm;
@@ -56,7 +56,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
     }
   }
 
-   
+  
   return {  
     callBids: _callBids 
   };
