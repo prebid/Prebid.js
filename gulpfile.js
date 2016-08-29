@@ -20,9 +20,6 @@ var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-// this will have all of a copy of the normal fs methods as well
-var fs = require('fs.extra');
-const exec = require('child_process').exec;
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -30,6 +27,7 @@ var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
+var port = 9999;
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
@@ -160,7 +158,7 @@ gulp.task('watch', function () {
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
-    port: 9999,
+    port: port,
     root: './',
     livereload: true
   });
@@ -208,7 +206,6 @@ gulp.task('e2etest', function() {
         env.push(key);
       }
     }
-
     cmd = '--env default,' + env.join(',');
   }
 
@@ -225,74 +222,17 @@ gulp.task('e2etest', function() {
   cmd = cmd + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
   return gulp.src('')
     .pipe(shell('nightwatch ' + cmd));
-
 });
 
-gulp.task('e2etest-report', function(){
-  var browsers = require('./browsers.json');
-  var env = ['default'];
-  var input = 'bs';
-  for(var key in browsers) {
-    if(key.substring(0, input.length) === input) {
-      env.push(key);
-    }
-  }
-
-  //create new directory structure
+gulp.task('e2etest-report', function() {
   var targetDestinationDir = './e2etest-report';
-  fs.rmrfSync(targetDestinationDir);
-  env.forEach(item => {
-    fs.mkdirpSync(targetDestinationDir + '/' + item);
-  });
-
-  //move xml files to newly created directory
-  var walker = fs.walk('./build/coverage/e2e/reports');
-  walker.on("file", function (root, stat, next) {
-    env.forEach(item => {
-      if(stat.name.search(item) !== -1) {
-        var src = root + '/' + stat.name;
-        var dest = targetDestinationDir + '/' + item + '/' + stat.name;
-        fs.copy(src, dest, {replace: true}, function(err) {
-          if(err) {
-            throw err;
-          }
-        });
-      }
-    });
-    next();
-  });
-
-  //run junit-viewer to read xml and create html
-  env.forEach(item => {
-    //junit-viewer --results="./custom-reports/chrome51" --save="./chrome.html"
-    var cmd = 'junit-viewer --results="' + targetDestinationDir + '/' + item + '" --save="' + targetDestinationDir + '/' + item +'.html"';
-    exec(cmd);
-  });
-
-  //create e2e-results.html
-  var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>End to End Testing Result</title><link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css"><script src="https://code.jquery.com/jquery-1.12.4.js"></script><script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script><script>$( function() {$( "#tabs" ).tabs({heightStyle: "fill"});});</script></head><body><div style="font-weight: bold;">Note: Refresh in 2-3 seconds if it says "Cannot get ....."</div><div id="tabs" style="height:2000px;">';
-  var li = '';
-  var tabs = '';
-  env.forEach(function(item,i) {
-    i++;
-    li = li + '<li><a href="#tabs-'+i+'">'+item+'</a></li>';
-    tabs = tabs + '<div id="tabs-'+i+'"><iframe name="'+item+'" src="http://localhost:9999/' + targetDestinationDir.slice(2) + '/'+item+'.html" frameborder="0" style="overflow:hidden;overflow-x:hidden;overflow-y:hidden;height:100%;width:100%;position:absolute;top:50px;left:0px;right:0px;bottom:0px" height="100%" width="100%"></iframe></div>';
-  });
-  html = html + '<ul>' + li + '</ul>' + tabs;
-  html = html + '</div></body></html>';
-
-  var filepath = targetDestinationDir + '/results.html';
-  fs.openSync(filepath, 'w+');
-
-  fs.writeFileSync(filepath, html);
-
+  helpers.createEnd2EndTestReport(targetDestinationDir);
   connect.server({
-    port: 9999,
+    port: port,
     root: './',
     livereload: true
   });
 
-  var port = '9999';
   setTimeout(function() {
     opens('http://localhost:' + port + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
