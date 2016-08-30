@@ -96,6 +96,24 @@ describe('AppNexusAdapter', () => {
       REQUEST.bids[0].params = backup;
     });
 
+    it('attaches valid video params to the tag', () => {
+      REQUEST.bids[0].params.video = {
+        id: 123,
+        minduration: 100,
+        foobar: 'invalid'
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody).tags[0];
+      expect(request.video).to.deep.equal({
+        id: 123,
+        minduration: 100
+      });
+
+      delete REQUEST.bids[0].params.video;
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);
@@ -206,10 +224,7 @@ describe('AppNexusAdapter', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
-      expect(response).to.have.property(
-        'statusMessage',
-        'Bid returned empty or error response'
-      );
+      expect(response).to.have.property('statusMessage', 'Bid available');
     });
 
     it('handles JSON.parse errors', () => {
