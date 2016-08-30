@@ -116,7 +116,7 @@ export default utils.extend(adapter({
           for (let code in adUnits) {
             if (adUnits.hasOwnProperty(code)) {
               let adUnit = adUnits[code];
-              if (adUnit.aolParams && adUnit.winner.cpm) {
+              if (adUnit.aolParams) {
                 let url = this.buildEndpoint(EVENTS.AUCTION, adUnit);
                 this.reportEvent(url);
               }
