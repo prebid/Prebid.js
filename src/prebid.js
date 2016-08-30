@@ -182,7 +182,7 @@ function getDealTargeting() {
           [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
         };
       })
-      .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
+      .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
 }
