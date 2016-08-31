@@ -18,15 +18,13 @@ var adUnits = [{
   bids: [{
     bidder: 'sonobi',                 //  New format
     params: {
-      dom_id: 'PER SLOT',      //  <String> dom Id
-      ad_unit:'PER SLOT'        //  <String> ad unit code
+      ad_unit: 'PER SLOT'        //  <String> ad unit code
     }
   },
   {
     bidder: 'sonobi',                     //  Old account format
     params: {
-      dom_id: 'PER SLOT',          //  <String> dom Id
-      placement_id:'PER SLOT'  //  <String> placement Id
+      placement_id: 'PER SLOT'  //  <String> placement Id
     }
   }]
 }];
