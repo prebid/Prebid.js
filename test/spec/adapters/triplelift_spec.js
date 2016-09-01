@@ -144,9 +144,9 @@ describe('triplelift adapter', () => {
       expect(secondPlacementCode).to.eql('bar');
     });
 
-    it('should include the adId on the bid object', () => {
-      expect(firstBid).to.have.property('adId');
-      expect(secondBid).to.have.property('adId');
+    it('should include the bid request bidId as the adId', () => {
+      expect(firstBid).to.have.property('adId', 'bidId1');
+      expect(secondBid).to.have.property('adId', 'bidId2');
     });
 
     it('should have a good statusCode', () => {
@@ -207,9 +207,9 @@ describe('triplelift adapter', () => {
       sinon.assert.calledTwice(bidManager.addBidResponse);
     });
 
-    it('should include the adId on the bid object', () => {
-      expect(firstBid).to.have.property('adId');
-      expect(secondBid).to.have.property('adId');
+    it('should include the bid request bidId as the adId', () => {
+      expect(firstBid).to.have.property('adId', 'bidId1');
+      expect(secondBid).to.have.property('adId', 'bidId2');
     });
 
     it('should have an error statusCode', () => {
