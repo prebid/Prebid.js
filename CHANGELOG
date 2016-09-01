@@ -1,3 +1,8 @@
+AOL Prebid 1.0.6
+----------------
+BUGFIX: Ensure that auctionId never exceeds max 64 bit value. Limit length to 18 digits.
+
+
 AOL Prebid 1.0.5
 ----------------
 BUGFIX: Ensure that an event is logged in the case when there are no bids from the DSPs.
