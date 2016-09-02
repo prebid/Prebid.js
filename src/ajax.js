@@ -4,6 +4,7 @@ const XHR_DONE = 4;
 
 /**
  * Simple IE9+ and cross-browser ajax request function
+ * Note: x-domain requests in IE9 do not support the use of cookies
  *
  * @param url string url
  * @param callback object callback
@@ -22,6 +23,18 @@ export function ajax(url, callback, data, options = {}) {
   if (useXDomainRequest) {
     x = new window.XDomainRequest();
     x.onload = handler;
+
+    // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
+    x.onerror = function () {
+      utils.logMessage('xhr onerror');
+    };
+    x.ontimeout = function () {
+      utils.logMessage('xhr timeout');
+    };
+    x.onprogress = function() {
+      utils.logMessage('xhr onprogress');
+    };
+
   } else {
     x = new window.XMLHttpRequest();
     x.onreadystatechange = handler;
