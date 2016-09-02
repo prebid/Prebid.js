@@ -158,7 +158,7 @@ function AppnexusAstAdapter() {
 
     if (status === STATUS.GOOD) {
       bid.cpm = tag.ads[0].cpm;
-      bid.creative_id = tag.ads[0].creativeId;
+      bid.creative_id = tag.ads[0].creative_id;
       bid.width = tag.ads[0].rtb.banner.width;
       bid.height = tag.ads[0].rtb.banner.height;
       bid.ad = tag.ads[0].rtb.banner.content;
