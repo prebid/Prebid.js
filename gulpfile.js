@@ -27,11 +27,14 @@ var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
+var port = 9999;
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
+
+gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
 
@@ -155,7 +158,7 @@ gulp.task('watch', function () {
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
-    port: 9999,
+    port: port,
     root: './',
     livereload: true
   });
@@ -190,4 +193,48 @@ gulp.task('docs', ['clean-docs'], function () {
       gutil.log('jsdoc2md failed:', err.message);
     })
     .pipe(gulp.dest('docs'));
+});
+
+gulp.task('e2etest', function() {
+  var cmd = '--env default';
+  if(argv.browserstack) {
+    var browsers = require('./browsers.json');
+    var env = [];
+    var input = 'bs';
+    for(var key in browsers) {
+      if(key.substring(0, input.length) === input) {
+        env.push(key);
+      }
+    }
+    cmd = '--env default,' + env.join(',');
+  }
+
+  if(argv.browserstack) {
+    cmd = cmd + ' --config nightwatch.conf.js';
+  } else {
+    cmd = cmd + ' --config nightwatch.json';
+  }
+
+  if (argv.group) {
+    cmd = cmd + ' --group ' + argv.group;
+  }
+
+  cmd = cmd + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
+  return gulp.src('')
+    .pipe(shell('nightwatch ' + cmd));
+});
+
+gulp.task('e2etest-report', function() {
+  var targetDestinationDir = './e2etest-report';
+  helpers.createEnd2EndTestReport(targetDestinationDir);
+  connect.server({
+    port: port,
+    root: './',
+    livereload: true
+  });
+
+  setTimeout(function() {
+    opens('http://localhost:' + port + '/' + targetDestinationDir.slice(2) + '/results.html');
+  }, 5000);
+
 });
