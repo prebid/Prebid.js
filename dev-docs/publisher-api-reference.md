@@ -480,25 +480,70 @@ Define ad units and their corresponding header bidding bidders' tag IDs.  For us
 
 ### pbjs.bidderSettings
 
+#### 1. Overview
 
-Bidders all have different recommended ad server line item targeting and creative setup. To remove the headache for you, Prebid.js has a default recommended query string targeting setting for all bidders.
+The bidderSettings object provides a way to define some behaviors for the
+platform and specific adapters. The basic structure is a 'standard' section with defaults for all adapters, and then one or more adapter-specific sections that override behavior for that bidder:
 
+{% highlight js %}
 
+pbjs.bidderSettings = {
+    standard: {
+         [...]
+    },
+    indexExchange: {
+         [...]
+    },
+    rubicon: {
+         [...]
+    },
+}
 
-#### 1. Keyword targeting for ALL bidders
+{% endhighlight %}
 
+Defining bidderSettings is optional; the platform has default values for all of the options.
+Adapters may specify their own default settings, though this isn't common.
+Some sample scenarios where publishers may wish to alter the default settings:
 
-The below code snippet is the **default** setting for ad server targeting. For each bidder's bid, Prebid.js will set the below 4 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target the 4 keys.
+* using bidder-specific ad server targeting instead of Prebid-standard targeting
+* passing additional information to the ad server
+* adjusting the bid CPM sent to the ad server
 
-If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. **Note** that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly.
+#### 2. Bidder Setting Attributes
 
-By default, only the winning bid (bid with the highest cpm) will be sent to the ad server. However, if you would like all bid responses available sent to the ad server, and hold the decision logic in the ad server, you can do that by specifying `alwaysUseBid` in the bidderSetting. This can be really useful especially when working with a prebid partner not returning a cpm Value.
+{: .table .table-bordered .table-striped }
+| Attribute | Scope | Version | Default | Description |
+| --- | --- | --- | --- | --- |
+| alwaysUseBid | adapter-specific | all | false | Useful when working with a prebid partner not returning a cpm value. |
+| adserverTargeting | standard or adapter-specific | all | see below | Define which key/value pairs are sent to the ad server. |
+| bidCpmAdjustment | standard or adapter-specific | all | n/a | Could, for example, adjust a bidder's gross-price bid to net price. |
+| sendStandardTargeting | adapter-specific | 0.13.0 | true | If adapter-specific targeting is specified, can be used to suppress the standard targeting for that adapter. |
+| suppressEmptyKeys | standard or adapter-specific | 0.13.0 | false | If custom adserverTargeting functions are specified that may generate empty keys, this can be used to suppress them. |
 
-The bidderSettings object can also be really useful to specify your own price bucket function to define the price bucket sent to the ad server.
+##### 2.1. alwaysUseBid
+
+By default, only the winning bid (with the highest cpm) will be sent to the ad server.
+However, if you're working with a Prebid partner that's not returning a CPM value, it
+won't be able to compete against the other bids. One option is to use [enableSendAllBids()](publisher-api-reference.html#module_pbjs.enableSendAllBids). But if you want to send the highest CPM
+bid along with all non-CPM bids, just specify this flag and the adapter-specific adserverTargeting object will always be sent to the ad server.
+
+##### 2.2. adserverTargeting
+
+As described in the [AdOps documentation](adops.html), Prebid has a recommended standard
+set of ad server targeting that works across bidders. This standard targeting approach is
+defined in the adserverTargeting attribute in the 'standard' section, but can be overridden
+per adapter as needed. Both secenarios are described below.
+
+**Keyword targeting for all bidders**
+
+The below code snippet is the *default* setting for ad server targeting. For each bidder's bid, Prebid.js will set 4 keys (`hb_bidder`, `hb_adid`, `hb_pb`, `hb_size`) with their corresponding values. The key value pair targeting is applied to the bid's corresponding ad unit. Your ad ops team will have the ad server's line items target these keys.
+
+If you'd like to customize the key value pairs, you can overwrite the settings as the below example shows. *Note* that once you updated the settings, let your ad ops team know about the change, so they can update the line item targeting accordingly. See the [Ad Ops](../adops.html) documentation for more information.
 
 <a name="bidderSettingsDefault"></a>
+<a name="default-keywords">
 
-There's no need to include the following code if you choose to use the **below default setting**.
+There's no need to include the following code if you choose to use the *below default setting*.
 
 {% highlight js %}
 
@@ -508,7 +553,7 @@ pbjs.bidderSettings = {
         adserverTargeting: [{
             key: "hb_bidder",
             val: function(bidResponse) {
-                return bidResponse.bidder;
+                return bidResponse.bidderCode;
             }
         }, {
             key: "hb_adid",
@@ -520,29 +565,29 @@ pbjs.bidderSettings = {
             val: function(bidResponse) {
                 return bidResponse.pbMg;
             }
+        }, {
+            key: 'hb_size',
+            val: function (bidResponse) {
+                return bidResponse.size;
+            }
         }]
     }
 }
 
 {% endhighlight %}
 
-<a name="default-keywords">
+<a name="key-targeting-specific-bidder"></a>
+**Keyword targeting for a specific bidder**
 
-##### Default keyword targeting prebid.js sends to your ad server
+Let’s say the bidder prefers a separate set of line items. You can overwrite the bidder
+settings as the below example for AppNexus shows.
 
-{% include default-keyword-targeting.md %}
-
-#### 2. Keyword targeting for a specific bidder
-
-If you'd like more customization (down to the bidder level), prebid.js also provides the API to do so.
-Let’s say you still prefer to have a separate set of line items for a bidder. You can overwrite the bidder settings as the below example shows, which overwrites the default AppNexus query string targeting.
-
-**Note that the line item setup has to match the targeting change**.
-
+*Note that the line item setup has to match the targeting change*
 
 {% highlight js %}
 pbjs.bidderSettings = {
     appnexus: {
+      sendStandardTargeting: false,
       adserverTargeting: [
         {
             key: "apn_pbMg",
@@ -561,50 +606,23 @@ pbjs.bidderSettings = {
 {% endhighlight %}
 
 
-The bidder setting for AppNexus is saying: send 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html).
+In otherwords, the above config sends 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html#common-bidresponse).
 
-<!-- Now let's say you would like Criteo bids to always be sent to the adServer, since Criteo isn't sending back a cpm, prebid.js can't order it among the other prebid partners.
-You could define your own bidderSetting, only for criteo bidder, that would setup Criteo bid to always be sent to the adserver and not be evaluated against other bids.
+Note that sendStandardTargeting is set to false so that the standard Prebid targeting (hb_bidder, etc.) aren't also sent to the ad server.
 
-{% highlight js %}
+**Price Buckets**
 
-pbjs.bidderSettings = {
-    standard: {
-        alwaysUseBid: true,
-        adserverTargeting: [{
-            key: "crt_bid",
-            val: function(bidResponse) {
-                return (bidResponse.statusMessage == "Bid available" ? "true" : "false");
-            }
-        }]
-    }
-}
+Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js. You can overwrite the bidder settings as the below example shows:
 
-{% endhighlight %}
-
--->
-
-Now let's say you would like to define you own price bucket function rather than use the ones available by default in prebid.js (pbLg, pbMg, pbHg).You can overwrite the bidder settings as the below example shows:
-
-**Note: this will only impact the price bucket assignation (for ad server targeting). It won't actually impact the cpm value used for ordering the bids.**
+*Note: this will only impact the price bucket sent to the ad server for targeting. It won't actually impact the cpm value used for ordering the bids.*
 
 
 {% highlight js %}
 
 pbjs.bidderSettings = {
     standard: {
-        alwaysUseBid: false,
-        adserverTargeting: [{
-            key: "hb_bidder",
-            val: function(bidResponse) {
-                return bidResponse.bidder;
-            }
-        }, {
-            key: "hb_adid",
-            val: function(bidResponse) {
-                return bidResponse.adId;
-            }
-        }, {
+        [...]
+        {
             key: "hb_pb",
             val: function(bidResponse) {
                 // define your own function to assign price bucket
@@ -620,20 +638,21 @@ pbjs.bidderSettings = {
                     return "pb5"; // all bids less than $6 are assigned to price bucket 'pb5'
                 return "pb6"; // all bids $6 and above are assigned to price bucket 'pb6'
             }
-        }, {
-            key: "hb_size",
-            val: function(bidResponse) {
-                return bidResponse.size;
-            }
-        }]
+        }
+	[...]
     }
 }
 
 {% endhighlight %}
 
-#### 3. Adjust bid price for a specific bidder
 
-Some bidders return gross prices, instead of the net prices (what the publisher will actually get paid). For example, a publisher's net price might be 15% below the returned gross price. In this case, the publisher may want to adjust the bidder's returned price to run a true header bidding auction. Otherwise, this bidder's gross price will unfairly win over your other demand sources who report the real price.
+##### 2.3. bidCpmAdjustment
+
+Some bidders return gross prices instead of the net prices (what the publisher will actually
+get paid). For example, a publisher's net price might be 15% below the returned gross price.
+In this case, the publisher may want to adjust the bidder's returned price to run a true
+header bidding auction. Otherwise, this bidder's gross price will unfairly win over your
+other demand sources who report the real price.
 
 {% highlight js %}
 
@@ -649,30 +668,22 @@ pbjs.bidderSettings = {
 
 {% endhighlight %}
 
-Note that in the above example, the AOL bidder will inherit from "standard" adserverTargeting keys, so that you don't have to define the targeting keywords again.
+In the above example, the AOL bidder will inherit from "standard" adserverTargeting keys, so that you don't have to define the targeting keywords again.
 
-#### function(bidResponse)
 
-{: .table .table-bordered .table-striped }
-| Function Name | Description |
-| :--- | :---- |
-| function(bidResponse) | The function returns a query string targeting value. It is used in pair with the adserverTargeting's `key` param. The key value pair together will be sent for targeting on the ad server's ad unit impression. `bidResponse` is bidder specific and you can find what're available in the [documentation here](bidders.html). |
+##### 2.4. sendStandardTargeting
 
-<a name="bidResponse"></a>
+This boolean flag minimizes key/value pairs sent to the ad server when 
+adapter-specific targeting is specified. By default, the platform will send both adapter-specific adServerTargeting as well as the standard adServerTargeting.
 
-#### Available bidResponse values
+While sending extra targeting the ad server may not matter, this flag can be used to
+suppress the standard targeting for adapters that define their own.
 
-{: .table .table-bordered .table-striped }
-|   Name |   Type | Description | Example
-| :----  |:--------| :-------| :-------|
-| `bidder` | String | The bidder code. Used by ad server's line items to identify bidders | `rubicon` |
-| `adId` | String |  The unique identifier of a bid creative. It's used by the line item's creative as in [this example](/adops/step-by-step.html). | `123` |
-| `pbLg` | String | The low granularity price bucket at 0.50 increment, capped at $5, floored to 2 decimal places. (0.50, 1.00, 1.50, ..., 5.00) | `1.50` |
-| `pbMg` | String | The medium granularity price bucket at 0.10 increment, capped at $20, floored to 2 decimal places. (0.10, 0.20, ..., 19.90, 20.00) | `1.60` |
-| `pbHg` | String | The high granularity price bucket at 0.01 increment, capped at $20, floored to 2 decimal places. (0.01, 0.02, ..., 19.99, 20.00) | `1.61` |
-| `size` | String | The size of the bid creative. Concatenation of width and height by 'x'. | `300x250` |
-| `cpm` | float | The exact bid price from the bidder | 1.59 |
+See the [example above](#key-targeting-specific-bidder) for example usage.
 
+##### 2.5. suppressEmptyKeys
+
+If a custom adServerTargeting function can return an empty value, this boolean flag can be used to avoid sending those empty values to the ad server.
 
 <hr class="full-rule">
 
