@@ -538,6 +538,8 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
+    it('should request bids only if a video adUnit has all video bidders');
+
     it('should queue bid requests when a previous bid request is in process', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
       var clock = sinon.useFakeTimers();

@@ -515,6 +515,22 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
 
+  // TODO: make better way to define video bidders
+  const VIDEO_BIDDERS = ['appnexusAst'];
+
+  // for any video adUnit, only request bids if all bidders support video
+  adUnits
+    .filter(adUnit => adUnit.mediaType === 'video')
+    .filter(videoAdUnit => videoAdUnit.bids
+      .map(bids => bids.bidder)
+      .filter(bidder => !VIDEO_BIDDERS.includes(bidder)).length
+    )
+    .forEach(adUnit => {
+      utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but
+        contains a bidder that doesn't support video`);
+      $$PREBID_GLOBAL$$.removeAdUnit(adUnit.code);
+    });
+
   if (auctionRunning) {
     bidRequestQueue.push(() => {
       $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
