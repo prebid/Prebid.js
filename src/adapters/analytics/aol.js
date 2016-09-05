@@ -77,36 +77,30 @@ export default utils.extend(adapter({
     track({ eventType, args }) {
       switch (eventType) {
         case AUCTION_COMPLETED:
-          let bidsReceived = args.bidsReceived;
           let adUnitsConf = args.adUnits;
+          let bidsReceived = args.bidsReceived;
+          let bidsReceivedIds = bidsReceived.map(receivedBid => receivedBid.adId);
+          let timedOutBids = args.bidsRequested
+            .map(bidderRequest => bidderRequest.bids
+                .filter(bid => bidsReceivedIds.indexOf(bid.bidId) < 0)
+                .map(bid => {
+                  return {
+                    adUnitCode: bid.placementCode,
+                    bidder: bid.bidder,
+                    cpm: 0,
+                    getStatusCode: () => 3, // ERROR_TIMEOUT
+                    timeToRespond: (new Date().getTime() - bidderRequest.start)
+                  };
+                })
+            )
+            .reduce((a, b) => a.concat(b), []);
 
-          for (let bid of bidsReceived) {
+          for (let bid of bidsReceived.concat(timedOutBids)) {
             const currentAdUnitCode = bid.adUnitCode;
             let adUnit = adUnits[currentAdUnitCode];
             if (!adUnit) {
-              adUnit = {
-                code: currentAdUnitCode,
-                bids: [],
-                winner: {
-                  cpm: 0
-                },
-              };
-
-              const filteredBids = bidsReceived.filter(
-                bid => bid.bidderCode === AOL_BIDDER_CODE && bid.adUnitCode === currentAdUnitCode
-              );
-              const pubapiId = (filteredBids.length === 1) ? filteredBids[0].pubapiId : '';
-
-              for (let adUnitConf of adUnitsConf) {
-                if (adUnitConf.code === currentAdUnitCode) {
-                  for (let adUnitBid of adUnitConf.bids) {
-                    if (adUnitBid.bidder === AOL_BIDDER_CODE) {
-                      adUnit.aolParams = adUnitBid.params;
-                      adUnit.aolParams.pubapiId = pubapiId;
-                    }
-                  }
-                }
-              }
+              adUnit = initAdUnit(currentAdUnitCode);
+              adUnit = addAolParams(adUnit, adUnitsConf, bidsReceived);
               adUnits[currentAdUnitCode] = adUnit;
             }
             adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
@@ -276,4 +270,33 @@ function getStatusCode(bid) {
     default:
       return -1; // INVALID
   }
+}
+
+function initAdUnit(adUnitCode) {
+  return {
+    code: adUnitCode,
+    bids: [],
+    winner: {
+      cpm: 0
+    }
+  };
+}
+
+function addAolParams(adUnit, adUnitsConf, bidsReceived) {
+  const filteredBids = bidsReceived.filter(
+    bid => bid.bidderCode === AOL_BIDDER_CODE && bid.adUnitCode === adUnit.code
+  );
+  const pubapiId = (filteredBids.length === 1) ? filteredBids[0].pubapiId : '';
+
+  for (let adUnitConf of adUnitsConf) {
+    if (adUnitConf.code === adUnit.code) {
+      for (let adUnitBid of adUnitConf.bids) {
+        if (adUnitBid.bidder === AOL_BIDDER_CODE) {
+          adUnit.aolParams = adUnitBid.params;
+          adUnit.aolParams.pubapiId = pubapiId;
+        }
+      }
+    }
+  }
+  return adUnit;
 }
