@@ -518,18 +518,19 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   // TODO: make better way to define video bidders
   const VIDEO_BIDDERS = ['appnexusAst'];
 
-  // for any video adUnit, only request bids if all bidders support video
-  adUnits
-    .filter(adUnit => adUnit.mediaType === 'video')
-    .filter(videoAdUnit => videoAdUnit.bids
-      .map(bids => bids.bidder)
-      .filter(bidder => !VIDEO_BIDDERS.includes(bidder)).length
-    )
-    .forEach(adUnit => {
-      utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but
-        contains a bidder that doesn't support video`);
-      $$PREBID_GLOBAL$$.removeAdUnit(adUnit.code);
-    });
+  // for video-enabled adUnits, only request bids if all bidders support video
+  const videoAdUnits = adUnit => adUnit.mediaType === 'video';
+  const nonVideoBidders = bids => !VIDEO_BIDDERS.includes(bids.bidder);
+  const invalidVideoAdUnits = adUnits
+    .filter(videoAdUnits)
+    .filter(adUnit => adUnit.bids.filter(nonVideoBidders).length);
+
+  invalidVideoAdUnits.forEach(adUnit => {
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video`);
+    for (let i = 0; i < adUnits.length; i++) {
+      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+    }
+  });
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
