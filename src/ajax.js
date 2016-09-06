@@ -1,5 +1,7 @@
 import {parse as parseURL, format as formatURL} from './url';
 
+var utils = require('./utils');
+
 const XHR_DONE = 4;
 
 /**
