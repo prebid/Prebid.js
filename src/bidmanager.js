@@ -301,6 +301,7 @@ exports.executeCallback = function () {
     events.emit(CONSTANTS.EVENTS.AUCTION_COMPLETED,
         {
           bidsReceived: $$PREBID_GLOBAL$$._bidsReceived,
+          bidsRequested: $$PREBID_GLOBAL$$._bidsRequested,
           adUnits: $$PREBID_GLOBAL$$.adUnits
         });
     processCallbacks([externalOneTimeCallback]);
