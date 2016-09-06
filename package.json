@@ -51,6 +51,7 @@
     "istanbul": "^0.3.2",
     "istanbul-instrumenter-loader": "^0.1.2",
     "jquery": "1.11.1",
+    "jshint-stylish": "^2.2.1",
     "json-loader": "^0.5.1",
     "karma": "^0.13.2",
     "karma-babel-preprocessor": "^6.0.1",
