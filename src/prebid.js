@@ -428,7 +428,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
     try {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
-      if (adObject) {
+      if (doc===document) {
+        utils.logError('Error trying to write ad. Ad render call for bid response id:  ' + id + ' was prevented from writing to the main document.');
+      } else if (adObject) {
         //save winning bids
         $$PREBID_GLOBAL$$._winningBids.push(adObject);
         //emit 'bid won' event here
