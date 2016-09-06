@@ -3,6 +3,7 @@ import { uniques } from './utils';
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
+var auctionmanager = require('./auctionmanager');
 
 var objectType_function = 'function';
 
@@ -68,6 +69,8 @@ function getBidSetForBidder(bidder) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+  const auction = auctionmanager.getAuctionByBidId(bid.adId);
+
   if (bid) {
 
     Object.assign(bid, {

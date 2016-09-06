@@ -1,25 +1,37 @@
+var utils = require('./utils');
 
-export const adaptermanager = function AdapterManager() {
+export const auctionmanager = (function() {
   let auctions = [];
-
   function _holdAuction(auction) {
-    auctions.push(auction);
-  };
+    return auctions.push(auction);
+  }
 
-  const _closeAuction = id => {
-
-  };
-
-  const _getAuction = id => {
-    return auctions.find(auction => auction.requestId === id);
-  };
-
-  function Auction(auction) {
+  function _closeAuction(id) {
 
   }
 
+  function _getAuction({ requestId }) {
+    return auctions.find(auction => auction.requestId === requestId);
+  }
+
+  function _getAuctionByBidId({ bidId }) {
+    return auctions.find(auction => auction);
+  }
+
+  function Auction({ bidsBackHandler, cbTimeout, adUnits }) {
+    this.auctionId = utils.generateUUID();
+    this.adUnits = adUnits;
+    this.bidsBackHandler = bidsBackHandler;
+    this.cbTimeout = cbTimeout;
+    this.bidsRequested = [];
+    this.bidsReceived = [];
+    this.status = 'open'; // or 'closed'
+  }
+
   return {
-    holdAuction() {},
+    holdAuction() {
+      return _holdAuction(...arguments);
+    },
 
     closeAuction() {
       return _closeAuction(...arguments);
@@ -29,7 +41,11 @@ export const adaptermanager = function AdapterManager() {
       return _getAuction(...arguments);
     },
 
+    getAuctionByBidId() {
+      return _getAuctionByBidId(...arguments);
+    },
+
     handleBidResponse() {}
   };
-};
+})();
 

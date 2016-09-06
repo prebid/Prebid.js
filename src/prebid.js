@@ -11,6 +11,7 @@ var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
+var auctionmanager = require('./auctionmanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');
@@ -515,21 +516,22 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
 
-  if (auctionRunning) {
-    bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
-    });
-    return;
-  } else {
-    auctionRunning = true;
-    removeComplete();
-  }
+  const auction = auctionmanager.holdAuction({ bidsBackHandler, cbTimeout, adUnits });
+  //if (auctionRunning) {
+  //  bidRequestQueue.push(() => {
+  //    $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+  //  });
+  //  return;
+  //} else {
+  //  auctionRunning = true;
+  //  removeComplete();
+  //}
 
   if (typeof bidsBackHandler === objectType_function) {
     bidmanager.addOneTimeCallback(bidsBackHandler);
   }
 
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', auction);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
@@ -542,7 +544,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   setTimeout(timeoutCallback, cbTimeout);
 
-  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+  adaptermanager.callBids(auction);
 };
 
 /**
