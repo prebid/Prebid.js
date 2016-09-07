@@ -18,7 +18,14 @@ export const auctionmanager = (function() {
   }
 
   function _getAuctionByBidId(bidId) {
-    return auctions.find(auction => auction);
+    return auctions
+      .find(auction => auction.getBidderRequests()
+        .find(request => request.bids
+          .find(bid => bid.bidId === bidId)));
+  }
+
+  function _getAuctionByStatusOpen() {
+    return auctions.find(auction => auction.status === 'open');
   }
 
   function Auction({ bidsBackHandler, cbTimeout, adUnits }) {
@@ -86,6 +93,10 @@ export const auctionmanager = (function() {
 
     getAuctionByBidId() {
       return _getAuctionByBidId(...arguments);
+    },
+
+    getAuctionByStatusOpen() {
+      return _getAuctionByStatusOpen(...arguments);
     },
 
     handleBidResponse() {}

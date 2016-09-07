@@ -9,7 +9,6 @@ var objectType_function = 'function';
 
 var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
-var externalOneTimeCallback = null;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 
@@ -51,18 +50,23 @@ function add(a, b) {
   return a + b;
 }
 
-function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
-  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
-  return requested === received;
+function bidsBackAll(auction) {
+  const bidsReceived = auction && auction.getBidsReceived();
+  const bidderRequests = auction.getBidderRequests();
+  const requested = bidderRequests && bidderRequests
+      .map(bidSet => bidSet.bids.length)
+      .reduce(add) || null;
+  const received = bidsReceived && bidsReceived.length || null;
+  return Number.parseInt(requested) === Number.parseInt(received);
 }
 
 exports.bidsBackAll = function() {
   return bidsBackAll();
 };
 
-function getBidSetForBidder(bidder) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
+function getBidSetForBidder(bidder, bidderRequests) {
+  return bidderRequests && bidderRequests
+      .find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 
 /*
@@ -70,13 +74,19 @@ function getBidSetForBidder(bidder) {
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   const auction = auctionmanager.getAuctionByBidId(bid.adId);
+  if (!auction) {
+    utils.logMessage('Auction not found for bid: ', JSON.stringify(bid));
+    return;
+  }
+
+  const bidderRequests = auction.getBidderRequests();
 
   if (bid) {
 
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: getBidSetForBidder(bid.bidderCode, bidderRequests).requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: getBidSetForBidder(bid.bidderCode, bidderRequests).start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -84,10 +94,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    if (bid.timeToRespond > auction.getTimeout()) {
       const timedOut = true;
 
-      this.executeCallback(timedOut);
+      this.executeCallback(timedOut, auction);
     }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -116,15 +126,15 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.adserverTargeting = keyValues;
     }
 
-    $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+    auction.getBidsReceived().push(bid);
   }
 
   if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
-  if (bidsBackAll()) {
-    this.executeCallback();
+  if (bidsBackAll(auction)) {
+    this.executeCallback(auction);
   }
 };
 
@@ -191,9 +201,10 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   function filterIfSendStandardTargeting(bidderSettings) {
-    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidder_settings[bidderCode].sendStandardTargeting === false) {
-      for(var key in keyValues) {
-        if(CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
+    if (typeof bidderSettings.sendStandardTargeting !== 'undefined' &&
+      bidder_settings[bidderCode].sendStandardTargeting === false) {
+      for (var key in keyValues) {
+        if (CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
           delete keyValues[key];
         }
       }
@@ -260,9 +271,11 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
-exports.executeCallback = function (timedOut) {
+exports.executeCallback = function (auction, timedOut) {
+  const bidsBackHandler = auction.getBidsBackHandler();
+
   if (externalCallbackArr.called !== true) {
-    processCallbacks(externalCallbackArr);
+    processCallbacks(auction, externalCallbackArr);
     externalCallbackArr.called = true;
 
     if (timedOut) {
@@ -275,13 +288,12 @@ exports.executeCallback = function (timedOut) {
   }
 
   //execute one time callback
-  if (externalOneTimeCallback) {
+  if (bidsBackHandler) {
     try {
-      processCallbacks([externalOneTimeCallback]);
+      processCallbacks([bidsBackHandler]);
     }
     finally {
       $$PREBID_GLOBAL$$.clearAuction();
-      externalOneTimeCallback = null;
     }
   }
 };
@@ -292,12 +304,12 @@ function triggerAdUnitCallbacks(adUnitCode) {
   processCallbacks(externalCallbackByAdUnitArr, params);
 }
 
-function processCallbacks(callbackQueue) {
+function processCallbacks(auction, callbackQueue) {
   var i;
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
+      func.call($$PREBID_GLOBAL$$, auction.getBidsReceived().reduce(groupByPlacement, {}));
     }
   }
 }
@@ -326,14 +338,6 @@ function groupByPlacement(prev, item, idx, arr) {
     return prev;
   }
 }
-
-/**
- * Add a one time callback, that is discarded after it is called
- * @param {Function} callback [description]
- */
-exports.addOneTimeCallback = function (callback) {
-  externalOneTimeCallback = callback;
-};
 
 exports.addCallback = function (id, callback, cbEvent) {
   callback.id = id;

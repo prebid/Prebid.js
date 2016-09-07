@@ -248,31 +248,6 @@ function getAllTargeting() {
   return targeting;
 }
 
-function markComplete(adObject) {
-  $$PREBID_GLOBAL$$._bidsRequested.filter(request => request.requestId === adObject.requestId)
-    .forEach(request => request.bids.filter(bid => bid.placementCode === adObject.adUnitCode)
-      .forEach(bid => bid.complete = true));
-
-  $$PREBID_GLOBAL$$._bidsReceived.filter(bid => {
-    return bid.requestId === adObject.requestId && bid.adUnitCode === adObject.adUnitCode;
-  }).forEach(bid => bid.complete = true);
-}
-
-function removeComplete() {
-  let requests = $$PREBID_GLOBAL$$._bidsRequested;
-  let responses = $$PREBID_GLOBAL$$._bidsReceived;
-
-  requests.map(request => request.bids
-      .filter(bid => bid.complete))
-    .forEach(request => requests.splice(requests.indexOf(request), 1));
-
-  responses.filter(bid => bid.complete).forEach(bid => responses.splice(responses.indexOf(bid), 1));
-
-  // also remove bids that have an empty or error status so known as not pending for render
-  responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
-    .forEach(bid => responses.slice(responses.indexOf(bid), 1));
-}
-
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -435,8 +410,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
 
-        // mark bid requests and responses for this placement in this auction as "complete"
-        markComplete(adObject);
         var height = adObject.height;
         var width = adObject.width;
         var url = adObject.adUrl;
@@ -517,19 +490,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   const auction = auctionmanager.holdAuction({ bidsBackHandler, cbTimeout, adUnits });
-  //if (auctionRunning) {
-  //  bidRequestQueue.push(() => {
-  //    $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
-  //  });
-  //  return;
-  //} else {
-  //  auctionRunning = true;
-  //  removeComplete();
-  //}
-
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler);
-  }
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', auction);
 
