@@ -25,7 +25,11 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   }).reduce(flatten, []);
 }
 
-exports.callBids = ({ requestId, adUnits, cbTimeout, bidsRequested }) => {
+exports.callBids = (auction) => {
+  const requestId = auction.getId();
+  const adUnits = auction.getAdUnits();
+  const cbTimeout = auction.getTimeout();
+
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
     timestamp: Date.now(),
     requestId
@@ -44,7 +48,7 @@ exports.callBids = ({ requestId, adUnits, cbTimeout, bidsRequested }) => {
         timeout: cbTimeout
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      bidsRequested.push(bidderRequest);
+      auction.addBidderRequest(bidderRequest);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
       if (bidderRequest.bids && bidderRequest.bids.length) {
         adapter.callBids(bidderRequest);

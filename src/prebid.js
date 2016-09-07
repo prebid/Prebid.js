@@ -2,6 +2,7 @@
 
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import 'polyfill';
+import { auctionmanager } from './auctionmanager';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
@@ -11,7 +12,6 @@ var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
-var auctionmanager = require('./auctionmanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');

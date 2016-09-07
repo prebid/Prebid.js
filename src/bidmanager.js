@@ -1,9 +1,9 @@
 import { uniques } from './utils';
+import { auctionmanager } from './auctionmanager';
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
-var auctionmanager = require('./auctionmanager');
 
 var objectType_function = 'function';
 
