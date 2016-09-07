@@ -103,6 +103,7 @@ var AolAdapter = function AolAdapter() {
     bidResponse.height = bidData.h;
     bidResponse.creativeId = bidData.crid;
     bidResponse.pubapiId = response.id;
+    bidResponse.currencyCode = response.cur;
     if (bidData.dealid) {
       bidResponse.dealId = bidData.dealid;
     }
