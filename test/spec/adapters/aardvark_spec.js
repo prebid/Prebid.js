@@ -121,6 +121,11 @@ describe('aardvark adapter', () => {
       expect(secondPlacementCode).to.eql('bar');
     });
 
+    it('should include bid request bidId as the adId', () => {
+      expect(firstBid).to.have.property('adId', 'bidId1');
+      expect(secondBid).to.have.property('adId', 'bidId2');
+    });
+
     it('should have a good statusCode', () => {
       expect(firstBid.getStatusCode()).to.eql(1);
       expect(secondBid.getStatusCode()).to.eql(1);
@@ -174,6 +179,11 @@ describe('aardvark adapter', () => {
     it('should have an error statusCode', () => {
       expect(firstBid.getStatusCode()).to.eql(2);
       expect(secondBid.getStatusCode()).to.eql(2);
+    });
+
+    it('should include bid request bidId as the adId', () => {
+      expect(firstBid).to.have.property('adId', 'bidId1');
+      expect(secondBid).to.have.property('adId', 'bidId2');
     });
 
     it('should pass the correct placement code as first param', () => {

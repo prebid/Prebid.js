@@ -285,29 +285,29 @@ var RubiconAdapter = function RubiconAdapter() {
   /**
    * Request the specified bids from
    * Rubicon
-   * @param {Object} params the bidder-level params (from prebid)
+   * @param {Object} bidderRequest the bidder-level params (from prebid)
    * @param {Array} params.bids the bids requested
    */
-  function _callBids(params) {
+  function _callBids(bidderRequest) {
 
     // start the timer; want to measure from
     // even just loading the SDK
     _bidStart = (new Date).getTime();
 
-    _mapSizes(params.bids);
+    _mapSizes(bidderRequest.bids);
 
-    if (utils.isEmpty(params.bids)) {
+    if (utils.isEmpty(bidderRequest.bids)) {
       return;
     }
 
     // on the first bid, set up the SDK
     if (!RUBICON_INITIALIZED) {
-      _initSDK(params.bids[0].params);
+      _initSDK(bidderRequest.bids[0].params);
     }
 
     _rready(function () {
       var slots = [];
-      var bids  = params.bids;
+      var bids  = bidderRequest.bids;
 
       for (var i=0, ln=bids.length; i < ln; i++) {
         slots.push(_defineSlot(bids[i]));
