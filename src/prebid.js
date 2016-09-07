@@ -2,6 +2,7 @@
 
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import 'polyfill';
+import {parse as parseURL, format as formatURL} from './url';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
@@ -747,6 +748,55 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
+};
+
+function verifyAdserverTag(urlComponents) {
+  //check for google required params with fixed values
+  var googleReqParams = {
+    'env' : 'vp',
+    'gdfp_req' : 1,
+    'impl' : 's',
+    'unviewed_position_start' : 1
+  };
+
+  for(var key in googleReqParams) {
+    if(!urlComponents.search.hasOwnProperty(key) || urlComponents.search[key] !== googleReqParams[key]) {
+      return false;
+    }
+  }
+
+  //check for google required params with variable values
+  var googleParamsWithVariableValue = ['output', 'iu', 'sz', 'url', 'correlator', 'description_url', 'hl'];
+  for(var i in googleParamsWithVariableValue) {
+    if(!urlComponents.search.hasOwnProperty(googleParamsWithVariableValue[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Build master video tag from publishers adserver tag
+ * @param {string} adserverTag default url
+ * @param {object} options options for video tag
+ */
+$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  //start auction or check that auction has ended or not
+  var urlComponents = parseURL(adserverTag);
+  console.log(urlComponents);
+  if(!verifyAdserverTag(urlComponents)) {
+    utils.logError('Invalid adserverTag, required google params are missing in query string');
+  }
+
+  //find winnning ad unit code
+  //if no bids are found return adservertag
+
+  Object.keys(options).forEach(key => {
+    
+  });
+  //override values and create new adservertag with deconstructed params and options
+  //reconstruct url
 };
 
 processQue();
