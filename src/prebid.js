@@ -428,9 +428,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
     try {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
-      if (doc===document) {
-        utils.logError('Error trying to write ad. Ad render call for bid response id:  ' + id + ' was prevented from writing to the main document.');
-      } else if (adObject) {
+      if (adObject) {
         //save winning bids
         $$PREBID_GLOBAL$$._winningBids.push(adObject);
         //emit 'bid won' event here
@@ -443,7 +441,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
-        if (ad) {
+        if (doc===document) {
+          utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
+        } else if (ad) {
           doc.write(ad);
           doc.close();
           if (doc.defaultView && doc.defaultView.frameElement) {
