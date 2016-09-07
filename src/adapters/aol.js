@@ -5,7 +5,7 @@ var bidmanager = require('../bidmanager.js');
 
 var AolAdapter = function AolAdapter() {
 
-  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${ ('bidfloor') ? `;bidfloor=${'bidfloor'}` : '' };misc=${'misc'}`;
+  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
@@ -53,7 +53,8 @@ var AolAdapter = function AolAdapter() {
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
-      bidfloor: (typeof params.bidFloor !== 'undefined') ? params.bidFloor.toString() : null,
+      bidfloor: (typeof params.bidFloor !== 'undefined') ?
+        `;bidfloor=${params.bidFloor.toString()}` : '',
       misc: new Date().getTime() // cache busting
     });
   }
