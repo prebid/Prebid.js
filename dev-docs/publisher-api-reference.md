@@ -365,6 +365,12 @@ Accepted values:
 + `"auto"`: Applies a sliding scale to determine granularity as shown in the [Auto Granularity](#autoGranularityBucket) table below.
 + `"dense"`: Like `"auto"`, but the bid price granularity uses smaller increments, especially at lower CPMs.  For details, see the [Dense Granularity](#denseGranularityBucket) table below.
 
+<div class="alert alert-danger" role="alert">
+  <p>
+  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are using the default values.
+  </p>
+</div>
+
 <a name="autoGranularityBucket"></a>
 
 #### Auto Granularity
@@ -508,6 +514,12 @@ Some sample scenarios where publishers may wish to alter the default settings:
 * using bidder-specific ad server targeting instead of Prebid-standard targeting
 * passing additional information to the ad server
 * adjusting the bid CPM sent to the ad server
+
+<div class="alert alert-danger" role="alert">
+  <p>
+  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are using the default values.
+  </p>
+</div>
 
 #### 2. Bidder Setting Attributes
 
