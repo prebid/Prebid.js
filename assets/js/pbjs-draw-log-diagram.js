@@ -73,8 +73,6 @@ function logToParse(logs) {
   }
 }
 
-
-// logs = {"Load Prebid.js":{"static":true,"start":0,"end":4},"Adserver Timer":{"static":true,"start":0,"end":619},"amazon":{"start":134,"end":618,"cpm":0},"appnexus":{"start":132,"end":519,"cpm":0.5},"criteo":{"start":152,"end":519,"cpm":0},"openx":{"start":153,"end":1349},"pubmatic":{"start":135,"end":1059},"rubicon":{"start":154,"end":734,"cpm":3.813333},"Load GPT":{"static":true,"start":619,"end":813},"Set Targeting":{"static":true,"start":816,"end":842}};
 //finalEndTime = 1500;
 window.drawLog = function(logs, finalEndTime) {
   console.log(JSON.stringify(logs));
