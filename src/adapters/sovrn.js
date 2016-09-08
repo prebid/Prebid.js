@@ -1,4 +1,5 @@
-import auctionmanager from '../auctionmanager';
+import { auctionmanager } from '../auctionmanager';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -73,7 +74,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    const auction = auctionmanager.getAuctionByStatusOpen();
+    const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
     const bidderRequests = auction.getBidderRequests();
     var missing = bidderRequests && bidderRequests
         .find(bidSet => bidSet.bidderCode === 'sovrn').bids

@@ -20,11 +20,11 @@ const _hgPriceCap = 20.00;
  * Returns a list of bidders that we haven't received a response yet
  * @return {array} [description]
  */
-exports.getTimedOutBidders = function () {
-  return $$PREBID_GLOBAL$$._bidsRequested
+exports.getTimedOutBidders = function (auction) {
+  return auction.getBidderRequests()
     .map(getBidderCode)
     .filter(uniques)
-    .filter(bidder => $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bidder => auction.getBidsReceived()
       .map(getBidders)
       .filter(uniques)
       .indexOf(bidder) < 0);
@@ -40,9 +40,9 @@ function getBidders(bid) {
   return bid.bidder;
 }
 
-function bidsBackAdUnit(adUnitCode) {
-  const requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode).bids.length;
-  const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
+function bidsBackAdUnit(auction, adUnitCode) {
+  const requested = auction.getAdUnits().find(unit => unit.code === adUnitCode).bids.length;
+  const received = auction.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
 
@@ -73,7 +73,9 @@ function getBidSetForBidder(bidder, bidderRequests) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
-  const auction = auctionmanager.getAuctionByBidId(bid.adId);
+  const auction = auctionmanager.getAuctionByBidId(bid.adId) ||
+    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
+
   if (!auction) {
     utils.logMessage('Auction not found for bid: ', JSON.stringify(bid));
     return;
@@ -94,10 +96,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > auction.getTimeout()) {
+    if (bid.timeToRespond > auction.getTimeout() + $$PREBID_GLOBAL$$._timeoutBuffer) {
       const timedOut = true;
 
-      this.executeCallback(timedOut, auction);
+      this.executeCallback(auction, timedOut);
     }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -129,8 +131,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     auction.getBidsReceived().push(bid);
   }
 
-  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
+  if (bid && bid.adUnitCode && bidsBackAdUnit(auction, bid.adUnitCode)) {
+    triggerAdUnitCallbacks(auction, bid.adUnitCode);
   }
 
   if (bidsBackAll(auction)) {
@@ -272,6 +274,7 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (auction, timedOut) {
+  auction.setState(CONSTANTS.AUCTION_STATES.CLOSING);
   const bidsBackHandler = auction.getBidsBackHandler();
 
   if (externalCallbackArr.called !== true) {
@@ -279,7 +282,7 @@ exports.executeCallback = function (auction, timedOut) {
     externalCallbackArr.called = true;
 
     if (timedOut) {
-      const timedOutBidders = this.getTimedOutBidders();
+      const timedOutBidders = this.getTimedOutBidders(auction);
 
       if (timedOutBidders.length) {
         events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
@@ -289,19 +292,13 @@ exports.executeCallback = function (auction, timedOut) {
 
   //execute one time callback
   if (bidsBackHandler) {
-    try {
-      processCallbacks([bidsBackHandler]);
-    }
-    finally {
-      $$PREBID_GLOBAL$$.clearAuction();
-    }
+    processCallbacks([bidsBackHandler]);
   }
 };
 
-function triggerAdUnitCallbacks(adUnitCode) {
-  //todo : get bid responses and send in args
+function triggerAdUnitCallbacks(auction, adUnitCode) {
   var params = [adUnitCode];
-  processCallbacks(externalCallbackByAdUnitArr, params);
+  processCallbacks(auction, externalCallbackByAdUnitArr, params);
 }
 
 function processCallbacks(auction, callbackQueue) {

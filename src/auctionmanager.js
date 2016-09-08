@@ -1,35 +1,51 @@
 var utils = require('./utils');
+var auctionStates = require('./constants.json').AUCTION_STATES;
 
 export const auctionmanager = (function() {
-  let auctions = [];
+
+  const _getAuctions = (() => {
+    let _auctions = [];
+    return () => _auctions;
+  })();
 
   function _holdAuction(config) {
     let auction = new Auction(config);
-    auctions.push(auction);
+    _getAuctions().push(auction);
     return auction;
   }
 
   function _closeAuction(id) {
-    auctions.find(auction => auction.auctionId === id).status = 'closed';
+    _getAuctions().find(auction => auction.auctionId === id).status = auctionStates.CLOSED;
   }
 
   function _getAuction(requestId) {
-    return auctions.find(auction => auction.requestId === requestId);
+    _getAuctions().find(auction => auction.requestId === requestId);
   }
 
   function _getAuctionByBidId(bidId) {
-    return auctions
+    return _getAuctions()
       .find(auction => auction.getBidderRequests()
         .find(request => request.bids
           .find(bid => bid.bidId === bidId)));
   }
 
-  function _getAuctionByStatusOpen() {
-    return auctions.find(auction => auction.status === 'open');
+  function _getAuctionByState(state) {
+    return _getAuctions().find(auction => auction.getState() === auctionStates[state]);
+  }
+
+  function _getAuctionByLastClosed() {
+    return _getAuctions()
+      .filter(auction => auction.getState() === auction.CLOSED)
+      [_getAuctions().length - 1];
+  }
+
+  function _getAuctionToReport() {
+    return _getAuctionByState(auctionStates.CLOSING) ||
+        _getAuctionByLastClosed();
   }
 
   function Auction({ bidsBackHandler, cbTimeout, adUnits }) {
-    let _this = this;
+    const _this = this;
 
     this.auctionId = utils.generateUUID();
     this.adUnits = adUnits;
@@ -37,7 +53,7 @@ export const auctionmanager = (function() {
     this.timeout = cbTimeout;
     this.bidderRequests = [];
     this.bidResponses = [];
-    this.status = 'open'; // or 'closed'
+    this.state = auctionStates.OPEN;
 
     function _addBidderRequest(bidderRequest) {
       _this.bidderRequests.push(bidderRequest);
@@ -59,6 +75,10 @@ export const auctionmanager = (function() {
 
     function _getBidsBackHandler() { return _this.bidsBackHandler; }
 
+    function _getState() { return _this.status; }
+
+    function _setState(state) { _this.state = state; }
+
     return {
       addBidderRequest() { return _addBidderRequest(...arguments); },
 
@@ -74,7 +94,11 @@ export const auctionmanager = (function() {
 
       getTimeout() { return _getTimeout(); },
 
-      getBidsBackHandler() { return _getBidsBackHandler(); }
+      getBidsBackHandler() { return _getBidsBackHandler(); },
+
+      getState() { return _getState(); },
+
+      setState() { return _setState(); }
     };
   }
 
@@ -95,11 +119,17 @@ export const auctionmanager = (function() {
       return _getAuctionByBidId(...arguments);
     },
 
-    getAuctionByStatusOpen() {
-      return _getAuctionByStatusOpen(...arguments);
+    getAuctionByState() {
+      return _getAuctionByState(...arguments);
     },
 
-    handleBidResponse() {}
+    getAuctionByLastClosed() {
+      return _getAuctionByLastClosed(...arguments);
+    },
+
+    getAuctionToReport() {
+      return _getAuctionToReport(...arguments);
+    }
   };
 })();
 
