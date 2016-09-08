@@ -77,85 +77,30 @@ description: A free and open source library for publishers to quickly implement 
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
     
-      <div class="col-xs-6 col-sm-4">
-        <h3>Sekindo</h3>
-      </div>
-	  
-      <div class="col-xs-6 col-sm-4">
-        <h3>Aardvark by RTK</h3>
-      </div>
-      
-      <div class="col-xs-6 col-sm-4">
-        <h3>AOL</h3>
-      </div>
-    
-      <div class="col-xs-6 col-sm-4">
-        <h3>AppNexus</h3>
-      </div>
-    
-      <!-- <div class="col-xs-6 col-sm-3">
-        <h3>Criteo</h3>
-      </div> -->
-    
-      <div class="col-xs-6 col-sm-4">
-        <h3>Index</h3>
-      </div>
+    <!-- START BIDDERS -->
+    <!-- (Note: Bidders are sorted alphabetically.) -->
 
-      <div class="col-xs-6 col-sm-4">
-        <h3>OpenX</h3>
-      </div>
+    <div class="col-xs-6 col-sm-4"><h3>Aardvark by RTK</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Adform</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>AdMedia</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>AOL</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>AppNexus</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>bRealTime</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Index</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>NginAd</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>OpenX</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Pubmatic</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>PulsePoint</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Rubicon</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Sekindo</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Sonobi</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Sovrn</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>SpringServe</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>TripleLift</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>WideOrbit</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Yieldbot</h3></div>
 
-      <div class="col-xs-6 col-sm-4">
-        <h3>Pubmatic</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>Rubicon</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>Sonobi</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>Sovrn</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4" >
-        <h3>Yieldbot</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>PulsePoint</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>Adform</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>bRealTime</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>SpringServe</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>TripleLift</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>WideOrbit</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>NginAd</h3>
-      </div>
-
-      <div class="col-xs-6 col-sm-4">
-        <h3>AdMedia</h3>
-      </div>
+    <!-- END BIDDERS -->
     
     </div>
 <!-- 
