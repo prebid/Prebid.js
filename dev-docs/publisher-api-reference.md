@@ -367,7 +367,7 @@ Accepted values:
 
 <div class="alert alert-danger" role="alert">
   <p>
-  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are using the default values.
+  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
   </p>
 </div>
 
@@ -517,7 +517,7 @@ Some sample scenarios where publishers may wish to alter the default settings:
 
 <div class="alert alert-danger" role="alert">
   <p>
-  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are using the default values.
+  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
   </p>
 </div>
 
