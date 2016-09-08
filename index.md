@@ -2,15 +2,9 @@
 layout: home
 title: Prebid.js - Header Bidding Made Easy
 head_title: Prebid.js - Header Bidding Made Easy
-
 isHome: true
-
 description: A free and open source library for publishers to quickly implement header bidding
-
 ---
-
-
-
 
 <a name="pb-home-live-demo"></a>
 
@@ -34,11 +28,6 @@ description: A free and open source library for publishers to quickly implement 
     <button class="btn btn-outline btn-lg" id="submit-email" onclick="submitEmail()">Join Best Practices Group</button>
   </div>        
 </div>
-
-
-<!--     <h2 class="bs-docs-featurette-title">Integrate header bidding partners in minutes, not weeks.</h2>
-    <p class="lead">Week-long header bidding implemenations are no picnic. We developed Prebid.js with a group of publishers to relieve that frustration.</p> 
--->
 
     <hr class="full-rule">
 
@@ -72,8 +61,6 @@ description: A free and open source library for publishers to quickly implement 
 
 
     <h2 class="bs-docs-featurette-title">Tags That Work in Prebid.js</h2>
-    <!-- <p class="lead">Prebid.js includes adaptors to the major SSPs, ad networks, and exchanges.</p> -->
-
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
     
@@ -103,65 +90,8 @@ description: A free and open source library for publishers to quickly implement 
     <!-- END BIDDERS -->
     
     </div>
-<!-- 
+
     <hr class="full-rule">
-
-    <h2 class="bs-docs-featurette-title">Partners Center</h2>
-    <p class="lead">A free an open marketplace for publishers and bidders supporting Prebid.org to connect.</p>
-
-    <div class="row bs-docs-featured-sites partner-logos">
-    
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <img src="assets/images/logos/monetizemore-logo.jpg" alt="MonetizeMore Header Bidding" class="img-responsive">
-        </div>
-        <a href="mailto:kean@monetizemore.com" class="btn btn-outline">Contact Publisher</a>
-      </div>
-
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <img src="assets/images/logos/sonobi-logo.png" alt="Sonobi Header Bidding" class="img-responsive">
-        </div>
-        <a href="mailto:rnovak@sonobi.com" class="btn btn-outline">Contact Bidder</a>
-      </div>
-    
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <img src="assets/images/logos/studybreakmedia-logo.png" alt="StudyBreakMedia Header Bidding" class="img-responsive">
-        </div>
-        <a href="mailto:emry@studybreakmedia.com" class="btn btn-outline">Contact Publisher</a>
-      </div>
-
-
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <img src="assets/images/logos/appnexus-logo.png" alt="AppNexus Header Bidding" class="img-responsive">
-        </div>
-        <a href="mailto:mmcneeley@appnexus.com" class="btn btn-outline">Contact Bidder</a>
-      </div>
-    
-
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <img src="assets/images/logos/brealtime-logo.png" alt="bRealTime Header Bidding" class="img-responsive">
-        </div>
-        <a href="mailto:rnovak@sonobi.com" class="btn btn-outline">Contact Bidder</a>
-      </div>
-    
-      <div class="col-xs-6 col-sm-2">
-        <div class="logo-block">
-          <div>Add Your Company!</div>
-        </div>
-        <a href="/addme.html#contact-companies" class="btn btn-outline">Enter Here</a>
-      </div>
-
-    
-    </div>
- -->
- 
-    <hr class="full-rule">
-
-
 
     <h2 class="bs-docs-featurette-title">Open Source Project</h2>
     
