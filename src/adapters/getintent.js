@@ -17,18 +17,26 @@ var GetIntentAdapter = function GetIntentAdapter() {
     }
   }
 
+  function addOptional(params, request, props) {
+    for (var i = 0; i < props.length; i++) {
+      if (params.hasOwnProperty(props[i])) {
+        request[props[i]] = params[props[i]];
+      }
+    }
+  }
+
   function bid(params) {
     var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
-      window.gi_hb.makeBid({
+      var request = {
         pid: bidRequest.params.pid, // required
         tid: bidRequest.params.tid, // required
-        cur: bidRequest.params.cur, // optional
-        floor: bidRequest.params.floor, // optional
-        known: bidRequest.params.known || 1, // optional
+        known: bidRequest.params.known || 1,
         size: bidRequest.sizes[0].join("x"),
-      }, function(bidResponse) {
+      };
+      addOptional(bidRequest.params, request, ['cur', 'floor']);
+      window.gi_hb.makeBid(request, function(bidResponse) {
         if (bidResponse.no_bid === 1) {
           var nobid = bidfactory.createBid(2);
           nobid.bidderCode = bidRequest.bidder;
