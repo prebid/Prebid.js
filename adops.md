@@ -109,7 +109,6 @@ Our recommendation is to start with $1 or 10 cent granularity until you’re mor
 To maximize earning potential, we recommend you sign-up for the various bidders prebid.js supports (more will be added):
 
 * AppNexus
-* Criteo
 * Rubicon Project
 * OpenX
 * PubMatic
