@@ -179,12 +179,16 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
   }
 };
 
-exports.getTopWindowUrl = function () {
+exports.getTopWindowLocation = function () {
   try {
-    return window.top.location.href;
+    return window.top.location;
   } catch (e) {
-    return window.location.href;
+    return window.location;
   }
+};
+
+exports.getTopWindowUrl = function () {
+  return this.getTopWindowLocation().href;
 };
 
 exports.logWarn = function (msg) {
