@@ -1,6 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
+import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
@@ -271,10 +272,6 @@ function removeComplete() {
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
     .forEach(bid => responses.slice(responses.indexOf(bid), 1));
 }
-
-const videoAdUnit = adUnit => adUnit.mediaType === 'video';
-const nonVideoBidder = bid => !adaptermanager.videoAdapters.includes(bid.bidder);
-const hasNonVideoBidder = adUnit => adUnit.bids.filter(nonVideoBidder).length;
 
 //////////////////////////////////
 //                              //
