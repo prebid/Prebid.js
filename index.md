@@ -5,7 +5,7 @@ head_title: Prebid.js - Header Bidding Made Easy
 
 isHome: true
 
-description: A free and open source library for publishers to quickly implement header bidding. 
+description: A free and open source library for publishers to quickly implement header bidding
 
 ---
 
@@ -47,21 +47,21 @@ description: A free and open source library for publishers to quickly implement 
         <img src="assets/images/icons/icon-ninja.png" alt="Header bidding no dev" class="img-responsive">
         <h3>No development required</h3>
         <p>Prebid.js includes adaptors for AppNexus, Pubmatic, Rubicon Project, and more.</p>
-        <a href="/dev-docs/bidders.html" class="btn btn-outline">See full bidder list</a>
+        <a href="/dev-docs/bidders.html" class="btn btn-outline">See the Full Bidder List</a>
       </div>
 
       <div class="col-sm-4">
         <img src="assets/images/icons/icon-money.png" alt="Header bidding min line item" class="img-responsive">
         <h3>Easy line item setup</h3>
         <p>Ad ops can control the bidders, ad sizes, and price buckets with a single group of line items.</p>
-        <a href="adops.html" class="btn btn-outline">Ad ops Guide</a>
+        <a href="adops.html" class="btn btn-outline">Read the Ad Ops Guide</a>
       </div>
 
       <div class="col-sm-4">
         <img src="assets/images/icons/icon-latency.png" alt="Header bidding latency" class="img-responsive">
         <h3>Reduce latency</h3>
-        <p>Improves user experience with asynchronous ad calls that load together with the page content.</p>
-        <a href="/overview/how-to-reduce-latency-of-header-bidding.html" class="btn btn-outline">How is this done</a>
+        <p>Improve user experience with asynchronous ad calls that load together with the page content.</p>
+        <a href="/overview/how-to-reduce-latency-of-header-bidding.html" class="btn btn-outline">Show Me How</a>
       </div>
 
     </div>
