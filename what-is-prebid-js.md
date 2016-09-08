@@ -71,7 +71,6 @@ Prebid.js has built-in support for most major bidders, including:
 
 - AOL
 - AppNexus
-- Criteo
 - Index
 - OpenX
 - Pubmatic
