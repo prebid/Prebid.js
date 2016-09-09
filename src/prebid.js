@@ -3,7 +3,7 @@
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
-import {parse as parseURL, format as formatURL, formatQS} from './url';
+import {parse as parseURL, format as formatURL} from './url';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
@@ -16,6 +16,7 @@ var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');
+var adserver = require('./adserver.js');
 
 /* private variables */
 
@@ -762,32 +763,6 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
 };
 
-function verifyAdserverTag(urlComponents) {
-  //check for google required params with fixed values
-  var googleReqParams = {
-    'env' : 'vp',
-    'gdfp_req' : '1',
-    'impl' : 's',
-    'unviewed_position_start' : '1'
-  };
-
-  for(var key in googleReqParams) {
-    if(!urlComponents.search.hasOwnProperty(key) || urlComponents.search[key] !== googleReqParams[key]) {
-      return false;
-    }
-  }
-
-  //check for google required params with variable values
-  var googleParamsWithVariableValue = ['output', 'iu', 'sz', 'url', 'correlator', 'description_url', 'hl'];
-  for(var i in googleParamsWithVariableValue) {
-    if(!urlComponents.search.hasOwnProperty(googleParamsWithVariableValue[i])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 /**
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
@@ -795,50 +770,22 @@ function verifyAdserverTag(urlComponents) {
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
   var urlComponents = parseURL(adserverTag);
-  if(!verifyAdserverTag(urlComponents)) {
-    utils.logError('Invalid adserverTag, required google params are missing in query string');
-  }
 
   if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
-    return formatURL(urlComponents);
+    return adserverTag;
   }
-
-  //Adserver parent class
-  var adserver = function(attr) {
-    var that = {};
-    that.name = attr.adserver;
-    that.code = attr.code;
-    that.getWinningBidByCode = function() {
-      var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adUnitCode === that.code);
-      return bidObject;
-    };
-    return that;
-  };
-
-  //DFP ad server
-  var dfpAdserver = function () {
-    var that = adserver(options);
-
-    var getCustomParams = function(targeting) {
-      targeting.hb_pb = '10.00';
-      return encodeURIComponent(formatQS(targeting));
-    };
-
-    that.appendQueryParams = function() {
-      var bid = that.getWinningBidByCode();
-      urlComponents.search.description_url = encodeURIComponent(bid.adUrl);
-      urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
-      urlComponents.correlator = Date.now();
-    };
-    return that;
-  };
 
   if(options.adserver === 'dfp') {
-    var dfpAdserverObj = dfpAdserver();
+    var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
+    if(dfpAdserverObj.verifyAdserverTag()) {
+      utils.logError('Invalid adserverTag, required google params are missing in query string');
+    }
     dfpAdserverObj.appendQueryParams();
+    return formatURL(dfpAdserverObj.urlComponents);
+  } else {
+    utils.logError('Only DFP adserver is supported');
+    return;
   }
-
-  return formatURL(urlComponents);
 };
 
 processQue();
