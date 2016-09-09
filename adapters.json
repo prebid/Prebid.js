@@ -36,5 +36,10 @@
       "appnexus": {
         "alias": "pagescience"
       }
+    },
+    {
+      "appnexusAst": {
+        "supportedMediaTypes": ["video"]
+      }
     }
 ]

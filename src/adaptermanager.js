@@ -17,6 +17,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => Object.assign(bid, {
         placementCode: adUnit.code,
+        mediaType: adUnit.mediaType,
         sizes: adUnit.sizes,
         bidId: utils.getUniqueIdentifierStr(),
         bidderRequestId,

@@ -538,6 +538,47 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
+    it('should not callBids if a video adUnit has non-video bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      const videoAdaptersBackup = adaptermanager.videoAdapters;
+      adaptermanager.videoAdapters = ['appnexusAst'];
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'video',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.notCalled(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+      adaptermanager.videoAdapters = videoAdaptersBackup;
+      resetAuction();
+    });
+
+    it('should callBids if a video adUnit has all video bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      const videoAdaptersBackup = adaptermanager.videoAdapters;
+      adaptermanager.videoAdapters = ['appnexusAst'];
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'video',
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+      adaptermanager.videoAdapters = videoAdaptersBackup;
+      resetAuction();
+    });
+
     it('should queue bid requests when a previous bid request is in process', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
       var clock = sinon.useFakeTimers();
