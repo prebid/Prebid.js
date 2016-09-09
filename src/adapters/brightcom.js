@@ -1,7 +1,8 @@
+import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 /**
@@ -135,7 +136,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
 
         // Get the bid request data
-        var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+        var bidRequest = getBidderRequestByBidder('brightcom').bids[0];  // assumes one bid request
+
 
         // Make sure the bid exists
         if (bidRequest) {
@@ -181,7 +183,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
           bid.height = adHeight;
 
           // Add the bid
-          bidmanager.addBidResponse(placementCode, bid);
+          addBidResponse(placementCode, bid);
 
           // Add current ad unit's code to tracking
           resAdUnitsCode.push(placementCode);
@@ -199,7 +201,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
         // Current ad unit wasn't returned. Define it as invalid.
         bid = bidfactory.createBid(2);
         bid.bidderCode = brightcomBidderCode;
-        bidmanager.addBidResponse(adUnitCode, bid);
+        addBidResponse(adUnitCode, bid);
       }
     }
 

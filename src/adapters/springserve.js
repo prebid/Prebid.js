@@ -1,5 +1,9 @@
+import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+
+const localGetBidderRequestByBidder = getBidderRequestByBidder;
+const localAddBidResponse = addBidResponse;
+
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var SpringServeAdapter;
@@ -57,7 +61,6 @@ SpringServeAdapter = function SpringServeAdapter() {
     var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
-      //bidmanager.pbCallbackMap[bid.params.impId] = params;
       adloader.loadScript(buildSpringServeCall(bid));
     }
   }
@@ -65,12 +68,10 @@ SpringServeAdapter = function SpringServeAdapter() {
   $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
-      //look up the request attributs stored in the bidmanager
+      //look up the request attributs stored in the auction
       var responseBid = responseObj.seatbid[0].bid[0];
-      //var requestObj = bidmanager.getPlacementIdByCBIdentifer(responseBid.impid);
-      var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve').bids
-        .filter(bid => bid.params && bid.params.impId === +responseBid.impid);
-      var bid = bidfactory.createBid(1);
+      var requestBids = localGetBidderRequestByBidder('springserve').bids;
+      var bid = bidfactory.createBid(1, requestBids[0]);
       var placementCode;
 
       //assign properties from the original request to the bid object
@@ -96,7 +97,7 @@ SpringServeAdapter = function SpringServeAdapter() {
         bid.bidderCode = 'springserve';
       }
 
-      bidmanager.addBidResponse(placementCode, bid);
+      localAddBidResponse(placementCode, bid);
     }
   };
 

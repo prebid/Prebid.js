@@ -1,5 +1,3 @@
-import { auctionmanager } from './auctionmanager';
-
 var CONSTANTS = require('./constants.json');
 
 var objectType_object = 'object';
@@ -504,11 +502,6 @@ export function uniques(value, index, arry) {
 
 export function flatten(a, b) {
   return a.concat(b);
-}
-
-export function getBidRequest(id) {
-  return auctionmanager.getAuctionByBidId(id).getBidderRequests()
-    .map(request => request.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
 export function getKeys(obj) {

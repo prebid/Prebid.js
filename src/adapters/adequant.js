@@ -1,5 +1,6 @@
+import { addBidResponse } from '../auctionmanager';
+
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
 var utils = require('../utils.js');
 var CONSTANTS = require('../constants.json');
@@ -47,21 +48,21 @@ module.exports = function() {
         placement_code = replies[parseInt(bid_response.impid,10)-1];
         if (!placement_code || !placements[placement_code]) { continue; }
 
-        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid_response);
         bid.bidderCode = 'adequant';
         bid.cpm = bid_response.price;
         bid.ad = bid_response.adm;
         bid.width = bid_response.w;
         bid.height = bid_response.h;
-        bidmanager.addBidResponse(placement_code, bid);
+        addBidResponse(placement_code, bid);
         placements[placement_code] = false;
       }
     }
     for (placement_code in placements) {
       if (placements[placement_code]) {
-        bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
+        bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
         bid.bidderCode = 'adequant';
-        bidmanager.addBidResponse(placement_code, bid);
+        addBidResponse(placement_code, bid);
         utils.logMessage('No bid response from Adequant for placement code ' + placement_code);
       }
     }

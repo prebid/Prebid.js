@@ -1,5 +1,6 @@
 var utils = require('./utils');
 var auctionStates = require('./constants.json').AUCTION_STATES;
+var bidmanager = require('./bidmanager');
 
 export const auctionmanager = (function() {
 
@@ -14,10 +15,6 @@ export const auctionmanager = (function() {
     return auction;
   }
 
-  function _closeAuction(id) {
-    _getAuctions().find(auction => auction.auctionId === id).status = auctionStates.CLOSED;
-  }
-
   function _getAuction(requestId) {
     _getAuctions().find(auction => auction.requestId === requestId);
   }
@@ -30,18 +27,35 @@ export const auctionmanager = (function() {
   }
 
   function _getAuctionByState(state) {
-    return _getAuctions().find(auction => auction.getState() === auctionStates[state]);
-  }
 
-  function _getAuctionByLastClosed() {
     return _getAuctions()
-      .filter(auction => auction.getState() === auction.CLOSED)
-      [_getAuctions().length - 1];
+      .filter(auction => auction.getState() === state)
+      .reduce(mostRecent, false);
+
+    function mostRecent(auctionPrevious, auctionCurrent) {
+      const timestampPrevious = getMostRecentRequestTimestamp(auctionPrevious);
+      const timestampCurrent = getMostRecentRequestTimestamp(auctionCurrent);
+
+      return timestampPrevious > timestampCurrent ? auctionPrevious : auctionCurrent;
+    }
+
+    function getMostRecentRequestTimestamp(auction) {
+      return auction && auction.getBidderRequests && auction.getBidderRequests()
+          .reduce((requestPrevious, requestCurrent) => {
+            return requestPrevious.start > requestCurrent.start ? requestPrevious.start : requestCurrent.start;
+          }, { start: 0 }) || 0;
+    }
   }
 
   function _getAuctionToReport() {
-    return _getAuctionByState(auctionStates.CLOSING) ||
-        _getAuctionByLastClosed();
+    const auction = _getAuctionByState(auctionStates.CLOSING) ||
+        _getAuctionByState(auctionStates.OPEN);
+
+    if (auction.getState() === auctionStates.OPEN) {
+      auction.setState(auctionStates.CLOSING);
+    }
+
+    return auction;
   }
 
   function Auction({ bidsBackHandler, cbTimeout, adUnits }) {
@@ -75,7 +89,7 @@ export const auctionmanager = (function() {
 
     function _getBidsBackHandler() { return _this.bidsBackHandler; }
 
-    function _getState() { return _this.status; }
+    function _getState() { return _this.state; }
 
     function _setState(state) { _this.state = state; }
 
@@ -98,17 +112,13 @@ export const auctionmanager = (function() {
 
       getState() { return _getState(); },
 
-      setState() { return _setState(); }
+      setState() { return _setState(...arguments); }
     };
   }
 
   return {
     holdAuction() {
       return _holdAuction(...arguments);
-    },
-
-    closeAuction() {
-      return _closeAuction(...arguments);
     },
 
     getAuction() {
@@ -123,13 +133,48 @@ export const auctionmanager = (function() {
       return _getAuctionByState(...arguments);
     },
 
-    getAuctionByLastClosed() {
-      return _getAuctionByLastClosed(...arguments);
-    },
-
     getAuctionToReport() {
       return _getAuctionToReport(...arguments);
     }
   };
 })();
 
+export function getBidderRequestByBidId() {
+  return _getBidderRequestByBidId(...arguments);
+}
+
+export function getBidderRequestByBidder() {
+  return _getBidderRequestByBidder(...arguments);
+}
+
+export function addBidResponse() {
+  return _addBidResponse(...arguments);
+}
+
+function _getBidderRequestByBidId(bidId) {
+  const auction = auctionmanager.getAuctionByBidId(bidId);
+
+  return bidId && auction && auction.getBidderRequests()
+      .find(request => request.bids
+        .find(bid => bid.bidId === bidId));
+}
+
+function _getBidderRequestByBidder(bidder) {
+  const auction = auctionmanager.getAuctionByState(auctionStates.OPEN);
+
+  return auction && auction.getBidderRequests()
+        .filter(request => request.bidderCode === bidder)
+        .map((request, index, collection) => {
+          if (collection.length > 1) {
+            utils.logError(`Bidder ${bidder} has more than one bidderRequest in the auction`);
+            return false;
+          } else {
+            return collection[0];
+          }
+        })[0];
+
+}
+
+function _addBidResponse() {
+  bidmanager.addBidResponse(...arguments);
+}

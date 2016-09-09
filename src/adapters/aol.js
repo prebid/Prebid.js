@@ -1,6 +1,7 @@
+import { addBidResponse } from '../auctionmanager';
+
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var AolAdapter = function AolAdapter() {
@@ -70,10 +71,11 @@ var AolAdapter = function AolAdapter() {
       return _addErrorBid(response, context);
     }
 
+    var bidResponse = bidfactory.createBid(1, bid);
+
     // clean up--we no longer need to store the bid
     delete bidsMap[context.alias];
 
-    var bidResponse = bidfactory.createBid(1);
     var ad = response.getCreative();
     if (typeof response.getPixels() !== 'undefined') {
       ad += response.getPixels();
@@ -85,8 +87,8 @@ var AolAdapter = function AolAdapter() {
     bidResponse.height = response.getAdHeight();
     bidResponse.creativeId = response.getCreativeId();
 
-    // add it to the bid manager
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    // add it to the bid responses
+    addBidResponse(bidResponse.placementCode, bidResponse);
   }
 
   /**
@@ -102,14 +104,15 @@ var AolAdapter = function AolAdapter() {
       return;
     }
 
+    var bidResponse = bidfactory.createBid(2, bid);
+
     // clean up--we no longer need to store the bid
     delete bidsMap[context.alias];
 
-    var bidResponse = bidfactory.createBid(2);
     bidResponse.bidderCode = ADTECH_BIDDER_NAME;
     bidResponse.reason = response.getNbr();
     bidResponse.raw = response.getResponse();
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+    addBidResponse(bid.placementCode, bidResponse);
   }
 
   /**

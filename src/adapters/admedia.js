@@ -1,6 +1,5 @@
-import { getBidRequest } from '../utils.js';
+import { getBidderRequestByBidId, addBidResponse } from '../auctionmanager';
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
 var utils = require('../utils.js');
 var CONSTANTS = require('../constants.json');
@@ -74,13 +73,13 @@ var AdmediaAdapter = function AdmediaAdapter() {
     var bidObject = {};
     var callback_id = response.callback_id;
     var placementCode = '';
-    var bidObj = getBidRequest(callback_id);
+    var bidObj = getBidderRequestByBidId(callback_id).bids[0]; // assumes one bid for placement
     if (bidObj) {
       placementCode = bidObj.placementCode;
     }
 
     if(bidObj && response.cpm>0 && !!response.ad){
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
       bidObject.bidderCode = bidObj.bidder;
       bidObject.cpm = parseFloat(response.cpm);
       bidObject.ad = response.ad;
@@ -93,7 +92,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       utils.logMessage('No prebid response from Admedia for placement code ' + placementCode);
     }
 
-    bidmanager.addBidResponse(placementCode, bidObject);
+    addBidResponse(placementCode, bidObject);
 
   };
 

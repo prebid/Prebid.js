@@ -1,12 +1,15 @@
+import { getBidderRequestByBidId, addBidResponse } from '../auctionmanager';
+
+const localGetBidderRequestByBidId = getBidderRequestByBidId;
+const localAddBidResponse = addBidResponse;
+
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 
 /* TripleLift bidder factory function
 *  Use to create a TripleLiftAdapter object
 */
-
 
 var TripleLiftAdapter = function TripleLiftAdapter() {
 
@@ -14,15 +17,10 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
 
-    //set expected bids count for callback execution
-    //bidmanager.setExpectedBidsCount('triplelift',bidsCount);
-
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = tlReq[i];
       var callbackId = bidRequest.bidId;
       adloader.loadScript(buildTLCall(bidRequest, callbackId));
-      //store a reference to the bidRequest from the callback id
-      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
 
   }
@@ -71,11 +69,11 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
   }
 
-
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      var bidObj = utils.getBidRequest(tlResponseObj.callback_id);
+      var bidObj = localGetBidderRequestByBidId(tlResponseObj.callback_id)[0]; // assumes one bid per
+      // placement
       var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'
@@ -92,7 +90,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.width = tlResponseObj.width;
         bid.height = tlResponseObj.height;
         bid.dealId = tlResponseObj.deal_id;
-        bidmanager.addBidResponse(placementCode, bid);
+        localAddBidResponse(placementCode, bid);
 
       } else {
         //no response data
@@ -101,7 +99,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         // @endif
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
-        bidmanager.addBidResponse(placementCode, bid);
+        addBidResponse(placementCode, bid);
       }
 
     } else {

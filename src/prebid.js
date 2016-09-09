@@ -22,10 +22,6 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
-
-var auctionRunning = false;
-var bidRequestQueue = [];
 var presetTargeting = [];
 var pbTargetingKeys = [];
 
@@ -85,14 +81,17 @@ function processQue() {
 }
 
 function checkDefinedPlacement(id) {
-  const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING);
+  const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING) ||
+    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
 
   if (!auction) {
-    utils.logError('Could not find auction :', 'prebid.js');
+    utils.logError('Could not find auction in checkDefinedPlacement', 'prebid.js');
     return;
   }
 
-  const placementCodes = auction.getBidderRequests().map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+  const placementCodes = auction.getBidderRequests()
+    .map(bidSet => bidSet.bids
+      .map(bid => bid.placementCode))
     .reduce(flatten)
     .filter(uniques);
 
@@ -289,7 +288,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode', arguments);
 
   if (!auction) {
-    utils.logError('Could not find auction :', 'prebid.js');
+    utils.logError('Could not find auction in getAdserverTargetingForAdUnitCode', 'prebid.js');
     return;
   }
 
@@ -323,7 +322,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
 
   if (!auction) {
-    utils.logError('Could not find auction :', 'prebid.js');
+    utils.logError('Could not find auction in getAdserverTargeting', 'prebid.js');
     return;
   }
 
@@ -357,7 +356,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
 
   if (!auction) {
-    utils.logError('Could not find auction :', 'prebid.js');
+    utils.logError('Could not find auction in getBidResponses', 'prebid.js');
     return;
   }
 
@@ -391,7 +390,7 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', arguments);
 
   if (!auction) {
-    utils.logError('Could not find auction :', 'prebid.js');
+    utils.logError('Could not find auction in getBidResponsesForAdUnitCode', 'prebid.js');
     return;
   }
 
@@ -406,7 +405,13 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
  */
 $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
-  const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING);
+  const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING) ||
+    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSED);
+
+  if (!auction) {
+    utils.logError('Could not find auction in setTargetingForGPTAsync', 'prebid.js');
+    return;
+  }
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
 
@@ -443,7 +448,10 @@ $$PREBID_GLOBAL$$.allBidsAvailable = function () {
  */
 $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   const auction = auctionmanager.getAuctionByBidId(id) ||
-      auctionmanager.getAuctionByLastClosed();
+      auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING) ||
+        auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
+
+  auction.setState(CONSTANTS.AUCTION_STATES.CLOSING);
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);

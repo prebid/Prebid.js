@@ -1,9 +1,8 @@
-import { auctionmanager } from '../auctionmanager';
+import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
 
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 /**
@@ -74,18 +73,16 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    const auction = auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
-    const bidderRequests = auction.getBidderRequests();
-    var missing = bidderRequests && bidderRequests
-        .find(bidSet => bidSet.bidderCode === 'sovrn').bids
+    const bidderRequest = getBidderRequestByBidder('sovrn');
+    var missing = bidderRequest && bidderRequest.bids
       .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
 
-    missing.forEach(function (bidRequest) {
+    missing && missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.
       var bid = {};
       bid = bidfactory.createBid(2, bidRequest);
       bid.bidderCode = 'sovrn';
-      bidmanager.addBidResponse(bidRequest.placementCode, bid);
+      addBidResponse(bidRequest.placementCode, bid);
     });
   }
 
@@ -111,7 +108,6 @@ var SovrnAdapter = function SovrnAdapter() {
             placementCode = bidObj.placementCode;
             bidObj.status = CONSTANTS.STATUS.GOOD;
 
-            //place ad response on bidmanager._adResponsesByBidderId
             responseCPM = parseFloat(sovrnBid.price);
 
             if (responseCPM !== 0) {
@@ -137,7 +133,7 @@ var SovrnAdapter = function SovrnAdapter() {
               bid.width = parseInt(sovrnBid.w);
               bid.height = parseInt(sovrnBid.h);
 
-              bidmanager.addBidResponse(placementCode, bid);
+              addBidResponse(placementCode, bid);
               impidsWithBidBack.push(id);
             }
           }

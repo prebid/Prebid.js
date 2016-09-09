@@ -274,7 +274,7 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (auction, timedOut) {
-  auction.setState(CONSTANTS.AUCTION_STATES.CLOSING);
+  auction.setState(CONSTANTS.AUCTION_STATES.CLOSED);
   const bidsBackHandler = auction.getBidsBackHandler();
 
   if (externalCallbackArr.called !== true) {
