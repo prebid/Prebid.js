@@ -3,7 +3,7 @@
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
-import {parse as parseURL, format as formatURL} from './url';
+import {parse as parseURL, format as formatURL, formatQS} from './url';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
@@ -794,36 +794,48 @@ function verifyAdserverTag(urlComponents) {
  * @param {object} options options for video tag
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
-  //start auction or check that auction has ended or not
   var urlComponents = parseURL(adserverTag);
   if(!verifyAdserverTag(urlComponents)) {
     utils.logError('Invalid adserverTag, required google params are missing in query string');
   }
 
+  if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
+    return formatURL(urlComponents);
+  }
+
+  //Adserver parent class
   var adserver = function(attr) {
     var that = {};
     that.name = attr.adserver;
     that.code = attr.code;
     that.getWinningBidByCode = function() {
-      var bid = $$PREBID_GLOBAL$$._bidsReceived.filter(function(bid) {
-        return that.code === bid.adUnitCode;
-      });
-      return bid;
+      var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adUnitCode === that.code);
+      return bidObject;
     };
     return that;
   };
 
+  //DFP ad server
   var dfpAdserver = function () {
     var that = adserver(options);
+
+    var getCustomParams = function(targeting) {
+      targeting.hb_pb = '10.00';
+      return encodeURIComponent(formatQS(targeting));
+    };
+
+    that.appendQueryParams = function() {
+      var bid = that.getWinningBidByCode();
+      urlComponents.search.description_url = encodeURIComponent(bid.adUrl);
+      urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
+      urlComponents.correlator = Date.now();
+    };
     return that;
   };
 
-  //find winnning ad unit code
-  //if no bids are found return adservertag
   if(options.adserver === 'dfp') {
     var dfpAdserverObj = dfpAdserver();
-    var bid = dfpAdserverObj.getWinningBidByCode();
-    urlComponents.search.description_url = encodeURIComponent(bid[0].adUrl);
+    dfpAdserverObj.appendQueryParams();
   }
 
   return formatURL(urlComponents);
