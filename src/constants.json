@@ -51,5 +51,10 @@
     "hb_adid",
     "hb_pb",
     "hb_size"
-  ]
+  ],
+  "AUCTION_STATES": {
+    "OPEN": "open",
+    "CLOSING": "closing",
+    "CLOSED": "closed"
+  }
 }
