@@ -800,12 +800,29 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
     utils.logError('Invalid adserverTag, required google params are missing in query string');
   }
 
+  var adserver = function(attr) {
+    var that = {};
+    that.name = attr.adserver;
+    that.code = attr.code;
+    that.getWinningBidByCode = function() {
+      var bid = $$PREBID_GLOBAL$$._bidsReceived.filter(function(bid) {
+        return that.code === bid.adUnitCode;
+      });
+      return bid;
+    };
+    return that;
+  };
+
+  var dfpAdserver = function () {
+    var that = adserver(options);
+    return that;
+  };
+
   //find winnning ad unit code
   //if no bids are found return adservertag
   if(options.adserver === 'dfp') {
-    var bid = $$PREBID_GLOBAL$$._bidsReceived.filter(function(bid) {
-      return options.code === bid.adUnitCode;
-    });
+    var dfpAdserverObj = dfpAdserver();
+    var bid = dfpAdserverObj.getWinningBidByCode();
     urlComponents.search.description_url = encodeURIComponent(bid[0].adUrl);
   }
 
