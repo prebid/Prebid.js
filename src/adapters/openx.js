@@ -91,7 +91,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
               adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
 
               adResponse.ad = adUnit.get('html');
-              if(adUnit.get(auct_win_is_deal)) {
+              if(adUnit.get('auct_win_is_deal')) {
                 adResponse.dealId = adUnit.get('deal_id');
               }
 
