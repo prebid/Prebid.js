@@ -769,9 +769,9 @@ function verifyAdserverTag(urlComponents) {
   //check for google required params with fixed values
   var googleReqParams = {
     'env' : 'vp',
-    'gdfp_req' : 1,
+    'gdfp_req' : '1',
     'impl' : 's',
-    'unviewed_position_start' : 1
+    'unviewed_position_start' : '1'
   };
 
   for(var key in googleReqParams) {
@@ -799,19 +799,20 @@ function verifyAdserverTag(urlComponents) {
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
   //start auction or check that auction has ended or not
   var urlComponents = parseURL(adserverTag);
-  console.log(urlComponents);
   if(!verifyAdserverTag(urlComponents)) {
     utils.logError('Invalid adserverTag, required google params are missing in query string');
   }
 
   //find winnning ad unit code
   //if no bids are found return adservertag
+  if(options.adserver === 'dfp') {
+    var bid = $$PREBID_GLOBAL$$._bidsReceived.filter(function(bid) {
+      return options.code === bid.adUnitCode;
+    });
+    urlComponents.search.description_url = encodeURIComponent(bid[0].adUrl);
+  }
 
-  Object.keys(options).forEach(key => {
-    
-  });
-  //override values and create new adservertag with deconstructed params and options
-  //reconstruct url
+  return formatURL(urlComponents);
 };
 
 processQue();
