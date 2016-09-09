@@ -13,7 +13,7 @@ describe(`
   FEATURE: AOL Prebid Analytics Adapter
   STORY: As a publisher I use AOL Analytics to collect data for auction and win events`, () => {
 
-    aolAnalytics.enableAnalytics();
+    aolAnalytics.enableAnalytics({});
 
     describe(`
       SCENARIO: The client side auction is performed to select the winning bid.
