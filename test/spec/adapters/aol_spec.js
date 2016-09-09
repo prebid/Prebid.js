@@ -288,6 +288,36 @@ describe('AolAdapter', () => {
         expect(bidResponse.creativeId).to.equal('12345');
         expect(bidResponse.pubapiId).to.equal('245730051428950632');
       });
+
+      it('should be added to bidmanager including pixels from pubapi response', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {
+                "sizeid": 225,
+                "pixels": "<script>document.write('<img src=\"pixel.gif\">');</script>"
+              }
+            }]
+          }]
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.trsue;
+        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(bidResponse.ad).to.equal(
+          "<script>console.log('ad');</script>" +
+          "<script>document.write('<img src=\"pixel.gif\">');</script>"
+        );
+      });
     });
   });
 });
