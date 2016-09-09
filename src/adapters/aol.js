@@ -5,9 +5,7 @@ var bidmanager = require('../bidmanager.js');
 
 var AolAdapter = function AolAdapter() {
 
-  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/` +
-    `${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/` +
-    `ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
+  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
