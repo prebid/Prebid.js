@@ -14,6 +14,7 @@ const adapters = getAdapters('../adapters.json');
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
 const aliases = adapters.filter(getAliases);
+const videoAdapters = adapters.filter(getVideoAdapters).map(getNames);
 
 var options = {
   start: '/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */',
@@ -56,6 +57,7 @@ function insertAdapters() {
       const name = Object.keys(adapter)[0];
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
+    .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 }
 
@@ -109,6 +111,15 @@ function getNames(adapter) {
 function getAliases(adapter) {
   const name = Object.keys(adapter)[0];
   return adapter && name && adapter[name].alias;
+}
+
+/**
+ * Returns adapter objects that support video
+ */
+function getVideoAdapters(adapter) {
+  const name = Object.keys(adapter)[0];
+  return adapter && name && adapter[name].supportedMediaTypes
+    && adapter[name].supportedMediaTypes.includes('video');
 }
 
 module.exports = blockLoader(options);

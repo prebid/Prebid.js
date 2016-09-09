@@ -1,6 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
+import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
@@ -516,6 +517,15 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   if (adUnitCodes && adUnitCodes.length) {
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
+
+  // for video-enabled adUnits, only request bids if all bidders support video
+  const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
+  invalidVideoAdUnits.forEach(adUnit => {
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
+    for (let i = 0; i < adUnits.length; i++) {
+      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+    }
+  });
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
