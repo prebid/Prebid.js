@@ -1,7 +1,11 @@
+import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+
+const localGetBidderRequestByBidder = getBidderRequestByBidder;
+const localAddBidResponse = addBidResponse;
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var defaultPlacementForBadBid = null;
@@ -74,7 +78,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   }
 
   function getBidSetForBidder() {
-    return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
+    return localGetBidderRequestByBidder('memeglobal');
   }
 
   // expose the callback to the global object:
@@ -100,7 +104,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         if (responseCPM === 0) {
           var bid = bidfactory.createBid(2);
           bid.bidderCode = bidderName;
-          bidmanager.addBidResponse(placementCode, bid);
+          localAddBidResponse(placementCode, bid);
           return;
         }
         bidResponse.placementCode = placementCode;
@@ -113,7 +117,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
         bidResponse.width = parseInt(bidderBid.w);
         bidResponse.height = parseInt(bidderBid.h);
-        bidmanager.addBidResponse(placementCode, bidResponse);
+        localAddBidResponse(placementCode, bidResponse);
       }
     });
   };

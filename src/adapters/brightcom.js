@@ -1,5 +1,8 @@
 import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
 
+const localGetBidderRequestByBidder = getBidderRequestByBidder;
+const localAddBidResponse = addBidResponse;
+
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -83,8 +86,6 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
       // Add current impression to collection
       brightcomImps.push(imp);
-      // Add mapping to current bid via impression id
-      //bidmanager.pbCallbackMap[imp.id] = bid;
 
       // Add current ad unit's code to tracking
       reqAdUnitsCode.push(bid.placementCode);
@@ -136,8 +137,9 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
 
         // Get the bid request data
-        var bidRequest = getBidderRequestByBidder('brightcom').bids[0];  // assumes one bid request
-
+        var request = localGetBidderRequestByBidder('springserve');
+        // assumes one bid request
+        var bidRequest = request && request.bids ? request.bids[0] : [];
 
         // Make sure the bid exists
         if (bidRequest) {
@@ -183,7 +185,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
           bid.height = adHeight;
 
           // Add the bid
-          addBidResponse(placementCode, bid);
+          localAddBidResponse(placementCode, bid);
 
           // Add current ad unit's code to tracking
           resAdUnitsCode.push(placementCode);

@@ -66,11 +66,13 @@ SpringServeAdapter = function SpringServeAdapter() {
   }
 
   $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
+    console.log('Springserve Response Object: ', responseObj);
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the auction
       var responseBid = responseObj.seatbid[0].bid[0];
-      var requestBids = localGetBidderRequestByBidder('springserve').bids;
+      var request = localGetBidderRequestByBidder('springserve');
+      var requestBids = request && request.bids ? request.bids : [];
       var bid = bidfactory.createBid(1, requestBids[0]);
       var placementCode;
 
