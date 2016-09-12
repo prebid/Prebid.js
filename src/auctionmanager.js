@@ -4,19 +4,34 @@ var bidmanager = require('./bidmanager');
 
 export const auctionmanager = (function() {
 
+  /**
+   * Returns a closure over the internal array of Auctions
+   * TODO: must be pruned
+   */
   const _getAuctions = (() => {
     let _auctions = [];
     return () => _auctions;
   })();
 
+  /**
+   * Creates a new Auction with config object as:
+   * { bidsBackHandler, cbTimeout, adUnits } = config
+   * @param config
+   * @returns {Auction}
+   * @private
+   */
   function _holdAuction(config) {
     let auction = new Auction(config);
     _getAuctions().push(auction);
     return auction;
   }
 
-  function _getAuction(requestId) {
-    _getAuctions().find(auction => auction.requestId === requestId);
+  /**
+   * @param auctionId
+   * @private
+   */
+  function _getAuction(auctionId) {
+    _getAuctions().find(auction => auction.auctionId === auctionId);
   }
 
   function _getAuctionByBidId(bidId) {
@@ -166,7 +181,7 @@ function _getBidderRequestByBidder(bidder) {
         .filter(request => request.bidderCode === bidder)
         .map((request, index, collection) => {
           if (collection.length > 1) {
-            utils.logError(`Bidder ${bidder} has more than one bidderRequest in the auction`);
+            utils.logError(`Bidder ${bidder} has more than one bidderRequest in the auction and must use \`getBidderRequestByBidId\` API`);
             return false;
           } else {
             return collection[0];

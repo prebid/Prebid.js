@@ -12,7 +12,7 @@ exports.bidderRegistry = _bidderRegistry;
 
 var _analyticsRegistry = {};
 
-function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+function getBids({ bidderCode, auctionId, bidderRequestId, adUnits }) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => Object.assign(bid, {
@@ -20,19 +20,19 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
         sizes: adUnit.sizes,
         bidId: utils.getUniqueIdentifierStr(),
         bidderRequestId,
-        requestId
+        auctionId
       }));
   }).reduce(flatten, []);
 }
 
 exports.callBids = (auction) => {
-  const requestId = auction.getId();
+  const auctionId = auction.getId();
   const adUnits = auction.getAdUnits();
   const cbTimeout = auction.getTimeout();
 
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
     timestamp: Date.now(),
-    requestId
+    auctionId
   });
 
   getBidderCodes(adUnits).forEach(bidderCode => {
@@ -41,9 +41,9 @@ exports.callBids = (auction) => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidderRequest = {
         bidderCode,
-        requestId,
+        auctionId,
         bidderRequestId,
-        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
+        bids: getBids({ bidderCode, auctionId, bidderRequestId, adUnits }),
         start: new Date().getTime(),
         timeout: cbTimeout
       };

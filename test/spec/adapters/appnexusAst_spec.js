@@ -6,7 +6,7 @@ const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 
 const REQUEST = {
   "bidderCode": "appnexusAst",
-  "requestId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6",
+  "auctionId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6",
   "bidderRequestId": "7101db09af0db2",
   "bids": [
     {
@@ -21,7 +21,7 @@ const REQUEST = {
       ],
       "bidId": "84ab500420319d",
       "bidderRequestId": "7101db09af0db2",
-      "requestId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6"
+      "auctionId": "d3e07445-ab06-44c8-a9dd-5ef9af06d2a6"
     }
   ],
   "start": 1469479810130

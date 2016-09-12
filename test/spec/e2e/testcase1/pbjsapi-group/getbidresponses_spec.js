@@ -21,7 +21,7 @@ module.exports = {
         return window.pbjs._bidsReceived;
       }, [], function(result) {
         //minimum expected keys in bid received
-        var expected = ["bidderCode", "width", "height", "adId", "cpm", "requestId", "bidder", "adUnitCode", "timeToRespond"];
+        var expected = ["bidderCode", "width", "height", "adId", "cpm", "auctionId", "bidder", "adUnitCode", "timeToRespond"];
         Object.keys(result.value).forEach(function(key){
           var compare = Object.keys(result.value[key]);
           assert.includeMembers(compare, expected, 'include members');

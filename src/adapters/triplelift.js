@@ -72,7 +72,8 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      var bidObj = localGetBidderRequestByBidId(tlResponseObj.callback_id)[0]; // assumes one bid per
+      var bidObj = localGetBidderRequestByBidId(tlResponseObj.callback_id).bids[0]; // assumes one
+      // bid per
       // placement
       var placementCode = bidObj.placementCode;
 

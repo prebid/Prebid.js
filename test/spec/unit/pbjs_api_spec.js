@@ -225,7 +225,7 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
-    it('should return bid responses for most recent requestId only', () => {
+    it('should return bid responses for most recent auctionId only', () => {
       const responses = $$PREBID_GLOBAL$$.getBidResponses();
       assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
     });
@@ -853,7 +853,7 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$._bidsRequested = [{
         "bidderCode": "appnexus",
-        "requestId": "1863e370099523",
+        "auctionId": "1863e370099523",
         "bidderRequestId": "2946b569352ef2",
         "bids": [
           {
@@ -866,7 +866,7 @@ describe('Unit: Prebid Module', function () {
             "sizes": [[728,90],[970,90]],
             "bidId": "392b5a6b05d648",
             "bidderRequestId": "2946b569352ef2",
-            "requestId": "1863e370099523",
+            "auctionId": "1863e370099523",
             "startTime": 1462918897462,
             "status": 1
           }

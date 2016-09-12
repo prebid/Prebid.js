@@ -23,7 +23,7 @@ describe('memeglobal adapter tests', function () {
     if (!bidSet){
       var bidderRequest = {
         start: null,
-        requestId: null,
+        auctionId: null,
         bidder: 'memeglobal',
         bidderCode: 'memeglobal',
         bids: []
@@ -46,7 +46,7 @@ describe('memeglobal adapter tests', function () {
               sizes: [[300, 250]],
                 bidder: 'memeglobal',
                 params: { siteId: '3608', adSizes:'300x250' },
-                requestId: '10b327aa396609',
+                auctionId: '10b327aa396609',
                 placementCode: 'header-bid-tag-0'
             }
           ]
@@ -65,7 +65,7 @@ describe('memeglobal adapter tests', function () {
               sizes: [[300, 250]],
                 bidder: 'memeglobal',
                 params: { siteId: '3608', adSizes:'300x250' },
-                requestId: '10b327aa396609',
+                auctionId: '10b327aa396609',
                 placementCode: 'header-bid-tag-0'
             }
           ]

@@ -48,7 +48,7 @@ describe('jcm adapter tests', function () {
      		          sizes: [[300, 250], [300, 300]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'300x250' },
-                          requestId: '10b327aa396609',
+                          auctionId: '10b327aa396609',
                           placementCode: '/19968336/header-bid-tag-0'
                          } 
 
@@ -72,7 +72,7 @@ describe('jcm adapter tests', function () {
                           sizes: [[300, 250]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'300x250' },
-                          requestId: '10b327aa396609',
+                          auctionId: '10b327aa396609',
                           placementCode: '/19968336/header-bid-tag-0'
                          }
 
@@ -129,7 +129,7 @@ describe('jcm adapter tests', function () {
                           sizes: [[300, 250]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'300x250' },
-                          requestId: '10b327aa396609',
+                          auctionId: '10b327aa396609',
                           placementCode: '/19968336/header-bid-tag-0'
                          },
                          {
@@ -137,7 +137,7 @@ describe('jcm adapter tests', function () {
                           sizes: [[728, 90]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'728x90' },
-                          requestId: '10b327aa396610',
+                          auctionId: '10b327aa396610',
                           placementCode: '/19968336/header-bid-tag-1'
                          }
 
@@ -200,7 +200,7 @@ describe('jcm adapter tests', function () {
                           sizes: [[300, 250]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'300x250' },
-                          requestId: '10b327aa396609',
+                          auctionId: '10b327aa396609',
                           placementCode: '/19968336/header-bid-tag-0'
                          },
                          {
@@ -208,7 +208,7 @@ describe('jcm adapter tests', function () {
                           sizes: [[728, 90]],
                           bidder: 'jcm',
                           params: { siteId: '3608', adSizes:'728x90' },
-                          requestId: '10b327aa396610',
+                          auctionId: '10b327aa396610',
                           placementCode: '/19968336/header-bid-tag-1'
                          }
 
