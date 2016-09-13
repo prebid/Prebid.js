@@ -174,7 +174,7 @@ function AppnexusAstAdapter() {
       if (tag.ads[0].rtb.video) {
         bid.width = tag.ads[0].rtb.video.player_width;
         bid.height = tag.ads[0].rtb.video.player_height;
-        bid.adUrl = tag.ads[0].rtb.video.asset_url;
+        bid.vastUrl = tag.ads[0].rtb.video.asset_url;
       } else {
         bid.width = tag.ads[0].rtb.banner.width;
         bid.height = tag.ads[0].rtb.banner.height;

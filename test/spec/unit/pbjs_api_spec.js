@@ -441,6 +441,19 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
+    it('should log an error when doc is document', () => {
+      $$PREBID_GLOBAL$$.renderAd(document, bidId);
+      const error = 'Error trying to write ad. Ad render call ad id ' + bidId + ' was prevented from writing to the main document.';
+      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+    });
+
+    it('should not render videos', () => {
+      adResponse.mediatype = 'video';
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      sinon.assert.notCalled(doc.write);
+      delete adResponse.mediatype;
+    });
+
     it('should catch errors thrown when trying to write ads to the page', function () {
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
 
