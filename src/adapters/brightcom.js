@@ -134,10 +134,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
     ) {
 
       // Go through the received bids
-      brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
+      brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
 
         // Get the bid request data
         var request = localGetBidderRequestByBidder('springserve');
+
         // assumes one bid request
         var bidRequest = request && request.bids ? request.bids[0] : [];
 

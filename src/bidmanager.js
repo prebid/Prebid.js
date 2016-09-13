@@ -74,7 +74,8 @@ function getBidSetForBidder(bidder, bidderRequests) {
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   const auction = auctionmanager.getAuctionByBidId(bid.adId) ||
-    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN);
+    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN) ||
+    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING);
 
   if (!auction) {
     utils.logMessage('Auction not found for bid: ', JSON.stringify(bid));

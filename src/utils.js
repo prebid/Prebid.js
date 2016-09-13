@@ -64,7 +64,7 @@ exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
  */
 exports.generateUUID = function generateUUID(placeholder) {
   return placeholder ?
-    (placeholder ^ Math.random() * 16 >> placeholder/4).toString(16)
+    (placeholder ^ Math.random() * 16 >> placeholder / 4).toString(16)
     :
     ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
@@ -333,7 +333,7 @@ exports.isArray = function (object) {
   return this.isA(object, t_Arr);
 };
 
-exports.isNumber = function(object) {
+exports.isNumber = function (object) {
   return this.isA(object, t_Numb);
 };
 
@@ -361,7 +361,7 @@ exports.isEmpty = function (object) {
  * @param str string to test
  * @returns {boolean} if string is empty
  */
-exports.isEmptyStr = function(str) {
+exports.isEmptyStr = function (str) {
   return this.isStr(str) && (!str || 0 === str.length);
 };
 
@@ -483,11 +483,11 @@ exports.getIframeDocument = function (iframe) {
   return doc;
 };
 
-exports.getValueString = function(param, val, defaultValue) {
+exports.getValueString = function (param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
-  if (this.isStr(val) ) {
+  if (this.isStr(val)) {
     return val;
   }
   if (this.isNumber(val)) {
@@ -529,4 +529,23 @@ export function getHighestCpm(previous, current) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
   return previous.cpm < current.cpm ? current : previous;
+}
+
+/**
+ * An emulation of Underscore `.pick()`
+ * gleaned from comment thread [here](http://stackoverflow.com/questions/25553910/one-liner-to-take-some-properties-from-object-in-es-6)
+ * Usage:
+ * ```
+ * var stuff = { name: 'Thing', color: 'blue', age: 17 };
+ * var picked = pick(stuff, 'name', 'age');
+ * ```
+ * @param o
+ * @param fields
+ * @returns {*}
+ */
+export function pick(o, ...fields) {
+  return fields.reduce((a, x) => {
+    if (o.hasOwnProperty(x)) a[x] = o[x];
+    return a;
+  }, {});
 }

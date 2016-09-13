@@ -66,7 +66,6 @@ SpringServeAdapter = function SpringServeAdapter() {
   }
 
   $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
-    console.log('Springserve Response Object: ', responseObj);
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the auction

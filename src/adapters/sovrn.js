@@ -77,13 +77,15 @@ var SovrnAdapter = function SovrnAdapter() {
     var missing = bidderRequest && bidderRequest.bids
       .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
 
-    missing && missing.forEach(function (bidRequest) {
-      // Add a no-bid response for this bid request.
-      var bid = {};
-      bid = bidfactory.createBid(2, bidRequest);
-      bid.bidderCode = 'sovrn';
-      addBidResponse(bidRequest.placementCode, bid);
-    });
+    if (missing && missing.length) {
+      missing.forEach(function (bidRequest) {
+        // Add a no-bid response for this bid request.
+        var bid = {};
+        bid = bidfactory.createBid(2, bidRequest);
+        bid.bidderCode = 'sovrn';
+        addBidResponse(bidRequest.placementCode, bid);
+      });
+    }
   }
 
   //expose the callback to the global object:

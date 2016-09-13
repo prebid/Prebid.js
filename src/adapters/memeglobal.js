@@ -1,6 +1,6 @@
-import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+import { getBidderRequestByBidId, addBidResponse } from '../auctionmanager';
 
-const localGetBidderRequestByBidder = getBidderRequestByBidder;
+const localGetBidderRequestByBidId = getBidderRequestByBidId;
 const localAddBidResponse = addBidResponse;
 
 var CONSTANTS = require('../constants.json');
@@ -77,10 +77,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     adloader.loadScript(scriptUrl);
   }
 
-  function getBidSetForBidder() {
-    return localGetBidderRequestByBidder('memeglobal');
-  }
-
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.mgres = function (bidResp) {
 
@@ -94,8 +90,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
       var responseCPM;
       var placementCode = '';
 
-      var bidSet = getBidSetForBidder();
-      var bidRequested = bidSet.bids.find(b => b.bidId === bidderBid.impid);
+      var bidRequested = localGetBidderRequestByBidId(bidderBid.impid);
       if (bidRequested) {
         var bidResponse = bidfactory.createBid(1);
         placementCode = bidRequested.placementCode;

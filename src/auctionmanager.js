@@ -1,3 +1,5 @@
+import { pick, flatten } from './utils';
+
 var utils = require('./utils');
 var auctionStates = require('./constants.json').AUCTION_STATES;
 var bidmanager = require('./bidmanager');
@@ -39,6 +41,10 @@ export const auctionmanager = (function() {
       .find(auction => auction.getBidderRequests()
         .find(request => request.bids
           .find(bid => bid.bidId === bidId)));
+  }
+
+  function _getAuctionByPendingBidder({ bidder, placement, size }) {
+
   }
 
   function _getAuctionByState(state) {
@@ -83,6 +89,13 @@ export const auctionmanager = (function() {
     this.bidderRequests = [];
     this.bidResponses = [];
     this.state = auctionStates.OPEN;
+    this.pendingBidders = adUnits.map(unit => {
+      return {
+        placement: unit.code,
+        sizes: unit.sizes,
+        bidder: unit.bids.find(bid => bid.bidder).bidder
+      };
+    });
 
     function _addBidderRequest(bidderRequest) {
       _this.bidderRequests.push(bidderRequest);
@@ -132,25 +145,15 @@ export const auctionmanager = (function() {
   }
 
   return {
-    holdAuction() {
-      return _holdAuction(...arguments);
-    },
+    holdAuction() { return _holdAuction(...arguments); },
 
-    getAuction() {
-      return _getAuction(...arguments);
-    },
+    getAuction() { return _getAuction(...arguments); },
 
-    getAuctionByBidId() {
-      return _getAuctionByBidId(...arguments);
-    },
+    getAuctionByBidId() { return _getAuctionByBidId(...arguments); },
 
-    getAuctionByState() {
-      return _getAuctionByState(...arguments);
-    },
+    getAuctionByState() { return _getAuctionByState(...arguments); },
 
-    getAuctionToReport() {
-      return _getAuctionToReport(...arguments);
-    }
+    getAuctionToReport() { return _getAuctionToReport(...arguments); }
   };
 })();
 
@@ -175,7 +178,8 @@ function _getBidderRequestByBidId(bidId) {
 }
 
 function _getBidderRequestByBidder(bidder) {
-  const auction = auctionmanager.getAuctionByState(auctionStates.OPEN);
+  const auction = auctionmanager.getAuctionByState(auctionStates.OPEN) ||
+    auctionmanager.getAuctionByState(auctionStates.CLOSING);
 
   return auction && auction.getBidderRequests()
         .filter(request => request.bidderCode === bidder)
