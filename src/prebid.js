@@ -769,23 +769,27 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @param {object} options options for video tag
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
   var urlComponents = parseURL(adserverTag);
 
+  //return original adserverTag if no bids received
   if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
     return adserverTag;
   }
 
-  if(options.adserver === 'dfp') {
+  var masterTag = '';
+  if(options.adserver.toLowerCase() === 'dfp') {
     var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
-    if(dfpAdserverObj.verifyAdserverTag()) {
+    if(!dfpAdserverObj.verifyAdserverTag()) {
       utils.logError('Invalid adserverTag, required google params are missing in query string');
     }
     dfpAdserverObj.appendQueryParams();
-    return formatURL(dfpAdserverObj.urlComponents);
+    masterTag = formatURL(dfpAdserverObj.urlComponents);
   } else {
     utils.logError('Only DFP adserver is supported');
     return;
   }
+  return masterTag;
 };
 
 processQue();

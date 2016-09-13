@@ -103,6 +103,14 @@
              reached, or when all bids come back, whichever happens sooner.
              */
             bidsBackHandler: function (bidResponses) {
+                var adserverTag = '<adserverTag>';
+                var options = {
+                    'adserver': 'dfp',
+                    'code': 'placementCode'
+                  };
+
+                var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+                //send masterTagUrl to the video player
                 initAdserver();
             }
 

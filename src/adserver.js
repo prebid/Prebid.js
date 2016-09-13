@@ -1,21 +1,19 @@
 import {formatQS} from './url';
 
 //Adserver parent class
-var adserver = function(attr) {
-  var that = {};
-  that.name = attr.adserver;
-  that.code = attr.code;
-  that.getWinningBidByCode = function() {
-    var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adUnitCode === that.code);
+const AdServer = function(attr) {
+  this.name = attr.adserver;
+  this.code = attr.code;
+  this.getWinningBidByCode = function() {
+    var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adUnitCode === this.code);
     return bidObject;
   };
-  return that;
 };
 
 //DFP ad server
 exports.dfpAdserver = function (options, urlComponents) {
-  var that = adserver(options);
-  that.urlComponents = urlComponents;
+  var adserver = new AdServer(options);
+  adserver.urlComponents = urlComponents;
 
   var dfpReqParams = {
     'env' : 'vp',
@@ -27,24 +25,22 @@ exports.dfpAdserver = function (options, urlComponents) {
   var dfpParamsWithVariableValue = ['output', 'iu', 'sz', 'url', 'correlator', 'description_url', 'hl'];
 
   var getCustomParams = function(targeting) {
-    targeting.hb_pb = '10.00';
     return encodeURIComponent(formatQS(targeting));
   };
 
-  that.appendQueryParams = function() {
-    var bid = that.getWinningBidByCode();
+  adserver.appendQueryParams = function() {
+    var bid = adserver.getWinningBidByCode();
     this.urlComponents.search.description_url = encodeURIComponent(bid.adUrl);
     this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
     this.urlComponents.correlator = Date.now();
   };
 
-  that.verifyAdserverTag = function() {
+  adserver.verifyAdserverTag = function() {
     for(var key in dfpReqParams) {
       if(!this.urlComponents.search.hasOwnProperty(key) || this.urlComponents.search[key] !== dfpReqParams[key]) {
         return false;
       }
     }
-
     for(var i in dfpParamsWithVariableValue) {
       if(!this.urlComponents.search.hasOwnProperty(dfpParamsWithVariableValue[i])) {
         return false;
@@ -53,5 +49,5 @@ exports.dfpAdserver = function (options, urlComponents) {
     return true;
   };
 
-  return that;
+  return adserver;
 };
