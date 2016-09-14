@@ -1,5 +1,3 @@
-import { pick, flatten } from './utils';
-
 var utils = require('./utils');
 var auctionStates = require('./constants.json').AUCTION_STATES;
 var bidmanager = require('./bidmanager');
@@ -28,14 +26,6 @@ export const auctionmanager = (function() {
     return auction;
   }
 
-  /**
-   * @param auctionId
-   * @private
-   */
-  function _getAuction(auctionId) {
-    _getAuctions().find(auction => auction.auctionId === auctionId);
-  }
-
   function _getAuctionByBidId(bidId) {
     return _getAuctions()
       .find(auction => auction.getBidderRequests()
@@ -43,40 +33,56 @@ export const auctionmanager = (function() {
           .find(bid => bid.bidId === bidId)));
   }
 
-  function _getAuctionByPendingBidder({ bidder, placement, size }) {
-
+  function _getAuctionWithBidderPending({ bidder, placement, sizes }) {
+    return _getAuctions()
+      .find(auction => {
+        const bidders = auction.getBiddersPending()
+          .filter(bidderPending => {
+            return bidderPending.bidder === bidder &&
+              bidderPending.placement === placement &&
+              bidderPending.sizes.includes(sizes);
+          });
+        return bidders.length && bidders.pop() || false;
+      });
   }
 
-  function _getAuctionByState(state) {
+  function _getBidderRequest(placement, bid, bidder) {
+    return _getBidderRequestByBidId(bid && bid.adId) ||
+      _getBidderRequestPending(...arguments).find(request => {
+        return request.placementCode === placement &&
+            request.bidderCode === bidder;
+      });
+  }
 
+  function _getBidderRequestByBidId(bidId) {
+    return bidId && _getAuctionByBidId(bidId).getBidderRequests()
+      .find(request => request.bids
+        .find(bid => bid.bidId === bidId));
+  }
+
+  function _getBidderRequestPending(placement, bid, bidder) {
     return _getAuctions()
-      .filter(auction => auction.getState() === state)
-      .reduce(mostRecent, false);
+      .filter(auction => {
+        return auction.getBiddersPending()
+          .find(bidderPending => bidderPending.bids
+            .find(bidPending => {
+              bidPending.bidder === bidder &&
+            }));
+      });
+  }
 
-    function mostRecent(auctionPrevious, auctionCurrent) {
-      const timestampPrevious = getMostRecentRequestTimestamp(auctionPrevious);
-      const timestampCurrent = getMostRecentRequestTimestamp(auctionCurrent);
-
-      return timestampPrevious > timestampCurrent ? auctionPrevious : auctionCurrent;
-    }
-
-    function getMostRecentRequestTimestamp(auction) {
-      return auction && auction.getBidderRequests && auction.getBidderRequests()
-          .reduce((requestPrevious, requestCurrent) => {
-            return requestPrevious.start > requestCurrent.start ? requestPrevious.start : requestCurrent.start;
-          }, { start: 0 }) || 0;
-    }
+  function _addBidResponse(placement, bid) {
+    const auction = _getAuctionByBidId(bid.adId) ||
+        _getAuctionWithBidderPending({
+          bidder: bid.bidderCode,
+          placement,
+          size: [bid.width, bid.height]
+        });
+    bidmanager.addBidResponse(placement, bid, auction);
   }
 
   function _getAuctionToReport() {
-    const auction = _getAuctionByState(auctionStates.CLOSING) ||
-        _getAuctionByState(auctionStates.OPEN);
-
-    if (auction.getState() === auctionStates.OPEN) {
-      auction.setState(auctionStates.CLOSING);
-    }
-
-    return auction;
+    return _getAuctions().pop();
   }
 
   function Auction({ bidsBackHandler, cbTimeout, adUnits }) {
@@ -89,7 +95,7 @@ export const auctionmanager = (function() {
     this.bidderRequests = [];
     this.bidResponses = [];
     this.state = auctionStates.OPEN;
-    this.pendingBidders = adUnits.map(unit => {
+    this.biddersPending = adUnits.map(unit => {
       return {
         placement: unit.code,
         sizes: unit.sizes,
@@ -121,6 +127,8 @@ export const auctionmanager = (function() {
 
     function _setState(state) { _this.state = state; }
 
+    function _getBiddersPending() { return _this.biddersPending; }
+
     return {
       addBidderRequest() { return _addBidderRequest(...arguments); },
 
@@ -130,7 +138,7 @@ export const auctionmanager = (function() {
 
       getBidderRequests() { return _getBidderRequests(); },
 
-      getBidsReceived() { return _getBidResponses(); },
+      getBidResponses() { return _getBidResponses(); },
 
       getAdUnits() { return _getAdUnits(); },
 
@@ -140,60 +148,21 @@ export const auctionmanager = (function() {
 
       getState() { return _getState(); },
 
-      setState() { return _setState(...arguments); }
+      setState() { return _setState(...arguments); },
+
+      getBiddersPending() { return _getBiddersPending(); }
     };
   }
 
   return {
     holdAuction() { return _holdAuction(...arguments); },
 
-    getAuction() { return _getAuction(...arguments); },
-
     getAuctionByBidId() { return _getAuctionByBidId(...arguments); },
 
-    getAuctionByState() { return _getAuctionByState(...arguments); },
+    getAuctionToReport() { return _getAuctionToReport(...arguments); },
 
-    getAuctionToReport() { return _getAuctionToReport(...arguments); }
+    getBidderRequest() { return _getBidderRequest(...arguments); },
+
+    addBidResponse() { return _addBidResponse(...arguments); }
   };
 })();
-
-export function getBidderRequestByBidId() {
-  return _getBidderRequestByBidId(...arguments);
-}
-
-export function getBidderRequestByBidder() {
-  return _getBidderRequestByBidder(...arguments);
-}
-
-export function addBidResponse() {
-  return _addBidResponse(...arguments);
-}
-
-function _getBidderRequestByBidId(bidId) {
-  const auction = auctionmanager.getAuctionByBidId(bidId);
-
-  return bidId && auction && auction.getBidderRequests()
-      .find(request => request.bids
-        .find(bid => bid.bidId === bidId));
-}
-
-function _getBidderRequestByBidder(bidder) {
-  const auction = auctionmanager.getAuctionByState(auctionStates.OPEN) ||
-    auctionmanager.getAuctionByState(auctionStates.CLOSING);
-
-  return auction && auction.getBidderRequests()
-        .filter(request => request.bidderCode === bidder)
-        .map((request, index, collection) => {
-          if (collection.length > 1) {
-            utils.logError(`Bidder ${bidder} has more than one bidderRequest in the auction and must use \`getBidderRequestByBidId\` API`);
-            return false;
-          } else {
-            return collection[0];
-          }
-        })[0];
-
-}
-
-function _addBidResponse() {
-  bidmanager.addBidResponse(...arguments);
-}

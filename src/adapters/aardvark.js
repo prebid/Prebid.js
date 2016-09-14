@@ -1,7 +1,7 @@
-import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+import { auctionmanager } from '../auctionmanager';
 
-const localGetBidderRequestByBidder = getBidderRequestByBidder;
-const localAddBidResponse = addBidResponse;
+const getBidderRequest = auctionmanager.getBidderRequest;
+const addBidResponse = auctionmanager.addBidResponse;
 
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -56,7 +56,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
   window.$$PREBID_GLOBAL$$.aardvarkResponse = function (rtkResponseObj) {
 
     //Get all initial Aardvark Bid Objects
-    var bidsObj = localGetBidderRequestByBidder('aardvark');
+    var bidsObj = getBidderRequest('aardvark');
 
     var returnedBidIDs = {};
 
@@ -76,7 +76,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
             bidResponse.width = currentBid.sizes[0][0];
             bidResponse.height = currentBid.sizes[0][1];
             returnedBidIDs[bid.id] = currentBid.placementCode;
-            localAddBidResponse(currentBid.placementCode, bidResponse);
+            addBidResponse(currentBid.placementCode, bidResponse);
           }
 
         }
@@ -91,7 +91,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
     difference.forEach(function (bidRequest) {
       var bidResponse = bidfactory.createBid(2, bidRequest);
       bidResponse.bidderCode = "aardvark";
-      localAddBidResponse(bidRequest.placementCode, bidResponse);
+      addBidResponse(bidRequest.placementCode, bidResponse);
     });
 
 

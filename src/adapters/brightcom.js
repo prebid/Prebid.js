@@ -1,7 +1,7 @@
-import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+import { auctionmanager } from '../auctionmanager';
 
-const localGetBidderRequestByBidder = getBidderRequestByBidder;
-const localAddBidResponse = addBidResponse;
+const getBidderRequest = auctionmanager.getBidderRequest;
+const addBidResponse = auctionmanager.addBidResponse;
 
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
@@ -137,7 +137,10 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
 
         // Get the bid request data
-        var request = localGetBidderRequestByBidder('springserve');
+        var request = getBidderRequest({
+          bidId: curBid.impid,
+          bidder: 'brightcom'
+        });
 
         // assumes one bid request
         var bidRequest = request && request.bids ? request.bids[0] : [];
@@ -186,7 +189,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
           bid.height = adHeight;
 
           // Add the bid
-          localAddBidResponse(placementCode, bid);
+          addBidResponse(placementCode, bid);
 
           // Add current ad unit's code to tracking
           resAdUnitsCode.push(placementCode);

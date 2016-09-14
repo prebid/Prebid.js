@@ -1,6 +1,5 @@
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 
 function AdformAdapter() {

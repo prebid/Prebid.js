@@ -24,7 +24,7 @@ exports.getTimedOutBidders = function (auction) {
   return auction.getBidderRequests()
     .map(getBidderCode)
     .filter(uniques)
-    .filter(bidder => auction.getBidsReceived()
+    .filter(bidder => auction.getBidResponses()
       .map(getBidders)
       .filter(uniques)
       .indexOf(bidder) < 0);
@@ -42,8 +42,8 @@ function getBidders(bid) {
 
 function bidsBackAdUnit(auction, adUnitCode) {
   const requested = auction.getAdUnits().find(unit => unit.code === adUnitCode).bids.length;
-  const received = auction.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode).length;
-  return requested === received;
+  const responses = auction.getBidResponses().filter(bid => bid.adUnitCode === adUnitCode).length;
+  return requested === responses;
 }
 
 function add(a, b) {
@@ -51,13 +51,13 @@ function add(a, b) {
 }
 
 function bidsBackAll(auction) {
-  const bidsReceived = auction && auction.getBidsReceived();
+  const bidResponses = auction && auction.getBidResponses();
   const bidderRequests = auction.getBidderRequests();
   const requested = bidderRequests && bidderRequests
       .map(bidSet => bidSet.bids.length)
       .reduce(add) || null;
-  const received = bidsReceived && bidsReceived.length || null;
-  return Number.parseInt(requested) === Number.parseInt(received);
+  const responses = bidResponses && bidResponses.length || null;
+  return Number.parseInt(requested) === Number.parseInt(responses);
 }
 
 exports.bidsBackAll = function() {
@@ -72,11 +72,7 @@ function getBidSetForBidder(bidder, bidderRequests) {
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
-exports.addBidResponse = function (adUnitCode, bid) {
-  const auction = auctionmanager.getAuctionByBidId(bid.adId) ||
-    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.OPEN) ||
-    auctionmanager.getAuctionByState(CONSTANTS.AUCTION_STATES.CLOSING);
-
+exports.addBidResponse = function (adUnitCode, bid, auction) {
   if (!auction) {
     utils.logMessage('Auction not found for bid: ', JSON.stringify(bid));
     return;
@@ -129,7 +125,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.adserverTargeting = keyValues;
     }
 
-    auction.getBidsReceived().push(bid);
+    auction.getBidResponses().push(bid);
   }
 
   if (bid && bid.adUnitCode && bidsBackAdUnit(auction, bid.adUnitCode)) {

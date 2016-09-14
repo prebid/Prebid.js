@@ -1,7 +1,7 @@
-import { getBidderRequestByBidder, addBidResponse } from '../auctionmanager';
+import { auctionmanager } from '../auctionmanager';
 
-const localGetBidderRequestByBidder = getBidderRequestByBidder;
-const localAddBidResponse = addBidResponse;
+const getBidderRequest = auctionmanager.getBidderRequest;
+const addBidResponse = auctionmanager.addBidResponse;
 
 var bidfactory = require('../bidfactory.js');
 var adloader = require('../adloader');
@@ -70,7 +70,7 @@ SpringServeAdapter = function SpringServeAdapter() {
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the auction
       var responseBid = responseObj.seatbid[0].bid[0];
-      var request = localGetBidderRequestByBidder('springserve');
+      var request = getBidderRequest({ bidder: 'springserve', bidId: responseBid.impid });
       var requestBids = request && request.bids ? request.bids : [];
       var bid = bidfactory.createBid(1, requestBids[0]);
       var placementCode;
@@ -98,7 +98,7 @@ SpringServeAdapter = function SpringServeAdapter() {
         bid.bidderCode = 'springserve';
       }
 
-      localAddBidResponse(placementCode, bid);
+      addBidResponse(placementCode, bid);
     }
   };
 

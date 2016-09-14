@@ -1,4 +1,6 @@
-import { addBidResponse } from '../auctionmanager';
+import { auctionmanager } from '../auctionmanager';
+
+const addBidResponse = auctionmanager.addBidResponse;
 
 var bidfactory = require('../bidfactory.js');
 var adloader = require('../adloader.js');
