@@ -31,8 +31,8 @@ const EVENTS = {
 
 let adUnits = {};
 
-let baseSchemaTemplate = template `${'protocol'}://${'host'}${('port') ? `:${'port'}` : ``}/hbevent/${'tagversion'}/${'network'}/${ ('subnetwork')?`${'subnetwork'}/`:``}${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
-let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'};${ ('hbcur') ? `hbcur=${'hbcur'};` : ``}pubapi=${'pubapi'}`;
+let baseSchemaTemplate = template `${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
+let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
 let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
 
@@ -48,7 +48,7 @@ export default utils.extend(adapter({
         server: null // Internal use only. Use 'region' config option for AOL adapter.
       }
     }) {
-      this.server = options.server;
+      this.server = options ? options.server : null;
 
       //first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
@@ -145,10 +145,8 @@ export default utils.extend(adapter({
       return {
         protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
         host: this.server || serverMap[aolParams.region] || serverMap.us,
-        port: aolParams.port || '',
         tagversion: '3.0',
         network: aolParams.network || '',
-        subnetwork: aolParams.subnetwork || '',
         placement: aolParams.placement,
         site: aolParams.pageid || 0,
         eventid: eventId,
@@ -163,8 +161,8 @@ export default utils.extend(adapter({
         hbauctionid: generateAuctionId(aolParams.placement),
         hbwinner: adUnit.winner.bidder ? getBidderId(adUnit.winner.bidder) : 0,
         hbprice: adUnit.winner.cpm || 0,
-        hbcur: '',
-        pubapi: aolParams.pubapiId
+        hbcur: aolParams.currencyCode ? `;hbcur=${aolParams.currencyCode}` : '',
+        pubapi: aolParams.pubapiId ? `;pubapi=${aolParams.pubapiId}` : ''
       };
     },
 
@@ -286,7 +284,9 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
   const filteredBids = bidsReceived.filter(
     bid => bid.bidderCode === AOL_BIDDER_CODE && bid.adUnitCode === adUnit.code
   );
-  const pubapiId = (filteredBids.length === 1) ? filteredBids[0].pubapiId : '';
+  const onlyOneBid = filteredBids.length === 1;
+  const pubapiId = (onlyOneBid) ? filteredBids[0].pubapiId : '';
+  const currencyCode = (onlyOneBid) ? filteredBids[0].currencyCode : '';
 
   for (let adUnitConf of adUnitsConf) {
     if (adUnitConf.code === adUnit.code) {
@@ -294,6 +294,7 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
         if (adUnitBid.bidder === AOL_BIDDER_CODE) {
           adUnit.aolParams = adUnitBid.params;
           adUnit.aolParams.pubapiId = pubapiId;
+          adUnit.aolParams.currencyCode = currencyCode;
         }
       }
     }
