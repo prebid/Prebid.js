@@ -1,3 +1,32 @@
+[AOL Container Tag Library](http://www.aolplatforms.com/header-bidding-solution)
+===========================
+
+This is a fork of Prebid.js made by [AOL](http://www.aolplatforms.com/). It has the following differences to the official Prebid:
+
+- Reports on how the auctions are performing
+- Per-partner (per-adapter) timeouts
+- AOL adapter
+    - Optimized - no additional request (Plan to include this into official Prebid)
+    - Hits v2 pubapi endpoint (config on the backend)
+    - Supports new `region` configuation option instead of `server`
+- Auto-updates - by using SemVer Server
+    - New Backwards-compatible features
+    - Bug fixes
+- Adapters specified in the library URL
+- Version numbers separate from official Prebid
+
+Container Tag library is available on the following URL (works fine with http as well as https):
+
+    vlibs.advertising.com/prebid/adapters=appnexus,openx;/prebid-1.x.x.js
+
+This URL is designed specifically for the Container Tag library and it supports two magic features:
+
+1. Request time injection of Prebid adapters (AOL adapter included by default)
+2. Delivery of latest available major version (1.x.x)
+
+Here continues the original README:
+
+
 [![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
