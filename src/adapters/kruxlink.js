@@ -43,7 +43,7 @@ function _makeCallback(id, placements) {
     // Add any no-bids remaining
     for (var placementCode in placements) {
       if (placements.hasOwnProperty(placementCode)) {
-        _makeBidResponse(placementCode);
+        _makeBidResponse(placements[placementCode]);
       }
     }
   };
