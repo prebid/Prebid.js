@@ -60,6 +60,13 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
+  webpackConfig.module.loaders = webpackConfig.module.loaders.concat([{
+    test: /adapters/,
+    include: /(src)/,
+    exclude: /(adapter.js|baseAdapter.js|analytics)/,
+    loader: 'delimiterLoader'
+  }]);
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
