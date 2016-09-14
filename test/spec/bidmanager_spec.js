@@ -350,6 +350,35 @@ describe('bidmanager.js', function () {
 
   });
 
+  describe('adjustBids', () => {
+    it('should adjust bids and pass copy of bid object', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[5]
+      );
+
+      assert.equal(bid.cpm, .5);
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        brealtime: {
+          bidCpmAdjustment: function (bidCpm, bidObj) {
+            assert.deepEqual(bidObj, bid);
+            return bidCpm * 0.5;
+          },
+        },
+        standard: {
+          adserverTargeting: [
+          ]
+        }
+      };
+
+      bidmanager.adjustBids(bid)
+      assert.equal(bid.cpm, .25);
+
+    });
+  });
+
   describe('addBidResponse', () => {
     before(() => {
       $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();

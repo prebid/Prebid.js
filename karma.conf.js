@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -216,6 +216,10 @@ module.exports = function (config) {
         browser_version: '49.0',
         device: null,
         os: 'OS X'
+      },
+      Chrome_travis_ci: {
+        base: 'Chrome',
+        flags: ['--no-sandbox']
       }
     },
 
@@ -223,9 +227,16 @@ module.exports = function (config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
+    client: {
+      mocha: {
+        reporter: 'html'
+      }
+    },
+
     // list of files / patterns to load in the browser
     files: [
-      'test/**/*_spec.js'
+      'test/**/*_spec.js',
+      'test/helpers/karma-init.js'
     ],
 
     // list of files to exclude
@@ -235,6 +246,7 @@ module.exports = function (config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
+      '!test/**/*_spec.js': 'coverage',
       'src/**/*.js': ['webpack', 'coverage']
     },
 

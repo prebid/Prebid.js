@@ -73,6 +73,10 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.aliasBidder);
     });
 
+    it('should have function $$PREBID_GLOBAL$$.getAllWinningBids', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
+    });
+
   });
 
 });

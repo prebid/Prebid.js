@@ -1,3 +1,5 @@
+import {parse as parseURL, format as formatURL} from './url';
+
 /**
  * Simple cross-browser ajax request function
  * https://gist.github.com/Xeoncross/7663273
@@ -7,13 +9,12 @@
  * @param url string url
  * @param callback object callback
  * @param data mixed data
- * @param x null Ajax request
- * @param options.isTrackingRequest set to true to denote the request
- *     is for tracking purposes, as opposed to loading remote data.
+ * @param options object
  */
 
-export const ajax = function ajax(url, callback, data, x = null,
-                                  options = {isTrackingRequest: false }) {
+export const ajax = function ajax(url, callback, data, options = {}) {
+  let x;
+
   try {
     if (window.XMLHttpRequest) {
       x = new window.XMLHttpRequest('MSXML2.XMLHTTP.3.0');
@@ -23,9 +24,18 @@ export const ajax = function ajax(url, callback, data, x = null,
       x = new window.ActiveXObject('MSXML2.XMLHTTP.3.0');
     }
 
+    const method = options.method || (data ? 'POST' : 'GET');
+
+    if (method === 'GET' && data) {
+      let urlInfo = parseURL(url);
+      Object.assign(urlInfo.search, data);
+      url = formatURL(urlInfo);
+    }
+
     //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
-    x.open(data ? 'POST' : 'GET', url, 1);
-    if (options.isTrackingRequest) {
+    x.open(method, url, 1);
+
+    if (options.withCredentials) {
       x.withCredentials = true;
     } else {
       x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -39,7 +49,7 @@ export const ajax = function ajax(url, callback, data, x = null,
       }
     };
 
-    x.send(data);
+    x.send(method === 'POST' && data);
   } catch (e) {
     console.log(e);
   }

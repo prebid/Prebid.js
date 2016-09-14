@@ -5,6 +5,7 @@
     "admedia",
     "aol",
     "appnexus",
+    "appnexusAst",
     "indexExchange",
     "kruxlink",
     "openx",
@@ -20,6 +21,9 @@
     "nginad",
     "brightcom",
     "wideorbit",
+    "jcm",
+    "underdogmedia",
+    "memeglobal",
     {
       "appnexus": {
         "alias": "brealtime"
