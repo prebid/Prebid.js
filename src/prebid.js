@@ -232,10 +232,10 @@ function getBidLandscapeTargeting() {
 function getAllTargeting() {
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-  var targeting = getDealTargeting()
-    .concat(getWinningBidTargeting())
+  var targeting = getWinningBidTargeting()
     .concat(getAlwaysUseBidTargeting())
-    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting() : []);
+    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting() : [])
+    .concat(getDealTargeting());
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
