@@ -272,7 +272,7 @@ function removeComplete() {
 
   // also remove bids that have an empty or error status so known as not pending for render
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
-    .forEach(bid => responses.slice(responses.indexOf(bid), 1));
+    .forEach(bid => responses.splice(responses.indexOf(bid), 1));
 }
 
 //////////////////////////////////
