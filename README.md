@@ -1,7 +1,9 @@
 [AOL Container Tag Library](http://www.aolplatforms.com/header-bidding-solution)
 ===========================
 
-This is a fork of Prebid.js made by [AOL](http://www.aolplatforms.com/). It has the following differences to the official Prebid:
+This is a fork of Prebid.js made by [AOL](http://www.aolplatforms.com/). 
+Check the [AOL Platforms website](http://www.aolplatforms.com/header-bidding-solution) for documentation 
+and more information on its unique features. Here is just a brief list of differences to the official Prebid:
 
 - Reports on how the auctions are performing
 - Per-partner (per-adapter) timeouts
