@@ -70,8 +70,7 @@ SpringServeAdapter = function SpringServeAdapter() {
       responseObj.seatbid[0].bid[0] !== undefined) {
       //look up the request attributs stored in the auction
       var responseBid = responseObj.seatbid[0].bid[0];
-      var request = getBidderRequest({ bidder: 'springserve', bidId: responseBid.impid });
-      var requestBids = request && request.bids ? request.bids : [];
+      var requestBids = getBidderRequest({ impid: responseBid.impid });
       var bid = bidfactory.createBid(1, requestBids[0]);
       var placementCode;
 

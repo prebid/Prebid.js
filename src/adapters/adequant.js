@@ -64,7 +64,7 @@ module.exports = function() {
       if (placements[placement_code]) {
         bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
         bid.bidderCode = 'adequant';
-        addBidResponse(placement_code, bid);
+        addBidResponse({ placement: placement_code, bid });
         utils.logMessage('No bid response from Adequant for placement code ' + placement_code);
       }
     }

@@ -487,12 +487,15 @@ exports.getValueString = function (param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
+
   if (this.isStr(val)) {
     return val;
   }
+
   if (this.isNumber(val)) {
     return val.toString();
   }
+
   this.logWarn('Unsuported type for param: ' + param + ' required type: String');
 };
 
@@ -528,6 +531,7 @@ export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
+
   return previous.cpm < current.cpm ? current : previous;
 }
 
@@ -549,3 +553,36 @@ export function pick(o, ...fields) {
     return a;
   }, {});
 }
+
+/**
+ * An equals function to compare two arrays
+ * /props http://stackoverflow.com/questions/7837456/how-to-compare-arrays-in-javascript
+ * @param array1
+ * @param array2
+ * @returns {boolean}
+ */
+exports.eq = function eq(array1, array2) {
+  //if the other array2 is a falsy value, return
+  if (!array1 || !array2)
+    return false;
+
+  // compare lengths - can save a lot of time
+  if (array1.length !== array2.length) {
+    return false;
+  }
+
+  for (var i = 0, l = array1.length; i < l; i++) {
+    // Check if we have nested arrays
+    if (array1[i] instanceof Array && array2[i] instanceof Array) {
+      // recurse into the nested arrays
+      if (!this.eq(array1[i], array2[i])) {
+        return false;
+      }
+    } else if (array1[i] !== array2[i]) {
+      // Warning - two different object instances will never be equal: {x:20} != {x:20}
+      return false;
+    }
+  }
+
+  return true;
+};

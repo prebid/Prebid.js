@@ -56,7 +56,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
   window.$$PREBID_GLOBAL$$.aardvarkResponse = function (rtkResponseObj) {
 
     //Get all initial Aardvark Bid Objects
-    var bidsObj = getBidderRequest('aardvark');
+    var bidsObj = getBidderRequest({ bidder: 'aardvark' });
 
     var returnedBidIDs = {};
 

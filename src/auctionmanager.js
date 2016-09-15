@@ -2,7 +2,7 @@ var utils = require('./utils');
 var auctionStates = require('./constants.json').AUCTION_STATES;
 var bidmanager = require('./bidmanager');
 
-export const auctionmanager = (function() {
+export const auctionmanager = (function () {
 
   /**
    * Returns a closure over the internal array of Auctions
@@ -27,58 +27,119 @@ export const auctionmanager = (function() {
   }
 
   function _getAuctionByBidId(bidId) {
-    return _getAuctions()
-      .find(auction => auction.getBidderRequests()
-        .find(request => request.bids
-          .find(bid => bid.bidId === bidId)));
+    return bidId && _getAuctions()
+        .find(auction => auction.getBidderRequests()
+          .find(request => request.bids
+            .find(bid => {
+              if (bid.bidId === bidId) {
+                return auction;
+              }
+            })));
   }
 
-  function _getAuctionWithBidderPending({ bidder, placement, sizes }) {
-    return _getAuctions()
-      .find(auction => {
-        const bidders = auction.getBiddersPending()
-          .filter(bidderPending => {
-            return bidderPending.bidder === bidder &&
-              bidderPending.placement === placement &&
-              bidderPending.sizes.includes(sizes);
-          });
-        return bidders.length && bidders.pop() || false;
-      });
+  function _getAuctionWithRequestPending({ bidder, placement, size, status, impid }) {
+
+    if (bidder && placement && size) {
+      return _getAuctions()
+        .find(auction => {
+          return auction.getBidderRequests()
+            .find((request) => {
+              const zero_size = [0, 0];
+              return request.bids.find((bid, index, collection) => {
+                const pendingBid = request.bidderCode === bidder &&
+                  bid.placementCode === placement &&
+                  bid.sizes.concat([zero_size])
+                    .find(bidderSize => utils.eq(bidderSize, size));
+
+                if (pendingBid) {
+                  return collection.splice(index, 1);
+                } else {
+                  utils.logWarn('prebid.js', `_getAuctionWithRequestPending: auction not found: {
+                    bidder: ${bidder}, placement: ${placement}, size: ${size} }`);
+                }
+              });
+            });
+        });
+    } else if (impid) {
+      return _getAuctions()
+        .find(auction => {
+          return auction.getBidderRequests()
+            .find((request) => request.bids
+              .find((bid, index, collection) => {
+                const pendingBid = bid.params && bid.params.impId === +impid;
+
+                if (pendingBid) {
+                  collection.splice(index, 1);
+                } else {
+                  utils.logWarn('prebid.js', `_getAuctionWithRequestPending: auction not found: {
+                    impid: ${impid}, placement: ${placement}, size: ${size} }`);
+                }
+
+                return pendingBid;
+              }));
+        });
+    }
   }
 
-  function _getBidderRequest(placement, bid, bidder) {
-    return _getBidderRequestByBidId(bid && bid.adId) ||
-      _getBidderRequestPending(...arguments).find(request => {
-        return request.placementCode === placement &&
-            request.bidderCode === bidder;
-      });
+  function _getBidderRequest({ bidId, impid }) {
+    if (bidId) {
+      return _getBidderRequestByBidId(bidId);
+    }
+    if (impid) {
+      _getBidderRequestByImpid(impid);
+    } else {
+      _getBidderRequestPending(...arguments);
+    }
   }
 
   function _getBidderRequestByBidId(bidId) {
     return bidId && _getAuctionByBidId(bidId).getBidderRequests()
-      .find(request => request.bids
-        .find(bid => bid.bidId === bidId));
+        .find(request => request.bids
+          .find(bid => bid.bidId === bidId));
   }
 
-  function _getBidderRequestPending(placement, bid, bidder) {
+  function _getBidderRequestByImpid(impid) {
     return _getAuctions()
-      .filter(auction => {
-        return auction.getBiddersPending()
-          .find(bidderPending => bidderPending.bids
-            .find(bidPending => {
-              bidPending.bidder === bidder &&
-            }));
-      });
+      .map(auction => auction.getBidderRequests()
+        .find(request => request.bids
+          .find(bid => bid.params && bid.params.impId === impid)));
   }
 
-  function _addBidResponse(placement, bid) {
-    const auction = _getAuctionByBidId(bid.adId) ||
-        _getAuctionWithBidderPending({
-          bidder: bid.bidderCode,
-          placement,
-          size: [bid.width, bid.height]
-        });
-    bidmanager.addBidResponse(placement, bid, auction);
+  function _getBidderRequestPending() {
+    return _getAuctions();
+  }
+
+  function _addBidResponse({ bidId, bid }) {
+    if (bid.getStatusCode() === 2) {
+      return _addBidResponseWithNoBid(...arguments);
+    }
+
+    if (bidId) {
+      return _addBidResponseWithBidId(...arguments);
+    }
+  }
+
+  function _addBidResponseWithNoBid({ bidder, placement, bid }) {
+    const auction = _getAuctionWithRequestPending({
+        bidder: bid.bidderCode,
+        placement,
+        size: [bid.width, bid.height]
+      });
+
+    if (auction) {
+      bidmanager.addBidResponse(placement, bid, auction);
+    } else {
+      utils.logError('prebid.js', '_addBidResponseWithNoBid cannot add bid response', arguments);
+    }
+  }
+
+  function _addBidResponseWithBidId({ bidId, placement, bid }) {
+    const auction = _getAuctionByBidId(bidId);
+    if (auction) {
+      bidmanager.addBidResponse(placement, bid, auction);
+    } else {
+      utils.logError('prebid.js', '_addBidResponseWithBidId cannot add bid response', arguments);
+    }
   }
 
   function _getAuctionToReport() {
@@ -111,58 +172,105 @@ export const auctionmanager = (function() {
       _this.bidResponses.push(bid);
     }
 
-    function _getId() { return _this.auctionId; }
+    function _getId() {
+      return _this.auctionId;
+    }
 
-    function _getBidderRequests() { return _this.bidderRequests; }
+    function _getBidderRequests() {
+      return _this.bidderRequests;
+    }
 
-    function _getBidResponses() { return _this.bidResponses; }
+    function _getBidResponses() {
+      return _this.bidResponses;
+    }
 
-    function _getAdUnits() { return _this.adUnits; }
+    function _getAdUnits() {
+      return _this.adUnits;
+    }
 
-    function _getTimeout() { return _this.timeout; }
+    function _getTimeout() {
+      return _this.timeout;
+    }
 
-    function _getBidsBackHandler() { return _this.bidsBackHandler; }
+    function _getBidsBackHandler() {
+      return _this.bidsBackHandler;
+    }
 
-    function _getState() { return _this.state; }
+    function _getState() {
+      return _this.state;
+    }
 
-    function _setState(state) { _this.state = state; }
-
-    function _getBiddersPending() { return _this.biddersPending; }
+    function _setState(state) {
+      _this.state = state;
+    }
 
     return {
-      addBidderRequest() { return _addBidderRequest(...arguments); },
+      addBidderRequest() {
+        return _addBidderRequest(...arguments);
+      },
 
-      addBidResponse() { return _addBidResponse(...arguments); },
+      addBidResponse() {
+        return _addBidResponse(...arguments);
+      },
 
-      getId() { return _getId(); },
+      getId() {
+        return _getId();
+      },
 
-      getBidderRequests() { return _getBidderRequests(); },
+      getBidderRequests() {
+        return _getBidderRequests();
+      },
 
-      getBidResponses() { return _getBidResponses(); },
+      getBidResponses() {
+        return _getBidResponses();
+      },
 
-      getAdUnits() { return _getAdUnits(); },
+      getAdUnits() {
+        return _getAdUnits();
+      },
 
-      getTimeout() { return _getTimeout(); },
+      getTimeout() {
+        return _getTimeout();
+      },
 
-      getBidsBackHandler() { return _getBidsBackHandler(); },
+      getBidsBackHandler() {
+        return _getBidsBackHandler();
+      },
 
-      getState() { return _getState(); },
+      getState() {
+        return _getState();
+      },
 
-      setState() { return _setState(...arguments); },
-
-      getBiddersPending() { return _getBiddersPending(); }
+      setState() {
+        return _setState(...arguments);
+      }
     };
   }
 
   return {
-    holdAuction() { return _holdAuction(...arguments); },
+    holdAuction() {
+      return _holdAuction(...arguments);
+    },
 
-    getAuctionByBidId() { return _getAuctionByBidId(...arguments); },
+    getAuctionByBidId() {
+      return _getAuctionByBidId(...arguments);
+    },
 
-    getAuctionToReport() { return _getAuctionToReport(...arguments); },
+    getAuctionToReport() {
+      return _getAuctionToReport(...arguments);
+    },
 
-    getBidderRequest() { return _getBidderRequest(...arguments); },
+    getBidderRequest() {
+      return _getBidderRequest(...arguments);
+    },
 
-    addBidResponse() { return _addBidResponse(...arguments); }
+    addBidResponse() {
+      return _addBidResponse(...arguments);
+    },
+
+    getAuctions() {
+      return _getAuctions();
+    }
   };
-})();
+})
+();

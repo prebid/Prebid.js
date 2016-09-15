@@ -137,10 +137,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
 
         // Get the bid request data
-        var request = getBidderRequest({
-          bidId: curBid.impid,
-          bidder: 'brightcom'
-        });
+        var request = getBidderRequest(null, curBid);
 
         // assumes one bid request
         var bidRequest = request && request.bids ? request.bids[0] : [];
