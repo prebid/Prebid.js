@@ -54,8 +54,11 @@ export function ajax(url, callback, data, options = {}) {
     if (options.withCredentials) {
       x.withCredentials = true;
     } else {
-      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+      if (options.preflight !== false) {
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      }
+      x.setRequestHeader('Content-Type',
+        options.contentType || 'application/json;charset=UTF-8');
     }
   }
 
