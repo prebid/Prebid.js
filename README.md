@@ -26,7 +26,9 @@ This URL is designed specifically for the Container Tag library and it supports 
 1. Request time injection of Prebid adapters (AOL adapter included by default)
 2. Delivery of latest available major version (1.x.x)
 
-Here continues the original README:
+**Here continues the original README:**
+
+---
 
 
 [![Build Status](https://travis-ci.org/prebid/Prebid.js.svg?branch=master)](https://travis-ci.org/prebid/Prebid.js)
