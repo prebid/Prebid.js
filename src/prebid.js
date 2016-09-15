@@ -3,6 +3,7 @@
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
+import {parse as parseURL, format as formatURL} from './url';
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
@@ -15,6 +16,7 @@ var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');
+var adserver = require('./adserver.js');
 
 /* private variables */
 
@@ -759,6 +761,35 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
+};
+
+/**
+ * Build master video tag from publishers adserver tag
+ * @param {string} adserverTag default url
+ * @param {object} options options for video tag
+ */
+$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
+  var urlComponents = parseURL(adserverTag);
+
+  //return original adserverTag if no bids received
+  if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
+    return adserverTag;
+  }
+
+  var masterTag = '';
+  if(options.adserver.toLowerCase() === 'dfp') {
+    var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
+    if(!dfpAdserverObj.verifyAdserverTag()) {
+      utils.logError('Invalid adserverTag, required google params are missing in query string');
+    }
+    dfpAdserverObj.appendQueryParams();
+    masterTag = formatURL(dfpAdserverObj.urlComponents);
+  } else {
+    utils.logError('Only DFP adserver is supported');
+    return;
+  }
+  return masterTag;
 };
 
 processQue();

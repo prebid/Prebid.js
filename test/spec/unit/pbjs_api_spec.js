@@ -16,6 +16,7 @@ var bidmanager = require('src/bidmanager');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
+var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
 var config = require('test/fixtures/config.json');
@@ -1056,6 +1057,82 @@ describe('Unit: Prebid Module', function () {
       Object.keys(result['/19968336/header-bid-tag-0']).forEach(value => {
         expect(value).to.have.length.of.at.most(20);
       });
+    });
+  });
+
+  describe('video adserverTag', () => {
+
+    var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+
+    var options = {
+        'adserver': 'dfp',
+        'code': '/19968336/header-bid-tag-0'
+      };
+
+    beforeEach(() => {
+      resetAuction();
+      $$PREBID_GLOBAL$$._bidsReceived = [
+        {
+          "bidderCode": "appnexusAst",
+          "dealId" : "1234",
+          "width": 300,
+          "height": 250,
+          "statusMessage": "Bid available",
+          "adId": "233bcbee889d46d",
+          "creative_id": 29681110,
+          "cpm": 10,
+          "adUrl": "http://lax1-ib.adnxs.com/ab?e=wqT_3QL8BKh8AgAAAwDWAAUBCMjAybkFEMLLiJWTu9PsVxjL84KE1tzG-kkgASotCQAAAQII4D8RAQcQAADgPxkJCQjwPyEJCQjgPykRCaAwuvekAji-B0C-B0gCUNbLkw5YweAnYABokUB4190DgAEBigEDVVNEkgUG8FKYAawCoAH6AagBAbABALgBAcABA8gBANABANgBAOABAPABAIoCOnVmKCdhJywgNDk0NDcyLCAxNDYyOTE5MjQwKTt1ZigncicsIDI5NjgxMTEwLDIeAPBskgLZASFmU21rZ0FpNjBJY0VFTmJMa3c0WUFDREI0Q2N3QURnQVFBUkl2Z2RRdXZla0FsZ0FZSk1IYUFCd0EzZ0RnQUVEaUFFRGtBRUJtQUVCb0FFQnFBRURzQUVBdVFFQUFBQUFBQURnUDhFQgkMTEFBNERfSkFRMkxMcEVUMU93XzJRFSggd1AtQUJBUFVCBSxASmdDaW9EVTJnV2dBZ0MxQWcBFgRDOQkIqERBQWdQSUFnUFFBZ1BZQWdQZ0FnRG9BZ0Q0QWdDQUF3RS6aAiUhV1FrbmI63AAcd2VBbklBUW8JXPCVVS7YAugH4ALH0wHqAh9odHRwOi8vcHJlYmlkLm9yZzo5OTk5L2dwdC5odG1sgAMAiAMBkAMAmAMFoAMBqgMAsAMAuAMAwAOsAsgDANgDAOADAOgDAPgDA4AEAJIEBC9qcHSYBACiBAoxMC4xLjEzLjM3qAQAsgQICAAQABgAIAC4BADABADIBADSBAoxMC4wLjg1Ljkx&s=1bf15e8cdc7c0c8c119614c6386ab1496560da39&referrer=http%3A%2F%2Fprebid.org%3A9999%2Fgpt.html",
+          "responseTimestamp": 1462919239340,
+          "requestTimestamp": 1462919238919,
+          "bidder": "appnexus",
+          "adUnitCode": "/19968336/header-bid-tag-0",
+          "timeToRespond": 421,
+          "pbLg": "5.00",
+          "pbMg": "10.00",
+          "pbHg": "10.00",
+          "pbAg": "10.00",
+          "size": "300x250",
+          "alwaysUseBid": true,
+          "requestId": 123456,
+          "adserverTargeting": {
+            "hb_bidder": "appnexus",
+            "hb_adid": "233bcbee889d46d",
+            "hb_pb": "10.00",
+            "hb_size": "300x250",
+            "foobar": "300x250",
+            "hb_deal_appnexusAst": "1234"
+          }
+        }
+      ];
+    });
+
+    afterEach(() => {
+      resetAuction();
+    });
+
+    it('should log error when adserver is not dfp', () => {
+      var logErrorSpy = sinon.spy(utils, 'logError');
+      var options = {
+          'adserver': 'anyother',
+          'code': '/19968336/header-bid-tag-0'
+        };
+      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      assert.ok(logErrorSpy.calledOnce, true);
+      utils.logError.restore();
+    });
+
+    it('should return original adservertag if bids empty', () => {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
+      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      expect(masterTagUrl).to.equal(adserverTag);
+    });
+
+    it('should log error when google\'s parameters are missing in adserverTag', () => {
+      var logErrorSpy = sinon.spy(utils, 'logError');
+      var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      assert.ok(logErrorSpy.calledOnce, true);
+      utils.logError.restore();
     });
   });
 
