@@ -277,8 +277,8 @@ exports.executeCallback = function (timedOut) {
       processCallbacks([externalOneTimeCallback]);
     }
     finally {
-      $$PREBID_GLOBAL$$.clearAuction();
       externalOneTimeCallback = null;
+      $$PREBID_GLOBAL$$.clearAuction();
     }
   }
 };
