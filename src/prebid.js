@@ -512,7 +512,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   // if specific adUnitCodes filter adUnits for those codes
