@@ -37,12 +37,6 @@ module.exports = {
         loader: 'adapterLoader'
       },
       {
-        test: /adapters/,
-        include: /(src)/,
-        exclude: /(adapter.js|baseAdapter.js|analytics)/,
-        loader: 'delimiterLoader'
-      },
-      {
         test: /constants.json$/,
         include: /(src)/,
         loader: StringReplacePlugin.replace({

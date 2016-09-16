@@ -1,3 +1,10 @@
+AOL Prebid 1.1.0
+----------------
+AOL adapter is optimized and heavily reduced in size.
+Small code optimizations in AOL analytics adapter.
+AOL analytics adapter now includes currency in the hbevent requests.
+
+
 AOL Prebid 1.0.7
 ----------------
 BUGFIX: AOL analytics adapter reports timed out bids.

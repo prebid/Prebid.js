@@ -3,7 +3,7 @@
 import { assert } from 'chai';
 import events from '../../../../../src/events';
 import CONSTANTS from '../../../../../src/constants.json';
-import { getBidResponses, getAdUnits } from '../../../../fixtures/fixturesAnalytics';
+import { getBidResponses, getRequestedBids, getAdUnits } from '../../../../fixtures/fixturesAnalytics';
 
 const aolAnalytics = require('../../../../../src/adapters/analytics/aol').default;
 const AUCTION_COMPLETED = CONSTANTS.EVENTS.AUCTION_COMPLETED;
@@ -13,7 +13,7 @@ describe(`
   FEATURE: AOL Prebid Analytics Adapter
   STORY: As a publisher I use AOL Analytics to collect data for auction and win events`, () => {
 
-    aolAnalytics.enableAnalytics();
+    aolAnalytics.enableAnalytics({});
 
     describe(`
       SCENARIO: The client side auction is performed to select the winning bid.
@@ -24,16 +24,17 @@ describe(`
           let spyTrack = sinon.spy(aolAnalytics, 'track');
           let spyReportEvent = sinon.spy(aolAnalytics, 'reportEvent');
           let spyBuildEndpoint = sinon.spy(aolAnalytics, 'buildEndpoint');
-          let bidResponses = getBidResponses();
+          let bidsReceived = getBidResponses();
+          let bidsRequested = getRequestedBids();
           let adUnits = getAdUnits();
           let url = 'foobar';
 
-          events.emit(AUCTION_COMPLETED, {bidResponses, adUnits});
+          events.emit(AUCTION_COMPLETED, { bidsReceived, bidsRequested, adUnits });
 
           it(`THEN: AOL Analytics track is called for the auction complete event`, () => {
             assert.ok(spyTrack.calledWith({
               eventType: AUCTION_COMPLETED,
-              args: { bidResponses, adUnits }
+              args: { bidsReceived, bidsRequested, adUnits }
             }));
           });
 

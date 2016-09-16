@@ -247,6 +247,38 @@ export function getBidResponses() {
   ];
 }
 
+export function getRequestedBids() {
+  return [
+    {
+      "bidderCode": "aol",
+      "bidderRequestId": "107f5e6e98dcf10",
+      "requestId": "1863e370099524",
+      "start": 1462918897477,
+      "timeout": 1000,
+      "bids": [
+        {
+          "bidder": "aol",
+          "params": {
+            "inventoryCode": "sortable_all_right_sports",
+            "placement": "23324932",
+            "network": "5071.1",
+            "alias": "desktop_articlepage_something_box_300_250",
+            "server": "adserver.adtech.de"
+          },
+          "placementCode": "/19968336/header-bid-tag-0",
+          "bidId": "1144e2f0de84364",
+          "bidderRequestId": "107f5e6e98dcf10",
+          "requestId": "1863e370099524",
+          "sizes": [
+            [300, 250],
+            [300, 600]
+          ]
+        }
+      ]
+    }
+  ];
+}
+
 export function getAdUnits() {
   return [
     {
