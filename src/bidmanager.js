@@ -83,7 +83,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    if (_currentTimeoutIndex >= _timeouts.length && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
       const timedOut = true;
 
       this.executeCallback(timedOut);
@@ -252,7 +252,7 @@ function setNextTimeout() {
   var nextTimeout = _timeouts[_currentTimeoutIndex];
   var previousTimeout = _timeouts[_currentTimeoutIndex - 1] || 0;
   var timeoutDifference = nextTimeout - previousTimeout;
-  setTimeout(exports.executeCallback, timeoutDifference);
+  setTimeout(() => exports.executeCallback(true), timeoutDifference);
 }
 
 function hasBidsWithPendingTimeouts() {
