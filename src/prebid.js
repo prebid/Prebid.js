@@ -1,14 +1,12 @@
 /** @module $$PREBID_GLOBAL$$ */
 
+import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 
-// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
-window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
-window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];
-var $$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$;
+var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
