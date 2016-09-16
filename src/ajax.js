@@ -53,13 +53,11 @@ export function ajax(url, callback, data, options = {}) {
   if (!useXDomainRequest) {
     if (options.withCredentials) {
       x.withCredentials = true;
-    } else {
-      if (options.preflight !== false) {
-        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      }
-      x.setRequestHeader('Content-Type',
-        options.contentType || 'application/json;charset=UTF-8');
     }
+    if (options.preflight) {
+      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    }
+    x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
   }
 
   x.send(method === 'POST' && data);
