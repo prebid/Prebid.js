@@ -1,3 +1,8 @@
+AOL Prebid 1.2.0
+----------------
+Fixed sorting of per-adapter timeouts.
+
+
 AOL Prebid 1.1.0
 ----------------
 AOL adapter is optimized and heavily reduced in size.
