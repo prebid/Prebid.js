@@ -45,8 +45,8 @@ At a high level, we'll:
 + build a video tag from the DFP ad server tag
 + invoke the video player with the video tag you just built
 
-Along the way we'll log a few things to the Console to make sure
-things are working.
+Along the way we'll log a few things to the browser console to make sure
+everything is working.
 
 ### 1. Create a video ad unit
 
@@ -83,7 +83,7 @@ necessary, but was helpful during development.  Specifically, we log:
 + the URL of the VAST creative, if any (this is also helpful if you
   don't necessarily use DFP)
 
-All of the code in this step and step # 1 should be in the page header.
+To optimize setup for low latency, we recommend that this code (and that referenced above in step #1) be added to the page header.
 
 ```javascript
 pbjs.que.push(function(){
@@ -170,5 +170,13 @@ function invokeVideoPlayer(url) {
 At this point you should be able to see an instream preroll video ad,
 followed by the ocean video from the
 [Video.js homepage](http://videojs.com/).
+
+## Working Examples
+
+**Note:** Prebid video is designed to work across devices and browsers. This demo has been developed and tested only for Chrome desktop, Firefox desktop, and Chrome Android; additional device/browser support is planned to be added at a later date.
+
+Below, find links to end-to-end "working examples" integrating Prebid.js demand with various video players:
+
++ [video.js](http://video-demo.appnexus.com/pbjs/mjacobson/video_testing/prebid_video_videojs_new.html)
 
 </div>
