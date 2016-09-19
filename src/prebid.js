@@ -47,7 +47,7 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = null;
+$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 
 // timeout buffer to adjust for bidder CDN latency
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
