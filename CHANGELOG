@@ -1,5 +1,6 @@
 AOL Prebid 1.2.0
 ----------------
+Updated to Prebid 0.12.0.
 Fixed sorting of per-adapter timeouts.
 
 
