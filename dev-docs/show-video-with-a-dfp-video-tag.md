@@ -167,9 +167,8 @@ function invokeVideoPlayer(url) {
 </script>
 ```
 
-At this point you should be able to see an instream preroll video ad,
-followed by the ocean video from the
-[Video.js homepage](http://videojs.com/).
+If you have [set up your adserver line items/ creatives]({{site.github.url}}/adops/setting-up-prebid-video-in-dfp.html) correctly, you should see
+an instream preroll video ad followed by the oceans video from the [video.js homepage](http://videojs.com/).
 
 ## Working Examples
 
