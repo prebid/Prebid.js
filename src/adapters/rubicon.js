@@ -8,6 +8,8 @@ var bidmanager = require('../bidmanager');
 var bidfactory = require('../bidfactory');
 var adloader = require('../adloader');
 
+const TIMEOUT_BUFFER = 100;
+
 /**
  * @class RubiconAdapter
  * Prebid adapter for Rubicon's header bidding client
@@ -313,7 +315,10 @@ var RubiconAdapter = function RubiconAdapter() {
         slots.push(_defineSlot(bids[i]));
       }
 
-      var parameters = { slots: slots };
+      var parameters = {
+        slots: slots,
+        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER)
+      };
       var callback   = function () {
         _bidsReady(slots);
       };
