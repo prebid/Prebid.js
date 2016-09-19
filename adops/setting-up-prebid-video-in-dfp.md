@@ -25,26 +25,6 @@ Note that this feature is still in Beta.
 * TOC
 {:toc}
 
-## Overview
-
-At a high level, the way Prebid.js serves a DFP video creative is:
-
-1. Publisher page loads Prebid.js
-2. Prebid sends out bid requests for video slot
-3. Bidders respond with
-    1. VAST URL
-    2. Price
-4. Prebid creates "master video ad tag" (DFP tag).  For engineering
-   instructions, see
-   [Show Video Ads with a DFP Video Tag]({{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html).
-5. Video player on page loads the master video ad tag
-6. DFP selects winning LI based on master video ad tag
-7. If Prebid LI is selected, DFP tag returns VAST document where
-    1. Prebid LI's VAST tag URL is returned as "VASTAdTagURI"
-    2. Creative macros are populated
-8. Video player plays VAST content
-
-
 ## Line Item Setup
 
 1. In the DFP "New line item" dialogue, select the **"Video VAST"** radio button to set up your Prebid line item to serve video creatives.
