@@ -549,7 +549,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
         }
       }
     }
-    timeouts.sort();
+    timeouts.sort((a, b) => a - b);
   }
 
   //set timeout(s) for all bids
