@@ -45,6 +45,13 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 
 //default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
+
+// current timeout set in `requestBids` or to default `bidderTimeout`
+$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
+
+// timeout buffer to adjust for bidder CDN latency
+$$PREBID_GLOBAL$$.timeoutBuffer = 200;
+
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 
 //let the world know we are loaded
@@ -512,7 +519,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   // if specific adUnitCodes filter adUnits for those codes

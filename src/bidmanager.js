@@ -81,7 +81,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
 
       this.executeCallback(timedOut);
