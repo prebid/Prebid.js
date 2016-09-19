@@ -72,6 +72,9 @@ nav_sections:
     code: quick-start
     name: QUICK START
   - top_nav: dev_docs
+    code: prebid-video
+    name: PREBID VIDEO (BETA)
+  - top_nav: dev_docs
     code: troubleshooting
     name: TROUBLESHOOTING
   - top_nav: dev_docs
