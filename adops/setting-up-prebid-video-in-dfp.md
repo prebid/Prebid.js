@@ -44,21 +44,36 @@ At a high level, the way Prebid.js serves a DFP video creative is:
     2. Creative macros are populated
 8. Video player plays VAST content
 
+
+## Line Item Setup
+
+1. In the DFP "New line item" dialogue, select the **"Video VAST"** radio button to set up your Prebid line item to serve video creatives.
+
+2. Add your video player size under **"Master"**.
+
+    ![DFP New Line Item]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-03.png)
+
+3. Other line item settings and key/ value targeting are identical to [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item).
+
 ## Creative Setup
 
-1. In DFP, set the type of creative set to **"Redirect"**:
+1. Enter the **"New creative set"** dialogue by selecting **new creative set** from the line item you created above. 
+
+2. Select **"Redirect"** as the **creative set type**:
 
    ![DFP New Creative Set]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-01.png)
 
-2. Set the **VAST tag URL** to 
+3. Set the **VAST tag URL** to 
 
    ```
    https://ib.adnxs.com/bounce?/getuid?%%DESCRIPTION_URL_UNESC%%
    ```
 
+4. Set the **duration** to **1**
+
    ![Creative settings]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-02.png)
 
-3. That's it as far as Prebid setup is concerned.  At this point you
+5. That's it as far as Prebid setup is concerned.  At this point you
    can add any other options you would normally use, e.g., labels or
    tracking URLs.
 
