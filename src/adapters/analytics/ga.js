@@ -18,7 +18,6 @@ var _enableCheck = true;
 var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
-var _timedOutBidders = [];
 var _trackerSend = null;
 
 /**
@@ -56,7 +55,8 @@ exports.enableAnalytics = function ({ provider, options }) {
       sendBidResponseToGa(bid);
 
     } else if (eventObj.eventType === BID_TIMEOUT) {
-      _timedOutBidders = args.bidderCode;
+      const bidderArray = args;
+      sendBidTimeouts(bidderArray);
     } else if (eventObj.eventType === BID_WON) {
       bid = args;
       sendBidWonToGa(bid);
@@ -73,12 +73,11 @@ exports.enableAnalytics = function ({ provider, options }) {
   //bidResponses
   events.on(BID_RESPONSE, function (bid) {
     sendBidResponseToGa(bid);
-    sendBidTimeouts(bid);
   });
 
   //bidTimeouts
   events.on(BID_TIMEOUT, function (bidderArray) {
-    _timedOutBidders = bidderArray;
+    sendBidTimeouts(bidderArray);
   });
 
   //wins
@@ -131,17 +130,17 @@ function getLoadTimeDistribution(time) {
   if (time >= 0 && time < 200) {
     distribution = '0-200ms';
   } else if (time >= 200 && time < 300) {
-    distribution = '200-300ms';
+    distribution = '0200-300ms';
   } else if (time >= 300 && time < 400) {
-    distribution = '300-400ms';
+    distribution = '0300-400ms';
   } else if (time >= 400 && time < 500) {
-    distribution = '400-500ms';
+    distribution = '0400-500ms';
   } else if (time >= 500 && time < 600) {
-    distribution = '500-600ms';
+    distribution = '0500-600ms';
   } else if (time >= 600 && time < 800) {
-    distribution = '600-800ms';
+    distribution = '0600-800ms';
   } else if (time >= 800 && time < 1000) {
-    distribution = '800-1000ms';
+    distribution = '0800-1000ms';
   } else if (time >= 1000 && time < 1200) {
     distribution = '1000-1200ms';
   } else if (time >= 1200 && time < 1500) {
@@ -224,18 +223,14 @@ function sendBidResponseToGa(bid) {
   checkAnalytics();
 }
 
-function sendBidTimeouts(bid) {
+function sendBidTimeouts(timedOutBidders) {
 
-  if (bid && bid.bidder) {
-    _analyticsQueue.push(function () {
-      utils._each(_timedOutBidders, function (bidderCode) {
-        if (bid.bidder === bidderCode) {
-          _eventCount++;
-          window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, bid.timeToRespond, _disableInteraction);
-        }
-      });
+  _analyticsQueue.push(function () {
+    utils._each(timedOutBidders, function (bidderCode) {
+      _eventCount++;
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, _disableInteraction);
     });
-  }
+  });
 
   checkAnalytics();
 }

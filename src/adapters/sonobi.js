@@ -10,7 +10,7 @@ var SonobiAdapter = function SonobiAdapter(){
   function _phone_in(params){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var bids = params.bids || [];
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(bids)) + '&cv=' + _operator(), null);
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(bids)) + '&cv=' + _operator());
   }
 
   function _keymaker(bids){               //  Make keys

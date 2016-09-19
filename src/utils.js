@@ -9,6 +9,7 @@ var _loggingChecked = false;
 var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
+var t_Numb = 'Number';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -332,6 +333,10 @@ exports.isArray = function (object) {
   return this.isA(object, t_Arr);
 };
 
+exports.isNumber = function(object) {
+  return this.isA(object, t_Numb);
+};
+
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
@@ -467,6 +472,19 @@ exports.getIframeDocument = function (iframe) {
   }
 
   return doc;
+};
+
+exports.getValueString = function(param, val, defaultValue) {
+  if (val === undefined || val === null) {
+    return defaultValue;
+  }
+  if (this.isStr(val) ) {
+    return val;
+  }
+  if (this.isNumber(val)) {
+    return val.toString();
+  }
+  this.logWarn('Unsuported type for param: ' + param + ' required type: String');
 };
 
 export function uniques(value, index, arry) {
