@@ -34,6 +34,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.bidderSettings](#module_pbjs.bidderSettings)
   * [.addCallback(event, func)](#module_pbjs.addCallback) ⇒ `String`
   * [.removeCallback(cbId)](#module_pbjs.removeCallback) ⇒ `String`
+  * [.buildMasterVideoTagFromAdserverTag(adserverTag, options)](#module_pbjs.buildMasterVideoTagFromAdserverTag) ⇒ `String`
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -730,15 +731,42 @@ Remove a callback event
 | --- | --- | --- |
 | cbId | `string` | id of the callback to remove |
 
+<hr class="full-rule" />
 
+<a name="module_pbjs.buildMasterVideoTagFromAdserverTag"></a>
 
+### pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options) ⇒ `String`
 
+**Kind**: static method of [pbjs](#module_pbjs)
 
+**Returns**: `String` - Video ad tag
+
+{: .table .table-bordered .table-striped }
+| Param       | Type     | Description                                        |
+| ---         | ---      | ---                                                |
+| adserverTag | `String` | Ad tag for your video ad server.                   |
+| options     | `Object` | Object describing the ad server and video ad code. |
+
+For example, if you're using DFP, your `adserverTag` might be
+something like this example taken from the
+[DFP help page on master video tags](https://support.google.com/dfp_premium/answer/1068325):
+
+```
+http://pubads.g.doubleclick.net/gampad/ads?env=vp&gdfp_req=1&impl=s&output=vast&iu=/6062/video-demo&sz=400x300&unviewed_position_start=1&url=http://www.simplevideoad.com&ciu_szs=728x90,300x250&correlator=7105
+```
+
+While your `options` object might look something like:
+
+```javascript
+var options = {
+  'adserver': 'dfp',
+  'code': 'video1' // Must match the `code` of the video adUnit declared elsewhere
+};
+```
+
+For an example showing how to use this method, see [Show Video Ads with a DFP Video Tag]({{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html).
 
 </div>
 
-
-
-<br>
-
-<br>
+<br />
+<br />
