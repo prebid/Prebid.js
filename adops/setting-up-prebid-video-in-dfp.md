@@ -27,17 +27,17 @@ Note that this feature is still in Beta.
 
 ## Line Item Setup
 
-1. In the DFP "New line item" dialogue, select the **"Video VAST"** radio button to set up your Prebid line item to serve video creatives.
+1. In the DFP "New line item" dialog, select the **"Video VAST"** radio button to set up your Prebid line item to serve video creatives.
 
-2. Add your video player size under **"Master"**.
+2. Add your video player size(s) under **"Master"**.
 
     ![DFP New Line Item]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-03.png)
 
-3. Other line item settings and key/ value targeting are identical to [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item).
+3. Other line item settings and key/ value targeting are identical to [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item).  Be sure to duplicate your line item and video creative for each Prebid price bucket you intend to create!
 
 ## Creative Setup
 
-1. Enter the **"New creative set"** dialogue by selecting **new creative set** from the line item you created above. 
+1. Enter the **"New creative set"** dialog by selecting **new creative set** from each line item you created above. 
 
 2. Select **"Redirect"** as the **creative set type**:
 
