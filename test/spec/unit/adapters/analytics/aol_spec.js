@@ -26,6 +26,7 @@ describe(`
           let spyBuildEndpoint = sinon.spy(aolAnalytics, 'buildEndpoint');
           $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
           $$PREBID_GLOBAL$$._bidsRequested = getRequestedBids();
+          const adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
           $$PREBID_GLOBAL$$.adUnits = getAdUnits();
           let url = 'foobar';
 
@@ -51,7 +52,7 @@ describe(`
 
           $$PREBID_GLOBAL$$._bidsReceived = [];
           $$PREBID_GLOBAL$$._bidsRequested = [];
-          $$PREBID_GLOBAL$$.adUnits = [];
+          $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
           aolAnalytics.track.restore();
           aolAnalytics.reportEvent.restore();
           aolAnalytics.buildEndpoint.restore();
