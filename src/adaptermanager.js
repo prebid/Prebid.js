@@ -17,6 +17,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => Object.assign(bid, {
         placementCode: adUnit.code,
+        mediaType: adUnit.mediaType,
         sizes: adUnit.sizes,
         bidId: utils.getUniqueIdentifierStr(),
         bidderRequestId,
@@ -28,8 +29,10 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
 exports.callBids = ({ adUnits, cbTimeout }) => {
   const requestId = utils.generateUUID();
 
+  const auctionStart = Date.now();
+
   const auctionInit = {
-    timestamp: Date.now(),
+    timestamp: auctionStart,
     requestId,
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
@@ -44,6 +47,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
         bidderRequestId,
         bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
         start: new Date().getTime(),
+        auctionStart: auctionStart,
         timeout: cbTimeout
       };
       utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
