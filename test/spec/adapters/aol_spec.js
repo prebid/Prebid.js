@@ -76,9 +76,42 @@ describe('AolAdapter', () => {
         expect(requests).to.be.empty;
       });
 
-      it('should be the pubapi endpoint', () => {
+      it('should hit the default pubapi endpoint', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+      });
+
+      it('should hit endpoint based on the region config option', () => {
+        adapter.callBids(createBidderRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            region: 'eu'
+          }
+        }));
+        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
+      });
+
+      it('should hit the default endpoint in case of unknown region config option', () => {
+        adapter.callBids(createBidderRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            region: 'an'
+          }
+        }));
+        expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+      });
+
+      it('should hit endpoint based on the server config option', () => {
+        adapter.callBids(createBidderRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            server: 'adserver-eu.adtech.advertising.com'
+          }
+        }));
+        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
       });
 
       it('should be the pubapi bid request', () => {
@@ -311,12 +344,67 @@ describe('AolAdapter', () => {
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.trsue;
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
           "<script>console.log('ad');</script>" +
           "<script>document.write('<img src=\"pixel.gif\">');</script>"
         );
+      });
+
+      it('should be added to bidmanager including dealid from pubapi response', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "dealid": "12345",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {
+                "sizeid": 225
+              }
+            }]
+          }]
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(bidResponse.dealId).to.equal('12345');
+      });
+
+      it('should be added to bidmanager including encrypted price from pubapi response', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "dealid": "12345",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {
+                "sizeid": 225,
+                "encp": "a9334987"
+              }
+            }]
+          }]
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(bidResponse.cpm).to.equal('a9334987');
       });
     });
   });
