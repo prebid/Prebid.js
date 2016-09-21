@@ -95,7 +95,7 @@ export default utils.extend(adapter({
             )
             .reduce((a, b) => a.concat(b), []);
 
-          for (let bid of bidsReceived.concat(timedOutBids)) {
+          bidsReceived.concat(timedOutBids).forEach(bid => {
             const currentAdUnitCode = bid.adUnitCode;
             let adUnit = adUnits[currentAdUnitCode];
             if (!adUnit) {
@@ -105,7 +105,7 @@ export default utils.extend(adapter({
             }
             adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
             adUnit.bids.push(Object.assign(bid));
-          }
+          });
 
           for (let code in adUnits) {
             if (adUnits.hasOwnProperty(code)) {
@@ -200,9 +200,9 @@ export default utils.extend(adapter({
             hbauctionid: auctionSchema.hbauctionid
           };
           url = baseSchemaTemplate(baseSchema) + auctionSchemaTemplate(auctionSchema);
-          for (let bid of adUnit.bids) {
+          adUnit.bids.forEach(bid => {
             url = url + bidderSchemaTemplate(this.getBidderSchema(bid));
-          }
+          });
           return url;
 
         case EVENTS.WIN:
@@ -288,16 +288,16 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
   const pubapiId = (onlyOneBid) ? filteredBids[0].pubapiId : '';
   const currencyCode = (onlyOneBid) ? filteredBids[0].currencyCode : '';
 
-  for (let adUnitConf of adUnitsConf) {
+  adUnitsConf.forEach(adUnitConf => {
     if (adUnitConf.code === adUnit.code) {
-      for (let adUnitBid of adUnitConf.bids) {
+      adUnitConf.bids.forEach(adUnitBid => {
         if (adUnitBid.bidder === AOL_BIDDER_CODE) {
           adUnit.aolParams = adUnitBid.params;
           adUnit.aolParams.pubapiId = pubapiId;
           adUnit.aolParams.currencyCode = currencyCode;
         }
-      }
+      });
     }
-  }
+  });
   return adUnit;
 }

@@ -1,7 +1,13 @@
+AOL Prebid 1.3.0
+----------------
+Updated to Prebid 0.13.0.
+
+
 AOL Prebid 1.2.0
 ----------------
 Updated to Prebid 0.12.0.
 Fixed sorting of per-adapter timeouts.
+Fixed ES6 features which require a polyfill.
 
 
 AOL Prebid 1.1.0
