@@ -1,35 +1,44 @@
 /**
  * @module sizeMapping
  */
-import { isArray, logError, logMsg } from './utils';
+import * as utils from './utils';
 
 exports.mapSizes = function(adUnit) {
-  if(!adUnit.sizeMapping){
+  if(!isSizeMappingValid(adUnit.sizeMapping)){
     return adUnit.sizes;
   }
-  if(!isSizeMappingValid){
+  const width = this.getScreenWidth();
+  if(!width) {
     return adUnit.sizes;
   }
-  const width = getScreenWidth();
-  if(width) {
-    adUnit.sizes = adUnit.sizeMapping.find(sizeMapping =>{
-      return width > sizeMapping.minWidth;
-    }).sizes;
-    logMsg(`AdUnit : ${adUnit.code} resized based on device widith to : ${adUnit.sizes}`);
-  }
+  const sizes = adUnit.sizeMapping.find(sizeMapping =>{
+    return width > sizeMapping.minWidth;
+  }).sizes;
+  utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${adUnit.sizes}`);
+  return sizes;
+
 };
 
 function isSizeMappingValid(sizeMapping) {
-  if(!isArray(sizeMapping)){
-    logError('sizeMapping needs at least one screen size defined');
-    return false;
+  if(utils.isArray(sizeMapping) && sizeMapping.length > 0){
+    return true;
   }
-  return true;
+  utils.logError('sizeMapping needs at least one screen size defined');
+  return false;
 }
 
-function getScreenWidth() {
-  const w = window;
-  const docElem = document.documentElement;
-  const  body = document.getElementsByTagName('body')[0];
-  return w.innerWidth || docElem.clientWidth || body.clientWidth;
-}
+exports.getScreenWidth = function(win) {
+  const w = win || window;
+  const docElem = w.document.documentElement;
+  const body = w.document.getElementsByTagName('body')[0];
+  if(w.innerWidth) {
+    return w.innerWidth;
+  }
+  else if(docElem && docElem.clientWidth ) {
+    return docElem.clientWidth;
+  }
+  else if(body && body.clientWidth){
+    return body.clientWidth;
+  }
+  return 0;
+};
