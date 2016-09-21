@@ -180,7 +180,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     filterIfSendStandardTargeting(bidder_settings[bidderCode]);
   }
 
-  //2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
+  //2) set keys from standard setting.
   else if (defaultBidderSettingsMap[bidderCode]) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
