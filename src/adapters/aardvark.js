@@ -58,7 +58,6 @@ var AardvarkAdapter = function AardvarkAdapter() {
     })[0];
 
     var returnedBidIDs = {};
-    var placementIDmap = {};
 
     if (rtkResponseObj.length > 0) {
       rtkResponseObj.forEach(function (bid) {
@@ -68,7 +67,7 @@ var AardvarkAdapter = function AardvarkAdapter() {
             return r.params.sc === bid.id;
           })[0];
           if (currentBid) {
-            var bidResponse = bidfactory.createBid(1);
+            var bidResponse = bidfactory.createBid(1, currentBid);
             bidResponse.bidderCode = "aardvark";
             bidResponse.cpm = bid.cpm;
             bidResponse.ad = bid.adm;
@@ -86,19 +85,12 @@ var AardvarkAdapter = function AardvarkAdapter() {
     }
 
     //All bids are back - lets add a bid response for anything that did not receive a bid.
-    var initialSC = [];
-    bidsObj.bids.forEach(function (bid) {
-      initialSC.push(bid.params.sc);
-      placementIDmap[bid.params.sc] = bid.placementCode;
-    });
+    let difference = bidsObj.bids.filter(x => Object.keys(returnedBidIDs).indexOf(x.params.sc) === -1);
 
-    let difference = initialSC.filter(x => Object.keys(returnedBidIDs).indexOf(x) === -1);
-
-    difference.forEach(function (shortcode) {
-      var bidResponse = bidfactory.createBid(2);
-      var placementcode = placementIDmap[shortcode];
+    difference.forEach(function (bidRequest) {
+      var bidResponse = bidfactory.createBid(2, bidRequest);
       bidResponse.bidderCode = "aardvark";
-      bidmanager.addBidResponse(placementcode, bidResponse);
+      bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
     });
 
 

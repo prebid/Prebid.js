@@ -83,7 +83,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (_currentTimeoutIndex >= _timeouts.length && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+    if (_currentTimeoutIndex >= _timeouts.length &&
+      $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
 
       this.executeCallback(timedOut);
@@ -182,12 +183,24 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
+    filterIfSendStandardTargeting(bidder_settings[bidderCode]);
   }
 
   //2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
   else if (defaultBidderSettingsMap[bidderCode]) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
+    filterIfSendStandardTargeting(defaultBidderSettingsMap[bidderCode]);
+  }
+
+  function filterIfSendStandardTargeting(bidderSettings) {
+    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidder_settings[bidderCode].sendStandardTargeting === false) {
+      for(var key in keyValues) {
+        if(CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
+          delete keyValues[key];
+        }
+      }
+    }
   }
 
   return keyValues;
@@ -211,13 +224,25 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (utils.isFn(value)) {
       try {
-        keyValues[key] = value(custBidObj);
+        value = value(custBidObj);
       } catch (e) {
         utils.logError('bidmanager', 'ERROR', e);
       }
+    }
+
+    if (
+      typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true &&
+      (
+        utils.isEmptyStr(value) ||
+        value === null ||
+        value === undefined
+      )
+    ) {
+      utils.logInfo("suppressing empty key '" + key + "' from adserver targeting");
     } else {
       keyValues[key] = value;
     }
+
   });
 
   return keyValues;
@@ -307,9 +332,9 @@ exports.executeCallback = function (timedOut) {
       processCallbacks([externalOneTimeCallback]);
     }
     finally {
-      $$PREBID_GLOBAL$$.clearAuction();
       externalOneTimeCallback = null;
       exports.setTimeouts([]);
+      $$PREBID_GLOBAL$$.clearAuction();
     }
   }
 };

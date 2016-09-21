@@ -404,36 +404,28 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.width = slotObj.width;
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
-
+              if ( typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined' ) {
+                bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;
+              }
               bids.push(bid);
             }
           }
 
           var currentBid = undefined;
 
-          //Pick the highest bidding price for this slot
           if (bids.length > 0) {
-            // Choose the highest bid
+            // Add all bid responses
             for (var i = 0; i < bids.length; i++) {
-              var bid = bids[i];
-              if (typeof currentBid === 'undefined') {
-                currentBid = bid;
-                continue;
-              }
-
-              if (bid.cpm > currentBid.cpm) {
-                currentBid = bid;
-              }
+              bidmanager.addBidResponse(adUnitCode, bids[i]);
             }
-
           // No bids for expected bid, pass bid
           } else {
             var bid = bidfactory.createBid(2);
             bid.bidderCode = ADAPTER_CODE;
             currentBid = bid;
+            bidmanager.addBidResponse(adUnitCode, currentBid);
           }
 
-          bidmanager.addBidResponse(adUnitCode, currentBid);
         }
       } catch (e) {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
