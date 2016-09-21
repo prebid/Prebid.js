@@ -58,9 +58,8 @@ function insertAdapters() {
       const name = Object.keys(adapter)[0];
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
-    .join('/*!ADAPTER REGISTER DELIMITER*/')
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
-    .join('');
+    .join('/*!ADAPTER REGISTER DELIMITER*/');
 }
 
 /**
