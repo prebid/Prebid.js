@@ -177,5 +177,6 @@ an instream preroll video ad followed by the oceans video from the [video.js hom
 Below, find links to end-to-end "working examples" integrating Prebid.js demand with various video players:
 
 + [video.js](http://video-demo.appnexus.com/pbjs/mjacobson/video_testing/prebid_video_videojs_new.html)
++ [JWPlayer](http://video-demo.appnexus.com/pbjs/JWPlayerDemo/jwPlayerPrebid.html)
 
 </div>
