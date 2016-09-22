@@ -24,6 +24,13 @@ var invalidAdUnit = {
   'sizeMapping': {} // wrong type
 };
 
+var invalidAdUnit2 = {
+  'sizes': [300,250],
+  'sizeMapping': [{
+    foo : 'bar'  //bad
+  }]
+};
+
 let mockWindow = {};
 
 function resetMockWindow() {
@@ -75,6 +82,16 @@ describe('sizeMapping', function() {
     stub.restore();
   });
 
+
+  it('mapSizes - should return sizes if sizemapping improperly defined ', function() {
+    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(0);
+    let sizes = sizeMapping.mapSizes(invalidAdUnit2);
+    expect(sizes).to.deep.equal([300,250]);
+    expect(validAdUnit.sizes).to.deep.equal([300,250]);
+    stub.restore();
+  });
+
+
   it('getScreenWidth', function() {
     mockWindow.innerWidth = 900;
     expect(sizeMapping.getScreenWidth(mockWindow)).to.equal(900);
@@ -90,6 +107,11 @@ describe('sizeMapping', function() {
     mockWindow.innerWidth = null;
     mockWindow.document.getElementsByTagName = function() { return [{clientWidth: 902}]; };
     expect(sizeMapping.getScreenWidth(mockWindow)).to.equal(902);
+  });
+
+  it('getScreenWidth - should return 0 if it cannot deteremine size', function() {
+    mockWindow.innerWidth = null;
+    expect(sizeMapping.getScreenWidth(mockWindow)).to.equal(0);
   });
 
 });
