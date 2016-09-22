@@ -8,6 +8,8 @@ var bidmanager = require('../bidmanager');
 var bidfactory = require('../bidfactory');
 var adloader = require('../adloader');
 
+const TIMEOUT_BUFFER = 100;
+
 /**
  * @class RubiconAdapter
  * Prebid adapter for Rubicon's header bidding client
@@ -30,12 +32,15 @@ var RubiconAdapter = function RubiconAdapter() {
     '970x90': 55,
     '970x250': 57,
     '1000x90': 58,
+    '640x480': 65,
     '320x480': 67,
     '1800x1000': 68,
-    '480x320':101,
+    '480x320': 101,
     '768x1024': 102,
-    '1000x300':113,
-    '320x100':117
+    '1000x300': 113,
+    '320x100': 117,
+    '800x250': 125,
+    '200x600': 126
   };
   var RUBICON_INITIALIZED = (window.rubicontag === undefined) ? 0 : 1;
 
@@ -313,7 +318,10 @@ var RubiconAdapter = function RubiconAdapter() {
         slots.push(_defineSlot(bids[i]));
       }
 
-      var parameters = { slots: slots };
+      var parameters = {
+        slots: slots,
+        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER)
+      };
       var callback   = function () {
         _bidsReady(slots);
       };
