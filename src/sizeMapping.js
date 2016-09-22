@@ -9,6 +9,13 @@ exports.mapSizes = function(adUnit) {
   }
   const width = this.getScreenWidth();
   if(!width) {
+    //size not detected - get largest value set for desktop
+    const mapping = adUnit.sizeMapping.reduce((prev, curr) => {
+      return prev.minWidth < curr.minWidth ? curr : prev;
+    });
+    if(mapping.sizes) {
+      return mapping.sizes;
+    }
     return adUnit.sizes;
   }
   const sizes = adUnit.sizeMapping.find(sizeMapping =>{

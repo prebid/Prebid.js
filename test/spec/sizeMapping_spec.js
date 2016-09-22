@@ -72,10 +72,10 @@ describe('sizeMapping', function () {
 
   });
 
-  it('mapSizes - should return sizes if screen width not detected', function () {
+  it('mapSizes - should return desktop (largest) sizes if screen width not detected', function () {
     let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(0);
     let sizes = sizeMapping.mapSizes(validAdUnit);
-    expect(sizes).to.deep.equal([300,250]);
+    expect(sizes).to.deep.equal([[ 300, 250 ], [ 728, 90 ]]);
     expect(validAdUnit.sizes).to.deep.equal([300,250]);
     stub.restore();
 
