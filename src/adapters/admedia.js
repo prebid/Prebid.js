@@ -25,7 +25,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       var endpoint = ext_url+utils.parseQueryStringParameters(request_obj);
 
-      adloader.loadScript(endpoint, function(){ _processBids(params); }, true);
+      adloader.loadScript(endpoint, function(){ _processBids(params); });
     }
     else{
       _processBids(params);
