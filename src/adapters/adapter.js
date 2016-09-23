@@ -10,7 +10,7 @@ function Adapter(code) {
   }
 
   function callBids() {
-	}
+  }
 
   return {
     callBids: callBids,
