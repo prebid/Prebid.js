@@ -39,6 +39,11 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "defymedia"
+      }
+    },
+    {
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
