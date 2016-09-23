@@ -63,7 +63,7 @@ description: A free and open source library for publishers to quickly implement 
     <h2 class="bs-docs-featurette-title">Tags That Work in Prebid.js</h2>
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
-    
+
     <!-- START BIDDERS -->
 
     <div class="col-xs-6 col-sm-4"><h3>AppNexus</h3></div>
@@ -91,6 +91,9 @@ description: A free and open source library for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Meme Global</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Underdog Media</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Centro</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Adblade</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Piximedia</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>GetIntent</h3></div>
 
     <!-- END BIDDERS -->
     
@@ -99,7 +102,7 @@ description: A free and open source library for publishers to quickly implement 
     <hr class="full-rule">
 
     <h2 class="bs-docs-featurette-title">Open Source Project</h2>
-    
+
     <p class="lead">Prebid.js is open source and community driven. The project is hosted, developed, and maintained on GitHub.</p>
 
     <a href="/overview/intro.html" class="btn btn-outline btn-lg">Next: Overview of Prebid.js</a>
