@@ -12,7 +12,7 @@ import BIDDERS_IDS_MAP from './aolPartnersIds.json';
 const events = require('src/events');
 const utils = require('../../utils');
 
-const AUCTION_COMPLETED = CONSTANTS.EVENTS.AUCTION_COMPLETED;
+const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AOL_BIDDER_CODE = 'aol';
@@ -65,7 +65,7 @@ export default utils.extend(adapter({
         }
       });
 
-      events.on(AUCTION_COMPLETED, args => this.enqueue({ eventType: AUCTION_COMPLETED, args }));
+      events.on(AUCTION_END, args => this.enqueue({ eventType: AUCTION_END, args }));
       events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
 
       this.enableAnalytics = function _enable() {
@@ -76,11 +76,11 @@ export default utils.extend(adapter({
     //override AnalyticsAdapter functions by supplying custom methods
     track({ eventType, args }) {
       switch (eventType) {
-        case AUCTION_COMPLETED:
-          let adUnitsConf = args.adUnits;
-          let bidsReceived = args.bidsReceived;
+        case AUCTION_END:
+          let adUnitsConf = $$PREBID_GLOBAL$$.adUnits;
+          let bidsReceived = $$PREBID_GLOBAL$$._bidsReceived;
           let bidsReceivedIds = bidsReceived.map(receivedBid => receivedBid.adId);
-          let timedOutBids = args.bidsRequested
+          let timedOutBids = $$PREBID_GLOBAL$$._bidsRequested
             .map(bidderRequest => bidderRequest.bids
                 .filter(bid => bidsReceivedIds.indexOf(bid.bidId) < 0)
                 .map(bid => {
@@ -95,7 +95,7 @@ export default utils.extend(adapter({
             )
             .reduce((a, b) => a.concat(b), []);
 
-          for (let bid of bidsReceived.concat(timedOutBids)) {
+          bidsReceived.concat(timedOutBids).forEach(bid => {
             const currentAdUnitCode = bid.adUnitCode;
             let adUnit = adUnits[currentAdUnitCode];
             if (!adUnit) {
@@ -105,7 +105,7 @@ export default utils.extend(adapter({
             }
             adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
             adUnit.bids.push(Object.assign(bid));
-          }
+          });
 
           for (let code in adUnits) {
             if (adUnits.hasOwnProperty(code)) {
@@ -137,7 +137,7 @@ export default utils.extend(adapter({
     },
 
     reportEvent(url) {
-      ajax(url, null, null, null, {isTrackingRequest: true});
+      ajax(url, null, null, { withCredentials: true });
     },
 
     getBaseSchema(eventId, adUnit) {
@@ -200,9 +200,9 @@ export default utils.extend(adapter({
             hbauctionid: auctionSchema.hbauctionid
           };
           url = baseSchemaTemplate(baseSchema) + auctionSchemaTemplate(auctionSchema);
-          for (let bid of adUnit.bids) {
+          adUnit.bids.forEach(bid => {
             url = url + bidderSchemaTemplate(this.getBidderSchema(bid));
-          }
+          });
           return url;
 
         case EVENTS.WIN:
@@ -288,16 +288,16 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
   const pubapiId = (onlyOneBid) ? filteredBids[0].pubapiId : '';
   const currencyCode = (onlyOneBid) ? filteredBids[0].currencyCode : '';
 
-  for (let adUnitConf of adUnitsConf) {
+  adUnitsConf.forEach(adUnitConf => {
     if (adUnitConf.code === adUnit.code) {
-      for (let adUnitBid of adUnitConf.bids) {
+      adUnitConf.bids.forEach(adUnitBid => {
         if (adUnitBid.bidder === AOL_BIDDER_CODE) {
           adUnit.aolParams = adUnitBid.params;
           adUnit.aolParams.pubapiId = pubapiId;
           adUnit.aolParams.currencyCode = currencyCode;
         }
-      }
+      });
     }
-  }
+  });
   return adUnit;
 }

@@ -7,6 +7,10 @@ test/app
 gpt.html
 gpt-each-bidder3.html
 
+# Selenium files
+bin
+selenium*.log
+
 # Dev File
 
 integrationExamples/gpt/gpt.html
@@ -70,3 +74,6 @@ crashlytics-build.properties
 
 # TypeScript typings
 typings/
+
+# MacOS system files
+.DS_Store

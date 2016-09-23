@@ -130,7 +130,7 @@ var AolAdapter = function AolAdapter() {
 
         _addBidResponse(bid, response);
 
-      }, null, null, { isTrackingRequest: true });
+      }, null, { withCredentials: true });
     });
   }
 

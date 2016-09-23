@@ -6,7 +6,7 @@ import CONSTANTS from '../../../../../src/constants.json';
 import { getBidResponses, getRequestedBids, getAdUnits } from '../../../../fixtures/fixturesAnalytics';
 
 const aolAnalytics = require('../../../../../src/adapters/analytics/aol').default;
-const AUCTION_COMPLETED = CONSTANTS.EVENTS.AUCTION_COMPLETED;
+const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 
 describe(`
@@ -24,17 +24,18 @@ describe(`
           let spyTrack = sinon.spy(aolAnalytics, 'track');
           let spyReportEvent = sinon.spy(aolAnalytics, 'reportEvent');
           let spyBuildEndpoint = sinon.spy(aolAnalytics, 'buildEndpoint');
-          let bidsReceived = getBidResponses();
-          let bidsRequested = getRequestedBids();
-          let adUnits = getAdUnits();
+          $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+          $$PREBID_GLOBAL$$._bidsRequested = getRequestedBids();
+          const adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
+          $$PREBID_GLOBAL$$.adUnits = getAdUnits();
           let url = 'foobar';
 
-          events.emit(AUCTION_COMPLETED, { bidsReceived, bidsRequested, adUnits });
+          events.emit(AUCTION_END);
 
           it(`THEN: AOL Analytics track is called for the auction complete event`, () => {
             assert.ok(spyTrack.calledWith({
-              eventType: AUCTION_COMPLETED,
-              args: { bidsReceived, bidsRequested, adUnits }
+              eventType: AUCTION_END,
+              args: undefined
             }));
           });
 
@@ -49,6 +50,9 @@ describe(`
               //assert.equal(spyReportEvent.args[0][0], url);
             });
 
+          $$PREBID_GLOBAL$$._bidsReceived = [];
+          $$PREBID_GLOBAL$$._bidsRequested = [];
+          $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
           aolAnalytics.track.restore();
           aolAnalytics.reportEvent.restore();
           aolAnalytics.buildEndpoint.restore();

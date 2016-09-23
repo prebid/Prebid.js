@@ -71,11 +71,7 @@ function getBidSetForBidder(bidder) {
  */
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
-    //first lookup bid request and assign it back the bidId if it matches the adUnitCode
-    let bidRequest = getBidSetForBidder(bid.bidderCode).bids.find(bidRequest => bidRequest.placementCode === adUnitCode);
-    if(bidRequest && bidRequest.bidId) {
-      bid.adId = bidRequest.bidId;
-    }
+
     Object.assign(bid, {
       requestId: getBidSetForBidder(bid.bidderCode).requestId,
       responseTimestamp: timestamp(),
@@ -84,7 +80,14 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bidder: bid.bidderCode,
       adUnitCode
     });
+
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+    if (_currentTimeoutIndex >= _timeouts.length && bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
+      const timedOut = true;
+
+      this.executeCallback(timedOut);
+    }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
@@ -115,7 +118,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
-  if (bidsBackAdUnit(bid.adUnitCode)) {
+  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
@@ -123,12 +126,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     this.executeCallback();
   } else if (_currentTimeoutIndex > 0 && !hasBidsWithPendingTimeouts()) {
     // global timeout has already elapsed and all bidders with pending timeouts returned bids
-    this.executeCallback();
-  }
-
-  if (bid.timeToRespond > $$PREBID_GLOBAL$$.bidderTimeout) {
-
-    events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, this.getTimedOutBidders());
     this.executeCallback();
   }
 };
@@ -157,7 +154,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
             val: function (bidResponse) {
               if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
                 return bidResponse.pbAg;
-              } else  if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+              } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
                 return bidResponse.pbDg;
               } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
                 return bidResponse.pbLg;
@@ -255,7 +252,7 @@ function setNextTimeout() {
   var nextTimeout = _timeouts[_currentTimeoutIndex];
   var previousTimeout = _timeouts[_currentTimeoutIndex - 1] || 0;
   var timeoutDifference = nextTimeout - previousTimeout;
-  setTimeout(exports.executeCallback, timeoutDifference);
+  setTimeout(() => exports.executeCallback(true), timeoutDifference);
 }
 
 function hasBidsWithPendingTimeouts() {
@@ -283,7 +280,7 @@ function hasBidsWithPendingTimeouts() {
   return false;
 }
 
-exports.executeCallback = function () {
+exports.executeCallback = function (timedOut) {
   if (_timeouts.length > 1) {
     if (hasBidsWithPendingTimeouts()) {
       setNextTimeout();
@@ -294,22 +291,27 @@ exports.executeCallback = function () {
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
+
+    if (timedOut) {
+      const timedOutBidders = this.getTimedOutBidders();
+
+      if (timedOutBidders.length) {
+        events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+      }
+    }
   }
 
   //execute one time callback
   if (externalOneTimeCallback) {
-    events.emit(CONSTANTS.EVENTS.AUCTION_COMPLETED,
-        {
-          bidsReceived: $$PREBID_GLOBAL$$._bidsReceived,
-          bidsRequested: $$PREBID_GLOBAL$$._bidsRequested,
-          adUnits: $$PREBID_GLOBAL$$.adUnits
-        });
-    processCallbacks([externalOneTimeCallback]);
-    externalOneTimeCallback = null;
-    exports.setTimeouts([]);
+    try {
+      processCallbacks([externalOneTimeCallback]);
+    }
+    finally {
+      $$PREBID_GLOBAL$$.clearAuction();
+      externalOneTimeCallback = null;
+      exports.setTimeouts([]);
+    }
   }
-
-  $$PREBID_GLOBAL$$.clearAuction();
 };
 
 function triggerAdUnitCallbacks(adUnitCode) {
@@ -381,7 +383,7 @@ function adjustBids(bid) {
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
     if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm);
+        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, utils.extend({}, bid));
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
@@ -393,6 +395,10 @@ function adjustBids(bid) {
     bid.cpm = bidPriceAdjusted;
   }
 }
+
+exports.adjustBids = function() {
+  return adjustBids(...arguments);
+};
 
 function getPriceBucketString(cpm) {
   var cpmFloat = 0;

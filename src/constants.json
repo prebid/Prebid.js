@@ -29,12 +29,12 @@
   "objectType_number": "number",
   "EVENTS": {
     "AUCTION_INIT": "auctionInit",
+    "AUCTION_END": "auctionEnd",
     "BID_ADJUSTMENT": "bidAdjustment",
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
-    "BID_WON": "bidWon",
-    "AUCTION_COMPLETED": "auctionCompleted"
+    "BID_WON": "bidWon"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
