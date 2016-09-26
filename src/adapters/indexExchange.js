@@ -291,6 +291,14 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           continue;
         }
 
+        var usingSizeSpecificSiteID = false;
+        // Check for size defined in bidder params 
+        if (bid.params.size && bid.params.size instanceof Array) {
+          if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1]))
+            continue;
+          usingSizeSpecificSiteID = true;
+        }
+
         if (bid.params.timeout && typeof cygnus_index_args.timeout === 'undefined') {
           cygnus_index_args.timeout = bid.params.timeout;
         }
@@ -307,7 +315,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
           firstAdUnitCode = bid.placementCode;
           var slotID = bid.params[requiredParams[0]];
-          slotIdMap[slotID] = bid;
 
           sizeID++;
           var size = {
@@ -315,7 +322,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             height: bid.sizes[j][1]
           };
 
-          var slotName = slotID + '_' + sizeID;
+          var slotName = usingSizeSpecificSiteID ? String(slotID) : slotID + '_' + sizeID;
+          slotIdMap[slotName] = bid;
 
           //Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
           cygnus_index_args.slots = mergeSlotInto({
@@ -385,15 +393,17 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
           // Grab the bid for current slot
           for (var cpmAndSlotId in indexObj) {
-            var match = /(T\d_)?(.+)_(\d+)_(\d+)/.exec(cpmAndSlotId);
+            var match = /^(T\d_)?(.+)_(\d+)$/.exec(cpmAndSlotId);
+            // if parse fail, move to next bid
+            if (!(match)){
+              utils.logError("Unable to parse " + cpmAndSlotId + ", skipping slot", ADAPTER_NAME);
+              continue;
+            }
             var tier = match[1] || '';
             var slotID = match[2];
-            var sizeID = match[3];
-            var currentCPM = match[4];
+            var currentCPM = match[3];
 
-            var slotName = slotID + '_' + sizeID;
-            var slotObj = getSlotObj(cygnus_index_args, tier + slotName);
-
+            var slotObj = getSlotObj(cygnus_index_args, tier + slotID);
             // Bid is for the current slot
             if (slotID === adSlotId) {
               var bid = bidfactory.createBid(1);
