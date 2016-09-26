@@ -45,50 +45,50 @@ describe('sizeMapping', function() {
   beforeEach(resetMockWindow);
 
   it('mapSizes 1029 width', function() {
-    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(1029);
+    mockWindow.innerWidth = 1029;
+    sizeMapping.setWindow(mockWindow);
     let sizes = sizeMapping.mapSizes(validAdUnit);
-    console.log(sizeMapping.getScreenWidth());
     expect(sizes).to.deep.equal([[300,250],[728,90]]);
     expect(validAdUnit.sizes).to.deep.equal([300,250]);
-    stub.restore();
   });
 
   it('mapSizes 400 width', function() {
-    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(400);
+    mockWindow.innerWidth = 400;
+    sizeMapping.setWindow(mockWindow);
     let sizes = sizeMapping.mapSizes(validAdUnit);
     expect(sizes).to.deep.equal([20,20]);
     expect(validAdUnit.sizes).to.deep.equal([300,250]);
-    stub.restore();
   });
 
   it('mapSizes - invalid adUnit - should return sizes', function() {
-    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(1029);
+    mockWindow.innerWidth = 1029;
+    sizeMapping.setWindow(mockWindow);
     let sizes = sizeMapping.mapSizes(invalidAdUnit);
     expect(sizes).to.deep.equal([300,250]);
     expect(invalidAdUnit.sizes).to.deep.equal([300,250]);
 
-    stub.returns(400);
+    mockWindow.innerWidth = 400;
+    sizeMapping.setWindow(mockWindow);
     sizes = sizeMapping.mapSizes(invalidAdUnit);
     expect(sizes).to.deep.equal([300,250]);
     expect(invalidAdUnit.sizes).to.deep.equal([300,250]);
-    stub.restore();
   });
 
   it('mapSizes - should return desktop (largest) sizes if screen width not detected', function() {
-    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(0);
+    mockWindow.innerWidth = 0;
+    sizeMapping.setWindow(mockWindow);
     let sizes = sizeMapping.mapSizes(validAdUnit);
     expect(sizes).to.deep.equal([[300, 250], [728, 90]]);
     expect(validAdUnit.sizes).to.deep.equal([300,250]);
-    stub.restore();
   });
 
 
   it('mapSizes - should return sizes if sizemapping improperly defined ', function() {
-    let stub = sinon.stub(sizeMapping, 'getScreenWidth').returns(0);
+    mockWindow.innerWidth = 0;
+    sizeMapping.setWindow(mockWindow);
     let sizes = sizeMapping.mapSizes(invalidAdUnit2);
     expect(sizes).to.deep.equal([300,250]);
     expect(validAdUnit.sizes).to.deep.equal([300,250]);
-    stub.restore();
   });
 
 
