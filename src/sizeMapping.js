@@ -9,7 +9,6 @@ function mapSizes(adUnit) {
     return adUnit.sizes;
   }
   const width = getScreenWidth();
-  console.log('internal screen width: ' + width);
   if(!width) {
     //size not detected - get largest value set for desktop
     const mapping = adUnit.sizeMapping.reduce((prev, curr) => {
