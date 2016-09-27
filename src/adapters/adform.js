@@ -14,7 +14,7 @@ function AdformAdapter() {
     var bids = params.bids;
     var request = [];
     var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'url', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'url', null ], [ 'tid', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
 
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
