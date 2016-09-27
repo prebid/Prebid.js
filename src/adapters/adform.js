@@ -51,7 +51,7 @@ function AdformAdapter() {
     var url = [];
 
     for (key in reqData) {
-      if (reqData[key])
+      if (reqData.hasOwnProperty(key) && reqData[key])
         url.push(key, '=', reqData[key], '&');
     }
 
