@@ -15,7 +15,7 @@ SpringServeAdapter = function SpringServeAdapter() {
       if(springserve && tagId){
         springserve.getBid(parseInt(tagId),
           function(bid){
-            pbjs.handleSpringServeCB(bid);
+            $$PREBID_GLOBAL$$.handleSpringServeCB(bid);
           }
         );
       }
@@ -46,11 +46,11 @@ SpringServeAdapter = function SpringServeAdapter() {
     adloader.loadScript(call, callback);
   }
 
-  pbjs.handleSpringServeCB = function (responseObj) {
+  $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
     if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
       responseObj.seatbid[0].bid[0] !== undefined) {
       var responseBid = responseObj.seatbid[0].bid[0];
-      var requestBids = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve').bids
+      var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve').bids
         .filter(bid => bid.params && parseInt(bid.params.impId.split("-")[2]) === +responseBid.impid);
       var bid = bidfactory.createBid(1);
       var placementCode;
