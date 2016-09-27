@@ -40,6 +40,7 @@ describe('rhythmone adapter tests', function () {
 						assert.equal(adResponse.ad.substring(0, expected.length), expected);
 						assert.equal(adResponse.width, 300);
 						assert.equal(adResponse.height, 250);
+						assert.equal(adResponse.cpm, 1);
 						assert.equal(adResponse.bidderCode, "rhythmone");
 					});
 				}
@@ -106,6 +107,7 @@ describe('rhythmone adapter tests', function () {
 						assert.equal(adResponse.ad.substring(0, expected.length), expected);
 						assert.equal(adResponse.width, 300);
 						assert.equal(adResponse.height, 250);
+						assert.equal(adResponse.cpm, 1);
 						assert.equal(adResponse.bidderCode, "rhythmone");
 					});
 				}
