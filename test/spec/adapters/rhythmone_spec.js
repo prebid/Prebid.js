@@ -38,8 +38,6 @@ describe('rhythmone adapter tests', function () {
 					it("should have the expected ad response", function(){
             var expected = "<div id=\"div-gpt-ad-1438287399331-0_wrapper\"></div>";
 						assert.equal(adResponse.ad.substring(0, expected.length), expected);
-						assert.equal(adResponse.type, 1);
-						assert.equal(adResponse.cpm, 1);
 						assert.equal(adResponse.width, 300);
 						assert.equal(adResponse.height, 250);
 						assert.equal(adResponse.bidderCode, "rhythmone");
