@@ -59,7 +59,7 @@ var AolAdapter = function AolAdapter() {
     });
   }
 
-  function _addErrorBidResponse(bid, response) {
+  function _addErrorBidResponse(bid, response = {}) {
     var bidResponse = bidfactory.createBid(2);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.reason = response.nbr;
@@ -73,6 +73,7 @@ var AolAdapter = function AolAdapter() {
     try {
       bidData = response.seatbid[0].bid[0];
     } catch (e) {
+      utils.logError('Invalid bid response', BIDDER_CODE, bid);
       _addErrorBidResponse(bid, response);
       return;
     }
@@ -85,6 +86,7 @@ var AolAdapter = function AolAdapter() {
       cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
+        utils.logError('Invalid price in bid response', BIDDER_CODE, bid);
         _addErrorBidResponse(bid, response);
         return;
       }
@@ -118,12 +120,14 @@ var AolAdapter = function AolAdapter() {
       ajax(pubapiUrl, (response) => {
         if (!response && response.length <= 0) {
           utils.logError('Empty bid response', BIDDER_CODE, bid);
+          _addErrorBidResponse(bid, response);
           return;
         }
 
         try {
           response = JSON.parse(response);
         } catch (e) {
+          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response);
           return;
         }

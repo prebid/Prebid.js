@@ -244,11 +244,12 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'aol');
       });
 
-      it('should not be added to bidmanager if empty response is returned', () => {
+      it('should be added to bidmanager as invalid in case of empty response', () => {
         server.respondWith('');
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
-        expect(bidmanager.addBidResponse.called).to.be.false;
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
       });
 
       it('should be added to bidmanager as invalid in case of invalid JSON response', () => {
