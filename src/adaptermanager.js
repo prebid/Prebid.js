@@ -1,6 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes } from './utils';
+import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -18,7 +19,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
       .map(bid => Object.assign(bid, {
         placementCode: adUnit.code,
         mediaType: adUnit.mediaType,
-        sizes: adUnit.sizes,
+        sizes: mapSizes(adUnit),
         bidId: utils.getUniqueIdentifierStr(),
         bidderRequestId,
         requestId
