@@ -366,7 +366,6 @@ function getStandardBidderSettings() {
           key: 'hb_size',
           val: function (bidResponse) {
             return bidResponse.size;
-
           }
         }
       ]
