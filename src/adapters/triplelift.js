@@ -76,10 +76,10 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
       var bidObj = utils.getBidRequest(tlResponseObj.callback_id);
-      var placementCode = bidObj.placementCode;
+      var placementCode = bidObj && bidObj.placementCode;
 
       // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);
+      if (bidObj) {utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);}
       // @endif
 
       var bid = [];
@@ -97,7 +97,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
       } else {
         //no response data
         // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);
+        if (bidObj) {utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);}
         // @endif
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
