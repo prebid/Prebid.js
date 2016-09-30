@@ -216,6 +216,67 @@ describe('Unit: Prebid Module', function () {
 
       assert.deepEqual(targeting, expected);
     });
+
+    it("should not ovewrite winning bids custom keys targeting key when the bid has `alwaysUseBid` set to `true`", () => {
+
+      //mimic a bidderSetting.standard key here for each bid and alwaysUseBid true for every bid
+      $$PREBID_GLOBAL$$._bidsReceived.forEach(bid => {
+        bid.adserverTargeting.custom_ad_id = bid.adId;
+        bid.alwaysUseBid = true;
+      })
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        "standard": {
+          adserverTargeting: [{
+            key: "hb_bidder",
+            val: function(bidResponse) {
+              return bidResponse.bidderCode;
+            }
+          }, {
+            key: "custom_ad_id",
+            val: function(bidResponse) {
+              return bidResponse.adId;
+            }
+          }, {
+            key: "hb_pb",
+            val: function(bidResponse) {
+              return bidResponse.pbMg;
+            }
+          }, {
+            key: "foobar",
+            val: function(bidResponse) {
+              return bidResponse.size;
+            }
+          }]
+        }
+      };
+
+      var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
+
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          foobar: '300x250',
+          hb_size: '300x250',
+          hb_pb: '10.00',
+          hb_adid: '233bcbee889d46d',
+          hb_bidder: 'appnexus',
+          custom_ad_id: '233bcbee889d46d'
+        },
+        '/19968336/header-bid-tag1': {
+          foobar: '728x90',
+          hb_size: '728x90',
+          hb_pb: '10.00',
+          hb_adid: '24bd938435ec3fc',
+          hb_bidder: 'appnexus',
+          custom_ad_id:'24bd938435ec3fc'
+        }
+      };
+
+      assert.deepEqual(targeting, expected);
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+
+    });
+
+
   });
 
   describe('getBidResponses', function () {
