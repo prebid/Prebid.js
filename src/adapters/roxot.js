@@ -10,7 +10,6 @@ var RoxotAdapter = function RoxotAdapter() {
   var roxotUrl = "r.rxthdr.com";
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
-  $$PREBID_GLOBAL$$.roxotEvents = events;
 
   return {
     callBids: _callBids
