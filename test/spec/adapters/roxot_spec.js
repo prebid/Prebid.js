@@ -7,7 +7,6 @@ describe('Roxot adapter tests', function(){
 
     it('should exist and be a function', function () {
       expect(pbjs.roxotResponseHandler).to.exist.and.to.be.a('function');
-      expect(pbjs.roxotEvents).to.exist.and.to.be.a('object');
     });
 
     it('should add empty bid responses if no bids returned', function () {
