@@ -1,6 +1,5 @@
 var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
-var events = require('../events.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
