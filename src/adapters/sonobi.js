@@ -5,7 +5,7 @@ var utils = require('../utils');
 
 var SonobiAdapter = function SonobiAdapter(){
   var keymakerAssoc = {};   //  Remember placement codes for callback mapping
-  var bidIdAssoc = {};      //  Remember bids for bid complete reporting
+  var bidReqAssoc = {};     //  Remember bids for bid complete reporting
 
   function _phone_in(request){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
@@ -14,66 +14,63 @@ var SonobiAdapter = function SonobiAdapter(){
     adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId));
   }
 
-  function _keymaker(adSlots){                                  //  Keymaker makes keys
+  function _keymaker(adSlots){
     var keyring = {};
-    utils._each(adSlots, function(bidSlot){
-      if(bidSlot.params){
-        //  Optional (please don't set these as the word 'OPTIONAL' come on now why would you think that was OK?)
-        var dom_id = (bidSlot.params.dom_id && !utils.isEmpty(bidSlot.params.dom_id)) ? bidSlot.params.dom_id : !utils.isEmpty(bidSlot.placementCode) ? bidSlot.placementCode : "dom_" + utils.getUniqueIdentifierStr();
-        var floor = (bidSlot.params.floor) ? bidSlot.params.floor : null;
+    utils._each(adSlots, function(bidRequest){
+      if(bidRequest.params){
+        //  Optional
+        var floor = (bidRequest.params.floor) ? bidRequest.params.floor : null;
         //  Mandatory
-        var slotIdentifier = (bidSlot.params.ad_unit) ? bidSlot.params.ad_unit : (bidSlot.params.placement_id) ? bidSlot.params.placement_id : null;
-        var sizes = utils.parseSizesInput(bidSlot.sizes).toString() || null;
+        var slotIdentifier = (bidRequest.params.ad_unit) ? bidRequest.params.ad_unit : (bidRequest.params.placement_id) ? bidRequest.params.placement_id : null;
+        var sizes = utils.parseSizesInput(bidRequest.sizes).toString() || null;
+        var bidId = bidRequest.bidId;
         if (utils.isEmpty(sizes)){
-          utils.logError('Sonobi adapter expects sizes for ' + bidSlot.placementCode);
+          utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
         }
         var args = (sizes) ? ((floor) ? (sizes + '|f=' + floor) : (sizes)) : (floor) ? ('f=' + floor) : '';
-        if (/[0-9a-fA-F]+/.test(slotIdentifier) && slotIdentifier.length === 20){
-          //  Placements are 20 character hex
-          keyring[dom_id] = slotIdentifier + '|' + args;
-          keymakerAssoc[dom_id] = bidSlot.placementCode;
-          bidIdAssoc[bidSlot.placementCode] = bidSlot;
-        } else if (/\/?[0-9]*\/(.*\/?)*/.test(slotIdentifier)){
-          //  AdUnitCode rules from DFP allow a lot of things you wouldn't expect
+        if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)){
           slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
-          //  Consistency isn't really their thing they can't even decide if leading slash matters
-          keyring[slotIdentifier + '|' + dom_id] = args;
-          keymakerAssoc[slotIdentifier + '|' + dom_id] = bidSlot.placementCode;
-          bidIdAssoc[bidSlot.placementCode] = bidSlot;
-        } else {
-          keymakerAssoc[dom_id] = bidSlot.placementCode;
-          bidIdAssoc[bidSlot.placementCode] = bidSlot;
-          _failure(bidSlot.placementCode);
-          utils.logError('The ad unit code or Sonobi Placement id for slot ' + bidSlot.placementCode + ' is invalid');
+          keyring[slotIdentifier + '|' + bidId] = args;
+          keymakerAssoc[slotIdentifier + '|' + bidId] = bidRequest.placementCode;
+          bidReqAssoc[bidRequest.placementCode] = bidRequest;
+        } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20){
+          keyring[bidId] = slotIdentifier + '|' + args;
+          keymakerAssoc[bidId] = bidRequest.placementCode;
+          bidReqAssoc[bidRequest.placementCode] = bidRequest;
+        } else  {
+          keymakerAssoc[bidId] = bidRequest.placementCode;
+          bidReqAssoc[bidRequest.placementCode] = bidRequest;
+          _failure(bidRequest.placementCode);
+          utils.logError('The ad unit code or Sonobi Placement id for slot ' + bidRequest.placementCode + ' is invalid');
         }
       }
     });
     return keyring;
   }
 
-  function _operator(bidderRequestId){                          //  Name jsonp callbacks by request
+  function _operator(bidderRequestId){
     var cb_name = "sbi_" + bidderRequestId;
     window[cb_name] = _trinity;
     return cb_name;
   }
 
-  function _trinity(response){                                  //  Call back
+  function _trinity(response){
     var slots = response.slots || {};
     var sbi_dc = response.sbi_dc || '';
     utils._each(slots, function(bid, slot_id){
       var placementCode = keymakerAssoc[slot_id];
-      if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size){        //  I got the money you got the stuff?
+      if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size){
         _success(placementCode, sbi_dc, bid);
       } else {
         _failure(placementCode);
       }
-      delete keymakerAssoc[slot_id];                            //  You're done get outta here
+      delete keymakerAssoc[slot_id];
     });
   }
 
-  function _seraph(placementCode){                              //  Search for the one
-    var theOne = bidIdAssoc[placementCode];
-    delete bidIdAssoc[placementCode];                           //  Eliminate him
+  function _seraph(placementCode){
+    var theOne = bidReqAssoc[placementCode];
+    delete bidReqAssoc[placementCode];
     return theOne;
   }
 
@@ -85,7 +82,6 @@ var SonobiAdapter = function SonobiAdapter(){
     goodBid.bidderCode = 'sonobi';
     goodBid.ad = _creative(sbi_dc, bid.sbi_aid);
     goodBid.cpm = Number(bid.sbi_mouse);
-    //  Video creatives will return sbi_size="outstream", default to 1x1
     goodBid.width = Number(bid.sbi_size.split('x')[0]) || 1;
     goodBid.height = Number(bid.sbi_size.split('x')[1]) || 1;
     bidmanager.addBidResponse(placementCode, goodBid);
