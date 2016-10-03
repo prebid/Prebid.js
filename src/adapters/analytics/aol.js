@@ -79,23 +79,40 @@ export default utils.extend(adapter({
         case AUCTION_END:
           let adUnitsConf = $$PREBID_GLOBAL$$.adUnits;
           let bidsReceived = $$PREBID_GLOBAL$$._bidsReceived;
-          let bidsReceivedIds = bidsReceived.map(receivedBid => receivedBid.adId);
-          let timedOutBids = $$PREBID_GLOBAL$$._bidsRequested
+          let bidsRequested = $$PREBID_GLOBAL$$._bidsRequested;
+
+          let bidsReceivedPerBidderPerAdUnit = bidsReceived
+            .reduce((bidsReceivedPerBidderPerAdUnit, bid) => {
+              let bidsPerBidder = bidsReceivedPerBidderPerAdUnit[bid.bidder] || {};
+              let bidsPerBidderPerAdUnit = bidsPerBidder[bid.adUnitCode] || [];
+              bidsPerBidderPerAdUnit.push(bid);
+              bidsPerBidder[bid.adUnitCode] = bidsPerBidderPerAdUnit;
+              bidsReceivedPerBidderPerAdUnit[bid.bidder] = bidsPerBidder;
+              return bidsReceivedPerBidderPerAdUnit;
+            }, {});
+
+          let bidsToReport = bidsRequested
             .map(bidderRequest => bidderRequest.bids
-                .filter(bid => bidsReceivedIds.indexOf(bid.bidId) < 0)
-                .map(bid => {
+              .map(bid => {
+                let receivedBidsForBidder = bidsReceivedPerBidderPerAdUnit[bid.bidder] || {};
+                let receivedBidsForBidderForAdUnit = receivedBidsForBidder[bid.placementCode] || [];
+                // check received bids, or mark bid as timed out if no more received bids
+                if (receivedBidsForBidderForAdUnit.length > 0) {
+                  return receivedBidsForBidderForAdUnit.shift(); // remove to count timed out bids
+                } else {
                   return {
                     adUnitCode: bid.placementCode,
                     bidder: bid.bidder,
                     cpm: 0,
                     getStatusCode: () => 3, // ERROR_TIMEOUT
-                    timeToRespond: (new Date().getTime() - bidderRequest.start)
+                    timeToRespond: new Date().getTime() - bidderRequest.start
                   };
-                })
+                }
+              })
             )
             .reduce((a, b) => a.concat(b), []);
 
-          bidsReceived.concat(timedOutBids).forEach(bid => {
+          bidsToReport.forEach(bid => {
             const currentAdUnitCode = bid.adUnitCode;
             let adUnit = adUnits[currentAdUnitCode];
             if (!adUnit) {
