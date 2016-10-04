@@ -360,7 +360,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" disabled bidderCode="defymedia" class="bidder-check-box disabled"> DefyMedia - Coming Soon!
+        <input type="checkbox" bidderCode="defymedia" class="bidder-check-box"> DefyMedia - Coming Soon!
       </label>
     </div>
   </div>
@@ -374,12 +374,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Upgrading version - please check back in a bit!)
+(Version: 0.13.1)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary disabled" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
