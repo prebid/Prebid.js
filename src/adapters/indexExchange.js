@@ -8,12 +8,38 @@ var adloader = require('../adloader.js');
 var ADAPTER_NAME = 'INDEXEXCHANGE';
 var ADAPTER_CODE = 'indexExchange';
 
+var CONSTANTS = {
+  "INDEX_DEBUG_MODE": {
+    "queryParam": "pbjs_ix_debug",
+    "mode": {
+      "sandbox": {
+        "queryValue": "sandbox",
+        "siteID": "999990"
+      }
+    }
+  }
+};
+
 var cygnus_index_parse_res = function () {
 };
 
 window.cygnus_index_args = {};
 
 var cygnus_index_adunits =  [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
+
+var getIndexDebugMode = function() {
+  return getParameterByName(CONSTANTS.INDEX_DEBUG_MODE.queryParam).toUpperCase();
+}
+
+var getParameterByName = function (name) {
+  var regexS = '[\\?&]' + name + '=([^&#]*)';
+  var regex = new RegExp(regexS);
+  var results = regex.exec(window.location.search);
+  if (results === null) {
+    return '';
+  }
+  return decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
 
 var cygnus_index_start = function () {
   window.index_slots = [];
@@ -190,7 +216,15 @@ var cygnus_index_start = function () {
     }
 
     var jsonURI = encodeURIComponent(this.serialize());
-    var scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+
+    var scriptSrc;
+    if (getIndexDebugMode() == CONSTANTS.INDEX_DEBUG_MODE.mode.sandbox.queryValue.toUpperCase()) {
+      this.siteID = CONSTANTS.INDEX_DEBUG_MODE.mode.sandbox.siteID;
+      scriptSrc = window.location.protocol === 'https:' ? 'https://sandbox.ht.indexexchange.com' : 'http://sandbox.ht.indexexchange.com';
+      utils.logMessage('IX DEBUG: Sandbox mode activated');
+    } else {
+      scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+    }
     scriptSrc += '/headertag?v=9&x3=1&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
