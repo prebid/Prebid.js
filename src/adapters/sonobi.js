@@ -9,9 +9,10 @@ var SonobiAdapter = function SonobiAdapter(){
 
   function _phone_in(request){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
+    var ref = (window.frameElement) ? encodeURI(top.location.host) : null;
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId));
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + (ref ? '&ref=' + ref : ''));
   }
 
   function _keymaker(adSlots){
@@ -99,11 +100,11 @@ var SonobiAdapter = function SonobiAdapter(){
   }
 
   return {
-    callBids:    _phone_in,
-    formRequest: _keymaker,
+    callBids:       _phone_in,
+    formRequest:    _keymaker,
     parseResponse:  _trinity,
-    success: _success,
-    failure: _failure
+    success:        _success,
+    failure:        _failure
   };
 };
 
