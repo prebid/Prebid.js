@@ -52,11 +52,11 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
   
   var rhythmBidderUtilities = {
     template: function(){return "<div id=\"{0}_wrapper\"></div><script type=\"text/javascript\">("+rhythmBidderUtilities.process.toString()+")({1}, {6}, {2}, {3}, \"{0}\", {4}, \"{5}\");</scr"+"ipt>";},
-    process: "function (e,t,r,n,i,a,o){function d(e,t,r,i){var a=[\"bidderCode\",\"size\",\"adUnitCode\",\"cpm\",\"timeToRespond\"],o=[\"b\",\"s\",\"a\",\"c\",\"t\"],d=0,s=[],c=new Image,u=\"\",p=document.location.ancestorOrigins,l=\"//rhythmanalytics.1rx.io/rhythmanalytics/img?tracking_id=prebid_r1&hit_type=event&time_ms=\"+(new Date).getTime()+\"&metric0=allBids&metric1=\"+encodeURIComponent(t)+\"&metric2=\"+encodeURIComponent(n.user.id);for(var f in e)for(d=0;d<e[f].bids.length;d++){for(var g={},m=0;m<a.length;m++)g[o[m]]=e[f].bids[d][a[m]];s.push(g)}try{u=null!==r?i.document.location.href.toString():p&&p.length>0?p[p.length-1]:document.location.href.toString()}catch(b){}for(l+=\"&page_url=\"+encodeURIComponent(u),d=0;d<s.length&&10>d;d++)l+=\"&dimension\"+d+\"=\"+encodeURIComponent(JSON.stringify(s[d]));c.src=l}function s(e,t,n){var i=document.createElement(\"iframe\");i.style.border=\"0\",i.scrolling=\"no\",i.seamless=\"seamless\",i.style.height=r.h+\"px\",i.style.width=r.w+\"px\",e.style.height=r.h+\"px\",e.style.width=r.w+\"px\",e.appendChild(i),t?(i.contentWindow.document.open(),i.contentWindow.document.write('<html><head></head><body style=\"margin:0;padding:0;\">'+t+\"</body></html>\"),/(MSIE|Trident|Edge)/.test(window.navigator.userAgent)===!1&&i.contentWindow.document.close()):n&&(i.src=n)}var c=window,u=function(){try{for(;c;){if(c.pbjs||c===window.top)return c.pbjs;c=c.parent}}catch(e){}return null}(),p=u?u.getBidResponses():{},l=p[i],f=0;d(p,o,u,c);var g=[n.imp[0].bidfloor];if(l)for(var m=0;m<l.bids.length;m++)g.push(parseFloat(l.bids[m].cpm));g.sort(),f=g[g.length-2]+.01;var b=/\\$\\{AUCTION_([A-Z_]+)\\}/g,h={ID:n.id,BID_ID:r.id,IMP_ID:r.impid,SEAT_ID:a.id,AD_ID:r.adid,PRICE:f,CURRENCY:n.cur[0]};e&&(e=e.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),t&&(t=t.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),s(document.getElementById(i+\"_wrapper\"),e,t)}"
+    process: "function (e,t,r,n,i,a,o){function d(e,t,r,i){var a=[\"bidderCode\",\"size\",\"adUnitCode\",\"cpm\",\"timeToRespond\"],o=[\"b\",\"s\",\"a\",\"c\",\"t\"],d=0,s=[],c=new Image,u=\"\",p=document.location.ancestorOrigins,l=\"//rhythmanalytics.1rx.io/rhythmanalytics/img?tracking_id=prebid_r1&hit_type=event&time_ms=\"+(new Date).getTime()+\"&metric0=allBids&metric1=\"+encodeURIComponent(t)+\"&metric2=\"+encodeURIComponent(n.user.id);for(var f in e)for(d=0;d<e[f].bids.length;d++){for(var g={},m=0;m<a.length;m++)g[o[m]]=e[f].bids[d][a[m]];s.push(g)}try{u=null!==r?i.document.location.href.toString():p&&p.length>0?p[p.length-1]:document.location.href.toString()}catch(b){}for(l+=\"&page_url=\"+encodeURIComponent(u),d=0;d<s.length&&10>d;d++)l+=\"&dimension\"+d+\"=\"+encodeURIComponent(JSON.stringify(s[d]));c.src=l}function s(e,t,n){var i=document.createElement(\"iframe\");i.style.border=\"0\",i.scrolling=\"no\",i.seamless=\"seamless\",i.style.height=r.h+\"px\",i.style.width=r.w+\"px\",e.style.height=r.h+\"px\",e.style.width=r.w+\"px\",e.appendChild(i),t?(i.contentWindow.document.open(),i.contentWindow.document.write('<html><head></head><body style=\"margin:0;padding:0;\">'+t+\"</body></html>\"),/(MSIE|Trident|Edge)/.test(window.navigator.userAgent)===!1&&i.contentWindow.document.close()):n&&(i.src=n)}var c=window,u=function(){try{for(;c;){if(c.$$PREBID_GLOBAL$$||c===window.top)return c.$$PREBID_GLOBAL$$;c=c.parent}}catch(e){}return null}(),p=u?u.getBidResponses():{},l=p[i],f=0;d(p,o,u,c);var g=[n.imp[0].bidfloor];if(l)for(var m=0;m<l.bids.length;m++)g.push(parseFloat(l.bids[m].cpm));g.sort(),f=g[g.length-2]+.01;var b=/\\$\\{AUCTION_([A-Z_]+)\\}/g,h={ID:n.id,BID_ID:r.id,IMP_ID:r.impid,SEAT_ID:a.id,AD_ID:r.adid,PRICE:f,CURRENCY:n.cur[0]};e&&(e=e.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),t&&(t=t.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),s(document.getElementById(i+\"_wrapper\"),e,t)}"
     /*
     process: function(markup, url, bidResponse, bidRequest, target, seat, publisherId){
     
-      function log(bd, publisherId, pbjs, win){
+      function log(bd, publisherId, pjs, win){
         var columns = ["bidderCode","size","adUnitCode","cpm","timeToRespond"],
           abbreviated = ["b", "s", "a", "c", "t"],
           i=0,
@@ -78,7 +78,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
           }
         
         try{
-          page = (pbjs !== null ? win.document.location.href.toString() : (d && d.length > 0 ? d[d.length-1] : document.location.href.toString()));
+          page = (pjs !== null ? win.document.location.href.toString() : (d && d.length > 0 ? d[d.length-1] : document.location.href.toString()));
         }
         catch(ex){}
 
@@ -113,23 +113,23 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
       }
     
       var w = window,
-        pbjs = (function(){
+        pjs = (function(){
           try{
             while(w){
-              if(w.pbjs || w === window.top) return w.pbjs;
+              if(w.$$PREBID_GLOBAL$$ || w === window.top) return w.$$PREBID_GLOBAL$$;
               w = w.parent;
             }
           }
           catch(ex){}
           return null;
         })(),
-        responses = (pbjs ? pbjs.getBidResponses() : {}),
+        responses = (pjs ? pjs.getBidResponses() : {}),
         slotBids = responses[target],
         secondPrice = 0;
     
       //console.log(responses);
     
-      log(responses, publisherId, pbjs, w);
+      log(responses, publisherId, pjs, w);
       
       var prices = [bidRequest.imp[0].bidfloor];
         
