@@ -158,6 +158,7 @@ gulp.task('watch', function () {
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
+    https: argv.https,
     port: port,
     root: './',
     livereload: true
@@ -169,7 +170,7 @@ gulp.task('quality', ['hint', 'jscs']);
 gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
     .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('jshint-stylish'))
     .pipe(jshint.reporter('fail'));
 });
 

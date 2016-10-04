@@ -81,7 +81,6 @@ var OpenxAdapter = function OpenxAdapter(options) {
 
             // Get ad response
             adUnit = response.getOrCreateAdUnit(bid.params.unit);
-
             // If 'pub_rev' (CPM) isn't returned we got an empty response
             if (adUnit.get('pub_rev')) {
               adResponse = adResponse = bidfactory.createBid(1);
@@ -91,6 +90,9 @@ var OpenxAdapter = function OpenxAdapter(options) {
               adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
 
               adResponse.ad = adUnit.get('html');
+              if(adUnit.get('deal_id') !== undefined) {
+                adResponse.dealId = adUnit.get('deal_id');
+              }
 
               // Add record/impression pixel to the creative HTML
               var recordPixel = OX.utils.template(response.getRecordTemplate(), {

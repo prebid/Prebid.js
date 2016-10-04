@@ -1,10 +1,12 @@
 import {parse as parseURL, format as formatURL} from './url';
 
-/**
- * Simple cross-browser ajax request function
- * https://gist.github.com/Xeoncross/7663273
+var utils = require('./utils');
 
- * IE 5.5+, Firefox, Opera, Chrome, Safari XHR object
+const XHR_DONE = 4;
+
+/**
+ * Simple IE9+ and cross-browser ajax request function
+ * Note: x-domain requests in IE9 do not support the use of cookies
  *
  * @param url string url
  * @param callback object callback
@@ -12,45 +14,60 @@ import {parse as parseURL, format as formatURL} from './url';
  * @param options object
  */
 
-export const ajax = function ajax(url, callback, data, options = {}) {
-  let x;
+export function ajax(url, callback, data, options = {}) {
 
-  try {
-    if (window.XMLHttpRequest) {
-      x = new window.XMLHttpRequest('MSXML2.XMLHTTP.3.0');
-    }
+  let x,
+      method = options.method || (data ? 'POST' : 'GET'),
+      // For IE9 support use XDomainRequest instead of XMLHttpRequest.
+      useXDomainRequest = window.XDomainRequest &&
+        (!window.XMLHttpRequest || new window.XMLHttpRequest().responseType === undefined);
 
-    if (window.ActiveXObject) {
-      x = new window.ActiveXObject('MSXML2.XMLHTTP.3.0');
-    }
-
-    const method = options.method || (data ? 'POST' : 'GET');
-
-    if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
-      Object.assign(urlInfo.search, data);
-      url = formatURL(urlInfo);
-    }
-
-    //x = new (window.XMLHttpRequest || window.ActiveXObject)('MSXML2.XMLHTTP.3.0');
-    x.open(method, url, 1);
-
-    if (options.withCredentials) {
-      x.withCredentials = true;
-    } else {
-      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      x.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    }
-
-    //x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    x.onreadystatechange = function () {
-      if (x.readyState > 3 && callback) {
-        callback(x.responseText, x);
-      }
+  if (useXDomainRequest) {
+    x = new window.XDomainRequest();
+    x.onload = function () {
+      callback(x.responseText, x);
     };
 
-    x.send(method === 'POST' && data);
-  } catch (e) {
-    console.log(e);
+    // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
+    x.onerror = function () {
+      utils.logMessage('xhr onerror');
+    };
+    x.ontimeout = function () {
+      utils.logMessage('xhr timeout');
+    };
+    x.onprogress = function() {
+      utils.logMessage('xhr onprogress');
+    };
+
+  } else {
+    x = new window.XMLHttpRequest();
+    x.onreadystatechange = handler;
   }
-};
+
+  if (method === 'GET' && data) {
+    let urlInfo = parseURL(url);
+    Object.assign(urlInfo.search, data);
+    url = formatURL(urlInfo);
+  }
+
+  x.open(method, url);
+
+  if (!useXDomainRequest) {
+    if (options.withCredentials) {
+      x.withCredentials = true;
+    }
+    if (options.preflight) {
+      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    }
+    x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
+  }
+
+  x.send(method === 'POST' && data);
+
+  function handler() {
+    if (x.readyState === XHR_DONE && callback) {
+      callback(x.responseText, x);
+    }
+  }
+
+}
