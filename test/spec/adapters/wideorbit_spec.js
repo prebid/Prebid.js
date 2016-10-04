@@ -2,7 +2,7 @@ describe('wideorbit adapter tests', function () {
 
     var expect = require('chai').expect;
     var urlParse = require('url-parse');
-    
+
     // FYI: querystringify will perform encoding/decoding
     var querystringify = require('querystringify');
 
@@ -12,14 +12,14 @@ describe('wideorbit adapter tests', function () {
 
     describe('creation of bid url', function () {
 
-        var spyLoadScript;
+        let stubLoadScript;
 
         beforeEach(function () {
-            spyLoadScript = sinon.spy(adLoader, 'loadScript');
+            stubLoadScript = sinon.stub(adLoader, 'loadScript');
         });
 
         afterEach(function () {
-            spyLoadScript.restore();
+            stubLoadScript.restore();
         });
 
         it('should be called only once', function () {
@@ -52,7 +52,7 @@ describe('wideorbit adapter tests', function () {
 
             adapter().callBids(params);
 
-            sinon.assert.calledOnce(spyLoadScript);
+            sinon.assert.calledOnce(stubLoadScript);
 
         });
 
@@ -86,9 +86,9 @@ describe('wideorbit adapter tests', function () {
 
             adapter().callBids(params);
 
-            var bidUrl = spyLoadScript.getCall(0).args[0];
+            var bidUrl = stubLoadScript.getCall(0).args[0];
 
-            sinon.assert.calledWith(spyLoadScript, bidUrl);
+            sinon.assert.calledWith(stubLoadScript, bidUrl);
 
             var parsedBidUrl = urlParse(bidUrl);
             var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -164,9 +164,9 @@ describe('wideorbit adapter tests', function () {
 
                 adapter().callBids(params);
 
-                var bidUrl = spyLoadScript.getCall(0).args[0];
+                var bidUrl = stubLoadScript.getCall(0).args[0];
 
-                sinon.assert.calledWith(spyLoadScript, bidUrl);
+                sinon.assert.calledWith(stubLoadScript, bidUrl);
 
                 var parsedBidUrl = urlParse(bidUrl);
                 var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -240,9 +240,9 @@ describe('wideorbit adapter tests', function () {
 
                 adapter().callBids(params);
 
-                var bidUrl = spyLoadScript.getCall(0).args[0];
+                var bidUrl = stubLoadScript.getCall(0).args[0];
 
-                sinon.assert.calledWith(spyLoadScript, bidUrl);
+                sinon.assert.calledWith(stubLoadScript, bidUrl);
 
                 var parsedBidUrl = urlParse(bidUrl);
                 var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -389,7 +389,7 @@ describe('wideorbit adapter tests', function () {
             expect(bidObject1.height).to.equal(100);
             expect(bidObject1.getStatusCode()).to.equal(1);
             expect(bidObject1.bidderCode).to.equal('wideorbit');
-            
+
             expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
             expect(bidObject2.cpm).to.equal(1.50);
             expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
@@ -488,4 +488,3 @@ describe('wideorbit adapter tests', function () {
     });
 
 });
-  

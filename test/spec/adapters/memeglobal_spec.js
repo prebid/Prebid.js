@@ -5,13 +5,13 @@ describe('memeglobal adapter tests', function () {
   const adLoader = require('src/adloader');
   var bidderName = 'memeglobal';
 
-  var spyLoadScript;
+  let stubLoadScript;
       beforeEach(function () {
-          spyLoadScript = sinon.spy(adLoader, 'loadScript');
+          stubLoadScript = sinon.stub(adLoader, 'loadScript');
       });
 
       afterEach(function () {
-          spyLoadScript.restore();
+          stubLoadScript.restore();
       });
 
   function getBidSetForBidder() {
@@ -53,7 +53,7 @@ describe('memeglobal adapter tests', function () {
       };
 
       adapter().callBids(params);
-      sinon.assert.calledOnce(spyLoadScript);
+      sinon.assert.calledOnce(stubLoadScript);
     });
 
     it('callBids empty params', function () {
@@ -72,7 +72,7 @@ describe('memeglobal adapter tests', function () {
       };
 
       adapter().callBids({});
-      expect(spyLoadScript.callCount).to.equal(0);
+      expect(stubLoadScript.callCount).to.equal(0);
     });
   });
 
@@ -169,4 +169,3 @@ describe('memeglobal adapter tests', function () {
     });
   });
 });
-
