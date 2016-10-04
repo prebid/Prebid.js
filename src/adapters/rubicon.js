@@ -8,6 +8,8 @@ var bidmanager = require('../bidmanager');
 var bidfactory = require('../bidfactory');
 var adloader = require('../adloader');
 
+const TIMEOUT_BUFFER = 100;
+
 /**
  * @class RubiconAdapter
  * Prebid adapter for Rubicon's header bidding client
@@ -30,12 +32,18 @@ var RubiconAdapter = function RubiconAdapter() {
     '970x90': 55,
     '970x250': 57,
     '1000x90': 58,
+    '320x80': 59,
+    '640x480': 65,
     '320x480': 67,
     '1800x1000': 68,
-    '480x320':101,
+    '320x320': 72,
+    '320x160': 73,
+    '480x320': 101,
     '768x1024': 102,
-    '1000x300':113,
-    '320x100':117
+    '1000x300': 113,
+    '320x100': 117,
+    '800x250': 125,
+    '200x600': 126
   };
   var RUBICON_INITIALIZED = (window.rubicontag === undefined) ? 0 : 1;
 
@@ -285,35 +293,38 @@ var RubiconAdapter = function RubiconAdapter() {
   /**
    * Request the specified bids from
    * Rubicon
-   * @param {Object} params the bidder-level params (from prebid)
+   * @param {Object} bidderRequest the bidder-level params (from prebid)
    * @param {Array} params.bids the bids requested
    */
-  function _callBids(params) {
+  function _callBids(bidderRequest) {
 
     // start the timer; want to measure from
     // even just loading the SDK
     _bidStart = (new Date).getTime();
 
-    _mapSizes(params.bids);
+    _mapSizes(bidderRequest.bids);
 
-    if (utils.isEmpty(params.bids)) {
+    if (utils.isEmpty(bidderRequest.bids)) {
       return;
     }
 
     // on the first bid, set up the SDK
     if (!RUBICON_INITIALIZED) {
-      _initSDK(params.bids[0].params);
+      _initSDK(bidderRequest.bids[0].params);
     }
 
     _rready(function () {
       var slots = [];
-      var bids  = params.bids;
+      var bids  = bidderRequest.bids;
 
       for (var i=0, ln=bids.length; i < ln; i++) {
         slots.push(_defineSlot(bids[i]));
       }
 
-      var parameters = { slots: slots };
+      var parameters = {
+        slots: slots,
+        timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER)
+      };
       var callback   = function () {
         _bidsReady(slots);
       };

@@ -1,14 +1,17 @@
 [
     "aardvark",
+    "adblade",
     "adequant",
     "adform",
     "admedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "getintent",
     "indexExchange",
     "kruxlink",
     "openx",
+    "piximedia",
     "pubmatic",
     "pulsepoint",
     "rubicon",
@@ -33,6 +36,16 @@
     {
       "appnexus": {
         "alias": "pagescience"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "defymedia"
+      }
+    },
+    {
+      "appnexusAst": {
+        "supportedMediaTypes": ["video"]
       }
     }
 ]

@@ -1,12 +1,12 @@
 /** @module $$PREBID_GLOBAL$$ */
 
+import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './utils';
+import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
+import {parse as parseURL, format as formatURL} from './url';
 
-// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
-window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
-window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];
-var $$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$;
+var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
@@ -14,6 +14,7 @@ var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');
+var adserver = require('./adserver.js');
 
 /* private variables */
 
@@ -40,8 +41,17 @@ $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
+$$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
+
 //default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
+
+// current timeout set in `requestBids` or to default `bidderTimeout`
+$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
+
+// timeout buffer to adjust for bidder CDN latency
+$$PREBID_GLOBAL$$.timeoutBuffer = 200;
+
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 
 //let the world know we are loaded
@@ -182,7 +192,7 @@ function getDealTargeting() {
           [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
         };
       })
-      .concat({ [dealKey]: [bid.adserverTargeting[dealKey]] })
+      .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
 }
@@ -191,9 +201,14 @@ function getDealTargeting() {
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
 function getAlwaysUseBidTargeting() {
+  //in case using a custom standard key set, we'll capture those here
+  let standardKeys = bidmanager.getStandardBidderAdServerTargeting().map(targeting =>{
+    return targeting.key;
+  });
+  //then append standard keys defined in the library.
+  standardKeys = standardKeys.concat(CONSTANTS.TARGETING_KEYS).filter(uniques);
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.alwaysUseBid) {
-      const standardKeys = CONSTANTS.TARGETING_KEYS;
       return {
         [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
           // Get only the non-standard keys of the losing bids, since we
@@ -229,10 +244,10 @@ function getBidLandscapeTargeting() {
 function getAllTargeting() {
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-  var targeting = getDealTargeting()
-    .concat(getWinningBidTargeting())
+  var targeting = getWinningBidTargeting()
     .concat(getAlwaysUseBidTargeting())
-    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting() : []);
+    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting() : [])
+    .concat(getDealTargeting());
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -269,7 +284,7 @@ function removeComplete() {
 
   // also remove bids that have an empty or error status so known as not pending for render
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
-    .forEach(bid => responses.slice(responses.indexOf(bid), 1));
+    .forEach(bid => responses.splice(responses.indexOf(bid), 1));
 }
 
 //////////////////////////////////
@@ -441,7 +456,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
-        if (ad) {
+        if (doc===document || adObject.mediaType === 'video') {
+          utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
+        } else if (ad) {
           doc.write(ad);
           doc.close();
           if (doc.defaultView && doc.defaultView.frameElement) {
@@ -507,13 +524,22 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
-  const cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   // if specific adUnitCodes filter adUnits for those codes
   if (adUnitCodes && adUnitCodes.length) {
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
+
+  // for video-enabled adUnits, only request bids if all bidders support video
+  const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
+  invalidVideoAdUnits.forEach(adUnit => {
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
+    for (let i = 0; i < adUnits.length; i++) {
+      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+    }
+  });
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
@@ -747,6 +773,35 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
+};
+
+/**
+ * Build master video tag from publishers adserver tag
+ * @param {string} adserverTag default url
+ * @param {object} options options for video tag
+ */
+$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
+  var urlComponents = parseURL(adserverTag);
+
+  //return original adserverTag if no bids received
+  if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
+    return adserverTag;
+  }
+
+  var masterTag = '';
+  if(options.adserver.toLowerCase() === 'dfp') {
+    var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
+    if(!dfpAdserverObj.verifyAdserverTag()) {
+      utils.logError('Invalid adserverTag, required google params are missing in query string');
+    }
+    dfpAdserverObj.appendQueryParams();
+    masterTag = formatURL(dfpAdserverObj.urlComponents);
+  } else {
+    utils.logError('Only DFP adserver is supported');
+    return;
+  }
+  return masterTag;
 };
 
 processQue();
