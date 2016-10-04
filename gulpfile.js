@@ -158,6 +158,7 @@ gulp.task('watch', function () {
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
+    https: argv.https,
     port: port,
     root: './',
     livereload: true

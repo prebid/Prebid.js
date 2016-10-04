@@ -816,7 +816,7 @@ describe('Unit: Prebid Module', function () {
   describe('loadScript', () => {
     it('should call adloader.loadScript', () => {
       const loadScriptSpy = sinon.spy(adloader, 'loadScript');
-      const tagSrc = 'testsrc';
+      const tagSrc = '';
       const callback = Function;
       const useCache = false;
 

@@ -24,7 +24,9 @@ export function ajax(url, callback, data, options = {}) {
 
   if (useXDomainRequest) {
     x = new window.XDomainRequest();
-    x.onload = handler;
+    x.onload = function () {
+      callback(x.responseText, x);
+    };
 
     // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
     x.onerror = function () {
