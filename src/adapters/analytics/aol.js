@@ -14,7 +14,6 @@ const utils = require('../../utils');
 
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AOL_BIDDER_CODE = 'aol';
 const analyticsType = 'endpoint';
 
@@ -31,12 +30,10 @@ const EVENTS = {
 
 let adUnits = {};
 
-let baseSchemaTemplate = template `${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
-let auctionSchemaTemplate = template `;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
-let winSchemaTemplate = template `;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
-let bidderSchemaTemplate = template `;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
-
-var _timedOutBidders = [];
+let baseSchemaTemplate = template`${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
+let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
+let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
+let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
 
 export default utils.extend(adapter({
     url: '',
@@ -55,21 +52,16 @@ export default utils.extend(adapter({
         if (!event) {
           return;
         }
-
-        const { eventType, args } = event;
-
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
-          this.enqueue({ eventType, args });
-        }
+        this.enqueue(event);
       });
 
       events.on(AUCTION_END, args => this.enqueue({ eventType: AUCTION_END, args }));
       events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
 
       this.enableAnalytics = function _enable() {
-        return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
+        return utils.logMessage(
+          `AOL analytics adapter already enabled, unnecessary call to 'enableAnalytics()'.`
+        );
       };
     },
 
@@ -140,11 +132,9 @@ export default utils.extend(adapter({
           let bidWon = args;
 
           for (let code in adUnits) {
-            if (adUnits.hasOwnProperty(code)) {
-              if (bidWon.adUnitCode === code) {
-                let url = this.buildEndpoint(EVENTS.WIN, adUnits[code]);
-                this.reportEvent(url);
-              }
+            if (adUnits.hasOwnProperty(code) && bidWon.adUnitCode === code) {
+              let url = this.buildEndpoint(EVENTS.WIN, adUnits[code]);
+              this.reportEvent(url);
             }
           }
 
