@@ -84,7 +84,7 @@ function AppnexusAstAdapter() {
     }
 
     parsed.tags.forEach(tag => {
-      const ad = tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+      const ad = getRtbBid(tag);
       const cpm = ad && ad.cpm;
       const type = ad && ad.ad_type;
 
@@ -162,9 +162,13 @@ function AppnexusAstAdapter() {
     return sizes;
   }
 
+  function getRtbBid(tag) {
+    return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+  }
+
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
-    const ad = tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+    const ad = getRtbBid(tag);
     let bid = bidfactory.createBid(status, tag);
     bid.code = baseAdapter.getBidderCode();
     bid.bidderCode = baseAdapter.getBidderCode();
