@@ -37,7 +37,6 @@ SekindoAdapter = function SekindoAdapter() {
         if (response.cpm !== undefined && response.cpm > 0) {
 
           bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
-          bid.adId = response.adId;
           bid.callback_uid = callbackId;
           bid.bidderCode = bidCode;
           bid.creative_id = response.adId;
@@ -72,11 +71,13 @@ SekindoAdapter = function SekindoAdapter() {
   function _requestBids(bid, callbackId, pubUrl) {
     //determine tag params
     var spaceId = utils.getBidIdParamater('spaceId', bid.params);
+    var subId = utils.getBidIdParamater('subId', bid.params);
     var bidfloor = utils.getBidIdParamater('bidfloor', bid.params);
     var protocol = ('https:' === document.location.protocol ? 's' : '');
-    var scriptSrc = 'https://live.sekindo.com/live/liveView.php?';
+    var scriptSrc = 'http'+protocol+'://live.sekindo.com/live/liveView.php?';
 
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 's', spaceId);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'subId', subId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'pubUrl', pubUrl);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbcb', callbackId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
