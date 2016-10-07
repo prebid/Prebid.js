@@ -109,14 +109,18 @@ describe("the rubicon adapter", () => {
         addKW: sandbox.spy(),
         getElementId: () => "/19968336/header-bid-tag-0",
         getRawResponses: () => {},
-        getRawResponseBySizeId: () => {}
+        getRawResponseBySizeId: () => {},
+        getAdServerTargetingByKey: key => ({
+          "rpfl_14062": ["15_tier"],
+          "rpfl_elemid": ["/19968336/header-bid-tag-0"]
+        }[key])
       };
 
       window.rubicontag = {
         cmd: {
           push: cb => cb()
         },
-        setIntegration: sandbox.spy(),
+        setIntegration: () => {},
         run: () => {},
         addEventListener: () => {},
         setUserKey: sandbox.spy(),
@@ -174,6 +178,8 @@ describe("the rubicon adapter", () => {
     describe("when doing fastlane slot configuration", () => {
 
       beforeEach(() => {
+        sandbox.spy(window.rubicontag, 'setIntegration');
+
         rubiconAdapter.callBids(bidderRequest);
       });
 
@@ -224,6 +230,40 @@ describe("the rubicon adapter", () => {
         expect(window.rubicontag.setIntegration.calledWith("$$PREBID_GLOBAL$$")).to.equal(true);
 
       });
+
+    });
+
+    describe("rubicon targeting", () => {
+
+      beforeEach(() => {
+        // need new adapter to reset private state
+        rubiconAdapter = new RubiconAdapter();
+      });
+
+      it("should register default bidder settings (once) when configured", () => {
+
+        sandbox.spy(bidManager, "registerDefaultBidderSetting");
+
+        sandbox.stub(window.rubicontag, 'setIntegration', () => ({
+          pbjsRubiconTargeting: true
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.registerDefaultBidderSetting.calledOnce).to.equal(true);
+
+      });
+
+      it("should not register default bidder settings when not configured", () => {
+
+        sandbox.spy(bidManager, "registerDefaultBidderSetting");
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.registerDefaultBidderSetting.called).to.equal(false);
+
+      })
 
     });
 
@@ -305,11 +345,16 @@ describe("the rubicon adapter", () => {
           expect(bids[0].width).to.equal(300);
           expect(bids[0].height).to.equal(250);
           expect(bids[0].cpm).to.equal(0.811);
+          expect(bids[0].rubiconTargeting['rpfl_14062']).to.equal("15_tier");
+          expect(bids[0].rubiconTargeting['rpfl_elemid']).to.equal("/19968336/header-bid-tag-0");
 
           expect(bids[1].bidderCode).to.equal("rubicon");
           expect(bids[1].width).to.equal(320);
           expect(bids[1].height).to.equal(50);
           expect(bids[1].cpm).to.equal(0.59);
+          expect(bids[1].rubiconTargeting['rpfl_14062']).to.equal("15_tier");
+          expect(bids[1].rubiconTargeting['rpfl_elemid']).to.equal("/19968336/header-bid-tag-0");
+
         })
 
       });
