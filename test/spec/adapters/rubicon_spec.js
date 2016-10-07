@@ -346,8 +346,6 @@ describe("the rubicon adapter", () => {
             }
           ]);
 
-          debugger;
-
           rubiconAdapter.callBids(bidderRequest);
 
           expect(bidManager.addBidResponse.calledTwice).to.equal(true);
