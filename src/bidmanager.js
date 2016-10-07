@@ -324,7 +324,7 @@ function adjustBids(bid) {
     }
   }
 
-  if (bidPriceAdjusted !== 0) {
+  if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
 }
