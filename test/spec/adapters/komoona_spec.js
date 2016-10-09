@@ -70,6 +70,8 @@ describe("komoona adapter tests", function() {
     expect(startConfig.hb_placements).to.have.all.members(['efgh', 'ijkl'])
     expect(startConfig).to.have.property('encode_bid');
     expect(startConfig.encode_bid).to.equal.undefined;
+    expect(startConfig).to.have.property('hb_placement_bidids');
+    expect(startConfig.hb_placement_bidids).to.deep.equal({efgh:'30e5e911c00703', ijkl: '48a0df61fac3ba'})
   });
 
   it("registers arriving bids in bidManager", function() {
@@ -79,9 +81,11 @@ describe("komoona adapter tests", function() {
       "height": "250",
       "width": "300",
       "placementid": "efgh",
-      "creative": "blahblah"
+      "creative": "blahblah",
+      "bidid": "30e5e911c00703"
     };
 
+    pbjs._bidsRequested.push(bids);
     adapter().callBids(bids);
 
     var startConfig = startStub.getCall(0).args[0];
@@ -99,7 +103,7 @@ describe("komoona adapter tests", function() {
     expect(actualBidSent).to.have.property('cpm', 2.62);
     expect(actualBidSent).to.have.property('width', 300);
     expect(actualBidSent).to.have.property('height', 250);
-
+    expect(actualBidSent).to.have.property('adId', '30e5e911c00703');
     bidmanager.addBidResponse.restore();
   });
 
@@ -113,8 +117,7 @@ it("makes sure all is well with empty configuration", function() {
 
     //start should never be called
     expect(startStub.getCall(0)).to.be.null;
-    
+
     bidmanager.addBidResponse.restore();
   });
 });
-

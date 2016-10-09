@@ -28,6 +28,7 @@
     "underdogmedia",
     "memeglobal",
     "centro",
+    "komoona",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -36,6 +37,11 @@
     {
       "appnexus": {
         "alias": "pagescience"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "defymedia"
       }
     },
     {
