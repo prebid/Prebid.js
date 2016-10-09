@@ -80,6 +80,7 @@ SekindoAdapter = function SekindoAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'subId', subId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'pubUrl', pubUrl);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbcb', callbackId);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', '$$PREBID_GLOBAL$$');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
