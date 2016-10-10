@@ -415,7 +415,7 @@ describe('bidmanager.js', function () {
   });
 
   describe('adjustBids', () => {
-    it('should adjust bids and pass copy of bid object', () => {
+    it('should adjust bids if greater than zero and pass copy of bid object', () => {
       const bid = Object.assign({},
         bidfactory.createBid(2),
         fixtures.getBidResponses()[5]
@@ -428,6 +428,12 @@ describe('bidmanager.js', function () {
         brealtime: {
           bidCpmAdjustment: function (bidCpm, bidObj) {
             assert.deepEqual(bidObj, bid);
+            if (bidObj.adUnitCode === 'negative') {
+              return bidCpm * -0.5;
+            }
+            if (bidObj.adUnitCode === 'zero') {
+              return 0;
+            }
             return bidCpm * 0.5;
           },
         },
@@ -437,8 +443,20 @@ describe('bidmanager.js', function () {
         }
       };
 
+      // negative
+      bid.adUnitCode = 'negative';
+      bidmanager.adjustBids(bid)
+      assert.equal(bid.cpm, .5);
+
+      // positive
+      bid.adUnitCode = 'normal';
       bidmanager.adjustBids(bid)
       assert.equal(bid.cpm, .25);
+
+      // zero
+      bid.adUnitCode = 'zero';
+      bidmanager.adjustBids(bid)
+      assert.equal(bid.cpm, 0);
 
     });
   });
