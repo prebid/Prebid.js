@@ -1,3 +1,8 @@
+AOL Prebid 1.3.1
+----------------
+Fixed reporting of timed out bids in AOL analytics.
+
+
 AOL Prebid 1.3.0
 ----------------
 Updated to Prebid 0.13.0.
