@@ -523,6 +523,80 @@ describe('AOL analytics adapter', () => {
     });
   });
 
+  describe('reportWinEvent()', () => {
+    beforeEach(() => {
+      sinon.stub(aolAnalytics, 'reportEvent');
+    });
+
+    afterEach(() => {
+      if (aolAnalytics.reportEvent.restore) {
+        aolAnalytics.reportEvent.restore();
+      }
+    });
+
+    it('should report win event for the correct ad unit', () => {
+      let winningBid = {
+        adUnitCode: 'header-bid-tag-1',
+        bidder: 'aol',
+        cpm: 0.1
+      };
+      let winningAdUnit = {
+        code: 'header-bid-tag-1',
+        bids: [winningBid],
+        winner: winningBid
+      };
+      aolAnalytics.adUnits = {
+        'header-bid-tag-0': {},
+        'header-bid-tag-1': winningAdUnit,
+        'header-bid-tag-2': {}
+      };
+      aolAnalytics.reportWinEvent({ winningBid });
+
+      expect(aolAnalytics.reportEvent.calledOnce).to.be.true;
+      expect(aolAnalytics.reportEvent.calledWith(ANALYTICS_EVENTS.WIN, winningAdUnit)).to.be.true;
+    });
+  });
+
+  describe('reportEvent()', () => {
+    let xhr;
+    let requests;
+
+    beforeEach(() => {
+      requests = [];
+      xhr = sinon.useFakeXMLHttpRequest();
+      xhr.onCreate = request => requests.push(request);
+      sinon.stub(aolAnalytics, 'buildEventUrl');
+    });
+
+    afterEach(() => {
+      xhr.restore();
+      if (aolAnalytics.buildEventUrl.restore) {
+        aolAnalytics.buildEventUrl.restore();
+      }
+    });
+
+    it('should build event URL', () => {
+      let event = AUCTION_END;
+      let adUnit = { foo: 'bar' };
+
+      aolAnalytics.reportEvent(event, adUnit);
+
+      expect(aolAnalytics.buildEventUrl.calledOnce).to.be.true;
+      expect(aolAnalytics.buildEventUrl.calledWith(event, adUnit)).to.be.true;
+    });
+
+    it('make AJAX call', () => {
+      let event = AUCTION_END;
+      let adUnit = { foo: 'bar' };
+
+      aolAnalytics.buildEventUrl.returns('http://www.example.com/');
+      aolAnalytics.reportEvent(event, adUnit);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal('http://www.example.com/');
+    });
+  });
+
   describe('buildEventUrl()', () => {
     describe('for AUCTION event', () => {
       it('should build the default hbevent endpoint', () => {
