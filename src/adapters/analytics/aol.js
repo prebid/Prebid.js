@@ -159,7 +159,7 @@ export default utils.extend(adapter({
       tagversion: '3.0',
       network: aolParams.network || '',
       placement: aolParams.placement,
-      site: aolParams.pageid || 0,
+      site: aolParams.pageId || 0,
       eventid: eventId,
       hbeventts: Math.floor(Date.now() / 1000) // Unix timestamp in seconds.
     };
