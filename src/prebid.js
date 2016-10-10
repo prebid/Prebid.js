@@ -459,14 +459,27 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         if (doc===document || adObject.mediaType === 'video') {
           utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
         } else if (ad) {
-          doc.write(ad);
+          // Write ad into sandboxed iframe.
+          var iframe = doc.createElement('iframe');
+          iframe.sandbox = 'allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock';
+          var style = '';
+          style = style + 'min-height:' + height + ';';
+          style = style + 'min-width:' + width + ';';
+          style = style + 'border:none;';
+          iframe.style = style;
+          doc.body.appendChild(iframe);
+          iframe.contentWindow.document.open('text/htmlreplace');
+          iframe.contentWindow.document.write(ad);
+          iframe.contentWindow.document.close();
           doc.close();
+
           if (doc.defaultView && doc.defaultView.frameElement) {
             doc.defaultView.frameElement.width = width;
             doc.defaultView.frameElement.height = height;
           }
         } else if (url) {
-          doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
+          // Write ad into sandboxed iframe.
+          doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '" SANDBOX="allow-forms allow-scripts allow-same-origin allow-popups allow-pointer-lock"></IFRAME>');
           doc.close();
 
           if (doc.defaultView && doc.defaultView.frameElement) {
