@@ -526,17 +526,18 @@ var sendAdToCreative = function (ev) {
     // Do nothing.  No ad found.
   }
   if (data.adId) {
+    console.log('sendAdToCreative ev: ', ev);
     var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
       return bid.adId === data.adId;
     });
     var ad = adObject.ad;
     var adUrl = adObject.adUrl;
     var message = JSON.stringify({
-      message: 'send ad',
+      message: 'send ad ' + data.adID,
       ad: ad,
       adUrl: adUrl
     });
-    ev.source.postMessage(message, 'https://securepubads.g.doubleclick.net');
+    ev.source.postMessage(message, '*');
 
     // document.getElementsByTagName('iframe')[0].contentWindow.postMessage(message, 'https://prebid.org');
   }
