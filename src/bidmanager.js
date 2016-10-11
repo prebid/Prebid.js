@@ -12,10 +12,6 @@ var externalOneTimeCallback = null;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 
-const _lgPriceCap = 5.00;
-const _mgPriceCap = 20.00;
-const _hgPriceCap = 20.00;
-
 /**
  * Returns a list of bidders that we haven't received a response yet
  * @return {array} [description]
@@ -380,73 +376,3 @@ function getStandardBidderAdServerTargeting() {
 }
 
 exports.getStandardBidderAdServerTargeting = getStandardBidderAdServerTargeting;
-
-function getPriceBucketString(cpm) {
-  var cpmFloat = 0;
-  var returnObj = {
-    low: '',
-    med: '',
-    high: '',
-    auto: '',
-    dense: ''
-  };
-  try {
-    cpmFloat = parseFloat(cpm);
-    if (cpmFloat) {
-      //round to closest .5
-      if (cpmFloat > _lgPriceCap) {
-        returnObj.low = _lgPriceCap.toFixed(2);
-      } else {
-        returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
-      }
-
-      //round to closest .1
-      if (cpmFloat > _mgPriceCap) {
-        returnObj.med = _mgPriceCap.toFixed(2);
-      } else {
-        returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
-      }
-
-      //round to closest .01
-      if (cpmFloat > _hgPriceCap) {
-        returnObj.high = _hgPriceCap.toFixed(2);
-      } else {
-        returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
-      }
-
-      // round auto default sliding scale
-      if (cpmFloat <= 5) {
-        // round to closest .05
-        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 10) {
-        // round to closest .10
-        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.auto = '20.00';
-      }
-
-      // dense mode
-      if (cpmFloat <= 3) {
-        // round to closest .01
-        returnObj.dense = (Math.floor(cpm * 100) / 100).toFixed(2);
-      } else if (cpmFloat <= 8) {
-        // round to closest .05
-        returnObj.dense = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.dense = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.dense = '20.00';
-      }
-    }
-  } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
-  }
-
-  return returnObj;
-}
