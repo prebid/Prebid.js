@@ -465,7 +465,9 @@ describe('bidmanager.js', function () {
     before(() => {
       $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
-
+    after(() =>{
+      $$PREBID_GLOBAL$$.adUnits = [];
+    });
     it('should return proper price bucket increments for dense mode', () => {
       const bid = Object.assign({},
         bidfactory.createBid(2),
