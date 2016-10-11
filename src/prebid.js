@@ -536,7 +536,7 @@ var sendAdToCreative = function (ev) {
       ad: ad,
       adUrl: adUrl
     });
-    ev.source.postMessage(message, 'https://amp.prebidapp.com:5000');
+    ev.source.postMessage(message, 'https://securepubads.g.doubleclick.net');
 
     // document.getElementsByTagName('iframe')[0].contentWindow.postMessage(message, 'https://prebid.org');
   }
