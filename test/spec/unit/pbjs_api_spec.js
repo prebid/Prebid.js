@@ -5,6 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
+  getAdUnits
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -24,6 +25,7 @@ var config = require('test/fixtures/config.json');
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+$$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 function resetAuction() {
   $$PREBID_GLOBAL$$._sendAllBids = false;
