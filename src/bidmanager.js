@@ -1,4 +1,5 @@
 import { uniques } from './utils';
+import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -91,7 +92,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     //append price strings
-    const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
+    const priceStringsObj = getPriceBucketString(bid.cpm);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;

@@ -1,116 +1,113 @@
-let customConfig;
-const _lgPriceCap = 5.00;
-const _mgPriceCap = 20.00;
-const _hgPriceCap = 20.00;
-
-function getPriceBucketString(cpm) {
-  var cpmFloat = 0;
-  var returnObj = {
-    low: '',
-    med: '',
-    high: '',
-    auto: '',
-    dense: '',
-    custom: ''
-  };
-  try {
-    cpmFloat = parseFloat(cpm);
-    if (cpmFloat) {
-      //round to closest .5
-      if (cpmFloat > _lgPriceCap) {
-        returnObj.low = _lgPriceCap.toFixed(2);
-      } else {
-        returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
-      }
-
-      //round to closest .1
-      if (cpmFloat > _mgPriceCap) {
-        returnObj.med = _mgPriceCap.toFixed(2);
-      } else {
-        returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
-      }
-
-      //round to closest .01
-      if (cpmFloat > _hgPriceCap) {
-        returnObj.high = _hgPriceCap.toFixed(2);
-      } else {
-        returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
-      }
-
-      // round auto default sliding scale
-      if (cpmFloat <= 5) {
-        // round to closest .05
-        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 10) {
-        // round to closest .10
-        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.auto = '20.00';
-      }
-
-      // dense mode
-      if (cpmFloat <= 3) {
-        // round to closest .01
-        returnObj.dense = (Math.floor(cpm * 100) / 100).toFixed(2);
-      } else if (cpmFloat <= 8) {
-        // round to closest .05
-        returnObj.dense = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.dense = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.dense = '20.00';
-      }
-    }
-  } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
-  }
-
-  return returnObj;
-}
-
-
-foo = {
-  "precision" : 2,
-  "buckets" : [
-    {
+const _defaultPrecision = 2;
+const _lgPriceConfig = {
+  "buckets" : [{
       "min" : 0,
-      "max" : 2.5,
+      "max" : 5,
+      "increment" : 0.5,
+      "cap" : true
+    }]
+};
+const _mgPriceConfig = {
+  "buckets" : [{
+      "min" : 0,
+      "max" : 20,
       "increment" : 0.1,
-      "cap" : false
+      "cap" : true
+    }]
+};
+const _hgPriceConfig = {
+  "buckets" : [{
+      "min" : 0,
+      "max" : 20,
+      "increment" : 0.01,
+      "cap" : true
+    }]
+};
+const _densePriceConfig = {
+  "buckets" : [{
+      "min" : 0,
+      "max" : 3,
+      "increment" : 0.01,
     },
     {
-      "min" : 2.5,
+      "min" : 3,
+      "max" : 8,
+      "increment" : 0.05,
+    },
+    {
+      "min" : 8,
+      "max" : 20,
+      "increment" : 0.5,
+      "cap" : true
+    }]
+};
+const _autoPriceConfig = {
+  "buckets" : [{
+      "min" : 0,
+      "max" : 5,
+      "increment" : 0.05,
+    },
+    {
+      "min" : 5,
       "max" : 10,
-      "increment" : 0.25,
-      "cap" : false
+      "increment" : 0.1,
     },
     {
       "min" : 10,
-      "max" : 25,
+      "max" : 20,
       "increment" : 0.5,
       "cap" : true
-    }
-  ]
+    }]
 };
 
-function getPriceBuckets(config, cpm) {
+function getPriceBucketString(cpm, customConfig) {
+  var cpmFloat = 0;
+  cpmFloat = parseFloat(cpm);
+  if(isNaN(cpmFloat)){
+    cpmFloat = '';
+  }
 
+  return {
+    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig),
+    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig),
+    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig),
+    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig),
+    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig),
+    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
+  };
+}
+
+function getCpmStringValue(cpm, config) {
+  let cpmStr = '';
+  if(!isValidePriceConfig(config)) return cpmStr;
+
+  let bucket = config.buckets.find(bucket =>{
+    if(bucket.cap && cpm > bucket.max){
+      cpmStr = bucket.max;
+    }
+    else if(cpm <= bucket.max && cpm >= bucket.min){
+      return bucket;
+    }
+  });
+  if(bucket){
+    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
+  }
+  return cpmStr;
 }
 
 function isValidePriceConfig(config) {
-  //todo
+  if(!config){
+    return false;
+  }
   return true;
 }
 
-function getBucket(cpm, increment, precision) {
+function getCpmTarget(cpm, increment, precision) {
+  if(!precision) {
+    precision = _defaultPrecision;
+  }
   let bucketSize = 1 / increment;
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
-export (customConfig, getPriceBuckets);
+export {getPriceBucketString, isValidePriceConfig };
