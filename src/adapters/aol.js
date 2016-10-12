@@ -60,7 +60,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addErrorBidResponse(bid, response = {}) {
-    var bidResponse = bidfactory.createBid(2);
+    const bidResponse = bidfactory.createBid(2, bid);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.reason = response.nbr;
     bidResponse.raw = response;
@@ -97,7 +97,7 @@ var AolAdapter = function AolAdapter() {
       ad += bidData.ext.pixels;
     }
 
-    var bidResponse = bidfactory.createBid(1);
+    const bidResponse = bidfactory.createBid(1, bid);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.ad = ad;
     bidResponse.cpm = cpm;
