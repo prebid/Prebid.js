@@ -9,6 +9,7 @@ var objectType_function = 'function';
 var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
 var externalOneTimeCallback = null;
+var externalOneTimeCallbackTimer = false;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 
@@ -222,6 +223,11 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (timedOut) {
+  // if there's still a timeout running, clear it now
+  if (externalOneTimeCallbackTimer) {
+    clearTimeout(externalOneTimeCallbackTimer);
+  }
+
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
@@ -290,10 +296,12 @@ function groupByPlacement(prev, item, idx, arr) {
 
 /**
  * Add a one time callback, that is discarded after it is called
- * @param {Function} callback [description]
+ * @param {Function} callback
+ * @param timer Timer to clear if callback is triggered before timer time's out
  */
-exports.addOneTimeCallback = function (callback) {
+exports.addOneTimeCallback = function (callback, timer) {
   externalOneTimeCallback = callback;
+  externalOneTimeCallbackTimer = timer;
 };
 
 exports.addCallback = function (id, callback, cbEvent) {
