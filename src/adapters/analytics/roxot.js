@@ -1,10 +1,6 @@
 import { ajax } from 'src/ajax';
-
-/**
- * example2.js - analytics adapter for Example2 Analytics Endpoint example
- */
-
 import adapter from 'AnalyticsAdapter';
+
 const utils = require('../../utils');
 
 const url = '//d.rxthdr.com/analytics';
