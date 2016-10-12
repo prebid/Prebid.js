@@ -1,9 +1,9 @@
-var utils = require('../utils.js');
-var ajax = require('../ajax.js').ajax;
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
+const utils = require('../utils.js');
+const ajax = require('../ajax.js').ajax;
+const bidfactory = require('../bidfactory.js');
+const bidmanager = require('../bidmanager.js');
 
-var AolAdapter = function AolAdapter() {
+const AolAdapter = function AolAdapter() {
 
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
@@ -28,8 +28,8 @@ var AolAdapter = function AolAdapter() {
   function _buildPubapiUrl(bid) {
     const params = bid.params;
     const serverParam = params.server;
-    var regionParam = params.region || 'us';
-    var server;
+    let regionParam = params.region || 'us';
+    let server;
 
     if (!SERVER_MAP.hasOwnProperty(regionParam)) {
       console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
@@ -68,17 +68,16 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addBidResponse(bid, response) {
-    var bidData;
+    let bidData;
 
     try {
       bidData = response.seatbid[0].bid[0];
     } catch (e) {
-      utils.logError('Invalid bid response', BIDDER_CODE, bid);
       _addErrorBidResponse(bid, response);
       return;
     }
 
-    var cpm;
+    let cpm;
 
     if (bidData.ext && bidData.ext.encp) {
       cpm = bidData.ext.encp;
@@ -92,7 +91,7 @@ var AolAdapter = function AolAdapter() {
       }
     }
 
-    var ad = bidData.adm;
+    let ad = bidData.adm;
     if (bidData.ext && bidData.ext.pixels) {
       ad += bidData.ext.pixels;
     }
@@ -114,10 +113,10 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _callBids(params) {
-    utils._each(params.bids, function (bid) {
+    utils._each(params.bids, bid => {
       const pubapiUrl = _buildPubapiUrl(bid);
 
-      ajax(pubapiUrl, (response) => {
+      ajax(pubapiUrl, response => {
         if (!response && response.length <= 0) {
           utils.logError('Empty bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response);
