@@ -672,8 +672,9 @@ other demand sources who report the real price.
 pbjs.bidderSettings = {
   standard: { ... }
   aol: {
-    bidCpmAdjustment : function(bidCpm){
+    bidCpmAdjustment : function(bidCpm, bid){
       // adjust the bid in real time before the auction takes place
+      console.log('Bidder is: ' + bid.bidderCode);
       return bidCpm * .85;
     }
   }
