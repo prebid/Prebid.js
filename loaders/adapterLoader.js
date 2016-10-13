@@ -7,14 +7,14 @@
 
 
 const fs = require('fs');
+const path = require('path');
 const blockLoader = require('block-loader');
 const getAdapters = require('./getAdapters');
 
-const adapters = getAdapters();
-const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
+const adapters = getAdapters('../adapters.json');
+const files = fs.readdirSync(path.join(__dirname, '..', 'src', 'adapters')).map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
 const aliases = adapters.filter(getAliases);
-const videoAdapters = adapters.filter(getVideoAdapters).map(getNames);
 
 var options = {
   start: '/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */',
@@ -36,7 +36,7 @@ function insertAdapters() {
   }
 
   const inserts = adapterNames.map(name => {
-    if (files.includes(name)) {
+    if (files.indexOf(name) !== -1) {
       return name;
     } else {
       console.log(`Prebid Warning: no adapter found for ${name}, continuing.`);
@@ -50,14 +50,18 @@ function insertAdapters() {
   }
 
   return inserts.map(name => {
-    return `var ${adapterName(name)} = require('./adapters/${name}.js');
-    exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+    if (name === 'appnexusAst') {
+      return `import { AppnexusAst } from './adapters/appnexusAst';
+        exports.registerBidAdapter(new AppnexusAst('appnexus'), 'appnexus');\n`;
+    } else {
+      return `var ${adapterName(name)} = require('./adapters/${name}.js');
+        exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+    }
   })
     .concat(aliases.map(adapter => {
       const name = Object.keys(adapter)[0];
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
-    .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 }
 
@@ -77,7 +81,7 @@ function adapterName(adapter) {
  * @returns {string}
  */
 function useCreateNew(adapter) {
-  return ['appnexus', 'appnexusAst'].includes(adapter) ? '.createNew' : '';
+  return adapter === 'appnexus' ? '.createNew' : '';
 }
 
 /**
@@ -111,15 +115,6 @@ function getNames(adapter) {
 function getAliases(adapter) {
   const name = Object.keys(adapter)[0];
   return adapter && name && adapter[name].alias;
-}
-
-/**
- * Returns adapter objects that support video
- */
-function getVideoAdapters(adapter) {
-  const name = Object.keys(adapter)[0];
-  return adapter && name && adapter[name].supportedMediaTypes
-    && adapter[name].supportedMediaTypes.includes('video');
 }
 
 module.exports = blockLoader(options);

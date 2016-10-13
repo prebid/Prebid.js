@@ -1,35 +1,25 @@
 'use strict';
-
 const fs = require('fs');
 const path = require('path');
 const argv = require('yargs').argv;
 
-const defaultAdapters = 'adapters.json';
+const jsonPath = argv['adapters'] || '';
 
-function load(file) {
+module.exports = function getAdapters(all) {
+  const json = path.resolve(path.join(__dirname, '..'), jsonPath);
+  console.info('>> adapters resolved from: ', jsonPath, json);
+
+  let adapters;
   try {
-    const buffer = fs.readFileSync(file);
-    return JSON.parse(buffer.toString());
+    fs.statSync(json);
+    adapters = require(json);
   } catch (e) {
-    return [];
-  }
-}
-
-module.exports = function getAdapters() {
-  let customAdapters = argv.adapters;
-
-  if (!customAdapters) {
-    return load(defaultAdapters);
+    if (jsonPath) {
+      console.log(`Prebid Warning: custom adapters config cannot be loaded from ${json}, ` +
+        'using default adapters.json');
+    }
+    adapters = require(all);
   }
 
-  customAdapters = path.resolve(process.cwd(), customAdapters);
-
-  try {
-    fs.statSync(customAdapters);
-    return load(customAdapters);
-  } catch (e) {
-    console.log(`Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
-      'using default adapters.json');
-    return load(defaultAdapters);
-  }
+  return adapters;
 };
