@@ -8,8 +8,10 @@
     "appnexus",
     "appnexusAst",
     "getintent",
+    "hiromedia",
     "indexExchange",
     "kruxlink",
+    "komoona",
     "openx",
     "piximedia",
     "pubmatic",
@@ -28,7 +30,7 @@
     "underdogmedia",
     "memeglobal",
     "centro",
-    "komoona",
+    "roxot",
     {
       "appnexus": {
         "alias": "brealtime"
