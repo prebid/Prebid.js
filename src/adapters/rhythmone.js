@@ -1,16 +1,46 @@
+/*
+  Copyright (c) 2016 RhythmOne, LLC. All rights reserved.
+*/
+
 var bidmanager = require('../bidmanager.js'),
   bidfactory = require('../bidfactory.js'),
-  adloader = require('../adloader.js');
+  adloader = require('../adloader.js'),
+  utils = require('../utils.js');
 
-module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
+import {ajax as ajax} from '../ajax';
 
-  var version = "0.9.0.0";
+function setupGA() {
+  /* jshint ignore:start */
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
+  ga('create', 'UA-63935000-31', { 'name': 'r1hbga' });
+  ga('r1hbga.send', 'pageview');
+  /* jshint ignore:end */
+}
+
+function track(p1, p2, p3) {
+  window.ga('r1hbga.send', 'event', p1, p2, p3);
+  //console.log('GA: %s %s %s', p1, p2, p3 || '');
+}
+
+setupGA();
+
+var w = (typeof window !== "undefined" ? window : {});
+w.trackR1Impression = track;
+  
+module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, loader){
+
+  var version = "0.9.0.0",
+    defaultZone = "1r";
+    
   if(typeof global === "undefined")
     global = window;
       
   if(typeof bidManager === "undefined")
     bidManager = bidmanager;
+    
+  if(typeof loader === "undefined")
+    loader = ajax;
   
   function generateId(length, base){
     var x = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_",
@@ -22,73 +52,10 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
     return r;
   }
   
-  function log(userId, publisherId, totalBids, successfulBids){
-    var img = new Image(),
-      url = '//rhythmanalytics.1rx.io/rhythmanalytics/img?tracking_id=prebid_r1&hit_type=event&time_ms='+(new Date()).getTime();
-
-    url += "&page_url="+encodeURIComponent(document.location.href.toString());
-    
-    if(typeof userId === "string"){
-        
-      url += "&metric2="+encodeURIComponent(userId);
-      
-      if(typeof publisherId === "string")
-        url += "&metric1="+encodeURIComponent(publisherId);
-      
-      if(typeof totalBids === "number" && typeof successfulBids === "number"){
-        // send the bids report
-        url += "&metric0=postBids";
-        url += "&metric4="+totalBids;
-        url += "&metric5="+successfulBids;
-      }
-      else url += "&metric0=preBids";
-    }
-    else url += "&metric0=init";
-    
-    img.src = url;
-  }
-  
-  log();
-  
   var rhythmBidderUtilities = {
     template: function(){return "<div id=\"{0}_wrapper\"></div><script type=\"text/javascript\">("+rhythmBidderUtilities.process.toString()+")({1}, {6}, {2}, {3}, \"{0}\", {4}, \"{5}\");</scr"+"ipt>";},
-    process: "function (e,t,r,n,i,a,o){function d(e,t,r,i){var a=[\"bidderCode\",\"size\",\"adUnitCode\",\"cpm\",\"timeToRespond\"],o=[\"b\",\"s\",\"a\",\"c\",\"t\"],d=0,s=[],c=new Image,u=\"\",p=document.location.ancestorOrigins,l=\"//rhythmanalytics.1rx.io/rhythmanalytics/img?tracking_id=prebid_r1&hit_type=event&time_ms=\"+(new Date).getTime()+\"&metric0=allBids&metric1=\"+encodeURIComponent(t)+\"&metric2=\"+encodeURIComponent(n.user.id);for(var f in e)for(d=0;d<e[f].bids.length;d++){for(var g={},m=0;m<a.length;m++)g[o[m]]=e[f].bids[d][a[m]];s.push(g)}try{u=null!==r?i.document.location.href.toString():p&&p.length>0?p[p.length-1]:document.location.href.toString()}catch(b){}for(l+=\"&page_url=\"+encodeURIComponent(u),d=0;d<s.length&&10>d;d++)l+=\"&dimension\"+d+\"=\"+encodeURIComponent(JSON.stringify(s[d]));c.src=l}function s(e,t,n){var i=document.createElement(\"iframe\");i.style.border=\"0\",i.scrolling=\"no\",i.seamless=\"seamless\",i.style.height=r.h+\"px\",i.style.width=r.w+\"px\",e.style.height=r.h+\"px\",e.style.width=r.w+\"px\",e.appendChild(i),t?(i.contentWindow.document.open(),i.contentWindow.document.write('<html><head></head><body style=\"margin:0;padding:0;\">'+t+\"</body></html>\"),/(MSIE|Trident|Edge)/.test(window.navigator.userAgent)===!1&&i.contentWindow.document.close()):n&&(i.src=n)}var c=window,u=function(){try{for(;c;){if(c.$$PREBID_GLOBAL$$||c===window.top)return c.$$PREBID_GLOBAL$$;c=c.parent}}catch(e){}return null}(),p=u?u.getBidResponses():{},l=p[i],f=0;d(p,o,u,c);var g=[n.imp[0].bidfloor];if(l)for(var m=0;m<l.bids.length;m++)g.push(parseFloat(l.bids[m].cpm));g.sort(),f=g[g.length-2]+.01;var b=/\\$\\{AUCTION_([A-Z_]+)\\}/g,h={ID:n.id,BID_ID:r.id,IMP_ID:r.impid,SEAT_ID:a.id,AD_ID:r.adid,PRICE:f,CURRENCY:n.cur[0]};e&&(e=e.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),t&&(t=t.replace(b,function(e){var t=b.exec(e)[1];return h[t]?h[t]:e})),s(document.getElementById(i+\"_wrapper\"),e,t)}"
-    /*
-    process: function(markup, url, bidResponse, bidRequest, target, seat, publisherId){
-    
-      function log(bd, publisherId, pjs, win){
-        var columns = ["bidderCode","size","adUnitCode","cpm","timeToRespond"],
-          abbreviated = ["b", "s", "a", "c", "t"],
-          i=0,
-          data = [],
-          img = new Image(),
-          page = "",
-          d = document.location.ancestorOrigins,
-          url = '//rhythmanalytics.1rx.io/rhythmanalytics/img?tracking_id=prebid_r1&hit_type=event&time_ms='+(new Date()).getTime()+
-            "&metric0=allBids"+
-            "&metric1="+encodeURIComponent(publisherId)+
-            "&metric2="+encodeURIComponent(bidRequest.user.id);
-          
-        for(var k in bd)
-          for(i=0; i<bd[k].bids.length; i++){
-            var cropped = {};
-            for(var j=0; j<columns.length; j++)
-              cropped[abbreviated[j]] = bd[k].bids[i][columns[j]];
-            data.push(cropped);
-          }
-        
-        try{
-          page = (pjs !== null ? win.document.location.href.toString() : (d && d.length > 0 ? d[d.length-1] : document.location.href.toString()));
-        }
-        catch(ex){}
 
-        url += "&page_url="+encodeURIComponent(page);
-        
-        for(i=0; i<data.length && i<10; i++)
-          url += "&dimension"+i+"="+encodeURIComponent(JSON.stringify(data[i]));
-        
-        img.src = url;
-      }
+    process: function(markup, url, bidResponse, bidRequest, target, seat){
     
       function frameWrap(target, markup, url){
         var f = document.createElement("iframe");
@@ -128,8 +95,8 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
         secondPrice = 0;
     
       //console.log(responses);
-    
-      log(responses, publisherId, pjs, w);
+      
+      window.parent.trackR1Impression('hb', 'impression');
       
       var prices = [bidRequest.imp[0].bidfloor];
         
@@ -167,72 +134,48 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
           return match;
         });
       
-      frameWrap(document.getElementById(target+"_wrapper"), markup, url);
+      var wrapper = document.getElementById(target+"_wrapper");
+      frameWrap(wrapper, markup, url);
+      return wrapper;
     }
-    */
   };
+  
+  this.testAdWrapper = function(markup, url, bidResponse, bidRequest, target, seat, publisherId){
+    return rhythmBidderUtilities.process(markup, url, bidResponse, bidRequest, target, seat, publisherId);
+  };
+  
+  track('hb', 'start', version);
   
   //console.log(JSON.stringify(rhythmBidderUtilities.process.toString()));
   
   function load( url, jsonObject, callback){
     
     var json = JSON.stringify(jsonObject),
-      x;
+      called = false;
     
     logToConsole("posting "+json+" to "+url);
     
-    if(typeof global.XDomainRequest !== "undefined"){
-      
-      // this section is for IE 8 compatibility
-      
-      if(typeof global.xDomainRequests === "undefined")
-        global.xDomainRequests = [];  // fixes IE8 issue where the domain request is garbage collected too early
-
-      x = new global.XDomainRequest();
-      x.onerror = function(){
-        callback(-1, "http error - XDomainRequest");
-      };
-      x.ontimeout = function(){callback(-1, "http timeout - XDomainRequest");};
-      x.onprogress = function(){};
-      x.onload = function() {
-        callback(200, "success", x.responseText);
-      };
-      x.open("POST", url, true);
-      x.send(json);
-      
-      global.xDomainRequests.push(x); // fixes IE8 issue where the domain request is garbage collected too early
-    }
-    else{
-      var called = false;
-      x = new global.XMLHttpRequest(url);
-      x.addEventListener("readystatechange", function(){
-        if(x.readyState === 4){
-          if(x.status === 200){
-            callback(200, "success", x.responseText);
-          }
-          else if(!called){
-            called = true;
-            callback(-1, "http error "+x.status, x.responseText);
-          }
-        }
-      });
-      x.addEventListener("error", function(){if(!called){called = true;callback(-1, "http error - "+x.status);}});
-      x.addEventListener("abort", function(){if(!called){called = true;callback(-1, "http abort - "+x.status);}});
-      x.open('POST', url);
-      x.setRequestHeader("Content-Type", "application/json");
-      //x.setRequestHeader("x-openrtb-version", "2.3");  
-      x.send(json);
-    }
+    loader(url, function(responseText, response){
+      if(response.status === 200){
+        clearTimeout(abort);
+        callback(200, "success", response.responseText);
+      }
+      else if(!called){
+        clearTimeout(abort);
+        called = true;
+        callback(-1, "http error "+response.status, response.responseText);
+      }
+    }, json, {method:"POST", contentType: "application/json"});
+    
+    var abort = setTimeout(function(){
+      if(!called){
+        called = true;
+        callback(-1, "http request timeout", "");
+      }
+    }, Math.floor($$PREBID_GLOBAL$$.cbTimeout * 0.9));
   }
 
   var bidderCode = "rhythmone";
-  
-  function GUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : r & 0x3 | 0x8).toString(16);
-    });
-  }
   
   function setIfPresent(o, key, value){
     try{
@@ -262,7 +205,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
       "at": 2,
       "tmax": 3000,
       "cur": ["USD"],
-      "id": GUID()
+      "id": utils.generateUUID()
     };
 
     var imp = {
@@ -289,7 +232,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
     setIfPresent(o.site, "page", function(){
       var d = (typeof bid.params === "object" ? bid.params.domain : null),
         l;
-      try{l = top.document.location.href.toString();}
+      try{l = global.top.document.location.href.toString();}
       catch(ex){l = document.location.href.toString();}
       if(d) l = l.replace(/^(https?)\:\/\/[^\/]*/i, function(m){
         m = (/^(https?)\:/ig).exec(m)[1];
@@ -303,14 +246,16 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
       d = document.location.ancestorOrigins;
       if(d && d.length > 0)
         return d[d.length-1];
-      return top.document.location.hostname;
+      return global.top.document.location.hostname;
     });
     setIfPresent(o.site, "name", function(){return top.document.title;});
     
-    if(!bid.params.placementId)
-      bid.params.placementId = "39483";
+    if(!bid.params.placementId){
+      logToConsole("required parameter 'placementId' not provided.  cannot bid");
+      return;
+    }
   
-    var endpoint = "//tag.1rx.io/rmp/{placementId}/0/vo?z=hb";
+    var endpoint = "//tag.1rx.io/rmp/{placementId}/0/vo?z={zone}";
     if(typeof bid.params === "object"){
     
       if(typeof bid.params.page === "string")
@@ -318,6 +263,9 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
     
       if(typeof bid.params.endpoint === "string")
         endpoint = bid.params.endpoint;
+      
+      if(typeof bid.params.zone === "string")
+        defaultZone = bid.params.zone;
       
       if(typeof bid.params.ip === "string")
         o.device.ip = bid.params.ip;
@@ -341,6 +289,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
     setIfPresent(o.device, "w", function(){return global.screen.width;});
     
     endpoint = endpoint.replace(/{placementId}/i, bid.params.placementId);
+    endpoint = endpoint.replace(/{zone}/i, defaultZone);
   
     var trace = (typeof bid.params === "object" ? bid.params.trace : null);
   
@@ -368,6 +317,13 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
   
   this.callBids = function(params){
   
+    track('hb', 'callBids');
+
+    global.pbjs.addCallback("auctionEnd", function(){
+      for(var i=0; i<bidCount; i++)
+        track('hb', 'bidTooSlow');
+    });
+  
     function finish(){
   
       var sandbox = new ZTStorage("//d3rim8qxq4v92b.cloudfront.net/ztstorage/bg.htm"),
@@ -382,13 +338,11 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
         
           var uGUID = response.uGUID;
           if(typeof uGUID === "undefined"){
-            uGUID = GUID();
+            uGUID = utils.generateUUID();
             cl = new ZTStorageCommandList();
             cl.set("uGUID", uGUID);
             sandbox.send(cl);
           }
-
-          log(uGUID);
           
           function bidSort(a, b){
             return b.cpm - a.cpm;
@@ -408,6 +362,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
               bidCount--;
               logToConsole("response: "+JSON.stringify(response));
               if(response !== -1){
+                track('hb', 'rmpReplySuccess');
                 var adResponse = bidfactory.createBid(1),
                 reply = response.seatbid[0].bid[0];
             
@@ -424,7 +379,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
                       JSON.stringify(reply).replace(/<\/script/g, "</scr\"+\"ipt"),
                       JSON.stringify(bidRequest),
                       JSON.stringify(response).replace(/<\/script/g, "</scr\"+\"ipt"),
-                      bid.params.placementId,
+                      placementID,
                       (reply.nurl?"\""+reply.nurl.replace(/"/g, "\\\"")+"\"":"false")
                     ];
                   if(i > -1 && i < values.length)
@@ -436,6 +391,8 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
 
                 bidStack[bid.placementCode].push(adResponse);
               }
+              else track('hb', 'rmpReplyFail');
+              
               if(bidCount === 0){
              
                 var stackLength = 0;
@@ -448,6 +405,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
                     bidStack[k].sort(bidSort);
                     logToConsole("registering bid "+k+" "+JSON.stringify(bidStack[k][0]));
                     bidManager.addBidResponse(k, bidStack[k][0]);
+                    track('hb', 'bidResponse');
                     successfulBids++;
                   }
                   stackLength++;
@@ -455,11 +413,20 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global){
                 
                 attemptedBids += stackLength;
                 
+                // if no bids are successful, inform prebid
+                if(successfulBids === 0){
+                  bid = bidfactory.createBid(2);
+                  bid.bidderCode = bidderCode;
+                  bidmanager.addBidResponse(bid.placementCode, bid);
+                }
+                
                 // when all bids are complete, log a report
-                log(uGUID, placementID, attemptedBids, successfulBids);
+                track('hb', 'bidsComplete');
               }
             }
+            track('hb', 'bidRequest');
             for(var j = 0; j<bid.sizes.length; j++){
+              track('hb', 'rmpRequest');
               bidCount++;
               ORTB(bid, bid.sizes[j], uGUID, response.ip, responseHandler);
             }
