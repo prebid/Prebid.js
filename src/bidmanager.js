@@ -224,7 +224,7 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 
 exports.executeCallback = function (timedOut) {
   // if there's still a timeout running, clear it now
-  if (externalOneTimeCallbackTimer) {
+  if (!timedOut && externalOneTimeCallbackTimer) {
     clearTimeout(externalOneTimeCallbackTimer);
   }
 
@@ -248,6 +248,7 @@ exports.executeCallback = function (timedOut) {
     }
     finally {
       externalOneTimeCallback = null;
+      externalOneTimeCallbackTimer = false;
       $$PREBID_GLOBAL$$.clearAuction();
     }
   }

@@ -276,11 +276,12 @@ function removeComplete() {
   let requests = $$PREBID_GLOBAL$$._bidsRequested;
   let responses = $$PREBID_GLOBAL$$._bidsReceived;
 
-  requests.map(request => request.bids
-      .filter(bid => bid.complete))
-    .forEach(request => requests.splice(requests.indexOf(request), 1));
+  requests.filter(request => {
+    let bids = request.bids.filter(bid => bid.complete === true);
+    return bids.length === request.bids.length;
+  }).forEach(request => requests.splice(requests.indexOf(request), 1));
 
-  responses.filter(bid => bid.complete).forEach(bid => responses.splice(responses.indexOf(bid), 1));
+  responses.filter(bid => bid.complete === true).forEach(bid => responses.splice(responses.indexOf(bid), 1));
 
   // also remove bids that have an empty or error status so known as not pending for render
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
