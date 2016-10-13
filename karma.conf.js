@@ -1,13 +1,9 @@
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
-webpackConfig.module.postLoaders = [
-  {
-    test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
-    loader: 'istanbul-instrumenter'
-  }
-];
+webpackConfig.module.loaders[0].query = {
+  plugins: ['istanbul']
+};
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 
@@ -52,7 +48,7 @@ module.exports = function (config) {
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
       '!test/**/*_spec.js': 'coverage',
-      'src/**/*.js': ['webpack', 'coverage']
+      'src/**/*.js': ['webpack']
     },
 
     // WebPack Related
