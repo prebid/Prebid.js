@@ -74,12 +74,13 @@ SekindoAdapter = function SekindoAdapter() {
     var subId = utils.getBidIdParamater('subId', bid.params);
     var bidfloor = utils.getBidIdParamater('bidfloor', bid.params);
     var protocol = ('https:' === document.location.protocol ? 's' : '');
-    var scriptSrc = 'http'+protocol+'://live.sekindo.com/live/liveView.php?';
+    var scriptSrc = 'http'+protocol+'://hb.sekindo.com/live/liveView.php?';
 
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 's', spaceId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'subId', subId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'pubUrl', pubUrl);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbcb', callbackId);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '1');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', '$$PREBID_GLOBAL$$');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
