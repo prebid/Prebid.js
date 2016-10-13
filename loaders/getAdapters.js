@@ -4,22 +4,32 @@ const fs = require('fs');
 const path = require('path');
 const argv = require('yargs').argv;
 
-const jsonPath = argv['adapters'] || '';
+const defaultAdapters = 'adapters.json';
 
-module.exports = function getAdapters(all) {
-  const json = path.resolve(process.cwd(), jsonPath);
-
-  let adapters;
+function load(file) {
   try {
-    fs.statSync(json);
-    adapters = require(json);
+    const buffer = fs.readFileSync(file);
+    return JSON.parse(buffer.toString());
   } catch (e) {
-    if (jsonPath) {
-      console.log(`Prebid Warning: custom adapters config cannot be loaded from ${json}, ` +
-        'using default adapters.json');
-    }
-    adapters = require(all);
+    return [];
+  }
+}
+
+module.exports = function getAdapters() {
+  let customAdapters = argv.adapters;
+
+  if (!customAdapters) {
+    return load(defaultAdapters);
   }
 
-  return adapters;
+  customAdapters = path.resolve(process.cwd(), customAdapters);
+
+  try {
+    fs.statSync(customAdapters);
+    return load(customAdapters);
+  } catch (e) {
+    console.log(`Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
+      'using default adapters.json');
+    return load(defaultAdapters);
+  }
 };
