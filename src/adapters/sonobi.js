@@ -11,7 +11,8 @@ var SonobiAdapter = function SonobiAdapter(){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId));
+    var ref = (window.frameElement) ? encodeURI(top.location.host || document.referrer) : null;
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + (ref) ? '&ref=' + ref : '');
   }
 
   function _keymaker(adSlots){
