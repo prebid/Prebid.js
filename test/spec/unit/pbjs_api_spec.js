@@ -5,6 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
+  getAdUnits
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -24,12 +25,15 @@ var config = require('test/fixtures/config.json');
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+$$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 function resetAuction() {
   $$PREBID_GLOBAL$$._sendAllBids = false;
   $$PREBID_GLOBAL$$.clearAuction();
   $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+  $$PREBID_GLOBAL$$.adUnits = getAdUnits();
+
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -101,7 +105,9 @@ window.googletag = {
 };
 
 describe('Unit: Prebid Module', function () {
-
+  after(function(){
+    $$PREBID_GLOBAL$$.adUnits = [];
+  })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
