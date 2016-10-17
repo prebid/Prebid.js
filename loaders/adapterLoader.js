@@ -49,16 +49,17 @@ function insertAdapters() {
     return '';
   }
 
-  return inserts.map(name => {
+  return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
     exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+
   })
     .concat(aliases.map(adapter => {
       const name = Object.keys(adapter)[0];
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
-    .join('');
+    .join('/*!ADAPTER REGISTER DELIMITER*/');
 }
 
 /**

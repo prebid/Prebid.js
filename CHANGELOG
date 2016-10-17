@@ -1,0 +1,73 @@
+AOL Prebid 1.3.1
+----------------
+Fixed reporting of timed out bids in AOL analytics.
+
+
+AOL Prebid 1.3.0
+----------------
+Updated to Prebid 0.13.0.
+
+
+AOL Prebid 1.2.0
+----------------
+Updated to Prebid 0.12.0.
+Fixed sorting of per-adapter timeouts.
+Fixed ES6 features which require a polyfill.
+
+
+AOL Prebid 1.1.0
+----------------
+AOL adapter is optimized and heavily reduced in size.
+Small code optimizations in AOL analytics adapter.
+AOL analytics adapter now includes currency in the hbevent requests.
+
+
+AOL Prebid 1.0.7
+----------------
+BUGFIX: AOL analytics adapter reports timed out bids.
+
+
+AOL Prebid 1.0.6
+----------------
+BUGFIX: Ensure that auctionId never exceeds max 64 bit value. Limit length to 18 digits.
+
+
+AOL Prebid 1.0.5
+----------------
+BUGFIX: Ensure that an event is logged in the case when there are no bids from the DSPs.
+Populate the bid object with the deal ID for private deals.
+
+
+AOL Prebid 1.0.4
+----------------
+BUGFIX: Fixed default server for AOL adapter & analytics.
+BUGFIX: Fixed region option to be picked up by AOL analytics.
+BUGFIX: Separate server host names used for AOL adapter & analytics.
+BUGFIX: Consolidated default parameter values for invalid bids in AOL analytics.
+
+
+AOL Prebid 1.0.3
+----------------
+BUGFIX: Fixed empty hbbid parameter in AOL analytics in case of invalid bid response.
+
+
+AOL Prebid 1.0.2
+----------------
+BUGFIX: Fixed error in AOL adapter when processing cpm from bid response.
+BUGFIX: Support for undefined options in AOL analytics.
+
+
+AOL Prebid 1.0.1
+----------------
+BUGFIX: Fixed pubapi parameter in AOL analytics.
+Switched to v2 server endpoint, planned for initial release.
+
+
+AOL Prebid 1.0.0
+----------------
+Initial release
+- optimized AOL adapter
+- region config
+- AOL analytics
+- dynamic bundling of the adapters
+- per-adapter timeouts

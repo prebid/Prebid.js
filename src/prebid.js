@@ -563,10 +563,23 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  //set timeout for all bids
-  const timedOut = true;
-  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, cbTimeout);
+  var timeouts = [cbTimeout];
+  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
+
+  if (bidderSettings) {
+    for (var bidderCode in bidderSettings) {
+      if (bidderSettings.hasOwnProperty(bidderCode)) {
+        var bidderTimeout = bidderSettings[bidderCode].timeout;
+        if (bidderTimeout && bidderTimeout > cbTimeout) {
+          timeouts.push(bidderTimeout);
+        }
+      }
+    }
+    timeouts.sort((a, b) => a - b);
+  }
+
+  //set timeout(s) for all bids
+  bidmanager.setTimeouts(timeouts);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
