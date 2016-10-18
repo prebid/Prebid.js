@@ -467,7 +467,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           } else {
             let bid = bidfactory.createBid(2);
             bid.bidderCode = ADAPTER_CODE;
-            bidmanager.addBidResponse(adUnitCode, bid);
+            bidmanager.addBidResponse(adUnitCode, [bid]);
           }
 
         }

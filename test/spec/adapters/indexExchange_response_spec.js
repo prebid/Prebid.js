@@ -56,12 +56,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -99,12 +99,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -144,12 +144,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -188,12 +188,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -236,12 +236,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -284,12 +284,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -340,12 +340,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -389,12 +389,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -438,12 +438,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -493,12 +493,12 @@ describe('indexExchange adapter - Response', function () {
 
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
-			var bid        = bidManager.addBidResponse.getCall(i).args[1];
+			var bids       = bidManager.addBidResponse.getCall(i).args[1];
 
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].push(bid);
+			adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
