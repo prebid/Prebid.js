@@ -1,11 +1,10 @@
 'use strict';
-var VERSION = '1.0.1',
+var VERSION = '2.0.0',
     CONSTANTS = require('../constants.json'),
     utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
-    bidmanager = require('../bidmanager.js');
-
-var adloader = require('../adloader');
+    bidmanager = require('../bidmanager.js'),
+    adloader = require('../adloader');
 
 /**
  * Adapter for requesting bids from Conversant
@@ -59,7 +58,6 @@ var ConversantAdapter = function () {
 
   var callBids = function (params) {
     var conversantBids = params.bids || [];
-    // De-dupe by tagid then issue single bid request for all bids
     requestBids(conversantBids);
   };
 
@@ -157,7 +155,6 @@ var ConversantAdapter = function () {
         placementsWithBidsBack.push(placementCode);
         bidRequested.status = CONSTANTS.STATUS.GOOD;
 
-        // Register bid response with bidmanager
         responseCPM = parseFloat(conversantBid.price);
 
         if (responseCPM !== 0.0) {
@@ -173,8 +170,7 @@ var ConversantAdapter = function () {
 
           bid.cpm = responseCPM;
 
-          // Track impression image onto returned html and decode
-          // Using bid.ad as the server returns HTML snippets.  Can also return url to ad in bid.adurl
+          // Track impression image onto returned html
           bid.ad = responseAd + '<img src=\"' + responseNurl + '\" />';
 
           sizeArrayLength = bidRequested.sizes.length;
