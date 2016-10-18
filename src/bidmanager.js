@@ -253,12 +253,12 @@ function triggerAdUnitCallbacks(adUnitCode) {
   processCallbacks(externalCallbackByAdUnitArr, params);
 }
 
-function processCallbacks(callbackQueue) {
+function processCallbacks(callbackQueue, params) {
   var i;
   if (utils.isArray(callbackQueue)) {
     for (i = 0; i < callbackQueue.length; i++) {
       var func = callbackQueue[i];
-      func.call($$PREBID_GLOBAL$$, $$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {}));
+      func.apply($$PREBID_GLOBAL$$, params || [$$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {})]);
     }
   }
 }
