@@ -36,6 +36,7 @@ var eventValidators = {
 /* Public vars */
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
+$$PREBID_GLOBAL$$._bidRequestDone = {};
 $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];

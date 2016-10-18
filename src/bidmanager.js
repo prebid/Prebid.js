@@ -43,8 +43,7 @@ function getBidders(bid) {
 function bidsBackAdUnit(adUnitCode) {
   let requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
   if (requested) {requested = requested.bids.length;}
-  const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
-  return requested === received;
+  return requested === $$PREBID_GLOBAL$$._bidRequestDone[adUnitCode];
 }
 
 function add(a, b) {
@@ -53,7 +52,12 @@ function add(a, b) {
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add, 0);
-  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
+  let received = 0;
+  for (let p in $$PREBID_GLOBAL$$._bidRequestDone) {
+    if ($$PREBID_GLOBAL$$._bidRequestDone.hasOwnProperty(p)) {
+      received += $$PREBID_GLOBAL$$._bidRequestDone[p];
+    }
+  }
   return requested === received;
 }
 
@@ -65,10 +69,16 @@ function getBidSetForBidder(bidder) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
 }
 
+exports.addBidResponse = function(adUnitCode, bidList) {
+  $$PREBID_GLOBAL$$._bidRequestDone[adUnitCode] = ($$PREBID_GLOBAL$$._bidRequestDone[adUnitCode] || 0) + 1;
+  if (!utils.isArray(bidList)) { bidList = [bidList]; }
+  bidList.forEach(bid => this.addBidResponse_impl(adUnitCode, bid));
+};
+
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse_impl = function(adUnitCode, bid) {
   if (bid) {
 
     Object.assign(bid, {
