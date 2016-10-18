@@ -40,8 +40,19 @@ describe('underdog media adapter test', () => {
 
         }
       };
-    }
+    },
 
+    BidRequestArray: function(arr){
+      return {
+        send: function(){
+          for(var i = 0; i < arr.length; i++){
+            var req = new window.udm_header_lib.BidRequest(arr[i]);
+            req.send();
+
+          }
+        }
+      };
+    }
   };
 
   // The third bid here is an invalid site id and should return a 'no-bid'.
