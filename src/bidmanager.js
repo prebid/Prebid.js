@@ -152,7 +152,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   function filterIfSendStandardTargeting(bidderSettings) {
-    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidder_settings[bidderCode].sendStandardTargeting === false) {
+    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidderSettings.sendStandardTargeting === false) {
       for(var key in keyValues) {
         if(CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
           delete keyValues[key];
