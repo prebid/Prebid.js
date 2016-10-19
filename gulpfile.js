@@ -120,7 +120,10 @@ gulp.task('test', function () {
       'bs_chrome_51_mac_yosemite',
       'bs_safari_7.1_mac_mavericks',
       'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks'
+      'bs_chrome_49_mac_mavericks',
+      'bs_ios_7',
+      'bs_ios_8',
+      'bs_ios_9',
     ];
   }
 
