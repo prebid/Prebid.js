@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {getPriceBucketString, isValidePriceConfig} from 'src/cpmBucketManager';
-let cpmFixtures = require('test/fixtures/cpmINputsOutputs.json');
+let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
 describe('cpmBucketManager', () => {
 
@@ -37,7 +37,7 @@ describe('cpmBucketManager', () => {
   });
 
   it('checks whether custom config is valid', () => {
-    let customConfig = {
+    let badConfig = {
       "buckets" : [{
           "min" : 0,
           "max" : 3,
@@ -52,7 +52,7 @@ describe('cpmBucketManager', () => {
       ]
     };
 
-    expect(isValidePriceConfig(customConfig)).to.be.false;
+    expect(isValidePriceConfig(badConfig)).to.be.false;
   });
 
 });
