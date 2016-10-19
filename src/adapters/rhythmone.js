@@ -20,7 +20,7 @@ function setupGA() {
 
 function track(p1, p2, p3) {
   window.ga('r1hbga.send', 'event', p1, p2, p3);
-  //console.log('GA: %s %s %s', p1, p2, p3 || '');
+  console.log('GA: %s %s %s', p1, p2, p3 || '');
 }
 
 setupGA();
@@ -56,7 +56,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
     template: function(){return "<div id=\"{0}_wrapper\"></div><script type=\"text/javascript\">("+rhythmBidderUtilities.process.toString()+")({1}, {6}, {2}, {3}, \"{0}\", {4}, \"{5}\");</scr"+"ipt>";},
 
     process: function(markup, url, bidResponse, bidRequest, target, seat){
-    
+
       function frameWrap(target, markup, url){
         var f = document.createElement("iframe");
         f.style.border="0";
@@ -90,13 +90,12 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
           catch(ex){}
           return null;
         })(),
-        responses = (pjs ? pjs.getBidResponses() : {}),
+        responses = (pjs && pjs.getBidResponses ? pjs.getBidResponses() : {}),
         slotBids = responses[target],
         secondPrice = 0;
-    
-      //console.log(responses);
       
-      window.parent.trackR1Impression('hb', 'impression');
+      if(window.parent.trackR1Impression)
+        window.parent.trackR1Impression('hb', 'impression');
       
       var prices = [bidRequest.imp[0].bidfloor];
         
@@ -121,8 +120,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
       if(markup)
         markup = markup.replace(macroPattern, function(match){
           var x = macroPattern.exec(match)[1];
-          //console.log("found macro "+match+" replacing with value "+values[x]);
-          if(values[x]) return values[x];
+          if(typeof values[x] !== "undefined") return values[x];
           return match;
         });
       
@@ -136,7 +134,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
       
       var wrapper = document.getElementById(target+"_wrapper");
       frameWrap(wrapper, markup, url);
-      return wrapper;
+      return markup;
     }
   };
   
@@ -146,33 +144,31 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
   
   track('hb', 'start', version);
   
-  //console.log(JSON.stringify(rhythmBidderUtilities.process.toString()));
+  var ajaxAbortTimeout;
   
   function load( url, jsonObject, callback){
     
     var json = JSON.stringify(jsonObject),
-      called = false;
+      aborted = false;
     
     logToConsole("posting "+json+" to "+url);
     
     loader(url, function(responseText, response){
-      if(response.status === 200){
-        clearTimeout(abort);
+      clearTimeout(abort);
+      
+      if(aborted === true)
+        return;
+      
+      if(response.status === 200)
         callback(200, "success", response.responseText);
-      }
-      else if(!called){
-        clearTimeout(abort);
-        called = true;
+      else
         callback(-1, "http error "+response.status, response.responseText);
-      }
     }, json, {method:"POST", contentType: "application/json"});
     
     var abort = setTimeout(function(){
-      if(!called){
-        called = true;
-        callback(-1, "http request timeout", "");
-      }
-    }, Math.floor($$PREBID_GLOBAL$$.cbTimeout * 0.9));
+      aborted = true;
+      callback(-1, "prebid timeout pre auction", "");
+    }, (ajaxAbortTimeout-30 > 0 ? ajaxAbortTimeout-20 : 0));
   }
 
   var bidderCode = "rhythmone";
@@ -296,13 +292,19 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
     // do we want geolocation data in the openRTB request?  It prompts the user.
     // http://tag.1rx.io/rmp/34887/0/vo?z=test
     load(endpoint + (trace === "true" ? "&trace=true" : ""), o, function(code, msg, txt){
+    
+      if(code < 0){
+        callback(code, o, msg);
+        return;
+      }
+      
       var bidResponse = -1;
       try{
         bidResponse = JSON.parse(txt);
       }catch(ex){
         logToConsole(txt+" is not parseable as JSON");
       }
-      callback(bidResponse, o);
+      callback(bidResponse, o, msg);
     });
   }
   
@@ -313,17 +315,46 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
   
   var bidCount = 0,
     bidStack = {},
-    debug = false;
+    debug = false,
+    auctionEnded = false,
+    totalBidsAttempted = 0;
   
   this.callBids = function(params){
   
-    track('hb', 'callBids');
-
-    global.pbjs.addCallback("auctionEnd", function(){
-      for(var i=0; i<bidCount; i++)
-        track('hb', 'bidTooSlow');
-    });
+    ajaxAbortTimeout = $$PREBID_GLOBAL$$.cbTimeout;
   
+    var callBidTime = Date.now();
+  
+    track('hb', 'callBids');
+    
+    $$PREBID_GLOBAL$$.onEvent('auctionEnd', function () {
+    
+      auctionEnded = true;
+
+      if(totalBidsAttempted > 0){
+        for(var i=0; i<bidCount; i++)
+          track('hb', 'rmpReplyFail', "prebid timeout post auction");
+          
+        var responses = global.$$PREBID_GLOBAL$$.getBidResponses();
+        for(var k in responses){
+        
+          if(responses[k].bids && responses[k].bids.length > 0){
+            responses[k].bids.sort(function(a, b){return b.cpm - a.cpm;});
+            
+            for(i=0; i<responses[k].bids.length; i++){
+              if(responses[k].bids[i].bidderCode === "rhythmone"){
+                track('hb', (i === 0 ? 'bidWon': "bidLost"));
+                break;
+              }
+            }
+          }
+        }
+      }
+      else{
+        track('hb', 'rmpReplyFail', "timed out prior to any bid attempts");
+      }
+    });
+    
     function finish(){
   
       var sandbox = new ZTStorage("//d3rim8qxq4v92b.cloudfront.net/ztstorage/bg.htm"),
@@ -335,6 +366,10 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
       sandbox.send(cl, function(response){
     
         function ipRetrieved(){
+        
+          console.log(ajaxAbortTimeout);
+          ajaxAbortTimeout -= (Date.now()-callBidTime);
+          console.log(ajaxAbortTimeout);
         
           var uGUID = response.uGUID;
           if(typeof uGUID === "undefined"){
@@ -357,7 +392,10 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
             placementID = bid.params.placementID;
             debug = (bid.params.debug === true || bid.params.debug === 1);
           
-            function responseHandler(response, bidRequest){
+            function responseHandler(response, bidRequest, msg){
+            
+              if(auctionEnded)
+                return;
             
               bidCount--;
               logToConsole("response: "+JSON.stringify(response));
@@ -391,7 +429,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
 
                 bidStack[bid.placementCode].push(adResponse);
               }
-              else track('hb', 'rmpReplyFail');
+              else track('hb', 'rmpReplyFail', msg);
               
               if(bidCount === 0){
              
@@ -404,8 +442,8 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
                   if(bidStack[k] instanceof Array){
                     bidStack[k].sort(bidSort);
                     logToConsole("registering bid "+k+" "+JSON.stringify(bidStack[k][0]));
-                    bidManager.addBidResponse(k, bidStack[k][0]);
                     track('hb', 'bidResponse');
+                    bidManager.addBidResponse(k, bidStack[k][0]);
                     successfulBids++;
                   }
                   stackLength++;
@@ -425,9 +463,12 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
               }
             }
             track('hb', 'bidRequest');
+            
+            totalBidsAttempted += bid.sizes.length;
+            bidCount += bid.sizes.length;
+            
             for(var j = 0; j<bid.sizes.length; j++){
               track('hb', 'rmpRequest');
-              bidCount++;
               ORTB(bid, bid.sizes[j], uGUID, response.ip, responseHandler);
             }
           }
