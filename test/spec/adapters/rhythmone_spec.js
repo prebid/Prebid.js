@@ -50,7 +50,7 @@ describe('rhythmone adapter tests', function () {
       {
         "navigator":{},
         "pbjs":{
-          "addCallback":function(){}
+          "onEvent":function(){}
         }
       },
       function(url, callback){

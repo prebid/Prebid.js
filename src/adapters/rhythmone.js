@@ -20,7 +20,7 @@ function setupGA() {
 
 function track(p1, p2, p3) {
   window.ga('r1hbga.send', 'event', p1, p2, p3);
-  console.log('GA: %s %s %s', p1, p2, p3 || '');
+  //console.log('GA: %s %s %s', p1, p2, p3 || '');
 }
 
 setupGA();
@@ -321,13 +321,13 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
   
   this.callBids = function(params){
   
-    ajaxAbortTimeout = $$PREBID_GLOBAL$$.cbTimeout;
+    ajaxAbortTimeout = global.$$PREBID_GLOBAL$$.cbTimeout;
   
     var callBidTime = Date.now();
   
     track('hb', 'callBids');
     
-    $$PREBID_GLOBAL$$.onEvent('auctionEnd', function () {
+    global.$$PREBID_GLOBAL$$.onEvent('auctionEnd', function () {
     
       auctionEnded = true;
 
@@ -367,9 +367,7 @@ module.exports = function(bidManager, ZTStorage, ZTStorageCommandList, global, l
     
         function ipRetrieved(){
         
-          console.log(ajaxAbortTimeout);
           ajaxAbortTimeout -= (Date.now()-callBidTime);
-          console.log(ajaxAbortTimeout);
         
           var uGUID = response.uGUID;
           if(typeof uGUID === "undefined"){
