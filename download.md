@@ -365,6 +365,13 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" disabled bidderCode="hiromedia" class="bidder-check-box disabled"> HIRO Media - Coming Soon!
+      </label>
+    </div>
+  </div>
 
 
 
