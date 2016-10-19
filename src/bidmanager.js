@@ -161,24 +161,14 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
-    filterIfSendStandardTargeting(bidder_settings[bidderCode]);
+    custBidObj.sendStandardTargeting = !!bidder_settings[bidderCode].sendStandardTargeting;
   }
 
   //2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
   else if (defaultBidderSettingsMap[bidderCode]) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
-    filterIfSendStandardTargeting(defaultBidderSettingsMap[bidderCode]);
-  }
-
-  function filterIfSendStandardTargeting(bidderSettings) {
-    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidderSettings.sendStandardTargeting === false) {
-      for(var key in keyValues) {
-        if(CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
-          delete keyValues[key];
-        }
-      }
-    }
+    custBidObj.sendStandardTargeting = !!defaultBidderSettingsMap[bidderCode].sendStandardTargeting;
   }
 
   return keyValues;
