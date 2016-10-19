@@ -964,6 +964,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
       const setCustomPriceBucket = sinon.spy(bidmanager, 'setCustomPriceBucket');
+      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
       const goodConfig = {
         "buckets" : [{
             "min" : 0,
@@ -977,6 +978,8 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
       assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
       bidmanager.setCustomPriceBucket.restore();
+      assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
+      bidmanager.setPriceGranularity.restore();
     });
   });
 

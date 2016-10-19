@@ -774,6 +774,8 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
       return;
     }
     bidmanager.setCustomPriceBucket(granularity);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    utils.logMessage('Using custom price granularity');
   }
 };
 

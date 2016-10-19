@@ -103,6 +103,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbHg = priceStringsObj.high;
     bid.pbAg = priceStringsObj.auto;
     bid.pbDg = priceStringsObj.dense;
+    bid.pbCg = priceStringsObj.custom;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
@@ -363,6 +364,8 @@ function getStandardBidderSettings() {
               return bidResponse.pbMg;
             } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
               return bidResponse.pbHg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+              return bidResponse.pbCg;
             }
           }
         }, {
