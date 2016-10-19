@@ -57,15 +57,16 @@ describe('indexExchange adapter - Response', function () {
 		for ( var i = 0; i < bidManager.addBidResponse.callCount; i++ ) {
 			var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
 			var bids       = bidManager.addBidResponse.getCall(i).args[1];
-
+			
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
 		for ( var i = 0; i < prebidResponsePair.matched.length; i++) {
+		
 			var pair = prebidResponsePair.matched[i];
 
 			assert.equal(pair.prebid[i].siteID,     pair.expected[i].siteID,     "adapter response for " + pair.placementCode + " siteID is set to "+pair.expected[i].siteID);
@@ -104,7 +105,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -149,7 +150,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -193,7 +194,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -241,7 +242,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -289,7 +290,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -345,7 +346,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -394,7 +395,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -443,7 +444,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
@@ -498,7 +499,7 @@ describe('indexExchange adapter - Response', function () {
 			if ( typeof adapterResponse[adUnitCode] === 'undefined'){
 				adapterResponse[adUnitCode] = [];
 			};
-			adapterResponse[adUnitCode].concat(bids);
+			adapterResponse[adUnitCode] = adapterResponse[adUnitCode].concat(bids);
 		}
 
 		var prebidResponsePair = IndexUtils.matchOnPlacementCode(expectedAdapterResponse, adapterResponse);
