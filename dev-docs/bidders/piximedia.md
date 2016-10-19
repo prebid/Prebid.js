@@ -22,6 +22,7 @@ biddercode_longer_than_12: false
 | :--- | :---- | :---------- | :------ |
 | `siteId` | required | The site ID from Piximedia. | "SITE" |
 | `placementId` | required | The placement ID from Piximedia. | "PLACEMENT" |
+| `currency` | optional | Override the default currency (euro) | "USD" |
 | `sizes` | optional | Override the default prebid size array | [[300, 250]] |
 
 (Sizes set in `adUnit` object will also apply to the Piximedia bid requests.)
