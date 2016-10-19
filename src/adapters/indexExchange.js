@@ -418,29 +418,30 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var indexObj = _IndexRequestData.targetIDToBid;
         var lookupObj = cygnus_index_args;
 
-        // Grab all the bids for each slot
-        for (var adSlotId in slotIdMap) {
-          var bidObj = slotIdMap[adSlotId];
-          var adUnitCode = bidObj.placementCode;
+        var bidsByAdUnitCode = {};
 
-          var bids = [];
+        // Grab all the bids for each slot
+        for (let adSlotId in slotIdMap) {
+          let bidObj = slotIdMap[adSlotId];
+          let adUnitCode = bidObj.placementCode;
+          if(!bidsByAdUnitCode[adUnitCode]){ bidsByAdUnitCode[adUnitCode] = []; }
 
           // Grab the bid for current slot
-          for (var cpmAndSlotId in indexObj) {
-            var match = /^(T\d_)?(.+)_(\d+)$/.exec(cpmAndSlotId);
+          for (let cpmAndSlotId in indexObj) {
+            let match = /^(T\d_)?(.+)_(\d+)$/.exec(cpmAndSlotId);
             // if parse fail, move to next bid
             if (!(match)){
               utils.logError("Unable to parse " + cpmAndSlotId + ", skipping slot", ADAPTER_NAME);
               continue;
             }
-            var tier = match[1] || '';
-            var slotID = match[2];
-            var currentCPM = match[3];
+            let tier = match[1] || '';
+            let slotID = match[2];
+            let currentCPM = match[3];
 
-            var slotObj = getSlotObj(cygnus_index_args, tier + slotID);
+            let slotObj = getSlotObj(cygnus_index_args, tier + slotID);
             // Bid is for the current slot
             if (slotID === adSlotId) {
-              var bid = bidfactory.createBid(1);
+              let bid = bidfactory.createBid(1);
               bid.cpm = currentCPM / 100;
               bid.ad = indexObj[cpmAndSlotId][0];
               bid.ad_id = adSlotId;
@@ -451,23 +452,22 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               if ( typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined' ) {
                 bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;
               }
-              bids.push(bid);
+              bidsByAdUnitCode[adUnitCode].push(bid);
             }
           }
+        }
 
-          var currentBid = undefined;
+        for (let adUnitCode in bidsByAdUnitCode) {
 
+          let bids = bidsByAdUnitCode[adUnitCode];
           if (bids.length > 0) {
             // Add all bid responses
-            for (var i = 0; i < bids.length; i++) {
-              bidmanager.addBidResponse(adUnitCode, bids[i]);
-            }
+            bidmanager.addBidResponse(adUnitCode, bids);
           // No bids for expected bid, pass bid
           } else {
-            var bid = bidfactory.createBid(2);
+            let bid = bidfactory.createBid(2);
             bid.bidderCode = ADAPTER_CODE;
-            currentBid = bid;
-            bidmanager.addBidResponse(adUnitCode, currentBid);
+            bidmanager.addBidResponse(adUnitCode, [bid]);
           }
 
         }
