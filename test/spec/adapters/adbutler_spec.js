@@ -12,14 +12,14 @@ describe('adbutler adapter tests', function () {
     
     describe('creation of bid url', function () {
 
-        var spyLoadScript;
+        var stubLoadScript;
 
         beforeEach(function () {
-            spyLoadScript = sinon.spy(adLoader, 'loadScript');
+            stubLoadScript = sinon.stub(adLoader, 'loadScript');
         });
 
         afterEach(function () {
-            spyLoadScript.restore();
+            stubLoadScript.restore();
         });
 
         if (typeof(pbjs._bidsReceived) === "undefined") {
@@ -43,7 +43,7 @@ describe('adbutler adapter tests', function () {
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253'
+                            zoneID: '210093'
                         },
                         requestId: '10b327aa396609',
                         placementCode: '/123456/header-bid-tag-1'
@@ -54,7 +54,7 @@ describe('adbutler adapter tests', function () {
 
             adapter().callBids(params);
 
-            sinon.assert.called(spyLoadScript);
+            sinon.assert.called(stubLoadScript);
 
         });
         
@@ -68,7 +68,7 @@ describe('adbutler adapter tests', function () {
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253',
+                            zoneID: '210093',
                             keyword: 'fish'
                         },
                         requestId: '10b327aa396609',
@@ -80,7 +80,7 @@ describe('adbutler adapter tests', function () {
 
             adapter().callBids(params);
             
-            var requestURI = spyLoadScript.getCall(0).args[0];
+            var requestURI = stubLoadScript.getCall(0).args[0];
             
             expect(requestURI).to.have.string(';kw=fish;');
         })
@@ -92,14 +92,15 @@ describe('adbutler adapter tests', function () {
             
             var params = {
                 bidderCode: 'adbutler',
+                bidder: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c94018cdbf2f68-1',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253',
+                            zoneID: '210093',
                         },
                         requestId: '10b327aa396609',
                         placementCode: '/123456/header-bid-tag-1'
@@ -111,7 +112,7 @@ describe('adbutler adapter tests', function () {
             var response = {
                 status: "SUCCESS",
                 account_id: 167283,
-                zone_id: 210253,
+                zone_id: 210093,
                 cpm: 1.5,
                 width: 300,
                 height: 250,
@@ -119,8 +120,26 @@ describe('adbutler adapter tests', function () {
             };
 
             adapter().callBids(params);
-            pbjs.adbutlerCB(response);
 
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
+            
+            pbjs.adbutlerCB(response);
+            
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
 
@@ -141,7 +160,7 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-2',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
@@ -164,6 +183,23 @@ describe('adbutler adapter tests', function () {
             };
 
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -183,7 +219,7 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-3',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
@@ -208,6 +244,23 @@ describe('adbutler adapter tests', function () {
             };
             
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -223,12 +276,12 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-4',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253',
+                            zoneID: '210093',
                             minCPM: '5.00'
                         },
                         requestId: '10b327aa396609',
@@ -241,7 +294,7 @@ describe('adbutler adapter tests', function () {
             var response = {
                 status: "SUCCESS",
                 account_id: 167283,
-                zone_id: 210253,
+                zone_id: 210093,
                 cpm: 1.5,
                 width: 300,
                 height: 250,
@@ -249,6 +302,23 @@ describe('adbutler adapter tests', function () {
             };
 
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -265,12 +335,12 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-5',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253',
+                            zoneID: '210093',
                             maxCPM: '1.00'
                         },
                         requestId: '10b327aa396609',
@@ -283,7 +353,7 @@ describe('adbutler adapter tests', function () {
             var response = {
                 status: "SUCCESS",
                 account_id: 167283,
-                zone_id: 210253,
+                zone_id: 210093,
                 cpm: 1.5,
                 width: 300,
                 height: 250,
@@ -291,6 +361,23 @@ describe('adbutler adapter tests', function () {
             };
 
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -311,12 +398,12 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-6',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253'
+                            zoneID: '210093'
                         },
                         requestId: '10b327aa396609',
                         placementCode: '/123456/header-bid-tag-1'
@@ -328,7 +415,7 @@ describe('adbutler adapter tests', function () {
             var response = {
                 status: "SUCCESS",
                 account_id: 167283,
-                zone_id: 210253,
+                zone_id: 210093,
                 cpm: 1.5,
                 width: 300,
                 height: 250,
@@ -337,6 +424,23 @@ describe('adbutler adapter tests', function () {
             };
             
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -354,12 +458,12 @@ describe('adbutler adapter tests', function () {
                 bidderCode: 'adbutler',
                 bids: [
                     {
-                        bidId: '3c9408cdbf2f68',
+                        bidId: '3c9408cdbf2f68-7',
                         sizes: [[300, 250]],
                         bidder: 'adbutler',
                         params: {
                             accountID: '167283',
-                            zoneID: '210253'
+                            zoneID: '210093'
                         },
                         requestId: '10b327aa396609',
                         placementCode: '/123456/header-bid-tag-1'
@@ -371,7 +475,7 @@ describe('adbutler adapter tests', function () {
             var response = {
                 status: "SUCCESS",
                 account_id: 167283,
-                zone_id: 210253,
+                zone_id: 210093,
                 cpm: 1.5,
                 width: 300,
                 height: 250,
@@ -383,6 +487,23 @@ describe('adbutler adapter tests', function () {
             };
 
             adapter().callBids(params);
+
+            var adUnits = new Array();
+            var unit = new Object();
+            unit.bids = params.bids;
+            unit.code = '/123456/header-bid-tag-1';
+            unit.sizes=[[300,250]];
+            adUnits.push(unit);
+
+            if (typeof(pbjs._bidsRequested)==="undefined"){
+                pbjs._bidsRequested = [params];
+            }
+            else{
+                pbjs._bidsRequested.push(params);
+            }
+
+            pbjs.adUnits = adUnits;
+            
             pbjs.adbutlerCB(response);
 
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
