@@ -5,6 +5,7 @@ import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
+import {isValidePriceConfig} from './cpmBucketManager';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -762,8 +763,17 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-  } else {
+    return;
+  }
+  if(typeof granularity === 'string') {
     bidmanager.setPriceGranularity(granularity);
+  }
+  else if(typeof granularity === 'object') {
+    if(!isValidePriceConfig(granularity)){
+      utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+      return;
+    }
+    bidmanager.setCustomPriceBucket(granularity);
   }
 };
 

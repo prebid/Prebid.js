@@ -11,7 +11,12 @@ var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
 var externalOneTimeCallback = null;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+let _customPriceBucket;
 var defaultBidderSettingsMap = {};
+
+exports.setCustomPriceBucket = function(customConfig) {
+  _customPriceBucket = customConfig;
+};
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -92,7 +97,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     //append price strings
-    const priceStringsObj = getPriceBucketString(bid.cpm);
+    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;

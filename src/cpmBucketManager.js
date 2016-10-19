@@ -83,7 +83,8 @@ function getCpmStringValue(cpm, config) {
 
   let bucket = config.buckets.find(bucket =>{
     if(bucket.cap && cpm > bucket.max){
-      cpmStr = bucket.max;
+      const precision = bucket.precision || _defaultPrecision;
+      cpmStr = bucket.max.toFixed(precision);
     }
     else if(cpm <= bucket.max && cpm >= bucket.min){
       return bucket;
@@ -92,14 +93,21 @@ function getCpmStringValue(cpm, config) {
   if(bucket){
     cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
   }
+  //if we failed to get a string, just use the passed in CPM
   return cpmStr;
 }
 
 function isValidePriceConfig(config) {
-  if(!config){
+  if(!config || !config.buckets || !Array.isArray(config.buckets)){
     return false;
   }
-  return true;
+  let isValid = true;
+  config.buckets.forEach(bucket => {
+    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment){
+      isValid = false;
+    }
+  });
+  return isValid;
 }
 
 function getCpmTarget(cpm, increment, precision) {
