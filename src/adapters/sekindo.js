@@ -36,7 +36,7 @@ SekindoAdapter = function SekindoAdapter() {
 
         if (response.cpm !== undefined && response.cpm > 0) {
 
-          bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+          bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
           bid.callback_uid = callbackId;
           bid.bidderCode = bidCode;
           bid.creative_id = response.adId;
