@@ -38,6 +38,7 @@ var ConversantAdapter = function () {
       appendScript(xmlHttp.responseText);
     };
     xmlHttp.open('POST', url, true); // true for asynchronous
+    xmlHttp.withCredentials = true;
     xmlHttp.send(data);
   };
 
