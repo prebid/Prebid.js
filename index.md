@@ -96,6 +96,7 @@ description: A free and open source library for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Piximedia</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>GetIntent</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>HIRO Media</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Roxot</h3></div>
 
     <!-- END BIDDERS -->
     
