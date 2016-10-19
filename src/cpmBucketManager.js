@@ -27,12 +27,12 @@ const _densePriceConfig = {
   "buckets" : [{
       "min" : 0,
       "max" : 3,
-      "increment" : 0.01,
+      "increment" : 0.01
     },
     {
       "min" : 3,
       "max" : 8,
-      "increment" : 0.05,
+      "increment" : 0.05
     },
     {
       "min" : 8,
@@ -45,12 +45,12 @@ const _autoPriceConfig = {
   "buckets" : [{
       "min" : 0,
       "max" : 5,
-      "increment" : 0.05,
+      "increment" : 0.05
     },
     {
       "min" : 5,
       "max" : 10,
-      "increment" : 0.1,
+      "increment" : 0.1
     },
     {
       "min" : 10,
@@ -93,7 +93,6 @@ function getCpmStringValue(cpm, config) {
   if(bucket){
     cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
   }
-  //if we failed to get a string, just use the passed in CPM
   return cpmStr;
 }
 
