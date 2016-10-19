@@ -33,11 +33,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
       callbackID = zoneID + '_' +zoneCount[zoneID];
 
       callbackData[callbackID] = {};
-
-      callbackData[callbackID].placementCode = bid.placementCode;
-      callbackData[callbackID].sizes = bid.sizes;
-      callbackData[callbackID].maxCPM = utils.getBidIdParamater('maxCPM', bid.params);
-      callbackData[callbackID].minCPM = utils.getBidIdParamater('minCPM', bid.params);
+      callbackData[callbackID].bidId = bid.bidId;
       
       var adRequest = buildRequest(bid,zoneCount[zoneID],pageID);
       zoneCount[zoneID]++;
@@ -54,51 +50,57 @@ var AdButlerAdapter = function AdButlerAdapter() {
         height = parseInt(aBResponseObject.height),
         isCorrectSize = false,
         isCorrectCPM = true,
-        CPM,minCPM,maxCPM;
+        CPM,minCPM,maxCPM,
+        bidObj = utils.getBidRequest(callbackData[callbackID].bidId);
         
-      //Ensure that response ad matches one of the placement sizes.  
-      utils._each(callbackData[callbackID].sizes,function(size){
-        if(width === size[0] && height === size[1]){
-          isCorrectSize = true;
-        }
-      });
+      if (bidObj) {
+        
+        if(aBResponseObject.status === 'SUCCESS'){
+          CPM = aBResponseObject.cpm;
+          minCPM = utils.getBidIdParamater('minCPM',bidObj.params);
+          maxCPM = utils.getBidIdParamater('maxCPM',bidObj.params);
 
-      if (aBResponseObject.status === 'SUCCESS' && isCorrectSize) {
-        
-        CPM = aBResponseObject.cpm;
-        minCPM = callbackData[callbackID].minCPM;
-        maxCPM = callbackData[callbackID].maxCPM;
-        
-        //Ensure response CPM is within the given bounds
-        if(minCPM !== '' && CPM < parseFloat(minCPM)){
-          isCorrectCPM = false;
-        }    
-        if(maxCPM !== '' && CPM > parseFloat(maxCPM)){
-          isCorrectCPM = false;
-        }  
-        
-        if(isCorrectCPM){
-            
-          bidResponse = bidfactory.createBid(1);
-          bidResponse.bidderCode = 'adbutler';
-          bidResponse.cpm = CPM;
-          bidResponse.width = width;
-          bidResponse.height = height;
-          bidResponse.ad = aBResponseObject.ad_code;
-          bidResponse.ad += addTrackingPixels(aBResponseObject.tracking_pixels); 
-            
+          //Ensure response CPM is within the given bounds
+          if(minCPM !== '' && CPM < parseFloat(minCPM)){
+            isCorrectCPM = false;
+          }
+          if(maxCPM !== '' && CPM > parseFloat(maxCPM)){
+            isCorrectCPM = false;
+          }
+
+          //Ensure that response ad matches one of the placement sizes.  
+          utils._each(bidObj.sizes,function(size){
+            if(width === size[0] && height === size[1]){
+              isCorrectSize = true;
+            }
+          });
+
+          if(isCorrectCPM && isCorrectSize){
+
+            bidResponse = bidfactory.createBid(1);
+            bidResponse.bidderCode = 'adbutler';
+            bidResponse.cpm = CPM;
+            bidResponse.width = width;
+            bidResponse.height = height;
+            bidResponse.ad = aBResponseObject.ad_code;
+            bidResponse.ad += addTrackingPixels(aBResponseObject.tracking_pixels);
+
+          } else {
+
+            bidResponse = bidfactory.createBid(2);
+            bidResponse.bidderCode = 'adbutler';
+
+          }
         } else {
+
           bidResponse = bidfactory.createBid(2);
           bidResponse.bidderCode = 'adbutler';
-        } 
+
+        }  
           
-      } else {
-        bidResponse = bidfactory.createBid(2);
-        bidResponse.bidderCode = 'adbutler';
+        bidmanager.addBidResponse(bidObj.placementCode, bidResponse);
+          
       }
-        
-      bidmanager.addBidResponse(callbackData[callbackID].placementCode, bidResponse);
-        
     };
   }
   
