@@ -37,6 +37,7 @@ var eventValidators = {
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
+$$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
@@ -262,29 +263,22 @@ function getAllTargeting() {
   return targeting;
 }
 
-function markComplete(adObject) {
-  $$PREBID_GLOBAL$$._bidsRequested.filter(request => request.requestId === adObject.requestId)
-    .forEach(request => request.bids.filter(bid => bid.placementCode === adObject.adUnitCode)
-      .forEach(bid => bid.complete = true));
-
-  $$PREBID_GLOBAL$$._bidsReceived.filter(bid => {
-    return bid.requestId === adObject.requestId && bid.adUnitCode === adObject.adUnitCode;
-  }).forEach(bid => bid.complete = true);
-}
-
-function removeComplete() {
+function removePreviousBids(adUnitCode) {
   let requests = $$PREBID_GLOBAL$$._bidsRequested;
   let responses = $$PREBID_GLOBAL$$._bidsReceived;
 
-  requests.map(request => request.bids
-      .filter(bid => bid.complete))
-    .forEach(request => requests.splice(requests.indexOf(request), 1));
+  requests.filter(request => {
+    request.bids.filter(bid => {
+      // bid has the placementCode, remove it
+      if (bid.placementCode === adUnitCode) {
+        return request.bids.splice(request.bids.indexOf(bid), 1);
+      }
+    });
+    // if there's no more bids, then the request can be removed
+    return request.bids.length === 0;
+  }).forEach(request => requests.splice(requests.indexOf(request), 1));
 
-  responses.filter(bid => bid.complete).forEach(bid => responses.splice(responses.indexOf(bid), 1));
-
-  // also remove bids that have an empty or error status so known as not pending for render
-  responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
-    .forEach(bid => responses.splice(responses.indexOf(bid), 1));
+  responses.filter(bid => bid.placementCode === adUnitCode).forEach(bid => responses.splice(responses.indexOf(bid), 1));
 }
 
 //////////////////////////////////
@@ -427,7 +421,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
  */
 $$PREBID_GLOBAL$$.allBidsAvailable = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
-  return bidmanager.bidsBackAll();
+  return bidmanager.bidsBack();
 };
 
 /**
@@ -449,8 +443,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
 
-        // mark bid requests and responses for this placement in this auction as "complete"
-        markComplete(adObject);
         var height = adObject.height;
         var width = adObject.width;
         var url = adObject.adUrl;
@@ -526,9 +518,10 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
+  adUnitCodes = adUnitCodes || [];
 
   // if specific adUnitCodes filter adUnits for those codes
-  if (adUnitCodes && adUnitCodes.length) {
+  if (adUnitCodes.length) {
     adUnits = adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
   }
 
@@ -543,30 +536,33 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes });
     });
     return;
-  } else {
-    auctionRunning = true;
-    removeComplete();
   }
-
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler);
+  auctionRunning = true;
+  for (let i = 0; i < adUnitCodes.length; i++) {
+    removePreviousBids(adUnitCodes[i]);
   }
+  $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+    if (typeof bidsBackHandler === objectType_function) {
+      bidmanager.addOneTimeCallback(bidsBackHandler);
+    }
     bidmanager.executeCallback();
     return;
   }
 
   //set timeout for all bids
-  const timedOut = true;
-  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, cbTimeout);
+  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, true);
+  const timer = setTimeout(timeoutCallback, cbTimeout);
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, timer);
+  }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };

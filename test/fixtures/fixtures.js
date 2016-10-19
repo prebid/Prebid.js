@@ -542,6 +542,13 @@ export function getSlotTargeting() {
   };
 }
 
+export function getAdUnitCodes() {
+  return [
+    "/19968336/header-bid-tag-0",
+    "/19968336/header-bid-tag1"
+  ];
+};
+
 export function getAdUnits() {
   return [
     {

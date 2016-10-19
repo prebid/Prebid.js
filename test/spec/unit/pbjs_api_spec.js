@@ -5,6 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
+  getAdUnitCodes,
   getAdUnits
 } from 'test/fixtures/fixtures';
 
@@ -25,6 +26,7 @@ var config = require('test/fixtures/config.json');
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+$$PREBID_GLOBAL$$._adUnitCodes = getAdUnitCodes();
 $$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 function resetAuction() {
@@ -32,6 +34,7 @@ function resetAuction() {
   $$PREBID_GLOBAL$$.clearAuction();
   $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+  $$PREBID_GLOBAL$$._adUnitCodes = getAdUnitCodes();
   $$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 }
@@ -432,11 +435,11 @@ describe('Unit: Prebid Module', function () {
 
   describe('allBidsAvailable', function () {
     it('should call bidmanager.allBidsBack', function () {
-      var spyAllBidsBack = sinon.spy(bidmanager, 'bidsBackAll');
+      var spyAllBidsBack = sinon.spy(bidmanager, 'bidsBack');
 
       $$PREBID_GLOBAL$$.allBidsAvailable();
       assert.ok(spyAllBidsBack.called, 'called bidmanager.allBidsBack');
-      bidmanager.bidsBackAll.restore();
+      bidmanager.bidsBack.restore();
     });
   });
 

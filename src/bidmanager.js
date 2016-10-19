@@ -9,6 +9,7 @@ var objectType_function = 'function';
 var externalCallbackByAdUnitArr = [];
 var externalCallbackArr = [];
 var externalOneTimeCallback = null;
+var externalOneTimeCallbackTimer = false;
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 
@@ -40,29 +41,27 @@ function getBidders(bid) {
   return bid.bidder;
 }
 
-function bidsBackAdUnit(adUnitCode) {
-  let requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
-  if (requested) {requested = requested.bids.length;}
-  const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
-  return requested === received;
-}
-
 function add(a, b) {
   return a + b;
 }
 
-function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add, 0);
-  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
+function bidsBack(adUnitCodes) {
+  adUnitCodes = adUnitCodes || $$PREBID_GLOBAL$$._adUnitCodes;
+  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => {
+    return bidSet.bids.filter(bid => adUnitCodes.includes(bid.placementCode)).length;
+  }).reduce(add, 0);
+  const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => adUnitCodes.includes(bid.adUnitCode)).length;
   return requested === received;
 }
 
-exports.bidsBackAll = function() {
-  return bidsBackAll();
+exports.bidsBack = function() {
+  return bidsBack();
 };
 
-function getBidSetForBidder(bidder) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
+function getBidSetForBidder(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
+    return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }
 
 /*
@@ -71,10 +70,11 @@ function getBidSetForBidder(bidder) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
 
+    const bidSet = getBidSetForBidder(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: bidSet.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: bidSet.start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -83,9 +83,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-      const timedOut = true;
-
-      this.executeCallback(timedOut);
+      this.executeCallback(true);
     }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -117,11 +115,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
-  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+  if (bid && bid.adUnitCode && bidsBack([bid.adUnitCode])) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
-  if (bidsBackAll()) {
+  if (bidsBack()) {
     this.executeCallback();
   }
 };
@@ -222,6 +220,11 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (timedOut) {
+  // if there's still a timeout running, clear it now
+  if (!timedOut && externalOneTimeCallbackTimer) {
+    clearTimeout(externalOneTimeCallbackTimer);
+  }
+
   if (externalCallbackArr.called !== true) {
     processCallbacks(externalCallbackArr);
     externalCallbackArr.called = true;
@@ -242,6 +245,7 @@ exports.executeCallback = function (timedOut) {
     }
     finally {
       externalOneTimeCallback = null;
+      externalOneTimeCallbackTimer = false;
       $$PREBID_GLOBAL$$.clearAuction();
     }
   }
@@ -290,10 +294,12 @@ function groupByPlacement(prev, item, idx, arr) {
 
 /**
  * Add a one time callback, that is discarded after it is called
- * @param {Function} callback [description]
+ * @param {Function} callback
+ * @param timer Timer to clear if callback is triggered before timer time's out
  */
-exports.addOneTimeCallback = function (callback) {
+exports.addOneTimeCallback = function (callback, timer) {
   externalOneTimeCallback = callback;
+  externalOneTimeCallbackTimer = timer;
 };
 
 exports.addCallback = function (id, callback, cbEvent) {
