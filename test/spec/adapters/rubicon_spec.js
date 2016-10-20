@@ -1,45 +1,81 @@
-import { expect } from "chai";
-import adloader from "src/adloader";
-import adapterManager from "src/adaptermanager";
-import bidManager from "src/bidmanager";
-import RubiconAdapter from "src/adapters/rubicon";
+import { expect } from 'chai';
+import adloader from 'src/adloader';
+import adapterManager from 'src/adaptermanager';
+import bidManager from 'src/bidmanager';
+import RubiconAdapter from 'src/adapters/rubicon';
+import {parse as parseQuery} from 'querystring';
 
-var CONSTANTS = require("src/constants.json");
+var CONSTANTS = require('src/constants.json');
 
+describe('the rubicon adapter', () => {
 
-describe("the rubicon adapter", () => {
-
-  let rubiconAdapter = adapterManager.bidderRegistry["rubicon"],
-      sandbox,
-      adUnit;
+  let sandbox,
+      adUnit,
+      bidderRequest;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
 
     adUnit = {
-      code: "/19968336/header-bid-tag-0",
+      code: '/19968336/header-bid-tag-0',
       sizes: [[300, 250], [320, 50]],
       bids: [
         {
-          bidder: "rubicon",
+          bidder: 'rubicon',
           params: {
-            accountId: "14062",
-            siteId: "70608",
-            zoneId: "335918",
-            userId: "12346",
-            keywords: ["a","b","c"],
+            accountId: '14062',
+            siteId: '70608',
+            zoneId: '335918',
+            userId: '12346',
+            keywords: ['a','b','c'],
             inventory: {
-              rating:"5-star",
-              prodtype:"tech"
+              rating:'5-star',
+              prodtype:'tech'
             },
             visitor: {
-              ucat:"new",
-              lastsearch:"iphone"
+              ucat:'new',
+              lastsearch:'iphone'
             },
-            position: "atf"
+            position: 'atf',
+            referrer: 'localhost'
           }
         }
       ]
+    };
+
+    bidderRequest = {
+      bidderCode: 'rubicon',
+      requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      bidderRequestId: '178e34bad3658f',
+      bids: [
+        {
+          bidder: 'rubicon',
+          params: {
+            accountId: '14062',
+            siteId: '70608',
+            zoneId: '335918',
+            userId: '12346',
+            keywords: ['a','b','c'],
+            inventory: {
+              rating:'5-star',
+              prodtype:'tech'
+            },
+            visitor: {
+              ucat:'new',
+              lastsearch:'iphone'
+            },
+            position: 'atf',
+            referrer: 'localhost'
+          },
+          placementCode: '/19968336/header-bid-tag-0',
+          sizes: [[300, 250], [320, 50]],
+          bidId: '2ffb201a808da7',
+          bidderRequestId: '178e34bad3658f',
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a'
+        }
+      ],
+      start: 1472239426002,
+      timeout: 5000
     };
 
   });
@@ -48,11 +84,13 @@ describe("the rubicon adapter", () => {
     sandbox.restore();
   });
 
-  describe("callBids public interface", () => {
+  describe('callBids public interface', () => {
 
-    it("should receive a well-formed bidRequest from the adaptermanager", () => {
+    let rubiconAdapter = adapterManager.bidderRegistry['rubicon'];
 
-      sandbox.stub(rubiconAdapter, "callBids");
+    it('should receive a well-formed bidRequest from the adaptermanager', () => {
+
+      sandbox.stub(rubiconAdapter, 'callBids');
 
       adapterManager.callBids({
           adUnits: [clone(adUnit)]
@@ -60,23 +98,23 @@ describe("the rubicon adapter", () => {
 
       let bidderRequest = rubiconAdapter.callBids.getCall(0).args[0];
 
-      expect(bidderRequest).to.have.property("bids")
-        .that.is.an("array")
+      expect(bidderRequest).to.have.property('bids')
+        .that.is.an('array')
         .with.lengthOf(1);
 
-      expect(bidderRequest).to.have.deep.property("bids[0]")
-        .to.have.property("bidder", "rubicon");
+      expect(bidderRequest).to.have.deep.property('bids[0]')
+        .to.have.property('bidder', 'rubicon');
 
-      expect(bidderRequest).to.have.deep.property("bids[0]")
-        .to.have.property("placementCode", adUnit.code);
+      expect(bidderRequest).to.have.deep.property('bids[0]')
+        .to.have.property('placementCode', adUnit.code);
 
-      expect(bidderRequest).to.have.deep.property("bids[0]")
-        .with.property("sizes")
-        .that.is.an("array")
+      expect(bidderRequest).to.have.deep.property('bids[0]')
+        .with.property('sizes')
+        .that.is.an('array')
         .with.lengthOf(2)
         .that.deep.equals(adUnit.sizes);
 
-      expect(bidderRequest).to.have.deep.property("bids[0]")
+      expect(bidderRequest).to.have.deep.property('bids[0]')
         .with.property('params')
         .that.deep.equals(adUnit.bids[0].params)
 
@@ -84,302 +122,261 @@ describe("the rubicon adapter", () => {
 
   });
 
-  describe("callBids implementation", () => {
+  describe('callBids implementation', () => {
 
-    let bidderRequest,
-        slot;
+    let rubiconAdapter;
 
-    beforeEach(() => {
-      sandbox.stub(adloader, "loadScript");
-      sandbox.spy(rubiconAdapter, "callBids");
+    describe('requests', () => {
 
-      slot = {
-        clearTargeting: sandbox.spy(),
-        setPosition: sandbox.spy(),
-        addFPV: sandbox.spy(),
-        addFPI: sandbox.spy(),
-        addKW: sandbox.spy(),
-        getElementId: () => "/19968336/header-bid-tag-0",
-        getRawResponses: () => {},
-        getRawResponseBySizeId: () => {}
-      };
-
-      window.rubicontag = {
-        cmd: {
-          push: cb => cb()
-        },
-        setIntegration: sandbox.spy(),
-        run: () => {},
-        addEventListener: () => {},
-        setUserKey: sandbox.spy(),
-        defineSlot: sandbox.spy(bid => slot)
-      };
-
-      bidderRequest = {
-        bidderCode: "rubicon",
-        requestId: "c45dd708-a418-42ec-b8a7-b70a6c6fab0a",
-        bidderRequestId: "178e34bad3658f",
-        bids: [
-          {
-            bidder: "rubicon",
-            params: {
-              accountId: "14062",
-              siteId: "70608",
-              zoneId: "335918",
-              userId: "12346",
-              keywords: ["a","b","c"],
-              inventory: {
-                rating:"5-star",
-                prodtype:"tech"
-              },
-              visitor: {
-                ucat:"new",
-                lastsearch:"iphone"
-              },
-              position: "atf"
-            },
-            placementCode: "/19968336/header-bid-tag-0",
-            sizes: [[300, 250], [320, 50]],
-            bidId: "2ffb201a808da7",
-            bidderRequestId: "178e34bad3658f",
-            requestId: "c45dd708-a418-42ec-b8a7-b70a6c6fab0a"
-          }
-        ],
-        start: 1472239426002,
-        timeout: 5000
-      };
-
-    });
-
-    describe("when doing fastlane slot configuration", () => {
+      let xhr,
+          screen;
 
       beforeEach(() => {
-        rubiconAdapter.callBids(bidderRequest);
-      });
-
-      it("should load the fastlane SDK if not loaded", () => {
-
-        let pathToSDK = adloader.loadScript.getCall(0).args[0];
-        expect(pathToSDK).to.equal(`http://ads.rubiconproject.com/header/${bidderRequest.bids[0].params.accountId}.js`);
-
-        rubiconAdapter.callBids(bidderRequest);
-        expect(adloader.loadScript.calledOnce).to.equal(true);
-
-      });
-
-      it("should make a valid call to rubicontag.defineSlot", () => {
-
-        expect(window.rubicontag.defineSlot.calledOnce).to.equal(true);
-
-        let slotParam = window.rubicontag.defineSlot.firstCall.args[0];
-        expect(slotParam).to.contain.all.keys(
-          "siteId",
-          "zoneId",
-          "sizes",
-          "id"
-        );
-        expect(slotParam).to.have.property("sizes")
-          .that.is.an("array")
-          .with.lengthOf(2)
-          .that.deep.equals([15, 43]);
-
-      });
-
-      it("should call rubicontag.setUserKey when params.userId is set", () => {
-
-        expect(window.rubicontag.setUserKey.calledWith(adUnit.bids[0].params.userId)).to.equal(true);
-
-      });
-
-      it("should set proper targeting params for Slot when passed", () => {
-
-        expect(slot.setPosition.calledOnce).to.equal(true);
-        expect(slot.setPosition.firstCall.calledWith("atf")).to.equal(true);
-
-        expect(slot.addFPV.calledTwice).to.equal(true);
-        expect(slot.addFPV.firstCall.calledWith("ucat", "new")).to.equal(true);
-        expect(slot.addFPV.secondCall.calledWith("lastsearch", "iphone")).to.equal(true);
-
-        expect(slot.addFPI.calledTwice).to.equal(true);
-        expect(slot.addFPI.firstCall.calledWith("rating", "5-star")).to.equal(true);
-        expect(slot.addFPI.secondCall.calledWith("prodtype", "tech")).to.equal(true);
-
-        expect(slot.addKW.calledOnce).to.equal(true);
-        expect(slot.addKW.firstCall.calledWith(["a","b","c"])).to.equal(true);
-
-      });
-
-      it("should set the rubicontag integration as prebid.js", () => {
-
-        expect(window.rubicontag.setIntegration.calledWith("$$PREBID_GLOBAL$$")).to.equal(true);
-
-      });
-
-    });
-
-    describe("when handling fastlane responses", () => {
-
-      beforeEach(() => {
-        // need a fresh rubicon adapter for these tests to reset private state.
         rubiconAdapter = new RubiconAdapter();
+
+        xhr = sandbox.useFakeXMLHttpRequest();
+
+        screen = window.screen;
+        window.screen = {
+          width: 1920,
+          height: 1080
+        };
       });
 
-      describe("individually through events", () => {
-
-        let bids;
-        let _callback;
-        let addEventListener;
-
-        beforeEach(() => {
-          bids = [];
-
-          addEventListener = sandbox.stub(window.rubicontag, "addEventListener", (event, callback) => {
-            _callback = callback;
-            return true;
-          });
-
-          sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
-            bids.push(bid);
-          });
-        });
-
-        it("should only register one listener for multiple bid requests", () => {
-
-          rubiconAdapter.callBids(bidderRequest);
-          rubiconAdapter.callBids(bidderRequest);
-
-          expect(addEventListener.calledOnce).to.equal(true);
-
-        });
-
-        it("should register successful bids with the bidmanager", () => {
-
-          sandbox.stub(window.rubicontag, "run", () => {
-            _callback({
-              elementId: "/19968336/header-bid-tag-0",
-              sizeId: "43"
-            });
-            _callback({
-              elementId: "/19968336/header-bid-tag-0",
-              sizeId: "15"
-            });
-          });
-
-          sandbox.stub(slot, "getRawResponseBySizeId", (sizeId) => {
-            return {
-              "43": {
-                "advertiser": 12345,
-                "cpm": 0.811,
-                "dimensions": [
-                  300,
-                  250
-                ],
-                "auction_id": "431ee1bc-3cc4-4bb7-b0d4-eb9faedb433c"
-              },
-              "15": {
-                "advertiser": 12345,
-                "cpm": 0.59,
-                "dimensions": [
-                  320,
-                  50
-                ],
-                "auction_id": "431ee1bc-3cc4-4bb7-b0d4-eb9faedb433c"
-              }
-            }[sizeId];
-          });
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          expect(bidManager.addBidResponse.calledTwice).to.equal(true);
-
-          expect(bids).to.be.lengthOf(2);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-          expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-
-          expect(bids[0].bidderCode).to.equal("rubicon");
-          expect(bids[0].width).to.equal(300);
-          expect(bids[0].height).to.equal(250);
-          expect(bids[0].cpm).to.equal(0.811);
-
-          expect(bids[1].bidderCode).to.equal("rubicon");
-          expect(bids[1].width).to.equal(320);
-          expect(bids[1].height).to.equal(50);
-          expect(bids[1].cpm).to.equal(0.59);
-        })
-
+      afterEach(() => {
+        xhr.restore();
+        window.screen = screen;
       });
 
-      describe("all at once", () => {
+      it('should make a well-formed optimized request', () => {
 
-        let bids;
+        rubiconAdapter.callBids(bidderRequest);
 
-        beforeEach(() => {
-          bids = [];
+        let request = xhr.requests[0];
 
-          sandbox.stub(window.rubicontag, "run", cb => cb());
-          sandbox.stub(window.rubicontag, "addEventListener", () => false);
-          sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
-            bids.push(bid);
-          });
+        expect(request instanceof sinon.FakeXMLHttpRequest).to.equal(true);
+
+        expect(request.withCredentials).to.equal(true);
+
+        let [path, query] = request.url.split('?');
+        query = parseQuery(query);
+
+        expect(path).to.equal(
+          '//fastlane.rubiconproject.com/a/api/fastlane.json'
+        );
+
+        let expectedQuery = {
+          'account_id': '14062',
+          'site_id': '70608',
+          'zone_id': '335918',
+          'size_id': '15',
+          'alt_size_ids': '43',
+          'p_pos': 'atf',
+          'rp_floor': '0.01',
+          'tk_flint': 'pbjs.rapid',
+          'p_screen_res': '1920x1080',
+          'tk_user_key': '12346',
+          'kw': 'a,b,c',
+          'tg_v.ucat': 'new',
+          'tg_v.lastsearch': 'iphone',
+          'tg_i.rating': '5-star',
+          'tg_i.prodtype': 'tech',
+          'rf': 'localhost'
+        };
+
+        // test that all values above are both present and correct
+        Object.keys(expectedQuery).forEach(key => {
+          let value = expectedQuery[key];
+          expect(query[key]).to.equal(value);
         });
 
-        it("should register successful bids with the bidmanager", () => {
-
-          sandbox.stub(slot, "getRawResponses", () => [
-            {
-              "advertiser": 12345,
-              "cpm": 0.811,
-              "dimensions": [
-                300,
-                250
-              ],
-              "auction_id": "431ee1bc-3cc4-4bb7-b0d4-eb9faedb433c"
-            },
-            {
-              "advertiser": 123456,
-              "cpm": 0.59,
-              "dimensions": [
-                320,
-                50
-              ],
-              "auction_id": "a3e042e5-3fb7-498f-b60e-71540f4769a8"
-            }
-          ]);
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          expect(bidManager.addBidResponse.calledTwice).to.equal(true);
-
-          expect(bids).to.be.lengthOf(2);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-          expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-
-          expect(bids[0].bidderCode).to.equal("rubicon");
-          expect(bids[0].width).to.equal(300);
-          expect(bids[0].height).to.equal(250);
-          expect(bids[0].cpm).to.equal(0.811);
-
-          expect(bids[1].bidderCode).to.equal("rubicon");
-          expect(bids[1].width).to.equal(320);
-          expect(bids[1].height).to.equal(50);
-          expect(bids[1].cpm).to.equal(0.59);
-
-        });
-
-        it("should register bad responses as errors with the bidmanager", () => {
-
-          sandbox.stub(slot, "getRawResponses", () => []);
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-
-        });
+        expect(query).to.have.property('rand');
 
       });
 
     });
+
+
+    describe('response handler', () => {
+      let bids;
+
+      beforeEach(() => {
+        bids = [];
+
+        sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
+          bids.push(bid);
+        });
+      });
+
+      it('should handle a success response and sort by cpm', () => {
+
+        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+          "status": "ok",
+          "account_id": 14062,
+          "site_id": 70608,
+          "zone_id": 530022,
+          "size_id": 15,
+          "alt_size_ids": [
+            43
+          ],
+          "tracking": "",
+          "inventory": {},
+          "ads": [
+            {
+              "status": "ok",
+              "impression_id": "153dc240-8229-4604-b8f5-256933b9374c",
+              "size_id": "15",
+              "ad_id": "6",
+              "advertiser": 7,
+              "network": 8,
+              "creative_id": 9,
+              "type": "script",
+              "script": "alert('foo')",
+              "campaign_id": 10,
+              "cpm": 0.811,
+              "targeting": [
+                {
+                  "key": "rpfl_14062",
+                  "values": [
+                    "15_tier_all_test"
+                  ]
+                }
+              ]
+            },
+            {
+              "status": "ok",
+              "impression_id": "153dc240-8229-4604-b8f5-256933b9374d",
+              "size_id": "43",
+              "ad_id": "7",
+              "advertiser": 7,
+              "network": 8,
+              "creative_id": 9,
+              "type": "script",
+              "script": "alert('foo')",
+              "campaign_id": 10,
+              "cpm": 0.911,
+              "targeting": [
+                {
+                  "key": "rpfl_14062",
+                  "values": [
+                    "15_tier_all_test"
+                  ]
+                }
+              ]
+            }
+          ]
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.addBidResponse.calledTwice).to.equal(true);
+
+        expect(bids).to.be.lengthOf(2);
+
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+        expect(bids[0].bidderCode).to.equal("rubicon");
+        expect(bids[0].width).to.equal(320);
+        expect(bids[0].height).to.equal(50);
+        expect(bids[0].cpm).to.equal(0.911);
+        expect(bids[0].ad).to.contain(`alert('foo')`)
+          .and.to.contain(`<html>`)
+          .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
+
+        expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+        expect(bids[1].bidderCode).to.equal("rubicon");
+        expect(bids[1].width).to.equal(300);
+        expect(bids[1].height).to.equal(250);
+        expect(bids[1].cpm).to.equal(0.811);
+        expect(bids[1].ad).to.contain(`alert('foo')`)
+          .and.to.contain(`<html>`)
+          .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
+      });
+
+      it('should be fine with a CPM of 0', () => {
+        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+          "status": "ok",
+          "account_id": 14062,
+          "site_id": 70608,
+          "zone_id": 530022,
+          "size_id": 15,
+          "alt_size_ids": [
+            43
+          ],
+          "tracking": "",
+          "inventory": {},
+          "ads": [{
+              "status": "ok",
+              "cpm": 0,
+              "size_id": 15
+            }]
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+      });
+
+      it('should handle an error with no ads returned', () => {
+        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+          "status": "ok",
+          "account_id": 14062,
+          "site_id": 70608,
+          "zone_id": 530022,
+          "size_id": 15,
+          "alt_size_ids": [
+            43
+          ],
+          "tracking": "",
+          "inventory": {},
+          "ads": []
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      });
+
+      it('should handle an error with bad status', () => {
+        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+          "status": "ok",
+          "account_id": 14062,
+          "site_id": 70608,
+          "zone_id": 530022,
+          "size_id": 15,
+          "alt_size_ids": [
+            43
+          ],
+          "tracking": "",
+          "inventory": {},
+          "ads": [{
+              "status": "not_ok",
+            }]
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      });
+
+      it('should handle an error because of malformed json response', () => {
+        rubiconAdapter = new RubiconAdapter("{test{");
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+        expect(bids[0].error instanceof SyntaxError).to.equal(true);
+      });
+
+    })
+
 
   });
 
