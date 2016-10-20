@@ -27,6 +27,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
         bidfloor: bidRequest.params.bidfloor,
         placementCode: bidRequest.placementCode,
         divId: bidRequest.params.divId,
+        subId: bidRequest.params.subId,
         callback: callback
       });
     }
