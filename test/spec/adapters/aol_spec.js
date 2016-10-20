@@ -430,5 +430,36 @@ describe('AolAdapter', () => {
         expect(bidResponse.cpm).to.equal('a9334987');
       });
     });
+
+    describe('when bidCpmAdjustment is set', () => {
+      let bidderSettingsBackup;
+      let server;
+
+      beforeEach(() => {
+        bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
+        server = sinon.fakeServer.create();
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
+        server.restore();
+        if (console.warn.restore) {
+          console.warn.restore();
+        }
+      });
+
+      it('should show warning in the console', function() {
+        sinon.spy(console, 'warn');
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          aol: {
+            bidCpmAdjustment: function() {}
+          }
+        };
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(console.warn.calledOnce).to.be.true;
+      });
+    });
   });
 });
