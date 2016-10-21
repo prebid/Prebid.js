@@ -91,8 +91,8 @@ var AolAdapter = function AolAdapter() {
     }
 
     var ad = bidData.adm;
-    if (bidData.ext && bidData.ext.pixels) {
-      ad += bidData.ext.pixels;
+    if (response.ext && response.ext.pixels) {
+      ad += response.ext.pixels;
     }
 
     var bidResponse = bidfactory.createBid(1);
