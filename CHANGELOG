@@ -1,6 +1,7 @@
 AOL Prebid 1.4.0
 ----------------
 Updated to Prebid 0.13.1
+BUGFIX: Fixed retrieving 3rd party pixels from bid response in AOL adapter.
 
 
 AOL Prebid 1.3.1
