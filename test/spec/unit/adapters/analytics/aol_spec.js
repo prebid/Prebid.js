@@ -26,6 +26,10 @@ const ANALYTICS_EVENTS = {
 
 describe('AOL analytics adapter', () => {
 
+  before(() => {
+    aolAnalytics.enableAnalytics({});
+  });
+
   afterEach(() => {
     aolAnalytics.adUnits = {};
   });
@@ -77,8 +81,6 @@ describe('AOL analytics adapter', () => {
     const DEFAULT_RECEIVED_BID = getDefaultReceivedBid(status);
     return Object.assign({}, DEFAULT_RECEIVED_BID, bidResponse);
   }
-
-  aolAnalytics.enableAnalytics({});
 
   describe('enableAnalytics()', () => {
     afterEach(() => {
