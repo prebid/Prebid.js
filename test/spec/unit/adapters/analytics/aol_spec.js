@@ -80,7 +80,7 @@ describe('AOL analytics adapter', () => {
 
   aolAnalytics.enableAnalytics({});
 
-  describe('enableAnalytics', () => {
+  describe('enableAnalytics()', () => {
     afterEach(() => {
       if (utils.logMessage.restore) {
         utils.logMessage.restore();
@@ -710,7 +710,7 @@ describe('AOL analytics adapter', () => {
         expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT};`);
       });
 
-      it('should build url with hbauctionid parameter having at most 19 digits', () => {
+      it('should build url with hbauctionid parameter having at most 18 digits', () => {
         let bid = BIDS.VALID;
         let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
           aolParams: BID_CONFIGS.AOL1.params,
@@ -719,7 +719,7 @@ describe('AOL analytics adapter', () => {
         });
         expect(url).to.match(/;hbauctionid=(\d+);/);
         let auctionId = url.match(/;hbauctionid=(\d+);/)[1];
-        expect(auctionId).to.have.length.at.most(19);
+        expect(auctionId).to.have.length.at.most(18);
       });
 
       it('should build url with hbwinner parameter', () => {
