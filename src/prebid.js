@@ -41,6 +41,8 @@ $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
 
+$$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
+
 //default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
 
@@ -199,9 +201,14 @@ function getDealTargeting() {
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
 function getAlwaysUseBidTargeting() {
+  //in case using a custom standard key set, we'll capture those here
+  let standardKeys = bidmanager.getStandardBidderAdServerTargeting().map(targeting =>{
+    return targeting.key;
+  });
+  //then append standard keys defined in the library.
+  standardKeys = standardKeys.concat(CONSTANTS.TARGETING_KEYS).filter(uniques);
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.alwaysUseBid) {
-      const standardKeys = CONSTANTS.TARGETING_KEYS;
       return {
         [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
           // Get only the non-standard keys of the losing bids, since we

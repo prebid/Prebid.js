@@ -1,4 +1,5 @@
 import {format, parse} from '../../src/url';
+import { expect } from 'chai';
 
 describe('helpers.url', () => {
 
@@ -23,7 +24,7 @@ describe('helpers.url', () => {
     });
 
     it('extracts the pathname', () => {
-      expect(parsed).to.have.property('pathname', '/pathname/');
+      expect(['/pathname/', 'pathname/']).to.include(parsed.pathname);
     });
 
     it('extracts the search query', () => {
