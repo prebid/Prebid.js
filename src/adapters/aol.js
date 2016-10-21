@@ -92,8 +92,8 @@ const AolAdapter = function AolAdapter() {
     }
 
     let ad = bidData.adm;
-    if (bidData.ext && bidData.ext.pixels) {
-      ad += bidData.ext.pixels;
+    if (response.ext && response.ext.pixels) {
+      ad += response.ext.pixels;
     }
 
     const bidResponse = bidfactory.createBid(1, bid);

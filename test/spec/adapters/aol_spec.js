@@ -357,13 +357,13 @@ describe('AolAdapter', () => {
               "adm": "<script>console.log('ad');</script>",
               "crid": "12345",
               "h": 90,
-              "w": 728,
-              "ext": {
-                "sizeid": 225,
-                "pixels": "<script>document.write('<img src=\"pixel.gif\">');</script>"
-              }
+              "w": 728
             }]
-          }]
+          }],
+          "ext": {
+            "sizeid": 225,
+            "pixels": "<script>document.write('<img src=\"pixel.gif\">');</script>"
+          }
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
