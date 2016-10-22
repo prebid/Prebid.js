@@ -61,8 +61,10 @@ exports.bidsBackAll = function() {
   return bidsBackAll();
 };
 
-function getBidSetForBidder(bidder) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
+function getBidSet(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
+    return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }
 
 /*
@@ -71,10 +73,11 @@ function getBidSetForBidder(bidder) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
 
+    const { requestId, start } = getBidSet(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
