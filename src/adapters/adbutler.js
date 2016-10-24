@@ -51,7 +51,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
         isCorrectSize = false,
         isCorrectCPM = true,
         CPM,minCPM,maxCPM,
-        bidObj = utils.getBidRequest(callbackData[callbackID].bidId);
+        bidObj = callbackData[callbackID] ? utils.getBidRequest(callbackData[callbackID].bidId) : null;
         
       if (bidObj) {
         
@@ -77,7 +77,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
 
           if(isCorrectCPM && isCorrectSize){
 
-            bidResponse = bidfactory.createBid(1);
+            bidResponse = bidfactory.createBid(1,bidObj);
             bidResponse.bidderCode = 'adbutler';
             bidResponse.cpm = CPM;
             bidResponse.width = width;
@@ -87,13 +87,13 @@ var AdButlerAdapter = function AdButlerAdapter() {
 
           } else {
 
-            bidResponse = bidfactory.createBid(2);
+            bidResponse = bidfactory.createBid(2,bidObj);
             bidResponse.bidderCode = 'adbutler';
 
           }
         } else {
 
-          bidResponse = bidfactory.createBid(2);
+          bidResponse = bidfactory.createBid(2,bidObj);
           bidResponse.bidderCode = 'adbutler';
 
         }  
