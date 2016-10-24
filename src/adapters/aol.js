@@ -1,183 +1,140 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+const utils = require('../utils.js');
+const ajax = require('../ajax.js').ajax;
+const bidfactory = require('../bidfactory.js');
+const bidmanager = require('../bidmanager.js');
 
-var AolAdapter = function AolAdapter() {
+const AolAdapter = function AolAdapter() {
 
-  // constants
-  var ADTECH_URI = 'https://secure-ads.pictela.net/rm/marketplace/pubtaglib/0_4_0/pubtaglib_0_4_0.js';
-  var ADTECH_BIDDER_NAME = 'aol';
-  var ADTECH_PUBAPI_CONFIG = {
-    pixelsDivId: 'pixelsDiv',
-    defaultKey: 'aolBid',
-    roundingConfig: [
-      {
-        from: 0,
-        to: 999,
-        roundFunction: 'tenCentsRound'
-      }, {
-        from: 1000,
-        to: -1,
-        roundValue: 1000
-      }
-    ],
-    pubApiOK: _addBid,
-    pubApiER: _addErrorBid
+  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
+  const BIDDER_CODE = 'aol';
+  const SERVER_MAP = {
+    us: 'adserver-us.adtech.advertising.com',
+    eu: 'adserver-eu.adtech.advertising.com',
+    as: 'adserver-as.adtech.advertising.com'
   };
 
-  var bids;
-  var bidsMap = {};
-  var d = window.document;
-  var h = d.getElementsByTagName('HEAD')[0];
-  var dummyUnitIdCount = 0;
-
-  /**
-   * @private create a div that we'll use as the
-   * location for the AOL unit; AOL will document.write
-   * if the div is not present in the document.
-   * @param {String} id to identify the div
-   * @return {String} the id used with the div
-   */
-  function _dummyUnit(id) {
-    var div = d.createElement('DIV');
-
-    if (!id || !id.length) {
-      id = 'ad-placeholder-' + (++dummyUnitIdCount);
-    }
-
-    div.id = id + '-head-unit';
-    h.appendChild(div);
-    return div.id;
-  }
-
-  /**
-   * @private Add a succesful bid response for aol
-   * @param {ADTECHResponse} response the response for the bid
-   * @param {ADTECHContext} context the context passed from aol
-   */
-  function _addBid(response, context) {
-    var bid = bidsMap[context.alias];
-    var cpm;
-
-    if (!bid) {
-      utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
-      return;
-    }
-
-    cpm = response.getCPM();
-    if (cpm === null || isNaN(cpm)) {
-      return _addErrorBid(response, context);
-    }
-
-    // clean up--we no longer need to store the bid
-    delete bidsMap[context.alias];
-
-    var bidResponse = bidfactory.createBid(1);
-    var ad = response.getCreative();
-    if (typeof response.getPixels() !== 'undefined') {
-      ad += response.getPixels();
-    }
-    bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-    bidResponse.ad = ad;
-    bidResponse.cpm = cpm;
-    bidResponse.width = response.getAdWidth();
-    bidResponse.height = response.getAdHeight();
-    bidResponse.creativeId = response.getCreativeId();
-
-    // add it to the bid manager
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  /**
-   * @private Add an error bid response for aol
-   * @param {ADTECHResponse} response the response for the bid
-   * @param {ADTECHContext} context the context passed from aol
-   */
-  function _addErrorBid(response, context) {
-    var bid = bidsMap[context.alias];
-
-    if (!bid) {
-      utils.logError('mismatched bid: ' + context.placement, ADTECH_BIDDER_NAME, context);
-      return;
-    }
-
-    // clean up--we no longer need to store the bid
-    delete bidsMap[context.alias];
-
-    var bidResponse = bidfactory.createBid(2);
-    bidResponse.bidderCode = ADTECH_BIDDER_NAME;
-    bidResponse.reason = response.getNbr();
-    bidResponse.raw = response.getResponse();
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  /**
-   * @private map a prebid bidrequest to an ADTECH/aol bid request
-   * @param {Bid} bid the bid request
-   * @return {Object} the bid request, formatted for the ADTECH/DAC api
-   */
-  function _mapUnit(bid) {
-    var alias = bid.params.alias || utils.getUniqueIdentifierStr();
-
-    // save the bid
-    bidsMap[alias] = bid;
-
-    return {
-      adContainerId: _dummyUnit(bid.params.adContainerId),
-      server: bid.params.server, // By default, DAC.js will use the US region endpoint (adserver.adtechus.com)
-      sizeid: bid.params.sizeId || 0,
-      pageid: bid.params.pageId,
-      secure: document.location.protocol === 'https:',
-      serviceType: 'pubapi',
-      performScreenDetection: false,
-      alias: alias,
-      network: bid.params.network,
-      placement: parseInt(bid.params.placement),
-      gpt: {
-        adUnitPath: bid.params.adUnitPath || bid.placementCode,
-        size: bid.params.size || (bid.sizes || [])[0]
-      },
-      params: {
-        cors: 'yes',
-        cmd: 'bid',
-        bidfloor: (typeof bid.params.bidFloor !== "undefined") ? bid.params.bidFloor.toString() : ''
-      },
-      pubApiConfig: ADTECH_PUBAPI_CONFIG,
-      placementCode: bid.placementCode
+  function template(strings, ...keys) {
+    return function(...values) {
+      let dict = values[values.length - 1] || {};
+      let result = [strings[0]];
+      keys.forEach(function(key, i) {
+        let value = Number.isInteger(key) ? values[key] : dict[key];
+        result.push(value, strings[i + 1]);
+      });
+      return result.join('');
     };
   }
 
-  /**
-   * @private once ADTECH is loaded, request bids by
-   * calling ADTECH.loadAd
-   */
-  function _reqBids() {
-    if (!window.ADTECH) {
-      utils.logError('window.ADTECH is not present!', ADTECH_BIDDER_NAME);
-      return;
+  function _buildPubapiUrl(bid) {
+    const params = bid.params;
+    const serverParam = params.server;
+    let regionParam = params.region || 'us';
+    let server;
+
+    if (!SERVER_MAP.hasOwnProperty(regionParam)) {
+      console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
+      regionParam = 'us'; // Default region.
     }
 
-    // get the bids
-    utils._each(bids, function (bid) {
-      var bidreq = _mapUnit(bid);
-      window.ADTECH.loadAd(bidreq);
+    if (serverParam) {
+      server = serverParam;
+    } else {
+      server = SERVER_MAP[regionParam];
+    }
+
+    // Set region param, used by AOL analytics.
+    params.region = regionParam;
+
+    return pubapiTemplate({
+      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      host: server,
+      network: params.network,
+      placement: parseInt(params.placement),
+      pageid: params.pageId || 0,
+      sizeid: params.sizeId || 0,
+      alias: params.alias || utils.getUniqueIdentifierStr(),
+      bidfloor: (typeof params.bidFloor !== 'undefined') ?
+        `;bidfloor=${params.bidFloor.toString()}` : '',
+      misc: new Date().getTime() // cache busting
     });
   }
 
-  /**
-   * @public call the bids
-   * this requests the specified bids
-   * from aol marketplace
-   * @param {Object} params
-   * @param {Array} params.bids the bids to be requested
-   */
+  function _addErrorBidResponse(bid, response = {}) {
+    const bidResponse = bidfactory.createBid(2, bid);
+    bidResponse.bidderCode = BIDDER_CODE;
+    bidResponse.reason = response.nbr;
+    bidResponse.raw = response;
+    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+  }
+
+  function _addBidResponse(bid, response) {
+    let bidData;
+
+    try {
+      bidData = response.seatbid[0].bid[0];
+    } catch (e) {
+      _addErrorBidResponse(bid, response);
+      return;
+    }
+
+    let cpm;
+
+    if (bidData.ext && bidData.ext.encp) {
+      cpm = bidData.ext.encp;
+    } else {
+      cpm = bidData.price;
+
+      if (cpm === null || isNaN(cpm)) {
+        utils.logError('Invalid price in bid response', BIDDER_CODE, bid);
+        _addErrorBidResponse(bid, response);
+        return;
+      }
+    }
+
+    let ad = bidData.adm;
+    if (bidData.ext && bidData.ext.pixels) {
+      ad += bidData.ext.pixels;
+    }
+
+    const bidResponse = bidfactory.createBid(1, bid);
+    bidResponse.bidderCode = BIDDER_CODE;
+    bidResponse.ad = ad;
+    bidResponse.cpm = cpm;
+    bidResponse.width = bidData.w;
+    bidResponse.height = bidData.h;
+    bidResponse.creativeId = bidData.crid;
+    bidResponse.pubapiId = response.id;
+    bidResponse.currencyCode = response.cur;
+    if (bidData.dealid) {
+      bidResponse.dealId = bidData.dealid;
+    }
+
+    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+  }
+
   function _callBids(params) {
-    window.bidRequestConfig = window.bidRequestConfig || {};
-    window.dacBidRequestConfigs = window.dacBidRequestConfigs || {};
-    bids = params.bids;
-    if (!bids || !bids.length) return;
-    adloader.loadScript(ADTECH_URI, _reqBids, true);
+    utils._each(params.bids, bid => {
+      const pubapiUrl = _buildPubapiUrl(bid);
+
+      ajax(pubapiUrl, response => {
+        if (!response && response.length <= 0) {
+          utils.logError('Empty bid response', BIDDER_CODE, bid);
+          _addErrorBidResponse(bid, response);
+          return;
+        }
+
+        try {
+          response = JSON.parse(response);
+        } catch (e) {
+          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
+          _addErrorBidResponse(bid, response);
+          return;
+        }
+
+        _addBidResponse(bid, response);
+
+      }, null, { withCredentials: true });
+    });
   }
 
   return {

@@ -543,22 +543,20 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits });
     });
     return;
-  } else {
-    auctionRunning = true;
-    removeComplete();
   }
-
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler);
-  }
+  auctionRunning = true;
+  removeComplete();
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, false);
+  }
     bidmanager.executeCallback();
     return;
   }
@@ -566,7 +564,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, cbTimeout);
+  const timer = setTimeout(timeoutCallback, cbTimeout);
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, timer);
+  }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };

@@ -191,6 +191,30 @@
     "device": null,
     "os": "OS X"
   },
+  "bs_ios_7": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "7.0",
+    "browser": "iphone",
+    "device": "iPhone 5S",
+    "browser_version": null
+  },
+  "bs_ios_8": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "8.3",
+    "browser": "iphone",
+    "device": "iPhone 6",
+    "browser_version": null
+  },
+  "bs_ios_9": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "9.1",
+    "browser": "iphone",
+    "device": "iPhone 6S",
+    "browser_version": null
+  },
   "Chrome_travis_ci": {
     "base": "Chrome",
     "flags": ["--no-sandbox"]
