@@ -86,7 +86,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
 
-      this.executeCallback(timedOut);
+      exports.executeCallback(timedOut);
     }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -123,7 +123,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bidsBackAll()) {
-    this.executeCallback();
+    exports.executeCallback();
   }
 };
 
@@ -233,7 +233,7 @@ exports.executeCallback = function (timedOut) {
     externalCallbacks.all.called = true;
 
     if (timedOut) {
-      const timedOutBidders = this.getTimedOutBidders();
+      const timedOutBidders = exports.getTimedOutBidders();
 
       if (timedOutBidders.length) {
         events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
@@ -454,7 +454,7 @@ function getPriceBucketString(cpm) {
       }
     }
   } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
+    utils.logError('Exception parsing CPM', 'bidmanager.js', e);
   }
 
   return returnObj;
