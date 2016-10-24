@@ -6,9 +6,7 @@ var events = require('./events');
 
 var objectType_function = 'function';
 
-var externalCallbackByAdUnitArr = [];
-var externalCallbackArr = [];
-var externalOneTimeCallback = null;
+var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 var defaultBidderSettingsMap = {};
 
@@ -222,9 +220,14 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
 };
 
 exports.executeCallback = function (timedOut) {
-  if (externalCallbackArr.called !== true) {
-    processCallbacks(externalCallbackArr);
-    externalCallbackArr.called = true;
+  // if there's still a timeout running, clear it now
+  if (!timedOut && externalCallbacks.timer) {
+    clearTimeout(externalCallbacks.timer);
+  }
+
+  if (externalCallbacks.all.called !== true) {
+    processCallbacks(externalCallbacks.all);
+    externalCallbacks.all.called = true;
 
     if (timedOut) {
       const timedOutBidders = this.getTimedOutBidders();
@@ -236,12 +239,13 @@ exports.executeCallback = function (timedOut) {
   }
 
   //execute one time callback
-  if (externalOneTimeCallback) {
+  if (externalCallbacks.oneTime) {
     try {
-      processCallbacks([externalOneTimeCallback]);
+      processCallbacks([externalCallbacks.oneTime]);
     }
     finally {
-      externalOneTimeCallback = null;
+      externalCallbacks.oneTime = null;
+      externalCallbacks.timer = false;
       $$PREBID_GLOBAL$$.clearAuction();
     }
   }
@@ -250,7 +254,7 @@ exports.executeCallback = function (timedOut) {
 function triggerAdUnitCallbacks(adUnitCode) {
   //todo : get bid responses and send in args
   var params = [adUnitCode];
-  processCallbacks(externalCallbackByAdUnitArr, params);
+  processCallbacks(externalCallbacks.byAdUnit, params);
 }
 
 function processCallbacks(callbackQueue, params) {
@@ -290,18 +294,20 @@ function groupByPlacement(prev, item, idx, arr) {
 
 /**
  * Add a one time callback, that is discarded after it is called
- * @param {Function} callback [description]
+ * @param {Function} callback
+ * @param timer Timer to clear if callback is triggered before timer time's out
  */
-exports.addOneTimeCallback = function (callback) {
-  externalOneTimeCallback = callback;
+exports.addOneTimeCallback = function (callback, timer) {
+  externalCallbacks.oneTime = callback;
+  externalCallbacks.timer = timer;
 };
 
 exports.addCallback = function (id, callback, cbEvent) {
   callback.id = id;
   if (CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent) {
-    externalCallbackArr.push(callback);
+    externalCallbacks.all.push(callback);
   } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
-    externalCallbackByAdUnitArr.push(callback);
+    externalCallbacks.byAdUnit.push(callback);
   }
 };
 
