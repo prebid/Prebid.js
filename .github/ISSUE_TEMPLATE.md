@@ -1,5 +1,5 @@
 ## Type of issue
-<!-- Is this a bug, feature request, question, etc. ? -->
+<!-- Is this a bug, feature request, question, etc.? Note if this is a documentation issue, please open a ticket here instead: https://github.com/prebid/prebid.github.io -->
 
 ## Description
 <!-- Describe the issue -->
