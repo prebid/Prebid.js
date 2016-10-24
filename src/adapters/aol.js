@@ -121,11 +121,10 @@ const AolAdapter = function AolAdapter() {
         // needs to be here in case bidderSettings are defined after requestBids() is called
         if (showCpmAdjustmentWarning &&
           $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
-          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function' &&
-          console && console.warn
+          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
         ) {
-          console.warn(
-            'WARNING: bidCpmAdjustment is active for the AOL adapter. ' +
+          utils.logWarn(
+            'bidCpmAdjustment is active for the AOL adapter. ' +
             'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
           );
         }
