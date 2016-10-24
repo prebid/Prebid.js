@@ -45,11 +45,11 @@
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
-    var doNotChange = 'doNotChange';
+    var adUnitCode = 'ad-unit-0';
 
     pbjs.que.push(function() {
         var adUnits = [{
-            code: doNotChange,
+            code: adUnitCode,
             sizes: [[tagWidth, tagHeight]],
             bids: bids
         }];
@@ -61,7 +61,7 @@
             bidsBackHandler: function() {
                 var iframe = document.getElementById('postbid_if');
                 var iframeDoc = iframe.contentWindow.document;
-                var params = pbjs.getAdserverTargetingForAdUnitCode(doNotChange);
+                var params = pbjs.getAdserverTargetingForAdUnitCode(adUnitCode);
 
                 // If any bidders return any creatives
                 if(params && params['hb_adid']){
