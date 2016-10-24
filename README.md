@@ -21,6 +21,8 @@ This README is for developers who want to contribute to Prebid.js.  For user-fac
 
 ## Install
 
+    $ git clone https://github.com/prebid/Prebid.js.git
+    $ cd Prebid.js
     $ npm install
 
 If you experience errors after a version update, try a fresh install:

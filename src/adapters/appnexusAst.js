@@ -84,8 +84,9 @@ function AppnexusAstAdapter() {
     }
 
     parsed.tags.forEach(tag => {
-      const cpm = tag.ads && tag.ads[0].cpm;
-      const type = tag.ads && tag.ads[0].ad_type;
+      const ad = getRtbBid(tag);
+      const cpm = ad && ad.cpm;
+      const type = ad && ad.ad_type;
 
       let status;
       if (cpm !== 0 && (type === 'banner' || type === 'video')) {
@@ -161,26 +162,31 @@ function AppnexusAstAdapter() {
     return sizes;
   }
 
+  function getRtbBid(tag) {
+    return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+  }
+
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
+    const ad = getRtbBid(tag);
     let bid = bidfactory.createBid(status, tag);
     bid.code = baseAdapter.getBidderCode();
     bid.bidderCode = baseAdapter.getBidderCode();
 
-    if (status === STATUS.GOOD) {
-      bid.cpm = tag.ads[0].cpm;
-      bid.creative_id = tag.ads[0].creative_id;
+    if (ad && status === STATUS.GOOD) {
+      bid.cpm = ad.cpm;
+      bid.creative_id = ad.creative_id;
 
-      if (tag.ads[0].rtb.video) {
-        bid.width = tag.ads[0].rtb.video.player_width;
-        bid.height = tag.ads[0].rtb.video.player_height;
-        bid.vastUrl = tag.ads[0].rtb.video.asset_url;
+      if (ad.rtb.video) {
+        bid.width = ad.rtb.video.player_width;
+        bid.height = ad.rtb.video.player_height;
+        bid.vastUrl = ad.rtb.video.asset_url;
       } else {
-        bid.width = tag.ads[0].rtb.banner.width;
-        bid.height = tag.ads[0].rtb.banner.height;
-        bid.ad = tag.ads[0].rtb.banner.content;
+        bid.width = ad.rtb.banner.width;
+        bid.height = ad.rtb.banner.height;
+        bid.ad = ad.rtb.banner.content;
         try {
-          const url = tag.ads[0].rtb.trackers[0].impression_urls[0];
+          const url = ad.rtb.trackers[0].impression_urls[0];
           const tracker = utils.createTrackPixelHtml(url);
           bid.ad += tracker;
         } catch (error) {
