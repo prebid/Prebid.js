@@ -1,69 +1,64 @@
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
-  "buckets" : [{
-      "min" : 0,
-      "max" : 5,
-      "increment" : 0.5,
-      "cap" : true
-    }]
+  'buckets': [{
+    'min': 0,
+    'max': 5,
+    'increment': 0.5
+  }]
 };
 const _mgPriceConfig = {
-  "buckets" : [{
-      "min" : 0,
-      "max" : 20,
-      "increment" : 0.1,
-      "cap" : true
-    }]
+  'buckets': [{
+    'min': 0,
+    'max': 20,
+    'increment': 0.1
+  }]
 };
 const _hgPriceConfig = {
-  "buckets" : [{
-      "min" : 0,
-      "max" : 20,
-      "increment" : 0.01,
-      "cap" : true
-    }]
+  'buckets': [{
+    'min': 0,
+    'max': 20,
+    'increment': 0.01
+  }]
 };
 const _densePriceConfig = {
-  "buckets" : [{
-      "min" : 0,
-      "max" : 3,
-      "increment" : 0.01
+  'buckets': [{
+      'min': 0,
+      'max': 3,
+      'increment': 0.01
     },
     {
-      "min" : 3,
-      "max" : 8,
-      "increment" : 0.05
+      'min': 3,
+      'max': 8,
+      'increment': 0.05
     },
     {
-      "min" : 8,
-      "max" : 20,
-      "increment" : 0.5,
-      "cap" : true
+      'min': 8,
+      'max': 20,
+      'increment': 0.5
     }]
 };
 const _autoPriceConfig = {
-  "buckets" : [{
-      "min" : 0,
-      "max" : 5,
-      "increment" : 0.05
+  'buckets': [{
+      'min': 0,
+      'max': 5,
+      'increment': 0.05
     },
     {
-      "min" : 5,
-      "max" : 10,
-      "increment" : 0.1
+      'min': 5,
+      'max': 10,
+      'increment': 0.1
     },
     {
-      "min" : 10,
-      "max" : 20,
-      "increment" : 0.5,
-      "cap" : true
+      'min': 10,
+      'max': 20,
+      'increment': 0.5
     }]
 };
 
 function getPriceBucketString(cpm, customConfig) {
   var cpmFloat = 0;
   cpmFloat = parseFloat(cpm);
-  if(isNaN(cpmFloat)){
+  if (isNaN(cpmFloat)) {
     cpmFloat = '';
   }
 
@@ -79,30 +74,38 @@ function getPriceBucketString(cpm, customConfig) {
 
 function getCpmStringValue(cpm, config) {
   let cpmStr = '';
-  if(!isValidePriceConfig(config)) return cpmStr;
-
-  let bucket = config.buckets.find(bucket =>{
-    if(bucket.cap && cpm > bucket.max){
+  if (!isValidePriceConfig(config)) {
+    return cpmStr;
+  }
+  const cap = config.buckets.reduce((prev,curr) => {
+    if (prev.max > curr.max) {
+      return prev;
+    }
+    return curr;
+  }, {
+    'max': 0,
+  });
+  let bucket = config.buckets.find(bucket => {
+    if (cpm > cap.max) {
       const precision = bucket.precision || _defaultPrecision;
       cpmStr = bucket.max.toFixed(precision);
-    }
-    else if(cpm <= bucket.max && cpm >= bucket.min){
+    } else if (cpm <= bucket.max && cpm >= bucket.min) {
       return bucket;
     }
   });
-  if(bucket){
+  if (bucket) {
     cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
   }
   return cpmStr;
 }
 
 function isValidePriceConfig(config) {
-  if(!config || !config.buckets || !Array.isArray(config.buckets)){
+  if (!config || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
   let isValid = true;
   config.buckets.forEach(bucket => {
-    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment){
+    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
       isValid = false;
     }
   });
@@ -110,7 +113,7 @@ function isValidePriceConfig(config) {
 }
 
 function getCpmTarget(cpm, increment, precision) {
-  if(!precision) {
+  if (!precision) {
     precision = _defaultPrecision;
   }
   let bucketSize = 1 / increment;
