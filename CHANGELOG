@@ -2,12 +2,12 @@ AOL Prebid 1.4.1
 ----------------
 Refactoring of AOL analytics.
 Fixed reporting of pageId parameter in AOL analytics.
+BUGFIX: Fixed retrieving 3rd party pixels from bid response in AOL adapter.
 
 
 AOL Prebid 1.4.0
 ----------------
 Updated to Prebid 0.13.1
-BUGFIX: Fixed retrieving 3rd party pixels from bid response in AOL adapter.
 
 
 AOL Prebid 1.3.1
