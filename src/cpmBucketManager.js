@@ -56,7 +56,7 @@ const _autoPriceConfig = {
 };
 
 function getPriceBucketString(cpm, customConfig) {
-  var cpmFloat = 0;
+  let cpmFloat = 0;
   cpmFloat = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
     cpmFloat = '';
@@ -120,4 +120,4 @@ function getCpmTarget(cpm, increment, precision) {
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
-export {getPriceBucketString, isValidePriceConfig };
+export { getPriceBucketString, isValidePriceConfig };
