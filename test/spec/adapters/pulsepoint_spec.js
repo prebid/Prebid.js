@@ -40,6 +40,7 @@ describe("PulsePoint Adapter Tests", () => {
         {
           placementCode: "/DfpAccount1/slot1", 
           bidder: "pulsepoint",
+          bidId: 'bid12345',
           params: {
             cp: "p10000",
             ct: "t10000",
@@ -48,6 +49,7 @@ describe("PulsePoint Adapter Tests", () => {
         },{
           placementCode: "/DfpAccount2/slot2", 
           bidder: "pulsepoint",
+          bidId: 'bid23456',
           params: {
             cp: "p20000",
             ct: "t20000",
@@ -102,6 +104,7 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bid.ad).to.equal('This is an Ad');
     expect(bid.width).to.equal('300');
     expect(bid.height).to.equal('250');
+    expect(bid.adId).to.equal('bid12345');
   });
 
   it('Verify passback', () => {
@@ -112,6 +115,7 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bid.bidderCode).to.equal('pulsepoint');
     expect(bid).to.not.have.property('ad');
     expect(bid).to.not.have.property('cpm');
+    expect(bid.adId).to.equal('bid12345');
   });
 
   it('Verify PulsePoint library is downloaded if nessesary', () => {
