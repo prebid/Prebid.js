@@ -2,6 +2,7 @@ var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
+var STATUS = require('../constants').STATUS;
 
 var KomoonaAdapter = function KomoonaAdapter() {
   var KOMOONA_BIDDER_NAME = 'komoona';
@@ -38,13 +39,16 @@ var KomoonaAdapter = function KomoonaAdapter() {
 
   function _bid_arrived(bid) {
     var bidObj = utils.getBidRequest(bid.bidid);
-
-    var bidResponse = bidfactory.createBid(1, bidObj);
+    var bidStatus = bid.creative ? STATUS.GOOD : STATUS.NO_BID;
+    var bidResponse = bidfactory.createBid(bidStatus, bidObj);
     bidResponse.bidderCode = KOMOONA_BIDDER_NAME;
-    bidResponse.ad = bid.creative;
-    bidResponse.cpm = bid.cpm;
-    bidResponse.width = parseInt(bid.width);
-    bidResponse.height = parseInt(bid.height);
+
+    if (bidStatus === STATUS.GOOD) {
+      bidResponse.ad = bid.creative;
+      bidResponse.cpm = bid.cpm;
+      bidResponse.width = parseInt(bid.width);
+      bidResponse.height = parseInt(bid.height);
+    }
 
     var placementCode = bidObj && bidObj.placementCode;
     bidmanager.addBidResponse(placementCode, bidResponse);
