@@ -512,5 +512,24 @@ describe('bidmanager.js', function () {
       const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
     });
+
+    it('should not alter bid adID', () => {
+      const bid1 = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[1]
+      );
+      const bid2 = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[3]
+      );
+
+      bidmanager.addBidResponse(bid1.adUnitCode, Object.assign({},bid1));
+      bidmanager.addBidResponse(bid2.adUnitCode, Object.assign({},bid2));
+
+      const addedBid2 = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid2.adId, bid2.adId);
+      const addedBid1 = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid1.adId, bid1.adId);
+    });
   });
 });
