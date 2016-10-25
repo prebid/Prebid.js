@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import _ from 'lodash';
+import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
 
@@ -449,7 +450,7 @@ describe('AolAdapter', () => {
       });
 
       it('should show warning in the console', function() {
-        sinon.spy(console, 'warn');
+        sinon.spy(utils, 'logWarn');
         server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
         $$PREBID_GLOBAL$$.bidderSettings = {
           aol: {
@@ -458,7 +459,7 @@ describe('AolAdapter', () => {
         };
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
-        expect(console.warn.calledOnce).to.be.true;
+        expect(utils.logWarn.calledOnce).to.be.true;
       });
     });
   });
