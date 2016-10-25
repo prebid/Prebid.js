@@ -154,20 +154,25 @@ function getPresetTargeting() {
   }
 }
 
-function getWinningBids() {
-  const bids = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
-  .filter(uniques)
-  .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-    .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-    .reduce(getHighestCpm,
-      {
+function getWinningBids(code) {
+  const getWinningBidForAdUnit = (adUnitCode) =>
+    $$PREBID_GLOBAL$$._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+      .reduce(getHighestCpm, {
         adUnitCode: adUnitCode,
         cpm: 0,
         adserverTargeting: {},
         timeToRespond: 0
-      }));
+      });
 
-  return bids;
+  if (code) {
+    return getWinningBidForAdUnit(code);
+  } else {
+    return $$PREBID_GLOBAL$$._bidsReceived
+      .map(bid => bid.adUnitCode)
+      .filter(uniques)
+      .map(getWinningBidForAdUnit);
+  }
 }
 
 function getWinningBidTargeting() {
