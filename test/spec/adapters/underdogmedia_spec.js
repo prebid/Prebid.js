@@ -20,15 +20,14 @@ describe('underdog media adapter test', () => {
             if(siteId == 10272){
               // Only bid on this particular site id
               var bids = [];
-              for(var i = 0; i < options.sizes.length; i++){
-                var size = options.sizes[i];
+              options.sizes.forEach(function(size){
                 bids.push({
                   cpm: 3.14,
                   ad_html: `Ad HTML for site ID ${siteId} size ${size[0]}x${size[1]}`,
                   width:   size[0],
                   height:  size[1]
                 });
-              }
+              });
               options.callback({
                 bids: bids
               });
@@ -45,11 +44,10 @@ describe('underdog media adapter test', () => {
     BidRequestArray: function(arr){
       return {
         send: function(){
-          for(var i = 0; i < arr.length; i++){
-            var req = new window.udm_header_lib.BidRequest(arr[i]);
+          arr.forEach(function(bidRequest){
+            var req = new window.udm_header_lib.BidRequest(bidRequest);
             req.send();
-
-          }
+          });
         }
       };
     }
