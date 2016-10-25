@@ -72,8 +72,12 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-      .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
+    if (missing) {
+      missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    } else {
+      missing = [];
+    }
 
     missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.

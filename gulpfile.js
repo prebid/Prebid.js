@@ -9,6 +9,7 @@ var uglify = require('gulp-uglify');
 var jshint = require('gulp-jshint');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
+var mocha = require('gulp-mocha');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
@@ -36,7 +37,7 @@ gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
+gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test', 'mocha']);
 
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
@@ -119,7 +120,10 @@ gulp.task('test', function () {
       'bs_chrome_51_mac_yosemite',
       'bs_safari_7.1_mac_mavericks',
       'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks'
+      'bs_chrome_49_mac_mavericks',
+      'bs_ios_7',
+      'bs_ios_8',
+      'bs_ios_9',
     ];
   }
 
@@ -129,6 +133,17 @@ gulp.task('test', function () {
       configFile: 'karma.conf.js',
       action: (argv.watch) ? 'watch' : 'run'
     }));
+});
+
+gulp.task('mocha', ['webpack'], function() {
+    return gulp.src(['test/spec/loaders/**/*.js'], { read: false })
+        .pipe(mocha({
+          reporter: 'spec',
+          globals: {
+            expect: require('chai').expect
+          }
+        }))
+        .on('error', gutil.log);
 });
 
 // Small task to load coverage reports in the browser
@@ -154,10 +169,18 @@ gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test'
 // Watch Task with Live Reload
 gulp.task('watch', function () {
 
-  gulp.watch(['test/spec/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
+  gulp.watch([
+    'src/**/*.js',
+    'test/spec/**/*.js',
+    '!test/spec/loaders/**/*.js'
+  ], ['quality', 'webpack', 'devpack', 'test']);
+  gulp.watch([
+    'loaders/**/*.js',
+    'test/spec/loaders/**/*.js'
+  ], ['quality', 'mocha']);
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
-  gulp.watch(['src/**/*.js'], ['quality', 'webpack', 'devpack', 'test']);
   connect.server({
+    https: argv.https,
     port: port,
     root: './',
     livereload: true

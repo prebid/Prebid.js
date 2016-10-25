@@ -5,6 +5,7 @@ import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
+import {isValidePriceConfig} from './cpmBucketManager';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -543,22 +544,20 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits });
     });
     return;
-  } else {
-    auctionRunning = true;
-    removeComplete();
   }
-
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler);
-  }
+  auctionRunning = true;
+  removeComplete();
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, false);
+  }
     bidmanager.executeCallback();
     return;
   }
@@ -566,7 +565,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   //set timeout for all bids
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  setTimeout(timeoutCallback, cbTimeout);
+  const timer = setTimeout(timeoutCallback, cbTimeout);
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, timer);
+  }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
 };
@@ -758,12 +760,36 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   }
 };
 
+/**
+ * Sets a default price granularity scheme.
+ * @param {String|Object} granularity - the granularity scheme.
+ * "low": $0.50 increments, capped at $5 CPM
+ * "medium": $0.10 increments, capped at $20 CPM (the default)
+ * "high": $0.01 increments, capped at $20 CPM
+ * "auto": Applies a sliding scale to determine granularity
+ * "dense": Like "auto", but the bid price granularity uses smaller increments, especially at lower CPMs
+ *
+ * Alternatively a custom object can be specified:
+ * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
+ * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
+ */
 $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-  } else {
+    return;
+  }
+  if(typeof granularity === 'string') {
     bidmanager.setPriceGranularity(granularity);
+  }
+  else if(typeof granularity === 'object') {
+    if(!isValidePriceConfig(granularity)){
+      utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+      return;
+    }
+    bidmanager.setCustomPriceBucket(granularity);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    utils.logMessage('Using custom price granularity');
   }
 };
 

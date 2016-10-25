@@ -5,6 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
+  getAdUnits
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -24,12 +25,15 @@ var config = require('test/fixtures/config.json');
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+$$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 function resetAuction() {
   $$PREBID_GLOBAL$$._sendAllBids = false;
   $$PREBID_GLOBAL$$.clearAuction();
   $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+  $$PREBID_GLOBAL$$.adUnits = getAdUnits();
+
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -101,7 +105,9 @@ window.googletag = {
 };
 
 describe('Unit: Prebid Module', function () {
-
+  after(function(){
+    $$PREBID_GLOBAL$$.adUnits = [];
+  })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
@@ -816,7 +822,7 @@ describe('Unit: Prebid Module', function () {
   describe('loadScript', () => {
     it('should call adloader.loadScript', () => {
       const loadScriptSpy = sinon.spy(adloader, 'loadScript');
-      const tagSrc = 'testsrc';
+      const tagSrc = '';
       const callback = Function;
       const useCache = false;
 
@@ -936,6 +942,49 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$.setPriceGranularity(granularity);
       assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
+      bidmanager.setPriceGranularity.restore();
+    });
+
+    it('should log error when not passed a valid config object', () => {
+      const logErrorSpy = sinon.spy(utils, 'logError');
+      const error = 'Invalid custom price value passed to `setPriceGranularity()`';
+      const badConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+          },
+          {
+            //missing min prop
+            "max" : 18,
+            "increment" : 0.05,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(badConfig);
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
+      const setCustomPriceBucket = sinon.spy(bidmanager, 'setCustomPriceBucket');
+      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
+      const goodConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
+      assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
+      bidmanager.setCustomPriceBucket.restore();
+      assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
       bidmanager.setPriceGranularity.restore();
     });
   });

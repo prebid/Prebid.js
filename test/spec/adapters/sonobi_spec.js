@@ -286,6 +286,8 @@ describe('Sonobi adapter tests', () => {
 
     let adapter = new Adapter();
     let spyAddBidResponse;
+    let stubFailBid;
+    let stubGoodBid;
 
     const sbi_bid = {
       "slots":
@@ -295,10 +297,24 @@ describe('Sonobi adapter tests', () => {
           "sbi_size": "300x250",
           "sbi_apoc": "premium",
           "sbi_aid": "159.60.7533347",
-          "sbi_mouse": 4.2
+          "sbi_mouse": 4.20
         }
       },
-      "sbi_dc": "iad-2-"
+      "sbi_dc": "mco-1-"
+    };
+
+    const sbi_video_bid = {
+      "slots":
+      {
+        "sbi_a":
+        {
+          "sbi_size": "outstream",
+          "sbi_apoc": "premium",
+          "sbi_aid": "159.60.7533347",
+          "sbi_mouse": 4.20,
+        }
+      },
+      "sbi_dc": "mco-1-"
     };
 
     const sbi_deal_bid = {
@@ -309,11 +325,11 @@ describe('Sonobi adapter tests', () => {
           "sbi_size": "300x250",
           "sbi_apoc": "premium",
           "sbi_aid": "159.60.7533347",
-          "sbi_mouse": 4.2,
+          "sbi_mouse": 4.20,
           "sbi_dozer": "apex-test-deal"
         }
       },
-      "sbi_dc": "iad-2-"
+      "sbi_dc": "mco-1-"
     };
 
     const sbi_noBid = {
@@ -321,30 +337,43 @@ describe('Sonobi adapter tests', () => {
       {
         "sbi_a": {}
       },
-      "sbi_dc": "iad-2-"
+      "sbi_dc": "mco-1-"
     };
 
     beforeEach(() => {
       spyAddBidResponse = sinon.spy(bidManager, "addBidResponse");
+      stubFailBid = sinon.stub(adapter, 'failure');
+      stubGoodBid = sinon.stub(adapter, 'success');
     });
 
     afterEach(() => {
       spyAddBidResponse.restore();
+      stubFailBid.restore();
+      stubGoodBid.restore();
     });
 
     it('should create bid object for good bid return', () => {
       adapter.parseResponse(sbi_bid);
       expect(spyAddBidResponse.called).to.be.true;
+      expect(stubFailBid.callCount).to.equal(0);
+    });
+
+    it('should create bid object for outstream video bid return', () => {
+      adapter.parseResponse(sbi_video_bid);
+      expect(spyAddBidResponse.called).to.be.true;
+      expect(stubFailBid.callCount).to.equal(0);
     });
 
     it('should create bid object for deal bid return', () => {
       adapter.parseResponse(sbi_deal_bid);
       expect(spyAddBidResponse.called).to.be.true;
+      expect(stubFailBid.callCount).to.equal(0);
     });
 
     it('should create fail bid object for empty return', () => {
       adapter.parseResponse(sbi_noBid);
       expect(spyAddBidResponse.called).to.be.true;
+      expect(stubGoodBid.callCount).to.equal(0);
     });
 
   });
