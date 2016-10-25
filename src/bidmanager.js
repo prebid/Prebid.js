@@ -1,4 +1,4 @@
-import { uniques, flatten } from './utils';
+import {uniques, flatten, adUnitsFilter} from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -7,12 +7,12 @@ var events = require('./events');
 
 var objectType_function = 'function';
 
-var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
+var externalCallbacks = { byAdUnit: [], all: [], oneTime: null, timer: false };
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 let _customPriceBucket;
 var defaultBidderSettingsMap = {};
 
-exports.setCustomPriceBucket = function(customConfig) {
+exports.setCustomPriceBucket = function (customConfig) {
   _customPriceBucket = customConfig;
 };
 
@@ -30,7 +30,9 @@ exports.getTimedOutBidders = function () {
       .indexOf(bidder) < 0);
 };
 
-function timestamp() { return new Date().getTime(); }
+function timestamp() {
+  return new Date().getTime();
+}
 
 function getBidderCode(bidSet) {
   return bidSet.bidderCode;
@@ -43,43 +45,44 @@ function getBidders(bid) {
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids
+      .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
     .reduce(flatten)
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
           bid.sizes.length :
           1;
-    }).reduce(add, 0);
+    }).reduce((a, b) => a + b, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
-}
-
-function add(a, b) {
-  return a + b;
 }
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
     .reduce(flatten)
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
         bid.sizes.length :
         1;
     }).reduce(add, 0);
 
-  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
+  const received = $$PREBID_GLOBAL$$._bidsReceived
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
+
   return requested === received;
 }
 
-exports.bidsBackAll = function() {
+exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
-function getBidSet(bidder, adUnitCode) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
-    return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
 
@@ -89,7 +92,7 @@ function getBidSet(bidder, adUnitCode) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
 
-    const { requestId, start } = getBidSet(bid.bidderCode, adUnitCode);
+    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
       requestId: requestId,
       responseTimestamp: timestamp(),
@@ -174,7 +177,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   return keyValues;
 }
 
-exports.getKeyValueTargetingPairs = function() {
+exports.getKeyValueTargetingPairs = function () {
   return getKeyValueTargetingPairs(...arguments);
 };
 
@@ -199,7 +202,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     }
 
     if (
-      typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true &&
+      typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true &&
       (
         utils.isEmptyStr(value) ||
         value === null ||
@@ -218,7 +221,8 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
 exports.setPriceGranularity = function setPriceGranularity(granularity) {
   var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
-  if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
+  if (Object.keys(granularityOptions)
+      .filter(option => granularity === granularityOptions[option])) {
     _granularity = granularity;
   } else {
     utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
@@ -263,19 +267,31 @@ exports.executeCallback = function (timedOut) {
   }
 };
 
+exports.externalCallbackReset = function () {
+  externalCallbacks.all.called = false;
+};
+
 function triggerAdUnitCallbacks(adUnitCode) {
   //todo : get bid responses and send in args
-  var params = [adUnitCode];
-  processCallbacks(externalCallbacks.byAdUnit, params);
+  var singleAdCode = [adUnitCode];
+  processCallbacks(externalCallbacks.byAdUnit, singleAdCode);
 }
 
-function processCallbacks(callbackQueue, params) {
-  var i;
+function processCallbacks(callbackQueue, singleAdCode) {
   if (utils.isArray(callbackQueue)) {
-    for (i = 0; i < callbackQueue.length; i++) {
-      var func = callbackQueue[i];
-      func.apply($$PREBID_GLOBAL$$, params || [$$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {})]);
-    }
+    callbackQueue.forEach(callback => {
+      const adUnitCodes = singleAdCode || $$PREBID_GLOBAL$$._adUnitCodes;
+      let bids;
+
+      if (adUnitCodes && adUnitCodes.length) {
+        bids = [$$PREBID_GLOBAL$$._bidsReceived
+                  .filter(adUnitsFilter.bind(this, adUnitCodes)).reduce(groupByPlacement, {})];
+      } else {
+        bids = [$$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {})];
+      }
+
+      callback.apply($$PREBID_GLOBAL$$, bids);
+    });
   }
 }
 
@@ -347,7 +363,7 @@ function adjustBids(bid) {
   }
 }
 
-exports.adjustBids = function() {
+exports.adjustBids = function () {
   return adjustBids(...arguments);
 };
 
@@ -392,6 +408,7 @@ function getStandardBidderSettings() {
       ]
     };
   }
+
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
 
