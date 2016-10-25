@@ -60,6 +60,7 @@ describe('Adform adapter', () => {
       assert.equal(_bidObject.ad, '<tag>');
       assert.equal(_bidObject.width, 90);
       assert.equal(_bidObject.height, 90);
+      assert.equal(_bidObject.dealId, 'deal-1');
     });
 
     it('should correctly form empty bid response object', () => {
@@ -89,7 +90,8 @@ describe('Adform adapter', () => {
           height: 90,
           banner: '<tag>',
           win_bid: 1.1,
-          win_cur: 'EUR'
+          win_cur: 'EUR',
+          deal_id: 'deal-1'
         },
         {},
         {
