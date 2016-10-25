@@ -154,18 +154,24 @@ function getPresetTargeting() {
   }
 }
 
+function getWinningBids() {
+  const bids = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
+  .filter(uniques)
+  .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+    .reduce(getHighestCpm,
+      {
+        adUnitCode: adUnitCode,
+        cpm: 0,
+        adserverTargeting: {},
+        timeToRespond: 0
+      }));
+
+  return bids;
+}
+
 function getWinningBidTargeting() {
-  let winners = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
-    .filter(uniques)
-    .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce(getHighestCpm,
-        {
-          adUnitCode: adUnitCode,
-          cpm: 0,
-          adserverTargeting: {},
-          timeToRespond: 0
-        }));
+  let winners = getWinningBids();
 
   // winning bids with deals need an hb_deal targeting key
   winners
