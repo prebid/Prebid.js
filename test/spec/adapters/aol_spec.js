@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import _ from 'lodash';
+import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
 
@@ -428,6 +429,37 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.cpm).to.equal('a9334987');
+      });
+    });
+
+    describe('when bidCpmAdjustment is set', () => {
+      let bidderSettingsBackup;
+      let server;
+
+      beforeEach(() => {
+        bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
+        server = sinon.fakeServer.create();
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
+        server.restore();
+        if (console.warn.restore) {
+          console.warn.restore();
+        }
+      });
+
+      it('should show warning in the console', function() {
+        sinon.spy(utils, 'logWarn');
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          aol: {
+            bidCpmAdjustment: function() {}
+          }
+        };
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(utils.logWarn.calledOnce).to.be.true;
       });
     });
   });
