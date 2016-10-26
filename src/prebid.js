@@ -155,15 +155,19 @@ function getPresetTargeting() {
 }
 
 function getWinningBids(code) {
-  const getWinningBidForAdUnit = (adUnitCode) =>
-    $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce(getHighestCpm, {
+  const getWinningBidForAdUnit = (adUnitCode) => {
+    const adUnits = $$PREBID_GLOBAL$$._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null);
+
+    if (adUnits.length) {
+      return adUnits.reduce(getHighestCpm, {
         adUnitCode: adUnitCode,
         cpm: 0,
         adserverTargeting: {},
         timeToRespond: 0
       });
+    }
+  };
 
   if (code) {
     return getWinningBidForAdUnit(code);
@@ -849,6 +853,20 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
 $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
   if (order === CONSTANTS.ORDER.RANDOM) {
     adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
+  }
+};
+
+/**
+ * Get array of highest cpm bids for all adUnits, or highest cpm bid
+ * object for the given adUnit
+ * @param {string} optional adUnitCode ad unit code
+ * @return {array|object} array or object containing highest cpm bid(s)
+ */
+$$PREBID_GLOBAL$$.getHighestCpmBid = function (adUnitCode) {
+  if (adUnitCode) {
+    return getWinningBids(adUnitCode);
+  } else {
+    return getWinningBids();
   }
 };
 
