@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes } from './utils';
+import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
@@ -38,7 +38,12 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-  getBidderCodes(adUnits).forEach(bidderCode => {
+  let bidderCodes = getBidderCodes(adUnits);
+  if ($$PREBID_GLOBAL$$._bidderSequence === 'random') {
+    bidderCodes = shuffle(bidderCodes);
+  }
+
+  bidderCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
