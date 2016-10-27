@@ -10,6 +10,12 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
+  "keywords": [
+    "advertising",
+    "auction",
+    "header bidding",
+    "prebid"
+  ],
   "globalVarName": "pbjs",
   "analytics": [],
   "author": "the prebid.js contributors",
