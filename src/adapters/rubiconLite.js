@@ -2,11 +2,11 @@
  * @file Rubicon (RubiconLite) adapter
  */
 
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var ajax = require("../ajax.js").ajax;
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
+import * as utils from 'src/utils';
+import { ajax } from 'src/ajax';
+import { STATUS } from 'src/constants';
 
 function RubiconAdapter(mockResponse) {
 
@@ -61,7 +61,7 @@ function RubiconAdapter(mockResponse) {
           }
 
           //indicate that there is no bid for this placement
-          let badBid = bidfactory.createBid(2, bid);
+          let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
           badBid.bidderCode = bid.bidder;
           badBid.error = err;
           bidmanager.addBidResponse(bid.placementCode, badBid);
@@ -126,24 +126,16 @@ function RubiconAdapter(mockResponse) {
     ).slice(0, -1); // remove trailing &
   }
 
-  let _renderCreative = (script, impId) =>
-    '<html>\n' +
-    '<head>\n' +
-    '<scr' + 'ipt type=\'text\/javascript\'>' +
-    'inDapIF=true;\n' +
-    '<' + '/scr' + 'ipt>\n' +
-    '<\/head>\n' +
-    '<body style=\'margin : 0; padding: 0;\'>\n' +
-    '<!-- Rubicon Project Ad Tag -->\n' +
-    '<div data-rp-impression-id=\'' + impId + '\'>\n' +
-    '<scr' + 'ipt type=\'text\/javascript\'>\n' +
-    ''+ script + '' +
-    '<' + '/scr' + 'ipt>\n' +
-    '</div>\n' +
-    '<\/body>\n' +
-    '<\/html>';
+  let _renderCreative = (script, impId) => `<html>
+<head><script type='text/javascript'>inDapIF=true;</script></head>
+<body style='margin : 0; padding: 0;'>
+<!-- Rubicon Project Ad Tag -->
+<div data-rp-impression-id='${impId}'>
+<script type='text/javascript'>${script}</script>
+</div>
+</body>
+</html>`;
 
-  //expose the callback to the global object:
   function handleRpCB(responseText, bidRequest) {
     let responseObj = JSON.parse(responseText); // can throw
 
@@ -166,12 +158,9 @@ function RubiconAdapter(mockResponse) {
         throw 'bad ad status';
       }
 
-      //set the status
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
-
       //store bid response
       //bid status is good (indicating 1)
-      var bid = bidfactory.createBid(1, bidRequest);
+      var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
       bid.creative_id = ad.ad_id;
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = ad.cpm || 0;
