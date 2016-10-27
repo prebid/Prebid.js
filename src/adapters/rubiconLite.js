@@ -8,7 +8,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-function RubiconAdapter(mockResponse) {
+function RubiconAdapter() {
 
   var sizeMap = {
     1:'468x60',
@@ -43,18 +43,12 @@ function RubiconAdapter(mockResponse) {
     var bids = bidderRequest.bids || [];
 
     bids.forEach(bid => {
-      if(!mockResponse) {
-        ajax(buildOptimizedCall(bid), cb, undefined, {withCredentials: true});
-      } else {
-        cb(mockResponse);
-      }
-
-      function cb(responseText) {
+      ajax(buildOptimizedCall(bid), function bidCallback(responseText) {
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
-        } catch(err) {
-          if(typeof err === "string") {
+        } catch (err) {
+          if (typeof err === "string") {
             utils.logWarn(`${err} when processing RubiconLite for placement code ${bid.placementCode}`);
           } else {
             utils.logError('Error processing response in RubiconLite for placement code ' + bid.placementCode, null, err);
@@ -66,7 +60,7 @@ function RubiconAdapter(mockResponse) {
           badBid.error = err;
           bidmanager.addBidResponse(bid.placementCode, badBid);
         }
-      }
+      }, undefined, {withCredentials: true});
     });
   }
 

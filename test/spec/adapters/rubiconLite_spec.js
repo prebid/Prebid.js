@@ -195,19 +195,26 @@ describe('the rubiconLite adapter', () => {
 
 
     describe('response handler', () => {
-      let bids;
+      let bids,
+          server;
 
       beforeEach(() => {
         bids = [];
+
+        server = sinon.fakeServer.create();
 
         sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
           bids.push(bid);
         });
       });
 
+      afterEach(() => {
+        server.restore();
+      });
+
       it('should handle a success response and sort by cpm', () => {
 
-        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+        server.respondWith(JSON.stringify({
           "status": "ok",
           "account_id": 14062,
           "site_id": 70608,
@@ -266,6 +273,8 @@ describe('the rubiconLite adapter', () => {
 
         rubiconAdapter.callBids(bidderRequest);
 
+        server.respond();
+
         expect(bidManager.addBidResponse.calledTwice).to.equal(true);
 
         expect(bids).to.be.lengthOf(2);
@@ -290,7 +299,7 @@ describe('the rubiconLite adapter', () => {
       });
 
       it('should be fine with a CPM of 0', () => {
-        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+        server.respondWith(JSON.stringify({
           "status": "ok",
           "account_id": 14062,
           "site_id": 70608,
@@ -310,13 +319,15 @@ describe('the rubiconLite adapter', () => {
 
         rubiconAdapter.callBids(bidderRequest);
 
+        server.respond();
+
         expect(bidManager.addBidResponse.calledOnce).to.equal(true);
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       });
 
       it('should handle an error with no ads returned', () => {
-        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+        server.respondWith(JSON.stringify({
           "status": "ok",
           "account_id": 14062,
           "site_id": 70608,
@@ -332,13 +343,15 @@ describe('the rubiconLite adapter', () => {
 
         rubiconAdapter.callBids(bidderRequest);
 
+        server.respond();
+
         expect(bidManager.addBidResponse.calledOnce).to.equal(true);
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       });
 
       it('should handle an error with bad status', () => {
-        rubiconAdapter = new RubiconAdapter(JSON.stringify({
+        server.respondWith(JSON.stringify({
           "status": "ok",
           "account_id": 14062,
           "site_id": 70608,
@@ -356,15 +369,19 @@ describe('the rubiconLite adapter', () => {
 
         rubiconAdapter.callBids(bidderRequest);
 
+        server.respond();
+
         expect(bidManager.addBidResponse.calledOnce).to.equal(true);
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       });
 
       it('should handle an error because of malformed json response', () => {
-        rubiconAdapter = new RubiconAdapter("{test{");
+        server.respondWith("{test{");
 
         rubiconAdapter.callBids(bidderRequest);
+
+        server.respond();
 
         expect(bidManager.addBidResponse.calledOnce).to.equal(true);
         expect(bids).to.be.lengthOf(1);
