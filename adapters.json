@@ -6,12 +6,10 @@
     "admedia",
     "aol",
     "appnexus",
-    "appnexusAst",
     "getintent",
     "hiromedia",
-	"komoona",
+  	"komoona",
     "indexExchange",
-    "kruxlink",
     "openx",
     "piximedia",
     "pubmatic",
@@ -21,16 +19,11 @@
     "sonobi",
     "sovrn",
     "springserve",
-    "triplelift",
     "yieldbot",
-    "nginad",
     "brightcom",
     "wideorbit",
-    "jcm",
     "underdogmedia",
-    "memeglobal",
     "centro",
-    "roxot",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -44,11 +37,6 @@
     {
       "appnexus": {
         "alias": "defymedia"
-      }
-    },
-    {
-      "appnexusAst": {
-        "supportedMediaTypes": ["video"]
       }
     }
 ]
