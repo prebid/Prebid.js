@@ -40,17 +40,9 @@ function isSizeMappingValid(sizeMapping) {
 }
 
 function getScreenWidth(win) {
-  const w = win || _win || window;
-  const docElem = w.document.documentElement;
-  const body = w.document.getElementsByTagName('body')[0];
-  if(w.innerWidth) {
-    return w.innerWidth;
-  }
-  else if(docElem && docElem.clientWidth ) {
-    return docElem.clientWidth;
-  }
-  else if(body && body.clientWidth){
-    return body.clientWidth;
+  var w = win || _win || window;
+  if(w.screen && w.screen.width) {
+    return w.screen.width;
   }
   return 0;
 }

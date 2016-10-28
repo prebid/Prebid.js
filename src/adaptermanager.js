@@ -16,15 +16,26 @@ var _analyticsRegistry = {};
 function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => Object.assign(bid, {
-        placementCode: adUnit.code,
-        mediaType: adUnit.mediaType,
-        sizes: mapSizes(adUnit),
-        bidId: utils.getUniqueIdentifierStr(),
-        bidderRequestId,
-        requestId
-      }));
-  }).reduce(flatten, []);
+      .map(bid => {
+        let sizes = adUnit.sizes;
+        if(adUnit.sizeMapping) {
+          let sizeMapping = mapSizes(adUnit);
+          if(sizeMapping === ''){
+            return '';
+          }
+          sizes = sizeMapping;
+        }
+       return Object.assign(bid, {
+          placementCode: adUnit.code,
+          mediaType: adUnit.mediaType,
+          sizes: sizes,
+          bidId: utils.getUniqueIdentifierStr(),
+          bidderRequestId,
+          requestId
+      });
+    }
+    );
+  }).reduce(flatten, []).filter(val => val !== '');
 }
 
 exports.callBids = ({ adUnits, cbTimeout }) => {
