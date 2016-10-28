@@ -26,6 +26,7 @@ $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 $$PREBID_GLOBAL$$.adUnits = getAdUnits();
+$$PREBID_GLOBAL$$._adUnitCodes = $$PREBID_GLOBAL$$.adUnits.map(unit => unit.code);
 
 function resetAuction() {
   $$PREBID_GLOBAL$$._sendAllBids = false;
@@ -33,7 +34,7 @@ function resetAuction() {
   $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
   $$PREBID_GLOBAL$$.adUnits = getAdUnits();
-
+  $$PREBID_GLOBAL$$._adUnitCodes = $$PREBID_GLOBAL$$.adUnits.map(unit => unit.code);
 }
 
 var Slot = function Slot(elementId, pathId) {
