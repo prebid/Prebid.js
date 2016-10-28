@@ -4,7 +4,6 @@
  * */
 
 'use strict';
-const path = require('path');
 const fs = require('fs');
 const blockLoader = require('block-loader');
 const getAdapters = require('./getAdapters');

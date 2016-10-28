@@ -1,7 +1,6 @@
 const proxyquire = require('proxyquire');
 const allAdapters = require('../../fixtures/allAdapters');
 const expect = require('chai').expect;
-const mockfs = require('mock-fs');
 require('../../../loaders/adapterLoader');
 
 const defaultAdapters = ["aardvark","adblade","adbutler","adequant","adform","admedia","aol","appnexus","appnexusAst","getintent","hiromedia","indexExchange","kruxlink","komoona","openx","piximedia","pubmatic","pulsepoint","rubicon","sekindo","sonobi","sovrn","springserve","triplelift","yieldbot","nginad","brightcom","wideorbit","jcm","underdogmedia","memeglobal","centro","roxot",{"appnexus":{"alias":"brealtime"}},{"appnexus":{"alias":"pagescience"}},{"appnexus":{"alias":"defymedia"}},{"appnexusAst":{"supportedMediaTypes":["video"]}}];
@@ -25,7 +24,6 @@ describe('adapterLoader.js', () => {
     let output = loader(input);
     const expected = 'let customAdapterName = require(\'/somepath/customAdapterName.js\');\n      exports.registerBidAdapter(new customAdapterName, \'customAdapterName\');\nexports.videoAdapters = [];';
     expect(output).to.equal(expected);
-    mockfs.restore();
   });
 
   it('should ignore custom adapters that that do not exist', () => {
@@ -35,7 +33,6 @@ describe('adapterLoader.js', () => {
     let output = loader(input);
     const expected = 'var AppnexusAdapter = require(\'./adapters/appnexus.js\');\n    exports.registerBidAdapter(new AppnexusAdapter.createNew(), \'appnexus\');\nexports.videoAdapters = [];';
     expect(output).to.equal(expected);
-    mockfs.restore();
   });
 
 });
