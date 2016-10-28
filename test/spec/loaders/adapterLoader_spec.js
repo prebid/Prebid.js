@@ -1,3 +1,5 @@
+'use strict';
+
 const proxyquire = require('proxyquire');
 const allAdapters = require('../../fixtures/allAdapters');
 const expect = require('chai').expect;
