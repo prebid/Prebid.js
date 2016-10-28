@@ -268,13 +268,11 @@ function getAllTargeting(adUnitCode) {
 }
 
 function clearPlacements() {
-  const adUnitCodes = $$PREBID_GLOBAL$$._adUnitCodes;
-  let requested = $$PREBID_GLOBAL$$._bidsRequested;
-  let received = $$PREBID_GLOBAL$$._bidsReceived;
-
-  requested = requested.filter(request => request.bids
-    .filter(bid => !adUnitCodes.includes(bid.placementCode)).length > 0);
-  received = received.filter(bid => !adUnitCodes.includes(bid.adUnitCode));
+  $$PREBID_GLOBAL$$._bidsRequested = $$PREBID_GLOBAL$$._bidsRequested
+    .filter(request => request.bids
+    .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.placementCode)).length > 0);
+  $$PREBID_GLOBAL$$._bidsReceived = $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode));
 }
 
 function setRenderSize(doc, width, height) {
@@ -351,7 +349,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = $$PREBID_GLOBAL$$._bidsReceived;
+  const responses = $$PREBID_GLOBAL$$._bidsReceived
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes));
 
   // find the last requested id to get responses for most recent auction only
   const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
