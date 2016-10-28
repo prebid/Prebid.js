@@ -19,10 +19,14 @@ function mapSizes(adUnit) {
     }
     return adUnit.sizes;
   }
-  const sizes = adUnit.sizeMapping.find(sizeMapping =>{
+  let sizes = '';
+  const mapping = adUnit.sizeMapping.find(sizeMapping =>{
     return width > sizeMapping.minWidth;
-  }).sizes;
-  utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
+  });
+  if(mapping && mapping.sizes){
+    sizes = mapping.sizes;
+    utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
+  }
   return sizes;
 
 }

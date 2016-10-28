@@ -29,6 +29,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
 
 exports.callBids = ({ adUnits, cbTimeout }) => {
   const requestId = utils.generateUUID();
+  //console.log(JSON.stringify(adUnits));
 
   const auctionStart = Date.now();
 
