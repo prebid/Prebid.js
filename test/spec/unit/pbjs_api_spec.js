@@ -1263,25 +1263,22 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getHighestCpm', () => {
-    it('returns an array of winning bids for each adUnit', () => {
-      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBid();
-
+    it('returns an array of winning bid objects for each adUnit', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
       expect(highestCpmBids.length).to.equal(2);
       expect(highestCpmBids[0]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[1]);
       expect(highestCpmBids[1]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[2]);
     });
 
-    it('returns the highest bid for the given adUnitCode', () => {
-      const highestCpmBid = $$PREBID_GLOBAL$$.getHighestCpmBid('/19968336/header-bid-tag-0');
-
-      expect(highestCpmBid).to.be.an('object');
-      expect(highestCpmBid).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[1]);
+    it('returns an array containing the highest bid object for the given adUnitCode', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids.length).to.equal(1);
+      expect(highestCpmBids[0]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[1]);
     });
 
-    it('returns nothing when the given adUnit is invalid', () => {
-      const shouldBeUndefined = $$PREBID_GLOBAL$$.getHighestCpmBid('Stallone');
-
-      expect(shouldBeUndefined).to.be.undefined;
+    it('returns an empty array when the given adUnit is not found', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/stallone');
+      expect(highestCpmBids.length).to.equal(0);
     });
   });
 

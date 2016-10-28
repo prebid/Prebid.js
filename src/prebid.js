@@ -154,33 +154,24 @@ function getPresetTargeting() {
   }
 }
 
-function getWinningBids(code) {
-  const getWinningBidForAdUnit = (adUnitCode) => {
-    const adUnits = $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null);
-
-    if (adUnits.length) {
-      return adUnits.reduce(getHighestCpm, {
-        adUnitCode: adUnitCode,
-        cpm: 0,
-        adserverTargeting: {},
-        timeToRespond: 0
-      });
-    }
-  };
-
-  if (code) {
-    return getWinningBidForAdUnit(code);
-  } else {
-    return $$PREBID_GLOBAL$$._bidsReceived
-      .map(bid => bid.adUnitCode)
-      .filter(uniques)
-      .map(getWinningBidForAdUnit);
-  }
+function getWinningBids(adUnitCodes) {
+  return $$PREBID_GLOBAL$$._bidsReceived
+    .filter(adUnitsFilter.bind(this, adUnitCodes))
+    .map(bid => bid.adUnitCode)
+    .filter(uniques)
+    .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
+      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+      .reduce(getHighestCpm,
+        {
+          adUnitCode: adUnitCode,
+          cpm: 0,
+          adserverTargeting: {},
+          timeToRespond: 0
+        }));
 }
 
-function getWinningBidTargeting() {
-  let winners = getWinningBids();
+function getWinningBidTargeting(adUnitCodes) {
+  let winners = getWinningBids(adUnitCodes);
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -860,14 +851,14 @@ $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} optional adUnitCode ad unit code
- * @return {array|object} array or object containing highest cpm bid(s)
+ * @return {array} array containing highest cpm bid object(s)
  */
-$$PREBID_GLOBAL$$.getHighestCpmBid = function (adUnitCode) {
-  if (adUnitCode) {
-    return getWinningBids(adUnitCode);
-  } else {
-    return getWinningBids();
-  }
+$$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
+  const adUnitCodes = adUnitCode && adUnitCode.length ?
+    [adUnitCode] :
+    $$PREBID_GLOBAL$$._adUnitCodes;
+
+  return getWinningBids(adUnitCodes);
 };
 
 processQue();
