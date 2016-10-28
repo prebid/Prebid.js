@@ -555,9 +555,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler, false);
-  }
+    if (typeof bidsBackHandler === objectType_function) {
+      bidmanager.addOneTimeCallback(bidsBackHandler, false);
+    }
     bidmanager.executeCallback();
     return;
   }
