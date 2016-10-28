@@ -150,7 +150,7 @@ function getPresetTargeting() {
           })
         };
       });
-    })();
+    }());
   }
 }
 
@@ -188,11 +188,7 @@ function getDealTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
-      [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
-        return {
-          [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-        };
-      })
+      [bid.adUnitCode]: getTargetingMap(bid, CONSTANTS.TARGETING_KEYS)
       .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
@@ -232,14 +228,18 @@ function getBidLandscapeTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.adserverTargeting) {
       return {
-        [bid.adUnitCode]: standardKeys.map(key => {
-          return {
-            [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-          };
-        })
+        [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
       };
     }
   }).filter(bid => bid); // removes empty elements in array
+}
+
+function getTargetingMap(bid, keys) {
+  return keys.map(key => {
+    return {
+      [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
+    };
+  });
 }
 
 function getAllTargeting() {
@@ -286,6 +286,13 @@ function removeComplete() {
   // also remove bids that have an empty or error status so known as not pending for render
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
     .forEach(bid => responses.splice(responses.indexOf(bid), 1));
+}
+
+function setRenderSize(doc, width, height) {
+  if (doc.defaultView && doc.defaultView.frameElement) {
+    doc.defaultView.frameElement.width = width;
+    doc.defaultView.frameElement.height = height;
+  }
 }
 
 //////////////////////////////////
@@ -462,19 +469,11 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if (ad) {
           doc.write(ad);
           doc.close();
-          if (doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
+          setRenderSize(doc, width, height);
         } else if (url) {
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
-
-          if (doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
-
+          setRenderSize(doc, width, height);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }
