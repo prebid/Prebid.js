@@ -348,13 +348,12 @@ var RubiconAdapter = function RubiconAdapter() {
    * @returns {Object} key value pairs for targeting
    */
   function _setTargeting(slot, accountId) {
-    let getTarget = key => slot.getAdServerTargetingByKey(key)[0],
-        targeting = {};
+    var targeting = {};
     [
       'rpfl_' + accountId,
       'rpfl_elemid'
     ].forEach((key) => {
-      targeting[key] = getTarget(key);
+      targeting[key] = slot.getAdServerTargetingByKey(key)[0];
     });
 
     return targeting;
