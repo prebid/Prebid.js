@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<script>
+
+    /** AMP x-domain iframe custom source file
+     *  host this file on a remote domain from your AMP pages,
+     *  set the `amp-3p-iframe-src` meta tag on your AMP pages
+     *  (see `./amp_page.html`)
+     *
+     *
+     *  see "Enhance incoming ad configuration" section of AMP docs
+     *  https://www.ampproject.org/docs/reference/components/amp-ad
+     */
+
+    (function() {
+var v = location.search.substr(1);
+if (!(/^\d+(-canary)?$/.test(v))) return;
+var u = 'https://3p.ampproject.net/'+encodeURIComponent(v)+'/f.js';
+document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
+})();
+</script>
+<script>
+    // The Prebid global must match Prebid.js setting
+    var $$PREBID_GLOBAL$$ = pbjs;
+
+    // Standard Prebid.js setup
+    var rightSlotSizes = [[300, 250], [300, 600], [300, 250], [100, 100]];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    var PREBID_TIMEOUT = 3000;
+
+    var date = new Date().getTime();
+
+    // wrap the rest of the setup in a function that will be called by the
+    // AMP `draw3p` hook
+    function loadPrebidJS() {
+
+        setTimeout(function() {
+            return initAdserver;
+        }(), PREBID_TIMEOUT);
+
+
+        pbjs.que.push(function () {
+
+            pbjs.logging = true;
+
+            var adUnits = [
+                {
+                    code: '/19968336/header-bid-tag-1',
+                    sizes: rightSlotSizes,
+                    bids: [
+                        {
+                            bidder: 'appnexusAst',
+                            params: {
+                                placementId: '4799418',
+                                dealId: 'some deal!'
+                            }
+                        },
+                        {
+                            bidder: 'aol',
+                            params: {
+                                network: '10077.1',
+                                placement: 3671670
+                            }
+                        },
+                        {
+                            bidder: 'sovrn',
+                            params: {
+                                tagid: "315045"
+                            }
+                        }
+                    ]
+                },
+                {
+                    code: '/19968336/header-bid-tag-2',
+                    sizes: rightSlotSizes,
+                    bids: [
+                        {
+                            bidder: 'appnexusAst',
+                            params: {
+                                placementId: '4799418',
+                                dealId: 'some deal!'
+                            }
+                        },
+                        {
+                            bidder: 'aol',
+                            params: {
+                                network: '10077.1',
+                                placement: 3671670
+                            }
+                        },
+                        {
+                            bidder: 'sovrn',
+                            params: {
+                                tagid: "315045"
+                            }
+                        }
+                        ]
+                }
+            ];
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.requestBids({
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                    console.log('bidsBackHandler responses: ', bidResponses);
+                },
+                timeout: 3000
+            });
+        });
+
+        // load Prebid.js
+       (function () {
+            var d = document, pbs = d.createElement("script"), pro = d.location.protocal;
+            pbs.type = "text/javascript";
+            pbs.src = 'https://localhost:9999/build/dev/prebid.js';
+            var target = document.getElementsByTagName("head")[0];
+            target.insertBefore(pbs, target.firstChild);
+        })();
+    }
+
+    /**
+     *
+     * @param config
+     * @param done
+     */
+    function setTargeting(config, done) {
+        config.targeting = getTargeting(config.slot);
+        done(config);
+    }
+
+    function getTargeting(slot) {
+        var targeting = window.context.master.pbjs.getAdserverTargeting()[slot];
+        for (var key in targeting) {
+            if (targeting.hasOwnProperty(key)) {
+                targeting[key] = [targeting[key]];
+            }
+        }
+        targeting['prebid_amp'] = ['true'];
+        return targeting;
+    }
+
+    function initAdserver() {
+      var i;
+      var adCalls = window.context.master.adCalls;
+      var adCallsLength = adCalls.length;
+      for (i = 0; i < adCallsLength; i++) {
+        adCalls.pop()();
+      }
+    }
+
+    function listenAdRequestFromCreative() {
+      addEventListener('message', sendAdToCreative, false);
+    }
+
+    function sendAdToCreative(ev) {
+      var key = ev.message ? 'message' : 'data';
+      var data = {};
+      try {
+        data = JSON.parse(ev[key]);
+      } catch (e) {
+        // Do nothing.  No ad found.
+      }
+      if (data.adId) {
+          // AMP ads a `context` object to `window`s and that is used to find the
+          // `master` iframe where Prebid is loaded
+        var adObject = window.context.master.pbjs._bidsReceived.find(function (bid) {
+          return bid.adId === data.adId;
+        });
+
+        var ad = adObject.ad;
+        var adUrl = adObject.adUrl;
+        var message = JSON.stringify({
+          message: 'Prebid creative sent: ' + data.adId,
+          ad: ad,
+          adUrl: adUrl
+        });
+        ev.source.postMessage(message, '*');
+      }
+    }
+</script>
+</head>
+<body style="margin:0">
+<div id="c" style="position:absolute;top:0;left:0;bottom:0;right:0;">
+  <script>
+    draw3p(function(config, done) {
+      if (typeof window.context.master.adCalls === 'undefined') {
+        window.context.master.adCalls = [];
+      }
+        if (window.context && window.context.isMaster) {
+            loadPrebidJS();
+        }
+        window.context.master.adCalls.push(setTargeting.bind(null, config, done));
+    }, ['doubleclick'], ['prebidapp.com']);
+
+    listenAdRequestFromCreative();
+  </script>
+</div>
+
+<script>if (window.docEndCallback) window.docEndCallback()</script>
+</body>
+</html>
