@@ -517,36 +517,6 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
   }
 };
 
-var sendAdToCreative = function (ev) {
-  var key = ev.message ? "message" : "data";
-  var data = {};
-  try {
-    data = JSON.parse(ev[key]);
-  } catch (e) {
-    // Do nothing.  No ad found.
-  }
-  if (data.adId) {
-    console.log('sendAdToCreative ev: ', ev);
-    var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
-      return bid.adId === data.adId;
-    });
-    var ad = adObject.ad;
-    var adUrl = adObject.adUrl;
-    var message = JSON.stringify({
-      message: 'send ad ' + data.adID,
-      ad: ad,
-      adUrl: adUrl
-    });
-    ev.source.postMessage(message, '*');
-
-    // document.getElementsByTagName('iframe')[0].contentWindow.postMessage(message, 'https://prebid.org');
-  }
-};
-
-var listenAdRequestFromCreative = function () {
-  addEventListener('message', sendAdToCreative, false);
-};
-
 /**
  *
  * @param bidsBackHandler
@@ -601,7 +571,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
-  listenAdRequestFromCreative();
 };
 
 /**
