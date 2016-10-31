@@ -542,7 +542,7 @@ bid along with all non-CPM bids, just specify this flag and the adapter-specific
 
 ##### 2.2. adserverTargeting
 
-As described in the [AdOps documentation](adops.html), Prebid has a recommended standard
+As described in the [AdOps documentation]({{site.baseurl}}/adops.html), Prebid has a recommended standard
 set of ad server targeting that works across bidders. This standard targeting approach is
 defined in the adserverTargeting attribute in the 'standard' section, but can be overridden
 per adapter as needed. Both secenarios are described below.
