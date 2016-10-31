@@ -13,35 +13,33 @@ exports.bidderRegistry = _bidderRegistry;
 
 var _analyticsRegistry = {};
 
-function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => {
         let sizes = adUnit.sizes;
-        if(adUnit.sizeMapping) {
+        if (adUnit.sizeMapping) {
           let sizeMapping = mapSizes(adUnit);
-          if(sizeMapping === ''){
+          if (sizeMapping === '') {
             return '';
           }
           sizes = sizeMapping;
         }
-       return Object.assign(bid, {
+        return Object.assign(bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
           requestId
-      });
-    }
-    );
+        });
+      }
+      );
   }).reduce(flatten, []).filter(val => val !== '');
 }
 
-exports.callBids = ({ adUnits, cbTimeout }) => {
+exports.callBids = ({adUnits, cbTimeout}) => {
   const requestId = utils.generateUUID();
-  //console.log(JSON.stringify(adUnits));
-
   const auctionStart = Date.now();
 
   const auctionInit = {
@@ -58,7 +56,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
+        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout
@@ -75,7 +73,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
   });
 };
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
 
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
@@ -90,7 +88,7 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   }
 };
 
-exports.aliasBidAdapter = function (bidderCode, alias) {
+exports.aliasBidAdapter = function(bidderCode, alias) {
   var existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === CONSTANTS.objectType_undefined) {
@@ -118,7 +116,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({ adapter, code }) {
+exports.registerAnalyticsAdapter = function({adapter, code}) {
   if (adapter && code) {
 
     if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
@@ -133,7 +131,7 @@ exports.registerAnalyticsAdapter = function ({ adapter, code }) {
   }
 };
 
-exports.enableAnalytics = function (config) {
+exports.enableAnalytics = function(config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
