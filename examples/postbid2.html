@@ -7,7 +7,7 @@
    var pbjs = pbjs || {};
    pbjs.que = pbjs.que || [];
 
-   var doNotChange = 'doNotChange';
+   var adUnitCode = 'ad-unit-0';
 
    var adWidth = 728;
    var adHeight = 90;
@@ -24,7 +24,7 @@
        
        // Add your bidder tag IDs here. Create 5 new placements (mimic as close as possible to current placement settings) for 5 auctions.  Input placement IDs below.
        var adUnits = [{
-           code: 'doNotChange',
+           code: adUnitCode,
            sizes: [[adWidth, adHeight]],
            bids: [{
                      bidder: 'appnexus',
@@ -67,7 +67,7 @@
 
                var iframeDoc = iframe.contentWindow.document;
 
-               var params = pbjs.getAdserverTargetingForAdUnitCode('doNotChange');
+               var params = pbjs.getAdserverTargetingForAdUnitCode(adUnitCode);
 
                if(params && params['hb_adid']){
                    pbjs.renderAd(iframeDoc, params['hb_adid']);
