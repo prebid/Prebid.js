@@ -12,6 +12,7 @@ var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
 var _analyticsRegistry = {};
+let _bidderSequence = null;
 
 function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   return adUnits.map(adUnit => {
@@ -39,7 +40,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  if ($$PREBID_GLOBAL$$._bidderSequence === 'random') {
+  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
 
@@ -140,6 +141,10 @@ exports.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
+};
+
+exports.setBidderSequence = function (order) {
+  _bidderSequence = order;
 };
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */

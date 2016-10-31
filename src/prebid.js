@@ -41,7 +41,6 @@ $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
-$$PREBID_GLOBAL$$._bidderSequence = null;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
@@ -838,8 +837,8 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * is 'random', which randomly shuffles the order
  */
 $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  if (order === 'random') {
-    $$PREBID_GLOBAL$$._bidderSequence = 'random';
+  if (order === CONSTANTS.ORDER.RANDOM) {
+    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
   }
 };
 
