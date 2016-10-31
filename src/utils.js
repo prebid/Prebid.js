@@ -538,3 +538,26 @@ export function getHighestCpm(previous, current) {
   }
   return previous.cpm < current.cpm ? current : previous;
 }
+
+/**
+ * Fisher–Yates shuffle
+ */
+export function shuffle(array) {
+  let counter = array.length;
+
+  // while there are elements in the array
+  while (counter > 0) {
+    // pick a random index
+    let index = Math.floor(Math.random() * counter);
+
+    // decrease counter by 1
+    counter--;
+
+    // and swap the last element with it
+    let temp = array[counter];
+    array[counter] = array[index];
+    array[index] = temp;
+  }
+
+  return array;
+}

@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes } from './utils';
+import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
@@ -12,6 +12,7 @@ var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
 var _analyticsRegistry = {};
+let _bidderSequence = null;
 
 function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
   return adUnits.map(adUnit => {
@@ -38,7 +39,12 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-  getBidderCodes(adUnits).forEach(bidderCode => {
+  let bidderCodes = getBidderCodes(adUnits);
+  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
+    bidderCodes = shuffle(bidderCodes);
+  }
+
+  bidderCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -135,6 +141,10 @@ exports.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
+};
+
+exports.setBidderSequence = function (order) {
+  _bidderSequence = order;
 };
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
