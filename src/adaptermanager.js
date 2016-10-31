@@ -73,7 +73,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   });
 };
 
-exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
+exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
 
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
@@ -88,7 +88,7 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
   }
 };
 
-exports.aliasBidAdapter = function(bidderCode, alias) {
+exports.aliasBidAdapter = function (bidderCode, alias) {
   var existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === CONSTANTS.objectType_undefined) {
@@ -116,7 +116,7 @@ exports.aliasBidAdapter = function(bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function({adapter, code}) {
+exports.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
 
     if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
@@ -131,7 +131,7 @@ exports.registerAnalyticsAdapter = function({adapter, code}) {
   }
 };
 
-exports.enableAnalytics = function(config) {
+exports.enableAnalytics = function (config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
