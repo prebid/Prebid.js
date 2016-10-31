@@ -198,7 +198,6 @@ describe('Conversant adapter tests', function () {
 
   describe('Should submit the correct headers in the xhr', function () {
     var server,
-        addBidResponseSpy,
         adapter;
 
     var bidResponse = {
@@ -237,13 +236,10 @@ describe('Conversant adapter tests', function () {
     beforeEach(function () {
       server = sinon.fakeServer.create();
       adapter = new Adapter();
-      addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
-
     });
 
     afterEach(function () {
       server.restore();
-      addBidResponseSpy.restore();
     });
 
     beforeEach(function () {
