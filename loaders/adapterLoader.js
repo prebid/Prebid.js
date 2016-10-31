@@ -12,7 +12,7 @@ const adapters = getAdapters();
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.filter(getStandardAdapters).filter(getUniques);
 //adapters loaded from `srcPath`
-const customAdapters = adapters.map(getCustomAdapters).filter( adapter =>{
+const customAdapters = adapters.map(getCustomAdapters).filter(adapter => {
   //filter undefined
   return !!adapter;
 });
@@ -50,7 +50,7 @@ function insertAdapters() {
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
     exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
   })
-    .concat(customAdapters.map(adapter =>{
+    .concat(customAdapters.map(adapter => {
       return `let ${adapter.name} = require('${adapter.srcPath}');
       exports.registerBidAdapter(new ${adapter.name}, '${adapter.name}');\n`;
     }))
@@ -61,12 +61,11 @@ function insertAdapters() {
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 
-    if (!inserts.length) {
-      console.log('Prebid Warning: no matching adapters found for config, no adapters will be' +
-        ' loaded.');
-      return '';
-    }
-    return inserts;
+  if (!inserts.length) {
+    console.log('No matching adapters found for config, no adapters will be loaded.');
+    return '';
+  }
+  return inserts;
 }
 
 /**
@@ -75,7 +74,7 @@ function insertAdapters() {
  * @returns {string}
  */
 function adapterName(adapter) {
-  if(adapter){
+  if (adapter) {
     const result = adapter.split('');
     return result[0].toUpperCase() + result.join('').substr(1) + 'Adapter';
   }
@@ -129,8 +128,8 @@ function getAliases(adapter) {
  */
 function getVideoAdapters(adapter) {
   const name = getNameStr(adapter);
-  return adapter && name && adapter[name].supportedMediaTypes
-    && adapter[name].supportedMediaTypes.includes('video');
+  return adapter && name && adapter[name].supportedMediaTypes &&
+    adapter[name].supportedMediaTypes.includes('video');
 }
 
 function getNameStr(adapter) {
@@ -138,23 +137,23 @@ function getNameStr(adapter) {
 }
 
 function getStandardAdapters(adapter) {
-  if(typeof adapter === 'string'){
+  if (typeof adapter === 'string') {
     return adapter;
   }
 }
 
 function getCustomAdapters(adapter) {
   const srcPath = getSrcPath(adapter);
-  if(srcPath === '') {
+  if (srcPath === '') {
     return;
   }
-  if(!fileExists(srcPath)){
+  if (!fileExists(srcPath)) {
     console.warn(`Not able to locate adapter at: ${srcPath} continuing`);
     return;
   }
   return {
-    name : getNames(adapter),
-    srcPath : srcPath
+    name: getNames(adapter),
+    srcPath: srcPath
   };
 }
 
@@ -166,6 +165,5 @@ function getSrcPath(adapter) {
 function fileExists(path) {
   return fs.existsSync(path);
 }
-
 
 module.exports = blockLoader(options);
