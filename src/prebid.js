@@ -226,13 +226,15 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 function getBidLandscapeTargeting(adUnitCodes) {
   const standardKeys = CONSTANTS.TARGETING_KEYS;
 
-  return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
-    if (bid.adserverTargeting) {
-      return {
-        [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
-      };
-    }
-  }).filter(bid => bid); // removes empty elements in array
+  return $$PREBID_GLOBAL$$._bidsReceived
+    .filter(adUnitsFilter.bind(this, adUnitCodes))
+    .map(bid => {
+      if (bid.adserverTargeting) {
+        return {
+          [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
+        };
+      }
+    }).filter(bid => bid); // removes empty elements in array
 }
 
 function getTargetingMap(bid, keys) {
