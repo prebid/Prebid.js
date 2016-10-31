@@ -9,12 +9,14 @@ var CONSTANTS = require("src/constants.json");
 
 describe("the rubicon adapter", () => {
 
-  let rubiconAdapter = adapterManager.bidderRegistry["rubicon"],
+  let rubiconAdapter,
       sandbox,
       adUnit;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+
+    delete window.rubicontag;
 
     adUnit = {
       code: "/19968336/header-bid-tag-0",
@@ -49,6 +51,10 @@ describe("the rubicon adapter", () => {
   });
 
   describe("callBids public interface", () => {
+
+    beforeEach(() => {
+      rubiconAdapter = adapterManager.bidderRegistry["rubicon"];
+    });
 
     it("should receive a well-formed bidRequest from the adaptermanager", () => {
 
@@ -90,6 +96,8 @@ describe("the rubicon adapter", () => {
         slot;
 
     beforeEach(() => {
+      rubiconAdapter = new RubiconAdapter();
+
       sandbox.stub(adloader, "loadScript");
       sandbox.spy(rubiconAdapter, "callBids");
 
@@ -151,20 +159,22 @@ describe("the rubicon adapter", () => {
 
     });
 
+    it("should load the fastlane SDK if not loaded", () => {
+
+      rubiconAdapter.callBids(bidderRequest);
+
+      let pathToSDK = adloader.loadScript.getCall(0).args[0];
+      expect(pathToSDK).to.equal(`http://ads.rubiconproject.com/header/${bidderRequest.bids[0].params.accountId}.js`);
+
+      rubiconAdapter.callBids(bidderRequest);
+      expect(adloader.loadScript.calledOnce).to.equal(true);
+
+    });
+
     describe("when doing fastlane slot configuration", () => {
 
       beforeEach(() => {
         rubiconAdapter.callBids(bidderRequest);
-      });
-
-      it("should load the fastlane SDK if not loaded", () => {
-
-        let pathToSDK = adloader.loadScript.getCall(0).args[0];
-        expect(pathToSDK).to.equal(`http://ads.rubiconproject.com/header/${bidderRequest.bids[0].params.accountId}.js`);
-
-        rubiconAdapter.callBids(bidderRequest);
-        expect(adloader.loadScript.calledOnce).to.equal(true);
-
       });
 
       it("should make a valid call to rubicontag.defineSlot", () => {
@@ -218,11 +228,6 @@ describe("the rubicon adapter", () => {
     });
 
     describe("when handling fastlane responses", () => {
-
-      beforeEach(() => {
-        // need a fresh rubicon adapter for these tests to reset private state.
-        rubiconAdapter = new RubiconAdapter();
-      });
 
       describe("individually through events", () => {
 
