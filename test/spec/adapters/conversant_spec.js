@@ -16,8 +16,8 @@ describe('Conversant adapter tests', function () {
         placementCode: 'div1',
         sizes: [[300, 600]],
         params: {
-          site_id: '123',
-          secure: true
+          site_id: '87293',
+          secure: false
         }
       },
       {
@@ -26,8 +26,8 @@ describe('Conversant adapter tests', function () {
         placementCode: 'div2',
         sizes: [[300, 600]],
         params: {
-          site_id: '123',
-          secure: true
+          site_id: '87293',
+          secure: false
         }
       },
       {
@@ -36,104 +36,176 @@ describe('Conversant adapter tests', function () {
         placementCode: 'div3',
         sizes: [[300, 600], [160, 600]],
         params: {
-          site_id: '123',
-          secure: true
+          site_id: '87293',
+          secure: false
         }
       }
     ]
   };
 
-  beforeEach(function () {
-    addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
-    pbjs._bidsRequested.push(bidderRequest);
-    adapter = new Adapter();
-  });
-
-  afterEach(function () {
-    addBidResponseSpy.restore();
-  });
 
   it('The Conversant response should exist and be a function', function () {
     expect(pbjs.conversantResponse).to.exist.and.to.be.a('function');
   });
 
-  it('Should correctly submit valid and empty bids to the bid manager', function () {
-    var bidResponse = {
-      id: 123,
-      seatbid: [{
-        bid: [{
-          id: 1111111,
-          impid: 'bidId1',
-          price: 0
-        },{
-          id: 2345,
-          impid: 'bidId2',
-          price: 0.22,
-          nurl: '',
-          adm: 'adm2',
-          h:300,
-          w:600
+  describe('Should submit bid resposnes correctly', function () {
+    beforeEach(function () {
+      addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
+      pbjs._bidsRequested.push(bidderRequest);
+      adapter = new Adapter();
+    });
+
+    afterEach(function () {
+      addBidResponseSpy.restore();
+    });
+
+    it('Should correctly submit valid and empty bids to the bid manager', function () {
+      var bidResponse = {
+        id: 123,
+        seatbid: [{
+          bid: [{
+            id: 1111111,
+            impid: 'bidId1',
+            price: 0
+          },{
+            id: 2345,
+            impid: 'bidId2',
+            price: 0.22,
+            nurl: '',
+            adm: 'adm2',
+            h:300,
+            w:600
+          }]
         }]
-      }]
-    };
+      };
 
-    pbjs.conversantResponse(bidResponse);
+      pbjs.conversantResponse(bidResponse);
 
-    var firstBid = addBidResponseSpy.getCall(0).args[1];
-    var secondBid = addBidResponseSpy.getCall(1).args[1];
-    var thirdBid = addBidResponseSpy.getCall(2).args[1];
-    var placementCode1 = addBidResponseSpy.getCall(0).args[0];
-    var placementCode2 = addBidResponseSpy.getCall(1).args[0];
-    var placementCode3 = addBidResponseSpy.getCall(2).args[0];
+      var firstBid = addBidResponseSpy.getCall(0).args[1];
+      var secondBid = addBidResponseSpy.getCall(1).args[1];
+      var thirdBid = addBidResponseSpy.getCall(2).args[1];
+      var placementCode1 = addBidResponseSpy.getCall(0).args[0];
+      var placementCode2 = addBidResponseSpy.getCall(1).args[0];
+      var placementCode3 = addBidResponseSpy.getCall(2).args[0];
 
-    expect(firstBid.getStatusCode()).to.equal(2);
-    expect(firstBid.bidderCode).to.equal('conversant');
-    expect(placementCode1).to.equal('div1');
+      expect(firstBid.getStatusCode()).to.equal(2);
+      expect(firstBid.bidderCode).to.equal('conversant');
+      expect(placementCode1).to.equal('div1');
 
-    expect(secondBid.getStatusCode()).to.equal(1);
-    expect(secondBid.bidderCode).to.equal('conversant');
-    expect(secondBid.cpm).to.equal(0.22);
-    expect(secondBid.ad).to.equal('adm2' + '<img src="" />');
-    expect(placementCode2).to.equal('div2');
+      expect(secondBid.getStatusCode()).to.equal(1);
+      expect(secondBid.bidderCode).to.equal('conversant');
+      expect(secondBid.cpm).to.equal(0.22);
+      expect(secondBid.ad).to.equal('adm2' + '<img src="" />');
+      expect(placementCode2).to.equal('div2');
 
-    expect(thirdBid.getStatusCode()).to.equal(2);
-    expect(thirdBid.bidderCode).to.equal('conversant');
-    expect(placementCode3).to.equal('div3');
+      expect(thirdBid.getStatusCode()).to.equal(2);
+      expect(thirdBid.bidderCode).to.equal('conversant');
+      expect(placementCode3).to.equal('div3');
 
-    expect(addBidResponseSpy.getCalls().length).to.equal(3);
+      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+    });
+
+    it('Should submit bids with statuses of 2 to the bid manager for empty bid responses', function () {
+      pbjs.conversantResponse({id: 1, seatbid: []});
+
+      var placementCode1 = addBidResponseSpy.getCall(0).args[0];
+      var firstBid = addBidResponseSpy.getCall(0).args[1];
+      var placementCode2 = addBidResponseSpy.getCall(1).args[0];
+      var secondBid = addBidResponseSpy.getCall(1).args[1];
+      var placementCode3 = addBidResponseSpy.getCall(2).args[0];
+      var thirdBid = addBidResponseSpy.getCall(2).args[1];
+
+      expect(placementCode1).to.equal('div1');
+      expect(firstBid.getStatusCode()).to.equal(2);
+      expect(firstBid.bidderCode).to.equal('conversant');
+
+      expect(placementCode2).to.equal('div2');
+      expect(secondBid.getStatusCode()).to.equal(2);
+      expect(secondBid.bidderCode).to.equal('conversant');
+
+      expect(placementCode3).to.equal('div3');
+      expect(thirdBid.getStatusCode()).to.equal(2);
+      expect(thirdBid.bidderCode).to.equal('conversant');
+
+      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+    });
+
+    it('Should submit valid bids to the bid manager', function () {
+      var bidResponse = {
+        id: 123,
+        seatbid: [{
+          bid: [{
+            id: 1111111,
+            impid: 'bidId1',
+            price: 0.11,
+            nurl : '',
+            adm: 'adm',
+            h: 250,
+            w: 300,
+            ext : {}
+          },{
+            id: 2345,
+            impid: 'bidId2',
+            price: 0.22,
+            nurl: '',
+            adm: 'adm2',
+            h:300,
+            w:600
+          },
+            {
+              id: 33333,
+              impid: 'bidId3',
+              price: 0.33,
+              nurl: '',
+              adm: 'adm3',
+              h: 160,
+              w: 600
+            }]
+        }]
+      };
+
+      pbjs.conversantResponse(bidResponse);
+
+      var firstBid = addBidResponseSpy.getCall(0).args[1];
+      var secondBid = addBidResponseSpy.getCall(1).args[1];
+      var thirdBid = addBidResponseSpy.getCall(2).args[1];
+      var placementCode1 = addBidResponseSpy.getCall(0).args[0];
+      var placementCode2 = addBidResponseSpy.getCall(1).args[0];
+      var placementCode3 = addBidResponseSpy.getCall(2).args[0];
+
+      expect(firstBid.getStatusCode()).to.equal(1);
+      expect(firstBid.bidderCode).to.equal('conversant');
+      expect(firstBid.cpm).to.equal(0.11);
+      expect(firstBid.ad).to.equal('adm'+ '<img src="" />');
+      expect(placementCode1).to.equal('div1');
+
+      expect(secondBid.getStatusCode()).to.equal(1);
+      expect(secondBid.bidderCode).to.equal('conversant');
+      expect(secondBid.cpm).to.equal(0.22);
+      expect(secondBid.ad).to.equal('adm2' + '<img src="" />');
+      expect(placementCode2).to.equal('div2');
+
+      expect(thirdBid.getStatusCode()).to.equal(1);
+      expect(thirdBid.bidderCode).to.equal('conversant');
+      expect(thirdBid.cpm).to.equal(0.33);
+      expect(thirdBid.ad).to.equal('adm3' + '<img src="" />');
+      expect(placementCode3).to.equal('div3');
+
+      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+    });
   });
 
-  it('Should submit bids with statuses of 2 to the bid manager for empty bid responses', function () {
-    pbjs.conversantResponse({id: 1, seatbid: []});
 
-    var placementCode1 = addBidResponseSpy.getCall(0).args[0];
-    var firstBid = addBidResponseSpy.getCall(0).args[1];
-    var placementCode2 = addBidResponseSpy.getCall(1).args[0];
-    var secondBid = addBidResponseSpy.getCall(1).args[1];
-    var placementCode3 = addBidResponseSpy.getCall(2).args[0];
-    var thirdBid = addBidResponseSpy.getCall(2).args[1];
+  describe('Should submit the correct headers in the xhr', function () {
+    var server,
+        addBidResponseSpy,
+        adapter;
 
-    expect(placementCode1).to.equal('div1');
-    expect(firstBid.getStatusCode()).to.equal(2);
-    expect(firstBid.bidderCode).to.equal('conversant');
-
-    expect(placementCode2).to.equal('div2');
-    expect(secondBid.getStatusCode()).to.equal(2);
-    expect(secondBid.bidderCode).to.equal('conversant');
-
-    expect(placementCode3).to.equal('div3');
-    expect(thirdBid.getStatusCode()).to.equal(2);
-    expect(thirdBid.bidderCode).to.equal('conversant');
-
-    expect(addBidResponseSpy.getCalls().length).to.equal(3);
-  });
-
-  it('Should submit valid bids to the bid manager', function () {
     var bidResponse = {
       id: 123,
       seatbid: [{
         bid: [{
-          id: 1111111,
+          id: 1111,
           impid: 'bidId1',
           price: 0.11,
           nurl : '',
@@ -142,7 +214,7 @@ describe('Conversant adapter tests', function () {
           w: 300,
           ext : {}
         },{
-          id: 2345,
+          id: 2222,
           impid: 'bidId2',
           price: 0.22,
           nurl: '',
@@ -151,7 +223,7 @@ describe('Conversant adapter tests', function () {
           w:600
         },
           {
-            id: 33333,
+            id: 3333,
             impid: 'bidId3',
             price: 0.33,
             nurl: '',
@@ -162,33 +234,30 @@ describe('Conversant adapter tests', function () {
       }]
     };
 
-    pbjs.conversantResponse(bidResponse);
+    beforeEach(function () {
+      server = sinon.fakeServer.create();
+      adapter = new Adapter();
+      addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
 
-    var firstBid = addBidResponseSpy.getCall(0).args[1];
-    var secondBid = addBidResponseSpy.getCall(1).args[1];
-    var thirdBid = addBidResponseSpy.getCall(2).args[1];
-    var placementCode1 = addBidResponseSpy.getCall(0).args[0];
-    var placementCode2 = addBidResponseSpy.getCall(1).args[0];
-    var placementCode3 = addBidResponseSpy.getCall(2).args[0];
+    });
 
-    expect(firstBid.getStatusCode()).to.equal(1);
-    expect(firstBid.bidderCode).to.equal('conversant');
-    expect(firstBid.cpm).to.equal(0.11);
-    expect(firstBid.ad).to.equal('adm'+ '<img src="" />');
-    expect(placementCode1).to.equal('div1');
+    afterEach(function () {
+      server.restore();
+      addBidResponseSpy.restore();
+    });
 
-    expect(secondBid.getStatusCode()).to.equal(1);
-    expect(secondBid.bidderCode).to.equal('conversant');
-    expect(secondBid.cpm).to.equal(0.22);
-    expect(secondBid.ad).to.equal('adm2' + '<img src="" />');
-    expect(placementCode2).to.equal('div2');
+    beforeEach(function () {
+      var resp = [200, {'Content-type': 'text/javascript'}, 'pbjs.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
+      server.respondWith('POST', new RegExp('media.msg.dotomi.com/s2s/header'), resp);
+    });
 
-    expect(thirdBid.getStatusCode()).to.equal(1);
-    expect(thirdBid.bidderCode).to.equal('conversant');
-    expect(thirdBid.cpm).to.equal(0.33);
-    expect(thirdBid.ad).to.equal('adm3' + '<img src="" />');
-    expect(placementCode3).to.equal('div3');
+    it('Should contain valid request header properties', function () {
+      adapter.callBids(bidderRequest);
+      server.respond();
 
-    expect(addBidResponseSpy.getCalls().length).to.equal(3);
+      var request = server.requests[0];
+      expect(request.requestBody).to.not.be.empty;
+      expect(request.withCredentials).to.equal(true); // allows for request cookies
+    });
   });
 });
