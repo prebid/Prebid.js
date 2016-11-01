@@ -1,4 +1,4 @@
-import { uniques } from './utils';
+import { uniques, flatten } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -41,8 +41,16 @@ function getBidders(bid) {
 }
 
 function bidsBackAdUnit(adUnitCode) {
-  let requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
-  if (requested) {requested = requested.bids.length;}
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids
+      .filter(bid => bid.placementCode === adUnitCode))
+    .reduce(flatten)
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+          bid.sizes.length :
+          1;
+    }).reduce(add, 0);
+
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
@@ -52,7 +60,15 @@ function add(a, b) {
 }
 
 function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add, 0);
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids)
+    .reduce(flatten)
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+        bid.sizes.length :
+        1;
+    }).reduce(add, 0);
+
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
   return requested === received;
 }
