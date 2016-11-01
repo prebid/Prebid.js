@@ -154,8 +154,16 @@ function getPresetTargeting() {
   }
 }
 
-function getWinningBidTargeting() {
-  let winners = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
+function getWinningBids(adUnitCode) {
+  // use the given adUnitCode as a filter if present or all adUnitCodes if not
+  const adUnitCodes = adUnitCode ?
+    [adUnitCode] :
+    $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
+
+  return $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+    .filter(bid => bid.cpm > 0)
+    .map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
@@ -166,6 +174,10 @@ function getWinningBidTargeting() {
           adserverTargeting: {},
           timeToRespond: 0
         }));
+}
+
+function getWinningBidTargeting() {
+  let winners = getWinningBids();
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -842,6 +854,16 @@ $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
   if (order === CONSTANTS.ORDER.RANDOM) {
     adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
   }
+};
+
+/**
+ * Get array of highest cpm bids for all adUnits, or highest cpm bid
+ * object for the given adUnit
+ * @param {string} adUnitCode - optional ad unit code
+ * @return {array} array containing highest cpm bid object(s)
+ */
+$$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
+  return getWinningBids(adUnitCode);
 };
 
 processQue();
