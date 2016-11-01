@@ -46,6 +46,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
   }
 
   function _requestBids() {
+    if (typeof OX === 'undefined') return;
 
     if (scriptUrl) {
       adloader.loadScript(scriptUrl, function () {
