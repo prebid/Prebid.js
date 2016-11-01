@@ -1,5 +1,5 @@
 'use strict';
-var VERSION = '2.0.0',
+var VERSION = '2.0.1',
     CONSTANTS = require('../constants.json'),
     utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
@@ -153,19 +153,18 @@ var ConversantAdapter = function () {
 
       if (bidRequested) {
         placementCode = bidRequested.placementCode;
-        placementsWithBidsBack.push(placementCode);
         bidRequested.status = CONSTANTS.STATUS.GOOD;
-
         responseCPM = parseFloat(conversantBid.price);
 
         if (responseCPM !== 0.0) {
           conversantBid.placementCode = placementCode;
+          placementsWithBidsBack.push(placementCode);
           conversantBid.size = bidRequested.sizes;
           responseAd = conversantBid.adm || '';
           responseNurl = conversantBid.nurl || '';
 
           // Our bid!
-          bid = bidfactory.createBid(1);
+          bid = bidfactory.createBid(1, bidRequested);
           bid.creative_id = conversantBid.id || '';
           bid.bidderCode = 'conversant';
 
@@ -183,12 +182,6 @@ var ConversantAdapter = function () {
             bid.height = bidRequested.sizes[0][1];
           }
 
-          bidmanager.addBidResponse(placementCode, bid);
-        } else {
-          //0 price bid
-          //indicate that there is no bid for this placement
-          bid = bidfactory.createBid(2);
-          bid.bidderCode = 'conversant';
           bidmanager.addBidResponse(placementCode, bid);
         }
       }

@@ -48,7 +48,7 @@ describe('Conversant adapter tests', function () {
     expect(pbjs.conversantResponse).to.exist.and.to.be.a('function');
   });
 
-  describe('Should submit bid resposnes correctly', function () {
+  describe('Should submit bid responses correctly', function () {
     beforeEach(function () {
       addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
       pbjs._bidsRequested.push(bidderRequest);
@@ -81,6 +81,7 @@ describe('Conversant adapter tests', function () {
 
       pbjs.conversantResponse(bidResponse);
 
+      // in this case, the valid bid (div2) is submitted before the empty bids (div1, div3)
       var firstBid = addBidResponseSpy.getCall(0).args[1];
       var secondBid = addBidResponseSpy.getCall(1).args[1];
       var thirdBid = addBidResponseSpy.getCall(2).args[1];
@@ -88,15 +89,15 @@ describe('Conversant adapter tests', function () {
       var placementCode2 = addBidResponseSpy.getCall(1).args[0];
       var placementCode3 = addBidResponseSpy.getCall(2).args[0];
 
-      expect(firstBid.getStatusCode()).to.equal(2);
+      expect(firstBid.getStatusCode()).to.equal(1);
       expect(firstBid.bidderCode).to.equal('conversant');
-      expect(placementCode1).to.equal('div1');
+      expect(firstBid.cpm).to.equal(0.22);
+      expect(firstBid.ad).to.equal('adm2' + '<img src="" />');
+      expect(placementCode1).to.equal('div2');
 
-      expect(secondBid.getStatusCode()).to.equal(1);
+      expect(secondBid.getStatusCode()).to.equal(2);
       expect(secondBid.bidderCode).to.equal('conversant');
-      expect(secondBid.cpm).to.equal(0.22);
-      expect(secondBid.ad).to.equal('adm2' + '<img src="" />');
-      expect(placementCode2).to.equal('div2');
+      expect(placementCode2).to.equal('div1');
 
       expect(thirdBid.getStatusCode()).to.equal(2);
       expect(thirdBid.bidderCode).to.equal('conversant');
@@ -246,11 +247,11 @@ describe('Conversant adapter tests', function () {
       var resp = [200, {'Content-type': 'text/javascript'}, 'pbjs.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
       server.respondWith('POST', new RegExp('media.msg.dotomi.com/s2s/header'), resp);
     });
-
+  
     it('Should contain valid request header properties', function () {
       adapter.callBids(bidderRequest);
       server.respond();
-
+  
       var request = server.requests[0];
       expect(request.requestBody).to.not.be.empty;
       expect(request.withCredentials).to.equal(true); // allows for request cookies
