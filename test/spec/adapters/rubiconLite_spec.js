@@ -122,6 +122,36 @@ describe('the rubiconLite adapter', () => {
 
   });
 
+  describe('MAS mapping / ordering', () => {
+
+    let masSizeOrdering = RubiconAdapter.masSizeOrdering;
+
+    it('should not include values without a proper mapping', () => {
+      // two invalid sizes included: [42, 42], [1, 1]
+      let ordering = masSizeOrdering([[320, 50], [42, 42], [300, 250], [640, 480], [1, 1], [336, 280]]);
+
+      expect(ordering).to.deep.equal([15, 16, 43, 65]);
+    });
+
+    it('should sort values without any MAS priority sizes in regular ascending order', () => {
+      let ordering = masSizeOrdering([[320, 50], [640, 480], [336, 280], [200, 600]]);
+
+      expect(ordering).to.deep.equal([16, 43, 65, 126]);
+    });
+
+    it('should sort MAS priority sizes in the proper order w/ rest ascending', () => {
+      let ordering = masSizeOrdering([[320, 50], [160,600], [640, 480], [300, 250],[336, 280], [200, 600]]);
+      expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
+
+      ordering = masSizeOrdering([[320, 50], [300, 250], [160,600], [640, 480],[336, 280], [200, 600], [728, 90]]);
+      expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
+
+      ordering = masSizeOrdering([[120, 600], [320, 50], [160,600], [640, 480],[336, 280], [200, 600], [728, 90]]);
+      expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
+    })
+
+  });
+
   describe('callBids implementation', () => {
 
     let rubiconAdapter;
