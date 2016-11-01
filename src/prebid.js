@@ -570,6 +570,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+  if($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
+    bidmanager.executeCallback();
+  }
 };
 
 /**

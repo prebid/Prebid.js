@@ -14,23 +14,33 @@ exports.bidderRegistry = _bidderRegistry;
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
-function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => Object.assign(bid, {
-        placementCode: adUnit.code,
-        mediaType: adUnit.mediaType,
-        sizes: mapSizes(adUnit),
-        bidId: utils.getUniqueIdentifierStr(),
-        bidderRequestId,
-        requestId
-      }));
-  }).reduce(flatten, []);
+      .map(bid => {
+        let sizes = adUnit.sizes;
+        if (adUnit.sizeMapping) {
+          let sizeMapping = mapSizes(adUnit);
+          if (sizeMapping === '') {
+            return '';
+          }
+          sizes = sizeMapping;
+        }
+        return Object.assign(bid, {
+          placementCode: adUnit.code,
+          mediaType: adUnit.mediaType,
+          sizes: sizes,
+          bidId: utils.getUniqueIdentifierStr(),
+          bidderRequestId,
+          requestId
+        });
+      }
+      );
+  }).reduce(flatten, []).filter(val => val !== '');
 }
 
-exports.callBids = ({ adUnits, cbTimeout }) => {
+exports.callBids = ({adUnits, cbTimeout}) => {
   const requestId = utils.generateUUID();
-
   const auctionStart = Date.now();
 
   const auctionInit = {
@@ -52,15 +62,15 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
+        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout
       };
-      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-      if (bidderRequest.bids && bidderRequest.bids.length) {
+      if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+        utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
         adapter.callBids(bidderRequest);
       }
     } else {
@@ -112,7 +122,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({ adapter, code }) {
+exports.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
 
     if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
