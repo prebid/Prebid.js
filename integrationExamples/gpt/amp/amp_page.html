@@ -2,14 +2,36 @@
 <html amp lang="en">
   <head>
       <!--
-      This is an example AMP page. Set the  amp-3p-iframe-src meta tag to your
-      x-domain host for remote.html and set your content, `amp-ad` and other components.
+      This is an example AMP page. This example includes:
+
+      amp_page.html     host on publisher's amp domain (amp.publisher.com)
+      amp_page.html     (canonical) host on publisher's main domain (publisher.com -- implied, not
+                            part of example)
+      remote.html       host on publisher's amp-x-domain domain (amp-x-domain.publisher.com)
+      creative.html     script tag returned by ad server to fill with Prebid demand
+
       -->
     <meta charset="utf-8">
     <title>Hello, AMPs</title>
     <link rel="canonical" href="http://example.ampproject.org/article-metadata.html" />
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-    <meta name="amp-3p-iframe-src" content="https://amp.prebidapp.com:5000/remote.html">
+
+      <!-- The following meta tag specifies the path to the publisher-hosted file to use as the
+        AMP x-domain host. The domain for ./remote.html must be different from the domain for
+        ./amp_page.html to be a cross domain (secure, unfriendly) iframe.  In this example the
+        domains and ports are:
+            https://publisher.com:9999/amp_page.html
+                and
+            https://amp.publisher.com:5000/remote.html
+
+            Further reading
+            AMP documentation <amp-ad> spec
+            https://www.ampproject.org/docs/reference/components/amp-ad
+            See sections on "Running ads from a custom domain" and "Enhance incoming ad
+            configuration" for more details on techniques used here.
+         -->
+    <meta name="amp-3p-iframe-src" content="https://amp.publisher.com:5000/remote.html">
+
     <script async custom-element="amp-ad" src="https://cdn.ampproject.org/v0/amp-ad-0.1.js"></script>
     <script type="application/ld+json">
       {
