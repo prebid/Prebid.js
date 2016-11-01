@@ -77,6 +77,7 @@ function AdformAdapter() {
           bidObject.ad = adItem.banner;
           bidObject.width = adItem.width;
           bidObject.height = adItem.height;
+          bidObject.dealId = adItem.deal_id;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         } else {
           bidObject = bidfactory.createBid(2);

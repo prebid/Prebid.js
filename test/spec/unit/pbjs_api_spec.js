@@ -944,6 +944,49 @@ describe('Unit: Prebid Module', function () {
       assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
       bidmanager.setPriceGranularity.restore();
     });
+
+    it('should log error when not passed a valid config object', () => {
+      const logErrorSpy = sinon.spy(utils, 'logError');
+      const error = 'Invalid custom price value passed to `setPriceGranularity()`';
+      const badConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+          },
+          {
+            //missing min prop
+            "max" : 18,
+            "increment" : 0.05,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(badConfig);
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
+      const setCustomPriceBucket = sinon.spy(bidmanager, 'setCustomPriceBucket');
+      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
+      const goodConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
+      assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
+      bidmanager.setCustomPriceBucket.restore();
+      assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
+      bidmanager.setPriceGranularity.restore();
+    });
   });
 
   describe('getAllWinningBids', () => {
@@ -1200,6 +1243,22 @@ describe('Unit: Prebid Module', function () {
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
+    });
+  });
+
+  describe('setBidderSequence', () => {
+    it('setting to `random` uses shuffled order of adUnits', () => {
+      sinon.spy(utils, 'shuffle');
+      const requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {},
+        timeout: 2000
+      };
+
+      $$PREBID_GLOBAL$$.setBidderSequence('random');
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+
+      sinon.assert.calledOnce(utils.shuffle);
+      utils.shuffle.restore();
     });
   });
 

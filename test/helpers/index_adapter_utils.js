@@ -56,6 +56,9 @@ function _createBidSlot(placementCode, indexSlotID, sizes, config) {
 	if ( typeof config.tier3SiteID !== 'undefined' ){
 		bid.params.tier3SiteID = config.tier3SiteID;
 	}
+	if ( typeof config.slotSize !== 'undefined' ){
+		bid.params.size = config.slotSize;
+	}
 
 	//special parameter
 	if ( typeof(config.missingSlotID) !== 'undefined' ){
@@ -64,6 +67,7 @@ function _createBidSlot(placementCode, indexSlotID, sizes, config) {
 	if ( typeof(config.missingSiteID) !== 'undefined' ){
 		delete bid.params.siteID;
 	}
+
 	return bid;
 }
 

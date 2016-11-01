@@ -1,4 +1,5 @@
 import { uniques } from './utils';
+import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -8,11 +9,12 @@ var objectType_function = 'function';
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+let _customPriceBucket;
 var defaultBidderSettingsMap = {};
 
-const _lgPriceCap = 5.00;
-const _mgPriceCap = 20.00;
-const _hgPriceCap = 20.00;
+exports.setCustomPriceBucket = function(customConfig) {
+  _customPriceBucket = customConfig;
+};
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -59,8 +61,10 @@ exports.bidsBackAll = function() {
   return bidsBackAll();
 };
 
-function getBidSetForBidder(bidder) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidder) || { start: null, requestId: null };
+function getBidSet(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
+    return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }
 
 /*
@@ -69,10 +73,11 @@ function getBidSetForBidder(bidder) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
 
+    const { requestId, start } = getBidSet(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
-      requestId: getBidSetForBidder(bid.bidderCode).requestId,
+      requestId: requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: getBidSetForBidder(bid.bidderCode).start,
+      requestTimestamp: start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -83,7 +88,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
 
-      this.executeCallback(timedOut);
+      exports.executeCallback(timedOut);
     }
 
     //emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
@@ -93,12 +98,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     //append price strings
-    const priceStringsObj = getPriceBucketString(bid.cpm, bid.height, bid.width);
+    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
     bid.pbAg = priceStringsObj.auto;
     bid.pbDg = priceStringsObj.dense;
+    bid.pbCg = priceStringsObj.custom;
 
     //if there is any key value pairs to map do here
     var keyValues = {};
@@ -120,7 +126,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bidsBackAll()) {
-    this.executeCallback();
+    exports.executeCallback();
   }
 };
 
@@ -230,7 +236,7 @@ exports.executeCallback = function (timedOut) {
     externalCallbacks.all.called = true;
 
     if (timedOut) {
-      const timedOutBidders = this.getTimedOutBidders();
+      const timedOutBidders = exports.getTimedOutBidders();
 
       if (timedOutBidders.length) {
         events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
@@ -367,6 +373,8 @@ function getStandardBidderSettings() {
               return bidResponse.pbMg;
             } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
               return bidResponse.pbHg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+              return bidResponse.pbCg;
             }
           }
         }, {
@@ -386,73 +394,3 @@ function getStandardBidderAdServerTargeting() {
 }
 
 exports.getStandardBidderAdServerTargeting = getStandardBidderAdServerTargeting;
-
-function getPriceBucketString(cpm) {
-  var cpmFloat = 0;
-  var returnObj = {
-    low: '',
-    med: '',
-    high: '',
-    auto: '',
-    dense: ''
-  };
-  try {
-    cpmFloat = parseFloat(cpm);
-    if (cpmFloat) {
-      //round to closest .5
-      if (cpmFloat > _lgPriceCap) {
-        returnObj.low = _lgPriceCap.toFixed(2);
-      } else {
-        returnObj.low = (Math.floor(cpm * 2) / 2).toFixed(2);
-      }
-
-      //round to closest .1
-      if (cpmFloat > _mgPriceCap) {
-        returnObj.med = _mgPriceCap.toFixed(2);
-      } else {
-        returnObj.med = (Math.floor(cpm * 10) / 10).toFixed(2);
-      }
-
-      //round to closest .01
-      if (cpmFloat > _hgPriceCap) {
-        returnObj.high = _hgPriceCap.toFixed(2);
-      } else {
-        returnObj.high = (Math.floor(cpm * 100) / 100).toFixed(2);
-      }
-
-      // round auto default sliding scale
-      if (cpmFloat <= 5) {
-        // round to closest .05
-        returnObj.auto = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 10) {
-        // round to closest .10
-        returnObj.auto = (Math.floor(cpm * 10) / 10).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.auto = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.auto = '20.00';
-      }
-
-      // dense mode
-      if (cpmFloat <= 3) {
-        // round to closest .01
-        returnObj.dense = (Math.floor(cpm * 100) / 100).toFixed(2);
-      } else if (cpmFloat <= 8) {
-        // round to closest .05
-        returnObj.dense = (Math.floor(cpm * 20) / 20).toFixed(2);
-      } else if (cpmFloat <= 20) {
-        // round to closest .50
-        returnObj.dense = (Math.floor(cpm * 2) / 2).toFixed(2);
-      } else {
-        // cap at 20.00
-        returnObj.dense = '20.00';
-      }
-    }
-  } catch (e) {
-    this.logError('Exception parsing CPM :' + e.message);
-  }
-
-  return returnObj;
-}
