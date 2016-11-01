@@ -154,9 +154,14 @@ function getPresetTargeting() {
   }
 }
 
-function getWinningBids(adUnitCodes) {
+function getWinningBids(adUnitCode) {
+  // use the given adUnitCode as a filter if present or all adUnitCodes if not
+  const adUnitCodes = adUnitCode
+    ? [adUnitCode]
+    : $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
+
   return $$PREBID_GLOBAL$$._bidsReceived
-    .filter(adUnitsFilter.bind(this, adUnitCodes))
+    .filter(bid => adUnitCodes.includes(bid.adUnitCode))
     .map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
@@ -170,8 +175,8 @@ function getWinningBids(adUnitCodes) {
         }));
 }
 
-function getWinningBidTargeting(adUnitCodes) {
-  let winners = getWinningBids(adUnitCodes);
+function getWinningBidTargeting() {
+  let winners = getWinningBids();
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -850,15 +855,11 @@ $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
- * @param {string} optional adUnitCode ad unit code
+ * @param {string} adUnitCode - optional ad unit code
  * @return {array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  const adUnitCodes = adUnitCode && adUnitCode.length ?
-    [adUnitCode] :
-    $$PREBID_GLOBAL$$._adUnitCodes;
-
-  return getWinningBids(adUnitCodes);
+  return getWinningBids(adUnitCode);
 };
 
 processQue();
