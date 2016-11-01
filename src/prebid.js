@@ -156,9 +156,9 @@ function getPresetTargeting() {
 
 function getWinningBids(adUnitCode) {
   // use the given adUnitCode as a filter if present or all adUnitCodes if not
-  const adUnitCodes = adUnitCode
-    ? [adUnitCode]
-    : $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
+  const adUnitCodes = adUnitCode ?
+    [adUnitCode] :
+    $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(bid => adUnitCodes.includes(bid.adUnitCode))
