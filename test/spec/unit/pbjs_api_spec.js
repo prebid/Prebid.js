@@ -1280,6 +1280,14 @@ describe('Unit: Prebid Module', function () {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/stallone');
       expect(highestCpmBids.length).to.equal(0);
     });
+
+    it('returns an empty array when the given adUnit has no bids', () => {
+      $$PREBID_GLOBAL$$._bidsReceived = [$$PREBID_GLOBAL$$._bidsReceived[0]];
+      $$PREBID_GLOBAL$$._bidsReceived[0].cpm = 0;
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids.length).to.equal(0);
+      resetAuction();
+    });
   });
 
 });

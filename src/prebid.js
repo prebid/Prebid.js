@@ -162,6 +162,7 @@ function getWinningBids(adUnitCode) {
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+    .filter(bid => bid.cpm > 0)
     .map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
