@@ -61,10 +61,10 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         auctionStart: auctionStart,
         timeout: cbTimeout
       };
-      utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-      if (bidderRequest.bids && bidderRequest.bids.length) {
+      if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+        utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
         adapter.callBids(bidderRequest);
       }
     } else {

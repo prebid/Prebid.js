@@ -27,6 +27,9 @@ function mapSizes(adUnit) {
     sizes = mapping.sizes;
     utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
   }
+  else{
+    utils.logMessage(`AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`);
+  }
   return sizes;
 
 }
