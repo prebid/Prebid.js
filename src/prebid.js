@@ -37,6 +37,7 @@ var eventValidators = {
 
 $$PREBID_GLOBAL$$._bidsRequested = [];
 $$PREBID_GLOBAL$$._bidsReceived = [];
+// _adUnitCodes stores the current filter to use for adUnits as an array of adUnitCodes
 $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
@@ -507,9 +508,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // we will use adUnitCodes for filtering the current auction
-  $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
-
   // for video-enabled adUnits, only request bids if all bidders support video
   const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
   invalidVideoAdUnits.forEach(adUnit => {
@@ -529,6 +527,10 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   auctionRunning = true;
+
+  // we will use adUnitCodes for filtering the current auction
+  $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
+
   bidmanager.externalCallbackReset();
   clearPlacements();
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -538,7 +540,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     if (typeof bidsBackHandler === objectType_function) {
       bidmanager.addOneTimeCallback(bidsBackHandler, false);
     }
-
 
     bidmanager.executeCallback();
     return;
