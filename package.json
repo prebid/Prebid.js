@@ -74,7 +74,7 @@
     "karma-safari-launcher": "^0.1.1",
     "karma-sauce-launcher": "^0.2.10",
     "karma-script-launcher": "^0.1.0",
-    "karma-sinon": "^1.0.4",
+    "karma-sinon-ie": "^2.0.0-rc10",
     "karma-webpack": "^1.5.1",
     "localtunnel": "^1.3.0",
     "mkpath": "^1.0.0",
