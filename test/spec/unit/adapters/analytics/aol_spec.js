@@ -313,6 +313,19 @@ describe('AOL analytics adapter', () => {
           expect(bid.timeToRespond).to.be.at.least(1);
         });
       });
+
+      it('should set the adUnits property used by reportWinEvent()', () => {
+        let adUnitsConfig = [DEFAULT_AD_UNIT];
+        let bidsRequested = [BID_SETS.AOL];
+        let bidsReceived = [BIDS.VALID];
+
+        aolAnalytics.reportAuctionEvent({ adUnitsConfig, bidsRequested, bidsReceived });
+
+        expect(aolAnalytics.adUnits)
+          .to.have.property(DEFAULT_AD_UNIT_CODE)
+          .that.has.a.deep.property('bids')
+          .with.lengthOf(1);
+      });
     });
 
     describe('for 2 ad units', () => {
@@ -521,6 +534,153 @@ describe('AOL analytics adapter', () => {
           expect(bid).to.have.property('adUnitCode', DEFAULT_AD_UNIT_CODE);
           expect(bid.timeToRespond).to.be.at.least(1);
         });
+      });
+    });
+
+    describe('when called multiple times', () => {
+      it('should report 2nd auction for only the requested ad units', () => {
+        let adUnitsConfig = [
+          createAdUnit({
+            code: 'header-bid-tag-0',
+            bids: [BID_CONFIGS.AOL1, BID_CONFIGS.APPNEXUS1]
+          }),
+          createAdUnit({
+            code: 'header-bid-tag-1',
+            bids: [BID_CONFIGS.AOL2, BID_CONFIGS.PULSEPOINT1]
+          })
+        ];
+        let bidsRequested1 = createRequestedBids(adUnitsConfig); // Request all bids.
+        let bidsReceived1 = [
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-1'
+          }),
+          createReceivedBid({
+            bidder: 'appnexus',
+            bidderCode: 'appnexus',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'pulsepoint',
+            bidderCode: 'pulsepoint',
+            adUnitCode: 'header-bid-tag-1'
+          })
+        ];
+
+        aolAnalytics.reportAuctionEvent({
+          adUnitsConfig,
+          bidsRequested: bidsRequested1,
+          bidsReceived: bidsReceived1
+        });
+
+        let bidsRequested2 = createRequestedBids([adUnitsConfig[0]]); // Request just first ad unit.
+        let bidsReceived2 = [
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'appnexus',
+            bidderCode: 'appnexus',
+            adUnitCode: 'header-bid-tag-0'
+          })
+        ];
+
+        aolAnalytics.reportAuctionEvent({
+          adUnitsConfig,
+          bidsRequested: bidsRequested2,
+          bidsReceived: bidsReceived2
+        });
+
+        expect(aolAnalytics.reportEvent.callCount).to.equal(3);
+        let call3 = aolAnalytics.reportEvent.getCall(2);
+        let bids3 = call3.args[1].bids;
+        expect(call3.calledWith(1)).to.be.true;
+        expect(bids3).to.have.lengthOf(2);
+        expect(bids3[0]).to.have.property('bidder', 'aol');
+        expect(bids3[1]).to.have.property('bidder', 'appnexus');
+        bids3.forEach(bid => {
+          expect(bid).to.have.property('adUnitCode', 'header-bid-tag-0');
+          expect(bid.getStatusCode()).to.equal(1);
+        });
+      });
+
+      it('2 auction should replace only the requested ad units in the adUnits property', () => {
+        let adUnitsConfig = [
+          createAdUnit({
+            code: 'header-bid-tag-0',
+            bids: [BID_CONFIGS.AOL1, BID_CONFIGS.APPNEXUS1]
+          }),
+          createAdUnit({
+            code: 'header-bid-tag-1',
+            bids: [BID_CONFIGS.AOL2, BID_CONFIGS.PULSEPOINT1]
+          })
+        ];
+        let bidsRequested1 = createRequestedBids(adUnitsConfig); // Request all bids.
+        let bidsReceived1 = [
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-1'
+          }),
+          createReceivedBid({
+            bidder: 'appnexus',
+            bidderCode: 'appnexus',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'pulsepoint',
+            bidderCode: 'pulsepoint',
+            adUnitCode: 'header-bid-tag-1'
+          })
+        ];
+
+        aolAnalytics.reportAuctionEvent({
+          adUnitsConfig,
+          bidsRequested: bidsRequested1,
+          bidsReceived: bidsReceived1
+        });
+
+        let bidsRequested2 = createRequestedBids([adUnitsConfig[0]]); // Request just first ad unit.
+        let bidsReceived2 = [
+          createReceivedBid({
+            bidder: 'aol',
+            bidderCode: 'aol',
+            adUnitCode: 'header-bid-tag-0'
+          }),
+          createReceivedBid({
+            bidder: 'appnexus',
+            bidderCode: 'appnexus',
+            adUnitCode: 'header-bid-tag-0'
+          })
+        ];
+
+        aolAnalytics.reportAuctionEvent({
+          adUnitsConfig,
+          bidsRequested: bidsRequested2,
+          bidsReceived: bidsReceived2
+        });
+
+        expect(aolAnalytics.adUnits)
+          .to.have.property('header-bid-tag-0')
+          .which.has.deep.property('bids')
+          .with.lengthOf(2);
+        expect(aolAnalytics.adUnits)
+          .to.have.property('header-bid-tag-1')
+          .which.has.deep.property('bids')
+          .with.lengthOf(2);
       });
     });
   });
