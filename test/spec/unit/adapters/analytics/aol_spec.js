@@ -612,7 +612,7 @@ describe('AOL analytics adapter', () => {
         });
       });
 
-      it('2 auction should replace only the requested ad units in the adUnits property', () => {
+      it('should change only the requested ad units in adUnits property after 2nd auction', () => {
         let adUnitsConfig = [
           createAdUnit({
             code: 'header-bid-tag-0',
