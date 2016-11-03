@@ -50,10 +50,14 @@ function bidsBackAdUnit(adUnitCode) {
       return bid.bidder === 'indexExchange' ?
           bid.sizes.length :
           1;
-    }).reduce((a, b) => a + b, 0);
+    }).reduce(add, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
+}
+
+function add(a, b) {
+  return a + b;
 }
 
 function bidsBackAll() {
@@ -65,7 +69,7 @@ function bidsBackAll() {
       return bid.bidder === 'indexExchange' ?
         bid.sizes.length :
         1;
-    }).reduce(add, 0);
+    }).reduce((a, b) => a + b, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
@@ -270,22 +274,17 @@ exports.externalCallbackReset = function () {
 
 function triggerAdUnitCallbacks(adUnitCode) {
   //todo : get bid responses and send in args
-  var singleAdCode = [adUnitCode];
-  processCallbacks(externalCallbacks.byAdUnit, singleAdCode);
+  var singleAdUnitCode = [adUnitCode];
+  processCallbacks(externalCallbacks.byAdUnit, singleAdUnitCode);
 }
 
-function processCallbacks(callbackQueue, singleAdCode) {
+function processCallbacks(callbackQueue, singleAdUnitCode) {
   if (utils.isArray(callbackQueue)) {
     callbackQueue.forEach(callback => {
-      const adUnitCodes = singleAdCode || $$PREBID_GLOBAL$$._adUnitCodes;
-      let bids;
-
-      if (adUnitCodes && adUnitCodes.length) {
-        bids = [$$PREBID_GLOBAL$$._bidsReceived
-                  .filter(adUnitsFilter.bind(this, adUnitCodes)).reduce(groupByPlacement, {})];
-      } else {
-        bids = [$$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {})];
-      }
+      const adUnitCodes = singleAdUnitCode || $$PREBID_GLOBAL$$._adUnitCodes;
+      const bids = [$$PREBID_GLOBAL$$._bidsReceived
+                      .filter(adUnitsFilter.bind(this, adUnitCodes))
+                      .reduce(groupByPlacement, {})];
 
       callback.apply($$PREBID_GLOBAL$$, bids);
     });

@@ -249,7 +249,6 @@ function getTargetingMap(bid, keys) {
 function getAllTargeting(adUnitCode) {
   const adUnitCodes = adUnitCode && adUnitCode.length ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
 
-
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
   var targeting = getWinningBidTargeting(adUnitCodes)
