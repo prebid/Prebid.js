@@ -86,7 +86,6 @@ description: A free and open source library for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Aardvark</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>WideOrbit</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Krux Link</h3></div>
-    <div class="col-xs-6 col-sm-4"><h3>Sekindo</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>AdMedia</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>JCM</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Meme Global</h3></div>
