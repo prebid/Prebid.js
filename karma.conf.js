@@ -120,7 +120,7 @@ module.exports = function (config) {
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
-      'karma-sinon',
+      'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
       'karma-html-reporter',
