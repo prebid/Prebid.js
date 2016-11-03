@@ -8,36 +8,36 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-function RubiconAdapter() {
+var sizeMap = {
+  1:'468x60',
+  2:'728x90',
+  8:'120x600',
+  9:'160x600',
+  10:'300x600',
+  15:'300x250',
+  16:'336x280',
+  43:'320x50',
+  44:'300x50',
+  54:'300x1050',
+  55:'970x90',
+  57:'970x250',
+  58:'1000x90',
+  59:'320x80',
+  65:'640x480',
+  67:'320x480',
+  68:'1800x1000',
+  72:'320x320',
+  73:'320x160',
+  101:'480x320',
+  102:'768x1024',
+  113:'1000x300',
+  117:'320x100',
+  125:'800x250',
+  126:'200x600'
+};
+utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
-  var sizeMap = {
-    1:'468x60',
-    2:'728x90',
-    8:'120x600',
-    9:'160x600',
-    10:'300x600',
-    15:'300x250',
-    16:'336x280',
-    43:'320x50',
-    44:'300x50',
-    54:'300x1050',
-    55:'970x90',
-    57:'970x250',
-    58:'1000x90',
-    59:'320x80',
-    65:'640x480',
-    67:'320x480',
-    68:'1800x1000',
-    72:'320x320',
-    73:'320x160',
-    101:'480x320',
-    102:'768x1024',
-    113:'1000x300',
-    117:'320x100',
-    125:'800x250',
-    126:'200x600'
-  };
-  utils._each(sizeMap, (item, key) => sizeMap[item] = key);
+function RubiconAdapter() {
 
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
@@ -82,15 +82,15 @@ function RubiconAdapter() {
     // defaults
     position = position || 'btf';
 
-    var parsedSizes = utils.parseSizesInput(bid.sizes);
+    var parsedSizes = RubiconAdapter.masSizeOrdering(bid.sizes);
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [
       'account_id', accountId,
       'site_id', siteId,
       'zone_id', zoneId,
-      'size_id', sizeMap[parsedSizes[0]],
-      'alt_size_ids', parsedSizes.slice(1).map(size => sizeMap[size]).join(','),
+      'size_id', parsedSizes[0],
+      'alt_size_ids', parsedSizes.slice(1).join(','),
       'p_pos', position,
       'rp_floor', '0.01',
       'tk_flint', 'pbjs.lite',
@@ -174,5 +174,37 @@ function RubiconAdapter() {
     callBids: _callBids
   };
 }
+
+RubiconAdapter.masSizeOrdering = function(sizes) {
+  const MAS_SIZE_PRIORITY = [15, 2, 9];
+
+  return utils.parseSizesInput(sizes)
+    // map sizes while excluding non-matches
+    .reduce((result, size) => {
+      let mappedSize = parseInt(sizeMap[size], 10);
+      if(mappedSize) {
+        result.push(mappedSize);
+      }
+      return result;
+    }, [])
+    .sort((first, second) => {
+      // sort by MAS_SIZE_PRIORITY priority order
+      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
+          secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+
+      if(firstPriority > -1 || secondPriority > -1) {
+        if(firstPriority === -1) {
+          return 1;
+        }
+        if(secondPriority === -1) {
+          return -1;
+        }
+        return firstPriority - secondPriority;
+      }
+
+      // and finally ascending order
+      return first - second;
+    });
+};
 
 module.exports = RubiconAdapter;
