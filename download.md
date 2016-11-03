@@ -272,14 +272,6 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="sekindo" class="bidder-check-box"> Sekindo
-      </label>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="checkbox">
-      <label>
         <input type="checkbox" bidderCode="admedia" class="bidder-check-box"> AdMedia
       </label>
     </div>
@@ -368,7 +360,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" disabled bidderCode="hiromedia" class="bidder-check-box disabled"> HIRO Media - Coming Soon!
+        <input type="checkbox" bidderCode="hiromedia" class="bidder-check-box"> HIRO Media
       </label>
     </div>
   </div>
@@ -376,7 +368,31 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" disabled bidderCode="roxot" class="bidder-check-box"> Roxot
+        <input type="checkbox" bidderCode="roxot" class="bidder-check-box"> Roxot
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="adbutler" class="bidder-check-box"> AdButler
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="komoona" class="bidder-check-box"> Komoona
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="rubiconLite" class="bidder-check-box"> RubiconLite
       </label>
     </div>
   </div>
@@ -389,12 +405,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Upgrading version - please check back in a bit!)
+(Version 0.14.0)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary disabled" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
