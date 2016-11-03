@@ -38,7 +38,8 @@ module.exports = function(bidManager, global, loader){
     currency = "USD",
     debug = false,
     auctionEnded = false,
-    requestCompleted = false;
+    requestCompleted = false,
+    placementCodes = {};
     
   if(typeof global === "undefined")
     global = window;
@@ -48,97 +49,6 @@ module.exports = function(bidManager, global, loader){
     
   if(typeof loader === "undefined")
     loader = ajax;
-  
-  var rhythmBidderUtilities = {
-    template: function(){return "<div id=\"{0}_wrapper\"></div><script type=\"text/javascript\">("+rhythmBidderUtilities.process.toString()+")(\"{0}\", {1}, {2}, {3}, \"{4}\", {5}, {6});</scr"+"ipt>";},
-
-    process: function(target, markup, bidResponse, bidfloor, currency, seat, url){
-    
-      function frameWrap(target, markup, url){
-        var f = document.createElement("iframe");
-        f.style.border="0";
-        f.scrolling="no";
-        f.seamless="seamless";
-        f.style.height = bidResponse.h+"px";
-        f.style.width = bidResponse.w+"px";
-        
-        target.style.height = bidResponse.h+"px";
-        target.style.width = bidResponse.w+"px";
-        target.appendChild(f);
-        
-        if(markup){
-          f.contentWindow.document.open();
-          f.contentWindow.document.write("<html><head></head><body style=\"margin:0;padding:0;\">"+markup+"</body></html>");
-          if((/(MSIE|Trident|Edge)/).test(window.navigator.userAgent) === false)
-            f.contentWindow.document.close();
-        }
-        else if(url)
-          f.src = url;
-      }
-    
-      var w = window,
-        pjs = (function(){
-          try{
-            while(w){
-              if(w.$$PREBID_GLOBAL$$ || w === window.top) return w.$$PREBID_GLOBAL$$;
-              w = w.parent;
-            }
-          }
-          catch(ex){}
-          return null;
-        })(),
-        responses = (pjs && pjs.getBidResponses ? pjs.getBidResponses() : {}),
-        slotBids = responses[target],
-        secondPrice = 0;
-      
-      if(window.parent.trackR1Impression)
-        window.parent.trackR1Impression('hb', 'impression');
-      
-      var prices = [bidfloor];
-        
-      if(slotBids && slotBids.bids)
-        for(var i=0; i<slotBids.bids.length; i++)
-          prices.push(parseFloat(slotBids.bids[i].cpm));
-      
-      prices.sort();
-      secondPrice = prices[prices.length-2]+0.01;
-    
-      var macroPattern = /\$\{AUCTION_([A-Z_]+)\}/g,
-        values = {
-          ID: bidResponse.impid,
-          BID_ID: bidResponse.id,
-          IMP_ID: bidResponse.impid,
-          SEAT_ID: seat.id,
-          AD_ID: bidResponse.adid,
-          PRICE: secondPrice,
-          CURRENCY: currency
-        };
-      
-      if(markup)
-        markup = markup.replace(macroPattern, function(match){
-          var x = macroPattern.exec(match)[1];
-          if(typeof values[x] !== "undefined") return values[x];
-          return match;
-        });
-      
-      if(url)
-        url = url.replace(macroPattern, function(match){
-          var x = macroPattern.exec(match)[1];
-          //console.log("found macro "+match+" replacing with value "+values[x]);
-          if(values[x]) return values[x];
-          return match;
-        });
-      
-      var wrapper = document.getElementById(target+"_wrapper");
-      
-      frameWrap(wrapper, markup, url);
-      return markup;
-    }
-  };
-  
-  this.testAdWrapper = function(target, markup, bidResponse, bidfloor, currency, seat, url){
-    return rhythmBidderUtilities.process(target, markup, bidResponse, bidfloor, currency, seat, url);
-  };
   
   //track(debug, 'hb', 'start', version);
   
@@ -151,7 +61,7 @@ module.exports = function(bidManager, global, loader){
   }
   
   function load(bidParams, url, postData, callback){
-    if(bidParams.method.toLowerCase() === "get"){
+    if(bidParams.method === "get"){
       loader(url, function(responseText, response){
         if(response.status === 200)
           callback(200, "success", response.responseText);
@@ -169,7 +79,8 @@ module.exports = function(bidManager, global, loader){
     }
   }
 
-  var bidderCode = "rhythmone";
+  var bidderCode = "rhythmone",
+    bidLostTimeout = null;
   
   function setIfPresent(o, key, value){
     try{
@@ -185,31 +96,29 @@ module.exports = function(bidManager, global, loader){
   
   function sniffAuctionEnd(){
   
+    global.$$PREBID_GLOBAL$$.onEvent('bidWon', function (e) {
+    
+      if(e.bidderCode === bidderCode){
+        placementCodes[e.adUnitCode] = true;
+        track(debug, 'hb', "bidWon");
+      }
+      
+      if(auctionEnded){
+        clearTimeout(bidLostTimeout);
+        bidLostTimeout = setTimeout(function(){
+          for(var k in placementCodes)
+            if(placementCodes[k] === false)
+              track(debug, 'hb', "bidLost");
+        }, 50);
+      }
+    });
+  
     global.$$PREBID_GLOBAL$$.onEvent('auctionEnd', function () {
     
       auctionEnded = true;
 
       if(requestCompleted === false)
         track(debug, 'hb', 'rmpReplyFail', "prebid timeout post auction");
-      
-      var responses = global.$$PREBID_GLOBAL$$.getBidResponses(), r, b, i;
-      for(var k in responses){
-        r = responses[k];
-        if(r.bids && r.bids.length > 0){
-          b = [];
-          for(i=0; i<r.bids.length; i++)
-            if(r.bids[i].cpm > 0) b.push(r.bids[i]);
-          
-          b.sort(function(a, b){return b.cpm - a.cpm;});
-          
-          for(i=0; i<b.length; i++){
-            if(b[i].bidderCode === "rhythmone"){
-              track(debug, 'hb', (i === 0 ? 'bidWon': "bidLost"));
-              break;
-            }
-          }
-        }
-      }
     });
   }
   
@@ -261,7 +170,7 @@ module.exports = function(bidManager, global, loader){
         query.push(encodeURIComponent(k)+"="+encodeURIComponent(v));
     }
     
-    if(bidParams.method.toLowerCase() === "get"){
+    if(bidParams.method === "get"){
     
       p("domain", ortbJSON.site.domain);
       p("title", ortbJSON.site.name);
@@ -302,7 +211,7 @@ module.exports = function(bidManager, global, loader){
     return endpoint;
   }
   
-  function getORTBJSON(bids, slotMap){
+  function getORTBJSON(bids, slotMap, bidParams){
     var o = {
       "device": {
         "langauge": global.navigator.language,
@@ -339,7 +248,10 @@ module.exports = function(bidManager, global, loader){
       var bidID = utils.generateUUID();
       slotMap[bidID] = bids[i];
       slotMap[bids[i].placementCode] = bids[i];
-      track(debug, 'hb', 'bidRequest');
+      
+      if(bidParams.method === "post")
+        track(debug, 'hb', 'bidRequest');
+        
       for(var j = 0; j<bids[i].sizes.length; j++){
         o.imp.push({
           "id": bidID,
@@ -378,6 +290,8 @@ module.exports = function(bidManager, global, loader){
     if(typeof bidParams.method !== "string")
       bidParams.method = "get";
     
+    bidParams.method = bidParams.method.toLowerCase();
+    
     sniffAuctionEnd();
 
     track(debug, 'hb', 'rmpRequest');
@@ -407,20 +321,13 @@ module.exports = function(bidManager, global, loader){
               var pbResponse = bidfactory.createBid(1),
                 placementCode = slotMap[bid.impid].placementCode;
             
+              placementCodes[placementCode] = false;
+            
               pbResponse.bidderCode = bidderCode;
               pbResponse.cpm = parseFloat(bid.price);
               pbResponse.width = bid.w;
               pbResponse.height = bid.h;
-              
-              pbResponse.ad = applyMacros(rhythmBidderUtilities.template(), [
-                placementCode, 
-                (bid.adm?"\""+bid.adm.replace(/"/g, "\\\"").replace(/\s+/g, " ").replace(/<\/script/g, "</scr\"+\"ipt")+"\"":"false"),
-                JSON.stringify(bid).replace(/<\/script/g, "</scr\"+\"ipt"),
-                bidfloor,
-                currency,
-                JSON.stringify(result).replace(/<\/script/g, "</scr\"+\"ipt"),
-                (bid.nurl?"\""+bid.nurl.replace(/"/g, "\\\"")+"\"":"false")
-              ]);
+              pbResponse.ad = bid.adm;
               
               logToConsole("registering bid "+placementCode+" "+JSON.stringify(pbResponse));
               

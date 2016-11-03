@@ -29,7 +29,8 @@ describe('rhythmone adapter tests', function () {
 			"bidid": "ff8b09b1-5264-52be-4b7b-0156526452bf"
 		};
 	
-    var endEvent = function(){};
+    var endEvent = function(){},
+      wonEvent = function(){};;
   
 		var z = new r1(
 			{
@@ -38,8 +39,7 @@ describe('rhythmone adapter tests', function () {
 						assert.equal(placementcode, "div-gpt-ad-1438287399331-0");
 					});
 					it("should have the expected ad response", function(){
-            var expected = "<div id=\"div-gpt-ad-1438287399331-0_wrapper\"></div>";
-						assert.equal(adResponse.ad.substring(0, expected.length), expected);
+						assert.equal((adResponse.ad.length > 0), true);
 						assert.equal(adResponse.width, 300);
 						assert.equal(adResponse.height, 250);
 						assert.equal(adResponse.cpm, 1);
@@ -50,7 +50,10 @@ describe('rhythmone adapter tests', function () {
       {
         "navigator":{},
         "pbjs":{
-          "onEvent":function(e, f){endEvent = f;},
+          "onEvent":function(e, f){
+            if(e.toLowerCase() === "auctionend") endEvent = f;
+            if(e.toLowerCase() === "bidwon") wonEvent = f;
+          },
           "getBidResponses":function(){return {"div-gpt-ad-1438287399331-0":{"bids":[{cpm:1,bidderCode:"rhythmone"},{cpm:2,bidderCode:"rhythmone"}]}};}
         }
       },
@@ -78,39 +81,9 @@ describe('rhythmone adapter tests', function () {
 		});
     
     endEvent();
-    
-    var d = window.document.createElement("div");
-    d.style.display = "none";
-    d.id = "div-gpt-ad-1438287399331-0_wrapper";
-    window.document.body.appendChild(d);
-    
-    // target, markup, bidResponse, bidfloor, currency, seat, url
-    
-    var adMarkup = z.testAdWrapper(
-      "div-gpt-ad-1438287399331-0",
-      "<a href=\"http://tag.1rx.io/rmp/34887/0/ch?ajkey=V12A0DACED8J-573H15H141CEA99C02K3585…16X12iamspartacus2EW3comH16X12iamspartacus2EW3comG0QG0Q919191I9140000G43A\" target=\"_blank\"><img src=\"http://img.1rx.io/banners/media/0/14/0/78/1464186216852_1R-300x250_border.png\" height=\"250\" width=\"300\" border=\"0\" alt=\"\"></a><script src=\"http://tag.1rx.io/rmp/34887/0/impr?ajkey=V12A0DACED8J-573H15H141CEA99C02K35…omH16X12iamspartacus2EW3comG0QG0Q919191I9140000G43A&obid=${AUCTION_PRICE}\" type=\"text/javascript\"></script><script type=\"text/javascript\"> setTimeout(function() { var iframe = document.createElement('iframe'); var xpr9190 = \"http\"; if (window.location.protocol == 'https:') xpr9190 += \"s\"; iframe.id = iframe.tagName+\"_\"+(Math.random() * 1000000000); iframe.style.display = \"block\"; iframe.style.width = \"0px\"; iframe.style.height = \"0px\"; iframe.src = xpr9190 + \"://sync.1rx.io/usersync2/rmp\"; if ((document.body === undefined) || (document.body == null )) { var iframeHtml = iframe.outerHTML || (function(n){ /**/ var div = document.createElement('div'); div.appendChild( n.cloneNode(true) ); return div.innerHTML; })(iframe); document.write(iframeHtml); } else { /**/ document.body.appendChild(iframe); } }, (Math.floor(Math.random() * 5)+1)); </script>",
-      {
-        "id": "520a3dbe-c403-a1e2-44dc-0157c403a1e3",
-        "impid": "div-gpt-ad-1438287399331-0",
-        "price": 1,
-        "adid": "35858",
-        "adm": "<a href=\"http://tag.1rx.io/rmp/34887/0/ch?ajkey=V12A0DACED8J-573H15H141CEA99C02K3585…16X12iamspartacus2EW3comH16X12iamspartacus2EW3comG0QG0Q919191I9140000G43A\" target=\"_blank\"><img src=\"http://img.1rx.io/banners/media/0/14/0/78/1464186216852_1R-300x250_border.png\" height=\"250\" width=\"300\" border=\"0\" alt=\"\"></a><script src=\"http://tag.1rx.io/rmp/34887/0/impr?ajkey=V12A0DACED8J-573H15H141CEA99C02K35…omH16X12iamspartacus2EW3comG0QG0Q919191I9140000G43A&obid=${AUCTION_PRICE}\" type=\"text/javascript\"></script><script type=\"text/javascript\">\n  setTimeout(function() {\n    var iframe = document.createElement('iframe');\n    var xpr9190 = \"http\";\n    if (window.location.protocol == 'https:') xpr9190 += \"s\";\n    iframe.id = iframe.tagName+\"_\"+(Math.random() * 1000000000);\n    iframe.style.display = \"block\";\n    iframe.style.width = \"0px\";\n    iframe.style.height = \"0px\";\n    iframe.src = xpr9190 + \"://sync.1rx.io/usersync2/rmp\";\n    if ((document.body === undefined) || (document.body == null )) {  \n      var iframeHtml = iframe.outerHTML || (function(n){ /**/\n          var div = document.createElement('div');\n          div.appendChild( n.cloneNode(true) );\n          return div.innerHTML;\n      })(iframe);\n      document.write(iframeHtml);\n    } else {\n      /**/\n      document.body.appendChild(iframe);\n    }\n  }, (Math.floor(Math.random() * 5)+1));\n</script>",
-        "adomain": ["www.rhythmone.com"],
-        "cid": "35857",
-        "cat": [],
-        "h": 250,
-        "w": 300
-      },
-      0,
-      "USD",
-      {
-        "id": "f90093d3-b219-4339-ba2f-68d65245320f"
-      },
-      false
-    );
-    
-    it("should apply OPENRTB macros to ad markup", function(){
-      assert.equal(adMarkup.indexOf("${AUCTION_PRICE}"), -1);
+    wonEvent({
+      bidderCode: "rhythmone",
+      adUnitCode: "div-gpt-ad-1438287399331-0"
     });
 	});
 });
