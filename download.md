@@ -364,7 +364,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
       </label>
     </div>
   </div>
-  
+
   <div class="col-md-4">
     <div class="checkbox">
       <label>
@@ -372,7 +372,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
       </label>
     </div>
   </div>
-  
+
   <div class="col-md-4">
     <div class="checkbox">
       <label>
@@ -389,12 +389,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version: 0.13.1)
+(Upgrading version - please check back in a bit!)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary disabled" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
