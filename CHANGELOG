@@ -1,3 +1,8 @@
+AOL Prebid 1.4.2
+----------------
+BUGFIX: Fixed reporting refreshed ad units in AOL analytics.
+
+
 AOL Prebid 1.4.1
 ----------------
 Refactoring of AOL analytics.
