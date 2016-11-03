@@ -328,7 +328,7 @@ module.exports = function(bidManager, global, loader){
         return d[d.length-1];
       return global.top.document.location.hostname;
     });
-    setIfPresent(o.site, "name", function(){return top.document.title;});
+    setIfPresent(o.site, "name", function(){return global.top.document.title;});
     
     o.device.devicetype = ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 3 : 2));
     
