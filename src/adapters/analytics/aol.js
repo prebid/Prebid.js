@@ -113,7 +113,7 @@ export default utils.extend(adapter({
       )
       .reduce(utils.flatten, []);
 
-    let adUnits = this.adUnits;
+    let adUnits = {};
 
     bidsToReport.forEach(bid => {
       const currentAdUnitCode = bid.adUnitCode;
@@ -129,7 +129,8 @@ export default utils.extend(adapter({
 
     for (let code in adUnits) {
       if (adUnits.hasOwnProperty(code)) {
-        let adUnit = adUnits[code];
+        // Add to this.adUnits to make it available in the reportWinEvent() later.
+        let adUnit = this.adUnits[code] = adUnits[code];
         if (adUnit.aolParams) {
           this.reportEvent(EVENTS.AUCTION, adUnit);
         }
