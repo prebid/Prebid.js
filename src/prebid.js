@@ -27,7 +27,6 @@ var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
-var presetTargeting = [];
 var pbTargetingKeys = [];
 
 var eventValidators = {
@@ -134,24 +133,6 @@ function setTargeting(targetingConfig) {
             });
         }));
   });
-}
-
-function isNotSetByPb(key) {
-  return pbTargetingKeys.indexOf(key) === -1;
-}
-
-function getPresetTargeting() {
-  if (isGptPubadsDefined()) {
-    presetTargeting = (function getPresetTargeting() {
-      return window.googletag.pubads().getSlots().map(slot => {
-        return {
-          [slot.getAdUnitPath()]: slot.getTargetingKeys().filter(isNotSetByPb).map(key => {
-            return { [key]: slot.getTargeting(key) };
-          })
-        };
-      });
-    }());
-  }
 }
 
 function getWinningBids(adUnitCode) {
@@ -434,8 +415,8 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
   }
 
   //first reset any old targeting
-  getPresetTargeting();
   resetPresetTargeting();
+
   //now set new targeting keys
   setTargeting(getAllTargeting());
 };
