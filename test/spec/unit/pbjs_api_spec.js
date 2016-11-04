@@ -1271,21 +1271,21 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('setBidderSequence', () => {
-    it('setting to `random` uses shuffled order of adUnits', () => {
-      sinon.spy(utils, 'shuffle');
-      const requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 2000
-      };
-
-      $$PREBID_GLOBAL$$.setBidderSequence('random');
-      $$PREBID_GLOBAL$$.requestBids(requestObj);
-
-      sinon.assert.calledOnce(utils.shuffle);
-      utils.shuffle.restore();
-    });
-  });
+  // describe('setBidderSequence', () => {
+  //   it('setting to `random` uses shuffled order of adUnits', () => {
+  //     sinon.spy(utils, 'shuffle');
+  //     const requestObj = {
+  //       bidsBackHandler: function bidsBackHandlerCallback() {},
+  //       timeout: 2000
+  //     };
+  //
+  //     $$PREBID_GLOBAL$$.setBidderSequence('random');
+  //     $$PREBID_GLOBAL$$.requestBids(requestObj);
+  //
+  //     sinon.assert.calledOnce(utils.shuffle);
+  //     utils.shuffle.restore();
+  //   });
+  // });
 
   describe('getHighestCpm', () => {
     it('returns an array of winning bid objects for each adUnit', () => {
