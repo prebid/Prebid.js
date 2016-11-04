@@ -27,7 +27,7 @@ var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
-var presetTargeting = [];
+// var presetTargeting = [];
 var pbTargetingKeys = [];
 
 var eventValidators = {
@@ -136,23 +136,23 @@ function setTargeting(targetingConfig) {
   });
 }
 
-function isNotSetByPb(key) {
-  return pbTargetingKeys.indexOf(key) === -1;
-}
+// function isNotSetByPb(key) {
+//   return pbTargetingKeys.indexOf(key) === -1;
+// }
 
-function getPresetTargeting() {
-  if (isGptPubadsDefined()) {
-    presetTargeting = (function getPresetTargeting() {
-      return window.googletag.pubads().getSlots().map(slot => {
-        return {
-          [slot.getAdUnitPath()]: slot.getTargetingKeys().filter(isNotSetByPb).map(key => {
-            return { [key]: slot.getTargeting(key) };
-          })
-        };
-      });
-    }());
-  }
-}
+// function getPresetTargeting() {
+//   if (isGptPubadsDefined()) {
+//     presetTargeting = (function getPresetTargeting() {
+//       return window.googletag.pubads().getSlots().map(slot => {
+//         return {
+//           [slot.getAdUnitPath()]: slot.getTargetingKeys().filter(isNotSetByPb).map(key => {
+//             return { [key]: slot.getTargeting(key) };
+//           })
+//         };
+//       });
+//     }());
+//   }
+// }
 
 function getWinningBids(adUnitCode) {
   // use the given adUnitCode as a filter if present or all adUnitCodes if not
@@ -434,7 +434,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
   }
 
   //first reset any old targeting
-  getPresetTargeting();
+  // getPresetTargeting();
   resetPresetTargeting();
   //now set new targeting keys
   setTargeting(getAllTargeting());
