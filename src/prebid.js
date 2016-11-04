@@ -415,8 +415,8 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
   }
 
   //first reset any old targeting
-  // getPresetTargeting();
   resetPresetTargeting();
+
   //now set new targeting keys
   setTargeting(getAllTargeting());
 };
