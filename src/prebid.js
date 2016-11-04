@@ -147,7 +147,7 @@ function getWinningBids(adUnitCode) {
   // use the given adUnitCode as a filter if present or all adUnitCodes if not
   const adUnitCodes = adUnitCode ?
     [adUnitCode] :
-    $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
+    $$PREBID_GLOBAL$$._adUnitCodes;
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(bid => adUnitCodes.includes(bid.adUnitCode))
@@ -497,6 +497,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+
   if (adUnitCodes && adUnitCodes.length) {
     // if specific adUnitCodes supplied filter adUnits for those codes
     adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
@@ -528,7 +530,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   bidmanager.externalCallbackReset();
   clearPlacements();
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
