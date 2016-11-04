@@ -541,6 +541,9 @@ export function getHighestCpm(previous, current) {
 
 /**
  * Fisher–Yates shuffle
+ * http://stackoverflow.com/a/6274398
+ * https://bost.ocks.org/mike/shuffle/
+ * istanbul ignore next
  */
 export function shuffle(array) {
   let counter = array.length;
