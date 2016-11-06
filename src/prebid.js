@@ -1,8 +1,8 @@
 /** @module $$PREBID_GLOBAL$$ */
 
-import {getGlobal} from './prebidGlobal';
+import { getGlobal } from './prebidGlobal';
 import {flatten, uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter} from './utils';
-import {videoAdUnit, hasNonVideoBidder} from './video';
+import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
@@ -524,6 +524,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   auctionRunning = true;
+
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   // we will use adUnitCodes for filtering the current auction
   $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
