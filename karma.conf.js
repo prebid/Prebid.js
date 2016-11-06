@@ -52,7 +52,8 @@ module.exports = function (config) {
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
       '!test/**/*_spec.js': 'coverage',
-      'src/**/*.js': ['webpack', 'coverage']
+      'src/**/*.js': ['webpack']
+      // 'src/**/*.js': ['webpack', 'coverage']
     },
 
     // WebPack Related
