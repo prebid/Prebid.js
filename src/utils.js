@@ -564,3 +564,7 @@ export function shuffle(array) {
 
   return array;
 }
+
+export function add(a, b) {
+  return a + b;
+}

@@ -536,7 +536,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 };
 
 function _countBids(bid) {
-  const bidCount = bid.sizes
   return bid && bid.sizes && bid.sizes.length || null;
 }
 
