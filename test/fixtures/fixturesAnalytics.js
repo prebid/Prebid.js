@@ -88,6 +88,7 @@ export const BIDS = {
     responseTimestamp: DEFAULT_RESPONSE_TIMESTAMP,
     timeToRespond: DEFAULT_RESPONSE_TIMESTAMP - DEFAULT_REQUEST_TIMESTAMP,
     cpm: 0.10,
+    dealId: 'MP-1-999-1-K3XEW',
     pbLg: '0.00',
     pbMg: '0.10',
     pbHg: '0.11',

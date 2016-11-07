@@ -956,6 +956,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbbid=0.1;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
+          expect(url).to.contain(`;hbdealid=${bid.dealId}`);
         });
 
         it('should build url with multiple bidders', () => {
@@ -963,7 +964,8 @@ describe('AOL analytics adapter', () => {
           let bid2 = createReceivedBid({
             bidder: 'appnexus',
             bidderCode: 'appnexus',
-            cpm: 0.08
+            cpm: 0.08,
+            dealId: 'MP-1-000-1-K3XEW'
           });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
@@ -974,10 +976,12 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbbid=0.1;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
+          expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
+          expect(url).to.contain(`;hbdealid=${bid2.dealId}`);
         });
 
         it('should build url with hbstatus of 1 for invalid bids', () => {
@@ -991,6 +995,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbbid=0;');
           expect(url).to.contain(';hbstatus=1;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
+          expect(url).to.not.contain(`;hbdealid=`);
         });
 
         it('should build url with hbstatus of 3 for timed out bids', () => {
@@ -1004,6 +1009,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbbid=0;');
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
+          expect(url).to.not.contain(`;hbdealid=`);
         });
 
         it('should build url with valid and timed out bids', () => {
@@ -1023,10 +1029,12 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbbid=0.1;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
+          expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
+          expect(url).to.not.contain(`;hbtime=${bid2.timeToRespond};hbdealid=`);
         });
       });
     });
@@ -1233,6 +1241,20 @@ describe('AOL analytics adapter', () => {
           }
         });
         expect(url).to.contain(`;pubcpm=${bid.cpm}`);
+      });
+
+      it('should build url with hbdealid parameter', () => {
+        let bid = BIDS.VALID;
+        let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.WIN, {
+          aolParams: BID_CONFIGS.AOL1.params,
+          bids: [bid],
+          winner: bid,
+          auctionParams: {
+            hbauctioneventts: 4567890,
+            hbauctionid: '123456789'
+          }
+        });
+        expect(url).to.contain(`;hbdealid=${bid.dealId}`);
       });
     });
   });

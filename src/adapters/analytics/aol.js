@@ -32,6 +32,7 @@ let baseSchemaTemplate = template`${'protocol'}://${'host'}/hbevent/${'tagversio
 let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
 let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
 let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
+let dealIdSchemaTemplate = template`;hbdealid=${'hbdealid'}`;
 
 export default utils.extend(adapter({
   url: '',
@@ -214,6 +215,9 @@ export default utils.extend(adapter({
         url = baseSchemaTemplate(baseSchema) + auctionSchemaTemplate(auctionSchema);
         adUnit.bids.forEach(bid => {
           url = url + bidderSchemaTemplate(this.getBidderSchema(bid));
+          if (bid.dealId) {
+            url = url + dealIdSchemaTemplate({hbdealid: bid.dealId});
+          }
         });
         return url;
 
@@ -222,6 +226,9 @@ export default utils.extend(adapter({
         baseSchema = this.getBaseSchema(EVENTS.WIN, adUnit);
         let winSchema = this.getWinSchema(adUnit);
         url = baseSchemaTemplate(baseSchema) + winSchemaTemplate(winSchema);
+        if (adUnit.winner.dealId) {
+          url = url + dealIdSchemaTemplate({hbdealid: adUnit.winner.dealId});
+        }
         return url;
 
     }
