@@ -38,7 +38,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @constant {number}
    * @private
    */
-  var ADAPTER_VERSION = 1;
+  var ADAPTER_VERSION = 2;
 
   /**
    * Default bid param values
@@ -57,7 +57,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @private
    */
   var DEFAULT_BID_PARAMS = {
-    bidUrl: 'https://hb-rtb.ktdpublishers.com/',
+    bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get',
     allowedSize: [300,250],
     sizeTolerance: 5
   };
@@ -485,16 +485,16 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
             bidsRequested[batchKey] = true;
 
             sendBidRequest(url,{
-              v: ADAPTER_VERSION,
-              cb: '$$PREBID_GLOBAL$$.hiromedia_callback',
-              bk: batchKey,
-              pc: bid.placementCode,
-              ac: bidParams.accountId,
-              br: browser.name,
-              brv: browser.version,
-              dom: domain,
-              sz: utils.parseSizesInput([bidInfo.selectedSize]),
-              szs: utils.parseSizesInput(bid.sizes)
+              adapterVersion: ADAPTER_VERSION,
+              callback: '$$PREBID_GLOBAL$$.hiromedia_callback',
+              batchKey: batchKey,
+              placementCode: bid.placementCode,
+              accountId: bidParams.accountId,
+              browser: browser.name,
+              browserVersion: browser.version,
+              domain: domain,
+              selectedSize: utils.parseSizesInput([bidInfo.selectedSize]),
+              placementSizes: utils.parseSizesInput(bid.sizes)
             });
 
           }
