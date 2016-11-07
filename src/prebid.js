@@ -542,7 +542,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     if (typeof bidsBackHandler === objectType_function) {
       bidmanager.addOneTimeCallback(bidsBackHandler, false);
     }
-
     bidmanager.executeCallback();
     return;
   }
