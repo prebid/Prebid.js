@@ -1,30 +1,15 @@
-/*
-  Copyright (c) 2016 RhythmOne, LLC. All rights reserved.
-*/
-
 var bidmanager = require('../bidmanager.js'),
   bidfactory = require('../bidfactory.js'),
-  utils = require('../utils.js');
+  utils = require('../utils.js'),
+  CONSTANTS = require('../constants.json');
 
 import {ajax as ajax} from '../ajax';
 
-//function setupGA() {
-//  /* jshint ignore:start */
-//  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-//
-//  ga('create', 'UA-63935000-31', { 'name': 'r1hbga' });
-//  ga('r1hbga.send', 'pageview');
-//  /* jshint ignore:end */
-//}
-
 function track(debug, p1, p2, p3) {
   if(debug === true){
-    //window.ga('r1hbga.send', 'event', p1, p2, p3);
     console.log('GA: %s %s %s', p1, p2, p3 || '');
   }
 }
-
-//setupGA();
 
 var w = (typeof window !== "undefined" ? window : {});
 w.trackR1Impression = track;
@@ -49,8 +34,6 @@ module.exports = function(bidManager, global, loader){
     
   if(typeof loader === "undefined")
     loader = ajax;
-  
-  //track(debug, 'hb', 'start', version);
   
   function applyMacros(txt, values){
     return txt.replace(/\{([^\}]+)\}/g, function(match){
@@ -132,7 +115,7 @@ module.exports = function(bidManager, global, loader){
   function noBids(params){
     for(var i=0; i<params.bids.length; i++){
       if(params.bids[i].success !== 1){
-        var bid = bidfactory.createBid(2);
+        var bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = bidderCode;
         track(debug, 'hb', 'bidResponse', 0);
         bidmanager.addBidResponse(params.bids[i].placementCode, bid);
@@ -318,7 +301,7 @@ module.exports = function(bidManager, global, loader){
             
               slotMap[bid.impid].success = 1;
               
-              var pbResponse = bidfactory.createBid(1),
+              var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
                 placementCode = slotMap[bid.impid].placementCode;
             
               placementCodes[placementCode] = false;
