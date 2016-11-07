@@ -269,6 +269,10 @@ function getAllTargeting(adUnitCode) {
   return targeting;
 }
 
+/**
+ * When a request for bids is made any stale bids remaining will be cleared for
+ * a placement included in the outgoing bid request.
+ */
 function clearPlacements() {
   $$PREBID_GLOBAL$$._bidsRequested = $$PREBID_GLOBAL$$._bidsRequested
     .filter(request => request.bids
