@@ -51,7 +51,8 @@ function getBidders(bid) {
  */
 function countExpectedBids(bid) {
   const bidder = bid.bidder;
-  const countBids = adaptermanager.bidderRegistry[bidder].countBids || function() { return 1; };
+  const adapter = adaptermanager.bidderRegistry[bidder];
+  const countBids = adapter && adapter.countBids || function() { return 1; };
   return countBids(bid);
 }
 
