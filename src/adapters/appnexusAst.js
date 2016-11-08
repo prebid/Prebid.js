@@ -72,7 +72,9 @@ function AppnexusAstAdapter() {
     }
 
     if (!parsed || parsed.error) {
-      utils.logError(`Bad response for ${baseAdapter.getBidderCode()} adapter`);
+      let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
+      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      utils.logError(errorMessage);
 
       // signal this response is complete
       Object.keys(bidRequests)

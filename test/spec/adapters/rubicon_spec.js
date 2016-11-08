@@ -9,12 +9,14 @@ var CONSTANTS = require("src/constants.json");
 
 describe("the rubicon adapter", () => {
 
-  let rubiconAdapter = adapterManager.bidderRegistry["rubicon"],
+  let rubiconAdapter,
       sandbox,
       adUnit;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+
+    delete window.rubicontag;
 
     adUnit = {
       code: "/19968336/header-bid-tag-0",
@@ -49,6 +51,10 @@ describe("the rubicon adapter", () => {
   });
 
   describe("callBids public interface", () => {
+
+    beforeEach(() => {
+      rubiconAdapter = adapterManager.bidderRegistry["rubicon"];
+    });
 
     it("should receive a well-formed bidRequest from the adaptermanager", () => {
 
@@ -90,6 +96,8 @@ describe("the rubicon adapter", () => {
         slot;
 
     beforeEach(() => {
+      rubiconAdapter = new RubiconAdapter();
+
       sandbox.stub(adloader, "loadScript");
       sandbox.spy(rubiconAdapter, "callBids");
 
@@ -101,14 +109,18 @@ describe("the rubicon adapter", () => {
         addKW: sandbox.spy(),
         getElementId: () => "/19968336/header-bid-tag-0",
         getRawResponses: () => {},
-        getRawResponseBySizeId: () => {}
+        getRawResponseBySizeId: () => {},
+        getAdServerTargetingByKey: key => ({
+          "rpfl_14062": ["15_tier"],
+          "rpfl_elemid": ["/19968336/header-bid-tag-0"]
+        }[key])
       };
 
       window.rubicontag = {
         cmd: {
           push: cb => cb()
         },
-        setIntegration: sandbox.spy(),
+        setIntegration: () => {},
         run: () => {},
         addEventListener: () => {},
         setUserKey: sandbox.spy(),
@@ -151,20 +163,24 @@ describe("the rubicon adapter", () => {
 
     });
 
+    it("should load the fastlane SDK if not loaded", () => {
+
+      rubiconAdapter.callBids(bidderRequest);
+
+      let pathToSDK = adloader.loadScript.getCall(0).args[0];
+      expect(pathToSDK).to.equal(`http://ads.rubiconproject.com/header/${bidderRequest.bids[0].params.accountId}.js`);
+
+      rubiconAdapter.callBids(bidderRequest);
+      expect(adloader.loadScript.calledOnce).to.equal(true);
+
+    });
+
     describe("when doing fastlane slot configuration", () => {
 
       beforeEach(() => {
-        rubiconAdapter.callBids(bidderRequest);
-      });
-
-      it("should load the fastlane SDK if not loaded", () => {
-
-        let pathToSDK = adloader.loadScript.getCall(0).args[0];
-        expect(pathToSDK).to.equal(`http://ads.rubiconproject.com/header/${bidderRequest.bids[0].params.accountId}.js`);
+        sandbox.spy(window.rubicontag, 'setIntegration');
 
         rubiconAdapter.callBids(bidderRequest);
-        expect(adloader.loadScript.calledOnce).to.equal(true);
-
       });
 
       it("should make a valid call to rubicontag.defineSlot", () => {
@@ -217,12 +233,41 @@ describe("the rubicon adapter", () => {
 
     });
 
-    describe("when handling fastlane responses", () => {
+    describe("rubicon targeting", () => {
 
       beforeEach(() => {
-        // need a fresh rubicon adapter for these tests to reset private state.
+        // need new adapter to reset private state
         rubiconAdapter = new RubiconAdapter();
       });
+
+      it("should register default bidder settings (once) when configured", () => {
+
+        sandbox.spy(bidManager, "registerDefaultBidderSetting");
+
+        sandbox.stub(window.rubicontag, 'setIntegration', () => ({
+          pbjsRubiconTargeting: true
+        }));
+
+        rubiconAdapter.callBids(bidderRequest);
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.registerDefaultBidderSetting.calledOnce).to.equal(true);
+
+      });
+
+      it("should not register default bidder settings when not configured", () => {
+
+        sandbox.spy(bidManager, "registerDefaultBidderSetting");
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        expect(bidManager.registerDefaultBidderSetting.called).to.equal(false);
+
+      })
+
+    });
+
+    describe("when handling fastlane responses", () => {
 
       describe("individually through events", () => {
 
@@ -300,11 +345,16 @@ describe("the rubicon adapter", () => {
           expect(bids[0].width).to.equal(300);
           expect(bids[0].height).to.equal(250);
           expect(bids[0].cpm).to.equal(0.811);
+          expect(bids[0].rubiconTargeting['rpfl_14062']).to.equal("15_tier");
+          expect(bids[0].rubiconTargeting['rpfl_elemid']).to.equal("/19968336/header-bid-tag-0");
 
           expect(bids[1].bidderCode).to.equal("rubicon");
           expect(bids[1].width).to.equal(320);
           expect(bids[1].height).to.equal(50);
           expect(bids[1].cpm).to.equal(0.59);
+          expect(bids[1].rubiconTargeting['rpfl_14062']).to.equal("15_tier");
+          expect(bids[1].rubiconTargeting['rpfl_elemid']).to.equal("/19968336/header-bid-tag-0");
+
         })
 
       });

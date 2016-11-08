@@ -1,0 +1,81 @@
+<!doctype html>
+<html amp lang="en">
+  <head>
+      <!--
+      This is an example AMP page. This example includes:
+
+      amp_page.html     host on publisher's amp domain (amp.publisher.com)
+      amp_page.html     (canonical) host on publisher's main domain (publisher.com -- implied, not
+                            part of example)
+      remote.html       host on publisher's amp-x-domain domain (amp-x-domain.publisher.com)
+      creative.html     script tag returned by ad server to fill with Prebid demand
+
+      -->
+    <meta charset="utf-8">
+    <title>Hello, AMPs</title>
+    <link rel="canonical" href="http://example.ampproject.org/article-metadata.html" />
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+
+      <!-- The following meta tag specifies the path to the publisher-hosted file to use as the
+        AMP x-domain host. The domain for ./remote.html must be different from the domain for
+        ./amp_page.html to be a cross domain (secure, unfriendly) iframe.  In this example the
+        domains and ports are:
+            https://publisher.com:9999/amp_page.html
+                and
+            https://amp.publisher.com:5000/remote.html
+
+            Further reading
+            AMP documentation <amp-ad> spec
+            https://www.ampproject.org/docs/reference/components/amp-ad
+            See sections on "Running ads from a custom domain" and "Enhance incoming ad
+            configuration" for more details on techniques used here.
+         -->
+    <meta name="amp-3p-iframe-src" content="https://amp.publisher.com:5000/remote.html">
+
+    <script async custom-element="amp-ad" src="https://cdn.ampproject.org/v0/amp-ad-0.1.js"></script>
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "NewsArticle",
+        "headline": "Open-source framework for publishing content",
+        "datePublished": "2015-10-07T12:02:41Z",
+        "image": [
+          "logo.jpg"
+        ]
+      }
+    </script>
+    <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+    <script async src="https://cdn.ampproject.org/v0.js"></script>
+  </head>
+  <body>
+    <h1>Welcome to the mobile web</h1>
+
+    <amp-ad
+      width="300"
+      height="250"
+      layout="fixed"
+      type="doubleclick"
+      data-slot="/19968336/header-bid-tag-1">
+    </amp-ad>
+
+    <amp-ad
+      width="300"
+      height="250"
+      layout="fixed"
+      type="doubleclick"
+      data-slot="/19968336/header-bid-tag-2">
+    </amp-ad>
+
+  <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam aliquam ac orci vitae cursus.
+         Nulla rutrum egestas felis ut bibendum. Maecenas blandit tellus eu turpis posuere condimentum sit amet eget eros. Donec sollicitudin sit amet enim ut ultricies. Nunc semper enim a dignissim convallis. Vestibulum faucibus eget ante non pellentesque. Maecenas convallis consectetur dolor, non facilisis felis interdum id. Cras ac leo et massa facilisis porttitor ut vitae dolor. Phasellus odio felis, pharetra vel sem vitae, ultricies ornare sapien. In sodales semper ultricies.
+
+Suspendisse potenti. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Integer tempus rutrum libero, sit amet finibus sapien rutrum sed. Vestibulum accumsan turpis vel est cursus vulputate. Nam id risus ligula. Praesent metus elit, iaculis sit amet egestas id, interdum id nibh. Nullam egestas tempor lorem at consectetur. Fusce sit amet mattis massa, id semper elit. Mauris blandit lectus a orci lobortis malesuada.
+
+Donec id turpis quam. Morbi fringilla justo nisi, et mattis nibh laoreet non. Aliquam orci eros, tincidunt a feugiat id, gravida ut nisl. Morbi et arcu facilisis, congue mauris ut, ultricies ligula. Vivamus vulputate est non facilisis iaculis. Phasellus quis auctor odio. Nulla facilisi. Sed convallis feugiat erat, sit amet tincidunt justo bibendum ut. Sed maximus justo sit amet pharetra tincidunt. Vivamus laoreet nisi vel est feugiat, sed egestas ante congue.
+
+Nunc ultricies sodales dolor eget semper. Phasellus ac ligula ac mi fermentum ornare sed et lacus. Curabitur ante enim, maximus ac lacus in, hendrerit mollis enim. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas posuere nisl ac nisl sagittis faucibus. Quisque pellentesque vehicula lectus, ac malesuada dui mollis pulvinar. Nam in lectus placerat eros feugiat dictum ut vel quam. Etiam magna mauris, euismod in felis sodales, interdum ultricies nisl. Nunc elit mi, pellentesque vel est nec, tempus dignissim purus. Praesent pharetra, odio ut cursus dictum, erat felis gravida lorem, at pretium justo dolor quis odio. Mauris tincidunt accumsan mi, gravida condimentum enim vulputate at. Phasellus pretium hendrerit commodo. Quisque blandit rhoncus erat, sed tincidunt dolor rutrum et.
+
+Nunc nec condimentum mauris, vel porta sem. Donec finibus sapien lacus, quis faucibus neque lobortis non. Nam faucibus nunc odio. Aliquam dolor nisl, placerat sed ipsum quis, facilisis sollicitudin nisi. Nullam sed ultrices enim. Ut sollicitudin mi dignissim, faucibus massa in, pellentesque velit. Donec auctor vel libero in posuere. Ut venenatis odio nec euismod egestas. Nunc posuere pretium sapien finibus sagittis. Nunc volutpat ante eget eleifend consequat. Donec sed quam sit amet quam venenatis pulvinar. Nullam in ex id magna pellentesque tempus.
+</div>
+  </body>
+</html>

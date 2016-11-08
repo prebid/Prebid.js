@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -120,7 +120,7 @@ module.exports = function (config) {
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
-      'karma-sinon',
+      'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
       'karma-html-reporter',
