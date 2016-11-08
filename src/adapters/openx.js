@@ -40,6 +40,10 @@ var OpenxAdapter = function OpenxAdapter(options) {
       if (bid.params.pgid) {
         opts.pgid = bid.params.pgid;
       }
+
+      if (bid.sizes) {
+        opts.sizes = bid.params.sizes;
+      }
     }
 
     _requestBids();
@@ -62,6 +66,10 @@ var OpenxAdapter = function OpenxAdapter(options) {
 
         if (opts.pgid) {
           POX.addPage(opts.pgid);
+        }
+
+        if (opts.sizes) {
+          POX.setAdSizes(opts.sizes);
         }
 
         // Add each ad unit ID
