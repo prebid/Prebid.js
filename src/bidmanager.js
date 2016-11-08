@@ -4,7 +4,6 @@ import {getPriceBucketString} from './cpmBucketManager';
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var events = require('./events');
-var adaptermanager = require('./adaptermanager');
 
 var objectType_function = 'function';
 
@@ -50,8 +49,7 @@ function getBidders(bid) {
  * @returns {*|number}
  */
 function countExpectedBids(bid) {
-  const bidder = bid.bidder;
-  const adapter = adaptermanager.bidderRegistry[bidder];
+  const adapter = $$PREBID_GLOBAL$$.getBidderRegistry()[bid.bidder];
   const countBids = adapter && adapter.countBids || function() { return 1; };
   return countBids(bid);
 }
