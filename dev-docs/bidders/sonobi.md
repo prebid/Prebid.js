@@ -39,5 +39,6 @@ biddercode_longer_than_12: false
 
 ### Caveats
 
-* Ask your account manager if you should use DFP adUnit code format or Sonobi Placement Id format
+* The Placement Id format is now deprecated. Your account manager will be in contact to help with transitioning to the adUnit format. 
+* More detailed instructions can be found [here](https://sonobi.atlassian.net/wiki/display/PP/Prebid.js+Implementation+Guide).
 * If you require assistance with any of our open source code, please email support at github@sonobi.com
