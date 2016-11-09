@@ -44,7 +44,9 @@ describe("PulsePoint Adapter Tests", () => {
           params: {
             cp: "p10000",
             ct: "t10000",
-            cf: "300x250"
+            cf: "300x250",
+            param1: "value1",
+            param2: 2
           }
         },{
           placementCode: "/DfpAccount2/slot2", 
@@ -79,6 +81,8 @@ describe("PulsePoint Adapter Tests", () => {
     expect(requests[0].cu).to.equal('http://bid.contextweb.com/header/tag');
     expect(requests[0].adUnitId).to.equal('/DfpAccount1/slot1');
     expect(requests[0]).to.have.property('callback');
+    expect(requests[0].param1).to.equal('value1');
+    expect(requests[0].param2).to.equal(2);
     // //slot 2
     expect(requests[1].cp).to.equal('p20000');
     expect(requests[1].ct).to.equal('t20000');
