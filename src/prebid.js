@@ -135,6 +135,12 @@ function setTargeting(targetingConfig) {
   });
 }
 
+function getStandardKeys() {
+  return bidmanager.getStandardBidderAdServerTargeting()        // in case using a custom standard key set
+                   .map(targeting => targeting.key)
+                   .concat(CONSTANTS.TARGETING_KEYS).filter(uniques);     // standard keys defined in the library.
+}
+
 function getWinningBids(adUnitCode) {
   // use the given adUnitCode as a filter if present or all adUnitCodes if not
   const adUnitCodes = adUnitCode ?
@@ -165,12 +171,15 @@ function getWinningBidTargeting() {
     .filter(bid => bid.dealId)
     .map(bid => bid.adserverTargeting.hb_deal = bid.dealId);
 
+  let standardKeys = getStandardKeys();
   winners = winners.map(winner => {
     return {
-      [winner.adUnitCode]: Object.keys(winner.adserverTargeting, key => key)
-        .map(key => {
-          return { [key.substring(0, 20)]: [winner.adserverTargeting[key]] };
-        })
+      [winner.adUnitCode]: Object.keys(winner.adserverTargeting)
+        .filter(key =>
+          typeof winner.sendStandardTargeting === "undefined" ||
+          winner.sendStandardTargeting ||
+          standardKeys.indexOf(key) === -1)
+        .map(key => ({ [key.substring(0, 20)]: [winner.adserverTargeting[key]] }))
     };
   });
 
@@ -191,16 +200,11 @@ function getDealTargeting() {
  * Get custom targeting keys for bids that have `alwaysUseBid=true`.
  */
 function getAlwaysUseBidTargeting() {
-  //in case using a custom standard key set, we'll capture those here
-  let standardKeys = bidmanager.getStandardBidderAdServerTargeting().map(targeting =>{
-    return targeting.key;
-  });
-  //then append standard keys defined in the library.
-  standardKeys = standardKeys.concat(CONSTANTS.TARGETING_KEYS).filter(uniques);
+  let standardKeys = getStandardKeys();
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.alwaysUseBid) {
       return {
-        [bid.adUnitCode]: Object.keys(bid.adserverTargeting, key => key).map(key => {
+        [bid.adUnitCode]: Object.keys(bid.adserverTargeting).map(key => {
           // Get only the non-standard keys of the losing bids, since we
           // don't want to override the standard keys of the winning bid.
           if (standardKeys.indexOf(key) > -1) {

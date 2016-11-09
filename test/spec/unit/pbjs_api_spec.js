@@ -223,13 +223,13 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(targeting, expected);
     });
 
-    it("should not ovewrite winning bids custom keys targeting key when the bid has `alwaysUseBid` set to `true`", () => {
+    it("should not overwrite winning bids custom keys targeting key when the bid has `alwaysUseBid` set to `true`", () => {
 
       //mimic a bidderSetting.standard key here for each bid and alwaysUseBid true for every bid
       $$PREBID_GLOBAL$$._bidsReceived.forEach(bid => {
         bid.adserverTargeting.custom_ad_id = bid.adId;
         bid.alwaysUseBid = true;
-      })
+      });
       $$PREBID_GLOBAL$$.bidderSettings = {
         "standard": {
           adserverTargeting: [{
@@ -282,6 +282,30 @@ describe('Unit: Prebid Module', function () {
 
     });
 
+    it("should not send standard targeting keys when the bid has `sendStandardTargeting` set to `false`", () => {
+
+      $$PREBID_GLOBAL$$._bidsReceived.forEach(bid => {
+        bid.adserverTargeting.custom_ad_id = bid.adId;
+        bid.sendStandardTargeting = false;
+      });
+
+      var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
+
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          foobar: '300x250',
+          custom_ad_id: '233bcbee889d46d'
+        },
+        '/19968336/header-bid-tag1': {
+          foobar: '728x90',
+          custom_ad_id:'24bd938435ec3fc'
+        }
+      };
+
+      assert.deepEqual(targeting, expected);
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+
+    });
 
   });
 
