@@ -87,7 +87,10 @@ function RubiconAdapter() {
     // defaults
     position = position || 'btf';
 
-    var parsedSizes = RubiconAdapter.masSizeOrdering(bid.sizes);
+    // use rubicon sizes if provided, otherwise adUnit.sizes
+    var parsedSizes = RubiconAdapter.masSizeOrdering(Array.isArray(bid.params.sizes) ?
+      bid.params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
+    );
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [
@@ -95,7 +98,7 @@ function RubiconAdapter() {
       'site_id', siteId,
       'zone_id', zoneId,
       'size_id', parsedSizes[0],
-      'alt_size_ids', parsedSizes.slice(1).join(','),
+      'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
       'p_pos', position,
       'rp_floor', '0.01',
       'tk_flint', 'pbjs.lite',

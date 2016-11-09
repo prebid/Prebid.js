@@ -221,6 +221,20 @@ describe('the rubicon adapter', () => {
 
       });
 
+      it('should use rubicon sizes if present', () => {
+
+        var sizesBidderRequest = clone(bidderRequest);
+        sizesBidderRequest.bids[0].params.sizes = [55, 57, 59];
+
+        rubiconAdapter.callBids(sizesBidderRequest);
+
+        let query = parseQuery(xhr.requests[0].url.split('?')[1]);
+
+        expect(query['size_id']).to.equal('55');
+        expect(query['alt_size_ids']).to.equal('57,59');
+
+      })
+
     });
 
 
