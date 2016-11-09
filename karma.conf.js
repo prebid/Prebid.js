@@ -115,7 +115,6 @@ module.exports = function (config) {
     plugins: [
       'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
-      'karma-nyan-reporter',
       'karma-coverage',
       'karma-es5-shim',
       'karma-mocha',
