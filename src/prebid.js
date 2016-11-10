@@ -267,6 +267,7 @@ function getAllTargeting(adUnitCode) {
       });
     });
   });
+  console.log('targeting ', targeting);
   return targeting;
 }
 

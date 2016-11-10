@@ -47,7 +47,7 @@ function bidsBackAdUnit(adUnitCode) {
       .filter(bid => bid.placementCode === adUnitCode))
     .reduce(flatten)
     .map(bid => {
-      return bid.bidder === 'indexExchange' ?
+      return bid.bidder === 'indexExchange' || bid.bidder === 'sonobi' ?
           bid.sizes.length :
           1;
     }).reduce(add, 0);
@@ -66,7 +66,7 @@ function bidsBackAll() {
     .reduce(flatten)
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
     .map(bid => {
-      return bid.bidder === 'indexExchange' ?
+      return bid.bidder === 'indexExchange' || bid.bidder === 'sonobi' ?
         bid.sizes.length :
         1;
     }).reduce((a, b) => a + b, 0);
