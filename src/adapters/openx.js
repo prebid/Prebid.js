@@ -42,7 +42,7 @@ var OpenxAdapter = function OpenxAdapter(options) {
       }
 
       if (bid.sizes) {
-        opts.sizes = bid.params.sizes;
+        opts.sizes = utils.parseSizesInput(bid.sizes);
       }
     }
 
