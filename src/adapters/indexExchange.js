@@ -530,8 +530,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   }
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
+    countBids: _countBids
   };
 };
+
+function _countBids(bid) {
+  return bid && bid.sizes && bid.sizes.length || null;
+}
 
 module.exports = IndexExchangeAdapter;

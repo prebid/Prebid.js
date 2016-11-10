@@ -851,4 +851,12 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return getWinningBids(adUnitCode);
 };
 
+/**
+ * Returns the adaptermanager.bidderRegistry
+ * @returns {*}
+ */
+$$PREBID_GLOBAL$$.getBidderRegistry = function() {
+  return adaptermanager.bidderRegistry;
+};
+
 processQue();

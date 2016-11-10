@@ -1,4 +1,4 @@
-import { uniques, flatten } from './utils';
+import { uniques, flatten, add } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -40,34 +40,38 @@ function getBidders(bid) {
   return bid.bidder;
 }
 
+/**
+ * Bidders handle multiple requests and multiple sizes in different ways.
+ * A Bidder Adapter can export a `countBids` function if this is anything
+ * other than the default behavior (e.g. a bid object in the `bidderRequest` array
+ * is counted as 1 bid response expected).
+ * @param bid
+ * @returns {*|number}
+ */
+function countExpectedBids(bid) {
+  const adapter = $$PREBID_GLOBAL$$.getBidderRegistry()[bid.bidder];
+  const countBids = adapter && adapter.countBids || function() { return 1; };
+  return countBids(bid);
+}
+
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids
       .filter(bid => bid.placementCode === adUnitCode))
     .reduce(flatten)
-    .map(bid => {
-      return bid.bidder === 'indexExchange' ?
-          bid.sizes.length :
-          1;
-    }).reduce(add, 0);
+    .map(countExpectedBids)
+    .reduce(add, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
-}
-
-function add(a, b) {
-  return a + b;
 }
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
     .reduce(flatten)
-    .map(bid => {
-      return bid.bidder === 'indexExchange' ?
-        bid.sizes.length :
-        1;
-    }).reduce(add, 0);
+    .map(countExpectedBids)
+    .reduce(add, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.length;
   return requested === received;
