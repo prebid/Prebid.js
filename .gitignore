@@ -5,6 +5,7 @@ build
 # Test Files
 test/app
 gpt.html
+gpt-mlane.html
 gpt-each-bidder3.html
 
 # Selenium files
