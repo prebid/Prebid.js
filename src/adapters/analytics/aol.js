@@ -186,7 +186,7 @@ export default utils.extend(adapter({
       hbauctionid: auctionParams.hbauctionid,
       hbwinner: getBidderId(adUnit.winner.bidder),
       pubcpm: adUnit.winner.cpm,
-      hbdealid: adUnit.winner.dealId ? `;hbdealid=${adUnit.winner.dealId}` : ''
+      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : ''
     };
   },
 
@@ -196,7 +196,7 @@ export default utils.extend(adapter({
       hbbid: bid.cpm || 0,
       hbstatus: getStatusCode(bid),
       hbtime: bid.timeToRespond || '',
-      hbdealid: bid.dealId ? `;hbdealid=${bid.dealId}` : ''
+      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : ''
     };
   },
 
