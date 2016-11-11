@@ -118,7 +118,11 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     //append referrer
     if (referrer === '') {
-      referrer = utils.getTopWindowUrl();
+      try {
+        referrer = utils.getTopWindowUrl();
+      } catch (err) {
+        referrer = 'iframed';
+      }
     }
 
     jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
