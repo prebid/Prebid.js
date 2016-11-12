@@ -48,15 +48,21 @@ function RubiconAdapter() {
     var bids = bidderRequest.bids || [];
 
     bids.forEach(bid => {
-      ajax(buildOptimizedCall(bid), function bidCallback(responseText) {
+      try {
+        ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+      } catch(err) {
+        utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
+      }
+
+      function bidCallback(responseText) {
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
         } catch (err) {
           if (typeof err === "string") {
-            utils.logWarn(`${err} when processing rubicon for placement code ${bid.placementCode}`);
+            utils.logWarn(`${err} when processing rubicon response for placement code ${bid.placementCode}`);
           } else {
-            utils.logError('Error processing response in rubicon for placement code ' + bid.placementCode, null, err);
+            utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
           }
 
           //indicate that there is no bid for this placement
@@ -65,7 +71,7 @@ function RubiconAdapter() {
           badBid.error = err;
           bidmanager.addBidResponse(bid.placementCode, badBid);
         }
-      }, undefined, {withCredentials: true});
+      }
     });
   }
 
@@ -91,6 +97,10 @@ function RubiconAdapter() {
     var parsedSizes = RubiconAdapter.masSizeOrdering(Array.isArray(bid.params.sizes) ?
       bid.params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
     );
+
+    if(parsedSizes.length < 1) {
+      throw "no valid sizes";
+    }
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [

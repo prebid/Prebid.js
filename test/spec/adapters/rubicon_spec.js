@@ -233,7 +233,18 @@ describe('the rubicon adapter', () => {
         expect(query['size_id']).to.equal('55');
         expect(query['alt_size_ids']).to.equal('57,59');
 
-      })
+      });
+
+      it('should not send a request if no valid sizes', () => {
+
+        var sizesBidderRequest = clone(bidderRequest);
+        sizesBidderRequest.bids[0].sizes = [[620,250],[300,251]];
+
+        rubiconAdapter.callBids(sizesBidderRequest);
+
+        expect(xhr.requests.length).to.equal(0);
+
+      });
 
     });
 
