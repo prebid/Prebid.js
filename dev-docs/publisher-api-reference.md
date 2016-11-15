@@ -23,6 +23,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.getAdserverTargetingForAdUnitCode([adUnitCode])](#module_pbjs.getAdserverTargetingForAdUnitCode) ⇒ `Object`
   * [.getBidResponses()](#module_pbjs.getBidResponses) ⇒ `Object`
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
+  * [.getHighestCpmBids([adUnitCode])](#module_pbjs.getHighestCpmBids) ⇒ `Array`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
   * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
@@ -266,8 +267,6 @@ This function returns the bid responses at the given moment.
 </div>
 </div>
 
-
-
 <hr class="full-rule">
 
 <a name="module_pbjs.getBidResponsesForAdUnitCode"></a>
@@ -284,6 +283,17 @@ Returns bidResponses for the specified adUnitCode. See full documentation at [pb
 | Param | Scope | Type | Description |
 | --- | --- | --- | --- |
 | adUnitCode | Required | `String` | adUnitCode |
+
+<hr class="full-rule">
+
+<a name="module_pbjs.getHighestCpmBids"></a>
+
+### pbjs.getHighestCpmBids([adUnitCode]) ⇒ `Array`
+
+Use this method to retrieve an array of winning bids.
+
++ `pbjs.getHighestCpmBids()`: with no argument, returns an array of winning bid objects for each ad unit on page
++ `pbjs.getHighestCpmBids(adUnitCode)`: when passed an ad unit code, returns an array with the winning bid object for that ad unit
 
 <hr class="full-rule">
 
