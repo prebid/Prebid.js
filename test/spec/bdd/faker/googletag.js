@@ -3,9 +3,6 @@ import faker from 'faker';
 var Slot = function Slot({ code, divId }) {
   code = code || `adunitcode-${randomFive()}`;
   divId = divId || `div-id-${randomFive()}`;
-  console.log(' Slot constructor');
-  console.log('divId: ', divId);
-  console.log('code: ', code);
 
   var slot = {
     targeting: [],

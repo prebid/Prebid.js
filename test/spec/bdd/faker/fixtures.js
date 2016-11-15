@@ -1,6 +1,5 @@
 import faker from 'faker';
 import { makeSlot } from './googletag';
-import adaptermanager from 'src/adaptermanager';
 
 export function makePlacement(overrides = {}) {
   return Object.assign(makeSlot(
@@ -26,14 +25,16 @@ export function makeBidder(overrides = {}) {
       abc: faker.random.alphaNumeric(10),
       xyz: faker.random.number({ max: 10, precision: 2 })
     },
-    callBids: (func) => {
-      if (typeof func === 'function') {
-        func.apply(this, ...arguments);
-      } else {
-        console.log('bidder callBids');
-      }
-    }
+    callBids: sinon.spy()
   }, overrides);
 
   return adapter;
+}
+
+export function makeRequest(overrides = {}) {
+  return Object.assign({
+    adUnits: overrides.adUnits,
+    bidsBackHandler: sinon.spy(),
+    timeout: 2000
+  }, overrides);
 }
