@@ -29,7 +29,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   function _requestBid(bidReq) {
     // build bid request object
     var domain = window.location.host;
-    var page = window.location.pathname + location.search + location.hash;
+    var page = window.location.host + window.location.pathname + location.search + location.hash;
 
     var tagId = utils.getBidIdParamater('tagid', bidReq.params);
     var bidFloor = Number(utils.getBidIdParamater('bidfloor', bidReq.params));

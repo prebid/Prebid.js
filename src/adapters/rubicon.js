@@ -159,6 +159,8 @@ var RubiconAdapter = function RubiconAdapter() {
       bidResponse.width = size[0];
       bidResponse.height = size[1];
 
+      bidResponse.rubiconTargeting = _setTargeting(slot, slot.bid.params.accountId);
+
       // DealId
       if (ad.deal) {
         bidResponse.dealId = ad.deal;
@@ -180,18 +182,16 @@ var RubiconAdapter = function RubiconAdapter() {
 
   /**
    * download the rubicontag sdk
-   * @param {Object} options
-   * @param {String} options.accountId
+   * @param {String} accountId
    * @param {Function} callback
    */
-  function _initSDK(options, done) {
+  function _initSDK(accountId, done) {
     if (RUBICON_INITIALIZED) {
       return;
     }
 
     RUBICON_INITIALIZED = 1;
 
-    var accountId  = options.accountId;
     var scripttUrl = RUBICONTAG_URL + accountId + '.js';
 
     adloader.loadScript(scripttUrl, done, true);
@@ -309,12 +309,64 @@ var RubiconAdapter = function RubiconAdapter() {
   }
 
   /**
+   * Register the default bidder settings for rubicon targeting
+   * @param {String} accountId
+   */
+  var _registerBidderSettings = (function() {
+    var _called = false;
+
+    // this function wrapped with closure to only run once
+    return accountId => {
+      if(!_called) {
+
+        bidmanager.registerDefaultBidderSetting(
+          RUBICON_BIDDER_CODE,
+          {
+            sendStandardTargeting: false,
+            suppressEmptyKeys: true,
+            adserverTargeting: [
+              'rpfl_' + accountId,
+              'rpfl_elemid'
+            ].map(key => ({
+                key: key,
+                val: bidResponse => bidResponse.rubiconTargeting && bidResponse.rubiconTargeting[key]
+              })
+            )
+          }
+        );
+
+        _called = true;
+      }
+    };
+  })();
+
+
+  /**
+   * Gets targeting information off bid slot
+   * @param {RubiconSlot} slot
+   * @param {String} accountId
+   * @returns {Object} key value pairs for targeting
+   */
+  function _setTargeting(slot, accountId) {
+    var targeting = {};
+    [
+      'rpfl_' + accountId,
+      'rpfl_elemid'
+    ].forEach((key) => {
+      targeting[key] = slot.getAdServerTargetingByKey(key)[0];
+    });
+
+    return targeting;
+  }
+
+  /**
    * Request the specified bids from
    * Rubicon
    * @param {Object} bidderRequest the bidder-level params (from prebid)
    * @param {Array} params.bids the bids requested
    */
   function _callBids(bidderRequest) {
+    var accountId = bidderRequest.bids[0].params.accountId;
 
     // start the timer; want to measure from
     // even just loading the SDK
@@ -328,11 +380,14 @@ var RubiconAdapter = function RubiconAdapter() {
 
     // on the first bid, set up the SDK
     if (!RUBICON_INITIALIZED) {
-      _initSDK(bidderRequest.bids[0].params);
+      _initSDK(accountId);
     }
 
     _rready(function () {
-      window.rubicontag.setIntegration('$$PREBID_GLOBAL$$');
+      var config = window.rubicontag.setIntegration('$$PREBID_GLOBAL$$');
+      if(config && config.pbjsRubiconTargeting) {
+        _registerBidderSettings(accountId);
+      }
 
       var slots = [];
       var bids  = bidderRequest.bids;
