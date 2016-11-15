@@ -31,8 +31,8 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     var domain = window.location.host;
     var page = window.location.host + window.location.pathname + location.search + location.hash;
 
-    var tagId = utils.getBidIdParamater('tagid', bidReq.params);
-    var bidFloor = Number(utils.getBidIdParamater('bidfloor', bidReq.params));
+    var tagId = utils.getBidIdParameter('tagid', bidReq.params);
+    var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
     var adW = 0;
     var adH = 0;
 
