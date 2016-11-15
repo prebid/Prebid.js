@@ -1,5 +1,6 @@
 AOL Prebid 1.5.0
 ----------------
+Reporting support for Deals.
 BUGFIX: Source version now has no errors associated with window=window.
 
 
