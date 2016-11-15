@@ -1,4 +1,4 @@
-import {formatQS} from './url';
+import {format, formatQS, parse} from './url';
 
 //Adserver parent class
 const AdServer = function(attr) {
@@ -28,9 +28,22 @@ exports.dfpAdserver = function (options, urlComponents) {
     return encodeURIComponent(formatQS(targeting));
   };
 
+  /**
+   * Replace regional-specific url to match DFP origin url
+   */
+  const matchOriginUrl = function(url) {
+    const parsedUrl = parse(url);
+
+    parsedUrl.protocol = 'https';
+    parsedUrl.host = 'ib.adnxs.com';
+
+    const matchedUrl = format(parsedUrl);
+    return encodeURIComponent(matchedUrl);
+  };
+
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
-    this.urlComponents.search.description_url = encodeURIComponent(bid.vastUrl);
+    this.urlComponents.search.description_url = matchOriginUrl(bid.vastUrl);
     this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
     this.urlComponents.correlator = Date.now();
   };
