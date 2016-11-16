@@ -1,7 +1,7 @@
-import bidmanager from "src/bidmanager";
-import bidfactory from "src/bidfactory";
-import * as utils from "src/utils";
-import {ajax} from "src/ajax";
+import bidmanager from 'src/bidmanager';
+import bidfactory from 'src/bidfactory';
+import * as utils from 'src/utils';
+import {ajax} from 'src/ajax';
 
 /**
  * Adapter for requesting bids from AdKernel white-label platform
@@ -21,9 +21,9 @@ const AdkernelAdapter = function AdkernelAdapter() {
    * @constructor
    */
   function RtbRequestDispatcher() {
-    const _dispatch = {},
-      originalBids = {},
-      site = createSite();
+    const _dispatch = {};
+    const originalBids = {};
+    const site = createSite();
 
     //translate adunit info into rtb impression dispatched by host/zone
     this.addImp = function (bid) {
