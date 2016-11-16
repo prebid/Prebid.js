@@ -47,11 +47,12 @@ var ConversantAdapter = function () {
   };
 
   var getDevice = function () {
+    const language = n.language ? 'language' : 'userLanguage';
     return {
       h: screen.height,
       w: screen.width,
       dnt: getDNT() ? 1 : 0,
-      language: n.language.split('-')[0],
+      language: n[language].split('-')[0],
       make: n.vendor ? n.vendor : '',
       ua: n.userAgent
     };
