@@ -20,7 +20,6 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
-    "rubiconLite",
     "sonobi",
     "sovrn",
     "springserve",
@@ -52,6 +51,11 @@
     {
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "rubicon": {
+        "alias": "rubiconLite"
       }
     }
 ]
