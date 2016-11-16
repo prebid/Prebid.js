@@ -7,7 +7,7 @@ import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skipppable', 'playback_method', 'frameworks'];
+  'startdelay', 'skippable', 'playback_method', 'frameworks'];
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -213,4 +213,3 @@ AppnexusAstAdapter.createNew = function() {
 };
 
 module.exports = AppnexusAstAdapter;
-
