@@ -80,6 +80,7 @@ var cygnus_index_start = function () {
       throw 'Invalid Site ID';
     }
 
+    timeoutDelay = Number(timeoutDelay);
     if (typeof timeoutDelay === 'number' && timeoutDelay % 1 === 0 && timeoutDelay >= 0) {
       this.timeoutDelay = timeoutDelay;
     }
@@ -114,8 +115,8 @@ var cygnus_index_start = function () {
   }
 
   OpenRTBRequest.prototype.serialize = function () {
-    var json = '{"id":' + this.requestID + ',"site":{"page":"' + quote(this.sitePage) + '"';
-    if (typeof document.referrer === 'string') {
+    var json = '{"id":"' + this.requestID + '","site":{"page":"' + quote(this.sitePage) + '"';
+    if (typeof document.referrer === 'string' && document.referrer !== "") {
       json += ',"ref":"' + quote(document.referrer) + '"';
     }
 
@@ -225,7 +226,8 @@ var cygnus_index_start = function () {
     } else {
       scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
     }
-    scriptSrc += '/headertag?v=9&x3=1&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI;
+    var prebidVersion = encodeURIComponent("$prebid.version$");
+    scriptSrc += '/headertag?v=9&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
     }
@@ -314,14 +316,17 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       for (var j = 0; j < bid.sizes.length; j++) {
         var validSize = false;
         for (var k = 0; k < cygnus_index_adunits.length; k++) {
-          if (bid.sizes[j][0] === cygnus_index_adunits[k][0] &&
-              bid.sizes[j][1] === cygnus_index_adunits[k][1]) {
+          if (bid.sizes[j][0] == cygnus_index_adunits[k][0] &&
+              bid.sizes[j][1] == cygnus_index_adunits[k][1]) {
+            bid.sizes[j][0] = Number(bid.sizes[j][0]);
+            bid.sizes[j][1] = Number(bid.sizes[j][1]);
             validSize = true;
             break;
           }
         }
 
         if (!validSize) {
+          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to no valid sizes");
           continue;
         }
 
@@ -339,7 +344,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 
         var siteID = Number(bid.params.siteID);
-        if (!siteID) {
+        if (typeof siteID !== "number" || siteID % 1 != 0 || siteID <= 0) {
+          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to invalid siteID");
           continue;
         }
         if (siteID && typeof cygnus_index_args.siteID === 'undefined') {
@@ -349,6 +355,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
           firstAdUnitCode = bid.placementCode;
           var slotID = bid.params[requiredParams[0]];
+          if ( typeof slotID !== 'string' && typeof slotID !== 'number' ){
+            utils.logError(ADAPTER_NAME + " bid contains invalid slot ID from " + bid.placementCode + ". Discarding slot");
+            continue
+          }
 
           sizeID++;
           var size = {
@@ -443,7 +453,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               var bid = bidfactory.createBid(1);
               bid.cpm = currentCPM / 100;
               bid.ad = indexObj[cpmAndSlotId][0];
-              bid.ad_id = adSlotId;
               bid.bidderCode = ADAPTER_CODE;
               bid.width = slotObj.width;
               bid.height = slotObj.height;
