@@ -180,15 +180,25 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 };
 
 exports.getTopWindowLocation = function () {
+  let location;
   try {
-    return window.top.location;
+    location = window.top.location;
   } catch (e) {
-    return window.location;
+    location = window.location;
   }
+
+  return location;
 };
 
 exports.getTopWindowUrl = function () {
-  return this.getTopWindowLocation().href;
+  let href;
+  try {
+    href = this.getTopWindowLocation().href;
+  } catch (e) {
+    href = '';
+  }
+
+  return href;
 };
 
 exports.logWarn = function (msg) {

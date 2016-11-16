@@ -201,11 +201,16 @@ function AppnexusAstAdapter() {
   }
 
   return {
-    createNew: exports.createNew,
+    createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 
 }
 
-exports.createNew = () => new AppnexusAstAdapter();
+AppnexusAstAdapter.createNew = function() {
+  return new AppnexusAstAdapter();
+};
+
+module.exports = AppnexusAstAdapter;
+

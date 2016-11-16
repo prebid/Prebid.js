@@ -60,6 +60,7 @@ $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 $$PREBID_GLOBAL$$.libLoaded = true;
 
 //version auto generated from build
+$$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
 //create adUnit array
