@@ -57,5 +57,11 @@
       "rubicon": {
         "alias": "rubiconLite"
       }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
     }
+
 ]
