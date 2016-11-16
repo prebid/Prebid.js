@@ -5,11 +5,9 @@ import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 describe('Vertoz Adapter', () => {
-
     let adapter;
     let sandbox;
     let bidsRequestBuff;
-
     const bidderRequest = {
         bidderCode: 'vertoz',
         bids: [{
@@ -48,10 +46,8 @@ describe('Vertoz Adapter', () => {
     beforeEach(() => {
         adapter = new Adapter();
         sandbox = sinon.sandbox.create();
-
         bidsRequestBuff = pbjs._bidsRequested;
         pbjs._bidsRequested = [];
-
     });
 
     afterEach(() => {
@@ -60,7 +56,6 @@ describe('Vertoz Adapter', () => {
     });
 
     describe('callBids', () => {
-
         beforeEach(() => {
             sandbox.stub(adLoader, 'loadScript');
             adapter.callBids(bidderRequest);
@@ -73,11 +68,8 @@ describe('Vertoz Adapter', () => {
     });
 
     describe('Bid response', () => {
-
         let vzBidRequest;
-
         let bidderReponse = {
-
             "vzhPlacementId": "VZ-HB-123",
             "bid": "0fac1b8a-6ba0-4641-bd57-2899b1bedeae_0",
             "adWidth": "300",
@@ -87,7 +79,6 @@ describe('Vertoz Adapter', () => {
             "slotBidId": "bidId1",
             "nurl": "<img></img>",
             "statusText": "vertoz:success"
-
         };
 
         beforeEach(() => {
@@ -95,7 +86,6 @@ describe('Vertoz Adapter', () => {
         });
 
         describe('success', () => {
-
             let firstBidReg;
             let adSpaceId;
 
@@ -123,10 +113,8 @@ describe('Vertoz Adapter', () => {
         });
 
         describe('failure', () => {
-
             let secondBidReg;
             let adSpaceId;
-
             let bidderResponse = {
                 "vzhPlacementId": "VZ-HB-456",
                 "slotBidId": "bidId2",
