@@ -36,6 +36,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.addCallback(event, func)](#module_pbjs.addCallback) ⇒ `String`
   * [.removeCallback(cbId)](#module_pbjs.removeCallback) ⇒ `String`
   * [.buildMasterVideoTagFromAdserverTag(adserverTag, options)](#module_pbjs.buildMasterVideoTagFromAdserverTag) ⇒ `String`
+  * [.setBidderSequence(order)](#module_pbjs.setBidderSequence)
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -777,7 +778,22 @@ var options = {
 
 For an example showing how to use this method, see [Show Video Ads with a DFP Video Tag]({{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html).
 
-</div>
+<hr class="full-rule" />
 
-<br />
-<br />
+<a name="module_pbjs.setBidderSequence"></a>
+
+### pbjs.setBidderSequence(order)
+
+This method shuffles the order in which bidders are called.
+
+It takes an argument `order` that currently only accepts the string `"random"` to shuffle the sequence bidders are called in.
+
+If the sequence is not set with this method, the bidders are called in the order they are defined within the `adUnit.bids` array on page, which is the current default.
+
+Example use:
+
+```javascript
+pbjs.setBidderSequence('random');
+```
+
+</div>
