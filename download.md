@@ -392,11 +392,34 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
-        <input type="checkbox" bidderCode="rubiconLite" class="bidder-check-box"> RubiconLite
+        <input type="checkbox" bidderCode="rhythmone" class="bidder-check-box"> RhythmOne
       </label>
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="vertoz" class="bidder-check-box"> Vertoz
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="adkernel" class="bidder-check-box"> AdKernel
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="conversant" class="bidder-check-box"> Conversant Media
+      </label>
+    </div>
+  </div>
 
 
 
@@ -405,7 +428,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version 0.14.0)
+(Version 0.15.0)
 </p>
 
 <div class="form-group">
