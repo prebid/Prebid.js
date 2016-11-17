@@ -53,6 +53,8 @@ gulp.task('devpack', function () {
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
+    // Remove window=window that was used to go around Uglify bug
+    .pipe(replace(/window\s*=\s*window;/g, ''))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
@@ -87,6 +89,9 @@ gulp.task('webpack', function () {
       }
     }))
     .pipe(header(banner, { prebid: prebid }))
+    // Remove window=window that was used to go around Uglify bug
+    .pipe(replace(/,?(\/\*!ADAPTER BEGIN \w+\*\/)\s*window\s*=\s*window/g, '$1'))
+    .pipe(replace(/,?(\/\*!ADAPTER END \w+\*\/)\s*window\s*=\s*window/g, '$1'))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });

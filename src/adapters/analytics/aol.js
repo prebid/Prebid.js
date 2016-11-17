@@ -30,8 +30,8 @@ const EVENTS = {
 
 let baseSchemaTemplate = template`${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
 let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
-let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}`;
-let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}`;
+let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'}`;
+let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'}`;
 
 export default utils.extend(adapter({
   url: '',
@@ -185,7 +185,8 @@ export default utils.extend(adapter({
       hbauctioneventts: auctionParams.hbauctioneventts,
       hbauctionid: auctionParams.hbauctionid,
       hbwinner: getBidderId(adUnit.winner.bidder),
-      pubcpm: adUnit.winner.cpm
+      pubcpm: adUnit.winner.cpm,
+      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : ''
     };
   },
 
@@ -194,7 +195,8 @@ export default utils.extend(adapter({
       hbbidder: getBidderId(bid.bidder),
       hbbid: bid.cpm || 0,
       hbstatus: getStatusCode(bid),
-      hbtime: bid.timeToRespond || ''
+      hbtime: bid.timeToRespond || '',
+      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : ''
     };
   },
 

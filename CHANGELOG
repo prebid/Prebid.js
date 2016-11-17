@@ -1,3 +1,14 @@
+AOL Prebid 1.5.1
+----------------
+BUGFIX: Fixed accidental build error associated with window=window.
+
+
+AOL Prebid 1.5.0
+----------------
+Reporting support for Deals.
+BUGFIX: Source version now has no errors associated with window=window.
+
+
 AOL Prebid 1.4.2
 ----------------
 BUGFIX: Fixed reporting refreshed ad units in AOL analytics.
