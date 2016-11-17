@@ -19,19 +19,26 @@ var PulsePointAdapter = function PulsePointAdapter() {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
-      var callback = bidResponseCallback(bidRequest);
-      var ppBidRequest = new window.pp.Ad({
-        cf: bidRequest.params.cf,
-        cp: bidRequest.params.cp,
-        ct: bidRequest.params.ct,
-        cn: 1,
-        ca: window.pp.requestActions.BID,
-        cu: bidUrl,
-        adUnitId: bidRequest.placementCode,
-        callback: callback
-      });
+      var ppBidRequest = new window.pp.Ad(bidRequestOptions(bidRequest));
       ppBidRequest.display();
     }
+  }
+
+  function bidRequestOptions(bidRequest) {
+    var callback = bidResponseCallback(bidRequest);
+    var options = {
+      cn: 1,
+      ca: window.pp.requestActions.BID,
+      cu: bidUrl,
+      adUnitId: bidRequest.placementCode,
+      callback: callback
+    };
+    for(var param in bidRequest.params) {
+      if(bidRequest.params.hasOwnProperty(param)) {
+        options[param] = bidRequest.params[param];
+      }
+    }
+    return options;
   }
 
   function bidResponseCallback(bid) {
