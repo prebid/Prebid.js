@@ -33,9 +33,9 @@ The following video parameters are supported.  For more information, see the vid
 
 + `mimes`: An array of strings listing the content MIME types supported, e.g., `["video/x-flv", "video/x-ms-wmv"]`.
 
-+ `minduration`: An integer that defines the minimum audio ad duration, in seconds.
++ `minduration`: An integer that defines the minimum video ad duration, in seconds.
 
-+ `maxduration`: An integer that defines the maximum audio ad duration, in seconds.
++ `maxduration`: An integer that defines the maximum video ad duration, in seconds.
 
 + `startdelay`: An integer that determines whether the ad should be shown before, during, or after the video content.  If the value is greater than 0, the position is mid-roll and the value indicates the start delay, in seconds.  Defaults to 0.
     + Pre-roll: `0`
