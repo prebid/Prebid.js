@@ -9,6 +9,16 @@ biddercode: appnexusAst
 biddercode_longer_than_12: false
 ---
 
+Advantages of using the `appnexusAst` adapter over the `appnexus`
+adapter include:
+
+- Requests all the adUnits at once, which reduces latency on page
+
+- Supports additional formats (such as Video)
+
+- Will continue to be upgraded as enhancements are made to Prebid.js
+  for expanding capabilities
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
