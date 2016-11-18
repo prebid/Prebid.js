@@ -123,8 +123,9 @@ export default utils.extend(adapter({
         adUnit = addAolParams(adUnit, adUnitsConfig, bidsReceived);
         adUnits[currentAdUnitCode] = adUnit;
       }
-      adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
-      adUnit.bids.push(Object.assign({}, bid));
+      let clonedBid = Object.assign({}, bid);
+      adUnit.winner = (adUnit.winner.cpm < clonedBid.cpm) ? clonedBid : adUnit.winner;
+      adUnit.bids.push(clonedBid);
     });
 
     for (let code in adUnits) {
