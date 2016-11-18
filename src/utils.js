@@ -180,15 +180,25 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 };
 
 exports.getTopWindowLocation = function () {
+  let location;
   try {
-    return window.top.location;
+    location = window.top.location;
   } catch (e) {
-    return window.location;
+    location = window.location;
   }
+
+  return location;
 };
 
 exports.getTopWindowUrl = function () {
-  return this.getTopWindowLocation().href;
+  let href;
+  try {
+    href = this.getTopWindowLocation().href;
+  } catch (e) {
+    href = '';
+  }
+
+  return href;
 };
 
 exports.logWarn = function (msg) {
@@ -536,5 +546,36 @@ export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
+
   return previous.cpm < current.cpm ? current : previous;
+}
+
+/**
+ * Fisher–Yates shuffle
+ * http://stackoverflow.com/a/6274398
+ * https://bost.ocks.org/mike/shuffle/
+ * istanbul ignore next
+ */
+export function shuffle(array) {
+  let counter = array.length;
+
+  // while there are elements in the array
+  while (counter > 0) {
+    // pick a random index
+    let index = Math.floor(Math.random() * counter);
+
+    // decrease counter by 1
+    counter--;
+
+    // and swap the last element with it
+    let temp = array[counter];
+    array[counter] = array[index];
+    array[index] = temp;
+  }
+
+  return array;
+}
+
+export function adUnitsFilter(filter, bid) {
+  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
 }
