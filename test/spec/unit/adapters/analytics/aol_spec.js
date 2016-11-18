@@ -155,6 +155,7 @@ describe('AOL analytics adapter', () => {
         expect(aolAnalytics.reportEvent.calledOnce).to.be.true;
         expect(aolAnalytics.reportEvent.calledWith(1)).to.be.true;
         let bids = aolAnalytics.reportEvent.getCall(0).args[1].bids;
+
         expect(bids).to.include(BIDS.EMPTY);
         expect(bids[0].getStatusCode()).to.equal(2);
       });
@@ -944,6 +945,16 @@ describe('AOL analytics adapter', () => {
         expect(url).to.contain(';pubapi=456;');
       });
 
+      it('should build url with hbwinbidid parameter', () => {
+        let bid = BIDS.VALID;
+        let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
+          aolParams: BID_CONFIGS.AOL1.params,
+          bids: [bid],
+          winner: bid
+        });
+        expect(url).to.contain(';hbwinbidid=0;');
+      });
+
       describe('should include bidders', () => {
         it('should build url with one bidder', () => {
           let bid = BIDS.VALID;
@@ -957,6 +968,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid.dealId}`);
+          expect(url).to.contain(`;hbbidid=0`);
         });
 
         it('should build url with multiple bidders', () => {
@@ -977,11 +989,13 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
+          expect(url).to.contain(`;hbbidid=0`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid2.dealId}`);
+          expect(url).to.contain(`;hbbidid=1`);
         });
 
         it('should build url with hbstatus of 1 for invalid bids', () => {
@@ -996,6 +1010,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=1;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.not.contain(`;hbdealid=`);
+          expect(url).to.contain(`;hbbidid=0`);
         });
 
         it('should build url with hbstatus of 3 for timed out bids', () => {
@@ -1010,6 +1025,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.not.contain(`;hbdealid=`);
+          expect(url).to.contain(`;hbbidid=0`);
         });
 
         it('should build url with valid and timed out bids', () => {
@@ -1030,11 +1046,13 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
+          expect(url).to.contain(`;hbbidid=0`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
           expect(url).to.not.contain(`;hbtime=${bid2.timeToRespond};hbdealid=`);
+          expect(url).to.contain(`;hbbidid=1`);
         });
       });
     });
@@ -1255,6 +1273,20 @@ describe('AOL analytics adapter', () => {
           }
         });
         expect(url).to.contain(`;hbdealid=${bid.dealId}`);
+      });
+
+      it('should build url with hbbidid parameter', () => {
+        let bid = BIDS.VALID;
+        let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.WIN, {
+          aolParams: BID_CONFIGS.AOL1.params,
+          bids: [bid],
+          winner: bid,
+          auctionParams: {
+            hbauctioneventts: 4567890,
+            hbauctionid: '123456789'
+          }
+        });
+        expect(url).to.contain(';hbbidid=0');
       });
     });
   });

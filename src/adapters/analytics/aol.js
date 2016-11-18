@@ -29,9 +29,9 @@ const EVENTS = {
 };
 
 let baseSchemaTemplate = template`${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
-let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
-let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'}`;
-let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'}`;
+let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}${'hbwinbidid'}`;
+let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'}${'hbbidid'}`;
+let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'}${'hbbidid'}`;
 
 export default utils.extend(adapter({
   url: '',
@@ -174,7 +174,8 @@ export default utils.extend(adapter({
       hbwinner: adUnit.winner.bidder ? getBidderId(adUnit.winner.bidder) : 0,
       hbprice: adUnit.winner.cpm || 0,
       hbcur: aolParams.currencyCode ? `;hbcur=${aolParams.currencyCode}` : '',
-      pubapi: aolParams.pubapiId ? `;pubapi=${aolParams.pubapiId}` : ''
+      pubapi: aolParams.pubapiId ? `;pubapi=${aolParams.pubapiId}` : '',
+      hbwinbidid: `;hbwinbidid=${adUnit.winner.aolBidId}`
     };
   },
 
@@ -186,7 +187,8 @@ export default utils.extend(adapter({
       hbauctionid: auctionParams.hbauctionid,
       hbwinner: getBidderId(adUnit.winner.bidder),
       pubcpm: adUnit.winner.cpm,
-      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : ''
+      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : '',
+      hbbidid: `;hbbidid=${adUnit.winner.aolBidId}`
     };
   },
 
@@ -196,12 +198,17 @@ export default utils.extend(adapter({
       hbbid: bid.cpm || 0,
       hbstatus: getStatusCode(bid),
       hbtime: bid.timeToRespond || '',
-      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : ''
+      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : '',
+      hbbidid: `;hbbidid=${bid.aolBidId}`
     };
   },
 
   buildEventUrl(event, adUnit) {
     let baseSchema, url;
+
+    for (let i = 0; i < adUnit.bids.length; i++) {
+      adUnit.bids[i].aolBidId = i;
+    }
 
     switch (event) {
 
