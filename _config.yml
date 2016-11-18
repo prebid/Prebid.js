@@ -76,7 +76,7 @@ nav_sections:
     name: PREBID VIDEO (BETA)
   - top_nav: dev_docs
     code: prebid-amp
-    name: PREBID FOR AMP
+    name: PREBID FOR AMP (ALPHA)
   - top_nav: dev_docs
     code: troubleshooting
     name: TROUBLESHOOTING
