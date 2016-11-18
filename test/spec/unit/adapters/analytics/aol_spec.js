@@ -155,7 +155,6 @@ describe('AOL analytics adapter', () => {
         expect(aolAnalytics.reportEvent.calledOnce).to.be.true;
         expect(aolAnalytics.reportEvent.calledWith(1)).to.be.true;
         let bids = aolAnalytics.reportEvent.getCall(0).args[1].bids;
-
         expect(bids).to.include(BIDS.EMPTY);
         expect(bids[0].getStatusCode()).to.equal(2);
       });
