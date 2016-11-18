@@ -29,8 +29,6 @@ biddercode_longer_than_12: false
 
 The following video parameters are supported.  For more information, see the video parameters in the [OpenRTB specification](http://www.iab.com/wp-content/uploads/2016/01/OpenRTB-API-Specification-Version-2-4-DRAFT.pdf).
 
-* `id`: An *Integer*.
-
 + `mimes`: An array of strings listing the content MIME types supported, e.g., `["video/x-flv", "video/x-ms-wmv"]`.
 
 + `minduration`: An integer that defines the minimum video ad duration, in seconds.
