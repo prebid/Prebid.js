@@ -76,15 +76,15 @@ The `amp-ad` elements in the page body need to be set up as shown below, especia
 
 The instructions below try to explain the code in [remote.html](https://github.com/prebid/Prebid.js/tree/master/integrationExamples/gpt/amp/remote.html) in the [AMP integration example in our repo](https://github.com/prebid/Prebid.js/tree/master/integrationExamples/gpt/amp).  When in doubt, use the AMP example files in the repo as your primary reference.
 
-The steps below are written to correspond roughly with the order in which you might write the code. For each step, we note whether the code should go in the page header or body.
+The steps below are written to correspond roughly with the order in which you might write the code.
 
 We recommend reading this side-by-side with [the AMP example files](https://github.com/prebid/Prebid.js/tree/master/integrationExamples/gpt/amp) to see exactly how it's all laid out.
 
 This file is where the Prebid auction actually runs.
 
-#### 1. Add the AMP cross-domain iFrame source file (header)
+#### 1. Add the AMP project's async file loader
 
-In your page's header, add the following JS in a script tag:
+In [remote.html](https://github.com/prebid/Prebid.js/tree/master/integrationExamples/gpt/amp/remote.html), load the `f.js` async file loader from the AMP project.  This is a standard method for loading 
 
 ```html
 <script>
@@ -108,7 +108,7 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
 ```
 
 
-#### 2. Add Prebid.js boilerplate (header)
+#### 2. Add Prebid.js boilerplate
 
 This is the standard Prebid prelude, similar to the [Basic Example]({{site.github.url}}/dev-docs/examples/basic-example.html).  Note the additional variable `requestBidsDuration`; this is passed from the `amp-ad` element's JSON attribute on the [AMP content page](#amp-content-page), and sets the auction timeout.
 
@@ -133,7 +133,7 @@ This is the standard Prebid prelude, similar to the [Basic Example]({{site.githu
 ```
 
 
-#### 3. Targeting and other helper functions (header)
+#### 3. Targeting and other helper functions
 
 The following are helper functions that make dealing with targeting settings a little easier.  In the example we assume you are doing key-value targeting in DFP against the `prebid_amp=true` key-value pair.
 
@@ -164,7 +164,7 @@ Here's a helper function that lets the page listen to the ad request from the cr
 ```
 
 
-#### 4. Send the ad to the creative (header)
+#### 4. Send the ad to the creative
 
 This function posts the ad content from the auction winner back to content page's domain where [creative.html](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/amp/creative.html) is served into the `amp-ad` element.
 
@@ -197,7 +197,7 @@ This function posts the ad content from the auction winner back to content page'
 ```
 
 
-#### 5. Load Prebid.js (header)
+#### 5. Load Prebid.js
 
 The function `loadPrebidJS()` shown below is what's called by the AMP `draw3p` function in this page's body (see next step), which is the integration point between AMP and content in third-party iframes (which is what this page is).
 
@@ -234,7 +234,7 @@ The function `loadPrebidJS()` shown below is what's called by the AMP `draw3p` f
 ```
 
 
-#### 6. Implement `draw3p`, the integration point with AMP (body)
+#### 6. Implement `draw3p`, the integration point with AMP
 
 In the page's body, implement the `draw3p` function as shown below.  Don't forget to add the arrays showing the ad networks used and the domains allowed to load this file in an iframe.
 
@@ -268,7 +268,7 @@ For more information about `draw3p`, see:
 ```
 
 
-#### 7. Listen to the ad request from the creative (body)
+#### 7. Listen to the ad request from the creative
 
 In the same `script` tag in the body as the previous step, call
 
