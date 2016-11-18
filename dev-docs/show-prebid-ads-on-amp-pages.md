@@ -201,14 +201,6 @@ This function posts the ad content from the auction winner back to content page'
 
 The function `loadPrebidJS()` shown below is what's called by the AMP `draw3p` function in this page's body (see next step), which is the integration point between AMP and content in third-party iframes (which is what this page is).
 
-For an example showing how `draw3p` is used, see [this AMP test](https://dfp-amp-testing-1185.appspot.com/amp_tests/dfp-3p-iframe.html).
-
-For more information about `draw3p`, see:
-
-+ [Its implementation](https://github.com/ampproject/amphtml/blob/e5501a30adf15c8fef049729f5e0e3137dbb18ca/3p/integration.js#L252)
-
-+ [The issue that led to its implementation](https://github.com/ampproject/amphtml/issues/1210)
-
 ```javascript
     // Helper that runs inside `loadPrebidJS()`
     function initAdserver() {
