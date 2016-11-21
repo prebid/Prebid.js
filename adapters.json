@@ -52,5 +52,10 @@
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
+    },
+    {
+      "appnexus": {
+        "alias": "matomy"
+      }
     }
 ]
