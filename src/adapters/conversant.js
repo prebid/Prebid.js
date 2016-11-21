@@ -73,7 +73,7 @@ var ConversantAdapter = function () {
 
     //build impression array for conversant
     utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParamater('bidloor', bid.params),
+      var bidfloor = utils.getBidIdParamater('bidFloor', bid.params),
         sizeArrayLength = bid.sizes.length,
         adW = 0,
         adH = 0,
