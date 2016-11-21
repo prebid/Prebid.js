@@ -29,9 +29,9 @@ const EVENTS = {
 };
 
 let baseSchemaTemplate = template`${'protocol'}://${'host'}/hbevent/${'tagversion'}/${'network'}/${'placement'}/${'site'}/${'eventid'}/hbeventts=${'hbeventts'};cors=yes`;
-let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'}`;
-let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'}`;
-let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'}`;
+let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};hbprice=${'hbprice'}${'hbcur'}${'pubapi'};hbwinbidid=${'hbwinbidid'}`;
+let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'};hbbidid=${'hbbidid'}`;
+let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'};hbbidid=${'hbbidid'}`;
 
 export default utils.extend(adapter({
   url: '',
@@ -123,8 +123,10 @@ export default utils.extend(adapter({
         adUnit = addAolParams(adUnit, adUnitsConfig, bidsReceived);
         adUnits[currentAdUnitCode] = adUnit;
       }
-      adUnit.winner = (adUnit.winner.cpm < bid.cpm) ? bid : adUnit.winner;
-      adUnit.bids.push(Object.assign({}, bid));
+      let clonedBid = Object.assign({}, bid);
+      clonedBid.aolAnalyticsBidId = adUnit.bids.length + 1;
+      adUnit.winner = (adUnit.winner.cpm < clonedBid.cpm) ? clonedBid : adUnit.winner;
+      adUnit.bids.push(clonedBid);
     });
 
     for (let code in adUnits) {
@@ -174,7 +176,8 @@ export default utils.extend(adapter({
       hbwinner: adUnit.winner.bidder ? getBidderId(adUnit.winner.bidder) : 0,
       hbprice: adUnit.winner.cpm || 0,
       hbcur: aolParams.currencyCode ? `;hbcur=${aolParams.currencyCode}` : '',
-      pubapi: aolParams.pubapiId ? `;pubapi=${aolParams.pubapiId}` : ''
+      pubapi: aolParams.pubapiId ? `;pubapi=${aolParams.pubapiId}` : '',
+      hbwinbidid: adUnit.winner.aolAnalyticsBidId
     };
   },
 
@@ -186,7 +189,8 @@ export default utils.extend(adapter({
       hbauctionid: auctionParams.hbauctionid,
       hbwinner: getBidderId(adUnit.winner.bidder),
       pubcpm: adUnit.winner.cpm,
-      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : ''
+      hbdealid: adUnit.winner.dealId ? `;hbdealid=${encodeURIComponent(adUnit.winner.dealId)}` : '',
+      hbbidid: adUnit.winner.aolAnalyticsBidId
     };
   },
 
@@ -196,7 +200,8 @@ export default utils.extend(adapter({
       hbbid: bid.cpm || 0,
       hbstatus: getStatusCode(bid),
       hbtime: bid.timeToRespond || '',
-      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : ''
+      hbdealid: bid.dealId ? `;hbdealid=${encodeURIComponent(bid.dealId)}` : '',
+      hbbidid: bid.aolAnalyticsBidId
     };
   },
 
