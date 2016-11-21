@@ -93,7 +93,7 @@ export const BIDS = {
     pbMg: '0.10',
     pbHg: '0.11',
     pbAg: '0.10',
-    size: '300x250',
+    size: '300x250'
   },
 
   EMPTY: {

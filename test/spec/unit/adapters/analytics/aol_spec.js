@@ -134,28 +134,35 @@ describe('AOL analytics adapter', () => {
       it('should report auction with a valid bid', () => {
         let adUnitsConfig = [DEFAULT_AD_UNIT];
         let bidsRequested = [BID_SETS.AOL];
-        let bidsReceived = [BIDS.VALID];
+        let validBidReceived = createReceivedBid({
+          aolAnalyticsBidId: 1
+        });
+        let bidsReceived = [validBidReceived];
 
         aolAnalytics.reportAuctionEvent({ adUnitsConfig, bidsRequested, bidsReceived });
 
         expect(aolAnalytics.reportEvent.calledOnce).to.be.true;
         expect(aolAnalytics.reportEvent.calledWith(1)).to.be.true;
         let bids = aolAnalytics.reportEvent.getCall(0).args[1].bids;
-        expect(bids).to.include(BIDS.VALID);
+        expect(bids).to.include(validBidReceived);
         expect(bids[0].getStatusCode()).to.equal(1);
       });
 
       it('should report auction with empty bid', () => {
         let adUnitsConfig = [DEFAULT_AD_UNIT];
         let bidsRequested = [BID_SETS.AOL];
-        let bidsReceived = [BIDS.EMPTY];
+        let emptyBidReceived = createReceivedBid({
+          aolAnalyticsBidId: 1,
+          status: 2
+        });
+        let bidsReceived = [emptyBidReceived];
 
         aolAnalytics.reportAuctionEvent({ adUnitsConfig, bidsRequested, bidsReceived });
 
         expect(aolAnalytics.reportEvent.calledOnce).to.be.true;
         expect(aolAnalytics.reportEvent.calledWith(1)).to.be.true;
         let bids = aolAnalytics.reportEvent.getCall(0).args[1].bids;
-        expect(bids).to.include(BIDS.EMPTY);
+        expect(bids).to.include(emptyBidReceived);
         expect(bids[0].getStatusCode()).to.equal(2);
       });
 
@@ -394,7 +401,7 @@ describe('AOL analytics adapter', () => {
       });
     });
 
-    describe('with multiple bids for the same bidder', () => {
+    describe('with multiple bids for the same bidder with unique identifiers', () => {
       it('should report auction with 2 valid bids from the same bidder', () => {
         let adUnitsConfig = [
           createAdUnit({
@@ -430,8 +437,11 @@ describe('AOL analytics adapter', () => {
         expect(args[1]).have.property('aolParams', BID_CONFIGS.AOL1.params);
         expect(bids).to.have.lengthOf(3);
         expect(bids[0]).to.have.property('bidder', 'aol');
+        expect(bids[0]).to.have.property('aolAnalyticsBidId', 1);
         expect(bids[1]).to.have.property('bidder', 'appnexus');
+        expect(bids[1]).to.have.property('aolAnalyticsBidId', 2);
         expect(bids[2]).to.have.property('bidder', 'appnexus');
+        expect(bids[2]).to.have.property('aolAnalyticsBidId', 3);
         bids.forEach(bid => {
           expect(bid).to.have.property('adUnitCode', DEFAULT_AD_UNIT_CODE);
           expect(bid.getStatusCode()).to.equal(1);
@@ -475,10 +485,13 @@ describe('AOL analytics adapter', () => {
         expect(call.args[1]).have.property('aolParams', BID_CONFIGS.AOL1.params);
         expect(bids).to.have.lengthOf(3);
         expect(bids[0]).to.have.property('bidder', 'aol');
+        expect(bids[0]).to.have.property('aolAnalyticsBidId', 1);
         expect(bids[0].getStatusCode()).to.equal(1);
         expect(bids[1]).to.have.property('bidder', 'appnexus');
+        expect(bids[1]).to.have.property('aolAnalyticsBidId', 2);
         expect(bids[1].getStatusCode()).to.equal(1);
         expect(bids[2]).to.have.property('bidder', 'appnexus');
+        expect(bids[2]).to.have.property('aolAnalyticsBidId', 3);
         expect(bids[2].getStatusCode()).to.equal(2);
         bids.forEach(bid => {
           expect(bid).to.have.property('adUnitCode', DEFAULT_AD_UNIT_CODE);
@@ -523,12 +536,16 @@ describe('AOL analytics adapter', () => {
         expect(call.args[1]).have.property('aolParams', BID_CONFIGS.AOL1.params);
         expect(bids).to.have.lengthOf(4);
         expect(bids[0]).to.have.property('bidder', 'aol');
+        expect(bids[0]).to.have.property('aolAnalyticsBidId', 1);
         expect(bids[0].getStatusCode()).to.equal(1);
         expect(bids[1]).to.have.property('bidder', 'appnexus');
+        expect(bids[1]).to.have.property('aolAnalyticsBidId', 2);
         expect(bids[1].getStatusCode()).to.equal(1);
         expect(bids[2]).to.have.property('bidder', 'appnexus');
+        expect(bids[2]).to.have.property('aolAnalyticsBidId', 3);
         expect(bids[2].getStatusCode()).to.equal(2);
         expect(bids[3]).to.have.property('bidder', 'appnexus');
+        expect(bids[3]).to.have.property('aolAnalyticsBidId', 4);
         expect(bids[3].getStatusCode()).to.equal(3);
         bids.forEach(bid => {
           expect(bid).to.have.property('adUnitCode', DEFAULT_AD_UNIT_CODE);
@@ -944,9 +961,22 @@ describe('AOL analytics adapter', () => {
         expect(url).to.contain(';pubapi=456;');
       });
 
+      it('should build url with hbwinbidid parameter', () => {
+        let bid = createReceivedBid(BIDS.VALID);
+        bid.aolAnalyticsBidId = 1;
+        let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
+          aolParams: BID_CONFIGS.AOL1.params,
+          bids: [bid],
+          winner: bid
+        });
+        expect(url).to.contain(';hbwinbidid=1;');
+      });
+
       describe('should include bidders', () => {
         it('should build url with one bidder', () => {
-          let bid = BIDS.VALID;
+          let bid = createReceivedBid({
+            aolAnalyticsBidId: 1
+          });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
             bids: [bid],
@@ -957,15 +987,19 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid.dealId}`);
+          expect(url).to.contain(`;hbbidid=1`);
         });
 
         it('should build url with multiple bidders', () => {
-          let bid1 = BIDS.VALID;
+          let bid1 = createReceivedBid({
+            aolAnalyticsBidId: 1
+          });
           let bid2 = createReceivedBid({
             bidder: 'appnexus',
             bidderCode: 'appnexus',
             cpm: 0.08,
-            dealId: 'MP-1-000-1-K3XEW'
+            dealId: 'MP-1-000-1-K3XEW',
+            aolAnalyticsBidId: 2
           });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
@@ -977,15 +1011,20 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
+          expect(url).to.contain(`;hbbidid=1`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid2.dealId}`);
+          expect(url).to.contain(`;hbbidid=2`);
         });
 
         it('should build url with hbstatus of 1 for invalid bids', () => {
-          let bid = BIDS.EMPTY;
+          let bid = createReceivedBid({
+            aolAnalyticsBidId: 1,
+            status: 2
+          });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
             bids: [bid],
@@ -996,10 +1035,14 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=1;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.not.contain(`;hbdealid=`);
+          expect(url).to.contain(`;hbbidid=1`);
         });
 
         it('should build url with hbstatus of 3 for timed out bids', () => {
-          let bid = BIDS.TIMED_OUT;
+          let bid = createReceivedBid({
+            aolAnalyticsBidId: 1,
+            status: 3
+          });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
             bids: [bid],
@@ -1010,15 +1053,19 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid.timeToRespond}`);
           expect(url).to.not.contain(`;hbdealid=`);
+          expect(url).to.contain(`;hbbidid=1`);
         });
 
         it('should build url with valid and timed out bids', () => {
-          let bid1 = BIDS.VALID;
+          let bid1 = createReceivedBid({
+            aolAnalyticsBidId: 1
+          });
           let bid2 = createReceivedBid({
             status: 3,
             bidder: 'appnexus',
             bidderCode: 'appnexus',
-            cpm: 0.08
+            cpm: 0.08,
+            aolAnalyticsBidId: 2
           });
           let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
             aolParams: BID_CONFIGS.AOL1.params,
@@ -1030,11 +1077,13 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(';hbstatus=0;');
           expect(url).to.contain(`;hbtime=${bid1.timeToRespond}`);
           expect(url).to.contain(`;hbdealid=${bid1.dealId}`);
+          expect(url).to.contain(`;hbbidid=1`);
           expect(url).to.contain(';hbbidder=3;');
           expect(url).to.contain(';hbbid=0.08;');
           expect(url).to.contain(';hbstatus=3;');
           expect(url).to.contain(`;hbtime=${bid2.timeToRespond}`);
           expect(url).to.not.contain(`;hbtime=${bid2.timeToRespond};hbdealid=`);
+          expect(url).to.contain(`;hbbidid=2`);
         });
       });
     });
@@ -1255,6 +1304,22 @@ describe('AOL analytics adapter', () => {
           }
         });
         expect(url).to.contain(`;hbdealid=${bid.dealId}`);
+      });
+
+      it('should build url with hbbidid parameter', () => {
+        let bid = createReceivedBid({
+          aolAnalyticsBidId: 1
+        });
+        let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.WIN, {
+          aolParams: BID_CONFIGS.AOL1.params,
+          bids: [bid],
+          winner: bid,
+          auctionParams: {
+            hbauctioneventts: 4567890,
+            hbauctionid: '123456789'
+          }
+        });
+        expect(url).to.contain(';hbbidid=1');
       });
     });
   });

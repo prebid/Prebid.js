@@ -1,5 +1,6 @@
 AOL Prebid 1.6.0
 ----------------
+Support for reporting bid identifiers.
 BUGFIX: indexExchange has now the correct bidder code.
 
 
