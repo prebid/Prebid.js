@@ -1020,7 +1020,7 @@ describe('AOL analytics adapter', () => {
           expect(url).to.contain(`;hbbidid=2`);
         });
 
-        it('should build url with hbstatus of 2 for invalid bids', () => {
+        it('should build url with hbstatus of 1 for invalid bids', () => {
           let bid = createReceivedBid({
             aolAnalyticsBidId: 1,
             status: 2
