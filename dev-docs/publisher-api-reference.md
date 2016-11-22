@@ -420,13 +420,13 @@ const customConfigObject = {
       "precision" 2,  //default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
       "min" : 0,
       "max" : 5,
-      "increment" : 0.01,
+      "increment" : 0.01
     },
     {
       "precision" 2,
       "min" : 5,
       "max" : 8,
-      "increment" : 0.05,
+      "increment" : 0.05
     },
     {
       "precision" 2,
