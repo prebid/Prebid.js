@@ -16,7 +16,7 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        include: /(src|test)/,
+        include: /(src|test|node_modules\/Prebid.js)/,
         exclude: /node_modules/,
         loader: 'babel', // 'babel-loader' is also a legal name to reference
         query: {
