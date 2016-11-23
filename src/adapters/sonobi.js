@@ -12,7 +12,7 @@ var SonobiAdapter = function SonobiAdapter(){
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = (window.frameElement) ? '&ref=' + encodeURI(top.location.host || document.referrer) : '';
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref );
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
   }
 
   function _keymaker(adSlots){
@@ -100,11 +100,11 @@ var SonobiAdapter = function SonobiAdapter(){
   }
 
   return {
-    callBids:    _phone_in,
-    formRequest: _keymaker,
+    callBids:       _phone_in,
+    formRequest:    _keymaker,
     parseResponse:  _trinity,
-    success: _success,
-    failure: _failure
+    success:        _success,
+    failure:        _failure
   };
 };
 
