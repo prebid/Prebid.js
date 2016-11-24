@@ -11,6 +11,8 @@ var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 let _customPriceBucket;
 var defaultBidderSettingsMap = {};
+var _timeouts = [];
+var _currentTimeoutIndex = -1;
 
 exports.setCustomPriceBucket = function(customConfig) {
   _customPriceBucket = customConfig;
@@ -101,7 +103,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
+    if (_currentTimeoutIndex >= _timeouts.length &&
+      $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
 
       exports.executeCallback(timedOut);
@@ -142,6 +145,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bidsBackAll()) {
+    exports.executeCallback();
+  } else if (_currentTimeoutIndex > 0 && !hasBidsWithPendingTimeouts()) {
+    // global timeout has already elapsed and all bidders with pending timeouts returned bids
     exports.executeCallback();
   }
 };
@@ -241,10 +247,54 @@ exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
 
+exports.setTimeouts = function (timeouts) {
+  _timeouts = timeouts;
+  _currentTimeoutIndex = -1;
+  setNextTimeout();
+};
+
+function setNextTimeout() {
+  _currentTimeoutIndex++;
+  if (_currentTimeoutIndex >= _timeouts.length) {
+    return;
+  }
+  var nextTimeout = _timeouts[_currentTimeoutIndex];
+  var previousTimeout = _timeouts[_currentTimeoutIndex - 1] || 0;
+  var timeoutDifference = nextTimeout - previousTimeout;
+  setTimeout(() => exports.executeCallback(true), timeoutDifference);
+}
+
+function hasBidsWithPendingTimeouts() {
+  var biddersWithPendingTimeouts = [];
+  var bidsReceived = $$PREBID_GLOBAL$$._bidsReceived;
+  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
+
+  if (bidderSettings) {
+    for (var bidderCode in bidderSettings) {
+      if (bidderSettings.hasOwnProperty(bidderCode)) {
+        var bidderTimeout = bidderSettings[bidderCode].timeout;
+        if (bidderTimeout && bidderTimeout > _timeouts[_currentTimeoutIndex]) {
+          biddersWithPendingTimeouts.push(bidderCode);
+        }
+      }
+    }
+  }
+
+  if (biddersWithPendingTimeouts.length > 0) {
+    var bidsWithTimeoutsReceived = bidsReceived.filter(
+      bid => biddersWithPendingTimeouts.includes(bid.bidderCode)
+    );
+    return bidsWithTimeoutsReceived.length < biddersWithPendingTimeouts.length;
+  }
+  return false;
+}
+
 exports.executeCallback = function (timedOut) {
-  // if there's still a timeout running, clear it now
-  if (!timedOut && externalCallbacks.timer) {
-    clearTimeout(externalCallbacks.timer);
+  if (_timeouts.length > 1) {
+    if (hasBidsWithPendingTimeouts()) {
+      setNextTimeout();
+      return;
+    }
   }
 
   if (externalCallbacks.all.called !== true) {
@@ -267,7 +317,7 @@ exports.executeCallback = function (timedOut) {
     }
     finally {
       externalCallbacks.oneTime = null;
-      externalCallbacks.timer = false;
+      exports.setTimeouts([]);
       $$PREBID_GLOBAL$$.clearAuction();
     }
   }

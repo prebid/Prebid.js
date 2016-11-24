@@ -17,8 +17,12 @@
     "prebid"
   ],
   "globalVarName": "pbjs",
-  "analytics": [],
+  "analytics": ["aol"],
   "author": "the prebid.js contributors",
+  "contributors": [{
+    "name": "AOL Platforms",
+    "url": "http://www.aolplatforms.com/"
+  }],
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.5.2",

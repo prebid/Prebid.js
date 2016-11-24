@@ -24,9 +24,9 @@ var shell = require('gulp-shell');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
-var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
+var dateString = 'Updated: ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
-var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>, ' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
 var port = 9999;
 
@@ -54,6 +54,8 @@ gulp.task('devpack', function () {
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
+    // Remove window=window that was used to go around Uglify bug
+    .pipe(replace(/window\s*=\s*window;/g, ''))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
@@ -67,12 +69,30 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
+  webpackConfig.module.loaders = webpackConfig.module.loaders.concat([{
+    test: /adapters/,
+    include: /(src)/,
+    exclude: /(adapter.js|baseAdapter.js|analytics)/,
+    loader: 'delimiterLoader'
+  }]);
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
+    .pipe(uglify({
+      preserveComments: 'some',
+      compress: {
+        // Hoisting of the functions turned off to prevent code movement.
+        // This prevents comment blocks delimiting the definition of the adapters from being moved
+        // so it fixes the extraction of the adapters during the build.
+        hoist_funs: false
+      }
+    }))
     .pipe(header(banner, { prebid: prebid }))
+    // Remove window=window that was used to go around Uglify bug
+    .pipe(replace(/,?(\/\*!ADAPTER BEGIN \w+\*\/)\s*window\s*=\s*window/g, '$1'))
+    .pipe(replace(/,?(\/\*!ADAPTER END \w+\*\/)\s*window\s*=\s*window/g, '$1'))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });

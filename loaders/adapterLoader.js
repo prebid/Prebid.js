@@ -46,9 +46,18 @@ function insertAdapters() {
     }
   });
 
-  inserts = inserts.map(name => {
+
+  if (!inserts.length) {
+    console.log('Prebid Warning: no matching adapters found for config, no adapters will be' +
+      ' loaded.');
+    return '';
+  }
+
+  return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
+
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
     exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+
   })
     .concat(customAdapters.map(adapter => {
       return `let ${adapter.name} = require('${adapter.srcPath}');
@@ -59,7 +68,7 @@ function insertAdapters() {
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
-    .join('');
+    .join('/*!ADAPTER REGISTER DELIMITER*/');
 
   if (!inserts.length) {
     console.log('No matching adapters found for config, no adapters will be loaded.');
