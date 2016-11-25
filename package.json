@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.14.0-pre",
+  "version": "0.15.3-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -10,6 +10,12 @@
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
+  "keywords": [
+    "advertising",
+    "auction",
+    "header bidding",
+    "prebid"
+  ],
   "globalVarName": "pbjs",
   "analytics": [],
   "author": "the prebid.js contributors",
@@ -18,6 +24,8 @@
     "babel-core": "^6.5.2",
     "babel-loader": "^6.2.3",
     "babel-plugin-transform-object-assign": "^6.8.0",
+    "babel-plugin-transform-es3-property-literals": "^6.8.0",
+    "babel-plugin-transform-es3-member-expression-literals": "^6.8.0",
     "babel-preset-es2015": "^6.5.0",
     "block-loader": "^2.1.0",
     "chai": "^3.3.0",
@@ -61,14 +69,13 @@
     "karma-ie-launcher": "^0.1.5",
     "karma-junit-reporter": "^0.3.8",
     "karma-mocha": "^0.2.0",
-    "karma-nyan-reporter": "0.2.2",
     "karma-opera-launcher": "^0.1.0",
     "karma-phantomjs-launcher": "^0.2.1",
     "karma-requirejs": "^0.2.2",
     "karma-safari-launcher": "^0.1.1",
     "karma-sauce-launcher": "^0.2.10",
     "karma-script-launcher": "^0.1.0",
-    "karma-sinon": "^1.0.4",
+    "karma-sinon-ie": "^2.0.0-rc10",
     "karma-webpack": "^1.5.1",
     "localtunnel": "^1.3.0",
     "mkpath": "^1.0.0",

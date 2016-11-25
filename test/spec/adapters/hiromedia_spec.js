@@ -14,7 +14,7 @@ describe('hiromedia adapter', function () {
 
   const BIDDER_CODE = 'hiromedia';
   const DEFAULT_CALLBACK_NAME = 'hiromedia_callback';
-  const DEFAULT_ENDPOINT = 'https://hb-rtb.ktdpublishers.com/';
+  const DEFAULT_ENDPOINT = 'https://hb-rtb.ktdpublishers.com/bid/get';
 
   let adapter;
   let sandbox;
@@ -139,28 +139,28 @@ describe('hiromedia adapter', function () {
       expect(bidUrl.pathname).to.equal(defaultBidUrl.pathname);
 
       // adapter version
-      expect(query).to.have.property('v');
+      expect(query).to.have.property('adapterVersion');
 
       // callback
-      expect(query).to.have.property('cb').and.to.equal('$$PREBID_GLOBAL$$.' + DEFAULT_CALLBACK_NAME);
+      expect(query).to.have.property('callback').and.to.equal('$$PREBID_GLOBAL$$.' + DEFAULT_CALLBACK_NAME);
 
       // batch key
-      expect(query).to.have.property('bk').and.to.equal([DEFAULT_ENDPOINT,'1337','300x250'].join('-'));
+      expect(query).to.have.property('batchKey').and.to.equal([DEFAULT_ENDPOINT,'1337','300x250'].join('-'));
 
       // placementCode
-      expect(query).to.have.property('pc').and.to.equal('div-gpt-ad-12345-1');
+      expect(query).to.have.property('placementCode').and.to.equal('div-gpt-ad-12345-1');
 
       // account id
-      expect(query).to.have.property('ac').and.to.equal('1337');
+      expect(query).to.have.property('accountId').and.to.equal('1337');
 
       // selectedSize
-      expect(query).to.have.property('sz').and.to.equal('300x250');
+      expect(query).to.have.property('selectedSize').and.to.equal('300x250');
 
       // bid request size list
-      expect(query).to.have.property('szs').and.to.equal('300x250');
+      expect(query).to.have.property('placementSizes').and.to.equal('300x250');
 
       // page url domain (hostname)
-      expect(query).to.have.property('dom').and.to.equal(window.top.location.hostname);
+      expect(query).to.have.property('domain').and.to.equal(window.top.location.hostname);
 
     });
 
@@ -183,7 +183,7 @@ describe('hiromedia adapter', function () {
       const bidUrl = urlParse(bidRequest);
       const query = querystringify.parse(bidUrl.query);
 
-      expect(query).to.have.property('szs').and.to.equal('300x600,300x250');
+      expect(query).to.have.property('placementSizes').and.to.equal('300x600,300x250');
 
     });
 
@@ -204,7 +204,7 @@ describe('hiromedia adapter', function () {
       const bidUrl = urlParse(bidRequest);
       const query = querystringify.parse(bidUrl.query);
 
-      expect(query).to.have.property('sz').and.to.equal('305x245');
+      expect(query).to.have.property('selectedSize').and.to.equal('305x245');
 
     });
 

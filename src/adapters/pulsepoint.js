@@ -19,19 +19,26 @@ var PulsePointAdapter = function PulsePointAdapter() {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
-      var callback = bidResponseCallback(bidRequest);
-      var ppBidRequest = new window.pp.Ad({
-        cf: bidRequest.params.cf,
-        cp: bidRequest.params.cp,
-        ct: bidRequest.params.ct,
-        cn: 1,
-        ca: window.pp.requestActions.BID,
-        cu: bidUrl,
-        adUnitId: bidRequest.placementCode,
-        callback: callback
-      });
+      var ppBidRequest = new window.pp.Ad(bidRequestOptions(bidRequest));
       ppBidRequest.display();
     }
+  }
+
+  function bidRequestOptions(bidRequest) {
+    var callback = bidResponseCallback(bidRequest);
+    var options = {
+      cn: 1,
+      ca: window.pp.requestActions.BID,
+      cu: bidUrl,
+      adUnitId: bidRequest.placementCode,
+      callback: callback
+    };
+    for(var param in bidRequest.params) {
+      if(bidRequest.params.hasOwnProperty(param)) {
+        options[param] = bidRequest.params[param];
+      }
+    }
+    return options;
   }
 
   function bidResponseCallback(bid) {
@@ -43,7 +50,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
   function bidResponseAvailable(bidRequest, bidResponse) {
     if (bidResponse) {
       var adSize = bidRequest.params.cf.toUpperCase().split('X');
-      var bid = bidfactory.createBid(1);
+      var bid = bidfactory.createBid(1, bidRequest);
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = bidResponse.bidCpm;
       bid.ad = bidResponse.html;
@@ -51,7 +58,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
       bid.height = adSize[1];
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     } else {
-      var passback = bidfactory.createBid(2);
+      var passback = bidfactory.createBid(2, bidRequest);
       passback.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, passback);
     }
