@@ -1,6 +1,7 @@
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
+
 // webpackConfig.module.postLoaders = [
 //   {
 //     test: /\.js$/,
