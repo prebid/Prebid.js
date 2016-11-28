@@ -31,6 +31,9 @@ exports.enableAnalytics = function ({ provider, options }) {
   _gaGlobal = provider || 'ga';
   _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
 
+  if (options && typeof options.global !== 'undefined') {
+    _gaGlobal = options.global;
+  }
   if (options && typeof options.enableDistribution !== 'undefined') {
     _enableDistribution = options.enableDistribution;
   }
