@@ -1,7 +1,8 @@
 import faker from 'faker';
+import { randomFive } from './fixtures';
 
 var Slot = function Slot({ code, divId }) {
-  code = code || `adunitcode-${randomFive()}`;
+  code = code || `ad-slot-code-${randomFive()}`;
   divId = divId || `div-id-${randomFive()}`;
 
   var slot = {
@@ -41,8 +42,6 @@ export function makeSlot() {
   window.googletag._slots.push(slot);
   return slot;
 }
-
-function randomFive() { return faker.random.number({ min: 10000, max: 99999 }); }
 
 window.googletag = {
   _slots: [],

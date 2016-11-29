@@ -11,7 +11,7 @@ export function makeAdSlot(overrides = {}) {
 
 export function makeAdUnit(overrides = {}) {
   return Object.assign({
-    code: faker.random.alphaNumeric(10),
+    code: `ad-unit-code-${randomFive()}`,
     sizes: [[300, 250], [300, 600]],
     bids: []
   }, overrides);
@@ -38,3 +38,5 @@ export function makeRequest(overrides = {}) {
     timeout: 2000
   }, overrides);
 }
+
+export function randomFive() { return faker.random.number({ min: 10000, max: 99999 }); }
