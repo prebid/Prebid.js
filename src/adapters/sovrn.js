@@ -25,8 +25,8 @@ var SovrnAdapter = function SovrnAdapter() {
 
     //build impression array for sovrn
     utils._each(bidReqs, function (bid) {
-      var tagId = utils.getBidIdParamater('tagid', bid.params);
-      var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+      var tagId = utils.getBidIdParameter('tagid', bid.params);
+      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
       var adW = 0;
       var adH = 0;
 

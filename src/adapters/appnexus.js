@@ -35,15 +35,15 @@ AppNexusAdapter = function AppNexusAdapter() {
   function buildJPTCall(bid, callbackId) {
 
     //determine tag params
-    var placementId = utils.getBidIdParamater('placementId', bid.params);
+    var placementId = utils.getBidIdParameter('placementId', bid.params);
 
     //memberId will be deprecated, use member instead
-    var memberId = utils.getBidIdParamater('memberId', bid.params);
-    var member = utils.getBidIdParamater('member', bid.params);
-    var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
-    var query = utils.getBidIdParamater('query', bid.params);
-    var referrer = utils.getBidIdParamater('referrer', bid.params);
-    var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
+    var memberId = utils.getBidIdParameter('memberId', bid.params);
+    var member = utils.getBidIdParameter('member', bid.params);
+    var inventoryCode = utils.getBidIdParameter('invCode', bid.params);
+    var query = utils.getBidIdParameter('query', bid.params);
+    var referrer = utils.getBidIdParameter('referrer', bid.params);
+    var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
 
     //build our base tag, based on if we are http or https
 

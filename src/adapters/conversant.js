@@ -63,13 +63,13 @@ var ConversantAdapter = function () {
 
     //build impression array for conversant
     utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParamater('bidfloor', bid.params),
+      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params),
         adW = 0,
         adH = 0,
         imp;
 
-      secure = utils.getBidIdParamater('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParamater('site_id', bid.params) + '';
+      secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
+      siteId = utils.getBidIdParameter('site_id', bid.params) + '';
 
       // Allow sizes to be overridden per placement
       var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
