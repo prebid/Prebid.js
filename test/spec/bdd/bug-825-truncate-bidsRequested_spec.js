@@ -55,9 +55,11 @@ describe('Bug: #825 adUnit code based refresh times out without setting targets'
       });
     });
     describe('When a subsequent bid request is made for one of the slots', () => {
-      $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits: [adUnits[0]] }));
       it('Then there will be four bidder requests', () => {
-        equal($$PREBID_GLOBAL$$._bidsRequested.length, 0, 'there are four bidder requests');
+        var clock = sinon.useFakeTimers();
+        $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits: [adUnits[0]] }));
+        clock.tick($$PREBID_GLOBAL$$.bidderTimeout + 1);
+        equal($$PREBID_GLOBAL$$._bidsRequested.length, 4, 'there are four bidder requests');
       });
     });
   });
