@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -43,7 +43,9 @@ module.exports = function (config) {
     ],
 
     // list of files to exclude
-    exclude: [],
+    exclude: [
+      'test/spec/loaders/**/*.js'
+    ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor

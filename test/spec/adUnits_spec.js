@@ -41,7 +41,7 @@ describe('Publisher API _ AdUnits', function () {
                 }
             ]
     }];
-
+    pbjsTestOnly.clearAllAdUnits();
     $$PREBID_GLOBAL$$.addAdUnits(adUnits);
   });
 

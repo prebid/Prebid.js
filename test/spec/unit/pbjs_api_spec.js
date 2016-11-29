@@ -5,6 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
+  getAdUnits
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -24,6 +25,7 @@ var config = require('test/fixtures/config.json');
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
 $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+$$PREBID_GLOBAL$$.adUnits = getAdUnits();
 
 function resetAuction() {
   $$PREBID_GLOBAL$$._sendAllBids = false;
@@ -31,6 +33,8 @@ function resetAuction() {
   $$PREBID_GLOBAL$$.clearAuction();
   $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
+  $$PREBID_GLOBAL$$.adUnits = getAdUnits();
+
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -102,7 +106,9 @@ window.googletag = {
 };
 
 describe('Unit: Prebid Module', function () {
-
+  after(function(){
+    $$PREBID_GLOBAL$$.adUnits = [];
+  })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
@@ -992,6 +998,49 @@ describe('Unit: Prebid Module', function () {
       assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
       bidmanager.setPriceGranularity.restore();
     });
+
+    it('should log error when not passed a valid config object', () => {
+      const logErrorSpy = sinon.spy(utils, 'logError');
+      const error = 'Invalid custom price value passed to `setPriceGranularity()`';
+      const badConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+          },
+          {
+            //missing min prop
+            "max" : 18,
+            "increment" : 0.05,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(badConfig);
+      assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
+      utils.logError.restore();
+    });
+
+    it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
+      const setCustomPriceBucket = sinon.spy(bidmanager, 'setCustomPriceBucket');
+      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
+      const goodConfig = {
+        "buckets" : [{
+            "min" : 0,
+            "max" : 3,
+            "increment" : 0.01,
+            "cap" : true
+          }
+        ]
+      };
+
+      $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
+      assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
+      bidmanager.setCustomPriceBucket.restore();
+      assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
+      bidmanager.setPriceGranularity.restore();
+    });
   });
 
   describe('getAllWinningBids', () => {
@@ -1248,6 +1297,50 @@ describe('Unit: Prebid Module', function () {
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
+    });
+  });
+
+  describe('setBidderSequence', () => {
+    it('setting to `random` uses shuffled order of adUnits', () => {
+      sinon.spy(utils, 'shuffle');
+      const requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {},
+        timeout: 2000
+      };
+
+      $$PREBID_GLOBAL$$.setBidderSequence('random');
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+
+      sinon.assert.calledOnce(utils.shuffle);
+      utils.shuffle.restore();
+    });
+  });
+
+  describe('getHighestCpm', () => {
+    it('returns an array of winning bid objects for each adUnit', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
+      expect(highestCpmBids.length).to.equal(2);
+      expect(highestCpmBids[0]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[1]);
+      expect(highestCpmBids[1]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[2]);
+    });
+
+    it('returns an array containing the highest bid object for the given adUnitCode', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids.length).to.equal(1);
+      expect(highestCpmBids[0]).to.deep.equal($$PREBID_GLOBAL$$._bidsReceived[1]);
+    });
+
+    it('returns an empty array when the given adUnit is not found', () => {
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/stallone');
+      expect(highestCpmBids.length).to.equal(0);
+    });
+
+    it('returns an empty array when the given adUnit has no bids', () => {
+      $$PREBID_GLOBAL$$._bidsReceived = [$$PREBID_GLOBAL$$._bidsReceived[0]];
+      $$PREBID_GLOBAL$$._bidsReceived[0].cpm = 0;
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids.length).to.equal(0);
+      resetAuction();
     });
   });
 

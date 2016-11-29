@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import _ from 'lodash';
+import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
 
@@ -244,11 +245,21 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'aol');
       });
 
-      it('should not be added to bidmanager if empty response is returned', () => {
+      it('should have adId matching the bidId from related bid request', () => {
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(bidmanager.addBidResponse.firstCall.args[1])
+          .to.have.property('adId', DEFAULT_BIDDER_REQUEST.bids[0].bidId);
+      });
+
+      it('should be added to bidmanager as invalid in case of empty response', () => {
         server.respondWith('');
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
-        expect(bidmanager.addBidResponse.called).to.be.false;
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
       });
 
       it('should be added to bidmanager as invalid in case of invalid JSON response', () => {
@@ -269,6 +280,19 @@ describe('AolAdapter', () => {
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+      });
+
+      it('should have adId matching the bidId from bid request in case of no bid data', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": []
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(bidmanager.addBidResponse.firstCall.args[1])
+          .to.have.property('adId', DEFAULT_BIDDER_REQUEST.bids[0].bidId);
       });
 
       it('should be added to bidmanager as invalid in case of empty price', () => {
@@ -405,6 +429,37 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.cpm).to.equal('a9334987');
+      });
+    });
+
+    describe('when bidCpmAdjustment is set', () => {
+      let bidderSettingsBackup;
+      let server;
+
+      beforeEach(() => {
+        bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
+        server = sinon.fakeServer.create();
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
+        server.restore();
+        if (console.warn.restore) {
+          console.warn.restore();
+        }
+      });
+
+      it('should show warning in the console', function() {
+        sinon.spy(utils, 'logWarn');
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        $$PREBID_GLOBAL$$.bidderSettings = {
+          aol: {
+            bidCpmAdjustment: function() {}
+          }
+        };
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(utils.logWarn.calledOnce).to.be.true;
       });
     });
   });
