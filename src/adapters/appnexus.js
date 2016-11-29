@@ -178,7 +178,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //store bid response
         //bid status is good (indicating 1)
         var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, bidObj);
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
