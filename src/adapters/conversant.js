@@ -80,7 +80,7 @@ var ConversantAdapter = function () {
         imp;
 
       secure = utils.getBidIdParamater('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParamater('site_id', bid.params);
+      siteId = utils.getBidIdParamater('site_id', bid.params) + '';
 
       if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
         adW = bid.sizes[0];
