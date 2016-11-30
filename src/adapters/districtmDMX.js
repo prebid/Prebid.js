@@ -3,8 +3,8 @@ var bidmanager = require('../bidmanager.js');
 var adLoader = require('../adloader');
 
 var DistrictmAdaptor = function districtmAdaptor(){
-   let districtmUrl = window.location.protocol + '//prebid.districtm.ca/lib.js';
-   this.callBids = params =>{
+  let districtmUrl = window.location.protocol + '//prebid.districtm.ca/lib.js';
+  this.callBids = params =>{
     if(!window.hb_dmx_res){
       adLoader.loadScript(districtmUrl,()=>{
         this.sendBids(params);
