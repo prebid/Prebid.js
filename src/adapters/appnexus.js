@@ -196,7 +196,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
         //indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }
