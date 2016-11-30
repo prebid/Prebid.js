@@ -202,7 +202,7 @@ exports.getTopWindowUrl = function () {
 };
 
 exports.logWarn = function (msg) {
-  if (debugTurnedOn() && console.warn) {
+  if (debugTurnedOn() && console && console.warn) {
     console.warn('WARNING: ' + msg);
   }
 };
