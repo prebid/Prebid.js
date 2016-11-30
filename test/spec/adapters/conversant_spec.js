@@ -45,13 +45,13 @@ describe('Conversant adapter tests', function () {
 
 
   it('The Conversant response should exist and be a function', function () {
-    expect(pbjs.conversantResponse).to.exist.and.to.be.a('function');
+    expect($$PREBID_GLOBAL$$.conversantResponse).to.exist.and.to.be.a('function');
   });
 
   describe('Should submit bid responses correctly', function () {
     beforeEach(function () {
       addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       adapter = new Adapter();
     });
 
@@ -79,7 +79,7 @@ describe('Conversant adapter tests', function () {
         }]
       };
 
-      pbjs.conversantResponse(bidResponse);
+      $$PREBID_GLOBAL$$.conversantResponse(bidResponse);
 
       // in this case, the valid bid (div2) is submitted before the empty bids (div1, div3)
       var firstBid = addBidResponseSpy.getCall(0).args[1];
@@ -107,7 +107,7 @@ describe('Conversant adapter tests', function () {
     });
 
     it('Should submit bids with statuses of 2 to the bid manager for empty bid responses', function () {
-      pbjs.conversantResponse({id: 1, seatbid: []});
+      $$PREBID_GLOBAL$$.conversantResponse({id: 1, seatbid: []});
 
       var placementCode1 = addBidResponseSpy.getCall(0).args[0];
       var firstBid = addBidResponseSpy.getCall(0).args[1];
@@ -165,7 +165,7 @@ describe('Conversant adapter tests', function () {
         }]
       };
 
-      pbjs.conversantResponse(bidResponse);
+      $$PREBID_GLOBAL$$.conversantResponse(bidResponse);
 
       var firstBid = addBidResponseSpy.getCall(0).args[1];
       var secondBid = addBidResponseSpy.getCall(1).args[1];
@@ -244,7 +244,7 @@ describe('Conversant adapter tests', function () {
     });
 
     beforeEach(function () {
-      var resp = [200, {'Content-type': 'text/javascript'}, 'pbjs.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
+      var resp = [200, {'Content-type': 'text/javascript'}, '$$PREBID_GLOBAL$$.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
       server.respondWith('POST', new RegExp('media.msg.dotomi.com/s2s/header'), resp);
     });
   

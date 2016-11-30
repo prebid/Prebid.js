@@ -47,11 +47,12 @@ var ConversantAdapter = function () {
   };
 
   var getDevice = function () {
+    const language = n.language ? 'language' : 'userLanguage';
     return {
       h: screen.height,
       w: screen.width,
       dnt: getDNT() ? 1 : 0,
-      language: n.language.split('-')[0],
+      language: n[language].split('-')[0],
       make: n.vendor ? n.vendor : '',
       ua: n.userAgent
     };
@@ -72,14 +73,14 @@ var ConversantAdapter = function () {
 
     //build impression array for conversant
     utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParamater('bidloor', bid.params),
+      var bidfloor = utils.getBidIdParamater('bidfloor', bid.params),
         sizeArrayLength = bid.sizes.length,
         adW = 0,
         adH = 0,
         imp;
 
       secure = utils.getBidIdParamater('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParamater('site_id', bid.params);
+      siteId = utils.getBidIdParamater('site_id', bid.params) + '';
 
       if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
         adW = bid.sizes[0];
