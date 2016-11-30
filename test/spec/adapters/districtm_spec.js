@@ -214,7 +214,7 @@ describe('DistrictM adapter test', () => {
         it('it\'s now time to play with the response ...', ()=>{
             let result = districtm.handlerRes(PREBID_RESPONSE(), PREBID_PARAMS);
             _each(result, function(k, v){
-                console.log(11, `${k} value is ${v}`);
+
             })
             
 
