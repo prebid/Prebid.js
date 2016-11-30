@@ -9,7 +9,7 @@ const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = [
-  'age', 'externalUid', 'segments', 'gender', 'dnt', 'language'
+  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
 ];
 
 /**

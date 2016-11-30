@@ -116,7 +116,7 @@ describe('AppNexusAdapter', () => {
 
     it('attaches valid user params to the tag', () => {
       REQUEST.bids[0].params.user = {
-        externalUid: '123',
+        external_uid: '123',
         foobar: 'invalid'
       };
 
@@ -125,7 +125,7 @@ describe('AppNexusAdapter', () => {
       const request = JSON.parse(requests[0].requestBody).tags[0];
       expect(request.user).to.exist;
       expect(request.user).to.deep.equal({
-        externalUid: '123',
+        external_uid: '123',
       });
 
       delete REQUEST.bids[0].params.user;
