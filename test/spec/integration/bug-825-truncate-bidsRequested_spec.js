@@ -1,4 +1,4 @@
-import { equal } from 'assert';
+import { equal, notEqual } from 'assert';
 
 import faker from 'faker';
 import { makeAdUnit, makeBidder, makeAdSlot, makeRequest } from './faker/fixtures';
@@ -55,9 +55,12 @@ describe('Bug: #825 adUnit code based refresh times out without setting targets'
         var clock = sinon.useFakeTimers();
         $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits }));
         equal($$PREBID_GLOBAL$$._bidsRequested.length, 3, 'there are three bidder requests');
+        var firstRequestId = $$PREBID_GLOBAL$$._bidsRequested.map(request => request.requestId).filter((value, index, array) => array.indexOf(value) === index)[0];
         $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits: [adUnits[0]] }));
-        clock.tick($$PREBID_GLOBAL$$.bidderTimeout + 10000);
-        equal($$PREBID_GLOBAL$$._bidsRequested.length, 1, 'there is now only one bidder request');
+        clock.tick($$PREBID_GLOBAL$$.bidderTimeout);
+        var nextRequestId = $$PREBID_GLOBAL$$._bidsRequested.map(request => request.requestId).filter((value, index, array) => array.indexOf(value) === index)[0];
+        equal($$PREBID_GLOBAL$$._bidsRequested.length, 3, 'there are still three bidder request');
+        notEqual(firstRequestId, nextRequestId, 'the request IDs have changed');
         clock.restore();
       });
     });
