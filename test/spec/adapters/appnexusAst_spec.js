@@ -137,6 +137,15 @@ describe('AppNexusAdapter', () => {
       expect(requests[0].method).to.equal('POST');
     });
 
+    it('sends video requests to secure endpoint', () => {
+      REQUEST.bids[0].mediaType = 'video';
+
+      adapter.callBids(REQUEST);
+      expect(requests[0].url).to.equal(`https:${ENDPOINT}`);
+
+      delete REQUEST.bids[0].mediaType;
+    });
+
     it('converts keyword params to proper form and attaches to request', () => {
       REQUEST.bids[0].params.keywords = {
         single: 'val',

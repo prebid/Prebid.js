@@ -21,6 +21,7 @@ function AppnexusAstAdapter() {
 
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
+  let https = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
@@ -43,7 +44,11 @@ function AppnexusAstAdapter() {
           tag.keywords = getKeywords(bid.params.keywords);
         }
 
-        if (bid.mediaType === 'video') {tag.require_asset_url = true;}
+        if (bid.mediaType === 'video') {
+          tag.require_asset_url = true;
+          https = true;
+        }
+
         if (bid.params.video) {
           tag.video = {};
           // place any valid video params on the tag
@@ -64,7 +69,11 @@ function AppnexusAstAdapter() {
 
     if (!utils.isEmpty(tags)) {
       const payload = JSON.stringify({tags: [...tags]});
-      ajax(ENDPOINT, handleResponse, payload, {
+
+      // video requests require secure connection
+      const URL = https ? `https:${ENDPOINT}`: ENDPOINT;
+
+      ajax(URL, handleResponse, payload, {
         contentType: 'text/plain',
         withCredentials : true
       });

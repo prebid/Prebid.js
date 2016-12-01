@@ -18,6 +18,7 @@ var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
 var adserver = require('src/adserver');
+var url = require('src/url');
 var CONSTANTS = require('src/constants.json');
 
 var config = require('test/fixtures/config.json');
@@ -1427,6 +1428,20 @@ describe('Unit: Prebid Module', function () {
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
+    });
+
+    it('should convert regional-specific URLs to match orgin URLs', () => {
+      const masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(
+        adserverTag,
+        options
+      );
+
+      const parsedTag = url.parse(masterTagUrl);
+      const descriptionUrl = parsedTag.search.description_url;
+      const parsedDescription = url.parse(descriptionUrl);
+
+      expect(parsedDescription.protocol).to.equal('https');
+      expect(parsedDescription.host).to.equal('ib.adnxs.com');
     });
   });
 
