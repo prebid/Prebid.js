@@ -8,6 +8,9 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
+const USER_PARAMS = [
+  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
+];
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -47,6 +50,13 @@ function AppnexusAstAdapter() {
           Object.keys(bid.params.video)
             .filter(param => VIDEO_TARGETING.includes(param))
             .forEach(param => tag.video[param] = bid.params.video[param]);
+        }
+
+        if (bid.params.user) {
+          tag.user = {};
+          Object.keys(bid.params.user)
+            .filter(param => USER_PARAMS.includes(param))
+            .forEach(param => tag.user[param] = bid.params.user[param]);
         }
 
         return tag;
