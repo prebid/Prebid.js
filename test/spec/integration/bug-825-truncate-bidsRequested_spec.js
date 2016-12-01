@@ -9,15 +9,16 @@ function resetPrebid() {
   require('src/prebid');
 }
 
-const pbjsBackup = $$PREBID_GLOBAL$$;
-
+let pbjsBackup;
 let adUnits;
 let adapters;
 
 describe('Bug: #825 adUnit code based refresh times out without setting targets', () => {
   describe('Given a page with five ad slots has loaded and the auction is finished', () => {
 
-    beforeEach(() => {
+    before(() => {
+      pbjsBackup = $$PREBID_GLOBAL$$;
+
       adapters = [
         makeBidder(),
         makeBidder(),
@@ -43,23 +44,21 @@ describe('Bug: #825 adUnit code based refresh times out without setting targets'
       adapters.forEach(adapter => {
         adaptermanager.bidderRegistry[[adapter.bidder]] = { callBids: adapter.callBids };
       });
-
-      $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits }));
     });
 
-    after(() => window.$$PREBID_GLOBAL$$ = pbjsBackup);
+    after(() => {
+      window.$$PREBID_GLOBAL$$ = pbjsBackup;
+    });
 
     describe('When the first auction completes', () => {
-      it('Then there will be three bidder requests', () => {
-        equal($$PREBID_GLOBAL$$._bidsRequested.length, 3, 'there are three bidder requests');
-      });
-    });
-    describe('When a subsequent bid request is made for one of the slots', () => {
-      it('Then there will be four bidder requests', () => {
+      it('Then there will be correct number of bidder requests', () => {
         var clock = sinon.useFakeTimers();
+        $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits }));
+        equal($$PREBID_GLOBAL$$._bidsRequested.length, 3, 'there are three bidder requests');
         $$PREBID_GLOBAL$$.requestBids(makeRequest({ adUnits: [adUnits[0]] }));
-        clock.tick($$PREBID_GLOBAL$$.bidderTimeout + 1);
-        equal($$PREBID_GLOBAL$$._bidsRequested.length, 4, 'there are four bidder requests');
+        clock.tick($$PREBID_GLOBAL$$.bidderTimeout + 10000);
+        equal($$PREBID_GLOBAL$$._bidsRequested.length, 1, 'there is now only one bidder request');
+        clock.restore();
       });
     });
   });
