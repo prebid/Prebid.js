@@ -21,6 +21,7 @@ function AppnexusAstAdapter() {
 
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
+  let usersync = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
@@ -117,6 +118,17 @@ function AppnexusAstAdapter() {
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
+
+    if (!usersync) {
+      const iframe = utils.createInvisibleIframe();
+      iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+      usersync = true;
+    }
   }
 
   /* Check that a bid has required paramters */
