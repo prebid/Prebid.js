@@ -122,7 +122,11 @@ function AppnexusAstAdapter() {
     if (!usersync) {
       const iframe = utils.createInvisibleIframe();
       iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-      document.body.appendChild(iframe);
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
       usersync = true;
     }
   }
