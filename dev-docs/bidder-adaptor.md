@@ -186,6 +186,5 @@ For usage examples, see [the working adapters in the repo](https://github.com/pr
 ## Further Reading
 
 + [The bidder adapter sources in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters)
-+ 
 
 </div>
