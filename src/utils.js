@@ -579,23 +579,3 @@ export function shuffle(array) {
 export function adUnitsFilter(filter, bid) {
   return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
 }
-
-// export function groupBy( array , f )
-// {
-//   var groups = {};
-//   array.forEach( function( o )
-//   {
-//     var group = JSON.stringify( f(o) );
-//     groups[group] = groups[group] || [];
-//     groups[group].push( o );
-//   });
-//   return Object.keys(groups).map( function( group )
-//   {
-//     return groups[group];
-//   })
-// }
-//
-// var result = groupBy(list, function(item)
-// {
-//   return [item.lastname, item.age];
-// });
