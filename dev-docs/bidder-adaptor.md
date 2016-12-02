@@ -123,8 +123,11 @@ When the bid response(s) are available, notify Prebid.js immediately, so that yo
 
 To register the bid, call the `bidmanager.addBidResponse(adUnitCode, bidObject)` function. To register multiple bids, call the function multiple times.
 
-* If the bid is valid, use `bidfactory.createBid(1)` to create the `bidObject`
-* If the bid is invalid (no fill or error), use `bidfactory.createBid(2)` to create the `bidObject`
+* If the bid is valid, use `bidfactory.createBid(1)` to create the `bidObject`.  A status of `1` means the bid is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
+* If the bid is invalid (no fill or error), use `bidfactory.createBid(2)` to create the `bidObject`.  A status of `2` means "no bid".
+
+{: .alert.alert-info :}
+If your bidder supports serving video ads, it needs to provide a VAST video URL in its response.  On the adapter side, your implementation of `createBid` needs to add the VAST URL to the bid.  For an example implementation, see the implementation in the [AST adapter](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).
 
 Example:
 
