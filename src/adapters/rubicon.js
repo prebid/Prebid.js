@@ -42,6 +42,9 @@ var sizeMap = {
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
+function RubiconError(message) { this.message = message; }
+function RubiconSyntaxError(error) { this.error = error; }
+
 function RubiconAdapter() {
 
   function _callBids(bidderRequest) {
@@ -51,7 +54,10 @@ function RubiconAdapter() {
       try {
         ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
       } catch(err) {
-        utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
+        if(!(err instanceof RubiconError)) {
+          throw err;
+        }
+        utils.logError('Error sending rubicon request for placement code ' + bid.placementCode);
       }
 
       function bidCallback(responseText) {
@@ -59,16 +65,17 @@ function RubiconAdapter() {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
         } catch (err) {
-          if (typeof err === "string") {
-            utils.logWarn(`${err} when processing rubicon response for placement code ${bid.placementCode}`);
+          if(err instanceof RubiconError) {
+            utils.logWarn(`${err.message} when processing rubicon response for placement code ${bid.placementCode}`);
+          } else if (err instanceof RubiconSyntaxError) {
+            utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err.error);
           } else {
-            utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
+            throw err;
           }
 
           //indicate that there is no bid for this placement
           let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
           badBid.bidderCode = bid.bidder;
-          badBid.error = err;
           bidmanager.addBidResponse(bid.placementCode, badBid);
         }
       }
@@ -99,7 +106,7 @@ function RubiconAdapter() {
     );
 
     if(parsedSizes.length < 1) {
-      throw "no valid sizes";
+      throw new RubiconError("no valid sizes");
     }
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
@@ -149,7 +156,12 @@ function RubiconAdapter() {
 </html>`;
 
   function handleRpCB(responseText, bidRequest) {
-    let responseObj = JSON.parse(responseText); // can throw
+    let responseObj;
+    try {
+      responseObj = JSON.parse(responseText);
+    } catch(err) {
+      throw new RubiconSyntaxError("error parsing rubicon response", err);
+    }
 
     if(
       typeof responseObj !== 'object' ||
@@ -157,7 +169,7 @@ function RubiconAdapter() {
       !Array.isArray(responseObj.ads) ||
       responseObj.ads.length < 1
     ) {
-      throw 'bad response';
+      throw new RubiconError('bad response');
     }
 
     var ads = responseObj.ads;
@@ -167,7 +179,7 @@ function RubiconAdapter() {
 
     ads.forEach(function (ad) {
       if(ad.status !== 'ok') {
-        throw 'bad ad status';
+        throw new RubiconError('bad ad status');
       }
 
       //store bid response
