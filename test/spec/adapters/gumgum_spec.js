@@ -79,7 +79,6 @@ describe('gumgum adapter', () => {
   }
 
   beforeEach(() => {
-    pbjs._bidsRequested = [];
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
   });
