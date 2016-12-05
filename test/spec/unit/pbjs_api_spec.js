@@ -1185,12 +1185,26 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('emit event', () => {
-    it('should call AUCTION_END only once', () => {
 
+    var spyClearAuction;
+    var spyRenderAd;
+    var clock1;
+
+    beforeEach(() => {
       resetAuction();
-      var spyClearAuction = sinon.spy($$PREBID_GLOBAL$$, 'clearAuction');
-      var clock1 = sinon.useFakeTimers();
+      spyClearAuction = sinon.spy($$PREBID_GLOBAL$$, 'clearAuction');
+      spyRenderAd = sinon.spy($$PREBID_GLOBAL$$, 'renderAd');
+      clock1 = sinon.useFakeTimers();
+    });
 
+    afterEach(() => {
+      resetAuction();
+      spyClearAuction.restore();
+      spyRenderAd.restore();
+      clock1.restore();
+    });
+
+    it('should call AUCTION_END only once', () => {
       var requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
         timeout: 2000,
@@ -1266,10 +1280,27 @@ describe('Unit: Prebid Module', function () {
       const adUnitCode = '/19968336/header-bid-tag1';
       $$PREBID_GLOBAL$$.addBidResponse(adUnitCode, bid);
       assert.equal(spyClearAuction.callCount,1, 'AUCTION_END event emitted more than once');
-
-      clock1.restore();
-      resetAuction();
     });
+
+    it('should call AUCTION_END before BID_WON', () => {
+
+      var doc = {};
+      var bidId = 1;
+
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {
+          $$PREBID_GLOBAL$$.renderAd(doc, bidId)
+        },
+        timeout: 2000,
+      };
+
+      $$PREBID_GLOBAL$$.requestBids(requestObj);
+      clock1.tick(2001);
+      assert.ok(spyClearAuction.calledOnce, true);
+      assert.ok(spyRenderAd.calledOnce, true);
+      sinon.assert.callOrder(spyClearAuction, spyRenderAd);
+    });
+
   });
 
   describe('removeAdUnit', () => {

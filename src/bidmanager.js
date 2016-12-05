@@ -257,13 +257,13 @@ exports.executeCallback = function (timedOut) {
 
   //execute one time callback
   if (externalCallbacks.oneTime) {
+    $$PREBID_GLOBAL$$.clearAuction();
     try {
       processCallbacks([externalCallbacks.oneTime]);
     }
     finally {
       externalCallbacks.oneTime = null;
       externalCallbacks.timer = false;
-      $$PREBID_GLOBAL$$.clearAuction();
     }
   }
 };
