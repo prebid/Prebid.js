@@ -10,8 +10,16 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const bidEndpoint = `https://g2.gumgum.com/hbid/imp`;
 
-  const WINDOW = global.top;
-  const SCREEN = WINDOW.screen;
+  let WINDOW;
+  let SCREEN;
+
+  try {
+    WINDOW = global.top;
+    SCREEN = WINDOW.screen;
+  } catch (error) {
+    utils.logError(error);
+    return;
+  }
 
   function _callBids({ bids }) {
     const browserParams = {
