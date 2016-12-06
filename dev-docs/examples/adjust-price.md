@@ -16,7 +16,7 @@ about:
 - Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
 
 
-jsfiddle_link: jsfiddle.net/prebid/hn06j4f4/6/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/hn06j4f4/10/embedded/html,result
 
 code_height: 2725
 code_lines: 125
