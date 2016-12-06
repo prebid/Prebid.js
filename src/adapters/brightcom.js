@@ -40,15 +40,15 @@ var BrightcomAdapter = function BrightcomAdapter() {
     utils._each(bidRequests, function(bid) {
 
       // Get impression details
-      var tagId = utils.getBidIdParamater('tagId', bid.params);
-      var ref = utils.getBidIdParamater('ref', bid.params);
+      var tagId = utils.getBidIdParameter('tagId', bid.params);
+      var ref = utils.getBidIdParameter('ref', bid.params);
       var adWidth=0;
       var adHeight=0;
 
       // If no publisher id is set, use the current
       if (pubId === '') {
         // Get the current publisher id (if it doesn't exist, it'll return '')
-        pubId = utils.getBidIdParamater('pubId', bid.params);
+        pubId = utils.getBidIdParameter('pubId', bid.params);
       }
 
       // Brightcom supports only 1 size per impression
