@@ -73,13 +73,23 @@ const GumgumAdapter = function GumgumAdapter() {
             } = cachedBidRequest;
       bidResponse.placementCode = placementCode;
       const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
-      const gumgumAdLoader = `r("${trackingId}",${productId},"${ encodedResponse }",window,top)`;
-      const gumgumLibrary = `(function(r){${gumgumAdLoader}})(function(trackingId,prodId,data,context,w,d,s,G){` +
-        'G=w.GUMGUM;d=w.document;function lg(){w.GUMGUM.pbjs(trackingId,prodId,data,context,this)}return!G?w' +
-        '.$$PREBID_GLOBAL$$.loadScript("https://g2.gumgum.com/javascripts/ggv2.js",lg):lg()});';
+      const gumgumAdLoader = `<script>
+        (function (context, topWindow, d, s, G) {
+          G = topWindow.GUMGUM;
+          d = topWindow.document;
+          function loadAd() {
+            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context, topWindow);
+          }
+          if (G) {
+            loadAd();
+          } else {
+            topWindow.$$PREBID_GLOBAL$$.loadScript("https://g2.gumgum.com/javascripts/ggv2.js", loadAd);
+          }
+        }(window, top));
+      </script>`;
       Object.assign(bid, {
         cpm: ad.price,
-        ad: `<script>${gumgumLibrary}</script>`,
+        ad: gumgumAdLoader,
         width: ad.width,
         height: ad.height,
         bidderCode: BIDDER_CODE
