@@ -10,6 +10,7 @@
     "appnexus",
     "appnexusAst",
     "conversant",
+    "districtmDMX",
     "getintent",
     "hiromedia",
     "indexExchange",
@@ -59,5 +60,11 @@
       "rubicon": {
         "alias": "rubiconLite"
       }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
     }
+
 ]

@@ -10,6 +10,7 @@ var Adapter = require('./adapter.js');
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
+  var usersync = false;
 
   baseAdapter.callBids = function (params) {
     //var bidCode = baseAdapter.getBidderCode();
@@ -200,6 +201,18 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }
+
+      if (!usersync) {
+        var iframe = utils.createInvisibleIframe();
+        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
+      }
+
 
     } else {
       //no response data
