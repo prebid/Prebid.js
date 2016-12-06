@@ -4,7 +4,8 @@ var VERSION = '2.0.1',
     utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
     bidmanager = require('../bidmanager.js'),
-    adloader = require('../adloader');
+    adloader = require('../adloader'),
+    ajax = require('../ajax').ajax;
 
 /**
  * Adapter for requesting bids from Conversant
@@ -29,17 +30,6 @@ var ConversantAdapter = function () {
       script.text = code;
       document.getElementsByTagName('head')[0].appendChild(script);
     }
-  };
-
-  var httpPOSTAsync = function (url, data) {
-    var xmlHttp = new w.XMLHttpRequest();
-
-    xmlHttp.onload = function () {
-      appendScript(xmlHttp.responseText);
-    };
-    xmlHttp.open('POST', url, true); // true for asynchronous
-    xmlHttp.withCredentials = true;
-    xmlHttp.send(data);
   };
 
   var getDNT = function () {
@@ -74,7 +64,6 @@ var ConversantAdapter = function () {
     //build impression array for conversant
     utils._each(bidReqs, function (bid) {
       var bidfloor = utils.getBidIdParamater('bidfloor', bid.params),
-        sizeArrayLength = bid.sizes.length,
         adW = 0,
         adH = 0,
         imp;
@@ -82,12 +71,15 @@ var ConversantAdapter = function () {
       secure = utils.getBidIdParamater('secure', bid.params) ? 1 : secure;
       siteId = utils.getBidIdParamater('site_id', bid.params) + '';
 
-      if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-        adW = bid.sizes[0];
-        adH = bid.sizes[1];
+      // Allow sizes to be overridden per placement
+      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
+
+      if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+        adW = bidSizes[0];
+        adH = bidSizes[1];
       } else {
-        adW = bid.sizes[0][0];
-        adH = bid.sizes[0][1];
+        adW = bidSizes[0][0];
+        adH = bidSizes[0][1];
       }
 
       imp = {
@@ -120,7 +112,9 @@ var ConversantAdapter = function () {
     };
 
     var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
-    httpPOSTAsync(url, JSON.stringify(conversantBidReqs));
+    ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
+      withCredentials : true
+    });
   };
 
   var addEmptyBidResponses = function (placementsWithBidsBack) {

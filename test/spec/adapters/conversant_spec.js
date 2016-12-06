@@ -247,14 +247,13 @@ describe('Conversant adapter tests', function () {
       var resp = [200, {'Content-type': 'text/javascript'}, '$$PREBID_GLOBAL$$.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
       server.respondWith('POST', new RegExp('media.msg.dotomi.com/s2s/header'), resp);
     });
-  
+
     it('Should contain valid request header properties', function () {
       adapter.callBids(bidderRequest);
       server.respond();
-  
+
       var request = server.requests[0];
       expect(request.requestBody).to.not.be.empty;
-      expect(request.withCredentials).to.equal(true); // allows for request cookies
     });
   });
 });
