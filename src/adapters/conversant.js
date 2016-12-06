@@ -4,8 +4,7 @@ var VERSION = '2.0.1',
     utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
     bidmanager = require('../bidmanager.js'),
-    adloader = require('../adloader'),
-    ajax = require('../ajax').ajax;
+    adloader = require('../adloader');
 
 /**
  * Adapter for requesting bids from Conversant
@@ -30,6 +29,17 @@ var ConversantAdapter = function () {
       script.text = code;
       document.getElementsByTagName('head')[0].appendChild(script);
     }
+  };
+
+  var httpPOSTAsync = function (url, data) {
+    var xmlHttp = new w.XMLHttpRequest();
+
+    xmlHttp.onload = function () {
+      appendScript(xmlHttp.responseText);
+    };
+    xmlHttp.open('POST', url, true); // true for asynchronous
+    xmlHttp.withCredentials = true;
+    xmlHttp.send(data);
   };
 
   var getDNT = function () {
@@ -112,9 +122,7 @@ var ConversantAdapter = function () {
     };
 
     var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
-    ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
-      withCredentials : true
-    });
+    httpPOSTAsync(url, JSON.stringify(conversantBidReqs));
   };
 
   var addEmptyBidResponses = function (placementsWithBidsBack) {

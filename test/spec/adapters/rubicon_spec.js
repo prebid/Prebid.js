@@ -177,6 +177,10 @@ describe('the rubicon adapter', () => {
 
         let request = xhr.requests[0];
 
+        expect(request instanceof sinon.FakeXMLHttpRequest).to.equal(true);
+
+        expect(request.withCredentials).to.equal(true);
+
         let [path, query] = request.url.split('?');
         query = parseQuery(query);
 
