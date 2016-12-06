@@ -530,8 +530,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   auctionRunning = true;
 
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
-
   // we will use adUnitCodes for filtering the current auction
   $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
 
