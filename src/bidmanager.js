@@ -1,4 +1,4 @@
-import { uniques } from './utils';
+import {uniques, flatten, adUnitsFilter} from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -41,8 +41,17 @@ function getBidders(bid) {
 }
 
 function bidsBackAdUnit(adUnitCode) {
-  let requested = $$PREBID_GLOBAL$$.adUnits.find(unit => unit.code === adUnitCode);
-  if (requested) {requested = requested.bids.length;}
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids
+      .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
+      .filter(bid => bid.placementCode === adUnitCode))
+    .reduce(flatten)
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+          bid.sizes.length :
+          1;
+    }).reduce(add, 0);
+
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
 }
@@ -52,18 +61,30 @@ function add(a, b) {
 }
 
 function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add, 0);
-  const received = $$PREBID_GLOBAL$$._bidsReceived.length;
+  const requested = $$PREBID_GLOBAL$$._bidsRequested
+    .map(request => request.bids)
+    .reduce(flatten)
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
+    .map(bid => {
+      return bid.bidder === 'indexExchange' ?
+        bid.sizes.length :
+        1;
+    }).reduce((a, b) => a + b, 0);
+
+  const received = $$PREBID_GLOBAL$$._bidsReceived
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
+
   return requested === received;
 }
 
-exports.bidsBackAll = function() {
+exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
-function getBidSet(bidder, adUnitCode) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => {
-    return bidSet.bids.filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
 
@@ -73,7 +94,7 @@ function getBidSet(bidder, adUnitCode) {
 exports.addBidResponse = function (adUnitCode, bid) {
   if (bid) {
 
-    const { requestId, start } = getBidSet(bid.bidderCode, adUnitCode);
+    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
       requestId: requestId,
       responseTimestamp: timestamp(),
@@ -145,24 +166,14 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
-    filterIfSendStandardTargeting(bidder_settings[bidderCode]);
+    custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
   }
 
   //2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
   else if (defaultBidderSettingsMap[bidderCode]) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
-    filterIfSendStandardTargeting(defaultBidderSettingsMap[bidderCode]);
-  }
-
-  function filterIfSendStandardTargeting(bidderSettings) {
-    if (typeof bidderSettings.sendStandardTargeting !== "undefined" && bidderSettings.sendStandardTargeting === false) {
-      for(var key in keyValues) {
-        if(CONSTANTS.TARGETING_KEYS.indexOf(key) !== -1) {
-          delete keyValues[key];
-        }
-      }
-    }
+    custBidObj.sendStandardTargeting = defaultBidderSettingsMap[bidderCode].sendStandardTargeting;
   }
 
   return keyValues;
@@ -257,19 +268,26 @@ exports.executeCallback = function (timedOut) {
   }
 };
 
+exports.externalCallbackReset = function () {
+  externalCallbacks.all.called = false;
+};
+
 function triggerAdUnitCallbacks(adUnitCode) {
   //todo : get bid responses and send in args
-  var params = [adUnitCode];
-  processCallbacks(externalCallbacks.byAdUnit, params);
+  var singleAdUnitCode = [adUnitCode];
+  processCallbacks(externalCallbacks.byAdUnit, singleAdUnitCode);
 }
 
-function processCallbacks(callbackQueue, params) {
-  var i;
+function processCallbacks(callbackQueue, singleAdUnitCode) {
   if (utils.isArray(callbackQueue)) {
-    for (i = 0; i < callbackQueue.length; i++) {
-      var func = callbackQueue[i];
-      func.apply($$PREBID_GLOBAL$$, params || [$$PREBID_GLOBAL$$._bidsReceived.reduce(groupByPlacement, {})]);
-    }
+    callbackQueue.forEach(callback => {
+      const adUnitCodes = singleAdUnitCode || $$PREBID_GLOBAL$$._adUnitCodes;
+      const bids = [$$PREBID_GLOBAL$$._bidsReceived
+                      .filter(adUnitsFilter.bind(this, adUnitCodes))
+                      .reduce(groupByPlacement, {})];
+
+      callback.apply($$PREBID_GLOBAL$$, bids);
+    });
   }
 }
 

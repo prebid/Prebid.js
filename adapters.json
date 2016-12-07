@@ -4,11 +4,15 @@
     "adbutler",
     "adequant",
     "adform",
+    "adkernel",
     "admedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "conversant",
+    "districtmDMX",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
@@ -17,9 +21,8 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "rhythmone",
     "rubicon",
-    "rubiconLite",
-    "sekindo",
     "sonobi",
     "sovrn",
     "springserve",
@@ -33,6 +36,7 @@
     "memeglobal",
     "centro",
     "roxot",
+    "vertoz",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -57,5 +61,16 @@
       "appnexus": {
         "alias": "matomy"
       }
+    },
+    {
+      "rubicon": {
+        "alias": "rubiconLite"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
     }
+
 ]

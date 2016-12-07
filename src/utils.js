@@ -69,7 +69,7 @@ exports.generateUUID = function generateUUID(placeholder) {
     ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
-exports.getBidIdParamater = function (key, paramsObj) {
+exports.getBidIdParameter = function (key, paramsObj) {
   if (paramsObj && paramsObj[key]) {
     return paramsObj[key];
   }
@@ -180,15 +180,25 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 };
 
 exports.getTopWindowLocation = function () {
+  let location;
   try {
-    return window.top.location;
+    location = window.top.location;
   } catch (e) {
-    return window.location;
+    location = window.location;
   }
+
+  return location;
 };
 
 exports.getTopWindowUrl = function () {
-  return this.getTopWindowLocation().href;
+  let href;
+  try {
+    href = this.getTopWindowLocation().href;
+  } catch (e) {
+    href = '';
+  }
+
+  return href;
 };
 
 exports.logWarn = function (msg) {
@@ -536,11 +546,15 @@ export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
+
   return previous.cpm < current.cpm ? current : previous;
 }
 
 /**
  * Fisher–Yates shuffle
+ * http://stackoverflow.com/a/6274398
+ * https://bost.ocks.org/mike/shuffle/
+ * istanbul ignore next
  */
 export function shuffle(array) {
   let counter = array.length;
@@ -560,4 +574,8 @@ export function shuffle(array) {
   }
 
   return array;
+}
+
+export function adUnitsFilter(filter, bid) {
+  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
 }

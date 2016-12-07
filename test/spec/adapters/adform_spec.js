@@ -153,7 +153,7 @@ function parseUrl(url) {
     path: parts.join('/'),
     items: query
       .filter((i) => ! ~i.indexOf('='))
-      .map((i) => atob(i)
+      .map((i) => fromBase64(i)
         .split('&')
         .reduce(toObject, {})),
     query: query
@@ -161,6 +161,18 @@ function parseUrl(url) {
       .map((i) => i.replace('?', ''))
       .reduce(toObject, {})
   };
+}
+
+function fromBase64(input) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split('');
+  let bc = 0, bs, buffer, idx = 0, output = '';
+  for (; buffer = input.charAt(idx++);
+    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
+      bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+  ) {
+    buffer = chars.indexOf(buffer);
+  }
+  return output;
 }
 
 function toObject(cache, string) {

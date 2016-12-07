@@ -15,59 +15,63 @@ const XHR_DONE = 4;
  */
 
 export function ajax(url, callback, data, options = {}) {
+  try {
+    let x;
+    let useXDomainRequest = false;
+    let method = options.method || (data ? 'POST' : 'GET');
 
-  let x,
-      method = options.method || (data ? 'POST' : 'GET'),
-      // For IE9 support use XDomainRequest instead of XMLHttpRequest.
-      useXDomainRequest = window.XDomainRequest &&
-        (!window.XMLHttpRequest || new window.XMLHttpRequest().responseType === undefined);
-
-  if (useXDomainRequest) {
-    x = new window.XDomainRequest();
-    x.onload = function () {
-      callback(x.responseText, x);
-    };
-
-    // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-    x.onerror = function () {
-      utils.logMessage('xhr onerror');
-    };
-    x.ontimeout = function () {
-      utils.logMessage('xhr timeout');
-    };
-    x.onprogress = function() {
-      utils.logMessage('xhr onprogress');
-    };
-
-  } else {
-    x = new window.XMLHttpRequest();
-    x.onreadystatechange = handler;
-  }
-
-  if (method === 'GET' && data) {
-    let urlInfo = parseURL(url);
-    Object.assign(urlInfo.search, data);
-    url = formatURL(urlInfo);
-  }
-
-  x.open(method, url);
-
-  if (!useXDomainRequest) {
-    if (options.withCredentials) {
-      x.withCredentials = true;
+    if (!window.XMLHttpRequest) {
+      useXDomainRequest = true;
+    } else{
+      x = new window.XMLHttpRequest();
+      if (x.responseType === undefined) {
+        useXDomainRequest = true;
+      }
     }
-    if (options.preflight) {
-      x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+    if (useXDomainRequest) {
+      x = new window.XDomainRequest();
+      x.onload = function () {
+        callback(x.responseText, x);
+      };
+
+      // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
+      x.onerror = function () {
+        utils.logMessage('xhr onerror');
+      };
+      x.ontimeout = function () {
+        utils.logMessage('xhr timeout');
+      };
+      x.onprogress = function() {
+        utils.logMessage('xhr onprogress');
+      };
+    } else {
+      x.onreadystatechange = function () {
+        if (x.readyState === XHR_DONE && callback) {
+          callback(x.responseText, x);
+        }
+      };
     }
-    x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
-  }
 
-  x.send(method === 'POST' && data);
-
-  function handler() {
-    if (x.readyState === XHR_DONE && callback) {
-      callback(x.responseText, x);
+    if (method === 'GET' && data) {
+      let urlInfo = parseURL(url);
+      Object.assign(urlInfo.search, data);
+      url = formatURL(urlInfo);
     }
-  }
 
+    x.open(method, url);
+
+    if (!useXDomainRequest) {
+      if (options.withCredentials) {
+        x.withCredentials = true;
+      }
+      if (options.preflight) {
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      }
+      x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
+    }
+    x.send(method === 'POST' && data);
+  } catch (error) {
+    utils.logError('xhr construction', error);
+  }
 }
