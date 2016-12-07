@@ -421,6 +421,30 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="featureforward" class="bidder-check-box"> FeatureForward
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="districtmDMX" class="bidder-check-box"> DistrictmDMX
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="gumgum" class="bidder-check-box"> GumGum
+      </label>
+    </div>
+  </div>
+
 
 
 
@@ -428,7 +452,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <br>
 <p>
-(Version 0.15.0)
+(Version 0.16.0)
 </p>
 
 <div class="form-group">
