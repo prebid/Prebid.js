@@ -30,7 +30,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
       ppBidRequest.display();
     } catch(e) {
       //register passback on any exceptions while attempting to fetch response.
-      utils.logMessage('pulsepoint.requestBid', 'ERROR', e);
+      utils.logError('pulsepoint.requestBid', 'ERROR', e);
       bidResponseAvailable(bidRequest);
     }
   }
