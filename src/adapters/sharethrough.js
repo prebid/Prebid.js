@@ -2,7 +2,6 @@ var utils = require('../utils.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 
-const STR_BIDDER_CODE = "sharethrough";
 const STR_VERSION = "0.1.0";
 
 var SharethroughAdapter = function SharethroughAdapter() {
@@ -15,12 +14,8 @@ var SharethroughAdapter = function SharethroughAdapter() {
   function _callBids(params) {
     const bids = params.bids;
 
-    if (window.addEventListener){
-      addEventListener("message", _receiveMessage, false);
-    } else {
-      attachEvent("onmessage", _receiveMessage);
-    }
-
+    addEventListener("message", _receiveMessage, false);
+    
     // cycle through bids
     for (let i = 0; i < bids.length; i += 1) {
       const bidRequest = bids[i];
@@ -30,15 +25,15 @@ var SharethroughAdapter = function SharethroughAdapter() {
   }
 
   function _buildSharethroughCall(bid) {
-    const testPkey = 'test'
+    const testPkey = 'test';
     const pkey = utils.getBidIdParameter('pkey', bid.params);
 
-    let host = (pkey == testPkey) ? str.STR_TEST_HOST : str.STR_BTLR_HOST;
+    let host = (pkey === testPkey) ? str.STR_TEST_HOST : str.STR_BTLR_HOST;
 
     let url = host + "/header-bid/v1?";
     url = utils.tryAppendQueryString(url, 'bidId', bid.bidId);
 
-    if(pkey != testPkey) {
+    if(pkey !== testPkey) {
       url = utils.tryAppendQueryString(url, 'placement_key', pkey);
       url = utils.tryAppendQueryString(url, 'ijson', '$$PREBID_GLOBAL$$.strcallback');
       url = appendEnvFields(url);
