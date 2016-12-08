@@ -1,6 +1,7 @@
 [
     "aardvark",
     "adblade",
+    "adbutler",
     "adequant",
     "adform",
     "admedia",
@@ -8,14 +9,16 @@
     "appnexus",
     "appnexusAst",
     "getintent",
+    "hiromedia",
     "indexExchange",
     "kruxlink",
+    "komoona",
     "openx",
     "piximedia",
     "pubmatic",
     "pulsepoint",
     "rubicon",
-    "sekindo",
+    "rubiconLite",
     "sonobi",
     "sovrn",
     "springserve",
@@ -28,6 +31,7 @@
     "underdogmedia",
     "memeglobal",
     "centro",
+    "roxot",
     {
       "appnexus": {
         "alias": "brealtime"

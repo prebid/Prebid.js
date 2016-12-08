@@ -5,7 +5,7 @@ var utils = require('../utils.js');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
-  var getJsStaticUrl = window.location.protocol + '//rtb.udmserve.net/udm_header_lib.js';
+  var getJsStaticUrl = window.location.protocol + '//bid.underdog.media/udm_header_lib.js';
 
   function _callBids(params) {
     if (typeof window.udm_header_lib === 'undefined') {
@@ -17,18 +17,22 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
   function bid(params) {
     var bids = params.bids;
+    var mapped_bids = [];
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
       var callback = bidResponseCallback(bidRequest);
-      var udmBidRequest = new window.udm_header_lib.BidRequest({
+      mapped_bids.push({
         sizes: bidRequest.sizes,
         siteId: bidRequest.params.siteId,
         bidfloor: bidRequest.params.bidfloor,
         placementCode: bidRequest.placementCode,
+        divId: bidRequest.params.divId,
+        subId: bidRequest.params.subId,
         callback: callback
       });
-      udmBidRequest.send();
     }
+    var udmBidRequest = new window.udm_header_lib.BidRequestArray(mapped_bids);
+    udmBidRequest.send();
   }
 
   function bidResponseCallback(bid) {

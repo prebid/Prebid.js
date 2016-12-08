@@ -1,10 +1,11 @@
-var utils = require('../utils.js');
-var ajax = require('../ajax.js').ajax;
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
+const utils = require('../utils.js');
+const ajax = require('../ajax.js').ajax;
+const bidfactory = require('../bidfactory.js');
+const bidmanager = require('../bidmanager.js');
 
-var AolAdapter = function AolAdapter() {
+const AolAdapter = function AolAdapter() {
 
+  let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
@@ -28,8 +29,8 @@ var AolAdapter = function AolAdapter() {
   function _buildPubapiUrl(bid) {
     const params = bid.params;
     const serverParam = params.server;
-    var regionParam = params.region || 'us';
-    var server;
+    let regionParam = params.region || 'us';
+    let server;
 
     if (!SERVER_MAP.hasOwnProperty(regionParam)) {
       console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
@@ -59,8 +60,8 @@ var AolAdapter = function AolAdapter() {
     });
   }
 
-  function _addErrorBidResponse(bid, response) {
-    var bidResponse = bidfactory.createBid(2);
+  function _addErrorBidResponse(bid, response = {}) {
+    const bidResponse = bidfactory.createBid(2, bid);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.reason = response.nbr;
     bidResponse.raw = response;
@@ -68,7 +69,7 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _addBidResponse(bid, response) {
-    var bidData;
+    let bidData;
 
     try {
       bidData = response.seatbid[0].bid[0];
@@ -77,7 +78,7 @@ var AolAdapter = function AolAdapter() {
       return;
     }
 
-    var cpm;
+    let cpm;
 
     if (bidData.ext && bidData.ext.encp) {
       cpm = bidData.ext.encp;
@@ -85,17 +86,18 @@ var AolAdapter = function AolAdapter() {
       cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
+        utils.logError('Invalid price in bid response', BIDDER_CODE, bid);
         _addErrorBidResponse(bid, response);
         return;
       }
     }
 
-    var ad = bidData.adm;
+    let ad = bidData.adm;
     if (response.ext && response.ext.pixels) {
       ad += response.ext.pixels;
     }
 
-    var bidResponse = bidfactory.createBid(1);
+    const bidResponse = bidfactory.createBid(1, bid);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.ad = ad;
     bidResponse.cpm = cpm;
@@ -112,18 +114,32 @@ var AolAdapter = function AolAdapter() {
   }
 
   function _callBids(params) {
-    utils._each(params.bids, function (bid) {
+    utils._each(params.bids, bid => {
       const pubapiUrl = _buildPubapiUrl(bid);
 
-      ajax(pubapiUrl, (response) => {
+      ajax(pubapiUrl, response => {
+        // needs to be here in case bidderSettings are defined after requestBids() is called
+        if (showCpmAdjustmentWarning &&
+          $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
+          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
+        ) {
+          utils.logWarn(
+            'bidCpmAdjustment is active for the AOL adapter. ' +
+            'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
+          );
+        }
+        showCpmAdjustmentWarning = false; // warning is shown at most once
+
         if (!response && response.length <= 0) {
           utils.logError('Empty bid response', BIDDER_CODE, bid);
+          _addErrorBidResponse(bid, response);
           return;
         }
 
         try {
           response = JSON.parse(response);
         } catch (e) {
+          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response);
           return;
         }

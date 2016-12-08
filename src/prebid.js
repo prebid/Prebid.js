@@ -5,6 +5,7 @@ import { flatten, uniques, getKeys, isGptPubadsDefined, getHighestCpm } from './
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
+import {isValidePriceConfig} from './cpmBucketManager';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -149,12 +150,20 @@ function getPresetTargeting() {
           })
         };
       });
-    })();
+    }());
   }
 }
 
-function getWinningBidTargeting() {
-  let winners = $$PREBID_GLOBAL$$._bidsReceived.map(bid => bid.adUnitCode)
+function getWinningBids(adUnitCode) {
+  // use the given adUnitCode as a filter if present or all adUnitCodes if not
+  const adUnitCodes = adUnitCode ?
+    [adUnitCode] :
+    $$PREBID_GLOBAL$$.adUnits.map(adUnit => adUnit.code);
+
+  return $$PREBID_GLOBAL$$._bidsReceived
+    .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+    .filter(bid => bid.cpm > 0)
+    .map(bid => bid.adUnitCode)
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
@@ -165,6 +174,10 @@ function getWinningBidTargeting() {
           adserverTargeting: {},
           timeToRespond: 0
         }));
+}
+
+function getWinningBidTargeting() {
+  let winners = getWinningBids();
 
   // winning bids with deals need an hb_deal targeting key
   winners
@@ -187,11 +200,7 @@ function getDealTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
     const dealKey = `hb_deal_${bid.bidderCode}`;
     return {
-      [bid.adUnitCode]: CONSTANTS.TARGETING_KEYS.map(key => {
-        return {
-          [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-        };
-      })
+      [bid.adUnitCode]: getTargetingMap(bid, CONSTANTS.TARGETING_KEYS)
       .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
@@ -231,14 +240,18 @@ function getBidLandscapeTargeting() {
   return $$PREBID_GLOBAL$$._bidsReceived.map(bid => {
     if (bid.adserverTargeting) {
       return {
-        [bid.adUnitCode]: standardKeys.map(key => {
-          return {
-            [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-          };
-        })
+        [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
       };
     }
   }).filter(bid => bid); // removes empty elements in array
+}
+
+function getTargetingMap(bid, keys) {
+  return keys.map(key => {
+    return {
+      [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
+    };
+  });
 }
 
 function getAllTargeting() {
@@ -285,6 +298,13 @@ function removeComplete() {
   // also remove bids that have an empty or error status so known as not pending for render
   responses.filter(bid => bid.getStatusCode && bid.getStatusCode() === 2)
     .forEach(bid => responses.splice(responses.indexOf(bid), 1));
+}
+
+function setRenderSize(doc, width, height) {
+  if (doc.defaultView && doc.defaultView.frameElement) {
+    doc.defaultView.frameElement.width = width;
+    doc.defaultView.frameElement.height = height;
+  }
 }
 
 //////////////////////////////////
@@ -461,19 +481,11 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if (ad) {
           doc.write(ad);
           doc.close();
-          if (doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
+          setRenderSize(doc, width, height);
         } else if (url) {
           doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
           doc.close();
-
-          if (doc.defaultView && doc.defaultView.frameElement) {
-            doc.defaultView.frameElement.width = width;
-            doc.defaultView.frameElement.height = height;
-          }
-
+          setRenderSize(doc, width, height);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }
@@ -543,24 +555,26 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (auctionRunning) {
     bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, cbTimeout, adUnits });
+      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits });
     });
     return;
-  } else {
-    auctionRunning = true;
-    removeComplete();
   }
-
-  if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler);
-  }
+  auctionRunning = true;
+  removeComplete();
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+    if (typeof bidsBackHandler === objectType_function) {
+      bidmanager.addOneTimeCallback(bidsBackHandler, false);
+    }
     bidmanager.executeCallback();
     return;
+  }
+
+  if (typeof bidsBackHandler === objectType_function) {
+    bidmanager.addOneTimeCallback(bidsBackHandler, false);
   }
 
   var timeouts = [cbTimeout];
@@ -582,6 +596,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   bidmanager.setTimeouts(timeouts);
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+  if($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
+    bidmanager.executeCallback();
+  }
 };
 
 /**
@@ -771,12 +788,36 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   }
 };
 
+/**
+ * Sets a default price granularity scheme.
+ * @param {String|Object} granularity - the granularity scheme.
+ * "low": $0.50 increments, capped at $5 CPM
+ * "medium": $0.10 increments, capped at $20 CPM (the default)
+ * "high": $0.01 increments, capped at $20 CPM
+ * "auto": Applies a sliding scale to determine granularity
+ * "dense": Like "auto", but the bid price granularity uses smaller increments, especially at lower CPMs
+ *
+ * Alternatively a custom object can be specified:
+ * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
+ * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
+ */
 $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-  } else {
+    return;
+  }
+  if(typeof granularity === 'string') {
     bidmanager.setPriceGranularity(granularity);
+  }
+  else if(typeof granularity === 'object') {
+    if(!isValidePriceConfig(granularity)){
+      utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+      return;
+    }
+    bidmanager.setCustomPriceBucket(granularity);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    utils.logMessage('Using custom price granularity');
   }
 };
 
@@ -815,6 +856,28 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
     return;
   }
   return masterTag;
+};
+
+/**
+ * Set the order bidders are called in. If not set, the bidders are called in
+ * the order they are defined wihin the adUnit.bids array
+ * @param {string} order - Order to call bidders in. Currently the only possible value
+ * is 'random', which randomly shuffles the order
+ */
+$$PREBID_GLOBAL$$.setBidderSequence = function (order) {
+  if (order === CONSTANTS.ORDER.RANDOM) {
+    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
+  }
+};
+
+/**
+ * Get array of highest cpm bids for all adUnits, or highest cpm bid
+ * object for the given adUnit
+ * @param {string} adUnitCode - optional ad unit code
+ * @return {array} array containing highest cpm bid object(s)
+ */
+$$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
+  return getWinningBids(adUnitCode);
 };
 
 processQue();

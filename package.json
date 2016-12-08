@@ -1,15 +1,21 @@
 {
   "name": "prebid.js",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "test": "gulp test"
+    "test": "gulp test && gulp mocha"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/prebid/Prebid.js.git"
   },
+  "keywords": [
+    "advertising",
+    "auction",
+    "header bidding",
+    "prebid"
+  ],
   "globalVarName": "pbjs",
   "analytics": ["aol"],
   "author": "the prebid.js contributors",
@@ -40,6 +46,7 @@
     "gulp-jsdoc-to-markdown": "^1.2.1",
     "gulp-jshint": "^1.8.4",
     "gulp-karma": "0.0.4",
+    "gulp-mocha": "^2.2.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
     "gulp-shell": "^0.5.2",
@@ -77,8 +84,10 @@
     "mkpath": "^1.0.0",
     "mocha": "^1.21.4",
     "nightwatch": "^0.9.5",
+    "mock-fs": "^3.11.0",
     "open": "0.0.5",
     "phantomjs": "^1.9.18",
+    "proxyquire": "^1.7.10",
     "querystringify": "0.0.3",
     "requirejs": "^2.1.20",
     "sinon": "^1.12.1",
