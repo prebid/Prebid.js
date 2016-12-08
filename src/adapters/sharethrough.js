@@ -2,6 +2,7 @@ var utils = require('../utils.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 
+const STR_BIDDER_CODE = "sharethrough";
 const STR_VERSION = "0.1.0";
 
 var SharethroughAdapter = function SharethroughAdapter() {
@@ -10,15 +11,19 @@ var SharethroughAdapter = function SharethroughAdapter() {
   str.STR_BTLR_HOST = document.location.protocol + "//btlr.sharethrough.com";
   str.STR_TEST_HOST =  document.location.protocol + "//btlr-prebid-test.sharethrough.com";
   str.STR_BEACON_HOST = document.location.protocol + "//b.sharethrough.com/butler?";
+  str.placementCodeSet = new Set();
 
   function _callBids(params) {
     const bids = params.bids;
+
+    $$PREBID_GLOBAL$$.onEvent('bidWon', str.bidWon);
 
     addEventListener("message", _receiveMessage, false);
     
     // cycle through bids
     for (let i = 0; i < bids.length; i += 1) {
       const bidRequest = bids[i];
+      str.placementCodeSet.add(bidRequest.placementCode);
       const scriptUrl = _buildSharethroughCall(bidRequest);
       str.loadIFrame(scriptUrl);
     }
@@ -101,6 +106,23 @@ var SharethroughAdapter = function SharethroughAdapter() {
     bidmanager.addBidResponse(bidObj.placementCode, bid);
   }
 
+  str.bidWon = function() {
+    const curBidderCode = arguments[0].bidderCode;
+    if(curBidderCode !== STR_BIDDER_CODE && str.placementCodeSet.has(arguments[0].adUnitCode)) {
+      str.fireLoseBeacon(curBidderCode, arguments[0].cpm, "headerBidLose");
+    }
+  };
+
+  str.fireLoseBeacon = function(winningBidderCode, winningCPM, type) {
+    let loseBeaconUrl = str.STR_BEACON_HOST;
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerBidderCode", winningBidderCode);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerCpm", winningCPM);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "type", type);
+    loseBeaconUrl = appendEnvFields(loseBeaconUrl);
+
+    str.fireBeacon(loseBeaconUrl);
+  };
+
   function appendEnvFields(url) {
     url = utils.tryAppendQueryString(url, 'hbVersion', '$prebid.version$');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
@@ -108,6 +130,11 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
     return url;
   }
+
+  str.fireBeacon = function(theUrl) {
+    const img = new Image();
+    img.src = theUrl;
+  };
 
   return {
     callBids: _callBids,
