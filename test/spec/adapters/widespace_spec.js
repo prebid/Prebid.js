@@ -114,9 +114,8 @@ describe('WidespaceAdapter', () => {
       pbjs._bidsRequested.push(BID_REQUEST);
       pbjs.widespaceHandleCB(BID_RESPONSE);
 
-      console.log(bidManager.addBidResponse.firstCall.args[0]);
-
       successfulBid1 = bidManager.addBidResponse.firstCall.args[1];
+
     });
 
     it('should add one bid', () => {
@@ -124,8 +123,6 @@ describe('WidespaceAdapter', () => {
     });
 
     it('should use the CPM returned by the server', () => {
-      console.log('successfulBid1', successfulBid1);
-      console.log('successfulBid1 CPM :::', successfulBid1.cpm);
       expect(successfulBid1).to.have.property('cpm', TEST.CPM);
     });
 
