@@ -39,7 +39,7 @@ gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2ete
 
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test', 'mocha']);
 
-gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
+gulp.task('build', ['webpack']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {

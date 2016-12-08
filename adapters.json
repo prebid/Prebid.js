@@ -4,12 +4,15 @@
     "adbutler",
     "adequant",
     "adform",
+    "adkernel",
     "admedia",
     "aol",
     "appnexus",
     "appnexusAst",
     "conversant",
+    "districtmDMX",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
@@ -18,8 +21,8 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "rhythmone",
     "rubicon",
-    "rubiconLite",
     "sonobi",
     "sovrn",
     "springserve",
@@ -33,6 +36,7 @@
     "memeglobal",
     "centro",
     "roxot",
+    "vertoz",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -52,5 +56,16 @@
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
+    },
+    {
+      "rubicon": {
+        "alias": "rubiconLite"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
     }
+
 ]

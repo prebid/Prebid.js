@@ -208,8 +208,21 @@
                     {
                         bidder: 'adblade',
                         params: {
-                            partnerId: 39875,
+                            partnerId: 42980,
                             bidfloor: 0.01		// OPTIONAL float bid floor in $ CPM
+                        }
+                    },
+                    {
+                        bidder: 'vertoz',
+                        params:{
+                            placementId:'VZH123'        //REQUIRED AD unit id
+                        }
+                    },
+                    {
+                        bidder: 'adkernel',
+                        params: {
+                            zoneId : '30164',
+                            host : 'cpm.metaadserving.com'
                         }
                     }
                 ]
@@ -305,6 +318,12 @@
                         bidder: 'memeglobal',
                         params: {
                             tagid: 007,  	// REQUIRED int. To get one, contact http://www.memeglobal.com
+                        }
+                    },
+                    {
+                        bidder: 'gumgum',
+                        params: {
+                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
                         }
                     }
                 ]
