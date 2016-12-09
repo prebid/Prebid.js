@@ -11,7 +11,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   str.STR_BTLR_HOST = document.location.protocol + "//btlr.sharethrough.com";
   str.STR_TEST_HOST =  document.location.protocol + "//btlr-prebid-test.sharethrough.com";
   str.STR_BEACON_HOST = document.location.protocol + "//b.sharethrough.com/butler?";
-  str.placementCodeSet = new Set();
+  str.placementCodeSet = {};
 
   function _callBids(params) {
     const bids = params.bids;
@@ -23,7 +23,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     // cycle through bids
     for (let i = 0; i < bids.length; i += 1) {
       const bidRequest = bids[i];
-      str.placementCodeSet.add(bidRequest.placementCode);
+      str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
       str.loadIFrame(scriptUrl);
     }
@@ -75,6 +75,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bid.width = size[0];
       bid.height = size[1];
       bid.adserverRequestId = bidResponse.adserverRequestId;
+      str.placementCodeSet[bidObj.placementCode].adserverRequestId = bidResponse.adserverRequestId;
       bid.winId = bidResponse.creatives[0].auctionWinId;
 
       bid.pkey = utils.getBidIdParameter('pkey', bidObj.params);
@@ -94,7 +95,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
                     window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
                 })();
                 </script>`;
-
       bidmanager.addBidResponse(bidObj.placementCode, bid);
     } catch (e) {
       _handleInvalidBid(bidObj);
@@ -108,15 +108,18 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   str.bidWon = function() {
     const curBidderCode = arguments[0].bidderCode;
-    if(curBidderCode !== STR_BIDDER_CODE && str.placementCodeSet.has(arguments[0].adUnitCode)) {
-      str.fireLoseBeacon(curBidderCode, arguments[0].cpm, "headerBidLose");
+
+    if(curBidderCode !== STR_BIDDER_CODE && (arguments[0].adUnitCode in str.placementCodeSet)) {
+      let strBid = str.placementCodeSet[arguments[0].adUnitCode];
+      str.fireLoseBeacon(curBidderCode, arguments[0].cpm, strBid.adserverRequestId, "headerBidLose");
     }
   };
 
-  str.fireLoseBeacon = function(winningBidderCode, winningCPM, type) {
+  str.fireLoseBeacon = function(winningBidderCode, winningCPM, arid, type) {
     let loseBeaconUrl = str.STR_BEACON_HOST;
     loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerBidderCode", winningBidderCode);
     loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerCpm", winningCPM);
+    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "arid", arid);
     loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "type", type);
     loseBeaconUrl = appendEnvFields(loseBeaconUrl);
 

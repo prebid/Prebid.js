@@ -110,7 +110,8 @@ describe('sharethrough adapter', () => {
       sandbox.stub(bidManager, 'addBidResponse');
 
       pbjs._bidsRequested.push(bidderRequest);
-
+      adapter.str.placementCodeSet['foo'] = {};
+      adapter.str.placementCodeSet['bar'] = {};
       // respond
 
       let bidderReponse1 = {
@@ -207,8 +208,7 @@ describe('sharethrough adapter', () => {
 
     describe('when bidderCode is not sharethrough and sharethrough is in bid', () => {
       beforeEach(() => {
-
-        sandbox.stub(adapter.str.placementCodeSet, "has").returns(true);
+        adapter.str.placementCodeSet["div-gpt-ad-1460505748561-0"] = {"adserverRequestId" : "0eca470d-fcac-48e6-845a-c86483ccaa0c"}
 
         var args =  [
                       {
@@ -258,12 +258,12 @@ describe('sharethrough adapter', () => {
 
     beforeEach(() => {
       sandbox.stub(adapter.str, 'fireBeacon');
-      adapter.str.fireLoseBeacon('someoneelse', 10.0, 'losebeacontype');
+      adapter.str.fireLoseBeacon('someoneelse', 10.0, 'arid', 'losebeacontype');
     });
 
     it('should call correct url', () => {
         let winUrl = adapter.str.fireBeacon.firstCall.args[0];
-        expect(winUrl).to.contain(adapter.str.STR_BEACON_HOST + 'winnerBidderCode=someoneelse&winnerCpm=10&type=losebeacontype&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
+        expect(winUrl).to.contain(adapter.str.STR_BEACON_HOST + 'winnerBidderCode=someoneelse&winnerCpm=10&arid=arid&type=losebeacontype&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
     });
   });
 });
