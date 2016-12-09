@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import _ from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
+import aolSync from 'src/adapters/aolSync';
 import bidmanager from 'src/bidmanager';
 
 const DEFAULT_BIDDER_REQUEST = {
@@ -430,6 +431,77 @@ describe('AolAdapter', () => {
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.cpm).to.equal('a9334987');
       });
+
+      it('should not render pixels from pubapi response if not enabled', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
+      });
+
+      it('should render pixels from pubapi response if enabled', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids({
+          bidderCode: 'aol',
+          requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+          bidderRequestId: '7101db09af0db2',
+          start: new Date().getTime(),
+          bids: [{
+            bidder: 'aol',
+            bidId: '84ab500420319d',
+            bidderRequestId: '7101db09af0db2',
+            requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+            placementCode: 'foo',
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              userSyncOn: 'bidResponse'
+            }
+          }]
+        });
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(document.body.querySelectorAll('iframe[src="pixels.org"]')[0].outerHTML).to.equal
+            ('<iframe width="1" height="1" src="pixels.org" style="display: none;"></iframe>');
+      });
+
     });
 
     describe('when bidCpmAdjustment is set', () => {
@@ -463,4 +535,59 @@ describe('AolAdapter', () => {
       });
     });
   });
+});
+
+describe('AolSync', () => {
+
+  describe('parsePixelsItems()', () => {
+    it('should return empty for undefined parameter', () => {
+      expect(aolSync.parsePixelsItems()).to.be.empty;
+    });
+
+    it('should return empty for null parameter', () => {
+      expect(aolSync.parsePixelsItems(null)).to.be.empty;
+    });
+
+    it('should return parsed items when pixels are present', () => {
+      let pixels = '<script type="text/javascript">' +
+        'document.write(\'<img src="url1.com">\');' +
+        'document.write(\'' +
+        '<iframe src="url2.com"></iframe>\');' +
+        'document.write(\'' +
+        '<img src="url3.com">\'); </script>';
+      expect(aolSync.parsePixelsItems(pixels)).to.deep.equal([
+        {tagName: 'IMG', src: 'url1.com'},
+        {tagName: 'IFRAME', src: 'url2.com'},
+        {tagName: 'IMG', src: 'url3.com'}
+      ]);
+    });
+  });
+
+  describe('renderPixelsIframe()', () => {
+    it('should create iframe and render if for pixels item', () => {
+
+      let createElementStub = sinon.stub(document, 'createElement').returns({
+        name: 'iframe-object'
+      });
+      let appendChildStub = sinon.stub(document.body, 'appendChild');
+      let expectedIframe = {
+        name: 'iframe-object',
+        width: 1,
+        height: 1,
+        style: 'display: none',
+        src: 'src-url'
+      };
+
+      aolSync.renderPixelsIframe({
+        src: 'src-url'
+      });
+      expect(createElementStub.withArgs('iframe').calledOnce).to.be.true;
+      expect(appendChildStub.withArgs(expectedIframe).calledOnce).to.be.true;
+
+      createElementStub.restore();
+      appendChildStub.restore();
+
+    });
+  });
+
 });

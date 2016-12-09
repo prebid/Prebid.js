@@ -2,6 +2,8 @@ const utils = require('../utils.js');
 const ajax = require('../ajax.js').ajax;
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
+const constants = require('../constants.json');
+const aolSync = require('aolsync.js');
 
 const AolAdapter = function AolAdapter() {
 
@@ -94,7 +96,11 @@ const AolAdapter = function AolAdapter() {
 
     let ad = bidData.adm;
     if (response.ext && response.ext.pixels) {
-      ad += response.ext.pixels;
+      if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
+        aolSync.renderPixels(response.ext.pixels);
+      } else {
+        ad += response.ext.pixels;
+      }
     }
 
     const bidResponse = bidfactory.createBid(1, bid);
