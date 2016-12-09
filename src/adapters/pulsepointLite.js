@@ -21,7 +21,9 @@ function PulsePointLiteAdapter() {
       var env = environment();
       var params = Object.assign({}, env, bidRequest.params);
       var ajaxOptions = {
-        withCredentials: true
+        contentType: 'text/plain',
+        withCredentials: true,
+        method: 'GET'
       };
       ajax(bidUrl, (bidResponse) => {
         bidResponseAvailable(bidRequest, bidResponse);
@@ -57,21 +59,24 @@ function PulsePointLiteAdapter() {
     }
   }
 
-  function bidResponseAvailable(bidRequest, bidResponse) {
-    if (bidResponse) {
-      var adSize = bidRequest.params.cf.toUpperCase().split('X');
-      var bid = createBid(STATUS.GOOD, bidRequest);
-      bid.bidderCode = bidRequest.bidder;
-      bid.cpm = bidResponse.bidCpm;
-      bid.ad = bidResponse.html;
-      bid.width = adSize[0];
-      bid.height = adSize[1];
-      addBidResponse(bidRequest.placementCode, bid);
-    } else {
-      var passback = createBid(STATUS.NO_BID, bidRequest);
-      passback.bidderCode = bidRequest.bidder;
-      addBidResponse(bidRequest.placementCode, passback);
+  function bidResponseAvailable(bidRequest, rawResponse) {
+    if (rawResponse) {
+      var bidResponse = JSON.parse(rawResponse);
+      if(bidResponse) {
+        var adSize = bidRequest.params.cf.toUpperCase().split('X');
+        var bid = createBid(STATUS.GOOD, bidRequest);
+        bid.bidderCode = bidRequest.bidder;
+        bid.cpm = bidResponse.bidCpm;
+        bid.ad = bidResponse.html;
+        bid.width = adSize[0];
+        bid.height = adSize[1];
+        addBidResponse(bidRequest.placementCode, bid);
+        return;
+      }
     }
+    var passback = createBid(STATUS.NO_BID, bidRequest);
+    passback.bidderCode = bidRequest.bidder;
+    addBidResponse(bidRequest.placementCode, passback);
   }
 
   return {

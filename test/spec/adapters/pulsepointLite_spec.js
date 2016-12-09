@@ -65,10 +65,10 @@ describe("PulsePoint Adapter Tests", () => {
   it('Verify bid', () => {
     pulsepointAdapter.callBids(slotConfigs);
     //trigger a mock ajax callback with bid.
-    ajaxStub.firstCall.args[1]({
+    ajaxStub.firstCall.args[1](JSON.stringify({
       html: 'This is an Ad',
       bidCpm: 1.25
-    });
+    }));
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
     expect(placement).to.equal('/DfpAccount1/slot1');
