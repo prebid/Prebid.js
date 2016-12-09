@@ -3,79 +3,83 @@
 {% include main_nav.html %}
 
 <div class="container bs-docs-container">
+  <div class="row">
 
+    <div class="col-md-5">
+      <div class="docs-sidebar">
+        <div class="row">
+          <div class="col-md-6">
+            {% include left_nav.html %}
+          </div>
 
+          <div class="col-md-6">
+            <h5>All Examples</h5>
 
-<div class="row">
+            <ul id="example-tab">
 
+              {% assign example_pages = (site.pages | where: "layout", "example") | sort: "pid" %}
 
-<div class="col-md-5">
+              {% for epage in example_pages %}
+                <li>
+                  <a href="{{ epage.url }}">{{ epage.title }}</a>
+                  {% if epage.is_beta %}
+                    <span class="label label-warning">Beta</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
 
-  <div class="docs-sidebar">
-
-    <div class="row">
-      <div class="col-md-6">
-        {% include left_nav.html %}
-      </div>
-
-      <div class="col-md-6">
-        <h5>All Examples</h5>
-
-        <ul id="example-tab">
-
-        {% assign example_pages = (site.pages | where: "layout", "example") | sort: "pid" %}
-
-        {% for epage in example_pages %}
-          <li>
-            <a href="{{ epage.url }}">{{ epage.title }}</a>
-            {% if epage.is_beta %}
-              <span class="label label-warning">Beta</span>
-            {% endif %}
-          </li>
-        {% endfor %}
-
-        </ul>
-      <!-- </div> -->
+            </ul>
+            <!-- </div> -->
+        </div>
       </div>
     </div>
   </div>
-</div>
 
+  <div class="col-md-7" role="main">
+    <div class="bs-docs-section" markdown="1">
 
-<div class="col-md-7" role="main">
+      <h1>{{ page.description }} </h1>
 
-  <div class="bs-docs-section" markdown="1">
+      {% if page.why_link %}
+        <h4>Who should use this example:</h4>
 
-    <h1>{{ page.description }} </h1>
+        <ul>
+          <li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
+        </ul>
+      {% endif %}
 
-    {% if page.why_link %}
-      <h4>Who should use this example:</h4>
+      <h4>This page contains:</h4>
 
-      <ul>
-      <li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
-      </ul>
-    {% endif %}
+      <p>
+        <ul>
+          {% for about_bullet in page.about %}
+            <li>{{ about_bullet}}</li>
+          {% endfor %}
+        </ul>
+      </p>
 
-    <h4>This page contains:</h4>
+      <p>
 
-    <ul>
-      {% for about_bullet in page.about %}
-        <li>{{ about_bullet}}</li>
-      {% endfor %}
-    </ul>
+        On the example below, click the JSFiddle <strong>Result</strong> tab
+        to see the result. Click <strong>Edit in JSFiddle</strong> to open
+        the example in a new tab.
 
+      </p>
 
-    <h4>How to use this:</h4>
+      <p>
+        For tips and troublshooting info, see:
+        <ul>
+          <li>
+            <a href="{{site.github.url}}/dev-docs/toubleshooting-tips.html">Tips for Troubleshooting</a>
+          </li>
+          <li>
+            <a href="{{site.github.url}}/dev-docs/common-issues.html">Common Issues</a>
+          </li>
+        </ul>
+      </p>
 
-    Click on the JSFiddle "Result" tab to see the result. Or, edit it in JSFiddle.
-
+    </div>
   </div>
-</div>
-
-
-
-
-
 
 </div>
 
