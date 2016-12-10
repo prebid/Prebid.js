@@ -249,6 +249,7 @@ exports.executeCallback = function (timedOut) {
 
   if (externalCallbacks.all.called !== true) {
     processCallbacks(externalCallbacks.all);
+    externalCallbacks.all = [];
     externalCallbacks.all.called = true;
 
     if (timedOut) {
@@ -328,6 +329,7 @@ exports.addCallback = function (id, callback, cbEvent) {
   callback.id = id;
   if (CONSTANTS.CB.TYPE.ALL_BIDS_BACK === cbEvent) {
     externalCallbacks.all.push(callback);
+    externalCallbacks.all.called = false;
   } else if (CONSTANTS.CB.TYPE.AD_UNIT_BIDS_BACK === cbEvent) {
     externalCallbacks.byAdUnit.push(callback);
   }
