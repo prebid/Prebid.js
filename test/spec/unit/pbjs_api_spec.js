@@ -453,6 +453,26 @@ describe('Unit: Prebid Module', function () {
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       window.googletag = windowGoogletagBackup;
     });
+
+    it('should emit SET_TARGETING event when successfully invoked', function() {
+      var slots = createSlotArray();
+      window.googletag.pubads().setSlots(slots);
+
+      // var eventsBeforeCount = events.getEvents().length;
+
+      var callback = sinon.spy();
+      
+      $$PREBID_GLOBAL$$.onEvent('setTargeting', callback);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+
+      sinon.assert.calledOnce(callback);
+      // var eventsAfter = events.getEvents();
+
+      // //exac
+      // expect(eventsAfter.length - eventsBeforeCount).to.equal(1);
+      // var latest = eventsAfter.pop();
+      // expect(latest.eventType).to.equal('setTargeting');
+    })
   });
 
   describe('allBidsAvailable', function () {

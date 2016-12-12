@@ -34,7 +34,8 @@
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
-    "BID_WON": "bidWon"
+    "BID_WON": "bidWon",
+    "SET_TARGETING": "setTargeting"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"

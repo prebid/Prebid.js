@@ -24,6 +24,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
+var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -401,8 +402,12 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   resetPresetTargeting();
-  //now set new targeting keys
+
+ //now set new targeting keys
   setTargeting(getAllTargeting());
+
+  //emit event 
+  events.emit(SET_TARGETING);
 };
 
 /**
