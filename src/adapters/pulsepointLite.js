@@ -14,19 +14,19 @@ function PulsePointLiteAdapter() {
   };
 
   function _callBids(bidderRequest) {
-    try {
-      bidderRequest.bids.forEach(bidRequest => {
+    bidderRequest.bids.forEach(bidRequest => {
+      try {
         var params = Object.assign({}, environment(), bidRequest.params);
         var url = bidUrl + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
         ajax(url, (bidResponse) => {
           bidResponseAvailable(bidRequest, bidResponse);
         }, null, ajaxOptions);
-      });
-    } catch(e) {
-      //register passback on any exceptions while attempting to fetch response.
-      logError('pulsepoint.requestBid', 'ERROR', e);
-      bidResponseAvailable(bidRequest);
-    }
+      } catch(e) {
+        //register passback on any exceptions while attempting to fetch response.
+        logError('pulsepoint.requestBid', 'ERROR', e);
+        bidResponseAvailable(bidRequest);
+      }
+    });
   }
 
   function environment() {
