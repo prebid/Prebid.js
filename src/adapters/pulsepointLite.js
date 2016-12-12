@@ -6,28 +6,22 @@ import {STATUS} from 'src/constants';
 
 function PulsePointLiteAdapter() {
 
-  var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag';
+  var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
+  var ajaxOptions = {
+    method: 'GET',
+    withCredentials: true,
+    contentType: 'text/plain'
+  };
 
   function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids;
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      requestBid(bidRequest);
-    }
-  }
-
-  function requestBid(bidRequest) {
     try {
-      var env = environment();
-      var params = Object.assign({}, env, bidRequest.params);
-      var ajaxOptions = {
-        contentType: 'text/plain',
-        withCredentials: true,
-        method: 'GET'
-      };
-      ajax(bidUrl, (bidResponse) => {
-        bidResponseAvailable(bidRequest, bidResponse);
-      }, params, ajaxOptions);
+      bidderRequest.bids.forEach(bidRequest => {
+        var params = Object.assign({}, environment(), bidRequest.params);
+        var url = bidUrl + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
+        ajax(url, (bidResponse) => {
+          bidResponseAvailable(bidRequest, bidResponse);
+        }, null, ajaxOptions);
+      });
     } catch(e) {
       //register passback on any exceptions while attempting to fetch response.
       logError('pulsepoint.requestBid', 'ERROR', e);
@@ -36,13 +30,14 @@ function PulsePointLiteAdapter() {
   }
 
   function environment() {
+    var pg = pageUrl();
     return {
       cn: 1,
       ca: 'BID',
       tl: 1,
       'if': 0,
-      cwu: encodeURIComponent(getPageUrl()),
-      cwr: encodeURIComponent(document.referrer),
+      cwu: pg.pg,
+      cwr: pg.ref,
       dw: document.documentElement.clientWidth,
       cxy: document.documentElement.clientWidth + ',' + document.documentElement.clientHeight,
       tz: new Date().getTimezoneOffset(),
@@ -50,12 +45,18 @@ function PulsePointLiteAdapter() {
     };
   }
 
-  function getPageUrl() {
+  function pageUrl() {
     try { 
-      return window.top.location.href;
+      return {
+        pg: window.top.location.href,
+        ref: window.top.document.referrer
+      };
     } 
     catch (e) { 
-      return window.location.href;
+      return {
+        pg: location.href,
+        ref: document.referrer
+      };
     }
   }
 
