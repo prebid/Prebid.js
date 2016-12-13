@@ -458,20 +458,12 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      // var eventsBeforeCount = events.getEvents().length;
-
       var callback = sinon.spy();
-      
+
       $$PREBID_GLOBAL$$.onEvent('setTargeting', callback);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       sinon.assert.calledOnce(callback);
-      // var eventsAfter = events.getEvents();
-
-      // //exac
-      // expect(eventsAfter.length - eventsBeforeCount).to.equal(1);
-      // var latest = eventsAfter.pop();
-      // expect(latest.eventType).to.equal('setTargeting');
     })
   });
 
