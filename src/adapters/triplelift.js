@@ -30,8 +30,8 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
   function buildTLCall(bid, callbackId) {
     //determine tag params
-    var inventoryCode = utils.getBidIdParamater('inventoryCode', bid.params);
-    var floor = utils.getBidIdParamater('floor', bid.params);
+    var inventoryCode = utils.getBidIdParameter('inventoryCode', bid.params);
+    var floor = utils.getBidIdParameter('floor', bid.params);
 
 
     //build our base tag, based on if we are http or https

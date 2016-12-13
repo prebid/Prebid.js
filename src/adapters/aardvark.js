@@ -32,8 +32,8 @@ var AardvarkAdapter = function AardvarkAdapter() {
 
     //build bid URL for RTK
     utils._each(bidReqs, function (bid) {
-      ai = utils.getBidIdParamater('ai', bid.params);
-      var sc = utils.getBidIdParamater('sc', bid.params);
+      ai = utils.getBidIdParameter('ai', bid.params);
+      var sc = utils.getBidIdParameter('sc', bid.params);
       shortcodes.push(sc);
     });
 
