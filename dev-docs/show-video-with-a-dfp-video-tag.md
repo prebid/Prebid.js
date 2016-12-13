@@ -178,5 +178,8 @@ Below, find links to end-to-end "working examples" integrating Prebid.js demand 
 
 + [video.js](http://video-demo.appnexus.com/pbjs/mjacobson/video_testing/prebid_video_videojs_new.html)
 + [JWPlayer](http://video-demo.appnexus.com/pbjs/JWPlayerDemo/jwPlayerPrebid.html)
++ [Brightcove](http://video-demo.appnexus.com/pbjs/brightcove-prebid/bc-demo.html)
++ [Kaltura](http://video-demo.appnexus.com/pbjs/kaltura-prebid/klt-demo.html)
++ [Ooyala](http://video-demo.appnexus.com/pbjs/ooyala-prebid/ooyala-demo.html)
 
 </div>
