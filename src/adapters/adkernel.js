@@ -2,19 +2,21 @@ import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
+import Adapter from 'src/adapters/adapter';
 
 /**
  * Adapter for requesting bids from AdKernel white-label platform
  * @class
  */
-const AdkernelAdapter = function AdkernelAdapter() {
-  const ADKERNEL = 'adkernel';
+const AdKernelAdapter = function AdKernelAdapter() {
   const AJAX_REQ_PARAMS = {
     contentType: 'text/plain',
     withCredentials: true,
     method: 'GET'
   };
   const EMPTY_BID_RESPONSE = {'seatbid': [{'bid': []}]};
+
+  let baseAdapter = Adapter.createNew('adkernel');
 
   /**
    * Helper object to build multiple bid requests in case of multiple zones/ad-networks
@@ -119,10 +121,10 @@ const AdkernelAdapter = function AdkernelAdapter() {
   /**
    *  Main module export function implementation
    */
-  function _callBids(params) {
+  baseAdapter.callBids = function (params) {
     var bids = params.bids || [];
     processBids(bids);
-  }
+  };
 
   /**
    *  Process all bids grouped by network/zone
@@ -156,8 +158,8 @@ const AdkernelAdapter = function AdkernelAdapter() {
    */
   function createBidObject(resp, bid, width, height) {
     return utils.extend(bidfactory.createBid(1, bid), {
-      bidderCode: ADKERNEL,
-      ad: formatAdmarkup(resp),
+      bidderCode: bid.bidder,
+      ad: formatAdMarkup(resp),
       width: width,
       height: height,
       cpm: parseFloat(resp.price)
@@ -169,14 +171,14 @@ const AdkernelAdapter = function AdkernelAdapter() {
    */
   function createEmptyBidObject(bid) {
     return utils.extend(bidfactory.createBid(2, bid), {
-      bidderCode: ADKERNEL
+      bidderCode: bid.bidder
     });
   }
 
   /**
    *  Format creative with optional nurl call
    */
-  function formatAdmarkup(bid) {
+  function formatAdMarkup(bid) {
     var adm = bid.adm;
     if ('nurl' in bid) {
       adm += utils.createTrackPixelHtml(bid.nurl);
@@ -194,14 +196,23 @@ const AdkernelAdapter = function AdkernelAdapter() {
   function createSite() {
     var location = utils.getTopWindowLocation();
     return {
-      'domain': location.hostname,
-      'page': location.pathname
+      'domain': location.hostname
     };
   }
 
   return {
-    callBids: _callBids
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
+    getBidderCode : baseAdapter.getBidderCode,
+    createNew : AdKernelAdapter.createNew
   };
 };
 
-module.exports = AdkernelAdapter;
+/**
+ * Creates new instance of AdKernel bidder adapter
+ */
+AdKernelAdapter.createNew = function() {
+  return new AdKernelAdapter();
+};
+
+module.exports = AdKernelAdapter;
