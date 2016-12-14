@@ -11,7 +11,6 @@ var FidelityAdapter = function FidelityAdapter() {
   function _callBids(params) {
     var bids = params.bids || [];
     bids.forEach(function (currentBid) {
-      if (!document.MAX_used) document.MAX_used = ',';
       var server = currentBid.params.server || FIDELITY_SERVER_NAME;
       var m3_u = window.location.protocol + '//'+server+'/delivery/hb.php?';
       m3_u += 'callback=window.$$PREBID_GLOBAL$$.fidelityResponse';
@@ -19,23 +18,21 @@ var FidelityAdapter = function FidelityAdapter() {
       m3_u += '&impid='+currentBid.bidId;
       m3_u += '&zoneid='+currentBid.params.zoneid;
       m3_u += '&cb='+Math.floor(Math.random()*99999999999);
-      if (document.MAX_used !== ',') m3_u += '&exclude=' + document.MAX_used;
       m3_u += document.charset ? '&charset='+document.charset : (document.characterSet ? '&charset='+document.characterSet : '');
 
-      var loc = window.top !== window ? document.referrer:window.location.href;
+      var loc;
+      try {
+        loc = window.top !== window ? document.referrer : window.location.href;
+      } catch (e) {
+        loc = document.referrer;
+      }
       loc = currentBid.params.loc || loc;
       m3_u += '&loc=' + encodeURIComponent(loc);
+
       var subid = currentBid.params.subid || 'hb';
       m3_u += '&subid=' + subid;
       if (document.referrer) m3_u += '&referer=' + encodeURIComponent(document.referrer);
-      if (document.context) m3_u += '&context=' + encodeURIComponent(document.context);
-      if (currentBid.params.click) {
-        document.MAX_ct0 = decodeURI(currentBid.params.click);
-        if (typeof document.MAX_ct0 !== 'undefined' && document.MAX_ct0.substring(0, 4) === 'http') {
-          m3_u += '&ct0=' + encodeURIComponent(document.MAX_ct0);
-        }
-      }
-      if (document.mmm_fo) m3_u += '&mmm_fo=1';
+      if (currentBid.params.click) m3_u += '&ct0=' + encodeURIComponent(currentBid.params.click);
       m3_u += '&flashver=' + encodeURIComponent(getFlashVersion());
 
       adloader.loadScript(m3_u);
@@ -58,14 +55,14 @@ var FidelityAdapter = function FidelityAdapter() {
   }
 
   function addBlankBidResponses(placementsWithBidsBack) {
-    var allFidelityBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'fidelity');
+    var allFidelityBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === FIDELITY_BIDDER_NAME);
 
     if (allFidelityBidRequests && allFidelityBidRequests.bids){
       utils._each(allFidelityBidRequests.bids, function (fidelityBid) {
         if (!utils.contains(placementsWithBidsBack, fidelityBid.placementCode)) {
           // Add a no-bid response for this placement.
           var bid = bidfactory.createBid(STATUS.NO_BID, fidelityBid);
-          bid.bidderCode = 'fidelity';
+          bid.bidderCode = FIDELITY_BIDDER_NAME;
           bidmanager.addBidResponse(fidelityBid.placementCode, bid);
         }
       });
