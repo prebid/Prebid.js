@@ -78,10 +78,6 @@ describe('fidelity adapter tests', function() {
         ]
       };
 
-      document.MAX_used = '1';
-      document.context = 'context';
-      document.mmm_fo = '1';
-
       adapter().callBids(bidderRequest);
 
       var requestURI = stubLoadScript.getCall(0).args[0];
@@ -96,9 +92,6 @@ describe('fidelity adapter tests', function() {
       expect(parsedBidUrlQueryString).to.have.property('loc').and.to.equal('http://locurl');
       expect(parsedBidUrlQueryString).to.have.property('ct0').and.to.equal('http://clickurl');
       expect(parsedBidUrlQueryString).to.have.property('subid').and.to.equal('000');
-      expect(parsedBidUrlQueryString).to.have.property('exclude').and.to.equal('1');
-      expect(parsedBidUrlQueryString).to.have.property('context').and.to.equal('context');
-      expect(parsedBidUrlQueryString).to.have.property('mmm_fo').and.to.equal('1');
 
       stubLoadScript.restore();
     });
