@@ -247,7 +247,8 @@ describe('the rubicon adapter', () => {
 
     describe('response handler', () => {
       let bids,
-          server;
+          server,
+          addBidResponseAction;
 
       beforeEach(() => {
         bids = [];
@@ -256,6 +257,10 @@ describe('the rubicon adapter', () => {
 
         sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
           bids.push(bid);
+          if(addBidResponseAction) {
+            addBidResponseAction();
+            addBidResponseAction = undefined;
+          }
         });
       });
 
@@ -437,7 +442,40 @@ describe('the rubicon adapter', () => {
         expect(bidManager.addBidResponse.calledOnce).to.equal(true);
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-        expect(bids[0].error instanceof SyntaxError).to.equal(true);
+      });
+
+      it('should not register an error bid when a success call to addBidResponse throws an error', () => {
+
+        server.respondWith(JSON.stringify({
+          "status": "ok",
+          "account_id": 14062,
+          "site_id": 70608,
+          "zone_id": 530022,
+          "size_id": 15,
+          "alt_size_ids": [
+            43
+          ],
+          "tracking": "",
+          "inventory": {},
+          "ads": [{
+              "status": "ok",
+              "cpm": .8,
+              "size_id": 15
+            }]
+        }));
+
+        addBidResponseAction = function() {
+          throw new Error("test error");
+        };
+
+        rubiconAdapter.callBids(bidderRequest);
+
+        server.respond();
+
+        // was calling twice for same bid, but should only call once
+        expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+        expect(bids).to.be.lengthOf(1);
+
       });
 
     })
