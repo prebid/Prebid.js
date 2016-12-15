@@ -135,10 +135,16 @@ exports.addBidResponse = function (adUnitCode, bid) {
       if (bid.dealId) {
         keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
       }
-
-      bid.adserverTargeting = keyValues;
     }
 
+    if (bid.dealId &&
+        (bid.cpm === 0 || typeof bid.cpm === 'undefined')) {
+      keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      delete keyValues.hb_pb;
+      delete keyValues[`hb_pb_${bid.bidderCode}`];
+    }
+
+    bid.adserverTargeting = keyValues;
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 

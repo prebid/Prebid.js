@@ -477,6 +477,16 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
     });
 
+    it('should remove hb_pb bid landscape targeting keys for a deal bid with no cpm', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[1]
+      );
+      bidmanager.addBidResponse(bid.adUnitCode, Object.assign({}, bid));
+      bidmanager.addBidResponse(bid.adUnitCode, Object.assign({}, bid, { cpm: 0, dealId: '1234' }));
+      $$PREBID_GLOBAL$$.getAdserverTargeting();
+    });
+
     it('should not alter bid adID', () => {
       const bid1 = Object.assign({},
         bidfactory.createBid(2),
