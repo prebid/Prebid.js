@@ -235,8 +235,8 @@ export default utils.extend(adapter({
   },
 
   generateAdId(adUnit) {
-    if (adUnit.aolParams && adUnit.aolParams.adIdPostfix ) {
-      return adUnit.code + '-' + adUnit.aolParams.adIdPostfix;
+    if (adUnit.aolParams && adUnit.aolParams.adIdExtension ) {
+      return adUnit.code + '-' + adUnit.aolParams.adIdExtension;
     }
 
     return adUnit.code;

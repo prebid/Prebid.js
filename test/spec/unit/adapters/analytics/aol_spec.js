@@ -889,18 +889,18 @@ describe('AOL analytics adapter', () => {
         expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE};`);
       });
 
-      it('should build url with ad unit code set as pubadid parameter when adIdPostfix is present', () => {
+      it('should build url with ad unit code set as pubadid parameter when adIdExtension is present', () => {
         let bid = BIDS.VALID;
-        let adIdPostfix = 'auction-event-adId-postfix';
+        let adIdExtension = 'auction-event-adId-postfix';
         let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
           code: DEFAULT_AD_UNIT_CODE,
           aolParams: {
-            adIdPostfix: adIdPostfix
+            adIdExtension: adIdExtension
           },
           bids: [bid],
           winner: bid
         });
-        expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE}-${adIdPostfix};`);
+        expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE}-${adIdExtension};`);
       });
 
       it('should build url with hbauctionid parameter having at most 18 digits', () => {
@@ -1250,13 +1250,13 @@ describe('AOL analytics adapter', () => {
         expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE};`);
       });
 
-      it('should build url with ad unit code set as pubadid parameter when adIdPostfix is present', () => {
+      it('should build url with ad unit code set as pubadid parameter when adIdExtension is present', () => {
         let bid = BIDS.VALID;
-        let adIdPostfix = 'win-event-adId-postfix';
+        let adIdExtension = 'win-event-adId-postfix';
         let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.WIN, {
           code: DEFAULT_AD_UNIT_CODE,
           aolParams: {
-            adIdPostfix: adIdPostfix
+            adIdExtension: adIdExtension
           },
           bids: [bid],
           winner: bid,
@@ -1265,7 +1265,7 @@ describe('AOL analytics adapter', () => {
             hbauctionid: '123456789'
           }
         });
-        expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE}-${adIdPostfix};`);
+        expect(url).to.contain(`;pubadid=${DEFAULT_AD_UNIT_CODE}-${adIdExtension};`);
       });
 
       it('should build url with hbauctionid parameter from auction', () => {
@@ -1376,25 +1376,25 @@ describe('AOL analytics adapter', () => {
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
-    it('should return adunit code when adIdPostfix is undefined', () => {
+    it('should return adunit code when adIdExtension is undefined', () => {
       adUnit.aolParams = {
-        adIdPostfix: undefined
+        adIdExtension: undefined
       };
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
-    it('should return adunit code when adIdPostfix is null', () => {
+    it('should return adunit code when adIdExtension is null', () => {
       adUnit.aolParams = {
-        adIdPostfix: null
+        adIdExtension: null
       };
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
-    it('should return adId with postfix when adIdPostfix is present', () => {
+    it('should return adId with postfix when adIdExtension is present', () => {
       adUnit.aolParams = {
-        adIdPostfix: 'test-adId-postfix'
+        adIdExtension: 'test-adId-postfix'
       };
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code + '-test-adId-postfix');
