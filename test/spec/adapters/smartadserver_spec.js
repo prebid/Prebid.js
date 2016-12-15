@@ -40,7 +40,7 @@ describe("smartadserver adapter tests", function () {
 
     var smartCallback;
     for (var k in $$PREBID_GLOBAL$$) {
-      if (k.startsWith("sas_")) {
+      if (k.lastIndexOf("sas_", 0) === 0) {
         smartCallback = k;
         break;
       }
