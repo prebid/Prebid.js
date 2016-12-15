@@ -1392,12 +1392,21 @@ describe('AOL analytics adapter', () => {
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
-    it('should return adId with postfix when adIdExtension is present', () => {
+    it('should return adId with extension when adIdExtension is present', () => {
       adUnit.aolParams = {
         adIdExtension: 'test-adId-postfix'
       };
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code + '-test-adId-postfix');
+    });
+
+    it('should return encoded adId with extension when code or adIdExtension contains special characters', () => {
+      adUnit.aolParams = {
+        code: 'ad@code+',
+        adIdExtension: '$test&@adI#d/post=fix+encoding'
+      };
+
+      expect(aolAnalytics.generateAdId(adUnit)).to.equal(encodeURIComponent(adUnit.code + '-' + adUnit.aolParams.adIdExtension));
     });
   });
 });

@@ -235,11 +235,15 @@ export default utils.extend(adapter({
   },
 
   generateAdId(adUnit) {
+    let adId;
+    
     if (adUnit.aolParams && adUnit.aolParams.adIdExtension ) {
-      return adUnit.code + '-' + adUnit.aolParams.adIdExtension;
+      adId = adUnit.code + '-' + adUnit.aolParams.adIdExtension;
+    } else {
+      adId = adUnit.code;
     }
 
-    return adUnit.code;
+    return encodeURIComponent(adId);
   }
 });
 
