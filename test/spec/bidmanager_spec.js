@@ -487,14 +487,17 @@ describe('bidmanager.js', function () {
       $$PREBID_GLOBAL$$.enableSendAllBids();
       delete $$PREBID_GLOBAL$$.bidderSettings.standard;
 
-      bidmanager.addBidResponse(bid.adUnitCode, Object.assign({ cpm: 0, dealId: '1234' }, bid));
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.eql({'/19968336/header-bid-tag-0': {
-        "hb_deal_appnexus": "1234",
-        "hb_size_appnexus": "300x250",
-        "hb_pb_appnexus": "",
-        "hb_adid_appnexus": "233bcbee889d46d",
-        "hb_bidder_appnexus": "appnexus"
-      }});
+      bidmanager.addBidResponse(bid.adUnitCode, Object.assign({}, bid, { cpm: 0, dealId: '1234' }));
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.eql(
+        {
+          "/19968336/header-bid-tag-0": {
+            "hb_deal_appnexus": "1234",
+            "hb_size_appnexus": "300x250",
+            "hb_pb_appnexus": "",
+            "hb_adid_appnexus": "233bcbee889d46d",
+            "hb_bidder_appnexus": "appnexus"
+          }
+        });
       $$PREBID_GLOBAL$$._bidsReceived = bidsReceivedBackup;
     });
 
