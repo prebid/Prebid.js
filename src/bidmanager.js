@@ -130,16 +130,15 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && bid.cpm !== 0) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
 
       if (bid.dealId) {
         keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
       }
-
-      bid.adserverTargeting = keyValues;
     }
 
+    bid.adserverTargeting = keyValues;
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
