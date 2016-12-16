@@ -477,30 +477,6 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
     });
 
-    it('should remove hb_pb bid landscape targeting keys for a deal bid with no cpm', () => {
-      const bid = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[1]
-      );
-      const bidsReceivedBackup = $$PREBID_GLOBAL$$._bidsReceived;
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-      $$PREBID_GLOBAL$$.enableSendAllBids();
-      delete $$PREBID_GLOBAL$$.bidderSettings.standard;
-
-      bidmanager.addBidResponse(bid.adUnitCode, Object.assign({}, bid, { cpm: 0, dealId: '1234' }));
-      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.eql(
-        {
-          "/19968336/header-bid-tag-0": {
-            "hb_deal_appnexus": "1234",
-            "hb_size_appnexus": "300x250",
-            "hb_pb_appnexus": "",
-            "hb_adid_appnexus": "233bcbee889d46d",
-            "hb_bidder_appnexus": "appnexus"
-          }
-        });
-      $$PREBID_GLOBAL$$._bidsReceived = bidsReceivedBackup;
-    });
-
     it('should not alter bid adID', () => {
       const bid1 = Object.assign({},
         bidfactory.createBid(2),

@@ -129,14 +129,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
 
       if (bid.dealId) {
         keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
-        if (bid.cpm === 0 || typeof bid.cpm === 'undefined') {
-          delete keyValues.hb_pb;
-        }
       }
     }
 
