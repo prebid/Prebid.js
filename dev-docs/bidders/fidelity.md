@@ -18,5 +18,5 @@ biddercode_longer_than_12: false
 | zoneid | required | The ad zone or tag specific ID 			 | `"27248"` 				|
 | loc  	 | optional | The web page URL location  			 | `"http://site.com/page.html"` 	|
 | click  | optional | The placeholder for third party click tracking URL | `"http://tracker.com&click="` 	|
-| subid  | optional | The placeholder for SubID  			 | `"hb by default"` 			|
-| server | optional | Bidder Domain  					 | `"x.fidelity-media.com by default"` 	|
+| subid  | optional | The placeholder for SubID  			 | `"hb" by default` 			|
+| server | optional | Bidder Domain  					 | `"x.fidelity-media.com" by default` 	|
