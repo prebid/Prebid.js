@@ -64,7 +64,7 @@ module.exports = function (config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'nyan', 'coverage'],
+    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'coverage'],
 
     // junit reporter config
     junitReporter: {
@@ -115,12 +115,11 @@ module.exports = function (config) {
     plugins: [
       'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
-      'karma-nyan-reporter',
       'karma-coverage',
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
-      'karma-sinon',
+      'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
       'karma-html-reporter',

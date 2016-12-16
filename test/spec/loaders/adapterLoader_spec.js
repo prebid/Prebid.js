@@ -33,7 +33,7 @@ describe('adapterLoader.js', () => {
     const getAdapterStub = () => customAdapter;
     const loader = proxyquire('../../../loaders/adapterLoader', {'fs': {existsSync : ()=> false }, './getAdapters' : getAdapterStub});
     let output = loader(input);
-    const expected = 'var AppnexusAdapter = require(\'./adapters/appnexus.js\');\n    exports.registerBidAdapter(new AppnexusAdapter.createNew(), \'appnexus\');\nexports.videoAdapters = [];';
+    const expected = 'var AppnexusAdapter = require(\'./adapters/appnexus.js\');\n    exports.registerBidAdapter(new AppnexusAdapter(), \'appnexus\');\nexports.videoAdapters = [];';
     expect(output).to.equal(expected);
   });
 
