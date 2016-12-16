@@ -288,6 +288,35 @@ function setRenderSize(doc, width, height) {
   }
 }
 
+function listenAdRequestFromCreative() {
+  addEventListener('message', sendAdToCreative, false);
+}
+
+function sendAdToCreative(ev) {
+  var key = ev.message ? 'message' : 'data';
+  var data = {};
+  try {
+    data = JSON.parse(ev[key]);
+  } catch (e) {
+    // Do nothing.  No ad found.
+  }
+
+  if (data.adId) {
+    var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
+      return bid.adId === data.adId;
+    });
+
+    var ad = adObject.ad;
+    var adUrl = adObject.adUrl;
+    var message = JSON.stringify({
+      message: 'Prebid creative sent: ' + data.adId,
+      ad: ad,
+      adUrl: adUrl
+    });
+    ev.source.postMessage(message, '*');
+  }
+}
+
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -836,4 +865,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return getWinningBids(adUnitCode);
 };
 
+listenAdRequestFromCreative();
 processQue();
