@@ -2,6 +2,7 @@ import {uniques, flatten, adUnitsFilter} from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
+var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
 
@@ -257,6 +258,7 @@ exports.executeCallback = function (timedOut) {
 
   //execute one time callback
   if (externalCallbacks.oneTime) {
+    events.emit(AUCTION_END);
     try {
       processCallbacks([externalCallbacks.oneTime]);
     }
