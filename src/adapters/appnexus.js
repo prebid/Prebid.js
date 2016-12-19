@@ -215,13 +215,13 @@ AppNexusAdapter = function AppNexusAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: exports.createNew,
+    createNew: AppNexusAdapter.createNew,
     buildJPTCall: buildJPTCall
   };
 };
 
-exports.createNew = function () {
+AppNexusAdapter.createNew = function () {
   return new AppNexusAdapter();
 };
 
-// module.exports = AppNexusAdapter;
+module.exports = AppNexusAdapter;
