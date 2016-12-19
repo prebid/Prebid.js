@@ -7,7 +7,10 @@ import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skipppable', 'playback_method', 'frameworks'];
+  'startdelay', 'skippable', 'playback_method', 'frameworks'];
+const USER_PARAMS = [
+  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
+];
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -18,6 +21,7 @@ function AppnexusAstAdapter() {
 
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
+  let usersync = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
@@ -47,6 +51,13 @@ function AppnexusAstAdapter() {
           Object.keys(bid.params.video)
             .filter(param => VIDEO_TARGETING.includes(param))
             .forEach(param => tag.video[param] = bid.params.video[param]);
+        }
+
+        if (bid.params.user) {
+          tag.user = {};
+          Object.keys(bid.params.user)
+            .filter(param => USER_PARAMS.includes(param))
+            .forEach(param => tag.user[param] = bid.params.user[param]);
         }
 
         return tag;
@@ -107,6 +118,17 @@ function AppnexusAstAdapter() {
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
+
+    if (!usersync) {
+      const iframe = utils.createInvisibleIframe();
+      iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+      usersync = true;
+    }
   }
 
   /* Check that a bid has required paramters */
@@ -213,4 +235,3 @@ AppnexusAstAdapter.createNew = function() {
 };
 
 module.exports = AppnexusAstAdapter;
-

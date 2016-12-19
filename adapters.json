@@ -4,12 +4,16 @@
     "adbutler",
     "adequant",
     "adform",
+    "adkernel",
     "admedia",
     "aol",
     "appnexus",
     "appnexusAst",
     "conversant",
+    "districtmDMX",
+    "fidelity",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
@@ -33,6 +37,8 @@
     "memeglobal",
     "centro",
     "roxot",
+    "vertoz",
+    "widespace",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -57,5 +63,11 @@
       "rubicon": {
         "alias": "rubiconLite"
       }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
     }
+
 ]

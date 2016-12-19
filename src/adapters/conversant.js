@@ -4,7 +4,8 @@ var VERSION = '2.0.1',
     utils = require('../utils.js'),
     bidfactory = require('../bidfactory.js'),
     bidmanager = require('../bidmanager.js'),
-    adloader = require('../adloader');
+    adloader = require('../adloader'),
+    ajax = require('../ajax').ajax;
 
 /**
  * Adapter for requesting bids from Conversant
@@ -31,27 +32,17 @@ var ConversantAdapter = function () {
     }
   };
 
-  var httpPOSTAsync = function (url, data) {
-    var xmlHttp = new w.XMLHttpRequest();
-
-    xmlHttp.onload = function () {
-      appendScript(xmlHttp.responseText);
-    };
-    xmlHttp.open('POST', url, true); // true for asynchronous
-    xmlHttp.withCredentials = true;
-    xmlHttp.send(data);
-  };
-
   var getDNT = function () {
     return n.doNotTrack === '1' || w.doNotTrack === '1' || n.msDoNotTrack === '1' || n.doNotTrack === 'yes';
   };
 
   var getDevice = function () {
+    const language = n.language ? 'language' : 'userLanguage';
     return {
       h: screen.height,
       w: screen.width,
       dnt: getDNT() ? 1 : 0,
-      language: n.language.split('-')[0],
+      language: n[language].split('-')[0],
       make: n.vendor ? n.vendor : '',
       ua: n.userAgent
     };
@@ -72,21 +63,23 @@ var ConversantAdapter = function () {
 
     //build impression array for conversant
     utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParamater('bidloor', bid.params),
-        sizeArrayLength = bid.sizes.length,
+      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params),
         adW = 0,
         adH = 0,
         imp;
 
-      secure = utils.getBidIdParamater('secure', bid.params) ? 1 : secure;
-      siteId = utils.getBidIdParamater('site_id', bid.params);
+      secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
+      siteId = utils.getBidIdParameter('site_id', bid.params) + '';
 
-      if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-        adW = bid.sizes[0];
-        adH = bid.sizes[1];
+      // Allow sizes to be overridden per placement
+      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
+
+      if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+        adW = bidSizes[0];
+        adH = bidSizes[1];
       } else {
-        adW = bid.sizes[0][0];
-        adH = bid.sizes[0][1];
+        adW = bidSizes[0][0];
+        adH = bidSizes[0][1];
       }
 
       imp = {
@@ -119,7 +112,9 @@ var ConversantAdapter = function () {
     };
 
     var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
-    httpPOSTAsync(url, JSON.stringify(conversantBidReqs));
+    ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
+      withCredentials : true
+    });
   };
 
   var addEmptyBidResponses = function (placementsWithBidsBack) {

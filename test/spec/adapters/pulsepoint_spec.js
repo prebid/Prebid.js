@@ -44,7 +44,9 @@ describe("PulsePoint Adapter Tests", () => {
           params: {
             cp: "p10000",
             ct: "t10000",
-            cf: "300x250"
+            cf: "300x250",
+            param1: "value1",
+            param2: 2
           }
         },{
           placementCode: "/DfpAccount2/slot2", 
@@ -79,6 +81,8 @@ describe("PulsePoint Adapter Tests", () => {
     expect(requests[0].cu).to.equal('http://bid.contextweb.com/header/tag');
     expect(requests[0].adUnitId).to.equal('/DfpAccount1/slot1');
     expect(requests[0]).to.have.property('callback');
+    expect(requests[0].param1).to.equal('value1');
+    expect(requests[0].param2).to.equal(2);
     // //slot 2
     expect(requests[1].cp).to.equal('p20000');
     expect(requests[1].ct).to.equal('t20000');
@@ -142,6 +146,20 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bidCall).to.be.a('object');
     expect(bidCall.args[0]).to.equal('/DfpAccount1/slot1');
     expect(bidCall.args[1]).to.be.a('object');
+  });
+
+  //related to issue https://github.com/prebid/Prebid.js/issues/866
+  it('Verify Passbacks when window.pp is not available', () => {
+    window.pp = function() {};
+    pulsepointAdapter.callBids(slotConfigs);
+    let placement = bidManager.addBidResponse.firstCall.args[0];
+    let bid = bidManager.addBidResponse.firstCall.args[1];
+    //verify that we passed back without exceptions, should window.pp be already taken.
+    expect(placement).to.equal('/DfpAccount1/slot1');
+    expect(bid.bidderCode).to.equal('pulsepoint');
+    expect(bid).to.not.have.property('ad');
+    expect(bid).to.not.have.property('cpm');
+    expect(bid.adId).to.equal('bid12345');
   });
 
 });
