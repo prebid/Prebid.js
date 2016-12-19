@@ -70,9 +70,9 @@ sekindoUMAdapter = function sekindoUMAdapter() {
 
   function _requestBids(bid, callbackId, pubUrl) {
     //determine tag params
-    var spaceId = utils.getBidIdParamater('spaceId', bid.params);
-    var subId = utils.getBidIdParamater('subId', bid.params);
-    var bidfloor = utils.getBidIdParamater('bidfloor', bid.params);
+    var spaceId = utils.getBidIdParameter('spaceId', bid.params);
+    var subId = utils.getBidIdParameter('subId', bid.params);
+    var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
     var protocol = ('https:' === document.location.protocol ? 's' : '');
     var scriptSrc = 'http'+protocol+'://hb.sekindo.com/live/liveView.php?';
 
