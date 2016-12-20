@@ -29,6 +29,7 @@ const GumgumAdapter = function GumgumAdapter() {
       sw: topScreen.width,
       sh: topScreen.height,
       pu: topWindow.location.href,
+      ce: navigator.cookieEnabled,
       dpr: topWindow.devicePixelRatio || 1
     };
     utils._each(bids, bidRequest => {
