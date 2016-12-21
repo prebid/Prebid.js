@@ -41,14 +41,17 @@ describe("sekindoUM Adapter Tests", () => {
             });
 
         it('Verify sekindo hidden iframe was created', () => {
-            //expect('#skIfr_'+bidderRequest.bids[0].bidId).dom.to.have.style('display', 'none');
-            //expect('#skIfr_'+bidderRequest.bids[0].bidId).dom.to.have.attribute('height', '0');
-            //expect('#skIfr_'+bidderRequest.bids[0].bidId).dom.to.have.attribute('width', '0');
-            expect(document.getElementById('skIfr_'+bidderRequest.bids[0].bidId).style.display).to.equal('none');
-            expect(document.getElementById('skIfr_'+bidderRequest.bids[0].bidId).height).to.equal('0');
-            expect(document.getElementById('skIfr_'+bidderRequest.bids[0].bidId).width).to.equal('0');
-
-
+            var scriptTags = document.getElementsByTagName('script');
+            var sekindoTagExists=0;
+            for (var i=0; i<scriptTags.length;i++)
+            {
+                if(scriptTags[i].src.match('hb.sekindo.com') != null)
+                {
+                    sekindoTagExists=1;
+                    break;
+                }
+            }
+            expect(sekindoTagExists).to.equal(1);
         });
     });
 
@@ -87,6 +90,5 @@ describe("sekindoUM Adapter Tests", () => {
             expect(addBidResponseSpy.getCalls().length).to.equal(1);
         });
     });
-
 
 });

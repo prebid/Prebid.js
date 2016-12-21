@@ -3,6 +3,7 @@ var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader.js');
 
 var sekindoUMAdapter;
 sekindoUMAdapter = function sekindoUMAdapter() {
@@ -80,25 +81,13 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'subId', subId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'pubUrl', pubUrl);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbcb', callbackId);
-    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '2');
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '3');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', '$$PREBID_GLOBAL$$');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
-    var html = '<scr'+'ipt type="text/javascript" src="'+scriptSrc+'"></scr'+'ipt>';
-
-    var iframe = utils.createInvisibleIframe();
-    iframe.id = 'skIfr_'+callbackId;
-
-    var elToAppend = document.getElementsByTagName('head')[0];
-    //insert the iframe into document
-    elToAppend.insertBefore(iframe, elToAppend.firstChild);
-
-    var iframeDoc = utils.getIframeDocument(iframe);
-    iframeDoc.open();
-    iframeDoc.write(html);
-    iframeDoc.close();
+    adloader.loadScript(scriptSrc);
   }
 
   return {
