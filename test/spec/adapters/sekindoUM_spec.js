@@ -25,14 +25,8 @@ describe("sekindoUM Adapter Tests", () => {
     };
 
      beforeEach(() => {
-         pbjs._bidsRequested = [];
         _sekindoUMAdapter = new sekindoUMAdapter();
      });
-
-     afterEach(() => {
-         pbjs._bidsRequested = [];
-     });
-
 
     describe('sekindoUM callBids', () => {
 
