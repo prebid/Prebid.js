@@ -114,6 +114,23 @@ describe('AppNexusAdapter', () => {
       delete REQUEST.bids[0].params.video;
     });
 
+    it('attaches valid user params to the tag', () => {
+      REQUEST.bids[0].params.user = {
+        external_uid: '123',
+        foobar: 'invalid'
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody).tags[0];
+      expect(request.user).to.exist;
+      expect(request.user).to.deep.equal({
+        external_uid: '123',
+      });
+
+      delete REQUEST.bids[0].params.user;
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);

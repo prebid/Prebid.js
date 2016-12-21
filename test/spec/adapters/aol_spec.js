@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import _ from 'lodash';
+import { cloneDeep } from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
@@ -29,7 +29,7 @@ const DEFAULT_PUBAPI_RESPONSE = {
       "id": 1,
       "impid": "245730051428950632",
       "price": 0.09,
-      "adm": "<script>console.log('ad');</script>",
+      "adm": "<script>logInfo('ad');</script>",
       "crid": "0",
       "h": 90,
       "w": 728,
@@ -45,7 +45,7 @@ describe('AolAdapter', () => {
   beforeEach(() => adapter = new AolAdapter());
 
   function createBidderRequest({bids, params} = {}) {
-    var bidderRequest = _.cloneDeep(DEFAULT_BIDDER_REQUEST);
+    var bidderRequest = cloneDeep(DEFAULT_BIDDER_REQUEST);
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
     }
@@ -303,7 +303,7 @@ describe('AolAdapter', () => {
             "bid": [{
               "id": 1,
               "impid": "245730051428950632",
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "0",
               "h": 90,
               "w": 728,
@@ -326,7 +326,7 @@ describe('AolAdapter', () => {
               "id": 1,
               "impid": "245730051428950632",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -338,7 +338,7 @@ describe('AolAdapter', () => {
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.ad).to.equal("<script>console.log('ad');</script>");
+        expect(bidResponse.ad).to.equal("<script>logInfo('ad');</script>");
         expect(bidResponse.cpm).to.equal(0.09);
         expect(bidResponse.width).to.equal(728);
         expect(bidResponse.height).to.equal(90);
@@ -355,7 +355,7 @@ describe('AolAdapter', () => {
               "id": 1,
               "impid": "245730051428950632",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -371,7 +371,7 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
-          "<script>console.log('ad');</script>" +
+          "<script>logInfo('ad');</script>" +
           "<script>document.write('<img src=\"pixel.gif\">');</script>"
         );
       });
@@ -386,7 +386,7 @@ describe('AolAdapter', () => {
               "impid": "245730051428950632",
               "dealid": "12345",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -413,7 +413,7 @@ describe('AolAdapter', () => {
               "impid": "245730051428950632",
               "dealid": "12345",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -444,8 +444,8 @@ describe('AolAdapter', () => {
       afterEach(() => {
         $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
         server.restore();
-        if (console.warn.restore) {
-          console.warn.restore();
+        if (utils.logWarn.restore) {
+          utils.logWarn.restore();
         }
       });
 

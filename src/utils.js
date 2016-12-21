@@ -69,7 +69,7 @@ exports.generateUUID = function generateUUID(placeholder) {
     ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
-exports.getBidIdParamater = function (key, paramsObj) {
+exports.getBidIdParameter = function (key, paramsObj) {
   if (paramsObj && paramsObj[key]) {
     return paramsObj[key];
   }

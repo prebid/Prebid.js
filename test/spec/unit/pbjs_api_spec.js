@@ -14,6 +14,7 @@ var expect = require('chai').expect;
 var prebid = require('src/prebid');
 var utils = require('src/utils');
 var bidmanager = require('src/bidmanager');
+var bidfactory = require('src/bidfactory');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
@@ -1225,7 +1226,7 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$._bidsReceived = [];
 
-      var bid = {
+      var bid = Object.assign({
         "bidderCode": "appnexus",
         "width": 728,
         "height": 90,
@@ -1252,7 +1253,7 @@ describe('Unit: Prebid Module', function () {
           "hb_size": "728x90",
           "foobar": "728x90"
         }
-      };
+      }, bidfactory.createBid(2));
 
       var adUnits = [{
         code: '/19968336/header-bid-tag1',
