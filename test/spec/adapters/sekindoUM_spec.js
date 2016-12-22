@@ -1,6 +1,3 @@
-//import {expect} from 'chai';
-//import _ from 'lodash';
-//var utils = require('../../../src/utils');
 import sekindoUMAdapter from '../../../src/adapters/sekindoUM';
 var bidManager = require('src/bidmanager');
 
