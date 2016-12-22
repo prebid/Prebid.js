@@ -52,6 +52,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     content += '<scr' + 'ipt>';
     content += '' +
       'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
+      'window.kadpageurl  = "'+ window.document.referrer +'";' + // for postbid safeframe page detection, note that we have not added safe frame detection logic
       'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];' +
       'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
     content += '</scr' + 'ipt>';
