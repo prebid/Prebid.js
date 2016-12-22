@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import _ from 'lodash';
-var utils = require('../../../src/utils');
+//import {expect} from 'chai';
+//import _ from 'lodash';
+//var utils = require('../../../src/utils');
 import sekindoUMAdapter from '../../../src/adapters/sekindoUM';
 var bidManager = require('src/bidmanager');
 
@@ -34,7 +34,7 @@ describe("sekindoUM Adapter Tests", () => {
             _sekindoUMAdapter.callBids(bidderRequest);
             });
 
-        it('Verify sekindo hidden iframe was created', () => {
+        it('Verify sekindo script tag was created', () => {
             var scriptTags = document.getElementsByTagName('script');
             var sekindoTagExists=0;
             for (var i=0; i<scriptTags.length;i++)
