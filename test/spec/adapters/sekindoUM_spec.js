@@ -1,3 +1,4 @@
+import {expect} from 'chai';
 import sekindoUMAdapter from '../../../src/adapters/sekindoUM';
 var bidManager = require('src/bidmanager');
 
