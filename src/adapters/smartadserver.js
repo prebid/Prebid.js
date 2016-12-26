@@ -39,7 +39,7 @@ var SmartAdServer = function SmartAdServer() {
           "siteid": bid.params.siteId,
           "pgid": bid.params.pageId,
           "fmtid": bid.params.formatId,
-          "tgt": encodeURIComponent(bid.params.target),
+          "tgt": encodeURIComponent(bid.params.target || ''),
           "tag": bid.placementCode,
           "sizes": bid.sizes.map(size => size[0] + "x" + size[1]).join(","),
           "async": 1
