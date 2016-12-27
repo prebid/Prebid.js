@@ -95,7 +95,7 @@ describe('Smartyads adapter tests', function () {
             expect(bids[0].width).to.equal(360);
             expect(bids[0].height).to.equal(240);
             expect(bids[0].cpm).to.equal(0.5);
-            expect(bids[0].deal).to.equal("bf063e2e025c");
+            expect(bids[0].dealId).to.equal("bf063e2e025c");
         });
     });
 
