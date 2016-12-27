@@ -24,6 +24,7 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
+    "smartyads",
     "sonobi",
     "sovrn",
     "springserve",
@@ -39,7 +40,6 @@
     "roxot",
     "vertoz",
     "widespace",
-    "smartyads",
     {
       "appnexus": {
         "alias": "brealtime"
