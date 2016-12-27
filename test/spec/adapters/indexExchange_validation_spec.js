@@ -4,7 +4,7 @@ import adLoader from '../../../src/adloader';
 
 var assert           = require('chai').assert;
 var IndexUtils       = require('../../helpers/index_adapter_utils.js');
-var HeaderTagRequest = '/headertag';
+var HeaderTagRequest = '/cygnus';
 var ADAPTER_CODE     = 'indexExchange';
 
 window.pbjs = window.pbjs || {};
