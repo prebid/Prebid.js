@@ -3,7 +3,7 @@ var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 
 const STR_BIDDER_CODE = "sharethrough";
-const STR_VERSION = "0.1.0";
+const STR_VERSION = "0.1.0"; //Need to check analytics too for version
 
 var SharethroughAdapter = function SharethroughAdapter() {
 
@@ -106,26 +106,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
     bidmanager.addBidResponse(bidObj.placementCode, bid);
   }
 
-  str.bidWon = function() {
-    const curBidderCode = arguments[0].bidderCode;
-
-    if(curBidderCode !== STR_BIDDER_CODE && (arguments[0].adUnitCode in str.placementCodeSet)) {
-      let strBid = str.placementCodeSet[arguments[0].adUnitCode];
-      str.fireLoseBeacon(curBidderCode, arguments[0].cpm, strBid.adserverRequestId, "headerBidLose");
-    }
-  };
-
-  str.fireLoseBeacon = function(winningBidderCode, winningCPM, arid, type) {
-    let loseBeaconUrl = str.STR_BEACON_HOST;
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerBidderCode", winningBidderCode);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "winnerCpm", winningCPM);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "arid", arid);
-    loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, "type", type);
-    loseBeaconUrl = appendEnvFields(loseBeaconUrl);
-
-    str.fireBeacon(loseBeaconUrl);
-  };
-
   function appendEnvFields(url) {
     url = utils.tryAppendQueryString(url, 'hbVersion', '$prebid.version$');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
@@ -133,11 +113,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
     return url;
   }
-
-  str.fireBeacon = function(theUrl) {
-    const img = new Image();
-    img.src = theUrl;
-  };
 
   return {
     callBids: _callBids,

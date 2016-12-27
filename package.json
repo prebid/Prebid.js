@@ -17,7 +17,7 @@
     "prebid"
   ],
   "globalVarName": "pbjs",
-  "analytics": [],
+  "analytics": ["sharethroughAnalytics"],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
