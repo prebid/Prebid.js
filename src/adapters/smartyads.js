@@ -107,7 +107,6 @@ function SmartyadsAdapter() {
             deviceHeight = window.screen.height;
 
         var queryString = [
-            'site_id', bid.params.site_id,
             'banner_id', bid.params.banner_id,
             'size_ad', parsedSizes[0],
             'alt_size_ad', parsedSizes.slice(1).join(',') || undefined,
@@ -118,14 +117,7 @@ function SmartyadsAdapter() {
             "deviceHeight", deviceHeight,
             "secure", secure,
             "bidId", bid.bidId,
-            "checkOn", 'rf',
-            "battr", bid.params.battr,
-            "ad_pos", bid.params.ad_pos,
-            "bid_floor", bid.params.bid_floor,
-            "iab_cat", bid.params.iab_cat,
-            "publisherId", bid.params.publisherId,
-            "bcat", bid.params.bcat,
-            "badv", bid.params.badv
+            "checkOn", 'rf'
         ];
 
         return queryString.reduce(
@@ -191,8 +183,9 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
             return first - second;
         });
 };
-SmartyadsAdapter.createNew = function () {
 
+SmartyadsAdapter.createNew = function () {
     return new SmartyadsAdapter();
 };
+
 module.exports = SmartyadsAdapter;
