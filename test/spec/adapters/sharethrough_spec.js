@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import Adapter from '../../../src/adapters/sharethrough';
-import adloader from '../../../src/adloader';
 import bidManager from '../../../src/bidmanager';
 
 describe('sharethrough adapter', () => {

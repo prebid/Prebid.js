@@ -59,7 +59,11 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   function _receiveMessage(event) {
     if(event.origin === str.STR_BTLR_HOST || event.origin === str.STR_TEST_HOST) {
-      $$PREBID_GLOBAL$$.strcallback(JSON.parse(event.data).response);
+      try {
+        $$PREBID_GLOBAL$$.strcallback(JSON.parse(event.data).response);
+      } catch(e) {
+        console.log(e);
+      }
     }
   }
 
@@ -69,7 +73,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     try {
       const bid = bidfactory.createBid(1, bidObj);
 
-      bid.bidderCode = 'sharethrough';
+      bid.bidderCode = STR_BIDDER_CODE;
       bid.cpm = bidResponse.creatives[0].cpm;
       const size = bidObj.sizes[0];
       bid.width = size[0];
@@ -92,7 +96,11 @@ var SharethroughAdapter = function SharethroughAdapter() {
                     sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
                     sfp_js.type = 'text/javascript';
                     sfp_js.charset = 'utf-8';
-                    window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
+                    try {
+                        window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
+                    } catch (e) {
+                      console.log(e);
+                    }
                 })();
                 </script>`;
       bidmanager.addBidResponse(bidObj.placementCode, bid);
