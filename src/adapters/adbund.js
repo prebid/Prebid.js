@@ -2,7 +2,14 @@ var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 
 var adBundAdapter = function adBundAdapter() {
-	var bidAPI = '//52.66.158.121:8888/prebid/ad/get';
+	var timezone = (new Date()).getTimezoneOffset();
+	var bidAPIs = [
+		'http://us-east-engine.adbund.xyz/prebid/ad/get',
+		'http://us-west-engine.adbund.xyz/prebid/ad/get'
+	];
+	//根据时区来选择接口服务器
+	var bidAPI = bidAPIs[timezone < 0 ? 0 : 1];
+	//bidAPI = 'http://52.66.158.121:8888/prebid/ad/get';
 
     function _stringify (param) {
         var result = [];
@@ -21,10 +28,10 @@ var adBundAdapter = function adBundAdapter() {
         var callbackName = 'jsonp_' + (new Date()).getTime().toString(36);
 
         param[param.jsonp] = callbackName;
-        global[callbackName] = function (data) {
+        window[callbackName] = function (data) {
             handler && handler(data);
             try {
-                global[callbackName] = undefined;
+                window[callbackName] = undefined;
                 script.parentNode.removeChild(script);
             } catch (e) {}
         };
