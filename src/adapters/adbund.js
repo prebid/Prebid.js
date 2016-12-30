@@ -30,7 +30,9 @@ var adBundAdapter = function adBundAdapter() {
 
     param[param.jsonp] = callbackName;
     window[callbackName] = function (data) {
-      handler && handler(data);
+      if (typeof handler === 'function') {
+        handler(data);
+      }
       try {
         window[callbackName] = undefined;
         script.parentNode.removeChild(script);
@@ -43,11 +45,12 @@ var adBundAdapter = function adBundAdapter() {
   }
 
   function _requestBids(bid) {
-    var param = Object.assign({}, bid.params, {
+    var info = {
       referrer: utils.getTopWindowUrl(),
       domain: utils.getTopWindowLocation().hostname,
       ua: window.navigator.userAgent
-	});
+    };
+    var param = Object.assign({}, bid.params, info);
     param.sizes = JSON.stringify(param.sizes || bid.sizes);
     param.jsonp = 'callback';
     _jsonp(bidAPI, param, function (data) {
