@@ -11,6 +11,7 @@
     "appnexusAst",
     "conversant",
     "districtmDMX",
+    "fidelity",
     "getintent",
     "gumgum",
     "hiromedia",
@@ -23,6 +24,7 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
+    "sekindoUM",
     "sonobi",
     "sovrn",
     "springserve",
@@ -38,6 +40,7 @@
     "sharethrough",
     "roxot",
     "vertoz",
+    "widespace",
     {
       "appnexus": {
         "alias": "brealtime"

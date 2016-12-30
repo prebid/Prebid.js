@@ -2,6 +2,7 @@ import {uniques, flatten, adUnitsFilter} from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
+var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
 
@@ -129,16 +130,15 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && bid.cpm !== 0) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
 
       if (bid.dealId) {
         keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
       }
-
-      bid.adserverTargeting = keyValues;
     }
 
+    bid.adserverTargeting = keyValues;
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
@@ -257,6 +257,7 @@ exports.executeCallback = function (timedOut) {
 
   //execute one time callback
   if (externalCallbacks.oneTime) {
+    events.emit(AUCTION_END);
     try {
       processCallbacks([externalCallbacks.oneTime]);
     }

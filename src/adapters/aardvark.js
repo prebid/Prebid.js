@@ -1,104 +1,144 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-
-
-/**
+/*
  * Adapter for requesting bids from RTK Aardvark
  * To request an RTK Aardvark Header bidding account
  * or for additional integration support please contact sales@rtk.io
  */
 
-var AardvarkAdapter = function AardvarkAdapter() {
+var utils      = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader   = require('../adloader.js');
+var adapter    = require('./adapter.js');
+var constants  = require('../constants.json');
 
-  function _callBids(params) {
-    var rtkBids = params.bids || [];
+var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
+    AARDVARK_REQUESTS_MAP  = 'aardvarkRequests',
+    AARDVARK_BIDDER_CODE   = 'aardvark',
+    DEFAULT_REFERRER       = 'thor.rtk.io',
+    DEFAULT_ENDPOINT       = 'thor.rtk.io',
 
-    _requestBids(rtkBids);
-  }
+    endpoint               = DEFAULT_ENDPOINT,
 
-  function _requestBids(bidReqs) {
-    let ref;
-    try {
-      ref = window.top.location.host;
-    }
-    catch (err) {
-      ref = "thor.rtk.io";
+    requestBids = function(bidderCode, callbackName, bidReqs) {
+      var ref    = utils.getTopWindowLocation(),
+          ai     = '',
+          scs    = [],
+          bidIds = [];
 
-    }
-    var ai = "";
-    var shortcodes = [];
+      ref = ref ? ref.host : DEFAULT_REFERRER;
 
-    //build bid URL for RTK
-    utils._each(bidReqs, function (bid) {
-      ai = utils.getBidIdParameter('ai', bid.params);
-      var sc = utils.getBidIdParameter('sc', bid.params);
-      shortcodes.push(sc);
-    });
+      for (var i = 0, l = bidReqs.length, bid, _ai, _sc, _endpoint; i < l; i += 1) {
+        bid = bidReqs[i];
+        _ai = utils.getBidIdParameter('ai', bid.params);
+        _sc = utils.getBidIdParameter('sc', bid.params);
+        if (!_ai || !_ai.length || !_sc || !_sc.length)
+          continue;
 
-    var scURL = "";
+        _endpoint = utils.getBidIdParameter('host', bid.params);
+        if (_endpoint)
+          endpoint = _endpoint;
 
-    if (shortcodes.length > 1) {
-      scURL = shortcodes.join("_");
-    } else {
-      scURL = shortcodes[0];
-    }
+        if (!ai.length)
+          ai = _ai;
+        if (_sc)
+          scs.push(_sc);
 
-    var scriptUrl = '//thor.rtk.io/' + ai + "/" + scURL + "/aardvark/?jsonp=window.$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=" + ref;
-    adloader.loadScript(scriptUrl);
-  }
+        bidIds.push(_sc + "=" + bid.bidId);
 
-  //expose the callback to the global object:
-  window.$$PREBID_GLOBAL$$.aardvarkResponse = function (rtkResponseObj) {
+        // Create the bidIdsMap for easier mapping back later
+        $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bid.bidId] = bid;
+      }
 
-    //Get all initial Aardvark Bid Objects
-    var bidsObj = $$PREBID_GLOBAL$$._bidsRequested.filter(function (bidder) {
-      return bidder.bidderCode === 'aardvark';
-    })[0];
+      if (!ai.length || !scs.length)
+        return utils.logWarn("Bad bid request params given for adapter $" + bidderCode + " (" + AARDVARK_BIDDER_CODE + ")");
 
-    var returnedBidIDs = {};
+      adloader.loadScript([
+        '//' + endpoint + '/', ai, '/', scs.join('_'),
+        '/aardvark/?jsonp=$$PREBID_GLOBAL$$.', callbackName,
+        '&rtkreferer=', ref, '&', bidIds.join('&')
+      ].join(''));
+    },
 
-    if (rtkResponseObj.length > 0) {
-      rtkResponseObj.forEach(function (bid) {
 
-        if (!bid.error) {
-          var currentBid = bidsObj.bids.filter(function (r) {
-            return r.params.sc === bid.id;
-          })[0];
-          if (currentBid) {
-            var bidResponse = bidfactory.createBid(1, currentBid);
-            bidResponse.bidderCode = "aardvark";
-            bidResponse.cpm = bid.cpm;
-            bidResponse.ad = bid.adm;
-            bidResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(bid.nurl));
-            bidResponse.width = currentBid.sizes[0][0];
-            bidResponse.height = currentBid.sizes[0][1];
-            returnedBidIDs[bid.id] = currentBid.placementCode;
-            bidmanager.addBidResponse(currentBid.placementCode, bidResponse);
+
+    registerBidResponse = function(bidderCode, rawBidResponse) {
+      if (rawBidResponse.error)
+        return utils.logWarn("Aardvark bid received with an error, ignoring... [" + rawBidResponse.error + "]");
+
+      if (!rawBidResponse.cid)
+        return utils.logWarn("Aardvark bid received without a callback id, ignoring...");
+
+      var bidObj = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid];
+      if (!bidObj)
+        return utils.logWarn("Aardvark request not found: " + rawBidResponse.cid);
+
+      if (bidObj.params.sc !== rawBidResponse.id)
+        return utils.logWarn("Aardvark bid received with a non matching shortcode " + rawBidResponse.id + " instead of " + bidObj.params.sc);
+
+      var bidResponse = bidfactory.createBid(constants.STATUS.GOOD, bidObj);
+      bidResponse.bidderCode = bidObj.bidder;
+      bidResponse.cpm        = rawBidResponse.cpm;
+      bidResponse.ad         = rawBidResponse.adm + utils.createTrackPixelHtml(decodeURIComponent(rawBidResponse.nurl));
+      bidResponse.width      = bidObj.sizes[0][0];
+      bidResponse.height     = bidObj.sizes[0][1];
+
+      bidmanager.addBidResponse(bidObj.placementCode, bidResponse);
+      $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid].responded = true;
+    },
+
+
+
+    registerAardvarkCallback = function(bidderCode, callbackName) {
+      $$PREBID_GLOBAL$$[callbackName] = function(rtkResponseObj) {
+
+        rtkResponseObj.forEach(function(bidResponse) {
+          registerBidResponse(bidderCode, bidResponse);
+        });
+
+        for (var bidRequestId in $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode])
+          if ($$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode].hasOwnProperty(bidRequestId)) {
+            var bidRequest = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bidRequestId];
+            if (!bidRequest.responded) {
+              var bidResponse = bidfactory.createBid(constants.STATUS.NO_BID, bidRequest);
+              bidResponse.bidderCode = bidRequest.bidder;
+              bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
+            }
           }
-
-        }
-
-      });
-
-    }
-
-    //All bids are back - lets add a bid response for anything that did not receive a bid.
-    let difference = bidsObj.bids.filter(x => Object.keys(returnedBidIDs).indexOf(x.params.sc) === -1);
-
-    difference.forEach(function (bidRequest) {
-      var bidResponse = bidfactory.createBid(2, bidRequest);
-      bidResponse.bidderCode = "aardvark";
-      bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
-    });
+      };
+    },
 
 
-  }; // aardvarkResponse
 
-  return {
-    callBids: _callBids
-  };
+    AardvarkAdapter = function() {
+      var baseAdapter = adapter.createNew(AARDVARK_BIDDER_CODE);
+
+      $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] || {};
+
+      baseAdapter.callBids = function (params) {
+        var bidderCode   = baseAdapter.getBidderCode(),
+            callbackName = AARDVARK_CALLBACK_NAME;
+
+        if (bidderCode !== AARDVARK_BIDDER_CODE)
+          callbackName = [AARDVARK_CALLBACK_NAME, bidderCode].join('_');
+
+        $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode] = {};
+
+        registerAardvarkCallback(bidderCode, callbackName);
+
+        return requestBids(bidderCode, callbackName, params.bids || []);
+      };
+
+      return {
+        callBids:      baseAdapter.callBids,
+        setBidderCode: baseAdapter.setBidderCode,
+        createNew:     exports.createNew
+      };
+    };
+
+
+
+exports.createNew = function() {
+  return new AardvarkAdapter();
 };
 
 module.exports = AardvarkAdapter;
