@@ -192,24 +192,24 @@
                             impid: 36
                         }
                     },
-					{
-						bidder: 'sekindo',
-							params: {
-								spaceId: 14071,  	// REQUIRED int. To get one, contact http://www.sekindo.com
-								bidfloor: 0.2		// OPTIONAL float bid floor in $ CPM
-							}
-					},
+                    {
+                        bidder: 'sekindo',
+                            params: {
+                                spaceId: 14071,     // REQUIRED int. To get one, contact http://www.sekindo.com
+                                bidfloor: 0.2       // OPTIONAL float bid floor in $ CPM
+                            }
+                    },
                     {
                         bidder: 'memeglobal',
                         params: {
-                            tagid: 007,  	// REQUIRED int. To get one, contact http://www.memeglobal.com
+                            tagid: 007,     // REQUIRED int. To get one, contact http://www.memeglobal.com
                         }
                     },
                     {
                         bidder: 'adblade',
                         params: {
                             partnerId: 42980,
-                            bidfloor: 0.01		// OPTIONAL float bid floor in $ CPM
+                            bidfloor: 0.01      // OPTIONAL float bid floor in $ CPM
                         }
                     },
                     {
@@ -226,10 +226,18 @@
                         }
                     },
                     {
-                    bidder: 'widespace',
+                        bidder: 'widespace',
                         params: {
                             sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
                             cur: 'EUR'
+                        }
+                    },
+                    {
+                        bidder: 'adbund',
+                        params: {
+                            sid: '110238', // REQUIRED int. To get one, sign up http://www.adbund.com
+                            bidfloor: 0.036, // OPTIONAL float bid floor in $ CPM
+                            sizes: [300, 250] //OPTIONAL.
                         }
                     }
                 ]
@@ -324,7 +332,7 @@
                     {
                         bidder: 'memeglobal',
                         params: {
-                            tagid: 007,  	// REQUIRED int. To get one, contact http://www.memeglobal.com
+                            tagid: 007,     // REQUIRED int. To get one, contact http://www.memeglobal.com
                         }
                     },
                     {
@@ -341,7 +349,7 @@
         $$PREBID_GLOBAL$$.addAdUnits(adUnits);
 
         //register a callback handler
-				$$PREBID_GLOBAL$$.addCallback('adUnitBidsBack', function (adUnitCode) {
+                $$PREBID_GLOBAL$$.addCallback('adUnitBidsBack', function (adUnitCode) {
             console.debug('ad unit bids back for:', adUnitCode);
         });
 
