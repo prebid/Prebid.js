@@ -148,4 +148,18 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bidCall.args[1]).to.be.a('object');
   });
 
+  //related to issue https://github.com/prebid/Prebid.js/issues/866
+  it('Verify Passbacks when window.pp is not available', () => {
+    window.pp = function() {};
+    pulsepointAdapter.callBids(slotConfigs);
+    let placement = bidManager.addBidResponse.firstCall.args[0];
+    let bid = bidManager.addBidResponse.firstCall.args[1];
+    //verify that we passed back without exceptions, should window.pp be already taken.
+    expect(placement).to.equal('/DfpAccount1/slot1');
+    expect(bid.bidderCode).to.equal('pulsepoint');
+    expect(bid).to.not.have.property('ad');
+    expect(bid).to.not.have.property('cpm');
+    expect(bid.adId).to.equal('bid12345');
+  });
+
 });

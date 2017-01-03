@@ -52,6 +52,7 @@ function RubiconAdapter() {
         ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
+        addErrorBid();
       }
 
       function bidCallback(responseText) {
@@ -64,13 +65,14 @@ function RubiconAdapter() {
           } else {
             utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
           }
-
-          //indicate that there is no bid for this placement
-          let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-          badBid.bidderCode = bid.bidder;
-          badBid.error = err;
-          bidmanager.addBidResponse(bid.placementCode, badBid);
+          addErrorBid();
         }
+      }
+
+      function addErrorBid() {
+        let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
+        badBid.bidderCode = bid.bidder;
+        bidmanager.addBidResponse(bid.placementCode, badBid);
       }
     });
   }
@@ -180,7 +182,11 @@ function RubiconAdapter() {
       [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       bid.dealId = ad.deal;
 
-      bidmanager.addBidResponse(bidRequest.placementCode, bid);
+      try {
+        bidmanager.addBidResponse(bidRequest.placementCode, bid);
+      } catch (err) {
+        utils.logError('Error from addBidResponse', null, err);
+      }
     });
   }
 
