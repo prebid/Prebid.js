@@ -27,13 +27,21 @@ Note that this feature is still in Beta.
 
 ## Line Item Setup
 
-1. In the DFP "New line item" dialog, select the **"Video VAST"** radio button to set up your Prebid line item to serve video creatives.
+In the DFP "New line item" dialog, select the **Video VAST** radio button to set up your Prebid line item to serve video creatives.
 
-2. Add your video player size(s) under **"Master"**.
+Add your video player size(s) under **"Master"**.
 
-    ![DFP New Line Item]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-03.png)
+![DFP New Line Item]({{site.github.url}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-03.png)
 
-3. Other line item settings and key/ value targeting are identical to [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item).  Be sure to duplicate your line item and video creative for each Prebid price bucket you intend to create!
+Other line item settings and key/ value targeting are the same as [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item), with one exception:
+
+By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs over $20.  In order to receive those bids, you'll need to implement custom price buckets:
+
++ For developer instructions showing how to implement custom price buckets, see the [Custom Price Bucket Example]({{ site.github.url }}/dev-docs/examples/custom-price-bucket.html).
+
++ From an ad ops perspective, you'll need to modify your line item's key-value targeting to target whatever keyword you and your dev team decide to use to implement the custom price buckets.  (In the developer instructions linked above, the keyword `custom_bid_price_key` is used.)
+
+Be sure to duplicate your line item and video creative for each Prebid price bucket you intend to create!
 
 ## Creative Setup
 
