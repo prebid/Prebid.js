@@ -35,11 +35,7 @@ Add your video player size(s) under **"Master"**.
 
 Other line item settings and key/ value targeting are the same as [those recommended for Prebid display]({{site.github.url}}/adops/step-by-step.html#step-1-add-a-line-item), with one exception:
 
-By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs over $20.  In order to receive those bids, you'll need to implement custom price buckets:
-
-+ For developer instructions showing how to implement custom price buckets, see the [Custom Price Bucket Example]({{ site.github.url }}/dev-docs/examples/custom-price-bucket.html).
-
-+ From an ad ops perspective, you'll need to modify your line item's key-value targeting to target whatever keyword you and your dev team decide to use to implement the custom price buckets.  (In the developer instructions linked above, the keyword `custom_bid_price_key` is used.)
+By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs higher than $20.  In order to receive those bids, you'll need to make sure your dev team implements custom price buckets as described in the [Custom Price Bucket Example]({{ site.github.url }}/dev-docs/examples/custom-price-bucket-using-setpricegranularity.html).  Once those changes are made on the engineering side, there should be no changes required from the ad ops side to support CPMs over $20.
 
 Be sure to duplicate your line item and video creative for each Prebid price bucket you intend to create!
 
