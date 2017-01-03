@@ -113,7 +113,12 @@ function resetPresetTargeting() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key){
-        slot.setTargeting(key,null);
+				// Reset Only Registerd dfp-adunits 
+				$$PREBID_GLOBAL$$.adUnits.find(function (unit) {
+					if(unit.code === slot.getSlotElementId()){
+        		slot.setTargeting(key,null);
+					}
+				});
       });
     });
   }
