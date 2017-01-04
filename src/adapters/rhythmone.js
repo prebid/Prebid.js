@@ -50,7 +50,7 @@ module.exports = function(bidManager, global, loader){
           callback(200, "success", response.responseText);
         else
           callback(-1, "http error "+response.status, response.responseText);
-      }, false, {method:"GET"});
+      }, false, {method:"GET", withCredentials: true});
     }
     else{
       loader(url, function(responseText, response){
@@ -58,7 +58,7 @@ module.exports = function(bidManager, global, loader){
           callback(200, "success", response.responseText);
         else
           callback(-1, "http error "+response.status, response.responseText);
-      }, postData, {method:"POST", contentType: "application/json"});
+      }, postData, {method:"POST", contentType: "application/json", withCredentials: true});
     }
   }
 
