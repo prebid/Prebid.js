@@ -72,7 +72,13 @@ var videoAdUnit = {
 };
 ```
 
-### 2. Request bids, build a video tag, and invoke the player
+### 2. Implement Custom Price Buckets to work around the default CPM cap of $20
+
+By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs over $20.  In order to receive those bids, you'll need to implement custom price buckets using the [`setPriceGranularity`]({{site.github.url}}/dev-docs/publisher-api-reference.html#customCPMObject) method.
+
+For instructions, see [Custom Price Bucket with `setPriceGranularity`]({{site.github.url}}/dev-docs/examples/custom-price-bucket-using-setpricegranularity.html).
+
+### 3. Request bids, build a video tag, and invoke the player
 
 Next, do the standard Prebid "add ad units and request bids" dance.
 In the example below, we've added some code that is not strictly
@@ -128,7 +134,7 @@ pbjs.que.push(function(){
 });
 ```
 
-### 3. Add the video player code to the page body
+### 4. Add the video player code to the page body
 
 In the body of the page, some HTML and JS like the following will show
 the ad -- this is where `invokeVideoPlayer` is defined:
@@ -168,7 +174,7 @@ function invokeVideoPlayer(url) {
 ```
 
 If you have [set up your adserver line items/ creatives]({{site.github.url}}/adops/setting-up-prebid-video-in-dfp.html) correctly, you should see
-an instream preroll video ad followed by the oceans video from the [video.js homepage](http://videojs.com/).
+an instream pre-roll video ad followed by the oceans video from the [video.js homepage](http://videojs.com/).
 
 ## Working Examples
 
