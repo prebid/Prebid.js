@@ -261,6 +261,9 @@ exports.executeCallback = function (timedOut) {
     try {
       processCallbacks([externalCallbacks.oneTime]);
     }
+    catch(e){
+      utils.logError('Error executing bidsBackHandler', null, e);
+    }
     finally {
       externalCallbacks.oneTime = null;
       externalCallbacks.timer = false;
