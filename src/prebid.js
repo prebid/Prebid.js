@@ -298,6 +298,7 @@ function receiveMessage(ev) {
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {}
+
   console.log('receiveMessage data: ', data);
 }
 
