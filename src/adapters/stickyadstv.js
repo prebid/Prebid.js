@@ -4,9 +4,9 @@ var adloader = require('../adloader.js');
 
 var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
-  var MUSTANG_URL = "http://cdn.stickyadstv.com/mustang/mustang.min.js";
-  var INTEXTROLL_URL = "http://cdn.stickyadstv.com/prime-time/intext-roll.min.js";
-  var SCREENROLL_URL = "http://cdn.stickyadstv.com/prime-time/screen-roll.min.js";
+  var MUSTANG_URL = "//cdn.stickyadstv.com/mustang/mustang.min.js";
+  var INTEXTROLL_URL = "//cdn.stickyadstv.com/prime-time/intext-roll.min.js";
+  var SCREENROLL_URL = "//cdn.stickyadstv.com/prime-time/screen-roll.min.js";
   
   window.stickyadstv_cache = {};
 
@@ -16,7 +16,13 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
       // Send out bid request for each bid given its tag IDs and query strings
-      sendBidRequest(bid);
+
+      if(bid.placementCode && bid.params.zoneId) {
+        sendBidRequest(bid);
+      }
+      else {
+        console.warn("StickyAdsTV: Missing mandatory field(s).");
+      }
 
     }
   }
@@ -39,6 +45,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     adloader.loadScript(urltoLoad, function(){
 
       getBid(bid, function(bidObject){
+
         if(!bidRegistered){
           bidRegistered = true;
           onBidReceived(placementCode, bidObject);
@@ -199,8 +206,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   function extractPrice(vast){
     var priceData = vast.getPricing();
 
-    if(!priceData)
-    {
+    if(!priceData) {
       console.warn("StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact.");
     }
     
