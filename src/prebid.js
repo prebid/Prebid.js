@@ -288,22 +288,21 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-function listenAdRequestFromCreative() {
-  console.log('listening for postMessage');
-  addEventListener('message', sendAdToCreative, false);
+function listenMessagesFromCreative() {
+  addEventListener('message', receiveMessage, false);
 }
 
-function sendAdToCreative(ev) {
-  console.log('sendAdToCreative via postMessage');
+function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
     data = JSON.parse(ev[key]);
-  } catch (e) {
-    // Do nothing.  No ad found.
-  }
+  } catch (e) {}
+  console.log('receiveMessage data: ', data);
+}
+
+function sendAdToCreative(data) {
   if (data.adId) {
-    console.log('postMessage data: ', data);
     var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
       return bid.adId === data.adId;
     });
@@ -867,5 +866,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return getWinningBids(adUnitCode);
 };
 
-$$PREBID_GLOBAL$$.que.push(() => listenAdRequestFromCreative());
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 processQue();
