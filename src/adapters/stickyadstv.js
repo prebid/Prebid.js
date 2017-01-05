@@ -262,7 +262,9 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   // Export the callBids function, so that prebid.js can execute
   // this function when the page asks to send out bid requests.
   return {
-    callBids: _callBids
+    callBids: _callBids,
+    formatBidObject: formatBidObject,
+    formatAdHTML: formatAdHTML
   };
 };
 

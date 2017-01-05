@@ -5,154 +5,123 @@ import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 describe('StickyAdsTV Adapter', function () {
-	var adapter = void 0;
-	var sandbox = void 0;
-	var bidsRequestBuff = void 0;
-	var bidderRequest = {
-		bidderCode: 'stickyadstv',
-		bids: [{
-			bidId: 'bidId1',
-			bidder: 'stickyadstv',
-			placementCode: 'foo',
-			sizes: [[300, 250]],
-			params: {
-				zoneId: '2003'
-			}
-		}, {
-			bidId: 'bidId2',
-			bidder: 'stickyadstv',
-			placementCode: 'bar',
-			sizes: [[728, 90]],
-			params: {
-				zoneId: '5562003'
-			}
-		}, {
-			bidId: 'bidId3',
-			bidder: 'stickyadstv',
-			placementCode: '',
-			sizes: [[300, 600]],
-			params: {
-				zoneId: '123456'
-			}
-		}, {
-			bidId: 'bidId4',
-			bidder: 'stickyadstv',
-			placementCode: 'coo',
-			sizes: [[300, 600]],
-			params: {
-				wrong: "missing zoneId"
-			}
-		}]
-	};
+    var adapter = void 0;
+    var sandbox = void 0;
+    var bidsRequestBuff = void 0;
+    var bidderRequest = {
+        bidderCode: 'stickyadstv',
+        bids: [{
+            bidId: 'bidId1',
+            bidder: 'stickyadstv',
+            placementCode: 'foo',
+            sizes: [[300, 250]],
+            params: {
+                zoneId: '2003'
+            }
+        }, {
+            bidId: 'bidId2',
+            bidder: 'stickyadstv',
+            placementCode: 'bar',
+            sizes: [[728, 90]],
+            params: {
+                zoneId: '5562003'
+            }
+        }, {
+            bidId: 'bidId3',
+            bidder: 'stickyadstv',
+            placementCode: '',
+            sizes: [[300, 600]],
+            params: {
+                zoneId: '123456'
+            }
+        }, {
+            bidId: 'bidId4',
+            bidder: 'stickyadstv',
+            placementCode: 'coo',
+            sizes: [[300, 600]],
+            params: {
+                wrong: "missing zoneId"
+            }
+        }]
+    };
 
-	beforeEach(function () {
-		adapter = new Adapter();
-		sandbox = sinon.sandbox.create();
-		bidsRequestBuff = pbjs._bidsRequested;
-		pbjs._bidsRequested = [];
-	});
+    beforeEach(function () {
+        adapter = new Adapter();
+        sandbox = sinon.sandbox.create();
+        bidsRequestBuff = pbjs._bidsRequested;
+        pbjs._bidsRequested = [];
+    });
 
-	afterEach(function () {
-		sandbox.restore();
-		pbjs._bidsRequested = bidsRequestBuff;
-	});
+    afterEach(function () {
+        sandbox.restore();
+        pbjs._bidsRequested = bidsRequestBuff;
+    });
 
-	describe('callBids', function () {
-		beforeEach(function () {
-			sandbox.stub(adLoader, 'loadScript');
-			adapter.callBids(bidderRequest);
-		});
+    describe('callBids', function () {
+        beforeEach(function () {
+            sandbox.stub(adLoader, 'loadScript');
+            adapter.callBids(bidderRequest);
+        });
 
-		it('should be called twice', function () {
-			sinon.assert.calledTwice(adLoader.loadScript);
-		});
+        it('should be called twice', function () {
+            sinon.assert.calledTwice(adLoader.loadScript);
+        });
 
-		it('should have load the mustang script', function () {
-			var url = void 0;
-			url = adLoader.loadScript.firstCall.args[0];
-			expect(url).to.equal("//cdn.stickyadstv.com/mustang/mustang.min.js");
-		});
-	});
+        it('should have load the mustang script', function () {
+            var url = void 0;
+            url = adLoader.loadScript.firstCall.args[0];
+            expect(url).to.equal("//cdn.stickyadstv.com/mustang/mustang.min.js");
+        });
+    });
 
-	describe('getbids', function () {
-		beforeEach(function () {
-			adapter.getbids();
-		});
+    describe('formatBidObject', function () {
 
-		it('should be called twice', function () {
-			sinon.assert.calledTwice(adLoader.loadScript);
-		});
-	});
+        it('should create a valid bid object', function () {
+            let result = adapter.formatBidObject(true, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
+            
+            expect(result).to.have.property('cpm', '1.2345');
+            expect(result).to.have.property('ad', "<div>sample</div>");
+            expect(result).to.have.property('bidderCode', "stickyadstv");
+            expect(result).to.have.property('currencyCode', "EUR");
+            expect(result).to.have.property('width', 200);
+            expect(result).to.have.property('height', 300);
+            expect(result.getStatusCode()).to.equal(1);
+        });
 
-	describe('Bid response', function () {
-		var vzBidRequest = void 0;
-		var bidderReponse = {
-			"vzhPlacementId": "VZ-HB-123",
-			"bid": "0fac1b8a-6ba0-4641-bd57-2899b1bedeae_0",
-			"adWidth": "300",
-			"adHeight": "250",
-			"cpm": "1.00000000000000",
-			"ad": "<div></div>",
-			"slotBidId": "bidId1",
-			"nurl": "<img></img>",
-			"statusText": "vertoz:success"
-		};
+        it('should create a invalid bid object because price is not defined', function () {
+            let result = adapter.formatBidObject(true, null, "<div>sample</div>", 200, 300);
+                        
+            expect(result).to.have.property('bidderCode', "stickyadstv");
+            expect(result.getStatusCode()).to.equal(2);
+        });
 
-		beforeEach(function () {
-			pbjs._bidsRequested.push(bidderRequest);
-		});
+        it('should create a invalid bid object', function () {
+            let result = adapter.formatBidObject(false, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
+                        
+            expect(result).to.have.property('bidderCode', "stickyadstv");
+            expect(result.getStatusCode()).to.equal(2);
+        });
+    });
 
-		describe('success', function () {
-			var firstBidReg = void 0;
-			var adSpaceId = void 0;
+    describe('formatAdHTML', function () {
 
-			beforeEach(function () {
-				sandbox.stub(_bidmanager2['default'], 'addBidResponse');
-				pbjs.vzResponse(bidderReponse);
-				firstBidReg = bidManager.addBidResponse.firstCall.args[1];
-				adSpaceId = bidManager.addBidResponse.firstCall.args[0];
-			});
+        it('should create an inBanner ad format', function () {
+            let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{}}, [200,300]);
+            
+            expect(result).to.equal('<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new window.top.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>');
+        });
 
-			it('cpm to have property 1.000000', function () {
-				(0, _chai.expect)(firstBidReg).to.have.property('cpm', 1.00);
-			});
-			it('adSpaceId should exist and be equal to placementCode', function () {
-				(0, _chai.expect)(adSpaceId).to.equal("foo");
-			});
-			it('should have property ad', function () {
-				(0, _chai.expect)(firstBidReg).to.have.property('ad');
-			});
-			it('should include the size to the bid object', function () {
-				(0, _chai.expect)(firstBidReg).to.have.property('width', '300');
-				(0, _chai.expect)(firstBidReg).to.have.property('height', '250');
-			});
-		});
+        it('should create an intext ad format', function () {
+            let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"intext-roll", auto:"v2", smartPlay:"true"}}, [200,300]);
+                        
+            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,domId:\"placementCodeValue\"};window.top.com.stickyadstv.intextroll.start(config);</script>");
+        });
 
-		describe('failure', function () {
-			var secondBidReg = void 0;
-			var adSpaceId = void 0;
-			var bidderResponse = {
-				"vzhPlacementId": "VZ-HB-456",
-				"slotBidId": "bidId2",
-				"statusText": "vertoz:NO_BIDS"
-			};
+        it('should create a screenroll ad format', function () {
+            let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"screen-roll"}}, [200,300]);
+                        
+            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast};window.top.com.stickyadstv.screenroll.start(config);</script>");
+        });
+    });
 
-			beforeEach(function () {
-				sandbox.stub(bidManager, 'addBidResponse');
-				pbjs.vzResponse(bidderResponse);
-				secondBidReg = bidManager.addBidResponse.firstCall.args[1];
-				adSpaceId = bidManager.addBidResponse.firstCall.args[0];
-			});
-
-			it('should not have cpm property', function () {
-				(0, _chai.expect)(secondBidReg.cpm).to.be.undefined;
-			});
-			it('adSpaceId should exist and be equal to placementCode', function () {
-				(0, _chai.expect)(adSpaceId).to.equal("bar");
-			});
-			it('should not have ad property', function () {
-				(0, _chai.expect)(secondBidReg.ad).to.be.undefined;
-			});
-		});
-	});
 });
