@@ -114,13 +114,13 @@ describe('StickyAdsTV Adapter', function () {
         it('should create an intext ad format', function () {
             let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"intext-roll", auto:"v2", smartPlay:"true"}}, [200,300]);
                         
-            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,domId:\"placementCodeValue\"};window.top.com.stickyadstv.intextroll.start(config);</script>");
+            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,auto:\"v2\",smartPlay:\"true\"};window.top.com.stickyadstv.intextroll.start(config);</script>");
         });
 
         it('should create a screenroll ad format', function () {
-            let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"screen-roll"}}, [200,300]);
+            let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"screen-roll", smartPlay:"true"}}, [200,300]);
                         
-            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast};window.top.com.stickyadstv.screenroll.start(config);</script>");
+            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:\"true\"};window.top.com.stickyadstv.screenroll.start(config);</script>");
         });
     });
 
