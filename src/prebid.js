@@ -297,25 +297,34 @@ function receiveMessage(ev) {
   var data = {};
   try {
     data = JSON.parse(ev[key]);
-  } catch (e) {}
+  } catch (e) {
+    return;
+  }
 
-  console.log('receiveMessage data: ', data);
-}
-
-function sendAdToCreative(data) {
   if (data.adId) {
-    var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
+    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
       return bid.adId === data.adId;
     });
+
+    if (data.message === 'Prebid Request') {
+      console.log('Prebid Request', data);
+      sendAdToCreative(adObject, ev.source);
+      events.emit(BID_WON, adObject);
+    }
+  }
+}
+
+function sendAdToCreative(adObject, source) {
+  if (adObject.adId) {
 
     var ad = adObject.ad;
     var adUrl = adObject.adUrl;
     var message = JSON.stringify({
-      message: 'Prebid creative sent: ' + data.adId,
+      message: 'Prebid creative sent: ' + adObject.adId,
       ad: ad,
       adUrl: adUrl
     });
-    ev.source.postMessage(message, '*');
+    source.postMessage(message, '*');
   }
 }
 
