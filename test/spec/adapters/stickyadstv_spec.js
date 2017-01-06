@@ -16,7 +16,8 @@ describe('StickyAdsTV Adapter', function () {
             placementCode: 'foo',
             sizes: [[300, 250]],
             params: {
-                zoneId: '2003'
+                zoneId: '2003',
+                format:"screen-roll"
             }
         }, {
             bidId: 'bidId2',
@@ -67,15 +68,20 @@ describe('StickyAdsTV Adapter', function () {
             sinon.assert.calledTwice(adLoader.loadScript);
         });
 
-        it('should have load the mustang script', function () {
+        it('should have load screenroll and mustang script', function () {
             var url = void 0;
+            
             url = adLoader.loadScript.firstCall.args[0];
+            expect(url).to.equal("//cdn.stickyadstv.com/prime-time/screen-roll.min.js");
+
+            url = adLoader.loadScript.secondCall.args[0];
             expect(url).to.equal("//cdn.stickyadstv.com/mustang/mustang.min.js");
         });
     });
 
     describe('getBid', function () {
-        let bidRespone;
+        let bidResponse;
+        let loadConfig;
         let getPricingCalled;
 
         beforeEach(function () {
@@ -94,33 +100,47 @@ describe('StickyAdsTV Adapter', function () {
                             };
 
                             this.load = function(config, listener){
+                                loadConfig = config;
                                 listener.onSuccess();
                             };
+                        }
+                    },
+                    screenroll : {
+                        getPlayerSize: function(){
+                            return "123x456";
                         }
                     }
                 }
             };
 
             adapter.getBid(bidderRequest.bids[0], function(bidObject){
-                bidRespone = bidObject;
+                bidResponse = bidObject;
             });
         });
 
         afterEach(function() {
             delete window.com.stickyadstv.vast.VastLoader;
             delete window.com.stickyadstv.vast;
+            delete window.com.stickyadstv.screenroll;
             delete window.com.stickyadstv;
         });
 
         it('should have returned a valid bidObject', function () {
             
-            expect(bidRespone).to.have.property('cpm', 4.000);
-            expect(bidRespone).to.have.property('ad', "<div id=\"stickyadstv_prebid_target\"></div><script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new window.top.com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);ad.initAd(300,250,\"\",0,\"\",\"\");</script>");
-            expect(bidRespone).to.have.property('bidderCode', "stickyadstv");
-            expect(bidRespone).to.have.property('currencyCode', "USD");
-            expect(bidRespone).to.have.property('width', 300);
-            expect(bidRespone).to.have.property('height', 250);
-            expect(bidRespone.getStatusCode()).to.equal(1);
+            expect(bidResponse).to.have.property('cpm', 4.000);
+            expect(bidResponse).to.have.property('ad', "<script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast};window.top.com.stickyadstv.screenroll.start(config);</script>");
+            expect(bidResponse).to.have.property('bidderCode', "stickyadstv");
+            expect(bidResponse).to.have.property('currencyCode', "USD");
+            expect(bidResponse).to.have.property('width', 300);
+            expect(bidResponse).to.have.property('height', 250);
+            expect(bidResponse.getStatusCode()).to.equal(1);
+        });
+
+        it('should have called load with proper config', function () {
+            
+            expect(loadConfig).to.have.property('playerSize', "123x456");
+            expect(loadConfig).to.have.property('zoneId', "2003");
+
         });
 
         it('should have called getPricing', function () {
