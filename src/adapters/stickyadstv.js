@@ -257,7 +257,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     callBids: _callBids,
     formatBidObject: formatBidObject,
     formatAdHTML: formatAdHTML,
-    getBiggerSize:getBiggerSize
+    getBiggerSize:getBiggerSize,
+    getBid:getBid
   };
 };
 

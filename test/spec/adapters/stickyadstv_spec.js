@@ -74,6 +74,62 @@ describe('StickyAdsTV Adapter', function () {
         });
     });
 
+    describe('getBid', function () {
+        let bidRespone;
+        let getPricingCalled;
+
+        beforeEach(function () {
+            //Mock VastLoader for test purpose
+            window.com = {
+                stickyadstv : {
+                    vast : {
+                        VastLoader : function(){
+                            this.getVast = function(){
+                                return { 
+                                    getPricing : function(){
+                                        getPricingCalled = true;
+                                        return {currency:"USD", price: 4.000} 
+                                    }
+                                };
+                            };
+
+                            this.load = function(config, listener){
+                                listener.onSuccess();
+                            };
+                        }
+                    }
+                }
+            };
+
+            adapter.getBid(bidderRequest.bids[0], function(bidObject){
+                bidRespone = bidObject;
+            });
+        });
+
+        afterEach(function() {
+            delete window.com.stickyadstv.vast.VastLoader;
+            delete window.com.stickyadstv.vast;
+            delete window.com.stickyadstv;
+        });
+
+        it('should have returned a valid bidObject', function () {
+            
+            expect(bidRespone).to.have.property('cpm', 4.000);
+            expect(bidRespone).to.have.property('ad', "<div id=\"stickyadstv_prebid_target\"></div><script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new window.top.com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);ad.initAd(300,250,\"\",0,\"\",\"\");</script>");
+            expect(bidRespone).to.have.property('bidderCode', "stickyadstv");
+            expect(bidRespone).to.have.property('currencyCode', "USD");
+            expect(bidRespone).to.have.property('width', 300);
+            expect(bidRespone).to.have.property('height', 250);
+            expect(bidRespone.getStatusCode()).to.equal(1);
+        });
+
+        it('should have called getPricing', function () {
+            
+            expect(getPricingCalled).to.equal(true);
+
+        });
+    });
+
     describe('formatBidObject', function () {
 
         it('should create a valid bid object', function () {
