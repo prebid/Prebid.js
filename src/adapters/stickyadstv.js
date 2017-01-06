@@ -48,7 +48,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
         if(!bidRegistered){
           bidRegistered = true;
-          onBidReceived(placementCode, bidObject);
+          bidmanager.addBidResponse(placementCode, bidObject);
         }
         
       });
@@ -234,14 +234,6 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return bidObject;
   }
 
-  function onBidReceived(placementCode, bidObject){
-
-    console.log("Add Bid response:"+ bidObject);
-    // send the bidResponse object to bid manager with the adUnitCode.
-    bidmanager.addBidResponse(placementCode, bidObject);
-
-  }
-
   /* Create a function bound to a given object (assigning `this`, and arguments,
    * optionally). Binding with arguments is also known as `curry`.
    * Delegates to **ECMAScript 5**'s native `Function.bind` if available.
@@ -264,7 +256,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   return {
     callBids: _callBids,
     formatBidObject: formatBidObject,
-    formatAdHTML: formatAdHTML
+    formatAdHTML: formatAdHTML,
+    getBiggerSize:getBiggerSize
   };
 };
 

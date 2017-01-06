@@ -120,7 +120,17 @@ describe('StickyAdsTV Adapter', function () {
         it('should create a screenroll ad format', function () {
             let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"screen-roll", smartPlay:"true"}}, [200,300]);
                         
-            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:\"true\"};window.top.com.stickyadstv.screenroll.start(config);</script>");
+            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,smartPlay:\"true\"};window.top.com.stickyadstv.screenroll.start(config);</script>");
+        });
+    });
+
+    describe('getBiggerSize', function () {
+
+        it('should returns the bigger size', function () {
+            let result = adapter.getBiggerSize([[1,4000],[4000,1],[200,300],[0,0]]);
+            
+            expect(result[0]).to.equal(200);
+            expect(result[1]).to.equal(300);
         });
     });
 
