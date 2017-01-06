@@ -71,7 +71,9 @@
                     // Passback 3rd party tag in Javascript
                     iframe.width = tagWidth;
                     iframe.height = tagHeight;
+                    iframeDoc.open("text/html", "replace");
                     iframeDoc.write(passbackTagHtml);
+                    iframeDoc.close();
                 }
             }
         });
