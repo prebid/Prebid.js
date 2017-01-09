@@ -82,7 +82,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       zoneId:zoneId,
       playerSize:size[0]+"x"+size[1],
       vastUrlParams: bid.params.vastUrlParams,
-      componentId: "prebid-sticky-"+bid.params.format
+      componentId: "prebid-sticky"+(bid.params.format ? "-"+bid.params.format : "")
     };
 
     if(bid.params.format === "screen-roll"){
