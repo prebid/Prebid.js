@@ -35,10 +35,10 @@ A couple alternative workarounds:
 
 ## How many header bidders should I have?
 
-There is an analysis from the Prebid team here:
+Every publisher is different.  In order to answer this question you'll need to run some tests, gather data, and decide what works for you based on your performance and monetization needs.
+
+There is an analysis from the Prebid team here which may be useful:
 
 [How many bidders should I work with?]({{site.github.url}}/blog/how-many-bidders-for-header-bidding)
-
-tl;dr: Every publisher is different, so run some tests, gather data, and decide what works for you based on your performance and monetization needs.
 
 </div>
