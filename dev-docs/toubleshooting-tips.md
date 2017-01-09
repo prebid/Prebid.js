@@ -53,5 +53,68 @@ The ad server's developer console usually provide information such as targeting,
 
 <br>
 
+## See all bids in the console
+
+To print information about all of the bids that come in to the console, add the following code to your page during development:
+
+```javascript
+var responses = pbjs.getBidResponses();
+var output = [];
+for (var adunit in responses) {
+    if (responses.hasOwnProperty(adunit)) {
+        var bids = responses[adunit].bids;
+        for (var i = 0; i < bids.length; i++) {
+            var b = bids[i];
+            output.push({
+                'adunit': adunit, 'adId': b.adId, 'bidder': b.bidder,
+                'time': b.timeToRespond, 'cpm': b.cpm, 'msg': b.statusMessage
+            });
+        }
+    }
+}
+if (output.length) {
+    if (console.table) {
+        console.table(output);
+    } else {
+        for (var j = 0; j < output.length; j++) {
+            console.log(output[j]);
+        }
+    }
+} else {
+    console.warn('NO prebid responses');
+}
+```
+
+## See all winning bids in the console
+
+To print information about all of the **winning** bids that come in to the console, add the following code to your page during development:
+
+```javascript
+var bids = pbjs._winningBids;
+var output = [];
+for (var i = 0; i < bids.length; i++) {
+    var b = bids[i];
+    output.push({
+        'adunit': b.adUnitCode, 'adId': b.adId, 'bidder': b.bidder,
+        'time': b.timeToRespond, 'cpm': b.cpm
+    });
+}
+if (output.length) {
+    if (console.table) {
+        console.table(output);
+    } else {
+        for (var j = 0; j < output.length; j++) {
+            console.log(output[j]);
+        }
+    }
+} else {
+    console.warn('No prebid winners');
+}
+```
+
+## Related Reading
+
++ [Prebid FAQ]({{site.github.url}}/dev-docs/faq.html)
++ [Prebid Common Issues]({{site.github.url}}/dev-docs/common-issues.html)
 
 </div>
