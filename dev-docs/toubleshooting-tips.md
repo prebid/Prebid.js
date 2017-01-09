@@ -11,9 +11,15 @@ nav_section: troubleshooting
 
 <div class="bs-docs-section" markdown="1">
 
-# Tips for troubleshooting
+# Tips for Troubleshooting
+{:.no_toc}
 
-### Turn on Prebid.js Debug Messages
+This page has tips and tricks for troubleshooting issues with your Prebid.js integration.
+
+* TOC
+{:toc}
+
+## Turn on Prebid.js debug messages
 
 Add `pbjs_debug=true` to the end of your page's URL. For example: <a href="{{ site.github.url }}/examples/pbjs_demo.html?pbjs_debug=true" class="btn btn-default btn-sm" target="_blank">/pbjs_demo.html?pbjs_debug=true</a>. This will add two types of messages to your browser's developer console:
 
@@ -32,11 +38,11 @@ Add `pbjs_debug=true` to the end of your page's URL. For example: <a href="{{ si
 | :----  |:--------|
 | Calling bidder |  When Prebid.js sends out bid requests, this message is logged |
 | Set key value for placement | After all the bids came back, or when timeout is reached, prebid.js will set keyword targeting for the defined ad units. |
-| Calling renderAd | If a header bidding bid wins the ad server's auction, prebid.js will render the winninb bid's creative. |
+| Calling renderAd | If a header bidding bid wins the ad server's auction, prebid.js will render the winning bid's creative. |
 
 <br>
 
-### Turn on your ad server's developer console
+## Turn on your ad server's developer console
 
 The ad server's developer console usually provide information such as targeting, latency, and key events logging. For example, here is a screenshot of DFP's GPT developer console logs:
 
