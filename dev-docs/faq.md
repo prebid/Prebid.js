@@ -47,4 +47,10 @@ Here are a couple of alternative workarounds:
 
 	Use post-bid. The downsides are that post-bid no longer allows your header bidding partners to compete with DFP/AdX, but they can still compete with each other.  For more information, see [What is post-bid?](http://prebid.org/overview/what-is-post-bid.html).
 
+## Related Reading
+
++ [Prebid Dev Tips]({{site.github.com}}/dev-docs/troubleshooting-tips.html)
++ [Prebid Common Issues]({{site.github.com}}/dev-docs/common-issues.html)
++ [Prebid.js issues tagged 'question'](https://github.com/prebid/Prebid.js/issues?utf8=%E2%9C%93&q=is%3Aissue%20label%3Aquestion%20)
+
 </div>
