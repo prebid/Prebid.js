@@ -15,15 +15,10 @@
       <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
         <ul class="nav navbar-nav">
 
-          <li {% if page.top_nav_section == 'beta' %}class="active"{% endif %}>
-            <a href="{{site.github.url}}/blog.html">Blog</a>
-          </li>
-
           <li {% if page.top_nav_section == 'overview' %}class="active"{% endif %}>
             <a href="{{site.github.url}}/overview/intro.html">Overview
             </a>
           </li>          
-
 
           <li {% if page.top_nav_section == 'dev_docs' %}class="active"{% endif %}>
             <a href="{{site.github.url}}/dev-docs/getting-started.html">Dev Docs
@@ -35,10 +30,18 @@
             </a>
           </li>
 
+          <li {% if page.top_nav_section == faq' %}class="active"{% endif %}>
+            <a href="{{site.github.url}}/dev-docs/faq.html">FAQ</a>
+          </li>
+
           <li {% if page.top_nav_section == 'support' %}class="active"{% endif %}>
             <a href="{{site.github.url}}/support/support.html">Support
             </a>
-          </li>       
+          </li>
+
+          <li {% if page.top_nav_section == 'beta' %}class="active"{% endif %}>
+            <a href="{{site.github.url}}/blog.html">Blog</a>
+          </li>
 
           <li {% if page.top_nav_section == 'download' %}class="active"{% endif %}>
             <!-- <a href="https://github.com/prebid/Prebid.js/releases">Download
