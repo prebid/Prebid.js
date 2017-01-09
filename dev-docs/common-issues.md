@@ -38,7 +38,6 @@ Check the bid prices. If they are low and are getting reduced to $0 due to price
 {:toc}
 
 + [Prebid FAQ]({{site.github.url}}/dev-docs/faq.html)
-+ [Prebid Dev Tips]({{site.github.url}}/dev-docs/faq.html)
 + [Prebid Tips for Troubleshooting]({{site.github.url}}/dev-docs/toubleshooting-tips.html)
 
 </div>
