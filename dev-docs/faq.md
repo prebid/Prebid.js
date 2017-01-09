@@ -13,7 +13,7 @@ nav_section: reference
 
 # FAQ
 
-#### Q: Does Prebid.js support synchronous ad server tags?
+## Does Prebid.js support synchronous ad server tags?
 
 Short answer is not out of the box, because of header bidding partners' limitations. But there're workarounds.
 
@@ -33,6 +33,12 @@ A couple alternative workarounds:
 
 	Use post bid. The downsides are post-bid no longer allows your header bidding partners to compete with DFP/AdX, but they can compete with each other. Documentation here: http://prebid.org/overview/what-is-post-bid.html
 
-Let us know which option you choose and any questions you may have!
+## How many header bidders should I have?
+
+There is an analysis from the Prebid team here:
+
+[How many bidders should I work with?]({{site.github.url}}/blog/how-many-bidders-for-header-bidding)
+
+tl;dr: Every publisher is different, so run some tests, gather data, and decide what works for you based on your performance and monetization needs.
 
 </div>
