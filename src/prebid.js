@@ -55,6 +55,9 @@ $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 
+// domain where prebid is running for cross domain iframe communication
+$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
+
 //let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
 
@@ -307,25 +310,37 @@ function receiveMessage(ev) {
     });
 
     if (data.message === 'Prebid Request') {
-      console.log('Prebid Request', data);
-      sendAdToCreative(adObject, ev.source);
+      sendAdToCreative(adObject, data.adServerDomain, ev.source);
       events.emit(BID_WON, adObject);
     }
   }
 }
 
-function sendAdToCreative(adObject, source) {
-  if (adObject.adId) {
+function sendAdToCreative(adObject, remoteDomain, source) {
+  const { adId, ad, adUrl, width, height } = adObject;
 
-    var ad = adObject.ad;
-    var adUrl = adObject.adUrl;
-    var message = JSON.stringify({
-      message: 'Prebid creative sent: ' + adObject.adId,
-      ad: ad,
-      adUrl: adUrl
-    });
-    source.postMessage(message, '*');
+  if (adId) {
+    resizeRemoteCreative(adObject);
+    source.postMessage(JSON.stringify({
+      message: 'Prebid Response',
+      ad,
+      adUrl,
+      width,
+      height
+    }), remoteDomain);
   }
+}
+
+function resizeRemoteCreative(adObject) {
+  const { adUnitCode, width, height } = adObject;
+  const iframe = document.getElementById(window.googletag.pubads()
+    .getSlots().find(slot => {
+      return slot.getAdUnitPath() === adUnitCode ||
+        slot.getSlotElementId() === adUnitCode;
+    }).getSlotElementId()).querySelector('iframe');
+
+  iframe.width = '' + width;
+  iframe.height = '' + height;
 }
 
 //////////////////////////////////

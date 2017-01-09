@@ -1,3 +1,9 @@
+// this script can be returned by an ad server delivering a cross domain iframe, into which the
+// creative will be rendered, e.g. DFP delivering a SafeFrame
+
+const publisherDomain = 'http://localhost:9999';
+const adServerDomain = 'http://tpc.googlesyndication.com';
+
 function renderAd(ev) {
     var key = ev.message ? 'message' : 'data';
     var adObject = {};
@@ -8,27 +14,24 @@ function renderAd(ev) {
     }
 
     if (adObject.ad || adObject.adUrl) {
-      var height = adObject.height;
-      var width = adObject.width;
-      var url = adObject.adUrl;
-      var ad = adObject.ad;
       var doc = window.document;
+      var ad = adObject.ad;
+      var url = adObject.adUrl;
+      var width = adObject.width;
+      var height = adObject.height;
 
-      // if (doc === document || adObject.mediaType === 'video') {
-      //     // utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented
-      // // from writing to the main document.');
-      // } else
+      if (adObject.mediaType === 'video') {
+        console.log('Error trying to write ad.');
+      } else
 
       if (ad) {
         doc.write(ad);
         doc.close();
-        setRenderSize(doc, width, height);
       } else if (url) {
         doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
         doc.close();
-        setRenderSize(doc, width, height);
       } else {
-        // utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
+        console.log('Error trying to write ad. No ad for bid response id: ' + id);
       }
     }
   }
@@ -36,20 +39,14 @@ function renderAd(ev) {
 function requestAdFromPrebid() {
   var message = JSON.stringify({
     message: 'Prebid Request',
-    adId: window.prebidAdId
+    adId: window.prebidAdId,
+    adServerDomain
   });
-  window.parent.postMessage(message, '*');
+  window.parent.postMessage(message, publisherDomain);
 }
 
 function listenAdFromPrebid() {
   window.addEventListener('message', renderAd, false);
-}
-
-function setRenderSize(doc, width, height) {
-  if (doc.defaultView && doc.defaultView.frameElement) {
-    doc.defaultView.frameElement.width = width;
-    doc.defaultView.frameElement.height = height;
-  }
 }
 
 listenAdFromPrebid();
