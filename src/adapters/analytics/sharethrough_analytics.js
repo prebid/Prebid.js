@@ -1,14 +1,14 @@
 import adapter from 'AnalyticsAdapter';
 const utils = require('../../utils');
 
-const url = 'https://httpbin.org/post';
+const emptyUrl = '';
 const analyticsType = 'endpoint';
 const STR_BIDDER_CODE = "sharethrough";
 const STR_VERSION = "0.1.0";
 
 export default utils.extend(adapter(
   {
-    url,
+    emptyUrl,
     analyticsType
   }
 ),
