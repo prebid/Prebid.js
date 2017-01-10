@@ -9,7 +9,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   const str = {};
   str.STR_BTLR_HOST = document.location.protocol + "//btlr.sharethrough.com";
-  str.STR_TEST_HOST =  document.location.protocol + "//btlr-prebid-test.sharethrough.com";
   str.STR_BEACON_HOST = document.location.protocol + "//b.sharethrough.com/butler?";
   str.placementCodeSet = {};
 
@@ -33,7 +32,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     const testPkey = 'test';
     const pkey = utils.getBidIdParameter('pkey', bid.params);
 
-    let host = (pkey === testPkey) ? str.STR_TEST_HOST : str.STR_BTLR_HOST;
+    let host = str.STR_BTLR_HOST;
 
     let url = host + "/header-bid/v1?";
     url = utils.tryAppendQueryString(url, 'bidId', bid.bidId);
@@ -58,7 +57,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   };
 
   function _receiveMessage(event) {
-    if(event.origin === str.STR_BTLR_HOST || event.origin === str.STR_TEST_HOST) {
+    if(event.origin === str.STR_BTLR_HOST) {
       try {
         $$PREBID_GLOBAL$$.strcallback(JSON.parse(event.data).response);
       } catch(e) {
@@ -72,7 +71,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
     const bidObj = utils.getBidRequest(bidId);
     try {
       const bid = bidfactory.createBid(1, bidObj);
-
       bid.bidderCode = STR_BIDDER_CODE;
       bid.cpm = bidResponse.creatives[0].cpm;
       const size = bidObj.sizes[0];
@@ -80,7 +78,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bid.height = size[1];
       bid.adserverRequestId = bidResponse.adserverRequestId;
       str.placementCodeSet[bidObj.placementCode].adserverRequestId = bidResponse.adserverRequestId;
-      bid.winId = bidResponse.creatives[0].auctionWinId;
 
       bid.pkey = utils.getBidIdParameter('pkey', bidObj.params);
 

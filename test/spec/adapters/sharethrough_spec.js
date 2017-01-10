@@ -67,28 +67,6 @@ describe('sharethrough adapter', () => {
       expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&ijson=pbjs.strcallback&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
     });
 
-    it('should call test url if pkey is test', () => {
-      const testBidRequest = 
-        {
-          bidderCode: 'sharethrough',
-          bids: [
-            {
-              bidder: 'sharethrough',
-              bidId: 'bidId1',
-              sizes: [[600,300]],
-              placementCode: 'foo',
-              params: {
-                pkey: 'test'
-              }
-            }]
-        };
-
-        adapter.callBids(testBidRequest);
-        var url = adapter.str.loadIFrame.firstCall.args[0];
-        sinon.assert.calledOnce(adapter.str.loadIFrame);
-        expect(url).to.contain(adapter.str.STR_TEST_HOST + '/header-bid/v1?bidId=bidId1');
-
-      });
   });
 
   describe('strcallback', () => {
