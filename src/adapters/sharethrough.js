@@ -15,8 +15,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
   function _callBids(params) {
     const bids = params.bids;
 
-    $$PREBID_GLOBAL$$.onEvent('bidWon', str.bidWon);
-
     addEventListener("message", _receiveMessage, false);
     
     // cycle through bids
