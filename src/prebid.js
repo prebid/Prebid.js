@@ -16,6 +16,7 @@ var bidfactory = require('./bidfactory');
 var adloader = require('./adloader');
 var events = require('./events');
 var adserver = require('./adserver.js');
+//var targeting = require('./targeting.js');
 
 /* private variables */
 
@@ -169,6 +170,7 @@ function getWinningBidTargeting() {
   let winners = getWinningBids();
 
   // winning bids with deals need an hb_deal targeting key
+  // adding hb_deal to bid.adserverTargeting if it exists in winners array
   winners
     .filter(bid => bid.dealId)
     .map(bid => bid.adserverTargeting.hb_deal = bid.dealId);
@@ -251,10 +253,17 @@ function getAllTargeting(adUnitCode) {
 
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-  var targeting = getWinningBidTargeting(adUnitCodes)
-    .concat(getAlwaysUseBidTargeting(adUnitCodes))
-    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : [])
-    .concat(getDealTargeting(adUnitCodes));
+  // var targeting = getWinningBidTargeting(adUnitCodes);
+  //     .concat(getAlwaysUseBidTargeting(adUnitCodes))
+  //     .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : [])
+  //     .concat(getDealTargeting(adUnitCodes));
+
+  var a1 = getWinningBidTargeting(adUnitCodes);
+  var a2 = getAlwaysUseBidTargeting(adUnitCodes);
+  var a3 = $$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : [];
+  var a4 = getDealTargeting(adUnitCodes);
+
+  var targeting = a1.concat(a2).concat(a3).concat(a4);
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
