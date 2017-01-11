@@ -22,7 +22,7 @@ The Smart AdServer bidder adaptor requires setup and approval from the Smart AdS
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
-| `domain` | required | The network domain | `1234` |
+| `domain` | required | The network domain | `'http://prg.smartadserver.com', 'https://prg.smartadserver.com'` |
 | `siteId` | required | The placement site ID | `1234` |
 | `pageId` | required | The placement page ID | `1234` |
 | `formatId` | required | The placement format ID | `1234` |
