@@ -55,7 +55,23 @@ The ad server's developer console usually provide information such as targeting,
 
 ## See all bids in the console
 
-To print information about all of the bids that come in to the console, add the following code to your page during development:
+To print information about all of the bids that come in to the Console on any page that is running Prebid.js, follow these steps.
+
+Open the Chrome Dev Tools.  In the **Sources** tab, next to **Content Scripts**, click the **>>** button and you can add **Snippets**:
+
+{: .pb-img.pb-md-img :}
+![View Snippets in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/01-view-snippets.png)
+
+<br />
+
+Right-click to add a **New** snippet:
+
+{: .pb-img.pb-md-img :}
+![Add New Snippet in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/02-add-new-snippet.png)
+
+<br />
+
+Paste in the following code using Control-V (or Command-V on Mac), and give the snippet a name, such as 'show-all-bids':
 
 ```javascript
 var responses = pbjs.getBidResponses();
@@ -85,9 +101,39 @@ if (output.length) {
 }
 ```
 
+<br />
+
+Right-click the snippet and choose **Run**:
+
+{: .pb-img.pb-md-img :}
+![Run a Snippet in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/03-run-snippet.png)
+
+<br />
+
+Check the output in Console to see the bids:
+
+{: .pb-img.pb-lg-img :}
+![See Snippet Output in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/04-snippet-output.png)
+
 ## See all winning bids in the console
 
-To print information about all of the **winning** bids that come in to the console, add the following code to your page during development:
+To print information about all of the winning bids that come in to the Console on any page that is running Prebid.js, follow these steps.
+
+Open the Chrome Dev Tools.  In the **Sources** tab, next to **Content Scripts**, click the **>>** button and you can add **Snippets**:
+
+{: .pb-img.pb-md-img :}
+![View Snippets in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/01-view-snippets.png)
+
+<br />
+
+Right-click to add a **New** snippet:
+
+{: .pb-img.pb-md-img :}
+![Add New Snippet in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/02-add-new-snippet.png)
+
+<br />
+
+Paste in the following code using Control-V (or Command-V on Mac), and give the snippet a name, such as 'show-all-winning-bids':
 
 ```javascript
 var bids = pbjs._winningBids;
@@ -111,6 +157,20 @@ if (output.length) {
     console.warn('No prebid winners');
 }
 ```
+
+<br />
+
+Right-click the snippet and choose **Run**:
+
+{: .pb-img.pb-md-img :}
+![Run a Snippet in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/03-run-snippet.png)
+
+<br />
+
+Check the output in Console to see the bids (note that this screenshot shows the output from "see all bids" but they're very similar):
+
+{: .pb-img.pb-lg-img :}
+![See Snippet Output in Dev Tools]({{site.github.url}}/assets/images/dev-docs/troubleshooting-tips/04-snippet-output.png)
 
 ## Related Reading
 
