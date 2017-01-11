@@ -6,19 +6,22 @@ pid: 21
 
 top_nav_section: dev_docs
 nav_section: reference
-
 ---
 
 <div class="bs-docs-section" markdown="1">
 
-# Summary
+# Bidders' Params
 
-In this page, you can find the below information:
+This page contains documentation on the specific parameters required by each supported bidder.
 
-* bidder code: this is the code prebid.js uses to identify bidders.
-* bid params: ad request parameters for a bidder. For example, tag Id, site ID, query string parameters. Your page should fill out the required bid params for a bidder to succesfully get a bid back.
-* bidder specific bidResponse: in addition to
-* Caveats: every bidder is different. In addition to the standardized bidResponse object we propose, there might be caveats that you should know about.
+For each bidder listed below, you'll find:
+
+* **Bidder Code**: The unique code Prebid.js uses to identify the bidder
+* **"Send All Bids" Ad Server Keys**: Used for sending all bids to the ad server, as described in [Send All Bids to Ad Server]({{site.github.io}}/blog/send-all-bids-to-adserver)
+* **"Default Deal ID" Ad Server Key**: Used for enabling deals using Prebid.js, as described in [Enable Deals in Prebid]({{site.github.url}}/adops/deals.html)
+* **Bid Params**: Ad request parameters required by a given bidder, such as the tag ID, site ID, or query string parameters.
+
+In addition to the bidder-specific parameters, there are <a href="#common-bidresponse">common parameters</a> that appear in all bid responses.
 
 {% assign bidder_pages = (site.pages | where: "layout", "bidder") %}
 
@@ -40,7 +43,7 @@ In this page, you can find the below information:
 
 ### bidResponse
 
-These parameters in the bidReponse object are common across all bidders.
+These parameters in the `bidReponse` object are common across all bidders.
 
 
 {: .table .table-bordered .table-striped }
