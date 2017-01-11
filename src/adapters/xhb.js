@@ -128,7 +128,7 @@ var XhbAdapter = function XhbAdapter() {
                 //in order to avoid using floats
                 //switch CPM to "dollar/cent"
                 //responseCPM = responseCPM / 10000;
-                responseCPM = 0.01;
+                responseCPM = 0.00;
 
                 //store bid response
                 //bid status is good (indicating 1)
@@ -142,7 +142,8 @@ var XhbAdapter = function XhbAdapter() {
                 bid.adUrl = jptResponseObj.result.ad;
                 bid.width = jptResponseObj.result.width;
                 bid.height = jptResponseObj.result.height;
-                bid.dealId = jptResponseObj.result.deal_id;
+                //bid.dealId = jptResponseObj.result.deal_id;
+                bid.dealId = '99999999';
 
                 bidmanager.addBidResponse(placementCode, bid);
 
