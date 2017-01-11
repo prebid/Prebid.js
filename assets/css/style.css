@@ -326,3 +326,8 @@ table.jsfiddle-line-number .line-number {
 #example-tab li {
   margin-bottom: 6px;
 }
+
+table {
+    table-layout: fixed;
+    word-wrap: break-word;
+}
