@@ -260,6 +260,9 @@ module.exports = function(bidManager, global, loader){
       bidParams = getBidParameters(params.bids);
   
     debug = (bidParams !== null && bidParams.debug === true);
+
+    auctionEnded = false;
+    requestCompleted = false;
   
     track(debug, 'hb', 'callBids');
 
