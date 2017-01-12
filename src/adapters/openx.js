@@ -1,129 +1,231 @@
-// jshint ignore:start
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+const bidfactory = require('../bidfactory.js');
+const bidmanager = require('../bidmanager.js');
+const adloader = require('../adloader');
+const CONSTANTS = require('../constants.json');
+const utils = require('../utils.js');
 
-/**
- * Adapter for requesting bids from OpenX.
- *
- * @param {Object} options - Configuration options for OpenX
- * @param {string} options.pageURL - Current page URL to send with bid request
- * @param {string} options.refererURL - Referer URL to send with bid request
- *
- * @returns {{callBids: _callBids}}
- * @constructor
- */
-var OpenxAdapter = function OpenxAdapter(options) {
+const OpenxAdapter = function OpenxAdapter() {
+  const BIDDER_CODE = 'openx';
+  const BIDDER_CONFIG = 'hb_pb';
+  let startTime;
 
-  var opts = options || {};
-  var scriptUrl;
-  var bids;
+  let pdNode = null;
 
-  function _callBids(params) {
-    bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      var bid = bids[i];
-
-      //load page options from bid request
-      if (bid.params.pageURL) {
-        opts.pageURL = bid.params.pageURL;
-      }
-
-      if (bid.params.refererURL) {
-        opts.refererURL = bid.params.refererURL;
-      }
-
-      if (bid.params.jstag_url) {
-        scriptUrl = bid.params.jstag_url;
-      }
-
-      if (bid.params.pgid) {
-        opts.pgid = bid.params.pgid;
-      }
+  $$PREBID_GLOBAL$$.oxARJResponse = function (oxResponseObj) {
+    let adUnits = oxResponseObj.ads.ad;
+    if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
+      makePDCall(oxResponseObj.ads.pixels);
     }
 
-    _requestBids();
+    if (!adUnits) {
+      adUnits = [];
+    }
+
+    let bids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'openx').bids;
+    for (let i = 0; i < bids.length; i++) {
+      let bid = bids[i];
+      let auid = null;
+      let adUnit = null;
+      // find the adunit in the response
+      for (let j = 0; j < adUnits.length; j++) {
+        adUnit = adUnits[j];
+        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit,bid) && !adUnit.used) {
+          auid = adUnit.adunitid;
+          break;
+        }
+      }
+
+      let beaconParams = {
+        bd: +(new Date()) - startTime,
+        br: '0', // maybe 0, t, or p
+        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout , // For the timeout per bid request
+        bs: window.location.hostname
+      };
+
+      // no fill :(
+      if (!auid) {
+        addBidResponse(null, bid);
+        continue;
+      }
+      adUnit.used = true;
+
+      if (adUnit.pub_rev) {
+        beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
+        beaconParams.bp = adUnit.pub_rev;
+        beaconParams.ts = adUnit.ts;
+        addBidResponse(adUnit, bid);
+      }
+      buildBoPixel(adUnit.creative[0], beaconParams);
+    }
+  };
+
+  function getViewportDimensions(isIfr) {
+    let width,
+      height,
+      tWin = window,
+      tDoc = document,
+      docEl = tDoc.documentElement,
+      body;
+
+    if (isIfr) {
+      tWin = window.top;
+      tDoc = window.top.document;
+      docEl = tDoc.documentElement;
+      body = tDoc.body;
+
+      width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
+      height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
+    } else {
+      docEl = tDoc.documentElement;
+      width = tWin.innerWidth || docEl.clientWidth;
+      height = tWin.innerHeight || docEl.clientHeight;
+    }
+
+    return `${width}x${height}`;
   }
 
-  function _requestBids() {
+  function makePDCall(pixelsUrl) {
+    let pdFrame = utils.createInvisibleIframe();
+    let name = 'openx-pd';
+    pdFrame.setAttribute("id", name);
+    pdFrame.setAttribute("name", name);
+    let rootNode = document.body;
 
-    if (scriptUrl) {
-      adloader.loadScript(scriptUrl, function () {
-        var i;
-        var POX = OX();
-
-        if (opts.pageURL) {
-          POX.setPageURL(opts.pageURL);
-        }
-
-        if (opts.refererURL) {
-          POX.setRefererURL(opts.refererURL);
-        }
-
-        if (opts.pgid) {
-          POX.addPage(opts.pgid);
-        }
-
-        // Add each ad unit ID
-        for (i = 0; i < bids.length; i++) {
-          POX.addAdUnit(bids[i].params.unit);
-        }
-
-        POX.addHook(function (response) {
-          var i;
-          var bid;
-          var adUnit;
-          var adResponse;
-
-          // Map each bid to its response
-          for (i = 0; i < bids.length; i++) {
-            bid = bids[i];
-
-            // Get ad response
-            adUnit = response.getOrCreateAdUnit(bid.params.unit);
-            // If 'pub_rev' (CPM) isn't returned we got an empty response
-            if (adUnit.get('pub_rev')) {
-              adResponse = adResponse = bidfactory.createBid(1);
-
-              adResponse.bidderCode = 'openx';
-              adResponse.ad_id = adUnit.get('ad_id');
-              adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
-
-              adResponse.ad = adUnit.get('html');
-              if(adUnit.get('deal_id') !== undefined) {
-                adResponse.dealId = adUnit.get('deal_id');
-              }
-
-              // Add record/impression pixel to the creative HTML
-              var recordPixel = OX.utils.template(response.getRecordTemplate(), {
-                medium: OX.utils.getMedium(),
-                rtype: OX.Resources.RI,
-                txn_state: adUnit.get('ts')
-              });
-              adResponse.ad += '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="' + recordPixel + '"></div>';
-
-              adResponse.adUrl = adUnit.get('ad_url');
-              adResponse.width = adUnit.get('width');
-              adResponse.height = adUnit.get('height');
-
-              bidmanager.addBidResponse(bid.placementCode, adResponse);
-            } else {
-              // Indicate an ad was not returned
-              adResponse = bidfactory.createBid(2);
-              adResponse.bidderCode = 'openx';
-              bidmanager.addBidResponse(bid.placementCode, adResponse);
-            }
-          }
-        }, OX.Hooks.ON_AD_RESPONSE);
-
-        // Make request
-        POX.load();
-      }, true);
+    if (!rootNode) {
+      return;
     }
+
+    pdFrame.src = pixelsUrl;
+
+    if (pdNode) {
+      pdNode.parentNode.replaceChild(pdFrame, pdNode);
+      pdNode = pdFrame;
+    } else {
+      pdNode = rootNode.appendChild(pdFrame);
+    }
+  }
+
+  function addBidResponse(adUnit, bid) {
+    let bidResponse = bidfactory.createBid(adUnit ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID, bid);
+    bidResponse.bidderCode = BIDDER_CODE;
+
+    if (adUnit) {
+      let creative = adUnit.creative[0];
+      bidResponse.ad = adUnit.html;
+      bidResponse.cpm = Number(adUnit.pub_rev) / 1000;
+      bidResponse.ad_id = adUnit.adid;
+      if (adUnit.deal_id) {
+        bidResponse.dealId = adUnit.deal_id;
+      }
+      if (creative) {
+        bidResponse.width = creative.width;
+        bidResponse.height = creative.height;
+      }
+    }
+    bidmanager.addBidResponse(bid.placementCode, bidResponse);
+  }
+
+  function buildQueryStringFromParams(params) {
+    for (let key in params) {
+      if (params.hasOwnProperty(key)) {
+        if (!params[key]) {
+          delete params[key];
+        }
+      }
+    }
+    return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
+      .join('&');
+  }
+
+  function buildBoPixel(creative, params) {
+    let img = new Image();
+    let recordPixel = creative.tracking.impression;
+    let boBase = recordPixel.match(/([^?]+\/)ri\?/);
+
+    if (boBase) {
+      img.src = `${boBase[1]}bo?${buildQueryStringFromParams(params)}`;
+    }
+  }
+
+  function adUnitHasValidSizeFromBid(adUnit, bid) {
+    let sizes = utils.parseSizesInput(bid.sizes);
+    let sizeLength = sizes && sizes.length || 0;
+    let found = false;
+    let creative = adUnit.creative && adUnit.creative[0];
+    let creative_size = String(creative.width) + 'x' + String(creative.height);
+
+    if (utils.isArray(sizes)) {
+      for (let i = 0; i < sizeLength; i++) {
+        let size = sizes[i];
+        if (String(size) === String(creative_size)) {
+          found = true;
+          break;
+        }
+      }
+    }
+    return found;
+  }
+
+  function buildRequest(bids, params, delDomain) {
+    if (!utils.isArray(bids)) {
+      return;
+    }
+
+    params.auid = utils._map(bids, bid => bid.params.unit).join('%2C');
+    params.aus = utils._map(bids, bid => {
+      return utils.parseSizesInput(bid.sizes).join(',');
+    }).join('|');
+
+    bids.forEach(function (bid) {
+      for (let customParam in bid.params.customParams) {
+        if (bid.params.customParams.hasOwnProperty(customParam)) {
+          params["c." + customParam] = bid.params.customParams[customParam];
+        }
+      }
+    });
+
+    params.callback = 'window.$$PREBID_GLOBAL$$.oxARJResponse';
+    let queryString = buildQueryStringFromParams(params);
+
+    adloader.loadScript(`//${delDomain}/w/1.0/arj?${queryString}`);
+  }
+
+  function callBids(params) {
+    let isIfr,
+      bids = params.bids || [],
+      currentURL = window.location.href && encodeURIComponent(window.location.href);
+    try {
+      isIfr = window.self !== window.top;
+    }
+    catch (e) {
+      isIfr = false;
+    }
+    if (bids.length === 0) {
+      return;
+    }
+
+    let delDomain = bids[0].params.delDomain;
+
+    startTime = new Date(params.start);
+
+    buildRequest(bids, {
+      ju: currentURL,
+      jr: currentURL,
+      ch: document.charSet || document.characterSet,
+      res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+      ifr: isIfr,
+      tz: startTime.getTimezoneOffset(),
+      tws: getViewportDimensions(isIfr),
+      ee: 'api_sync_write',
+      ef: 'bt%2Cdb',
+      be: 1,
+      bc: BIDDER_CONFIG
+    },
+      delDomain);
   }
 
   return {
-    callBids: _callBids
+    callBids: callBids
   };
 };
 
