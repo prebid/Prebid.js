@@ -42,7 +42,7 @@ function renderAd(ev) {
 function requestAdFromPrebid() {
   var message = JSON.stringify({
     message: 'Prebid Request',
-    adId: window.prebidAdId,
+    adId: '%%PATTERN:hb_adid%%',
     adServerDomain
   });
   window.parent.postMessage(message, publisherDomain);
