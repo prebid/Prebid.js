@@ -1,6 +1,9 @@
 // this script can be returned by an ad server delivering a cross domain iframe, into which the
 // creative will be rendered, e.g. DFP delivering a SafeFrame
 
+// set these domains as fits your environment and ensure matching protocols
+// alternatively this can be passed as a macro on the query string of the ad server call, for
+// example `%%PUBLISHER_DOMAIN%%`.
 const publisherDomain = 'http://localhost:9999';
 const adServerDomain = 'http://tpc.googlesyndication.com';
 
