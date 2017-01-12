@@ -542,6 +542,12 @@ export function isGptPubadsDefined() {
   }
 }
 
+export function isApntagDefined() {
+  if (window.apntag && exports.isFn(window.apntag.setKeywords)) {
+    return true;
+  }
+}
+
 export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
