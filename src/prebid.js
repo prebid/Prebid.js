@@ -6,6 +6,7 @@ import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
+import {listenMessagesFromCreative} from './secure-creatives';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -54,6 +55,9 @@ $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
+
+// domain where prebid is running for cross domain iframe communication
+$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
 
 //let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -836,4 +840,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return getWinningBids(adUnitCode);
 };
 
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 processQue();
