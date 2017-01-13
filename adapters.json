@@ -70,6 +70,11 @@
       "appnexus": {
         "alias": "featureforward"
       }
+    },
+    {
+      "adkernel": {
+        "alias": "headbidding"
+      }
     }
 
 ]
