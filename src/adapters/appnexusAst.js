@@ -26,6 +26,7 @@ function AppnexusAstAdapter() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const bids = bidRequest.bids || [];
+    var member = 0;
     const tags = bids
       .filter(bid => valid(bid))
       .map(bid => {
@@ -36,10 +37,31 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        tag.id = parseInt(bid.params.placementId, 10);
+        if(bid.params.placementId)
+          tag.id = parseInt(bid.params.placementId, 10);
+        else 
+          tag.code = bid.params.invCode;
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
         tag.prebid = true;
         tag.disable_psa = true;
+        member = parseInt(bid.params.memberId, 10);
+        if (bid.params.reserve)
+          tag.reserve = bid.params.reserve;
+        if (bid.params.position)
+          tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+        if (bid.params.trafficSourceCode)
+          tag.traffic_source_code = bid.params.trafficSourceCode;
+        if (bid.params.privateSizes)
+          tag.private_sizes = getSizes(bid.params.privateSizes);
+        if (bid.params.supplyType)
+          tag.supply_type = bid.params.supplyType;
+        if (bid.params.pubClick)
+          tag.pubclick = bid.params.pubClick;
+        if (bid.params.extInvCode)
+          tag.ext_inv_code = bid.params.extInvCode;
+        if (bid.params.externalImpId)
+          tag.external_imp_id = bid.params.externalImpId;
+
         if (!utils.isEmpty(bid.params.keywords)) {
           tag.keywords = getKeywords(bid.params.keywords);
         }
@@ -64,7 +86,10 @@ function AppnexusAstAdapter() {
       });
 
     if (!utils.isEmpty(tags)) {
-      const payload = JSON.stringify({tags: [...tags]});
+      const payloadJson = {tags: [...tags]};
+      if (member > 0)
+        payloadJson.member_id = member;
+      const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
         withCredentials : true
