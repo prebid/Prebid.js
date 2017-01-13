@@ -1,17 +1,16 @@
-import { getBidRequest } from '../utils.js';
+import {getBidRequest} from '../utils.js';
 
-var CONSTANTS = require('../constants.json');
+const CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
-//var Adapter = require('./adapter.js');
 
 var XhbAdapter = function XhbAdapter() {
 
     function buildJPTCall(bid, callbackId) {
         //determine tag params
-        var placementId = utils.getBidIdParamater('placementId', bid.params);
+        const placementId = utils.getBidIdParamater('placementId', bid.params);
         var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
         var referrer = utils.getBidIdParamater('referrer', bid.params);
         var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
@@ -50,9 +49,6 @@ var XhbAdapter = function XhbAdapter() {
             jptCall += sizeQueryString + '&';
         }
 
-
-
-
         //append custom attributes:
         var paramsCopy = utils.extend({}, bid.params);
 
@@ -80,19 +76,10 @@ var XhbAdapter = function XhbAdapter() {
         jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
 
 
-
-
         //remove the trailing "&"
         if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
             jptCall = jptCall.substring(0, jptCall.length - 1);
         }
-
-        // @if NODE_ENV='debug'
-        utils.logMessage('jpt request built: ' + jptCall);
-        // @endif
-
-        //append a timer here to track latency
-        bid.startTime = new Date().getTime();
 
         return jptCall;
     }
@@ -115,56 +102,31 @@ var XhbAdapter = function XhbAdapter() {
                 bidObj.status = CONSTANTS.STATUS.GOOD;
             }
 
-            // @if NODE_ENV='debug'
-            utils.logMessage('JSONP callback function called for ad ID: ' + id);
-            // @endif
-
             var bid = [];
             if (jptResponseObj.result && jptResponseObj.result.ad && jptResponseObj.result.ad !== '') {
-
-
-                //responseCPM = parseInt(jptResponseObj.result.cpm, 10);
-                //CPM response from /jpt is dollar/cent multiplied by 10000
-                //in order to avoid using floats
-                //switch CPM to "dollar/cent"
-                //responseCPM = responseCPM / 10000;
                 responseCPM = 0.00;
 
                 //store bid response
                 //bid status is good (indicating 1)
-
                 var adId = jptResponseObj.result.creative_id;
-                bid = bidfactory.createBid(1);
+                bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
                 bid.creative_id = adId;
                 bid.bidderCode = bidCode;
                 bid.cpm = responseCPM;
-                //bid.available = '1';
                 bid.adUrl = jptResponseObj.result.ad;
                 bid.width = jptResponseObj.result.width;
                 bid.height = jptResponseObj.result.height;
-                //bid.dealId = jptResponseObj.result.deal_id;
                 bid.dealId = '99999999';
 
                 bidmanager.addBidResponse(placementCode, bid);
 
             } else {
                 //no response data
-                // @if NODE_ENV='debug'
-                utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-                // @endif
-
                 //indicate that there is no bid for this placement
                 bid = bidfactory.createBid(2);
                 bid.bidderCode = bidCode;
                 bidmanager.addBidResponse(placementCode, bid);
             }
-
-        } else {
-            //no response data
-            // @if NODE_ENV='debug'
-            utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-
-            // @endif
         }
     };
 
