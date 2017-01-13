@@ -75,7 +75,6 @@ var XhbAdapter = function XhbAdapter() {
         jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
         jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
 
-
         //remove the trailing "&"
         if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
             jptCall = jptCall.substring(0, jptCall.length - 1);
@@ -86,7 +85,6 @@ var XhbAdapter = function XhbAdapter() {
 
     //expose the callback to the global object:
     $$PREBID_GLOBAL$$.handleXhbCB = function (jptResponseObj) {
-
         var bidCode;
 
         if (jptResponseObj && jptResponseObj.callback_uid) {
