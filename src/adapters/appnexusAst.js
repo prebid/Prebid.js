@@ -45,7 +45,7 @@ function AppnexusAstAdapter() {
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
         tag.prebid = true;
         tag.disable_psa = true;
-        member = parseInt(bid.params.memberId, 10);
+        member = parseInt(bid.params.member, 10);
         if (bid.params.reserve) {
           tag.reserve = bid.params.reserve;
         }
@@ -167,10 +167,10 @@ function AppnexusAstAdapter() {
 
   /* Check that a bid has required paramters */
   function valid(bid) {
-    if (bid.params.placementId || bid.params.memberId && bid.params.invCode) {
+    if (bid.params.placementId || bid.params.member && bid.params.invCode) {
       return bid;
     } else {
-      utils.logError('bid requires placementId or (memberId and invCode) params');
+      utils.logError('bid requires placementId or (member and invCode) params');
     }
   }
 
