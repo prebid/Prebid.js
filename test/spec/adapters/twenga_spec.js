@@ -41,7 +41,7 @@ describe("twenga adapter tests", function () {
     it("sets url parameters", function () {
         var stubLoadScript = sinon.stub(adLoader, "loadScript");
 
-        adapter.createNew().callBids(DEFAULT_PARAMS);
+        adapter().callBids(DEFAULT_PARAMS);
 
         var bidUrl = stubLoadScript.getCall(0).args[0];
         var parsedBidUrl = urlParse(bidUrl);
@@ -58,52 +58,23 @@ describe("twenga adapter tests", function () {
         stubLoadScript.restore();
     });
 
-    var stringToFunction = function (s) {
-        var scope = global;
-        var scopeSplit = s.split('.');
-        for (var i = 0; i < scopeSplit.length - 1; i++) {
-            scope = scope[scopeSplit[i]];
-            if (scope == undefined) return;
-        }
-        return scope[scopeSplit[scopeSplit.length - 1]];
-    };
-
     it("creates an empty bid response if no bids", function() {
-        var stubLoadScript = sinon.stub(adLoader, "loadScript", function(url) {
-            var bidUrl = stubLoadScript.getCall(0).args[0];
-            var parsedBidUrl = urlParse(bidUrl);
-            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-            var callback = stringToFunction(parsedBidUrlQueryString.callback);
-            expect(callback).to.exist.and.to.be.a('function');
-            callback(undefined);
-        });
+        var stubLoadScript = sinon.stub(adLoader, "loadScript");
         var stubAddBidResponse = sinon.stub(bidmanager, "addBidResponse");
 
         adapter.createNew().callBids(DEFAULT_PARAMS);
+        $$PREBID_GLOBAL$$.handleTwCB(undefined);
 
         stubAddBidResponse.restore();
         stubLoadScript.restore();
     });
 
     it("creates a bid response if bid is returned", function() {
-        var stubLoadScript = sinon.stub(adLoader, "loadScript", function(url) {
-            var bidUrl = stubLoadScript.getCall(0).args[0];
-            var parsedBidUrl = urlParse(bidUrl);
-            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-            $$PREBID_GLOBAL$$._bidsRequested.
-                push({ bidderCode: DEFAULT_PARAMS.bidderCode,
-                       bids: [{ bidId: parsedBidUrlQueryString.callback_uid,
-                                placementCode: DEFAULT_PARAMS.bids[0].placementCode }]});
-
-            var callback = stringToFunction(parsedBidUrlQueryString.callback);
-            expect(callback).to.exist.and.to.be.a('function');
-            callback(BID_RESPONSE);
-        });
+        var stubLoadScript = sinon.stub(adLoader, "loadScript");
         var stubAddBidResponse = sinon.stub(bidmanager, "addBidResponse");
 
         adapter.createNew().callBids(DEFAULT_PARAMS);
+        $$PREBID_GLOBAL$$.handleTwCB(BID_RESPONSE);
 
         var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
 
