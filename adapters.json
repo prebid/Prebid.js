@@ -11,7 +11,9 @@
     "appnexusAst",
     "conversant",
     "districtmDMX",
+    "fidelity",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
@@ -22,6 +24,8 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
+	  "smartadserver",
+    "sekindoUM",
     "sonobi",
     "sovrn",
     "springserve",
@@ -34,8 +38,10 @@
     "underdogmedia",
     "memeglobal",
     "centro",
+    "sharethrough",
     "roxot",
     "vertoz",
+    "widespace",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -64,6 +70,11 @@
     {
       "appnexus": {
         "alias": "featureforward"
+      }
+    },
+    {
+      "adkernel": {
+        "alias": "headbidding"
       }
     }
 

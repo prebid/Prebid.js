@@ -36,13 +36,13 @@ describe('Utils', function () {
     });
   });
 
-  describe('getBidIdParamater', function () {
+  describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('a', obj);
+      var output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
     });
 
@@ -51,7 +51,7 @@ describe('Utils', function () {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('c', obj);
+      var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
     });
   });
