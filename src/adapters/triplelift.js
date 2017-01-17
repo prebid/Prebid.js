@@ -76,7 +76,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var hasFlash = 0;
     try {
       // check for Flash support in IE
-      var fo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+      var fo = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash');
       if (fo) { hasFlash = 1; }
     } catch (e) {
       if (navigator.mimeTypes &&
