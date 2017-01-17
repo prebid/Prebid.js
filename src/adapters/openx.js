@@ -68,8 +68,13 @@ const OpenxAdapter = function OpenxAdapter() {
       body;
 
     if (isIfr) {
-      tWin = window.top;
-      tDoc = window.top.document;
+      try {
+        tWin = window.top;
+        tDoc = window.top.document;
+      }
+      catch (e) {
+        return;
+      }
       docEl = tDoc.documentElement;
       body = tDoc.body;
 
