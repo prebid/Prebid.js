@@ -19,7 +19,7 @@ player_notes:
 - To find the Dynamic Embed code for your player, go to the content tab and select the 'Preview and Embed' action. Click 'Show Advanced Options' to see more embedding options, and select 'Dynamic Embed' from the dropdown menu.
 
 jsfiddle_link: jsfiddle.net/shirleylberry/17vap1ro/embedded/html/
-demo_link: video-demo.appnexus.com/pbjs/kaltura-prebid/kaltura-demo.html
+demo_link: video-demo.appnexus.com/pbjs/kaltura-prebid/klt-demo.html
 
 code_lines: 139
 code_height: 3000

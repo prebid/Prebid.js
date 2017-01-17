@@ -18,7 +18,7 @@ about:
 player_notes:
 - You must have the correct JW Player license that allows you to play advertising.
 - The different methods of embedding JW Player on your site can be found <a href="https://support.jwplayer.com/customer/portal/articles/1406723-mp4-video-embed">here</a>. 
-- For this example we will be using method 1, a cloud-hosted player and JW Platform hosted content. To see an example using the self-hosted player, click <a href="#">here</a>.
+- For this example we will be using method 1, a cloud-hosted player and JW Platform hosted content. To see an example using the self-hosted player, click <a href="/dev-docs/examples/jw-selfhost-example.html">here</a>.
 - No matter what embedding method you choose to use, you must follow the <b>custom embed</b> instructions. You cannot use the single-line embed.
 - If you're using a cloud-hosted player, <b>do not enable advertising in the platform</b>. We'll do it on page so that we can use the vast url from prebid.
 - You can set up most of your player's settings in the platform. The platform settings will be used unless overridden on the page in the setup call.
