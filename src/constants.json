@@ -54,6 +54,7 @@
     "hb_bidder",
     "hb_adid",
     "hb_pb",
-    "hb_size"
+    "hb_size",
+    "hb_deal"
   ]
 }
