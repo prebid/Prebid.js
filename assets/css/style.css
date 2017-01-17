@@ -327,7 +327,7 @@ table.jsfiddle-line-number .line-number {
   margin-bottom: 6px;
 }
 
-table {
+table:not(.jsfiddle-line-number) {
     table-layout: fixed;
     word-wrap: break-word;
 }
