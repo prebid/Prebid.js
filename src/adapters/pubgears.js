@@ -56,6 +56,8 @@ function PubGearsAdapter() {
 
 		var bids = params[consts.JSON_MAPPING.PL_BIDS]
 		var slots = bids.map(getSlotFromBidParam) 
+		if(slots.length <= 0)
+			return
 		publisher = bids[0][PARAMS][PUBLISHER_PARAM]
 
 		bids.forEach(function(bid) {
@@ -65,7 +67,6 @@ function PubGearsAdapter() {
 		})
 
 		proxy = proxy || getScript(SCRIPT_ID) || makeScript(slots, publisher, SCRIPT_ID, TAG_URL)
-
 		if(!initialized)
 			registerEventListeners(proxy)
 		initialized = true
@@ -92,6 +93,7 @@ function PubGearsAdapter() {
 
 		var size = resource[SIZE]
 		var key = [ resource[PUB_ZONE],  size ].join('@')
+		return key
 	}
 
 	function makeScript(slots, publisher, id, url) {
@@ -119,7 +121,7 @@ function PubGearsAdapter() {
 
 	function onBid(event) {
 
-		var data = event[DETAIL][DATA]
+		var data = event[DETAIL]
 		var slotKey = getSlotFromResource(data[RESOURCE])
 		var adUnitCode = pendingSlots[slotKey]
 
@@ -170,7 +172,7 @@ function PubGearsAdapter() {
 
 	function onComplete(event) {
 
-		var data = event[DETAIL][DATA]
+		var data = event[DETAIL]
 		var slotKey = getSlotFromResource(data[RESOURCE])
 		delete pendingSlots[slotKey]
 	}
