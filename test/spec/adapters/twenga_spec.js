@@ -38,6 +38,10 @@ describe("twenga adapter tests", function () {
         callback_uid: "abcd1234"
     };
 
+    it("creates adapter", function () {
+        adapter.createNew();
+    });
+
     it("sets url parameters", function () {
         var stubLoadScript = sinon.stub(adLoader, "loadScript");
 
@@ -62,8 +66,9 @@ describe("twenga adapter tests", function () {
         var stubLoadScript = sinon.stub(adLoader, "loadScript");
         var stubAddBidResponse = sinon.stub(bidmanager, "addBidResponse");
 
-        adapter.createNew().callBids(DEFAULT_PARAMS);
-        $$PREBID_GLOBAL$$.handleTwCB(undefined);
+        var a = adapter();
+        a.callBids(DEFAULT_PARAMS);
+        a.callback(undefined);
 
         stubAddBidResponse.restore();
         stubLoadScript.restore();
@@ -73,8 +78,9 @@ describe("twenga adapter tests", function () {
         var stubLoadScript = sinon.stub(adLoader, "loadScript");
         var stubAddBidResponse = sinon.stub(bidmanager, "addBidResponse");
 
-        adapter.createNew().callBids(DEFAULT_PARAMS);
-        $$PREBID_GLOBAL$$.handleTwCB(BID_RESPONSE);
+        var a = adapter();
+        a.callBids(DEFAULT_PARAMS);
+        a.callback(BID_RESPONSE);
 
         var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
 

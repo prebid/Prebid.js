@@ -140,7 +140,8 @@ TwengaAdapter = function TwengaAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     createNew: TwengaAdapter.createNew,
-    buildBidCall: buildBidCall
+    buildBidCall: buildBidCall,
+    callback: $$PREBID_GLOBAL$$.handleTwCB
   };
 };
 
