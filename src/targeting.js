@@ -1,7 +1,7 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
-var bidmanager = require('./bidmanager.js');
+const bidmanager = require('./bidmanager.js');
+const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var utils = require('./utils.js');
 
 var targeting = exports;
 var pbTargetingKeys = [];
@@ -77,7 +77,7 @@ targeting.getWinningBids = function(adUnitCode) {
         }));
 };
 
-targeting.setTargetingForAn = function() {
+targeting.setTargetingForAst = function() {
   let targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
   Object.keys(targeting).forEach(targetId =>
     Object.keys(targeting[targetId]).forEach(key => {
@@ -85,7 +85,8 @@ targeting.setTargetingForAn = function() {
       //setKeywords supports string and array as value
       if(utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
         var keywordsObj = {};
-        keywordsObj[key] = targeting[targetId][key];
+        var nKey = (key === 'hb_adid') ? key.toUpperCase() : key;
+        keywordsObj[nKey] = targeting[targetId][key];
         window.apntag.setKeywords(targetId,keywordsObj);
       }
     })
@@ -179,3 +180,9 @@ function getDealTargeting() {
     };
   });
 }
+
+targeting.isApntagDefined = function() {
+  if (window.apntag && utils.isFn(window.apntag.setKeywords)) {
+    return true;
+  }
+};

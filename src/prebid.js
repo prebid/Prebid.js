@@ -1,7 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter, isApntagDefined} from './utils';
+import {flatten, uniques, isGptPubadsDefined, adUnitsFilter} from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
@@ -248,14 +248,14 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
   targeting.setTargeting(targeting.getAllTargeting());
 };
 
-$$PREBID_GLOBAL$$.setTargetingForAn = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function() {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
-  if(!isApntagDefined()) {
+  if(!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
-  targeting.setTargetingForAn();
+  targeting.setTargetingForAst();
 };
 
 /**

@@ -1505,7 +1505,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('setTargetingForAn', () => {
+  describe('setTargetingForAst', () => {
     beforeEach(() => {
       resetAuction();
     });
@@ -1518,8 +1518,16 @@ describe('Unit: Prebid Module', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const bidder = 'appnexus';
       const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => (bid.adUnitCode === adUnitCode && bid.bidderCode === bidder));
-      $$PREBID_GLOBAL$$.setTargetingForAn();
-      expect(bids[0].adserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+
+      var expectedAdserverTargeting = bids[0].adserverTargeting;
+      var newAdserverTargeting = {};
+      for(var key in expectedAdserverTargeting) {
+        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
+        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+      }
+
+      $$PREBID_GLOBAL$$.setTargetingForAst();
+      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
     });
 
   });
