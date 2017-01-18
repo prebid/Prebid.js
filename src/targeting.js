@@ -10,7 +10,13 @@ targeting.resetPresetTargeting = function() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key){
-        slot.setTargeting(key,null);
+        // reset only registered adunits
+        $$PREBID_GLOBAL$$.adUnits.find(function(unit) {
+          if (unit.code === slot.getAdUnitPath() ||
+              unit.code === slot.getSlotElementId()) {
+            slot.setTargeting(key, null);
+          }
+        });
       });
     });
   }
