@@ -124,3 +124,4 @@ var SharethroughAdapter = function SharethroughAdapter() {
 };
 
 module.exports = SharethroughAdapter;
+
