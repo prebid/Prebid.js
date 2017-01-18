@@ -16,11 +16,18 @@ const XHR_DONE = 4;
 
 export function ajax(url, callback, data, options = {}) {
 
-  let x,
-      method = options.method || (data ? 'POST' : 'GET'),
-      // For IE9 support use XDomainRequest instead of XMLHttpRequest.
-      useXDomainRequest = window.XDomainRequest &&
-        (!window.XMLHttpRequest || new window.XMLHttpRequest().responseType === undefined);
+  let x;
+  let useXDomainRequest =false;
+  let method = options.method || (data ? 'POST' : 'GET');
+  if(!window.XMLHttpRequest){
+    useXDomainRequest = true;
+  }
+  else{
+    x = new window.XMLHttpRequest();
+    if(x.responseType === undefined){
+      useXDomainRequest = true;
+    }
+  }
 
   if (useXDomainRequest) {
     x = new window.XDomainRequest();
@@ -40,7 +47,6 @@ export function ajax(url, callback, data, options = {}) {
     };
 
   } else {
-    x = new window.XMLHttpRequest();
     x.onreadystatechange = handler;
   }
 
@@ -61,7 +67,6 @@ export function ajax(url, callback, data, options = {}) {
     }
     x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
   }
-
   x.send(method === 'POST' && data);
 
   function handler() {

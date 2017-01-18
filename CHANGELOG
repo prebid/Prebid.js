@@ -1,6 +1,11 @@
 AOL Prebid dev
 ----------------
-Added functionality of cookie syncing upon bid request
+Added functionality of cookie syncing upon bid request.
+
+
+AOL Prebid 1.8.0
+----------------
+Updated to Prebid 0.15.2
 
 
 AOL Prebid 1.7.0

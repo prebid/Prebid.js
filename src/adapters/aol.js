@@ -15,6 +15,7 @@ const AolAdapter = function AolAdapter() {
     eu: 'adserver-eu.adtech.advertising.com',
     as: 'adserver-as.adtech.advertising.com'
   };
+
   const SYNC_TYPES = {
     iframe: 'IFRAME',
     img: 'IMG'
@@ -51,10 +52,10 @@ const AolAdapter = function AolAdapter() {
   function renderPixelsItems(pixelsItems) {
     pixelsItems.forEach((item) => {
       switch (item.tagName) {
-        case PIXELS_ITEMS.img :
+        case SYNC_TYPES.img :
           renderPixelsImage(item);
           break;
-        case PIXELS_ITEMS.iframe :
+        case SYNC_TYPES.iframe :
           renderPixelsIframe(item);
           break;
       }
@@ -72,7 +73,10 @@ const AolAdapter = function AolAdapter() {
     iframe.height = 1;
     iframe.style = 'display: none';
     iframe.src = pixelsItem.src;
-    document.body.appendChild(iframe);
+    if (document.body && document.body.firstChild) {
+      document.body.insertBefore(document.body.firstChild, iframe);
+    }
+
   }
 
   function template(strings, ...keys) {
@@ -156,7 +160,7 @@ const AolAdapter = function AolAdapter() {
     let ad = bidData.adm;
     if (response.ext && response.ext.pixels) {
       if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
-        dropSyncPixels(response.ext.pixels);
+        dropSyncCookies(response.ext.pixels);
       } else {
         ad += response.ext.pixels;
       }

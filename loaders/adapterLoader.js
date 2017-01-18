@@ -56,7 +56,7 @@ function insertAdapters() {
   return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
 
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
-    exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+    exports.registerBidAdapter(new ${adapterName(name)}(), '${name}');\n`;
 
   })
     .concat(customAdapters.map(adapter => {
@@ -88,15 +88,6 @@ function adapterName(adapter) {
     return result[0].toUpperCase() + result.join('').substr(1) + 'Adapter';
   }
   return '';
-}
-
-/**
- * Some adapters export an object with a `createNew` constructor so accommodate this pattern
- * @param adapter
- * @returns {string}
- */
-function useCreateNew(adapter) {
-  return ['appnexus', 'appnexusAst'].includes(adapter) ? '.createNew' : '';
 }
 
 /**
