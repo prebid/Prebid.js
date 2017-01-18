@@ -45,11 +45,17 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 function RubiconAdapter() {
 
   function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
+    var bids = bidderRequest.bids || [],
+      videoFastlaneURL = 'http://optimized-by-adv.rubiconproject.com/v1/auction/video';
 
     bids.forEach(bid => {
       try {
-        ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+        // Video endpoint only accepts POST calls
+        if (bid.mediaType === 'video') {
+          ajax(videoFastlaneURL, bidCallback, buildVideoRequestPayload(bid,bidderRequest), {withCredentials: true});
+        } else {
+          ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+        }
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
         addErrorBid();
@@ -75,6 +81,64 @@ function RubiconAdapter() {
         bidmanager.addBidResponse(bid.placementCode, badBid);
       }
     });
+  }
+
+  function buildVideoRequestPayload(bid,bidderRequest) {
+    bid.startTime = new Date().getTime();
+
+    let oParams = bid.params,
+        TIMEOUT_BUFFER = 500;
+
+    if(!oParams || typeof oParams.video !== "object") {
+      throw "Invalid Video Bid";
+    }
+
+    let postData =  {
+      page_url: !oParams.pageUrl ? utils.getTopWindowUrl() : oParams.pageUrl,
+      resolution:  window.screen.width +'x'+ window.screen.height,
+      account_id: oParams.accountId,
+      integration: 'pbjs.lite',
+      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER),
+      stash_creatives: true,
+      ae_pass_through_parameters: oParams.video.aeParams,
+      slots: []
+    };
+
+    // Define the slot object
+    let slotData = {
+      site_id: oParams.siteId,
+      zone_id: oParams.zoneId,
+      position: oParams.position || 'btf',
+      floor: 0.01,
+      element_id: bid.placementCode,
+      name: oParams.name,
+      language: oParams.video.language,
+      height: oParams.video.playerHeight,
+      width: oParams.video.playerWidth
+    };
+
+    // check and add inventory, keywords, visitor and size_id data
+    if(Array.isArray(oParams.sizes) && oParams.sizes.length > 0) {
+      slotData.size_id = oParams.sizes[0];
+    } else {
+      throw "Invalid Video Bid - Invalid Size!";
+    }
+
+    if(oParams.inventory && typeof oParams.inventory === "object") {
+      slotData.inventory = oParams.inventory;
+    }
+
+    if(oParams.keywords && typeof Array.isArray(oParams.keywords)) {
+      slotData.keywords = oParams.keywords;
+    }
+
+    if(oParams.visitor && typeof oParams.visitor === "object") {
+      slotData.visitor = oParams.visitor;
+    }
+
+    postData.slots.push(slotData);
+
+    return(JSON.stringify(postData));
   }
 
   function buildOptimizedCall(bid) {
@@ -152,22 +216,30 @@ function RubiconAdapter() {
 
   function handleRpCB(responseText, bidRequest) {
     let responseObj = JSON.parse(responseText); // can throw
+    var ads = responseObj.ads,
+        adResponseKey = bidRequest.placementCode;
 
-    if(
-      typeof responseObj !== 'object' ||
-      responseObj.status !== 'ok' ||
-      !Array.isArray(responseObj.ads) ||
-      responseObj.ads.length < 1
-    ) {
+    // check overall response
+    if(typeof responseObj !== 'object' || responseObj.status !== 'ok') {
       throw 'bad response';
     }
 
-    var ads = responseObj.ads;
+    // video ads array is wrapped in an object
+    if (bidRequest.mediaType === 'video') {
+      if(typeof ads === 'object') {
+        ads = ads[adResponseKey];
+      }
+    }
+
+    // check the ad response
+    if(!Array.isArray(ads) || ads.length < 1) {
+      throw 'invalid ad response';
+    }
 
     // if there are multiple ads, sort by CPM
     ads = ads.sort(_adCpmSort);
 
-    ads.forEach(function (ad) {
+    ads.forEach(ad => {
       if(ad.status !== 'ok') {
         throw 'bad ad status';
       }
@@ -178,9 +250,17 @@ function RubiconAdapter() {
       bid.creative_id = ad.ad_id;
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = ad.cpm || 0;
-      bid.ad = _renderCreative(ad.script, ad.impression_id);
-      [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       bid.dealId = ad.deal;
+      if (bidRequest.mediaType === 'video') {
+        bid.width = bidRequest.params.video.playerWidth;
+        bid.height = bidRequest.params.video.playerHeight;
+        bid.vastUrl = ad.creative_depot_url;
+        bid.impression_id = ad.impression_id;
+      } else {
+        bid.ad = _renderCreative(ad.script, ad.impression_id);
+        [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+      }
+
 
       try {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);
