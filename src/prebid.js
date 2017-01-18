@@ -6,6 +6,7 @@ import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
+import {listenMessagesFromCreative} from './secure-creatives';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -23,7 +24,6 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
-var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -55,6 +55,9 @@ $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
+
+// domain where prebid is running for cross domain iframe communication
+$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
 
 //let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -485,7 +488,6 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
   utils.logMessage('Prebid auction cleared');
-  events.emit(AUCTION_END);
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
   }
@@ -838,4 +840,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return getWinningBids(adUnitCode);
 };
 
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 processQue();

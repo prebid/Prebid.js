@@ -1,6 +1,7 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
+var utils = require('../utils.js');
 
 var PulsePointAdapter = function PulsePointAdapter() {
 
@@ -19,8 +20,18 @@ var PulsePointAdapter = function PulsePointAdapter() {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
+      requestBid(bidRequest);
+    }
+  }
+
+  function requestBid(bidRequest) {
+    try {
       var ppBidRequest = new window.pp.Ad(bidRequestOptions(bidRequest));
       ppBidRequest.display();
+    } catch(e) {
+      //register passback on any exceptions while attempting to fetch response.
+      utils.logError('pulsepoint.requestBid', 'ERROR', e);
+      bidResponseAvailable(bidRequest);
     }
   }
 
