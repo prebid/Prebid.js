@@ -1,6 +1,8 @@
+var CONSTANTS = require('../constants.json');
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader');
 
 var adBundAdapter = function adBundAdapter() {
   var timezone = (new Date()).getTimezoneOffset();
@@ -8,9 +10,8 @@ var adBundAdapter = function adBundAdapter() {
     'http://us-east-engine.adbund.xyz/prebid/ad/get',
     'http://us-west-engine.adbund.xyz/prebid/ad/get'
   ];
-  //根据时区来选择接口服务器
+  //Based on the time zone to select the interface to the server
   var bidAPI = bidAPIs[timezone < 0 ? 0 : 1];
-  //bidAPI = 'http://52.66.158.121:8888/prebid/ad/get';
 
   function _stringify(param) {
     var result = [];
@@ -23,25 +24,19 @@ var adBundAdapter = function adBundAdapter() {
     return result.join('&');
   }
 
-  function _jsonp(server, param, handler) {
-    var head = document.getElementsByTagName('head')[0];
-    var script = document.createElement('script');
-    var callbackName = 'jsonp_' + (new Date()).getTime().toString(36);
-
-    param[param.jsonp] = callbackName;
-    window[callbackName] = function (data) {
-      if (typeof handler === 'function') {
-        handler(data);
+  function _createCallback(bid) {
+    return function (data) {
+      var response;
+      if (data && data.cpm) {
+        response = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+        response.bidderCode = 'adbund';
+        Object.assign(response, data);
+      } else {
+        response = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
+        response.bidderCode = 'adbund';
       }
-      try {
-        window[callbackName] = undefined;
-        script.parentNode.removeChild(script);
-      } catch (e) {}
+      bidmanager.addBidResponse(bid.placementCode, response);
     };
-
-    script.charset = 'utf-8';
-    script.src = server + '?' + _stringify(param);
-    head.insertBefore(script, head.lastChild);
   }
 
   function _requestBids(bid) {
@@ -52,19 +47,9 @@ var adBundAdapter = function adBundAdapter() {
     };
     var param = Object.assign({}, bid.params, info);
     param.sizes = JSON.stringify(param.sizes || bid.sizes);
-    param.jsonp = 'callback';
-    _jsonp(bidAPI, param, function (data) {
-      var response;
-      if (data && data.cpm) {
-        response = bidfactory.createBid(1);
-        response.bidderCode = 'adbund';
-        Object.assign(response, data);
-      } else {
-        response = bidfactory.createBid(2);
-        response.bidderCode = 'adbund';
-      }
-      bidmanager.addBidResponse(bid.placementCode, response);
-    });
+    param.callback = '$$PREBID_GLOBAL$$.adbundResponse';
+    $$PREBID_GLOBAL$$.adbundResponse = _createCallback(bid);
+    adloader.loadScript(bidAPI + '?' + _stringify(param));
   }
 
   function _callBids(params) {
