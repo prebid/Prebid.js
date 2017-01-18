@@ -114,6 +114,11 @@ describe('gumgum adapter', () => {
       endpointRequest.to.include('sh');
     });
 
+    it('should include the global bid timeout', () => {
+      const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
+      endpointRequest.to.include(`tmax=${$$PREBID_GLOBAL$$.cbTimeout}`);
+    });
+
     it('should include the publisher identity', () => {
       const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
       endpointRequest.to.include('t=' + TEST.PUBLISHER_IDENTITY);
