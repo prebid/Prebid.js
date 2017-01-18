@@ -106,6 +106,35 @@ window.googletag = {
   }
 };
 
+var createTagAST = function() {
+  var tags = {};
+  tags[config.adUnitCodes[0]] = {
+    keywords : {}
+  };
+  return tags;
+};
+
+window.apntag = {
+  keywords: [],
+  tags : createTagAST(),
+  setKeywords: function(key, params) {
+    var self = this;
+    if(!self.tags.hasOwnProperty(key)) {
+      return;
+    }
+    self.tags[key].keywords = this.tags[key].keywords || {};
+
+    utils._each(params,function(param,id){
+      if (!self.tags[key].keywords.hasOwnProperty(id))
+        self.tags[key].keywords[id] = param;
+      else if (!utils.isArray(self.tags[key].keywords[id]))
+        self.tags[key].keywords[id] = [self.tags[key].keywords[id]].concat(param);
+      else
+        self.tags[key].keywords[id] = self.tags[key].keywords[id].concat(param);
+    });
+  }
+};
+
 describe('Unit: Prebid Module', function () {
   after(function(){
     $$PREBID_GLOBAL$$.adUnits = [];
@@ -1474,6 +1503,33 @@ describe('Unit: Prebid Module', function () {
       expect(highestCpmBids.length).to.equal(0);
       resetAuction();
     });
+  });
+
+  describe('setTargetingForAst', () => {
+    beforeEach(() => {
+      resetAuction();
+    });
+
+    afterEach(() => {
+      resetAuction();
+    });
+
+    it('should set targeting for appnexus apntag object', () => {
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      const bidder = 'appnexus';
+      const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => (bid.adUnitCode === adUnitCode && bid.bidderCode === bidder));
+
+      var expectedAdserverTargeting = bids[0].adserverTargeting;
+      var newAdserverTargeting = {};
+      for(var key in expectedAdserverTargeting) {
+        var nkey = (key === 'hb_adid') ? key.toUpperCase() : key;
+        newAdserverTargeting[nkey] = expectedAdserverTargeting[key];
+      }
+
+      $$PREBID_GLOBAL$$.setTargetingForAst();
+      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+    });
+
   });
 
 });
