@@ -73,10 +73,7 @@ const AolAdapter = function AolAdapter() {
     iframe.height = 1;
     iframe.style = 'display: none';
     iframe.src = pixelsItem.src;
-    if (document.body && document.body.firstChild) {
-      document.body.insertBefore(document.body.firstChild, iframe);
-    }
-
+    document.body.appendChild(iframe);
   }
 
   function template(strings, ...keys) {
