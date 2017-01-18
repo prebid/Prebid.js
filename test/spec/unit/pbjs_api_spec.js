@@ -602,6 +602,18 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('requestBids', () => {
+
+    var adUnitsBackup;
+
+    beforeEach(() => {
+      adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
+    });
+
+    afterEach(() => {
+      $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
+      resetAuction();
+    });
+
     it('should add bidsBackHandler callback to bidmanager', () => {
       var spyAddOneTimeCallBack = sinon.spy(bidmanager, 'addOneTimeCallback');
       var requestObj = {
@@ -612,20 +624,16 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyAddOneTimeCallBack.calledWith(requestObj.bidsBackHandler),
         'called bidmanager.addOneTimeCallback');
       bidmanager.addOneTimeCallback.restore();
-      resetAuction();
     });
 
     it('should log message when adUnits not configured', () => {
       const logMessageSpy = sinon.spy(utils, 'logMessage');
-      const adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
 
       $$PREBID_GLOBAL$$.adUnits = [];
       $$PREBID_GLOBAL$$.requestBids({});
 
       assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       utils.logMessage.restore();
-      $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
-      resetAuction();
     });
 
     it('should execute callback after timeout', () => {
@@ -648,12 +656,10 @@ describe('Unit: Prebid Module', function () {
 
       bidmanager.executeCallback.restore();
       clock.restore();
-      resetAuction();
     });
 
     it('should execute callback immediately if adUnits is empty', () => {
       var spyExecuteCallback = sinon.spy(bidmanager, 'executeCallback');
-      const adUnitsBackup = $$PREBID_GLOBAL$$.adUnits;
 
       $$PREBID_GLOBAL$$.adUnits = [];
       $$PREBID_GLOBAL$$.requestBids({});
@@ -662,16 +668,30 @@ describe('Unit: Prebid Module', function () {
         ' empty');
 
       bidmanager.executeCallback.restore();
-      $$PREBID_GLOBAL$$.adUnits = adUnitsBackup;
-      resetAuction();
+    });
+
+    it('should not propagate exceptions from bidsBackHandler', () => {
+      $$PREBID_GLOBAL$$.adUnits = [];
+
+      var requestObj = {
+        bidsBackHandler: function bidsBackHandlerCallback() {
+          var test = undefined;
+          return test.test;
+        }
+      };
+
+      expect(() => {
+        $$PREBID_GLOBAL$$.requestBids(requestObj);
+      }).not.to.throw();
+
     });
 
     it('should call callBids function on adaptermanager', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
+
       $$PREBID_GLOBAL$$.requestBids({});
       assert.ok(spyCallBids.called, 'called adaptermanager.callBids');
       adaptermanager.callBids.restore();
-      resetAuction();
     });
 
     it('should not callBids if a video adUnit has non-video bidders', () => {
@@ -692,7 +712,6 @@ describe('Unit: Prebid Module', function () {
 
       adaptermanager.callBids.restore();
       adaptermanager.videoAdapters = videoAdaptersBackup;
-      resetAuction();
     });
 
     it('should callBids if a video adUnit has all video bidders', () => {
@@ -712,7 +731,6 @@ describe('Unit: Prebid Module', function () {
 
       adaptermanager.callBids.restore();
       adaptermanager.videoAdapters = videoAdaptersBackup;
-      resetAuction();
     });
 
     it('should queue bid requests when a previous bid request is in process', () => {
