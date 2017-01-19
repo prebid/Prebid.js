@@ -18,8 +18,7 @@ const GumgumAdapter = function GumgumAdapter() {
     topWindow = global.top;
     topScreen = topWindow.screen;
   } catch (error) {
-    utils.logError(error);
-    return;
+    return utils.logError(error);
   }
 
   function _callBids({ bids }) {
@@ -40,7 +39,7 @@ const GumgumAdapter = function GumgumAdapter() {
       const trackingId = params.inScreen;
       const nativeId   = params.native;
       const slotId     = params.inSlot;
-      const bid = {};
+      const bid        = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
       /* slot/native ads need the placement id */
       switch (true) {

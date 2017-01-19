@@ -24,6 +24,7 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
+    "smartyads",
 	  "smartadserver",
     "sekindoUM",
     "sonobi",
@@ -38,6 +39,7 @@
     "underdogmedia",
     "memeglobal",
     "centro",
+    "sharethrough",
     "roxot",
     "vertoz",
     "widespace",
@@ -69,6 +71,11 @@
     {
       "appnexus": {
         "alias": "featureforward"
+      }
+    },
+    {
+      "adkernel": {
+        "alias": "headbidding"
       }
     }
 
