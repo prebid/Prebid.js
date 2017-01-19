@@ -116,7 +116,7 @@ describe('sharethrough adapter', () => {
                               ],
                               "stxUserId": ""
                             };
-                            
+
       pbjs.strcallback(bidderReponse1);
       pbjs.strcallback(bidderReponse2);
 

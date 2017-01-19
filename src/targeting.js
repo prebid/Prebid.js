@@ -29,8 +29,7 @@ targeting.getAllTargeting = function(adUnitCode) {
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
   var targeting = getWinningBidTargeting(adUnitCodes)
       .concat(getAlwaysUseBidTargeting(adUnitCodes))
-      .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : [])
-      .concat(getDealTargeting(adUnitCodes));
+      .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
 
   //store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -101,14 +100,8 @@ targeting.setTargetingForAst = function() {
 
 function getWinningBidTargeting() {
   let winners = targeting.getWinningBids();
-
-  // winning bids with deals need an hb_deal targeting key
-  // adding hb_deal to bid.adserverTargeting if it exists in winners array
-  winners
-    .filter(bid => bid.dealId)
-    .map(bid => bid.adserverTargeting.hb_deal = bid.dealId);
-
   let standardKeys = getStandardKeys();
+
   winners = winners.map(winner => {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting)
@@ -163,7 +156,10 @@ function getBidLandscapeTargeting(adUnitCodes) {
     .map(bid => {
       if (bid.adserverTargeting) {
         return {
-          [bid.adUnitCode]: getTargetingMap(bid, standardKeys)
+          [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
+            key => typeof bid.adserverTargeting[key] !== 'undefined') // mainly for possibly
+            // unset hb_deal
+          )
         };
       }
     }).filter(bid => bid); // removes empty elements in array
@@ -173,16 +169,6 @@ function getTargetingMap(bid, keys) {
   return keys.map(key => {
     return {
       [`${key}_${bid.bidderCode}`.substring(0, 20)]: [bid.adserverTargeting[key]]
-    };
-  });
-}
-
-function getDealTargeting() {
-  return $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.dealId).map(bid => {
-    const dealKey = `hb_deal_${bid.bidderCode}`;
-    return {
-      [bid.adUnitCode]: getTargetingMap(bid, CONSTANTS.TARGETING_KEYS)
-      .concat({ [dealKey.substring(0, 20)]: [bid.adserverTargeting[dealKey]] })
     };
   });
 }
