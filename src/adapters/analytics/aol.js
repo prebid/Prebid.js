@@ -236,9 +236,9 @@ export default utils.extend(adapter({
 
   generateAdId(adUnit) {
     let adId;
-    
-    if (adUnit.aolParams && adUnit.aolParams.adIdExtension ) {
-      adId = adUnit.code + '-' + adUnit.aolParams.adIdExtension;
+
+    if (adUnit.adIdExtension) {
+      adId = adUnit.code + '-' + adUnit.adIdExtension;
     } else {
       adId = adUnit.code;
     }
