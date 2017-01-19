@@ -50,7 +50,7 @@ module.exports = function(bidManager, global, loader){
           callback(200, "success", response.responseText);
         else
           callback(-1, "http error "+response.status, response.responseText);
-      }, false, {method:"GET"});
+      }, false, {method:"GET", withCredentials: true});
     }
     else{
       loader(url, function(responseText, response){
@@ -58,7 +58,7 @@ module.exports = function(bidManager, global, loader){
           callback(200, "success", response.responseText);
         else
           callback(-1, "http error "+response.status, response.responseText);
-      }, postData, {method:"POST", contentType: "application/json"});
+      }, postData, {method:"POST", contentType: "application/json", withCredentials: true});
     }
   }
 
@@ -115,6 +115,7 @@ module.exports = function(bidManager, global, loader){
   function noBids(params){
     for(var i=0; i<params.bids.length; i++){
       if(params.bids[i].success !== 1){
+        logToConsole("registering nobid for slot "+params.bids[i].placementCode);
         var bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = bidderCode;
         track(debug, 'hb', 'bidResponse', 0);
@@ -290,8 +291,6 @@ module.exports = function(bidManager, global, loader){
     
       logToConsole(txt);
     
-      var bidCount = 0;
-    
       if(code === -1)
         track(debug, 'hb', 'rmpReplyFail', msg);
       else{
@@ -316,7 +315,6 @@ module.exports = function(bidManager, global, loader){
               
               track(debug, 'hb', 'bidResponse', 1);
               bidManager.addBidResponse(placementCode, pbResponse);
-              bidCount++;
             };
             
           track(debug, 'hb', 'rmpReplySuccess');
@@ -331,8 +329,7 @@ module.exports = function(bidManager, global, loader){
       }
 
       // if no bids are successful, inform prebid
-      if(bidCount === 0)
-        noBids(params);
+      noBids(params);
       
       // when all bids are complete, log a report
       track(debug, 'hb', 'bidsComplete');
