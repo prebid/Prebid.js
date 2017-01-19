@@ -4,7 +4,6 @@ const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const constants = require('../constants.json');
 
-
 const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
@@ -33,7 +32,7 @@ const AolAdapter = function AolAdapter() {
     let pixelsItems = [];
 
     if (pixels) {
-      pixels.match(itemsRegExp).forEach((item) => {
+      pixels.match(itemsRegExp).forEach(item => {
         let tagNameMatches = item.match(tagNameRegExp);
         let sourcesPathMatches = item.match(srcRegExp);
 
@@ -52,12 +51,11 @@ const AolAdapter = function AolAdapter() {
   function renderPixelsItems(pixelsItems) {
     pixelsItems.forEach((item) => {
       switch (item.tagName) {
-        case SYNC_TYPES.img :
+        case SYNC_TYPES.img:
           renderPixelsImage(item);
-          break;
-        case SYNC_TYPES.iframe :
+          return;
+        case SYNC_TYPES.iframe:
           renderPixelsIframe(item);
-          break;
       }
     });
   }

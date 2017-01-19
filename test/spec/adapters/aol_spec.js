@@ -431,7 +431,7 @@ describe('AolAdapter', () => {
         expect(bidResponse.cpm).to.equal('a9334987');
       });
 
-      it('should not render pixels from pubapi response if not enabled', () => {
+      it('should not render pixels on pubapi response when no parameter is set', () => {
         server.respondWith(JSON.stringify({
           "id": "245730051428950632",
           "cur": "USD",
@@ -457,7 +457,7 @@ describe('AolAdapter', () => {
         expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
       });
 
-      it('should render pixels from pubapi response if enabled', () => {
+      it('should render pixels from pubapi response when param userSyncOn isgit sta \'bidResponse\'', () => {
         server.respondWith(JSON.stringify({
           "id": "245730051428950632",
           "cur": "USD",
