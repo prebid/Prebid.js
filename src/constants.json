@@ -19,7 +19,8 @@
     "TYPE": {
       "ALL_BIDS_BACK": "allRequestedBidsBack",
       "AD_UNIT_BIDS_BACK": "adUnitBidsBack",
-      "BID_WON": "bidWon"
+      "BID_WON": "bidWon",
+      "REQUEST_BIDS": "requestBids"
     }
   },
   "objectType_function": "function",
@@ -35,7 +36,8 @@
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
     "BID_WON": "bidWon",
-    "SET_TARGETING": "setTargeting"
+    "SET_TARGETING": "setTargeting",
+    "REQUEST_BIDS": "requestBids"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"

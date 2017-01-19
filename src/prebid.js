@@ -359,6 +359,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
+  events.emit('requestBids');
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
