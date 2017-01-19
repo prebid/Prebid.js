@@ -2,7 +2,7 @@ describe('jcm adapter tests', function () {
 
     var expect = require('chai').expect;
     var urlParse = require('url-parse');
-    
+
     // FYI: querystringify will perform encoding/decoding
     var querystringify = require('querystringify');
 
@@ -13,21 +13,21 @@ describe('jcm adapter tests', function () {
     window.pbjs = window.pbjs || {};
     if (typeof(pbjs)==="undefined"){
         var pbjs = window.pbjs;
-    }	
-    var spyLoadScript;
+    }
+    let stubLoadScript;
 
         beforeEach(function () {
-            spyLoadScript = sinon.spy(adLoader, 'loadScript');
+            stubLoadScript = sinon.stub(adLoader, 'loadScript');
         });
 
         afterEach(function () {
-            spyLoadScript.restore();
+            stubLoadScript.restore();
         });
 
 
     describe('creation of bid url', function () {
 
-       if (typeof(pbjs._bidsReceived)==="undefined"){ 
+       if (typeof(pbjs._bidsReceived)==="undefined"){
            pbjs._bidsReceived = [];
        }
        if (typeof(pbjs._bidsRequested)==="undefined"){
@@ -50,14 +50,14 @@ describe('jcm adapter tests', function () {
                           params: { siteId: '3608', adSizes:'300x250' },
                           requestId: '10b327aa396609',
                           placementCode: '/19968336/header-bid-tag-0'
-                         } 
+                         }
 
                 ]
             };
 
             adapter().callBids(params);
 
-            sinon.assert.calledOnce(spyLoadScript);
+            sinon.assert.calledOnce(stubLoadScript);
 
         });
 
@@ -80,19 +80,19 @@ describe('jcm adapter tests', function () {
             };
 
             adapter().callBids(params);
-            var bidUrl = spyLoadScript.getCall(0).args[0];
+            var bidUrl = stubLoadScript.getCall(0).args[0];
 
-            sinon.assert.calledWith(spyLoadScript, bidUrl);
+            sinon.assert.calledWith(stubLoadScript, bidUrl);
 
             var parsedBidUrl = urlParse(bidUrl);
-            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query); 
- 
+            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
+
             expect(parsedBidUrl.hostname).to.equal('media.adfrontiers.com');
             expect(parsedBidUrl.pathname).to.equal('/pq');
-              
+
             expect(parsedBidUrlQueryString).to.have.property('t').and.to.equal('hb');
             expect(parsedBidUrlQueryString).to.have.property('bids');
-            
+
             var bidObjArr = JSON.parse(parsedBidUrlQueryString.bids);
             expect(bidObjArr).to.have.property('bids');
             var bidObj = bidObjArr.bids[0];
@@ -101,7 +101,7 @@ describe('jcm adapter tests', function () {
             expect(bidObj).to.have.property('siteId').and.to.equal('3608');
             expect(bidObj).to.have.property('callbackId').and.to.equal('3c9408cdbf2f68');
         });
-     
+
    });
 
  describe('placement by size', function () {
@@ -145,9 +145,9 @@ describe('jcm adapter tests', function () {
             };
 
             adapter().callBids(params);
-            var bidUrl = spyLoadScript.getCall(0).args[0];
+            var bidUrl = stubLoadScript.getCall(0).args[0];
 
-            sinon.assert.calledWith(spyLoadScript, bidUrl);
+            sinon.assert.calledWith(stubLoadScript, bidUrl);
 
             var parsedBidUrl = urlParse(bidUrl);
             var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -227,7 +227,7 @@ describe('jcm adapter tests', function () {
         it('bidmanager.addBidResponse should be called twice with correct arguments', function () {
 
        var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      
+
        adapter().callBids(params);
 
        var adUnits = new Array();
@@ -242,7 +242,7 @@ describe('jcm adapter tests', function () {
        }
        else{
            pbjs._bidsRequested.push(params);
-       } 
+       }
        pbjs.adUnits = adUnits;
        pbjs.processJCMResponse(response);
 
@@ -257,16 +257,15 @@ describe('jcm adapter tests', function () {
        expect(bidObject1.width).to.equal(300);
        expect(bidObject1.height).to.equal(250);
        expect(bidObject1.getStatusCode()).to.equal(1);
-       expect(bidObject1.bidderCode).to.equal('jcm'); 
+       expect(bidObject1.bidderCode).to.equal('jcm');
 
        expect(bidPlacementCode2).to.equal('/19968336/header-bid-tag-1');
        expect(bidObject2.getStatusCode()).to.equal(2);
- 
+
        sinon.assert.calledTwice(stubAddBidResponse);
-       stubAddBidResponse.restore(); 
-      }); 
+       stubAddBidResponse.restore();
+      });
 
     });
 
 });
-

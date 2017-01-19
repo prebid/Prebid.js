@@ -5,13 +5,13 @@ describe('memeglobal adapter tests', function () {
   const adLoader = require('src/adloader');
   var bidderName = 'memeglobal';
 
-  var spyLoadScript;
+  let stubLoadScript;
       beforeEach(function () {
-          spyLoadScript = sinon.spy(adLoader, 'loadScript');
+          stubLoadScript = sinon.stub(adLoader, 'loadScript');
       });
 
       afterEach(function () {
-          spyLoadScript.restore();
+          stubLoadScript.restore();
       });
 
   function getBidSetForBidder() {
@@ -53,7 +53,7 @@ describe('memeglobal adapter tests', function () {
       };
 
       adapter().callBids(params);
-      sinon.assert.calledOnce(spyLoadScript);
+      sinon.assert.calledOnce(stubLoadScript);
     });
 
     it('callBids empty params', function () {
@@ -72,7 +72,7 @@ describe('memeglobal adapter tests', function () {
       };
 
       adapter().callBids({});
-      expect(spyLoadScript.callCount).to.equal(0);
+      expect(stubLoadScript.callCount).to.equal(0);
     });
   });
 
@@ -161,7 +161,7 @@ describe('memeglobal adapter tests', function () {
       expect(bidObject1.cpm).to.equal(0.09);
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.ad).to.equal('ad-code<img src="http://url">');
+      expect(bidObject1.ad).to.equal('ad-code<img src="http://url" height="0px" width="0px">');
 
       stubAddBidResponse.calledThrice;
 
@@ -169,4 +169,3 @@ describe('memeglobal adapter tests', function () {
     });
   });
 });
-

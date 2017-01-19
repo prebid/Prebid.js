@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -43,7 +43,9 @@ module.exports = function (config) {
     ],
 
     // list of files to exclude
-    exclude: [],
+    exclude: [
+      'test/spec/loaders/**/*.js'
+    ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
@@ -62,7 +64,7 @@ module.exports = function (config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'nyan', 'coverage'],
+    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'coverage'],
 
     // junit reporter config
     junitReporter: {
@@ -113,12 +115,11 @@ module.exports = function (config) {
     plugins: [
       'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
-      'karma-nyan-reporter',
       'karma-coverage',
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
-      'karma-sinon',
+      'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
       'karma-html-reporter',

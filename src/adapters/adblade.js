@@ -29,6 +29,10 @@ var AdbladeAdapter = function AdbladeAdapter() {
     }
 
     utils._each(bids, function(bid) {
+      // make sure the "sizes" are an array of arrays
+      if (!(bid.sizes[0] instanceof Array)) {
+        bid.sizes = [bid.sizes];
+      }
       utils._each(bid.sizes, function(size) {
         let key = size[0] + 'x' + size[1];
 

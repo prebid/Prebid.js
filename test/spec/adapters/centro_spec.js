@@ -14,13 +14,13 @@ describe('centro adapter tests', function () {
         var pbjs = window.pbjs;
     }
 
-    var spyLoadScript;
+    let stubLoadScript;
     beforeEach(function () {
-        spyLoadScript = sinon.spy(adLoader, 'loadScript');
+        stubLoadScript = sinon.stub(adLoader, 'loadScript');
     });
 
     afterEach(function () {
-        spyLoadScript.restore();
+        stubLoadScript.restore();
     });
 
     var logErrorSpy;
@@ -70,11 +70,11 @@ describe('centro adapter tests', function () {
             };
 
             adapter().callBids(params);
-            var bidUrl1 = spyLoadScript.getCall(0).args[0];
-            var bidUrl2 = spyLoadScript.getCall(1).args[0];
+            var bidUrl1 = stubLoadScript.getCall(0).args[0];
+            var bidUrl2 = stubLoadScript.getCall(1).args[0];
 
             sinon.assert.calledWith(logErrorSpy, 'Bid has no unit', 'centro');
-            sinon.assert.calledWith(spyLoadScript, bidUrl1);
+            sinon.assert.calledWith(stubLoadScript, bidUrl1);
 
             var parsedBidUrl = urlParse(bidUrl1);
             var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -88,7 +88,7 @@ describe('centro adapter tests', function () {
             expect(parsedBidUrlQueryString).to.have.property('sz').and.to.equal('300x250');
             expect(parsedBidUrlQueryString).to.have.property('callback').and.to.equal(generatedCallback);
 
-            sinon.assert.calledWith(spyLoadScript, bidUrl2);
+            sinon.assert.calledWith(stubLoadScript, bidUrl2);
 
             parsedBidUrl = urlParse(bidUrl2);
             parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);

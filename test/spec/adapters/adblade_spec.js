@@ -39,6 +39,50 @@ describe('adblade adapter', () => {
     pbjs._bidsRequested = bidsRequestedOriginal;
   });
 
+  describe('sizes', () => {
+    beforeEach(() => {
+      sandbox.stub(adLoader, 'loadScript');
+    });
+
+    let bidderRequest = {
+      bidderCode: 'adblade',
+      bids: [
+        {
+          bidId: 'bidId1',
+          bidder: 'adblade',
+          placementCode: 'foo',
+          sizes: [[728, 90], [300, 250]],
+          params: {
+            partnerId: 1,
+          }
+        }
+      ]
+    };
+
+    it('array of arrays', () => {
+      adapter.callBids(bidderRequest);
+      sinon.assert.calledTwice(adLoader.loadScript);
+
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C'); // banner:{w:728, h:90}
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('adblade.com');
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('prebidjs');
+
+      expect(adLoader.loadScript.secondCall.args[0]).to.include('%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C'); // banner:{w:300, h:250}
+      expect(adLoader.loadScript.secondCall.args[0]).to.include('adblade.com');
+      expect(adLoader.loadScript.secondCall.args[0]).to.include('prebidjs');
+    });
+
+    it('array of strings', () => {
+      bidderRequest.bids[0].sizes = [728, 90];
+      adapter.callBids(bidderRequest);
+      sinon.assert.calledOnce(adLoader.loadScript);
+
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C'); // banner:{w:728, h:90}
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('adblade.com');
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('prebidjs');
+    });
+  });
+
   describe('callBids', () => {
 
     beforeEach(() => {
