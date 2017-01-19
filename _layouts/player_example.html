@@ -32,6 +32,8 @@
           <li>Please refer to the <a href="{{page.why_link}}" target="_blank">product feature launch notes</a>.</li>
         </ul>
       {% endif %}
+      <p>This page is an example of using prebid video with a specific player. For a general guide to using video in prebid, click <a href="{{site.github.url}}/dev-docs/show-video-with-a-dfp-video-tag.html">here.</a></p>
+      <br>
 
       <h4>This page contains:</h4>
 
@@ -42,12 +44,19 @@
           {% endfor %}
         </ul>
       </p>
-
+      <br>
+      <h4>Player specific notes:</h4>
+      <p>
+        <ul>
+          {% for player_bullet in page.player_notes %}
+            <li>{{ player_bullet}}</li>
+          {% endfor %}
+        </ul>
+      </p>
+      <br>
       <p>
 
-        On the example below, click the JSFiddle <strong>Result</strong> tab
-        to see the result. Click <strong>Edit in JSFiddle</strong> to open
-        the example in a new tab.
+        Click <a href="//{{page.demo_link}}">here</a> to view a demo page with this example. Click <strong>Edit in JSFiddle</strong> to open the example in a new tab. 
 
       </p>
 
@@ -89,7 +98,6 @@
 
 <td>
 
-
 <iframe width="100%" height="{{page.code_height}}" src="//{{page.jsfiddle_link}}" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 </td>
@@ -107,6 +115,7 @@
 {{content}}
 
 </div>
+<br><br>
 
 </div>
 

@@ -331,3 +331,8 @@ table:not(.jsfiddle-line-number) {
     table-layout: fixed;
     word-wrap: break-word;
 }
+
+div.pl-doc-entry{
+  position: absolute;
+}
+
