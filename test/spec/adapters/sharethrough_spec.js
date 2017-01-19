@@ -117,7 +117,7 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      pbjs.strcallback(bidderReponse1);``
+      pbjs.strcallback(bidderReponse1);
       pbjs.strcallback(bidderReponse2);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
