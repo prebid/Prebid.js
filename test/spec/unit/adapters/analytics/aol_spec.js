@@ -894,9 +894,8 @@ describe('AOL analytics adapter', () => {
         let adIdExtension = 'auction-event-adId-postfix';
         let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.AUCTION, {
           code: DEFAULT_AD_UNIT_CODE,
-          aolParams: {
-            adIdExtension: adIdExtension
-          },
+          adIdExtension: adIdExtension,
+          aolParams: {},
           bids: [bid],
           winner: bid
         });
@@ -1255,9 +1254,8 @@ describe('AOL analytics adapter', () => {
         let adIdExtension = 'win-event-adId-postfix';
         let url = aolAnalytics.buildEventUrl(ANALYTICS_EVENTS.WIN, {
           code: DEFAULT_AD_UNIT_CODE,
-          aolParams: {
-            adIdExtension: adIdExtension
-          },
+          adIdExtension: adIdExtension,
+          aolParams: {},
           bids: [bid],
           winner: bid,
           auctionParams: {
@@ -1377,36 +1375,29 @@ describe('AOL analytics adapter', () => {
     });
 
     it('should return adunit code when adIdExtension is undefined', () => {
-      adUnit.aolParams = {
-        adIdExtension: undefined
-      };
+      adUnit.adIdExtension = undefined;
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
     it('should return adunit code when adIdExtension is null', () => {
-      adUnit.aolParams = {
-        adIdExtension: null
-      };
+      adUnit.adIdExtension = null;
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
     });
 
     it('should return adId with extension when adIdExtension is present', () => {
-      adUnit.aolParams = {
-        adIdExtension: 'test-adId-postfix'
-      };
+      adUnit.adIdExtension = 'test-adId-postfix';
 
       expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code + '-test-adId-postfix');
     });
 
     it('should return encoded adId with extension when code or adIdExtension contains special characters', () => {
-      adUnit.aolParams = {
-        code: 'ad@code+',
-        adIdExtension: '$test&@adI#d/post=fix+encoding'
-      };
+      adUnit.code = 'ad@code+';
+      adUnit.adIdExtension = '$test&@adI#d/post=fix+encoding';
 
-      expect(aolAnalytics.generateAdId(adUnit)).to.equal(encodeURIComponent(adUnit.code + '-' + adUnit.aolParams.adIdExtension));
+
+      expect(aolAnalytics.generateAdId(adUnit)).to.equal(encodeURIComponent(adUnit.code + '-' + adUnit.adIdExtension));
     });
   });
 });
