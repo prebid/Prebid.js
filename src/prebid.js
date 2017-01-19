@@ -25,6 +25,7 @@ var objectType_function = 'function';
 var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
+var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -244,8 +245,12 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   targeting.resetPresetTargeting();
+  
   //now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
+  
+  //emit event 
+  events.emit(SET_TARGETING);
 };
 
 $$PREBID_GLOBAL$$.setTargetingForAst = function() {
@@ -256,6 +261,9 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   }
 
   targeting.setTargetingForAst();
+  
+  //emit event 
+  events.emit(SET_TARGETING);
 };
 
 /**

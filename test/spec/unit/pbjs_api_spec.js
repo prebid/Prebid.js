@@ -483,6 +483,18 @@ describe('Unit: Prebid Module', function () {
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       window.googletag = windowGoogletagBackup;
     });
+
+    it('should emit SET_TARGETING event when successfully invoked', function() {
+      var slots = createSlotArray();
+      window.googletag.pubads().setSlots(slots);
+
+      var callback = sinon.spy();
+
+      $$PREBID_GLOBAL$$.onEvent('setTargeting', callback);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+
+      sinon.assert.calledOnce(callback);
+    })
   });
 
   describe('allBidsAvailable', function () {
