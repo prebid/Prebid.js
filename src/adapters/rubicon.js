@@ -6,6 +6,13 @@ import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
 const RUBICON_BIDDER_CODE = 'rubicon';
+const INTEGRATION = 'pbjs.lite';
+
+// use protocol relative urls for http or https
+const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
+const VIDEO_ENDPOINT = '//optimized-by-adv.rubiconproject.com/v1/auction/video';
+
+const TIMEOUT_BUFFER = 500;
 
 var sizeMap = {
   1:'468x60',
@@ -45,14 +52,13 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 function RubiconAdapter() {
 
   function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [],
-      videoFastlaneURL = 'http://optimized-by-adv.rubiconproject.com/v1/auction/video';
+    var bids = bidderRequest.bids || [];
 
     bids.forEach(bid => {
       try {
         // Video endpoint only accepts POST calls
         if (bid.mediaType === 'video') {
-          ajax(videoFastlaneURL, bidCallback, buildVideoRequestPayload(bid,bidderRequest), {withCredentials: true});
+          ajax(VIDEO_ENDPOINT, bidCallback, buildVideoRequestPayload(bid, bidderRequest), {withCredentials: true});
         } else {
           ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
         }
@@ -83,57 +89,60 @@ function RubiconAdapter() {
     });
   }
 
-  function buildVideoRequestPayload(bid,bidderRequest) {
+  function _getScreenResolution() {
+    return [window.screen.width, window.screen.height].join('x');
+  }
+
+  function buildVideoRequestPayload(bid, bidderRequest) {
     bid.startTime = new Date().getTime();
 
-    let oParams = bid.params,
-        TIMEOUT_BUFFER = 500;
+    let params = bid.params;
 
-    if(!oParams || typeof oParams.video !== "object") {
-      throw "Invalid Video Bid";
+    if(!params || typeof params.video !== 'object') {
+      throw 'Invalid Video Bid';
     }
 
     let postData =  {
-      page_url: !oParams.pageUrl ? utils.getTopWindowUrl() : oParams.pageUrl,
-      resolution:  window.screen.width +'x'+ window.screen.height,
-      account_id: oParams.accountId,
-      integration: 'pbjs.lite',
+      page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+      resolution:  _getScreenResolution(),
+      account_id: params.accountId,
+      integration: INTEGRATION,
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER),
       stash_creatives: true,
-      ae_pass_through_parameters: oParams.video.aeParams,
+      ae_pass_through_parameters: params.video.aeParams,
       slots: []
     };
 
     // Define the slot object
     let slotData = {
-      site_id: oParams.siteId,
-      zone_id: oParams.zoneId,
-      position: oParams.position || 'btf',
+      site_id: params.siteId,
+      zone_id: params.zoneId,
+      position: params.position || 'btf',
       floor: 0.01,
       element_id: bid.placementCode,
-      name: oParams.name,
-      language: oParams.video.language,
-      height: oParams.video.playerHeight,
-      width: oParams.video.playerWidth
+      name: bid.placementCode,
+      language: params.video.language,
+      height: params.video.playerHeight,
+      width: params.video.playerWidth
     };
 
     // check and add inventory, keywords, visitor and size_id data
-    if(Array.isArray(oParams.sizes) && oParams.sizes.length > 0) {
-      slotData.size_id = oParams.sizes[0];
+    if(Array.isArray(params.sizes) && params.sizes.length > 0) {
+      slotData.size_id = params.sizes[0];
     } else {
       throw "Invalid Video Bid - Invalid Size!";
     }
 
-    if(oParams.inventory && typeof oParams.inventory === "object") {
-      slotData.inventory = oParams.inventory;
+    if(params.inventory && typeof params.inventory === 'object') {
+      slotData.inventory = params.inventory;
     }
 
-    if(oParams.keywords && typeof Array.isArray(oParams.keywords)) {
-      slotData.keywords = oParams.keywords;
+    if(params.keywords && Array.isArray(params.keywords)) {
+      slotData.keywords = params.keywords;
     }
 
-    if(oParams.visitor && typeof oParams.visitor === "object") {
-      slotData.visitor = oParams.visitor;
+    if(params.visitor && typeof params.visitor === 'object') {
+      slotData.visitor = params.visitor;
     }
 
     postData.slots.push(slotData);
@@ -177,8 +186,8 @@ function RubiconAdapter() {
       'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
       'p_pos', position,
       'rp_floor', '0.01',
-      'tk_flint', 'pbjs.lite',
-      'p_screen_res', window.screen.width +'x'+ window.screen.height,
+      'tk_flint', INTEGRATION,
+      'p_screen_res', _getScreenResolution(),
       'kw', keywords,
       'tk_user_key', userId
     ];
@@ -200,7 +209,7 @@ function RubiconAdapter() {
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined ?
         memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
-      '//fastlane.rubiconproject.com/a/api/fastlane.json?' // use protocol relative link for http or https
+      FASTLANE_ENDPOINT + '?'
     ).slice(0, -1); // remove trailing &
   }
 
@@ -215,8 +224,8 @@ function RubiconAdapter() {
 </html>`;
 
   function handleRpCB(responseText, bidRequest) {
-    let responseObj = JSON.parse(responseText); // can throw
-    var ads = responseObj.ads,
+    var responseObj = JSON.parse(responseText), // can throw
+        ads = responseObj.ads,
         adResponseKey = bidRequest.placementCode;
 
     // check overall response
@@ -225,10 +234,8 @@ function RubiconAdapter() {
     }
 
     // video ads array is wrapped in an object
-    if (bidRequest.mediaType === 'video') {
-      if(typeof ads === 'object') {
-        ads = ads[adResponseKey];
-      }
+    if (bidRequest.mediaType === 'video' && typeof ads === 'object') {
+      ads = ads[adResponseKey];
     }
 
     // check the ad response
