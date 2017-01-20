@@ -20,15 +20,58 @@ const AolAdapter = function AolAdapter() {
     img: 'IMG'
   };
 
+  let DOMReady = (() => {
+    let readyEventFired = false;
+    return fn => {
+      let idempotentFn = () => {
+        if (readyEventFired) {
+          return;
+        }
+        readyEventFired = true;
+        return fn();
+      };
+      let doScrollCheck = () => {
+        if (readyEventFired) {
+          return;
+        }
+        try {
+          document.documentElement.doScroll('left');
+        } catch (e) {
+          setTimeout(doScrollCheck, 1);
+          return;
+        }
+        return idempotentFn();
+      };
+      if (document.readyState === "complete") {
+        return idempotentFn();
+      }
+      if (document.addEventListener) {
+        document.addEventListener("DOMContentLoaded", idempotentFn, false);
+        window.addEventListener("load", idempotentFn, false);
+      } else if (document.attachEvent) {
+        document.attachEvent("onreadystatechange", idempotentFn);
+        window.attachEvent("onload", idempotentFn);
+        let topLevel = false;
+        try {
+          topLevel = window.frameElement === null;
+        } catch (e) {
+        }
+        if (document.documentElement.doScroll && topLevel) {
+          return doScrollCheck();
+        }
+      }
+    };
+  })();
+
   function dropSyncCookies(pixels) {
-    let pixelsElements = parsePixelsItems(pixels);
-    renderPixelsItems(pixelsElements);
+    let pixelElements = parsePixelItems(pixels);
+    renderPixelElements(pixelElements);
   }
 
-  function parsePixelsItems(pixels) {
-    let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("([^"]*)"|'([^"]*)')/gi;
+  function parsePixelItems(pixels) {
+    let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
     let tagNameRegExp = /\w*(?=\s)/;
-    let srcRegExp = /src=(")(.+)"/;
+    let srcRegExp = /src=("|')(.*?)\1/;
     let pixelsItems = [];
 
     if (pixels) {
@@ -48,30 +91,36 @@ const AolAdapter = function AolAdapter() {
     return pixelsItems;
   }
 
-  function renderPixelsItems(pixelsItems) {
-    pixelsItems.forEach((item) => {
-      switch (item.tagName) {
+  function renderPixelElements(pixelsElements) {
+    pixelsElements.forEach((element) => {
+      switch (element.tagName) {
         case SYNC_TYPES.img:
-          renderPixelsImage(item);
-          return;
+          return renderPixelImage(element);
         case SYNC_TYPES.iframe:
-          renderPixelsIframe(item);
+          return renderPixelIframe(element);
       }
     });
   }
 
-  function renderPixelsImage(pixelsItem) {
+  function renderPixelImage(pixelsItem) {
     let image = new Image();
     image.src = pixelsItem.src;
   }
 
-  function renderPixelsIframe(pixelsItem) {
+  function renderPixelIframe(pixelsItem) {
     let iframe = document.createElement('iframe');
     iframe.width = 1;
     iframe.height = 1;
     iframe.style = 'display: none';
     iframe.src = pixelsItem.src;
-    document.body.appendChild(iframe);
+    if (document.readyState === 'interactive' ||
+        document.readyState === 'complete') {
+      document.body.appendChild(iframe);
+    } else {
+      DOMReady(() => {
+        document.body.appendChild(iframe);
+      });
+    }
   }
 
   function template(strings, ...keys) {
