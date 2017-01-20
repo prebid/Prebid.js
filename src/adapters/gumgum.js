@@ -63,8 +63,9 @@ const GumgumAdapter = function GumgumAdapter() {
 
       /* throttle based on the latest request for this product */
       const productId     = bid.pi;
+      const requestKey    = productId + '|' + placementCode;
       const throttle      = throttleTable[productId];
-      const latestRequest = requestCache[productId];
+      const latestRequest = requestCache[requestKey];
       if (latestRequest && throttle && (timestamp - latestRequest) < throttle) {
         return utils.logWarn(
           `[GumGum] The refreshes for "${ placementCode }" with the params ` +
@@ -72,7 +73,7 @@ const GumgumAdapter = function GumgumAdapter() {
         );
       }
       /* update the last request */
-      requestCache[productId] = timestamp;
+      requestCache[requestKey] = timestamp;
 
       /* tracking id is required for in-image and in-screen */
       if (trackingId) bid.t = trackingId;
