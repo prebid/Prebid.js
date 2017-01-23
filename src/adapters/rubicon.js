@@ -102,12 +102,27 @@ function RubiconAdapter() {
       throw 'Invalid Video Bid';
     }
 
+    let size;
+    if(params.video.playerWidth && params.video.playerHeight) {
+      size = [
+        params.video.playerWidth,
+        params.video.playerHeight
+      ];
+    } else if(
+        Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
+        Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
+    ) {
+      size = bid.sizes[0];
+    } else {
+      throw "Invalid Video Bid - No size provided";
+    }
+
     let postData =  {
       page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
       resolution:  _getScreenResolution(),
       account_id: params.accountId,
       integration: INTEGRATION,
-      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart - TIMEOUT_BUFFER),
+      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
       stash_creatives: true,
       ae_pass_through_parameters: params.video.aeParams,
       slots: []
@@ -122,15 +137,15 @@ function RubiconAdapter() {
       element_id: bid.placementCode,
       name: bid.placementCode,
       language: params.video.language,
-      height: params.video.playerHeight,
-      width: params.video.playerWidth
+      width: size[0],
+      height: size[1]
     };
 
     // check and add inventory, keywords, visitor and size_id data
-    if(Array.isArray(params.sizes) && params.sizes.length > 0) {
-      slotData.size_id = params.sizes[0];
+    if(params.video.size_id) {
+      slotData.size_id = params.video.size_id;
     } else {
-      throw "Invalid Video Bid - Invalid Size!";
+      throw "Invalid Video Bid - Invalid Ad Type!";
     }
 
     if(params.inventory && typeof params.inventory === 'object') {
