@@ -4,8 +4,7 @@ import adLoader from '../../../src/adloader';
 
 var assert           = require('chai').assert;
 var IndexUtils       = require('../../helpers/index_adapter_utils.js');
-var IndexResponse    = require('../../helpers/index_adapter_response.js');
-var HeaderTagRequest = '/headertag';
+var HeaderTagRequest = '/cygnus';
 var SlotThreshold    = 20;
 var ADAPTER_CODE     = 'indexExchange';
 var DefaultValue     = {
@@ -43,7 +42,7 @@ describe('indexExchange adapter - Response', function () {
 
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -83,7 +82,7 @@ describe('indexExchange adapter - Response', function () {
 
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, [ [ true ] ] );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -114,7 +113,7 @@ describe('indexExchange adapter - Response', function () {
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse, [ [1000, 3000, 2000] ]);
 
@@ -160,7 +159,7 @@ describe('indexExchange adapter - Response', function () {
 
 		// pass on bid on second size
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, [ [ false, true ] ] );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+	cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -201,7 +200,7 @@ describe('indexExchange adapter - Response', function () {
 
 		// pass on bid on all bids
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, [ [ true, true ] ] );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -231,7 +230,7 @@ describe('indexExchange adapter - Response', function () {
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse, [ [1000, 3000, 2000] ]);
 
@@ -276,7 +275,7 @@ describe('indexExchange adapter - Response', function () {
 			[ true  ], // pass on bid on second slot
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, passOnBid );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse, [ [1000, 3000, 2000] ]);
 
@@ -322,7 +321,7 @@ describe('indexExchange adapter - Response', function () {
 			[ true  ], // pass on bid on the second slot
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, passOnBid );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse, [ [1000, 3000, 2000] ]);
 
@@ -358,7 +357,7 @@ describe('indexExchange adapter - Response', function () {
 
 			// first ix call
 			var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request );
-			IndexResponse.cygnus_index_parse_res( asResponse );
+			cygnus_index_parse_res( asResponse );
 			var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 			var adapterResponse = {};
@@ -409,7 +408,7 @@ describe('indexExchange adapter - Response', function () {
 
 			// first ix call
 			var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request );
-			IndexResponse.cygnus_index_parse_res( asResponse );
+			cygnus_index_parse_res( asResponse );
 
 			var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -460,7 +459,7 @@ describe('indexExchange adapter - Response', function () {
 
 			// first ix call
 			var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request );
-			IndexResponse.cygnus_index_parse_res( asResponse );
+			cygnus_index_parse_res( asResponse );
 
 			var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -511,7 +510,7 @@ describe('indexExchange adapter - Response', function () {
 
 			// first ix call
 			var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request, [ [ requestParams.passOnBid ] ] );
-			IndexResponse.cygnus_index_parse_res( asResponse );
+			cygnus_index_parse_res( asResponse );
 			var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 			var adapterResponse = {};
@@ -578,7 +577,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
@@ -622,7 +621,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -667,7 +666,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -711,7 +710,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam ); // Alpha numeric starting with non-numeric
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -759,7 +758,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -806,8 +805,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -863,7 +861,7 @@ describe('indexExchange adapter - Response', function () {
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
 
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -912,7 +910,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -961,7 +959,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -1016,7 +1014,7 @@ describe('indexExchange adapter - Response', function () {
 			]
 		];
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 		var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse( configuredBids, asResponse );
 
 		var adapterResponse = {};
@@ -1121,7 +1119,7 @@ describe('indexExchange adapter - Response', function () {
 
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON );
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		assert.equal(callbackCalled, true, 'callback function is called');
 		assert.equal( callback_requestID, requestJSON.r.id, 'callback requestID matches with actual request ID: ' + requestJSON.r.id );
@@ -1144,7 +1142,7 @@ describe('indexExchange adapter - Response', function () {
 
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, [[true]] ); // pass on bid
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		assert.equal(callbackCalled, true, 'callback function is called');
 		assert.equal( callback_requestID, requestJSON.r.id, 'callback requestID matches with actual request ID: ' + requestJSON.r.id );
@@ -1166,7 +1164,7 @@ describe('indexExchange adapter - Response', function () {
 
 		var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 		var asResponse = IndexUtils.getBidResponse( configuredBids, requestJSON, undefined, undefined, [[true]] ); // pass on bid
-		IndexResponse.cygnus_index_parse_res( asResponse );
+		cygnus_index_parse_res( asResponse );
 
 		var adapterResponse = {};
 
