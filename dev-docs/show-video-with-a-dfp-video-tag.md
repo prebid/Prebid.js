@@ -32,6 +32,19 @@ The code below was built with access to the following libraries:
 + video.js version 5.9.2
 + MailOnline videojs-vast-vpaid plugin version 2.0.2
 
+Also, you need to make sure to include the code below in your
+`adapters.json` when building Prebid.js.  If you don't build Prebid.js
+with support for at least one video-enabled bidder, you will not be
+able to show any video ads.
+
+{% highlight js %}
+{
+  "appnexusAst" : {
+    "supportedMediaTypes" : ["video"]
+  }
+}
+{% endhighlight %}
+
 ## Implementation
 
 This section will take you through the code you need to write to show
