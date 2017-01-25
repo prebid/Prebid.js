@@ -1,11 +1,12 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var Ajax = require('../ajax');
+var utils = require('../utils.js');
 
 /**
  * Adapter for requesting bids from Admixer.
  *
- * @returns {{callBids: _callBids}}
+ * @returns {{callBids: _callBids,responseCallback: _responseCallback}}
  */
 var AdmixerAdapter = function AdmixerAdapter() {
   var invUrl = '//inv-nets.admixer.net/prebid.aspx';
@@ -15,9 +16,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
     for (var i = 0, ln = bids.length; i < ln; i++) {
       var bid = bids[i];
       var params = {
-        'sizes': bid.sizes.reduce(function (a, b) {
-          return a.concat([b.join('x')]);
-        }, []).join('-'),
+        'sizes': utils.parseSizesInput(bid.sizes).join('-'),
         'zone': bid.params && bid.params.zone,
         'callback_uid': bid.placementCode
       };
@@ -33,11 +32,16 @@ var AdmixerAdapter = function AdmixerAdapter() {
   }
 
   function _requestBid(url, params) {
-    Ajax.ajax(url, _responseCallback, params, {method: 'GET',withCredentials : true});
+    Ajax.ajax(url, _responseCallback, params, {method: 'GET', withCredentials: true});
   }
 
   function _responseCallback(adUnit) {
-    adUnit = JSON.parse(adUnit);
+    try {
+      adUnit = JSON.parse(adUnit);
+    } catch (_error) {
+      adUnit = {result: {cpm: 0}};
+      utils.logError(_error);
+    }
     var adUnitCode = adUnit.callback_uid;
     var bid = adUnit.result;
     var bidObject;
