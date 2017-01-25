@@ -16,7 +16,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     const bids = params.bids;
 
     addEventListener("message", _receiveMessage, false);
-    
+
     // cycle through bids
     for (let i = 0; i < bids.length; i += 1) {
       const bidRequest = bids[i];
