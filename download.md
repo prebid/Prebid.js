@@ -445,14 +445,76 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="fidelity" class="bidder-check-box"> Fidelity Media
+      </label>
+    </div>
+  </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="widespace" class="bidder-check-box"> Widespace
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="sekindoUM" class="bidder-check-box"> Sekindo Universal Mccann
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="smartadserver" class="bidder-check-box"> Smart AdServer
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="headbidding" class="bidder-check-box"> Headbidding
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="sharethrough" class="bidder-check-box"> Sharethrough
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="smartyads" class="bidder-check-box"> SmartyAds
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="xhb" class="bidder-check-box"> Xaxis
+      </label>
+    </div>
+  </div>
 
 
 </div>
 
 <br>
 <p>
-(Version 0.16.0)
+(Version 0.18.0)
 </p>
 
 <div class="form-group">
