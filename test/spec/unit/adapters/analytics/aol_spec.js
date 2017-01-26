@@ -1364,6 +1364,18 @@ describe('AOL analytics adapter', () => {
       };
     });
 
+    it('should return adunit code when aolParams field is undefined', () => {
+      adUnit.aolParams = undefined;
+
+      expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
+    });
+
+    it('should return adunit code when aolParams field is null', () => {
+      adUnit.aolParams = null;
+
+      expect(aolAnalytics.generateAdId(adUnit)).to.equal(adUnit.code);
+    });
+
     it('should return adunit code when adIdExtension is undefined', () => {
       adUnit.adIdExtension = undefined;
 
