@@ -109,13 +109,14 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var divHtml = "<div id=\"stickyadstv_prebid_target\"></div>";
 
     var script = "<script type='text/javascript'>"+
-       
-    "var vast =  window.top.stickyadstv_cache[\""+placementCode+"\"];"+
+    
+    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
+    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast,"+
     "  autoPlay:true"+
     "};"+
-    "var ad = new window.top.com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);"+
+    "var ad = new com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);"+
     "ad.initAd("+size[0]+","+size[1]+",\"\",0,\"\",\"\");"+
 
     "</script>";
@@ -135,7 +136,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     var script = "<script type='text/javascript'>"+
         
-    "var vast =  window.top.stickyadstv_cache[\""+placementCode+"\"];"+
+    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
+    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast";
 
@@ -149,7 +151,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += "};"+
     
-    "window.top.com.stickyadstv.intextroll.start(config);"+
+    "com.stickyadstv.intextroll.start(config);"+
 
     "</script>";
 
@@ -163,7 +165,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     var script = "<script type='text/javascript'>"+
        
-    "var vast =  window.top.stickyadstv_cache[\""+placementCode+"\"];"+
+    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
+    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast";
 
@@ -177,7 +180,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += "};"+
     
-    "window.top.com.stickyadstv.screenroll.start(config);"+
+    "com.stickyadstv.screenroll.start(config);"+
 
     "</script>";
 
