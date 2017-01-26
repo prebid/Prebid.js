@@ -327,6 +327,9 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
           adUnit.aolParams.currencyCode = currencyCode;
         }
       });
+      if (adUnitConf.adIdExtension) {
+        adUnit.adIdExtension = adUnitConf.adIdExtension;
+      }
     }
   });
   return adUnit;

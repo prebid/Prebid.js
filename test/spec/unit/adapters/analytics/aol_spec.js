@@ -340,6 +340,7 @@ describe('AOL analytics adapter', () => {
         let adUnitsConfig = [
           createAdUnit({
             code: 'header-bid-tag-0',
+            adIdExtension: 'ext-id',
             bids: [BID_CONFIGS.AOL1, BID_CONFIGS.APPNEXUS1]
           }),
           createAdUnit({
@@ -378,6 +379,7 @@ describe('AOL analytics adapter', () => {
         let bids1 = call1.args[1].bids;
         expect(call1.calledWith(1)).to.be.true;
         expect(call1.args[1]).have.property('aolParams', BID_CONFIGS.AOL1.params);
+        expect(call1.args[1]).have.property('adIdExtension', adUnitsConfig[0].adIdExtension);
         expect(bids1).to.have.lengthOf(2);
         expect(bids1[0]).to.have.property('bidder', 'aol');
         expect(bids1[1]).to.have.property('bidder', 'appnexus');
