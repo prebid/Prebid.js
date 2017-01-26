@@ -64,17 +64,17 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     var vastCallback = {
       onSuccess : bind(function(){
-        //'this' is the bid here
-        var bid = this;
+        //'this' is the bid request here
+        var bidRequest = this;
         
-        var adHtml = formatAdHTML(bid,size);
-        var price = extractPrice(bid.vast);
+        var adHtml = formatAdHTML(bidRequest,size);
+        var price = extractPrice(bidRequest.vast);
 
-        callback(formatBidObject(true, price, adHtml, size[0], size[1]));
+        callback(formatBidObject(bidRequest, true, price, adHtml, size[0], size[1]));
         
       },bid),
       onError : bind(function(){
-        callback(formatBidObject(false));
+        callback(formatBidObject(bidRequest, false));
       },bid)
     };
 
@@ -216,11 +216,11 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return priceData;
   }
 
-  function formatBidObject(valid, priceData, html, width, height){
+  function formatBidObject(bidRequest, valid, priceData, html, width, height){
     var bidObject;
     if(valid && priceData) {
       // valid bid response
-      bidObject = bidfactory.createBid(1);
+      bidObject = bidfactory.createBid(1, bidRequest);
       bidObject.bidderCode = 'stickyadstv';
       bidObject.cpm = priceData.price;
       bidObject.currencyCode = priceData.currency;
@@ -231,7 +231,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     else {
       // invalid bid response
-      bidObject = bidfactory.createBid(2);
+      bidObject = bidfactory.createBid(2, bidRequest);
       bidObject.bidderCode = 'stickyadstv';
     }
     return bidObject;
