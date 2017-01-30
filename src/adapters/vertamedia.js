@@ -8,7 +8,7 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-    let baseAdapter = Adapter.createNew('Vertamedia'),
+    var baseAdapter = Adapter.createNew('Vertamedia'),
         bidRequest;
 
     baseAdapter.callBids = function (bidRequests) {
@@ -48,7 +48,7 @@ function VertamediaAdapter() {
 
     /* Notify Prebid of bid responses so bids can get in the auction */
     function handleResponse(response) {
-        let parsed;
+        var parsed;
 
         try {
             parsed = JSON.parse(response);
@@ -67,7 +67,7 @@ function VertamediaAdapter() {
     }
 
     function createBid(status, tag) {
-        let bid = bidfactory.createBid(status, tag);
+        var bid = bidfactory.createBid(status, tag);
 
         bid.code = baseAdapter.getBidderCode();
         bid.bidderCode = bidRequest.bidder;
