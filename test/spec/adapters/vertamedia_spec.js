@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/vertamedia';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = '//rtb.vertamedia.com/hb/?aid=22489&w=640&h=480&domain=localhost';
+const ENDPOINT = 'http://rtb.vertamedia.com/hb/?aid=22489&w=640&h=480&domain=localhost';
 
 const REQUEST = {
     "bidderCode": "vertamedia",
