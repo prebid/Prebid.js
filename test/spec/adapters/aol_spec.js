@@ -61,157 +61,229 @@ describe('AolAdapter', () => {
     });
 
     describe('bid request', () => {
-      let xhr;
-      let requests;
 
-      beforeEach(() => {
-        xhr = sinon.useFakeXMLHttpRequest();
-        requests = [];
-        xhr.onCreate = request => requests.push(request);
+      describe('MP api', () => {
+
+        let xhr;
+        let requests;
+
+        beforeEach(() => {
+          xhr = sinon.useFakeXMLHttpRequest();
+          requests = [];
+          xhr.onCreate = request => requests.push(request);
+        });
+
+        afterEach(() => xhr.restore());
+
+        it('requires parameters to be made', () => {
+          adapter.callBids({});
+          expect(requests).to.be.empty;
+        });
+
+        it('should hit the MP api endpoint with the MP config', () => {
+          adapter.callBids(DEFAULT_BIDDER_REQUEST);
+          expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+        });
+
+        it('should hit endpoint based on the region config option', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              region: 'eu'
+            }
+          }));
+          expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
+        });
+
+        it('should hit the default endpoint in case of unknown region config option', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              region: 'an'
+            }
+          }));
+          expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+        });
+
+        it('should hit endpoint based on the server config option', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              server: 'adserver-eu.adtech.advertising.com'
+            }
+          }));
+          expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
+        });
+
+        it('should be the pubapi bid request', () => {
+          adapter.callBids(DEFAULT_BIDDER_REQUEST);
+          expect(requests[0].url).to.contain('cmd=bid;');
+        });
+
+        it('should be the version 2 of pubapi', () => {
+          adapter.callBids(DEFAULT_BIDDER_REQUEST);
+          expect(requests[0].url).to.contain('v=2;');
+        });
+
+        it('should contain cache busting', () => {
+          adapter.callBids(DEFAULT_BIDDER_REQUEST);
+          expect(requests[0].url).to.match(/misc=\d+/);
+        });
+
+        it('should contain required params - placement & network', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1'
+            }
+          }));
+          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/');
+        });
+
+        it('should contain pageId and sizeId of 0 if params are missing', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1'
+            }
+          }));
+          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/0/0/ADTECH;');
+        });
+
+        it('should contain pageId optional param', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              pageId: 12345
+            }
+          }));
+          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/12345/');
+        });
+
+        it('should contain sizeId optional param', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              sizeId: 12345
+            }
+          }));
+          expect(requests[0].url).to.contain('/12345/ADTECH;');
+        });
+
+        it('should contain generated alias if alias param is missing', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1'
+            }
+          }));
+          expect(requests[0].url).to.match(/alias=\w+?;/);
+        });
+
+        it('should contain alias optional param', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              alias: 'desktop_articlepage_something_box_300_250'
+            }
+          }));
+          expect(requests[0].url).to.contain('alias=desktop_articlepage_something_box_300_250');
+        });
+
+        it('should not contain bidfloor if bidFloor param is missing', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1'
+            }
+          }));
+          expect(requests[0].url).not.to.contain('bidfloor=');
+        });
+
+        it('should contain bidFloor optional param', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              bidFloor: 0.80
+            }
+          }));
+          expect(requests[0].url).to.contain('bidfloor=0.8');
+        });
+
       });
 
-      afterEach(() => xhr.restore());
+      describe('Nexage api', () => {
 
-      it('requires parameters to be made', () => {
-        adapter.callBids({});
-        expect(requests).to.be.empty;
-      });
+        let xhr;
+        let requests;
 
-      it('should hit the default pubapi endpoint', () => {
-        adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
-      });
+        beforeEach(() => {
+          xhr = sinon.useFakeXMLHttpRequest();
+          requests = [];
+          xhr.onCreate = request => requests.push(request);
+        });
 
-      it('should hit endpoint based on the region config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            region: 'eu'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
-      });
+        afterEach(() => xhr.restore());
 
-      it('should hit the default endpoint in case of unknown region config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            region: 'an'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
-      });
+        it('requires parameters to be made', () => {
+          adapter.callBids({});
+          expect(requests).to.be.empty;
+        });
 
-      it('should hit endpoint based on the server config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            server: 'adserver-eu.adtech.advertising.com'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
-      });
+        it('should hit the nexage api endpoint with the nexage config', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              dcn: '11223344',
+              pos: 'header-2324'
+            }
+          }));
+          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?');
+        });
 
-      it('should be the pubapi bid request', () => {
-        adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.contain('cmd=bid;');
-      });
+        it('should contain required params - dcn & pos', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              dcn: '54321123',
+              pos: 'footer-2324'
+            }
+          }));
+          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324');
+        });
 
-      it('should be the version 2 of pubapi', () => {
-        adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.contain('v=2;');
-      });
+        it('should contain cmd=bid by default', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              dcn: '54321123',
+              pos: 'footer-2324'
+            }
+          }));
+          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid');
+        });
 
-      it('should contain cache busting', () => {
-        adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.match(/misc=\d+/);
-      });
+        it('should contain optional parameters if they are set', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              dcn: '54321123',
+              pos: 'footer-2324',
+              ext: {
+                param1: 'val1',
+                param2: 'val2',
+                param3: 'val3',
+                param4: 'val4'
+              }
+            }
+          }));
+          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid' +
+              '&param1=val1&param2=val2&param3=val3&param4=val4');
+        });
 
-      it('should contain required params - placement & network', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
-        expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/');
-      });
-
-      it('should contain pageId and sizeId of 0 if params are missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
-        expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/0/0/ADTECH;');
-      });
-
-      it('should contain pageId optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            pageId: 12345
-          }
-        }));
-        expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/12345/');
-      });
-
-      it('should contain sizeId optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            sizeId: 12345
-          }
-        }));
-        expect(requests[0].url).to.contain('/12345/ADTECH;');
-      });
-
-      it('should contain generated alias if alias param is missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
-        expect(requests[0].url).to.match(/alias=\w+?;/);
-      });
-
-      it('should contain alias optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            alias: 'desktop_articlepage_something_box_300_250'
-          }
-        }));
-        expect(requests[0].url).to.contain('alias=desktop_articlepage_something_box_300_250');
-      });
-
-      it('should not contain bidfloor if bidFloor param is missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
-        expect(requests[0].url).not.to.contain('bidfloor=');
-      });
-
-      it('should contain bidFloor optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            bidFloor: 0.80
-          }
-        }));
-        expect(requests[0].url).to.contain('bidfloor=0.8');
       });
 
     });
@@ -233,6 +305,18 @@ describe('AolAdapter', () => {
       it('should be added to bidmanager if returned from pubapi', () => {
         server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+      });
+
+      it('should be added to bidmanager if returned from nexage', () => {
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        adapter.callBids(createBidderRequest({
+          params: {
+            dcn: '54321123',
+            pos: 'footer-2324'
+          }
+        }));
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
       });
