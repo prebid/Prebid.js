@@ -1,5 +1,6 @@
 var prebid = require('./package.json');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
+var path = require('path');
 
 module.exports = {
   output: {
@@ -16,8 +17,8 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        include: /(src|test|node_modules\/Prebid.js)/,
-        exclude: /node_modules/,
+        include: /(src|test)/,
+        exclude: path.resolve(__dirname, 'node_modules'),
         loader: 'babel', // 'babel-loader' is also a legal name to reference
         query: {
           presets: ['es2015']
