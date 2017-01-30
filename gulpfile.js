@@ -5,7 +5,6 @@ var gulp = require('gulp');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack-stream');
-var uglify = require('gulp-uglify');
 var jshint = require('gulp-jshint');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
@@ -71,7 +70,6 @@ gulp.task('webpack', function () {
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
