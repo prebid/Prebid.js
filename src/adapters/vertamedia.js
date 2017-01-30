@@ -8,7 +8,7 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-    var baseAdapter = Adapter.createNew('Vertamedia'),
+    var baseAdapter = Adapter.createNew('vertamedia'),
         bidRequest;
 
     baseAdapter.callBids = function (bidRequests) {
