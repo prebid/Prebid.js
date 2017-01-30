@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = 'http://rtb.vertamedia.com/hb/';
+const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
     let baseAdapter = Adapter.createNew('Vertamedia'),
