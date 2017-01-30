@@ -7,6 +7,7 @@ const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
+  const nexageapiTemplate = template`${'protocol'}://hb.nexage.com/bidRequest?dcn=${'dcn'}&pos=${'pos'}&cmd=bid${ext}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
@@ -57,6 +58,20 @@ const AolAdapter = function AolAdapter() {
       bidfloor: (typeof params.bidFloor !== 'undefined') ?
         `;bidfloor=${params.bidFloor.toString()}` : '',
       misc: new Date().getTime() // cache busting
+    });
+  }
+
+  function _buildNexageapiUrl(bid) {
+    const params = bid.params;
+    let ext = '';
+    utils._each(params.ext, (key, value) => {
+      ext += `&${key}=${value}`;
+    });
+    return pubapiTemplate({
+      protocol: 'http',
+      dcn: params.dcn,
+      pos: params.pos,
+      ext : ext
     });
   }
 
@@ -115,9 +130,13 @@ const AolAdapter = function AolAdapter() {
 
   function _callBids(params) {
     utils._each(params.bids, bid => {
-      const pubapiUrl = _buildPubapiUrl(bid);
 
-      ajax(pubapiUrl, response => {
+      if (bid.placement) {
+
+      } else if (bid.dcn)
+      const apiUrl = _buildPubapiUrl(bid);
+
+      ajax(apiUrl, response => {
         // needs to be here in case bidderSettings are defined after requestBids() is called
         if (showCpmAdjustmentWarning &&
           $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
