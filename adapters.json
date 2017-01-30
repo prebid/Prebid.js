@@ -6,6 +6,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
@@ -38,14 +39,11 @@
     "jcm",
     "underdogmedia",
     "memeglobal",
-    "criteo",
     "centro",
-    "xhb",
     "sharethrough",
     "roxot",
     "vertoz",
     "widespace",
-    "admixer",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -63,6 +61,10 @@
     },
     {
       "appnexusAst": {
+        "supportedMediaTypes": ["video"]
+      }
+    },    {
+      "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
     },
