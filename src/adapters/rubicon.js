@@ -6,7 +6,11 @@ import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
 const RUBICON_BIDDER_CODE = 'rubicon';
-const INTEGRATION = 'pbjs.lite';
+
+// use deferred function call since version isn't defined yet at this point
+function getIntegration() {
+  return 'pbjs_lite_' + $$PREBID_GLOBAL$$.version;
+}
 
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
@@ -121,7 +125,7 @@ function RubiconAdapter() {
       page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
       resolution:  _getScreenResolution(),
       account_id: params.accountId,
-      integration: INTEGRATION,
+      integration: getIntegration(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
       stash_creatives: true,
       ae_pass_through_parameters: params.video.aeParams,
@@ -201,7 +205,7 @@ function RubiconAdapter() {
       'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
       'p_pos', position,
       'rp_floor', '0.01',
-      'tk_flint', INTEGRATION,
+      'tk_flint', getIntegration(),
       'p_screen_res', _getScreenResolution(),
       'kw', keywords,
       'tk_user_key', userId

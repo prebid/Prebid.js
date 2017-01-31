@@ -7,6 +7,8 @@ import {parse as parseQuery} from 'querystring';
 
 var CONSTANTS = require('src/constants.json');
 
+const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+
 describe('the rubicon adapter', () => {
 
   let sandbox,
@@ -222,7 +224,7 @@ describe('the rubicon adapter', () => {
             'alt_size_ids': '43',
             'p_pos': 'atf',
             'rp_floor': '0.01',
-            'tk_flint': 'pbjs.lite',
+            'tk_flint': INTEGRATION,
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -302,7 +304,7 @@ describe('the rubicon adapter', () => {
           expect(post).to.have.property('page_url').that.is.a('string');
           expect(post.resolution).to.match(/\d+x\d+/);
           expect(post.account_id).to.equal('14062')
-          expect(post.integration).to.equal('pbjs.lite');
+          expect(post.integration).to.equal(INTEGRATION);
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
           expect(post.stash_creatives).to.equal(true);
