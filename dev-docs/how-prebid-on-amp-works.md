@@ -38,6 +38,6 @@ For more information, see [the AMP example in our Github repo](https://github.co
 ## Related Topics
 
 + [Show Prebid Ads on AMP Pages]({{site.github.url}}/dev-docs/show-prebid-ads-on-amp-pages.html) (Developers)
-+ [Setting up Prebid for AMP in DFP]({{}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops)
++ [Setting up Prebid for AMP in DFP]({{site.github.url}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops)
 
 </div>

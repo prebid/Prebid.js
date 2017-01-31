@@ -336,6 +336,6 @@ It basically does two things:
 
 + [How Prebid on AMP Works]({{site.github.url}}/dev-docs/how-prebid-on-amp-works.html)
 + Sections "Running ads from a custom domain" and "Enhance incoming ad configuration" of the [AMP for Ads](https://www.ampproject.org/docs/reference/components/amp-ad) docs
-+ [Setting up Prebid for AMP in DFP]({{}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops)
++ [Setting up Prebid for AMP in DFP]({{site.github.url}}/adops/setting-up-prebid-for-amp-in-dfp.html) (Ad Ops)
 
 </div>
