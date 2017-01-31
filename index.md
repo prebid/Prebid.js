@@ -25,7 +25,7 @@ description: A free and open source library for publishers to quickly implement 
     <input type="text" class="form-control" id="email-field" placeholder="Email" required>
   </div>
   <div class="form-group">
-    <button class="btn btn-outline btn-lg" id="submit-email" onclick="submitEmail()">Join Best Practices Group</button>
+    <button class="btn btn-outline btn-lg" id="submit-email" onclick="submitEmail()">Get the Latest Updates</button>
   </div>        
 </div>
 
