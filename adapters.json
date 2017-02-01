@@ -24,6 +24,7 @@
     "pulsepoint",
     "rhythmone",
     "rubicon",
+    "smartyads",
 	  "smartadserver",
     "sekindoUM",
     "sonobi",
@@ -37,10 +38,14 @@
     "jcm",
     "underdogmedia",
     "memeglobal",
+    "criteo",
     "centro",
+    "xhb",
+    "sharethrough",
     "roxot",
     "vertoz",
     "widespace",
+    "admixer",
     {
       "appnexus": {
         "alias": "brealtime"
