@@ -27,7 +27,7 @@ const AolAdapter = function AolAdapter() {
     };
   }
 
-  function _buildPubapiUrl(bid) {
+  function _buildPubApiUrl(bid) {
     const params = bid.params;
     const serverParam = params.server;
     let regionParam = params.region || 'us';
@@ -61,7 +61,7 @@ const AolAdapter = function AolAdapter() {
     });
   }
 
-  function _buildNexageapiUrl(bid) {
+  function _buildNexageApiUrl(bid) {
     const params = bid.params;
     let ext = '';
     utils._each(params.ext, (value, key) => {

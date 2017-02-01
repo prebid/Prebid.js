@@ -62,7 +62,7 @@ describe('AolAdapter', () => {
 
     describe('bid request', () => {
 
-      describe('MP api', () => {
+      describe('Marketplace api', () => {
 
         let xhr;
         let requests;
@@ -80,7 +80,7 @@ describe('AolAdapter', () => {
           expect(requests).to.be.empty;
         });
 
-        it('should hit the MP api endpoint with the MP config', () => {
+        it('should hit the Marketplace api endpoint with the Marketplace config', () => {
           adapter.callBids(DEFAULT_BIDDER_REQUEST);
           expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
         });
