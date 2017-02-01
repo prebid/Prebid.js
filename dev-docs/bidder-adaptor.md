@@ -19,6 +19,10 @@ At a high level, a bidder adapter is responsible for:
 
 This page has instructions for writing your own bidder adapter.  The instructions here try to walk you through some of the code you'll need to write for your adapter.  When in doubt, use [the working adapters in the Github repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters) for reference.
 
+{: .alert.alert-success :}
+**Adding a Video Bidder Adaptor?**  
+See [How to Add a New Video Bidder Adaptor]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
+
 * TOC
 {:toc}
 
@@ -29,7 +33,7 @@ In your PR to add the new adapter, please provide the following information:
 
 - The contact email of the adapter's maintainer.
 - A test ad unit that will consistently return test creatives. This helps us to ensure future Prebid.js updates do not break your adapter.
-
+- Any other information listed as required in [CONTRIBUTING.md](https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md).
 
 ## Step 2: Add a new bidder JS file
 
@@ -57,14 +61,11 @@ module.exports = BidderNameAdapter;
 
 A good example of an adapter that uses this pattern for its implementation is [OpenX](https://github.com/prebid/Prebid.js/blob/master/src/adapters/openx.js).
 
-
 ## Step 3: Design your bid params
 
-Use the `bid.params` object for defining the parameters of your ad request. At a minimum, you should include the tag ID and the  site ID.  You can also include ad sizes, keywords, and other data, such as video bidding information.
+Use the `bid.params` object for defining the parameters of your ad request. At a minimum, you should include the tag ID and the  site ID.  You can also include ad sizes, keywords, and other data, such as [video bidding information]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
 
 For more information about the kinds of information that can be passed using these parameters, see [the list of bidder parameters]({{site.github.url}}/dev-docs/bidders.html).
-
-For example, if your bidder supports serving video ads, you could add a `video` object to your adapter's bid parameters like the [AppNexus AST adapter]({{site.github.url}}/dev-docs/bidders.html#appnexusAst).  To see how those video params are processed and added to the ad tag, see [the AST adapter's implementation of the `callBids` function](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).
 
 For more information about how the implementation of `callBids` should work generally, see the next section.
 
@@ -126,9 +127,6 @@ To register the bid, call the `bidmanager.addBidResponse(adUnitCode, bidObject)`
 * If the bid is valid, use `bidfactory.createBid(1)` to create the `bidObject`.  A status of `1` means the bid is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
 * If the bid is invalid (no fill or error), use `bidfactory.createBid(2)` to create the `bidObject`.  A status of `2` means "no bid".
 
-{: .alert.alert-info :}
-If your bidder supports serving video ads, it needs to provide a VAST video URL in its response.  On the adapter side, your implementation of `createBid` needs to add the VAST URL to the bid.  For an example implementation, see the implementation in the [AST adapter](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).
-
 Example:
 
 {% highlight js %}
@@ -184,6 +182,8 @@ Use this with the `cacheRequest` argument set to `true` if the script you're loa
 For usage examples, see [the working adapters in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters).
 
 ## Further Reading
+
++ [How to Add a New Video Bidder Adaptor]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html)
 
 + [The bidder adapter sources in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters)
 
