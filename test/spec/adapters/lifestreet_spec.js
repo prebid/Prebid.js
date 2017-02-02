@@ -194,7 +194,10 @@ describe ('LifestreetAdapter', () => {
         let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.getStatusCode()).to.equal(1);
         expect(bidResponse.ad).to.equal(`<div id="LSM_AD"></div>
-                    <script>window.parent.$$PREBID_GLOBAL$$["Test Slot"]
+                    <script>window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$ || 
+                    window.parent.$$PREBID_GLOBAL$$ || 
+                    window.top.$$PREBID_GLOBAL$$;
+                    window.$$PREBID_GLOBAL$$["Test Slot"]
                     .showInContainer(document.getElementById("LSM_AD"));</script>`);
         expect(bidResponse.cpm).to.equal(1.0);
         expect(bidResponse.width).to.equal(160);

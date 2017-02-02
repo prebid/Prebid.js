@@ -41,14 +41,14 @@ const LifestreetAdapter = function LifestreetAdapter() {
         }
       }
       if (shouldRequest) {
-        _callJSTag(bid.placementCode, jstagUrl, timeout, bid.params);
+        _callJSTag(bid, jstagUrl, timeout);
       } else {
-        _addSlotBidResponse(bid.placementCode, 0, null, 0, 0);
+        _addSlotBidResponse(bid, 0, null, 0, 0);
       }
     });
   }
 
-  function _callJSTag(placementCode, jstagUrl, timeout, params) {
+  function _callJSTag(bid, jstagUrl, timeout) {
     adloader.loadScript(jstagUrl, () => {
       /*global LSM_Slot */
       if (LSM_Slot && typeof LSM_Slot === 'function') {
@@ -63,36 +63,39 @@ const LifestreetAdapter = function LifestreetAdapter() {
               if (slotName && !SLOTS_LOAD_MAP[slotName]) {
                 SLOTS_LOAD_MAP[slotName] = true;
                 let ad = `<div id="LSM_AD"></div>
-                    <script>window.parent.$$PREBID_GLOBAL$$["` + slotName + `"]
+                    <script>window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$ || 
+                    window.parent.$$PREBID_GLOBAL$$ || 
+                    window.top.$$PREBID_GLOBAL$$;
+                    window.$$PREBID_GLOBAL$$["` + slotName + `"]
                     .showInContainer(document.getElementById("LSM_AD"));</script>`;
-                _addSlotBidResponse(placementCode, cpm, ad, width, height);
+                _addSlotBidResponse(bid, cpm, ad, width, height);
               } else {
                 slot.show();
               }
             } else {
-              _addSlotBidResponse(placementCode, 0, null, 0, 0);
+              _addSlotBidResponse(bid, 0, null, 0, 0);
             }
           }
         };
-        for (let property in params) {
+        for (let property in bid.params) {
           if (property === 'jstag_url' || property === 'timeout') {
             continue;
           }
-          if (params.hasOwnProperty(property)) {
-            slotTagParams[property] = params[property];
+          if (bid.params.hasOwnProperty(property)) {
+            slotTagParams[property] = bid.params[property];
           }
         }
         /*jshint newcap: false */
         LSM_Slot(slotTagParams);
       } else {
-        _addSlotBidResponse(placementCode, 0, null, 0, 0);
+        _addSlotBidResponse(bid, 0, null, 0, 0);
       }
     });
   }
 
-  function _addSlotBidResponse(placementCode, cpm, ad, width, height) {
+  function _addSlotBidResponse(bid, cpm, ad, width, height) {
     let hasResponse = cpm && ad && ad.length > 0;
-    let bidObject = bidfactory.createBid(hasResponse ? 1 : 2);
+    let bidObject = bidfactory.createBid(hasResponse ? 1 : 2, bid);
     bidObject.bidderCode = BIDDER_CODE;
     if (hasResponse) {
       bidObject.cpm = cpm;
@@ -100,7 +103,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
       bidObject.width = width;
       bidObject.height = height;
     }
-    bidmanager.addBidResponse(placementCode, bidObject);
+    bidmanager.addBidResponse(bid.placementCode, bidObject);
   }
 
   return {
