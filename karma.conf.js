@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -17,22 +17,41 @@ module.exports = function (config) {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: './',
 
+    // BrowserStack Config
+    browserStack: {
+      username: process.env.BROWSERSTACK_USERNAME,
+      accessKey: process.env.BROWSERSTACK_KEY
+    },
+
+    // define browsers
+    customLaunchers: require('./browsers.json'),
+
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
+    client: {
+      mocha: {
+        reporter: 'html'
+      }
+    },
+
     // list of files / patterns to load in the browser
     files: [
-      'test/**/*_spec.js'
+      'test/**/*_spec.js',
+      'test/helpers/karma-init.js'
     ],
 
     // list of files to exclude
-    exclude: [],
+    exclude: [
+      'test/spec/loaders/**/*.js'
+    ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
+      '!test/**/*_spec.js': 'coverage',
       'src/**/*.js': ['webpack', 'coverage']
     },
 
@@ -45,7 +64,7 @@ module.exports = function (config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'nyan', 'coverage'],
+    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'coverage'],
 
     // junit reporter config
     junitReporter: {
@@ -88,15 +107,19 @@ module.exports = function (config) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
+    browserDisconnectTimeout : 10000, // default 2000
+    browserDisconnectTolerance : 1, // default 0
+    browserNoActivityTimeout : 4*60*1000, //default 10000
+    captureTimeout : 4*60*1000, //default 60000
 
     plugins: [
+      'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
-      'karma-nyan-reporter',
       'karma-coverage',
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
-      'karma-sinon',
+      'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
       'karma-html-reporter',

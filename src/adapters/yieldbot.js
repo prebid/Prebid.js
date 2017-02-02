@@ -96,9 +96,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
           yieldbot.pub(psn);
           yieldbot.defineSlot(slot, { sizes: bid.sizes || [] });
 
-          var cbId = utils.getUniqueIdentifierStr();
-          bidmanager.pbCallbackMap[cbId] = bid;
-          ybotlib.definedSlots.push(cbId);
+          ybotlib.definedSlots.push(bid.bidId);
         });
 
         yieldbot.enableAsync();
@@ -109,7 +107,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
         ybotlib.handleUpdateState();
       });
 
-      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js');
+      adloader.loadScript('//cdn.yldbt.com/js/yieldbot.intent.js', null, true);
     },
     /**
      * Yieldbot bid request callback handler.
@@ -126,7 +124,9 @@ var YieldbotAdapter = function YieldbotAdapter() {
         var placementCode;
         var adapterConfig;
 
-        adapterConfig = bidmanager.getPlacementIdByCBIdentifer(v) || {};
+        adapterConfig = $$PREBID_GLOBAL$$._bidsRequested
+            .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot').bids
+              .find(bid => bid.bidId === v) || {};
         slot = adapterConfig.params.slot || '';
         criteria = yieldbot.getSlotCriteria(slot);
 

@@ -19,7 +19,8 @@
     "TYPE": {
       "ALL_BIDS_BACK": "allRequestedBidsBack",
       "AD_UNIT_BIDS_BACK": "adUnitBidsBack",
-      "BID_WON": "bidWon"
+      "BID_WON": "bidWon",
+      "REQUEST_BIDS": "requestBids"
     }
   },
   "objectType_function": "function",
@@ -28,26 +29,35 @@
   "objectType_string": "string",
   "objectType_number": "number",
   "EVENTS": {
+    "AUCTION_INIT": "auctionInit",
+    "AUCTION_END": "auctionEnd",
     "BID_ADJUSTMENT": "bidAdjustment",
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
-    "BID_WON": "bidWon"
+    "BID_WON": "bidWon",
+    "SET_TARGETING": "setTargeting",
+    "REQUEST_BIDS": "requestBids"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
+  },
+  "ORDER": {
+    "RANDOM": "random"
   },
   "GRANULARITY_OPTIONS": {
     "LOW": "low",
     "MEDIUM": "medium",
     "HIGH": "high",
     "AUTO": "auto",
-    "DENSE": "dense"
+    "DENSE": "dense",
+    "CUSTOM": "custom"
   },
   "TARGETING_KEYS": [
     "hb_bidder",
     "hb_adid",
     "hb_pb",
-    "hb_size"
+    "hb_size",
+    "hb_deal"
   ]
 }

@@ -27,7 +27,7 @@ var NginAdAdapter = function NginAdAdapter() {
     var PubZoneIds = [];
 
     for (key in bids) {
-      map[utils.getBidIdParamater('pzoneid', bids[key].params)] = bids[key];
+      map[utils.getBidIdParameter('pzoneid', bids[key].params)] = bids[key];
     }
 
     for (key in map) {
@@ -66,15 +66,16 @@ var NginAdAdapter = function NginAdAdapter() {
     //assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
 
+
     //build impression array for nginad
     utils._each(bidReqs, function(bid) {
-      var tagId = utils.getBidIdParamater('pzoneid', bid.params);
-      var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+      var tagId = utils.getBidIdParameter('pzoneid', bid.params);
+      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
 
       var whArr = getWidthAndHeight(bid);
 
       var imp = {
-        id: utils.getUniqueIdentifierStr(),
+        id: bid.bidId,
         banner: {
           w: whArr[0],
           h: whArr[1]
@@ -100,10 +101,10 @@ var NginAdAdapter = function NginAdAdapter() {
       }
     };
 
-    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.pbjs.nginadResponse' +
+    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.$$PREBID_GLOBAL$$.nginadResponse' +
       '&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
 
-    adloader.loadScript(scriptUrl, null);
+    adloader.loadScript(scriptUrl);
   }
 
   function handleErrorResponse(bidReqs, defaultPlacementForBadBid) {
@@ -119,7 +120,7 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.nginadResponse = function(nginadResponseObj) {
+  $$PREBID_GLOBAL$$.nginadResponse = function(nginadResponseObj) {
     var bid = {};
     var key;
 
@@ -141,8 +142,9 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      var bidObj = pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
-        .filter(bid => bid.params && bid.params.impId === id);
+      /*jshint -W083 */
+      var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
+        .find(bid => bid.bidId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }

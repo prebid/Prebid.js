@@ -1,10 +1,10 @@
 export const pbjsTestOnly = {
 
   getAdUnits() {
-    return pbjs.adUnits;
+    return $$PREBID_GLOBAL$$.adUnits;
   },
 
   clearAllAdUnits() {
-    pbjs.adUnits = [];
+    $$PREBID_GLOBAL$$.adUnits = [];
   }
 };

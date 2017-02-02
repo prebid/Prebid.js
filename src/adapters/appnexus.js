@@ -10,6 +10,7 @@ var Adapter = require('./adapter.js');
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
+  var usersync = false;
 
   baseAdapter.callBids = function (params) {
     //var bidCode = baseAdapter.getBidderCode();
@@ -34,21 +35,21 @@ AppNexusAdapter = function AppNexusAdapter() {
   function buildJPTCall(bid, callbackId) {
 
     //determine tag params
-    var placementId = utils.getBidIdParamater('placementId', bid.params);
+    var placementId = utils.getBidIdParameter('placementId', bid.params);
 
     //memberId will be deprecated, use member instead
-    var memberId = utils.getBidIdParamater('memberId', bid.params);
-    var member = utils.getBidIdParamater('member', bid.params);
-    var inventoryCode = utils.getBidIdParamater('invCode', bid.params);
-    var query = utils.getBidIdParamater('query', bid.params);
-    var referrer = utils.getBidIdParamater('referrer', bid.params);
-    var altReferrer = utils.getBidIdParamater('alt_referrer', bid.params);
+    var memberId = utils.getBidIdParameter('memberId', bid.params);
+    var member = utils.getBidIdParameter('member', bid.params);
+    var inventoryCode = utils.getBidIdParameter('invCode', bid.params);
+    var query = utils.getBidIdParameter('query', bid.params);
+    var referrer = utils.getBidIdParameter('referrer', bid.params);
+    var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
 
     //build our base tag, based on if we are http or https
 
     var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
+    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -59,7 +60,6 @@ AppNexusAdapter = function AppNexusAdapter() {
       utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
     }
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
 
     //sizes takes a bit more logic
@@ -143,7 +143,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   }
 
   //expose the callback to the global object:
-  pbjs.handleAnCB = function (jptResponseObj) {
+  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
 
     var bidCode;
 
@@ -179,7 +179,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         //store bid response
         //bid status is good (indicating 1)
         var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, bidObj);
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
@@ -197,10 +197,22 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
         //indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }
+
+      if (!usersync) {
+        var iframe = utils.createInvisibleIframe();
+        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
+      }
+
 
     } else {
       //no response data
@@ -216,13 +228,13 @@ AppNexusAdapter = function AppNexusAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: exports.createNew,
+    createNew: AppNexusAdapter.createNew,
     buildJPTCall: buildJPTCall
   };
 };
 
-exports.createNew = function () {
+AppNexusAdapter.createNew = function () {
   return new AppNexusAdapter();
 };
 
-// module.exports = AppNexusAdapter;
+module.exports = AppNexusAdapter;

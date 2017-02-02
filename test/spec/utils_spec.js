@@ -36,13 +36,13 @@ describe('Utils', function () {
     });
   });
 
-  describe('getBidIdParamater', function () {
+  describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('a', obj);
+      var output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
     });
 
@@ -51,7 +51,7 @@ describe('Utils', function () {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('c', obj);
+      var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
     });
   });
@@ -449,10 +449,6 @@ describe('Utils', function () {
       assert.deepEqual(output.width, 0);
     });
 
-    it('return iframe - border', function () {
-      assert.deepEqual(output.border, '0px');
-    });
-
     it('return iframe - hspace', function () {
       assert.deepEqual(output.hspace, '0');
     });
@@ -469,9 +465,6 @@ describe('Utils', function () {
       assert.deepEqual(output.marginHeight, '0');
     });
 
-    //it('return iframe - style.border',function(){
-    //	assert.deepEqual(output.style.border,'0px');
-    //});
     it('return iframe - scrolling', function () {
       assert.deepEqual(output.scrolling, 'no');
     });
@@ -486,6 +479,55 @@ describe('Utils', function () {
 
     it('return iframe - style', function () {
       assert.ok(output.style);
+    });
+  });
+
+  describe('getHighestCpm', function () {
+    it('should pick the existing highest cpm', function () {
+      var previous = {
+        cpm: 2,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      assert.equal(utils.getHighestCpm(previous, current), previous);
+    });
+
+    it('should pick the new highest cpm', function () {
+      var previous = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 2,
+        timeToRespond: 100
+      };
+      assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the fastest cpm in case of tie', function () {
+      var previous = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 1,
+        timeToRespond: 50
+      };
+      assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+  });
+
+  describe('polyfill test', function () {
+    it('should not add polyfill to array', function() {
+      var arr = ['hello','world'];
+      var count = 0;
+      for(var key in arr) {
+        count++;
+      }
+      assert.equal(arr.length, count, "Polyfill test fails")
     });
   });
 
