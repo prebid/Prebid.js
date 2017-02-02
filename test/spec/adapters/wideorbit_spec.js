@@ -88,7 +88,7 @@ describe('wideorbit adapter tests', function () {
             adapter().callBids(params);
 
             var bidUrl = stubLoadScript.getCall(0).args[0];
-
+			
             sinon.assert.calledWith(stubLoadScript, bidUrl);
 
             var parsedBidUrl = urlParse(bidUrl);
