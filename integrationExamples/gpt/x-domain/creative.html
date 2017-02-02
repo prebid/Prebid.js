@@ -17,7 +17,7 @@ function renderAd(ev) {
     }
 
     if (adObject.ad || adObject.adUrl) {
-      var doc = window.document;
+      var body = window.document.body;
       var ad = adObject.ad;
       var url = adObject.adUrl;
       var width = adObject.width;
@@ -28,11 +28,22 @@ function renderAd(ev) {
       } else
 
       if (ad) {
-        doc.write(ad);
-        doc.close();
+        var frame = document.createElement('iframe');
+        frame.setAttribute('FRAMEBORDER', 0);
+        frame.setAttribute('SCROLLING', 'no');
+        frame.setAttribute('MARGINHEIGHT', 0);
+        frame.setAttribute('MARGINWIDTH', 0);
+        frame.setAttribute('TOPMARGIN', 0);
+        frame.setAttribute('LEFTMARGIN', 0);
+        frame.setAttribute('ALLOWTRANSPARENCY', 'true');
+        frame.setAttribute('width', width);
+        frame.setAttribute('height', height);
+        body.appendChild(frame);
+        frame.contentDocument.open();
+        frame.contentDocument.write(ad);
+        frame.contentDocument.close();
       } else if (url) {
-        doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
-        doc.close();
+        body.insertAdjacentHTML('beforeend', '<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
       } else {
         console.log('Error trying to write ad. No ad for bid response id: ' + id);
       }
