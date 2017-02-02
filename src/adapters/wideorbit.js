@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js'),
     adloader = require('../adloader');
 
 var WideOrbitAdapter = function WideOrbitAdapter() {
-  var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url=&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
+  var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
       pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
       pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
       pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
@@ -17,7 +17,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       return;
     }
 
-    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId'],
+    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'],
         prop;
 
     utils._each(properties, function (correctName) {
@@ -82,12 +82,13 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     ]);
   }
 
-  function _setupAdCall(publisherId, placementCount, placementsComponent) {
+  function _setupAdCall(publisherId, placementCount, placementsComponent, referrer) {
     return _setParams(base + pageImpression, [
       ['pbId', publisherId],
       ['pc', placementCount],
       ['cts', new Date().getTime()],
-      ['cb', Math.floor(Math.random() * 100000000)]
+      ['cb', Math.floor(Math.random() * 100000000)],
+      ['referrer', encodeURIComponent(referrer || '')]
     ]) + placementsComponent;
   }
 
@@ -104,7 +105,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   function _callBids(params) {
     var publisherId,
       bidUrl = '',
-      i;
+      i, referrer;
 
     bids = params.bids || [];
 
@@ -116,10 +117,11 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       _fixParamNames(requestParams);
 
       publisherId = requestParams.pbId;
+	  referrer = referrer || requestParams.referrer;
       bidUrl += _setupPlacementParameters(i, requestParams);
     }
 
-    bidUrl = _setupAdCall(publisherId, bids.length, bidUrl);
+    bidUrl = _setupAdCall(publisherId, bids.length, bidUrl, referrer);
 
     utils.logMessage('Calling WO: ' + bidUrl);
 
