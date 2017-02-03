@@ -5,7 +5,7 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var RoxotAdapter = function RoxotAdapter() {
-  var roxotUrl = "r.rxthdr.com";
+  var roxotUrl = "//r.rxthdr.com";
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 
@@ -28,7 +28,7 @@ var RoxotAdapter = function RoxotAdapter() {
       }
     };
 
-    var scriptUrl = '//' + roxotUrl + '?callback=$$PREBID_GLOBAL$$.roxotResponseHandler' +
+    var scriptUrl = roxotUrl + '?callback=$$PREBID_GLOBAL$$.roxotResponseHandler' +
       '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(roxotBidReqs));
 
