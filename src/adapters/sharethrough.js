@@ -11,6 +11,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   str.STR_BTLR_HOST = document.location.protocol + "//btlr.sharethrough.com";
   str.STR_BEACON_HOST = document.location.protocol + "//b.sharethrough.com/butler?";
   str.placementCodeSet = {};
+  window.strBids = window.strBids || {};
 
   function _callBids(params) {
     const bids = params.bids;
@@ -20,28 +21,27 @@ var SharethroughAdapter = function SharethroughAdapter() {
     // cycle through bids
     for (let i = 0; i < bids.length; i += 1) {
       const bidRequest = bids[i];
+      _attachToWindow(bidRequest);
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
       str.loadIFrame(scriptUrl);
     }
   }
 
+  function _attachToWindow(bid) {
+    window.strBids[bid.placementCode] = bid.bidId;
+  }
+
   function _buildSharethroughCall(bid) {
-    const testPkey = 'test';
     const pkey = utils.getBidIdParameter('pkey', bid.params);
 
     let host = str.STR_BTLR_HOST;
 
     let url = host + "/header-bid/v1?";
     url = utils.tryAppendQueryString(url, 'bidId', bid.bidId);
-
-    if(pkey !== testPkey) {
-      url = utils.tryAppendQueryString(url, 'placement_key', pkey);
-      url = utils.tryAppendQueryString(url, 'ijson', '$$PREBID_GLOBAL$$.strcallback');
-      url = appendEnvFields(url);
-    } else {
-      url = url.substring(0, url.length - 1);
-    }
+    url = utils.tryAppendQueryString(url, 'placement_key', pkey);
+    url = utils.tryAppendQueryString(url, 'ijson', '$$PREBID_GLOBAL$$.strcallback');
+    url = appendEnvFields(url);
 
     return url;
   }
