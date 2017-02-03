@@ -210,4 +210,13 @@ describe('StickyAdsTV Adapter', function () {
         });
     });
 
+    describe('top most window', function () {
+
+        it('should returns the top most window', function () {
+            let result = adapter.getTopMostWindow();
+            
+            expect(result).to.equal(window.top); 
+        });
+    });
+
 });
