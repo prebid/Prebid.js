@@ -61,7 +61,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var size = getBiggerSize(bid.sizes);
 
     var vastLoader = new window.com.stickyadstv.vast.VastLoader();
-    bid.vast = window.stickyadstv_cache[bid.placementCode] = vastLoader.getVast();
+    bid.vast = topMostWindow.stickyadstv_cache[bid.placementCode] = vastLoader.getVast();
 
     var vastCallback = {
       onSuccess : bind(function(){
