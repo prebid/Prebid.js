@@ -128,7 +128,7 @@ describe('StickyAdsTV Adapter', function () {
         it('should have returned a valid bidObject', function () {
             
             expect(bidResponse).to.have.property('cpm', 4.000);
-            expect(bidResponse).to.have.property('ad', "<script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast};window.top.com.stickyadstv.screenroll.start(config);</script>");
+            expect(bidResponse).to.have.property('ad', "<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast};topWindow.com.stickyadstv.screenroll.start(config);</script>");
             expect(bidResponse).to.have.property('bidderCode', "stickyadstv");
             expect(bidResponse).to.have.property('currencyCode', "USD");
             expect(bidResponse).to.have.property('width', 300);
@@ -153,7 +153,7 @@ describe('StickyAdsTV Adapter', function () {
     describe('formatBidObject', function () {
 
         it('should create a valid bid object', function () {
-            let result = adapter.formatBidObject(true, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
+            let result = adapter.formatBidObject("", true, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
             
             expect(result).to.have.property('cpm', '1.2345');
             expect(result).to.have.property('ad', "<div>sample</div>");
@@ -165,14 +165,14 @@ describe('StickyAdsTV Adapter', function () {
         });
 
         it('should create a invalid bid object because price is not defined', function () {
-            let result = adapter.formatBidObject(true, null, "<div>sample</div>", 200, 300);
+            let result = adapter.formatBidObject("", true, null, "<div>sample</div>", 200, 300);
                         
             expect(result).to.have.property('bidderCode', "stickyadstv");
             expect(result.getStatusCode()).to.equal(2);
         });
 
         it('should create a invalid bid object', function () {
-            let result = adapter.formatBidObject(false, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
+            let result = adapter.formatBidObject("", false, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
                         
             expect(result).to.have.property('bidderCode', "stickyadstv");
             expect(result.getStatusCode()).to.equal(2);
@@ -184,19 +184,19 @@ describe('StickyAdsTV Adapter', function () {
         it('should create an inBanner ad format', function () {
             let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{}}, [200,300]);
             
-            expect(result).to.equal('<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var vast =  window.top.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new window.top.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>');
+            expect(result).to.equal('<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>');
         });
 
         it('should create an intext ad format', function () {
             let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"intext-roll", auto:"v2", smartPlay:"true"}}, [200,300]);
                         
-            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,auto:\"v2\",smartPlay:\"true\"};window.top.com.stickyadstv.intextroll.start(config);</script>");
+            expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,auto:"v2",smartPlay:"true"};topWindow.com.stickyadstv.intextroll.start(config);</script>');
         });
 
         it('should create a screenroll ad format', function () {
             let result = adapter.formatAdHTML({placementCode:"placementCodeValue", params:{format:"screen-roll", smartPlay:"true"}}, [200,300]);
                         
-            expect(result).to.equal("<script type='text/javascript'>var vast =  window.top.stickyadstv_cache[\"placementCodeValue\"];var config = {  preloadedVast:vast,smartPlay:\"true\"};window.top.com.stickyadstv.screenroll.start(config);</script>");
+            expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:"true"};topWindow.com.stickyadstv.screenroll.start(config);</script>');
         });
     });
 
