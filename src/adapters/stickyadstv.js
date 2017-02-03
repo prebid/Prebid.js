@@ -8,7 +8,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   var INTEXTROLL_URL = "//cdn.stickyadstv.com/prime-time/intext-roll.min.js";
   var SCREENROLL_URL = "//cdn.stickyadstv.com/prime-time/screen-roll.min.js";
   
-  window.stickyadstv_cache = {};
+  var topMostWindow = getTopMostWindow();
+  topMostWindow.stickyadstv_cache = {};
 
   function _callBids(params) {
      
@@ -64,6 +65,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     var vastCallback = {
       onSuccess : bind(function(){
+        
         //'this' is the bid request here
         var bidRequest = this;
         
@@ -74,6 +76,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
         
       },bid),
       onError : bind(function(){
+        var bidRequest = this;
         callback(formatBidObject(bidRequest, false));
       },bid)
     };
@@ -109,14 +112,14 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var divHtml = "<div id=\"stickyadstv_prebid_target\"></div>";
 
     var script = "<script type='text/javascript'>"+
-    
-    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
-    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
+    //get the top most accessible window
+    "var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();"+
+    "var vast =  topWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast,"+
     "  autoPlay:true"+
     "};"+
-    "var ad = new com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);"+
+    "var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById(\"stickyadstv_prebid_target\"),config);"+
     "ad.initAd("+size[0]+","+size[1]+",\"\",0,\"\",\"\");"+
 
     "</script>";
@@ -135,9 +138,9 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
 
     var script = "<script type='text/javascript'>"+
-        
-    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
-    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
+    //get the top most accessible window
+    "var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();"+
+    "var vast =  topWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast";
 
@@ -151,7 +154,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += "};"+
     
-    "com.stickyadstv.intextroll.start(config);"+
+    "topWindow.com.stickyadstv.intextroll.start(config);"+
 
     "</script>";
 
@@ -165,8 +168,9 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     var script = "<script type='text/javascript'>"+
        
-    "var globalWindow = com.stickyadstv.browser.getTopMostWindow();"+
-    "var vast =  globalWindow.stickyadstv_cache[\""+placementCode+"\"];"+
+    //get the top most accessible window
+    "var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();"+
+    "var vast =  topWindow.stickyadstv_cache[\""+placementCode+"\"];"+
     "var config = {"+
     "  preloadedVast:vast";
 
@@ -180,7 +184,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += "};"+
     
-    "com.stickyadstv.screenroll.start(config);"+
+    "topWindow.com.stickyadstv.screenroll.start(config);"+
 
     "</script>";
 
@@ -237,6 +241,24 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return bidObject;
   }
 
+
+  /**
+  * returns the top most accessible window
+  */
+  function getTopMostWindow(){
+    var res=window; 
+
+    try {
+      while(top != res){
+        if(res.parent.location.href.length)
+          res=res.parent;
+      }
+    }
+    catch(e){}
+
+    return res;
+  }
+  
   /* Create a function bound to a given object (assigning `this`, and arguments,
    * optionally). Binding with arguments is also known as `curry`.
    * Delegates to **ECMAScript 5**'s native `Function.bind` if available.
@@ -253,6 +275,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       return func.apply(context,arguments);
     };
   };
+
 
   // Export the callBids function, so that prebid.js can execute
   // this function when the page asks to send out bid requests.
