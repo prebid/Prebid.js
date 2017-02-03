@@ -114,7 +114,7 @@ describe('the rubicon adapter', () => {
       sandbox.stub(rubiconAdapter, 'callBids');
 
       adapterManager.callBids({
-          adUnits: [clone(adUnit)]
+        adUnits: [clone(adUnit)]
       });
 
       let bidderRequest = rubiconAdapter.callBids.getCall(0).args[0];
@@ -172,7 +172,7 @@ describe('the rubicon adapter', () => {
 
       ordering = masSizeOrdering([[120, 600], [320, 50], [160,600], [640, 480],[336, 280], [200, 600], [728, 90]]);
       expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
-    })
+    });
 
   });
 
@@ -303,7 +303,7 @@ describe('the rubicon adapter', () => {
 
           expect(post).to.have.property('page_url').that.is.a('string');
           expect(post.resolution).to.match(/\d+x\d+/);
-          expect(post.account_id).to.equal('14062')
+          expect(post.account_id).to.equal('14062');
           expect(post.integration).to.equal(INTEGRATION);
           expect(post).to.have.property('timeout').that.is.a('number');
           expect(post.timeout < 5000).to.equal(true);
@@ -346,7 +346,7 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('ucat').that.equals('new');
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
 
-        })
+        });
 
       });
 
@@ -639,12 +639,13 @@ describe('the rubicon adapter', () => {
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].creative_id).to.equal(999999);
           expect(bids[0].cpm).to.equal(1);
+          expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
               'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
 
-        })
+        });
 
       });
 
