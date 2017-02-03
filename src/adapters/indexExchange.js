@@ -13,6 +13,7 @@ var CONSTANTS = {
     "queryParam": "pbjs_ix_debug",
     "mode": {
       "sandbox": {
+        "topFrameLimit": 10,
         "queryValue": "sandbox",
         "siteID": "999990"
       }
@@ -20,8 +21,123 @@ var CONSTANTS = {
   }
 };
 
-var cygnus_index_parse_res = function () {
-};
+var OPEN_MARKET = 'IOM';
+var PRIVATE_MARKET = 'IPM';
+
+window.cygnus_index_parse_res = function(response) {
+  try {
+    if (response) {
+      if (typeof _IndexRequestData !== "object" || typeof _IndexRequestData.impIDToSlotID !== "object" || typeof _IndexRequestData.impIDToSlotID[response.id] === "undefined") {
+        return;
+      }
+      var targetMode = 1;
+      var callbackFn;
+      if (typeof _IndexRequestData.reqOptions === 'object' && typeof _IndexRequestData.reqOptions[response.id] === 'object') {
+        if (typeof _IndexRequestData.reqOptions[response.id].callback === "function") {
+          callbackFn = _IndexRequestData.reqOptions[response.id].callback;
+        }
+        if (typeof _IndexRequestData.reqOptions[response.id].targetMode === "number") {
+          targetMode = _IndexRequestData.reqOptions[response.id].targetMode;
+        }
+      }
+
+      _IndexRequestData.lastRequestID = response.id;
+      _IndexRequestData.targetIDToBid = {};
+      _IndexRequestData.targetIDToResp = {};
+      _IndexRequestData.targetIDToCreative = {};
+
+      var allBids = [];
+      var seatbidLength = typeof response.seatbid === "undefined" ? 0 : response.seatbid.length;
+      for (var i = 0; i < seatbidLength; i++) {
+        for (var j = 0; j < response.seatbid[i].bid.length; j++) {
+          var bid = response.seatbid[i].bid[j];
+          if (typeof bid.ext !== "object" || typeof bid.ext.pricelevel !== "string") {
+            continue;
+          }
+          if (typeof _IndexRequestData.impIDToSlotID[response.id][bid.impid] === "undefined") {
+            continue;
+          }
+          var slotID = _IndexRequestData.impIDToSlotID[response.id][bid.impid];
+          var targetID;
+          var noTargetModeTargetID;
+          var targetPrefix;
+          if (typeof bid.ext.dealid === "string") {
+            if (targetMode === 1) {
+              targetID = slotID + bid.ext.pricelevel;
+            } else {
+              targetID = slotID + "_" + bid.ext.dealid;
+            }
+            noTargetModeTargetID = slotID + '_' + bid.ext.dealid;
+            targetPrefix = PRIVATE_MARKET + '_';
+          } else {
+            targetID = slotID + bid.ext.pricelevel;
+            noTargetModeTargetID = slotID + bid.ext.pricelevel;
+            targetPrefix = OPEN_MARKET + '_';
+          }
+          if (_IndexRequestData.targetIDToBid[targetID] === undefined) {
+            _IndexRequestData.targetIDToBid[targetID] = [bid.adm];
+          } else {
+            _IndexRequestData.targetIDToBid[targetID].push(bid.adm);
+          }
+          if (_IndexRequestData.targetIDToCreative[noTargetModeTargetID] === undefined) {
+            _IndexRequestData.targetIDToCreative[noTargetModeTargetID] = [bid.adm];
+          } else {
+            _IndexRequestData.targetIDToCreative[noTargetModeTargetID].push(bid.adm);
+          }
+          var impBid = {};
+          impBid.impressionID = bid.impid;
+          if (typeof bid.ext.dealid !== 'undefined') {
+            impBid.dealID = bid.ext.dealid;
+          }
+          impBid.bid = bid.price;
+          impBid.slotID = slotID;
+          impBid.priceLevel = bid.ext.pricelevel;
+          impBid.target = targetPrefix + targetID;
+          _IndexRequestData.targetIDToResp[targetID] = impBid;
+          allBids.push(impBid);
+        }
+      }
+      if (typeof callbackFn === "function") {
+        if (allBids.length === 0) {
+          callbackFn(response.id);
+        } else {
+          callbackFn(response.id, allBids);
+        }
+      }
+
+    }
+  } catch (e) {}
+
+  if (typeof window.cygnus_index_ready_state === 'function') {
+    window.cygnus_index_ready_state();
+  }
+}
+
+window.index_render = function(doc, targetID) {
+  try {
+    var ad = _IndexRequestData.targetIDToCreative[targetID].pop();
+    if (ad != null) {
+      doc.write(ad);
+    } else {
+      var url = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+      url += '/headerstats?type=RT&s=' + cygnus_index_args.siteID + '&u=' + encodeURIComponent(location.href) + '&r=' + _IndexRequestData.lastRequestID;
+      var px_call = new Image();
+      px_call.src = url + '&blank=' + targetID;
+    }
+  } catch (e) {}
+}
+
+window.headertag_render = function(doc, targetID, slotID) {
+  var index_slot = slotID;
+  var index_ary = targetID.split(',');
+  for (var i = 0; i < index_ary.length; i++) {
+    var unpack = index_ary[i].split('_');
+    if (unpack[0] == index_slot) {
+      index_render(doc, index_ary[i]);
+      return;
+    }
+  }
+}
 
 window.cygnus_index_args = {};
 
@@ -32,9 +148,21 @@ var getIndexDebugMode = function() {
 }
 
 var getParameterByName = function (name) {
+  var wdw = window;
+  var childsReferrer = '';
+  for (var x = 0; x < CONSTANTS.INDEX_DEBUG_MODE.mode.sandbox.topFrameLimit; x++) {
+    if (wdw.parent == wdw) {
+      break;
+    }
+    try {
+      childsReferrer = wdw.document.referrer;
+    } catch (err) {}
+    wdw = wdw.parent;
+  }
+  var topURL = top === self ? location.href : childsReferrer;
   var regexS = '[\\?&]' + name + '=([^&#]*)';
   var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.search);
+  var results = regex.exec(topURL);
   if (results === null) {
     return '';
   }
@@ -42,8 +170,6 @@ var getParameterByName = function (name) {
 };
 
 var cygnus_index_start = function () {
-  window.index_slots = [];
-
   window.cygnus_index_args.parseFn = cygnus_index_parse_res;
   var escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
   var meta = {
@@ -80,6 +206,7 @@ var cygnus_index_start = function () {
       throw 'Invalid Site ID';
     }
 
+    timeoutDelay = Number(timeoutDelay);
     if (typeof timeoutDelay === 'number' && timeoutDelay % 1 === 0 && timeoutDelay >= 0) {
       this.timeoutDelay = timeoutDelay;
     }
@@ -114,8 +241,8 @@ var cygnus_index_start = function () {
   }
 
   OpenRTBRequest.prototype.serialize = function () {
-    var json = '{"id":' + this.requestID + ',"site":{"page":"' + quote(this.sitePage) + '"';
-    if (typeof document.referrer === 'string') {
+    var json = '{"id":"' + this.requestID + '","site":{"page":"' + quote(this.sitePage) + '"';
+    if (typeof document.referrer === 'string' && document.referrer !== "") {
       json += ',"ref":"' + quote(document.referrer) + '"';
     }
 
@@ -225,7 +352,8 @@ var cygnus_index_start = function () {
     } else {
       scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
     }
-    scriptSrc += '/headertag?v=9&x3=1&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI;
+    var prebidVersion = encodeURIComponent("$prebid.version$");
+    scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
     }
@@ -236,12 +364,6 @@ var cygnus_index_start = function () {
   try {
     if (typeof cygnus_index_args === 'undefined' || typeof cygnus_index_args.siteID === 'undefined' || typeof cygnus_index_args.slots === 'undefined') {
       return;
-    }
-
-    if (typeof window._IndexRequestData === 'undefined') {
-      window._IndexRequestData = {};
-      window._IndexRequestData.impIDToSlotID = {};
-      window._IndexRequestData.reqOptions = {};
     }
 
     var req = new OpenRTBRequest(cygnus_index_args.siteID, cygnus_index_args.parseFn, cygnus_index_args.timeout);
@@ -289,6 +411,14 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   function _callBids(request) {
     var bidArr = request.bids;
 
+    if (typeof window._IndexRequestData === 'undefined') {
+      window._IndexRequestData = {};
+      window._IndexRequestData.impIDToSlotID = {};
+      window._IndexRequestData.reqOptions = {};
+    }
+    // clear custom targets at the beginning of every request
+    _IndexRequestData.targetAggregate = {'open':{},'private':{}};
+
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
       return;
     }
@@ -314,14 +444,17 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       for (var j = 0; j < bid.sizes.length; j++) {
         var validSize = false;
         for (var k = 0; k < cygnus_index_adunits.length; k++) {
-          if (bid.sizes[j][0] === cygnus_index_adunits[k][0] &&
-              bid.sizes[j][1] === cygnus_index_adunits[k][1]) {
+          if (bid.sizes[j][0] == cygnus_index_adunits[k][0] &&
+              bid.sizes[j][1] == cygnus_index_adunits[k][1]) {
+            bid.sizes[j][0] = Number(bid.sizes[j][0]);
+            bid.sizes[j][1] = Number(bid.sizes[j][1]);
             validSize = true;
             break;
           }
         }
 
         if (!validSize) {
+          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to no valid sizes");
           continue;
         }
 
@@ -339,7 +472,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
 
         var siteID = Number(bid.params.siteID);
-        if (!siteID) {
+        if (typeof siteID !== "number" || siteID % 1 != 0 || siteID <= 0) {
+          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to invalid siteID");
           continue;
         }
         if (siteID && typeof cygnus_index_args.siteID === 'undefined') {
@@ -349,6 +483,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
           firstAdUnitCode = bid.placementCode;
           var slotID = bid.params[requiredParams[0]];
+          if ( typeof slotID !== 'string' && typeof slotID !== 'number' ){
+            utils.logError(ADAPTER_NAME + " bid contains invalid slot ID from " + bid.placementCode + ". Discarding slot");
+            continue
+          }
 
           sizeID++;
           var size = {
@@ -443,13 +581,19 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               var bid = bidfactory.createBid(1);
               bid.cpm = currentCPM / 100;
               bid.ad = indexObj[cpmAndSlotId][0];
-              bid.ad_id = adSlotId;
               bid.bidderCode = ADAPTER_CODE;
               bid.width = slotObj.width;
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
               if ( typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined' ) {
+                if (typeof _IndexRequestData.targetAggregate['private'][adUnitCode] === 'undefined')
+                  _IndexRequestData.targetAggregate['private'][adUnitCode] = [];
                 bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;
+                _IndexRequestData.targetAggregate['private'][adUnitCode].push( slotID + "_" + _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID );
+              } else {
+                if (typeof _IndexRequestData.targetAggregate['open'][adUnitCode] === 'undefined')
+                  _IndexRequestData.targetAggregate['open'][adUnitCode] = [];
+                _IndexRequestData.targetAggregate['open'][adUnitCode].push( slotID + "_" + currentCPM );
               }
               bids.push(bid);
             }

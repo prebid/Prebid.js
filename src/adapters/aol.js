@@ -5,6 +5,7 @@ const bidmanager = require('../bidmanager.js');
 
 const AolAdapter = function AolAdapter() {
 
+  let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
@@ -32,7 +33,7 @@ const AolAdapter = function AolAdapter() {
     let server;
 
     if (!SERVER_MAP.hasOwnProperty(regionParam)) {
-      console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
+      utils.logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
       regionParam = 'us'; // Default region.
     }
 
@@ -92,8 +93,8 @@ const AolAdapter = function AolAdapter() {
     }
 
     let ad = bidData.adm;
-    if (bidData.ext && bidData.ext.pixels) {
-      ad += bidData.ext.pixels;
+    if (response.ext && response.ext.pixels) {
+      ad += response.ext.pixels;
     }
 
     const bidResponse = bidfactory.createBid(1, bid);
@@ -117,6 +118,18 @@ const AolAdapter = function AolAdapter() {
       const pubapiUrl = _buildPubapiUrl(bid);
 
       ajax(pubapiUrl, response => {
+        // needs to be here in case bidderSettings are defined after requestBids() is called
+        if (showCpmAdjustmentWarning &&
+          $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
+          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
+        ) {
+          utils.logWarn(
+            'bidCpmAdjustment is active for the AOL adapter. ' +
+            'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
+          );
+        }
+        showCpmAdjustmentWarning = false; // warning is shown at most once
+
         if (!response && response.length <= 0) {
           utils.logError('Empty bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response);

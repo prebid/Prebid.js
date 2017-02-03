@@ -1,5 +1,5 @@
 <!--
-Thank you for your pull request. Please make sure this PR is scoped to one change, and that any added or changed code includes tests with greater than 80% code coverage. See http://prebid.org/dev-docs/testing-prebid.html for documentation on testing Prebid.js.
+Thank you for your pull request. Please make sure this PR is scoped to one change, and that any added or changed code includes tests with greater than 80% code coverage. See https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md#testing-prebidjs for documentation on testing Prebid.js.
 -->
 
 ## Type of change

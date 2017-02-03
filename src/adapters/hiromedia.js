@@ -25,7 +25,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Bidder code
    *
-   * @constant {string} BIDDER_CODE
+   * @memberof module:HiroMediaAdapter~
+   * @constant {string}
    * @private
    */
   var BIDDER_CODE = 'hiromedia';
@@ -33,15 +34,17 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Adapter version
    *
-   * @constant {number} ADAPTER_VERSION
+   * @memberof module:HiroMediaAdapter~
+   * @constant {number}
    * @private
    */
-  var ADAPTER_VERSION = 1;
+  var ADAPTER_VERSION = 2;
 
   /**
    * Default bid param values
    *
-   * @constant {module:HiroMediaAdapter~bidParams} DEFAULT_BID_PARAMS
+   * @memberof module:HiroMediaAdapter~
+   * @constant {module:HiroMediaAdapter~bidParams}
    * @private
    */
   var REQUIRED_BID_PARAMS = ['accountId'];
@@ -49,11 +52,12 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Default bid param values
    *
-   * @constant {module:HiroMediaAdapter~bidParams} DEFAULT_BID_PARAMS
+   * @memberof module:HiroMediaAdapter~
+   * @constant {module:HiroMediaAdapter~bidParams}
    * @private
    */
   var DEFAULT_BID_PARAMS = {
-    bidUrl: 'https://hb-rtb.ktdpublishers.com/',
+    bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get',
     allowedSize: [300,250],
     sizeTolerance: 5
   };
@@ -64,7 +68,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * Bids need to be stored between requests and response since the response
    * is a global callback.
    *
-   * @var {array.<module:HiroMediaAdapter~bidInfo>} _bidStorage
+   * @memberof module:HiroMediaAdapter~
+   * @var {array.<module:HiroMediaAdapter~bidInfo>}
    * @private
    */
   var _bidStorage = [];
@@ -75,7 +80,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * Simple wrapper that will create a bid object with the correct status
    * and add the response for the placement.
    *
-   * @method addBidResponse
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {module:HiroMediaAdapter~bidInfo} bidInfo bid object wrapper to respond for
@@ -105,7 +110,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Return `true` if sampling is larger than a newly created random value
    *
-   * @method checkChance
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {number} sampling the value to check
@@ -118,7 +123,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Apply a response for all pending bids that have the same response batch key
    *
-   * @method handleResponse
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {object} response [description]
@@ -144,7 +149,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Call {@linkcode module:HiroMediaAdapter~handleResponse} for valid responses
    *
-   * @method hiromedia_callback
    * @global
    *
    * @param  {object} [response] the response from the server
@@ -162,7 +166,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    *
    * Super basic UA parser for the major browser configurations.
    *
-   * @method getBrowser
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @return {module:HiroMediaAdapter~browserInfo} object containing name and version of browser
@@ -220,7 +224,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Return top context domain
    *
-   * @method getDomain
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @return {string}  domain of top context url.
@@ -236,7 +240,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Convert a `string` to an integer with radix 10.
    *
-   * @method toInteger
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {string} value string to convert
@@ -252,7 +256,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * Returns `true` if the distance between `allowedValue` and `value`
    * is smaller than the value of `tolerance`
    *
-   * @method isValueInRange
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {number} value the value to test
@@ -277,7 +281,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * Each dimension of `size` will be checked against the corresponding dimension
    * of `allowedSize`
    *
-   * @method isSizeInRange
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {module:HiroMediaAdapter~size} size size array to test
@@ -295,7 +299,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    *
    * Simple wrapper around `util.parseSizesInput`
    *
-   * @method normalizeSizes
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {array} sizes array of sizes that are passed to `util.parseSizesInput`
@@ -310,7 +314,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Apply default parameters to an object if the parameters are not set
    *
-   * @method defaultParams
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {module:HiroMediaAdapter~bidParams} bidParams custom parameters for bid
@@ -328,7 +332,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * we can calculate a key based on the variant properties
    * of a bid which can share the same response
    *
-   * @method getBatchKey
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {module:HiroMediaAdapter~bidInfo} bidInfo bid information
@@ -355,7 +359,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * will set `selectedSize` based on `params.allowedSize` and calculate the batch
    * key.
    *
-   * @method processBids
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {object} bids bids sent from `Prebid.js`
@@ -405,7 +409,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    *
    * Calls `adLoader.loadScript`
    *
-   * @method sendBidRequest
+   * @memberof module:HiroMediaAdapter~
    * @private
    *
    * @param  {string} url base url, can already contain query parameters
@@ -481,16 +485,16 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
             bidsRequested[batchKey] = true;
 
             sendBidRequest(url,{
-              v: ADAPTER_VERSION,
-              cb: '$$PREBID_GLOBAL$$.hiromedia_callback',
-              bk: batchKey,
-              pc: bid.placementCode,
-              ac: bidParams.accountId,
-              br: browser.name,
-              brv: browser.version,
-              dom: domain,
-              sz: utils.parseSizesInput([bidInfo.selectedSize]),
-              szs: utils.parseSizesInput(bid.sizes)
+              adapterVersion: ADAPTER_VERSION,
+              callback: '$$PREBID_GLOBAL$$.hiromedia_callback',
+              batchKey: batchKey,
+              placementCode: bid.placementCode,
+              accountId: bidParams.accountId,
+              browser: browser.name,
+              browserVersion: browser.version,
+              domain: domain,
+              selectedSize: utils.parseSizesInput([bidInfo.selectedSize]),
+              placementSizes: utils.parseSizesInput(bid.sizes)
             });
 
           }
