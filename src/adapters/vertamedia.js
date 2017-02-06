@@ -57,7 +57,6 @@ function VertamediaAdapter() {
     }
 
     if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
-      utils.logError(`in response for ${baseAdapter.getBidderCode()} adapter`);
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
 
       return;
@@ -81,6 +80,7 @@ function VertamediaAdapter() {
     bid.creative_id = tag.cmpId;
     bid.width = bidRequest.width;
     bid.height = bidRequest.height;
+    bid.descriptionUrl = tag.url;
     bid.vastUrl = tag.url;
 
     return bid;
