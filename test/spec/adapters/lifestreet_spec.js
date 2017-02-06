@@ -207,6 +207,12 @@ describe ('LifestreetAdapter', () => {
                 if (object.message === 'LSMPrebid Response' && object.slotObject) {
                   var slot  = object.slotObject;
                   slot.__proto__ = slotapi.Slot.prototype;
+                  slot.getProperties()['_onload'] = (slot) => {
+                    if (slot.state() !== 'error') {
+                      slot.show();
+                    }
+                  };
+                  window[slot.getSlotObjectName()] = slot;
                   slot.showInContainer(document.getElementById("LSM_AD"));
                 }
               }

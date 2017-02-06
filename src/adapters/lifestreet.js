@@ -97,6 +97,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
               message: PREBID_RESPONSE_MESSAGE,
               slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
             }), '*');
+            window.$$PREBID_GLOBAL$$[object.slotName].destroy();
           }
         }, false);
       } else {
@@ -134,6 +135,12 @@ const LifestreetAdapter = function LifestreetAdapter() {
                 if (object.message === '` + PREBID_RESPONSE_MESSAGE + `' && object.slotObject) {
                   var slot  = object.slotObject;
                   slot.__proto__ = slotapi.Slot.prototype;
+                  slot.getProperties()['_onload'] = (slot) => {
+                    if (slot.state() !== 'error') {
+                      slot.show();
+                    }
+                  };
+                  window[slot.getSlotObjectName()] = slot;
                   slot.showInContainer(document.getElementById("LSM_AD"));
                 }
               }
