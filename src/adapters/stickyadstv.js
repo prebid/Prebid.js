@@ -249,7 +249,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var res=window; 
 
     try {
-      while(top != res){
+      while(top !== res){
         if(res.parent.location.href.length)
           res=res.parent;
       }
