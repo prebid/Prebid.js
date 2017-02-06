@@ -16,7 +16,10 @@ function renderAd(ev) {
       return;
     }
 
-    if (adObject.ad || adObject.adUrl) {
+    var origin = ev.origin || ev.originalEvent.origin;
+    if (adObject.message && adObject.message === 'Prebid Response' &&
+        publisherDomain === origin &&
+        (adObject.ad || adObject.adUrl)) {
       var body = window.document.body;
       var ad = adObject.ad;
       var url = adObject.adUrl;
