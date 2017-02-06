@@ -14,7 +14,7 @@ describe('adbund adapter tests', function () {
             bidder: 'adbund',
             params: {
                 sid: '110238',
-				bidfloor: 0.036
+                bidfloor: 0.036
             }
         }]
     };
