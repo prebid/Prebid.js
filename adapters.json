@@ -6,6 +6,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
@@ -64,6 +65,10 @@
     },
     {
       "appnexusAst": {
+        "supportedMediaTypes": ["video"]
+      }
+    },    {
+      "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
     },
