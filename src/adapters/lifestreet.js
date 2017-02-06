@@ -7,6 +7,8 @@ const LifestreetAdapter = function LifestreetAdapter() {
   const BIDDER_CODE = 'lifestreet';
   const ADAPTER_VERSION = 'prebidJS-1.0';
   const SLOTS_LOAD_MAP = {};
+  const PREBID_REQUEST_MESSAGE = 'LSMPrebid Request';
+  const PREBID_RESPONSE_MESSAGE = 'LSMPrebid Response';
 
   function _callBids(params) {
     utils._each(params.bids, bid => {
@@ -62,12 +64,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
               $$PREBID_GLOBAL$$[slotName] = slot;
               if (slotName && !SLOTS_LOAD_MAP[slotName]) {
                 SLOTS_LOAD_MAP[slotName] = true;
-                let ad = `<div id="LSM_AD"></div>
-                    <script>window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$ || 
-                    window.parent.$$PREBID_GLOBAL$$ || 
-                    window.top.$$PREBID_GLOBAL$$;
-                    window.$$PREBID_GLOBAL$$["` + slotName + `"]
-                    .showInContainer(document.getElementById("LSM_AD"));</script>`;
+                let ad = _constructLSMAd(jstagUrl, slotName);
                 _addSlotBidResponse(bid, cpm, ad, width, height);
               } else {
                 slot.show();
@@ -87,6 +84,21 @@ const LifestreetAdapter = function LifestreetAdapter() {
         }
         /*jshint newcap: false */
         LSM_Slot(slotTagParams);
+        window.addEventListener('message', (ev) => {
+          let key = ev.message ? 'message' : 'data';
+          let object = {};
+          try {
+            object = JSON.parse(ev[key]);
+          } catch (e) {
+            return;
+          }
+          if (object.message && object.message === PREBID_REQUEST_MESSAGE && object.slotName) {
+            ev.source.postMessage(JSON.stringify({
+              message: PREBID_RESPONSE_MESSAGE,
+              slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
+            }), '*');
+          }
+        }, false);
       } else {
         _addSlotBidResponse(bid, 0, null, 0, 0);
       }
@@ -104,6 +116,35 @@ const LifestreetAdapter = function LifestreetAdapter() {
       bidObject.height = height;
     }
     bidmanager.addBidResponse(bid.placementCode, bidObject);
+  }
+
+  function _constructLSMAd(jsTagUrl, slotName) {
+    if (jsTagUrl && slotName) {
+      return `<div id="LSM_AD"></div>
+             <script type="text/javascript" src='` + jsTagUrl + `'></script>
+             <script>
+              function receivedLSMMessage(ev) {
+                var key = ev.message ? 'message' : 'data';
+                var object = {};
+                try {
+                  object = JSON.parse(ev[key]);
+                } catch (e) {
+                  return;
+                }
+                if (object.message === '` + PREBID_RESPONSE_MESSAGE + `' && object.slotObject) {
+                  var slot  = object.slotObject;
+                  slot.__proto__ = slotapi.Slot.prototype;
+                  slot.showInContainer(document.getElementById("LSM_AD"));
+                }
+              }
+              window.addEventListener('message', receivedLSMMessage, false);
+              window.parent.postMessage(JSON.stringify({
+                message: '` + PREBID_REQUEST_MESSAGE + `',
+                slotName: '` + slotName +`'
+              }), '*');
+            </script>`;
+    }
+    return null;
   }
 
   return {

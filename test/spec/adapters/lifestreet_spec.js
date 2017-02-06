@@ -194,11 +194,28 @@ describe ('LifestreetAdapter', () => {
         let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.getStatusCode()).to.equal(1);
         expect(bidResponse.ad).to.equal(`<div id="LSM_AD"></div>
-                    <script>window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$ || 
-                    window.parent.$$PREBID_GLOBAL$$ || 
-                    window.top.$$PREBID_GLOBAL$$;
-                    window.$$PREBID_GLOBAL$$["Test Slot"]
-                    .showInContainer(document.getElementById("LSM_AD"));</script>`);
+             <script type="text/javascript" src='//ads.lfstmedia.com/getad?site=285071'></script>
+             <script>
+              function receivedLSMMessage(ev) {
+                var key = ev.message ? 'message' : 'data';
+                var object = {};
+                try {
+                  object = JSON.parse(ev[key]);
+                } catch (e) {
+                  return;
+                }
+                if (object.message === 'LSMPrebid Response' && object.slotObject) {
+                  var slot  = object.slotObject;
+                  slot.__proto__ = slotapi.Slot.prototype;
+                  slot.showInContainer(document.getElementById("LSM_AD"));
+                }
+              }
+              window.addEventListener('message', receivedLSMMessage, false);
+              window.parent.postMessage(JSON.stringify({
+                message: 'LSMPrebid Request',
+                slotName: 'Test Slot'
+              }), '*');
+            </script>`);
         expect(bidResponse.cpm).to.equal(1.0);
         expect(bidResponse.width).to.equal(160);
         expect(bidResponse.height).to.equal(600);
