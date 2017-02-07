@@ -220,44 +220,83 @@ gulp.task('docs', ['clean-docs'], function () {
 
 gulp.task('e2etest', function() {
   var cmd = '--env default';
+  var cmdQueue = [];
+  var env = [];
   if(argv.browserstack) {
     var browsers = require('./browsers.json');
-    var env = [];
     var input = 'bs';
+    var i = 1;
     for(var key in browsers) {
       if(key.substring(0, input.length) === input) {
         env.push(key);
+        if(i % 2 === 0) {
+          var cmdStr = 'nightwatch --env '+ env.join(',');
+          if(argv.browserstack) {
+            cmdStr = cmdStr + ' --config nightwatch.conf.js';
+          } else {
+            cmdStr = cmdStr + ' --config nightwatch.json';
+          }
+
+          if (argv.group) {
+            cmdStr = cmdStr + ' --group ' + argv.group;
+          }
+
+          cmdStr = cmdStr + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
+          cmdQueue.push(cmdStr);
+          env = [];
+        }
+        i++;
       }
     }
-    cmd = '--env default,' + env.join(',');
   }
 
-  if(argv.browserstack) {
-    cmd = cmd + ' --config nightwatch.conf.js';
-  } else {
-    cmd = cmd + ' --config nightwatch.json';
-  }
+  console.log(cmdQueue.join(';'));
 
-  if (argv.group) {
-    cmd = cmd + ' --group ' + argv.group;
-  }
-
-  cmd = cmd + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
   return gulp.src('')
-    .pipe(shell('nightwatch ' + cmd));
+    .pipe(shell(cmdQueue.join(';')));
 });
+
+// gulp.task('e2etest', function() {
+//   var cmd = '--env default';
+//   if(argv.browserstack) {
+//     var browsers = require('./browsers.json');
+//     var env = [];
+//     var input = 'bs';
+//     for(var key in browsers) {
+//       if(key.substring(0, input.length) === input) {
+//         env.push(key);
+//       }
+//     }
+//     cmd = '--env default,' + env.join(',');
+//   }
+//
+//   if(argv.browserstack) {
+//     cmd = cmd + ' --config nightwatch.conf.js';
+//   } else {
+//     cmd = cmd + ' --config nightwatch.json';
+//   }
+//
+//   if (argv.group) {
+//     cmd = cmd + ' --group ' + argv.group;
+//   }
+//
+//   cmd = cmd + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
+//   console.log(cmd);
+//   return gulp.src('')
+//     .pipe(shell('nightwatch ' + cmd));
+// });
 
 gulp.task('e2etest-report', function() {
   var targetDestinationDir = './e2etest-report';
   helpers.createEnd2EndTestReport(targetDestinationDir);
   connect.server({
-    port: port,
+    port: 9010,
     root: './',
     livereload: true
   });
 
   setTimeout(function() {
-    opens('http://localhost:' + port + '/' + targetDestinationDir.slice(2) + '/results.html');
+    opens('http://localhost:' + 9010 + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
 
 });

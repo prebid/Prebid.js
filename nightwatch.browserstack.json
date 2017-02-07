@@ -38,8 +38,8 @@
         "browserstack.local": true,
         "browserstack.debug": true,
         "browserstack.selenium_version" : "2.53.0",
-        "browserstack.user": "${BROWSERSTACK_USERNAME}",
-        "browserstack.key": "${BROWSERSTACK_KEY}"
+        "browserstack.user": "${BROWSERSTACK_USERNAME1}",
+        "browserstack.key": "${BROWSERSTACK_KEY1}"
       }
     }
   }
