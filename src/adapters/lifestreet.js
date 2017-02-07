@@ -135,7 +135,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
                 if (object.message === '` + PREBID_RESPONSE_MESSAGE + `' && object.slotObject) {
                   var slot  = object.slotObject;
                   slot.__proto__ = slotapi.Slot.prototype;
-                  slot.getProperties()['_onload'] = (slot) => {
+                  slot.getProperties()['_onload'] = function(slot) {
                     if (slot.state() !== 'error') {
                       slot.show();
                     }
