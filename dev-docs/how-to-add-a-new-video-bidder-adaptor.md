@@ -35,7 +35,7 @@ In your PR to add the new adapter, please provide the following information:
 ## Step 2: Add a new bidder JS file
 
 1. Create a JS file under `src/adapters` with the name of the bidder,
-   e.g., `rubicon.js`
+   e.g., `yourBidder.js`
 
 2. Your adapter should export the `callBids` function.  Prebid.js
    executes this function when the page asks to send out bid requests.
@@ -52,9 +52,8 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration',
                          'skippable', 'playback_method', 
                          'frameworks'];
 
-function BidderNameAdapter() {
-
-    let baseAdapter = Adapter.createNew('bidderNameAdaptor');
+function YourBidderAdapter() {
+    let baseAdapter = Adapter.createNew('yourBidderAdapter');
 
     baseAdapter.callBids = function(bidRequest) {
       // Add your implementation here.
@@ -77,12 +76,12 @@ function BidderNameAdapter() {
     // ... other code ...
 }
 
-module.exports = BidderNameAdapter;
+module.exports = YourBidderAdapter;
 {% endhighlight %}
 
 ## Step 3: Design your bid params
 
-Use the `bid.params` object for defining the parameters of your ad request. At a minimum, you should include the tag ID and the  site ID.  You can also include ad sizes, keywords, and other data, such as video bidding information.
+Use the `bid.params` object for defining the parameters of your ad request.  You can include tag ID, site ID, ad size, keywords, and other data, such as video bidding information.
 
 For more information about the kinds of information that can be passed using these parameters, see [the list of bidder parameters]({{site.github.url}}/dev-docs/bidders.html).
 
@@ -90,120 +89,118 @@ In order to make sure your adaptor supports video, you'll need to:
 
 1. Add a `video` object to your adapter's bid parameters like the one in the [AppNexus AST adapter]({{site.github.url}}/dev-docs/bidders.html#appnexusAst).  To see an example showing how those video params are processed and added to the ad tag, see [the AST adapter's implementation of the `callBids` function](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).
 
-2. Your bidder will have to support returning a DFP VAST URL somewhere in its bid response.  Each new bidder adaptor added to Prebid.js will have to support its own video URL.  For more information, see the implementation of [pbjs.buildMasterVideoTagFromAdserverTag](https://github.com/prebid/Prebid.js/blob/master/src/prebid.js#L656).
+2. Your bidder will have to support returning a VAST URL somewhere in its bid response.  Each new bidder adaptor added to Prebid.js will have to support its own video URL.  For more information, see the implementation of [pbjs.buildMasterVideoTagFromAdserverTag](https://github.com/prebid/Prebid.js/blob/master/src/prebid.js#L656).
 
 ## Step 4: Send out bid requests
 
 When the page asks Prebid.js to send out bid requests, your bidder's `callBids(bidRequest)` function will be executed, sending out bid requests to your bidder.
 
-The `bidRequest` object contains information about the bids configured in the request as shown below.
+The `bidRequest` object contains information about the bids in the request as shown below.  This example uses an AppNexus AST video bid request, so keep in mind not everything will be the same for your own bidder.
 
 {% highlight js %}
 {
-    bidderCode: "openx",
-    bids: [
-        {
-            bidder: "openx",
-            adUnitCode: "id123/header-bid-tag-0",
-            sizes: [ [300, 250], [300, 600] ]
-            // params is custom to the bidder adapter and will be
-            // passed through from the configuration as is.
-            params: { 
-            	unit: '3242432',
-                pgid: '123124',
-                jstag_url: 'http://...'
-            },
-        }, {
-        	bidder: "openx",
-        	// params, adUnit Code, and sizes
-        	// Note that the same adUnitCode may appear again.
-    	}
-    ]
+  "bidderCode": "appnexusAst",
+  "requestId": "52ddd9cc-8f77-4f54-91cb-b49b78f02292",
+  "bidderRequestId": "11919bf315f56d",
+  "bids": [
+    {
+      "bidder": "appnexusAst",
+      "params": {
+        "placementId": "10433394"
+      },
+      "placementCode": "/19968336/header-bid-tag-0",
+      "mediaType": "video",
+      "sizes": [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          300
+        ]
+      ],
+      "bidId": "230a95a8ac95a9",
+      "bidderRequestId": "11919bf315f56d",
+      "requestId": "52ddd9cc-8f77-4f54-91cb-b49b78f02292"
+    }
+  ],
+  "start": 1486418703275,
+  "auctionStart": 1486418703274,
+  "timeout": 3000
 }
 {% endhighlight %}
 
-Note that you should keep track of the `adUnitCode` in bid requests (this is also known as the "placement code" by some bidders). In the next section this will come in handy.
+Note that you should keep track of the `adUnitCode` in bid requests (this is also known as the "placement code" by some bidders).  You'll need this later on when you [register the bid response with the bid manager](#register-bid-response-bid-manager).
 
 ## Step 5: Register bid responses
 
 When the bid response(s) are available, notify Prebid.js immediately, so that your bid can get into the auction as soon as possible. A bidder's API will usually have an event listener that notifies you when the bid responses are back.
 
-To register the bid, call the `bidmanager.addBidResponse(adUnitCode, bidObject)` function. To register multiple bids, call the function multiple times.  Here's one way to do it:
-
-```javascript
-Object.keys(bidRequests)
-  .map(bidId => bidRequests[bidId].placementCode)
-  .forEach(placementCode => {
-    bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
-  });
-```
-
-If the bid is valid, create the `bidObject` like so, matching the bid request/response pair:
-
-```
-import { getBidRequest } from '../utils.js';
-var bidRequest = getBidRequest(id);
-var bid = bidfactory.createBid(1, bidRequest);
-```
-
-A status of `1` means the bid is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
-
-If the bid is invalid (no fill or error), create the `bidObject` like so:
-
-```
-import { getBidRequest } from '../utils.js';
-var bidRequest = getBidRequest(id);
-var bid = bidfactory.createBid(2, bidRequest);
-```
-
-A status of `2` means "no bid".
-
-{: .alert.alert-info :}
+{: .alert.alert-warning :}
 **IMPORTANT NOTE FOR VIDEO BIDDERS**  
 If your bidder supports serving video ads, it needs to provide a VAST video URL in its response.  On the adapter side, your implementation of `createBid` needs to add the VAST URL to the bid.  For an example implementation, see the implementation of `createBid` in the [AppNexus AST adapter](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).
 
-Example:
+### Create the bid response object
+
+If the bid is valid, create the bid response as shown below, matching the bid request/response pair.  A status of `1` means the bid response is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
 
 {% highlight js %}
+var utils      = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
 
-// In the bidder's API callback...
+var bidRequest  = utils.getBidRequest(id);
+var bidResponse = bidfactory.createBid(1, bidRequest);
+{% endhighlight %}
 
-// the bidder API's ad response unit that has info like CPM, creative content
-var adUnit;
+If the bid is invalid (no fill or error), create the `bidObject` as shown below.  A status of `2` means "no bid".
 
-var bidObject = bidfactory.createBid(1);
-bidObject.bidderCode = 'openx';
-bidObject.cpm = Number(adUnit.get('pub_rev')) / 1000;
-bidObject.ad = adUnit.get('html');
-bidObject.width = adUnit.get('width');
-bidObject.height = adUnit.get('height');
+{% highlight js %}
+var bidRequest  = utils.getBidRequest(id);
+var bidResponse = bidfactory.createBid(2, bidRequest);
+{% endhighlight %}
 
-// send the bidResponse object to bid manager with the adUnitCode.
+### Add info to the bid response
+
+Once you've created the bid response, assuming it's valid, you must add more video-specific information:
+
++ Player width
++ Player height
++ VAST URL
+
+Note that you'll have to modify the example code below to match the parameters returned by your bidder.  We've also omitted a lot of error-checking.  You can refer to the [AppNexus AST adapter implementation](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js#L228) for details.
+
+{% highlight js %}
+var baseAdapter = require('baseAdapter.js');
+
+// Pull the ad object out of your bidder's response.
+var ad = getRtbBid(tag);
+
+// The bid request needs a code to identify the bidder.
+bidResponse.bidderCode = 'yourBidder';
+
+// What is the bid price?
+bidResponse.cpm = ad.cpm;
+
+// Video-specific information: player width and height, and VAST URL.
+bidResponse.width   = ad.rtb.video.player_width;
+bidResponse.height  = ad.rtb.video.player_height;
+bidResponse.vastUrl = ad.rtb.video.asset_url;
+{% endhighlight %}
+
+<a name="register-bid-response-bid-manager" />
+
+### Register the bid response with the bid manager
+
+Now that you've added the required information to the bid response, you must register the response with the bid manager by calling the `bidmanager.addBidResponse(adUnitCode, bidObject)` function. To register multiple bid responses, call the function multiple times.
+
+{% highlight js %}
 bidmanager.addBidResponse(adUnitCode, bidObject);
-
-// invalid bid response
-bidObject = bidfactory.createBid(2);
-bidObject.bidderCode = 'openx';
-bidmanager.addBidResponse(adUnitCode, bidObject);
-
 {% endhighlight %}
 
 **`adUnitCode` in `addBidResponse`**
 
 In bidder API's callback, there'll be ID(s) that tie back to the request params in the `bid` object. Building a map from `adUnitCode` to the request param(s)/ID(s) will help you retrieve the `adUnitCode` based on the callback.
-
-**`bidObject` in `addBidResponse`**
-
-The required parameters to add into `bidObject` are:
-
-{: .table .table-bordered .table-striped }
-| Key          | Scope     | Description                                                              | Example                              |
-| :----        | :-------- | :-------                                                                 | :-------                             |
-| `bidderCode` | Required  | The bidder code.                                                         | `"pubmatic"`                         |
-| `cpm`        | Required  | The bid price. We recommend the most granular price a bidder can provide | 3.5764                               |
-| `width`      | Required  | The width of the returned creative.                                      | 300                                  |
-| `height`     | Required  | The height of the returned creative.                                     | 250                                  |
-| `ad`         | Required  | The creative payload of the returned bid                                 | `"<html><h3>I am an ad</h3></html>"` |
 
 ## Step 6. Update `adapters.json`
 
@@ -211,7 +208,7 @@ Finally, add `"video"` to the array of media types your adapter supports.
 
 ```javascript
 {
-  "bidderName": {
+  "yourBidder": {
     "supportedMediaTypes": ["video"]
   }
 }
@@ -225,7 +222,7 @@ Load a script asynchronously. The callback function will be executed when the sc
 
 Use this with the `cacheRequest` argument set to `true` if the script you're loading is a library or something else that doesn't change between requests.  It will cache the script so you don't have to wait for it to load before firing the supplied callback.
 
-For usage examples, see [the working adapters in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters).
+For usage examples of `loadScript`, see [the adapters in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters).
 
 ## Further Reading
 
