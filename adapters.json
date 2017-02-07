@@ -6,6 +6,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
@@ -18,6 +19,7 @@
     "indexExchange",
     "kruxlink",
     "komoona",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
@@ -31,6 +33,7 @@
     "sovrn",
     "springserve",
     "triplelift",
+    "twenga",
     "yieldbot",
     "nginad",
     "brightcom",
@@ -65,10 +68,15 @@
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
+    },    {
+      "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
     },
     {
       "rubicon": {
-        "alias": "rubiconLite"
+        "alias": "rubiconLite",
+        "supportedMediaTypes": ["video"]
       }
     },
     {
