@@ -63,7 +63,7 @@ A good example of an adapter that uses this pattern for its implementation is [O
 
 ## Step 3: Design your bid params
 
-Use the `bid.params` object for defining the parameters of your ad request. At a minimum, you should include the tag ID and the  site ID.  You can also include ad sizes, keywords, and other data, such as [video bidding information]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
+Use the `bid.params` object for defining the parameters of your ad request.  You can include tag ID, site ID, ad size, keywords, and other data, such as [video bidding information]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
 
 For more information about the kinds of information that can be passed using these parameters, see [the list of bidder parameters]({{site.github.url}}/dev-docs/bidders.html).
 
