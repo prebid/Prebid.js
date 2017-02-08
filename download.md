@@ -504,6 +504,14 @@ To improve the speed and load time of your site, build Prebid.js for only the he
   <div class="col-md-4">
     <div class="checkbox">
       <label>
+        <input type="checkbox" bidderCode="twenga" class="bidder-check-box"> Twenga
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
         <input type="checkbox" bidderCode="xhb" class="bidder-check-box"> Xaxis
       </label>
     </div>
