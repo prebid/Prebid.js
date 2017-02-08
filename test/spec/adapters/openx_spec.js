@@ -135,6 +135,77 @@ describe('openx adapter tests', function () {
     stubAddBidResponse.restore();
   });
 
+  it('should add no fill bid responses if bids are returned, but have empty pub rev', function () {
+    let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+    let bidderRequest = {
+      bidderCode: 'openx',
+      bids: [
+        {
+          bidId: 'bidId1',
+          bidder: 'openx',
+          params: {
+            delDomain: 'delDomain1',
+            unit: '1234'
+          },
+          sizes: [[300, 250]],
+          placementCode: 'test-gpt-div-1234'
+        }
+      ]
+    };
+
+    // Empty pub rev in bid response
+    let response = {
+      "ads":
+      {
+        "version": 1,
+        "count": 1,
+        "pixels": "http://testpixels.net",
+        "ad": [
+          {
+            "adunitid": 1234,
+            "adid": 5678,
+            "type": "html",
+            "html": "test_html",
+            "framed": 1,
+            "is_fallback": 1,
+            "ts": "ts",
+            "cpipc": 1000,
+            "pub_rev": "",
+            "adv_id": "adv_id",
+            "brand_id": "",
+            "creative": [
+              {
+                "width": "300",
+                "height": "250",
+                "target": "_blank",
+                "mime": "text/html",
+                "media": "test_media",
+                "tracking": {
+                  "impression": "test_impression",
+                  "inview": "test_inview",
+                  "click": "test_click"
+                }
+              }
+            ]
+          }]
+      }
+    };
+
+    pbjs._bidsRequested.push(bidderRequest);
+    // adapter needs to be called, in order for the stub to register.
+    adapter();
+
+    pbjs.oxARJResponse(response);
+
+    let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
+    let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
+    expect(bidPlacementCode1).to.equal('test-gpt-div-1234');
+    expect(bidResponse1.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+    expect(bidResponse1.bidderCode).to.equal('openx');
+    stubAddBidResponse.restore();
+  });
+
   it('should not call loadscript when inputting with empty params', function () {
     let spyLoadScript = sinon.spy(adloader, 'loadScript');
     adapter().callBids({});
