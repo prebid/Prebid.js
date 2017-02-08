@@ -75,6 +75,11 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
       "rubicon": {
         "alias": "rubiconLite",
         "supportedMediaTypes": ["video"]
