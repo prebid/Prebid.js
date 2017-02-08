@@ -30,9 +30,9 @@ exports.dfpAdserver = function (options, urlComponents) {
 
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
-    this.urlComponents.search.description_url = encodeURIComponent(bid.vastUrl);
+    this.urlComponents.search.description_url = encodeURIComponent(bid.descriptionUrl);
     this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
-    this.urlComponents.correlator = Date.now();
+    this.urlComponents.search.correlator = Date.now();
   };
 
   adserver.verifyAdserverTag = function() {
