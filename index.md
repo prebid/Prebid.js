@@ -91,6 +91,7 @@ description: A free and open source library for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Meme Global</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Underdog Media</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Centro</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Conversant</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Adblade</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Piximedia</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>GetIntent</h3></div>
