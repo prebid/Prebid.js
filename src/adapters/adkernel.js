@@ -26,6 +26,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     const _dispatch = {};
     const originalBids = {};
     const site = createSite();
+    const syncedHostZones = {};
 
     //translate adunit info into rtb impression dispatched by host/zone
     this.addImp = function (bid) {
@@ -48,16 +49,34 @@ const AdKernelAdapter = function AdKernelAdapter() {
       //save rtb impression for specified ad-network host and zone
       _dispatch[host][zone].push(imp);
       originalBids[bidId] = bid;
+      //perform user-sync
+      if (!(host in syncedHostZones)){
+        syncedHostZones[host] = [];
+      }
+      if (syncedHostZones[host].indexOf(zone) === -1) {
+        syncedHostZones[host].push(zone);
+        insertUserSync(host, zone);
+      }
     };
+
+    function insertUserSync(host, zone) {
+      var iframe = utils.createInvisibleIframe();
+      iframe.src = `//${host}/user-sync?zone=${zone}`;
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+    }
 
     /**
      *  Main function to get bid requests
      */
     this.dispatch = function (callback) {
       utils._each(_dispatch, (zones, host) => {
-        utils.logMessage('processing network ' + host);
+        utils.logMessage(`processing network ${host}`);
         utils._each(zones, (impressions, zone) => {
-          utils.logMessage('processing zone ' + zone);
+          utils.logMessage(`processing zone ${zone}`);
           dispatchRtbRequest(host, zone, impressions, callback);
         });
       });
@@ -106,7 +125,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
      * Build ad-network specific endpoint url
      */
     function buildEndpointUrl(host) {
-      return window.location.protocol + '//' + host + '/rtbg';
+      return `${window.location.protocol}//${host}/rtbg`;
     }
 
     function buildRequestParams(zone, rtbReq) {
@@ -134,7 +153,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     //process individual bids
     utils._each(bids, (bid) => {
       if (!validateBidParams(bid.params)) {
-        utils.logError('Incorrect configuration for adkernel bidder:', bid.params);
+        utils.logError(`Incorrect configuration for adkernel bidder: ${bid.params}`);
         bidmanager.addBidResponse(bid.placementCode, createEmptyBidObject(bid));
       } else {
         dispatcher.addImp(bid);
@@ -144,10 +163,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
     dispatcher.dispatch((bid, imp, bidResp) => {
       let adUnitId = bid.placementCode;
       if (bidResp) {
-        utils.logMessage('got response for ' + adUnitId);
+        utils.logMessage(`got response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, imp.banner.w, imp.banner.h));
       } else {
-        utils.logMessage('got empty response for ' + adUnitId);
+        utils.logMessage(`got empty response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createEmptyBidObject(bid));
       }
     });

@@ -177,6 +177,7 @@ function RubiconAdapter() {
       siteId,
       zoneId,
       position,
+      floor,
       keywords,
       visitor,
       inventory,
@@ -185,6 +186,7 @@ function RubiconAdapter() {
     } = bid.params;
 
     // defaults
+    floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
     position = position || 'btf';
 
     // use rubicon sizes if provided, otherwise adUnit.sizes
@@ -204,7 +206,7 @@ function RubiconAdapter() {
       'size_id', parsedSizes[0],
       'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
       'p_pos', position,
-      'rp_floor', '0.01',
+      'rp_floor', floor,
       'tk_flint', getIntegration(),
       'p_screen_res', _getScreenResolution(),
       'kw', keywords,

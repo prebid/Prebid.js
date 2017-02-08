@@ -262,7 +262,7 @@ describe('the rubicon adapter', () => {
           expect(query['alt_size_ids']).to.equal('57,59');
 
         });
-
+       
         it('should not send a request and register an error bid if no valid sizes', () => {
 
           var sizesBidderRequest = clone(bidderRequest);
@@ -275,6 +275,19 @@ describe('the rubicon adapter', () => {
           expect(bidManager.addBidResponse.calledOnce).to.equal(true);
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+
+        });
+        
+        it('should allow a floor override', () => {
+
+          var floorBidderRequest = clone(bidderRequest);
+          floorBidderRequest.bids[0].params.floor = 2;
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          let query = parseQuery(xhr.requests[0].url.split('?')[1]);
+
+          expect(query['rp_floor']).to.equal('2');
 
         });
 
