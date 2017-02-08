@@ -4,7 +4,7 @@
 
 var urlParser = document.createElement('a');
 urlParser.href = '%%PATTERN:url%%';
-var publisherDomain = urlParser.protocol + '//' + urlParser.host;
+var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
 var adServerDomain = 'https://tpc.googlesyndication.com';
 
 function renderAd(ev) {
@@ -16,7 +16,11 @@ function renderAd(ev) {
       return;
     }
 
-    if (adObject.ad || adObject.adUrl) {
+    var origin = ev.origin || ev.originalEvent.origin;
+    if (adObject.message && adObject.message === 'Prebid Response' &&
+        publisherDomain === origin &&
+        adObject.adId === '%%PATTERN:hb_adid%%' &&
+        (adObject.ad || adObject.adUrl)) {
       var body = window.document.body;
       var ad = adObject.ad;
       var url = adObject.adUrl;
