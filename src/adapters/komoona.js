@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//bidder.komoona.com/v1/GetSBids'
+const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 function KomoonaAdapter() {
 
@@ -97,10 +97,10 @@ function KomoonaAdapter() {
     bid.bidderCode = baseAdapter.getBidderCode();
 
     if (status === STATUS.GOOD) {
-        bid.cpm = tag.cpm;
-        bid.width = tag.width;
-        bid.height = tag.height;
-        bid.ad = tag.creative;
+      bid.cpm = tag.cpm;
+      bid.width = tag.width;
+      bid.height = tag.height;
+      bid.ad = tag.creative;
     }
 
     return bid;
