@@ -124,8 +124,22 @@ When the bid response(s) are available, notify Prebid.js immediately, so that yo
 
 To register the bid, call the `bidmanager.addBidResponse(adUnitCode, bidObject)` function. To register multiple bids, call the function multiple times.
 
-* If the bid is valid, use `bidfactory.createBid(1)` to create the `bidObject`.  A status of `1` means the bid is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
-* If the bid is invalid (no fill or error), use `bidfactory.createBid(2)` to create the `bidObject`.  A status of `2` means "no bid".
+If the bid is valid, create the bid response as shown below, matching the bid request/response pair.  A status of `1` means the bid response is valid.  For details about the status codes, see [constants.json](https://github.com/prebid/Prebid.js/blob/master/src/constants.json).
+
+{% highlight js %}
+var utils       = require('../utils.js');
+var bidfactory  = require('../bidfactory.js');
+
+var bidRequest  = utils.getBidRequest(id);
+var bidResponse = bidfactory.createBid(1, bidRequest);
+{% endhighlight %}
+
+If the bid is invalid (no fill or error), create the `bidObject` as shown below.  A status of `2` means "no bid".
+
+{% highlight js %}
+var bidRequest  = utils.getBidRequest(id);
+var bidResponse = bidfactory.createBid(2, bidRequest);
+{% endhighlight %}
 
 Example:
 
@@ -136,7 +150,8 @@ Example:
 // the bidder API's ad response unit that has info like CPM, creative content
 var adUnit;
 
-var bidObject = bidfactory.createBid(1);
+var bidRequest  = utils.getBidRequest(id);
+var bidObject = bidfactory.createBid(1, bidRequest);
 bidObject.bidderCode = 'openx';
 bidObject.cpm = Number(adUnit.get('pub_rev')) / 1000;
 bidObject.ad = adUnit.get('html');
@@ -147,7 +162,7 @@ bidObject.height = adUnit.get('height');
 bidmanager.addBidResponse(adUnitCode, bidObject);
 
 // invalid bid response
-bidObject = bidfactory.createBid(2);
+bidObject = bidfactory.createBid(2, bidRequest);
 bidObject.bidderCode = 'openx';
 bidmanager.addBidResponse(adUnitCode, bidObject);
 
