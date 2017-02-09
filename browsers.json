@@ -119,6 +119,14 @@
     "device": null,
     "os": "Windows"
   },
+  "bs_chrome_56_mac_sierra": {
+    "base": "BrowserStack",
+    "os": "OS X",
+    "os_version": "Sierra",
+    "browser": "chrome",
+    "device": null,
+    "browser_version": "56.0"
+  },
   "bs_safari_9.1_mac_elcapitan": {
     "base": "BrowserStack",
     "os_version": "El Capitan",

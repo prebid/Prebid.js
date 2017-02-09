@@ -33,6 +33,7 @@
     "sonobi",
     "sovrn",
     "springserve",
+    "stickyadstv",
     "triplelift",
     "twenga",
     "yieldbot",
@@ -75,6 +76,11 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
       "rubicon": {
         "alias": "rubiconLite",
         "supportedMediaTypes": ["video"]
@@ -83,6 +89,11 @@
     {
       "appnexus": {
         "alias": "featureforward"
+      }
+    },    
+    {
+      "appnexus": {
+        "alias": "oftmedia"
       }
     },
     {
