@@ -27,6 +27,7 @@ function AppnexusAstAdapter() {
   baseAdapter.callBids = function(bidRequest) {
     const bids = bidRequest.bids || [];
     var member = 0;
+    let userObj;
     const tags = bids
       .filter(bid => valid(bid))
       .map(bid => {
@@ -84,17 +85,17 @@ function AppnexusAstAdapter() {
         }
 
         if (bid.params.user) {
-          tag.user = {};
+          userObj = {};
           Object.keys(bid.params.user)
             .filter(param => USER_PARAMS.includes(param))
-            .forEach(param => tag.user[param] = bid.params.user[param]);
+            .forEach(param => userObj[param] = bid.params.user[param]);
         }
 
         return tag;
       });
 
     if (!utils.isEmpty(tags)) {
-      const payloadJson = {tags: [...tags]};
+      const payloadJson = {tags: [...tags], user: userObj};
       if (member > 0) {
         payloadJson.member_id = member;
       }
