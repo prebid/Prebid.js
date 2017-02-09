@@ -192,28 +192,25 @@
     "os": "OS X"
   },
   "bs_ios_7": {
+    "type" : "mobile",
     "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "7.0",
-    "browser": "iphone",
-    "device": "iPhone 5S",
-    "browser_version": null
+    "platform" : "MAC",
+    "browser": "iPhone",
+    "device": "iPhone 5S"
   },
   "bs_ios_8": {
+    "type" : "mobile",
     "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "8.3",
-    "browser": "iphone",
-    "device": "iPhone 6",
-    "browser_version": null
+    "platform" : "MAC",
+    "browser": "iPhone",
+    "device": "iPhone 6"
   },
   "bs_ios_9": {
+    "type" : "mobile",
     "base": "BrowserStack",
-    "os": "ios",
-    "os_version": "9.1",
-    "browser": "iphone",
-    "device": "iPhone 6S",
-    "browser_version": null
+    "platform" : "MAC",
+    "browser": "iPhone",
+    "device": "iPhone 6S"
   },
   "Chrome_travis_ci": {
     "base": "Chrome",

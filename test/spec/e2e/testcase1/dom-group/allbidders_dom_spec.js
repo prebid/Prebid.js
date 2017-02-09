@@ -6,7 +6,7 @@ module.exports = {
     browser
       .url('http://an.localhost:9999/test/spec/e2e/gpt-examples/all_bidders_instant_load.html')
       .waitForElementVisible('body', 5000)
-      .pause(10000)
+      .pause(7000)
       .execute(util.findIframeInDiv, ['div-1'], function(result) {
         this.verify.equal(result.value, true, 'adequant ad not rendered');
       });
