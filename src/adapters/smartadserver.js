@@ -17,6 +17,7 @@ var SmartAdServer = function SmartAdServer() {
         bidObject.ad = adUnit.ad;
         bidObject.width = adUnit.width;
         bidObject.height = adUnit.height;
+        bidObject.dealId = adUnit.dealId;
         bidmanager.addBidResponse(bid.placementCode, bidObject);
       } else {
         utils.logMessage(`[SmartAdServer] no bid response for placementCode ${bid.placementCode}`);
