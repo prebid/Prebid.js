@@ -232,7 +232,7 @@ gulp.task('e2etest', function() {
     var startWith = 'bs';
 
     Object.keys(browsers).filter(function(v){
-      return v.substring(0, startWith.length) === startWith;
+      return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
     }).map(function(v,i,arr) {
       var newArr = (i%2 === 0) ? arr.slice(i,i+2) : null;
       if(newArr) {
@@ -241,7 +241,7 @@ gulp.task('e2etest', function() {
       }
     });
   }
-
+  
   return gulp.src('')
     .pipe(shell(cmdQueue.join(';')));
 });
