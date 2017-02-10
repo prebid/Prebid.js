@@ -1,14 +1,21 @@
 [
     "aardvark",
+    "adblade",
+    "adbutler",
     "adequant",
     "adform",
     "admedia",
     "aol",
     "appnexus",
+    "appnexusAst",
+    "getintent",
+    "hiromedia",
     "indexExchange",
 	"innity",
     "kruxlink",
+    "komoona",
     "openx",
+    "piximedia",
     "pubmatic",
     "pulsepoint",
     "rubicon",
@@ -22,6 +29,10 @@
     "brightcom",
     "wideorbit",
     "jcm",
+    "underdogmedia",
+    "memeglobal",
+    "centro",
+    "roxot",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -30,6 +41,16 @@
     {
       "appnexus": {
         "alias": "pagescience"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "defymedia"
+      }
+    },
+    {
+      "appnexusAst": {
+        "supportedMediaTypes": ["video"]
       }
     }
 ]

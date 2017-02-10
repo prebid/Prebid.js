@@ -9,6 +9,7 @@ var _loggingChecked = false;
 var t_Arr = 'Array';
 var t_Str = 'String';
 var t_Fn = 'Function';
+var t_Numb = 'Number';
 var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
@@ -178,12 +179,16 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
   }
 };
 
-exports.getTopWindowUrl = function () {
+exports.getTopWindowLocation = function () {
   try {
-    return window.top.location.href;
+    return window.top.location;
   } catch (e) {
-    return window.location.href;
+    return window.location;
   }
+};
+
+exports.getTopWindowUrl = function () {
+  return this.getTopWindowLocation().href;
 };
 
 exports.logWarn = function (msg) {
@@ -332,6 +337,10 @@ exports.isArray = function (object) {
   return this.isA(object, t_Arr);
 };
 
+exports.isNumber = function(object) {
+  return this.isA(object, t_Numb);
+};
+
 /**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
@@ -349,6 +358,15 @@ exports.isEmpty = function (object) {
   }
 
   return true;
+};
+
+/**
+ * Return if string is empty, null, or undefined
+ * @param str string to test
+ * @returns {boolean} if string is empty
+ */
+exports.isEmptyStr = function(str) {
+  return this.isStr(str) && (!str || 0 === str.length);
 };
 
 /**
@@ -469,6 +487,19 @@ exports.getIframeDocument = function (iframe) {
   return doc;
 };
 
+exports.getValueString = function(param, val, defaultValue) {
+  if (val === undefined || val === null) {
+    return defaultValue;
+  }
+  if (this.isStr(val) ) {
+    return val;
+  }
+  if (this.isNumber(val)) {
+    return val.toString();
+  }
+  this.logWarn('Unsuported type for param: ' + param + ' required type: String');
+};
+
 export function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
 }
@@ -489,9 +520,9 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
-export function getBidderCodes() {
+export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
-  return $$PREBID_GLOBAL$$.adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+  return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten).filter(uniques);
 }
 

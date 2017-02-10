@@ -9,7 +9,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
 
   function _callBids(params) {
     if (typeof window.pp === 'undefined') {
-      adloader.loadScript(getJsStaticUrl, function () { bid(params); });
+      adloader.loadScript(getJsStaticUrl, function () { bid(params); }, true);
     } else {
       bid(params);
     }
@@ -43,7 +43,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
   function bidResponseAvailable(bidRequest, bidResponse) {
     if (bidResponse) {
       var adSize = bidRequest.params.cf.toUpperCase().split('X');
-      var bid = bidfactory.createBid(1);
+      var bid = bidfactory.createBid(1, bidRequest);
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = bidResponse.bidCpm;
       bid.ad = bidResponse.html;
@@ -51,7 +51,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
       bid.height = adSize[1];
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     } else {
-      var passback = bidfactory.createBid(2);
+      var passback = bidfactory.createBid(2, bidRequest);
       passback.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, passback);
     }

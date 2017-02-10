@@ -68,17 +68,21 @@ var SovrnAdapter = function SovrnAdapter() {
     var scriptUrl = '//' + sovrnUrl + '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
       '&src=' + CONSTANTS.REPO_AND_VERSION +
       '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
-    adloader.loadScript(scriptUrl, null);
+    adloader.loadScript(scriptUrl);
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-      .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
+    if (missing) {
+      missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    } else {
+      missing = [];
+    }
 
     missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.
       var bid = {};
-      bid = bidfactory.createBid(2);
+      bid = bidfactory.createBid(2, bidRequest);
       bid.bidderCode = 'sovrn';
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     });
@@ -119,7 +123,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
               //store bid response
               //bid status is good (indicating 1)
-              bid = bidfactory.createBid(1);
+              bid = bidfactory.createBid(1, bidObj);
               bid.creative_id = sovrnBid.id;
               bid.bidderCode = 'sovrn';
               bid.cpm = responseCPM;

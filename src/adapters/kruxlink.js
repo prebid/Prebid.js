@@ -25,19 +25,25 @@ function _makeCallback(id, placements) {
     delete $$PREBID_GLOBAL$$[callback];
 
     // Add in the bid respones
-    for (var i = 0; i < response.seatbid.length; i++) {
-      var seatbid = response.seatbid[i];
-      for (var j = 0; j < seatbid.bid.length; j++) {
-        var bid = seatbid.bid[j];
-        _makeBidResponse(placements[bid.impid], bid);
-        delete placements[bid.impid];
+    if (response.seatbid !== undefined) {
+      for (var i = 0; i < response.seatbid.length; i++) {
+        var seatbid = response.seatbid[i];
+        if (seatbid.bid !== undefined) {
+          for (var j = 0; j < seatbid.bid.length; j++) {
+            var bid = seatbid.bid[j];
+            if (bid.impid !== undefined) {
+              _makeBidResponse(placements[bid.impid], bid);
+              delete placements[bid.impid];
+            }
+          }
+        }
       }
     }
 
     // Add any no-bids remaining
-    for (var placementCode in placements) {
-      if (placements.hasOwnProperty(placementCode)) {
-        _makeBidResponse(placementCode);
+    for (var impid in placements) {
+      if (placements.hasOwnProperty(impid)) {
+        _makeBidResponse(placements[impid]);
       }
     }
   };

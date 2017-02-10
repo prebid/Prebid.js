@@ -19,7 +19,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     for (var i = 0; i < bidsCount; i++) {
       var bidRequest = tlReq[i];
-      var callbackId = bidRequest.bidderRequestId;
+      var callbackId = bidRequest.bidId;
       adloader.loadScript(buildTLCall(bidRequest, callbackId));
       //store a reference to the bidRequest from the callback id
       //bidmanager.pbCallbackMap[callbackId] = bidRequest;
@@ -75,18 +75,17 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      //var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderRequestId === tlResponseObj.callback_id).bids.reduce((a, b) => b);
-      var placementCode = bidObj.placementCode;
+      var bidObj = utils.getBidRequest(tlResponseObj.callback_id);
+      var placementCode = bidObj && bidObj.placementCode;
 
       // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);
+      if (bidObj) {utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);}
       // @endif
 
       var bid = [];
       if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
 
-        bid = bidfactory.createBid(1);
+        bid = bidfactory.createBid(1, bidObj);
         bid.bidderCode = 'triplelift';
         bid.cpm = tlResponseObj.cpm;
         bid.ad = tlResponseObj.ad;
@@ -98,9 +97,9 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
       } else {
         //no response data
         // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);
+        if (bidObj) {utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);}
         // @endif
-        bid = bidfactory.createBid(2);
+        bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
