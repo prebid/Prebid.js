@@ -46,7 +46,7 @@ function bidsBackAdUnit(adUnitCode) {
     .map(request => request.bids
       .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
           bid.sizes.length :
@@ -64,7 +64,7 @@ function add(a, b) {
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
