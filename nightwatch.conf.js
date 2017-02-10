@@ -25,8 +25,8 @@ module.exports = (function(settings) {
 			"browserstack.local": true,
 			"browserstack.debug": true,
 			"browserstack.selenium_version" : "2.53.0",
-			"browserstack.user": "${BROWSERSTACK_USERNAME1}",
-			"browserstack.key": "${BROWSERSTACK_KEY1}"
+			"browserstack.user": "${BROWSERSTACK_USERNAME}",
+			"browserstack.key": "${BROWSERSTACK_KEY}"
 		};
 		settings.test_settings[browser]['desiredCapabilities'] = desiredCapabilities;
 	}
