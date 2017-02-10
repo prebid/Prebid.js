@@ -22,7 +22,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
     //Build and send bid requests
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i],
-        zoneID = utils.getBidIdParamater('zoneID', bid.params),
+        zoneID = utils.getBidIdParameter('zoneID', bid.params),
         callbackID;  
         
       if(!(zoneID in zoneCount)){
@@ -57,8 +57,8 @@ var AdButlerAdapter = function AdButlerAdapter() {
         
         if(aBResponseObject.status === 'SUCCESS'){
           CPM = aBResponseObject.cpm;
-          minCPM = utils.getBidIdParamater('minCPM',bidObj.params);
-          maxCPM = utils.getBidIdParamater('maxCPM',bidObj.params);
+          minCPM = utils.getBidIdParameter('minCPM',bidObj.params);
+          maxCPM = utils.getBidIdParameter('maxCPM',bidObj.params);
 
           //Ensure response CPM is within the given bounds
           if(minCPM !== '' && CPM < parseFloat(minCPM)){
@@ -105,9 +105,9 @@ var AdButlerAdapter = function AdButlerAdapter() {
   }
   
   function buildRequest(bid,adIndex,pageID){
-    var accountID = utils.getBidIdParamater('accountID', bid.params);
-    var zoneID = utils.getBidIdParamater('zoneID', bid.params);
-    var keyword = utils.getBidIdParamater('keyword', bid.params);
+    var accountID = utils.getBidIdParameter('accountID', bid.params);
+    var zoneID = utils.getBidIdParameter('zoneID', bid.params);
+    var keyword = utils.getBidIdParameter('keyword', bid.params);
     
     var requestURI = location.protocol + '//servedbyadbutler.com/adserve/;type=hbr;';
     requestURI += 'ID='+encodeURIComponent(accountID)+';';

@@ -4,26 +4,39 @@
     "adbutler",
     "adequant",
     "adform",
+    "adkernel",
     "admedia",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "conversant",
+    "districtmDMX",
+    "fidelity",
     "getintent",
+    "gumgum",
     "hiromedia",
     "indexExchange",
 	"innity",
     "kruxlink",
     "komoona",
+    "lifestreet",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "rhythmone",
     "rubicon",
-    "sekindo",
+    "smartyads",
+	  "smartadserver",
+    "sekindoUM",
     "sonobi",
     "sovrn",
     "springserve",
+    "stickyadstv",
     "triplelift",
+    "twenga",
     "yieldbot",
     "nginad",
     "brightcom",
@@ -31,8 +44,14 @@
     "jcm",
     "underdogmedia",
     "memeglobal",
+    "criteo",
     "centro",
+    "xhb",
+    "sharethrough",
     "roxot",
+    "vertoz",
+    "widespace",
+    "admixer",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -52,5 +71,36 @@
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
+    },    {
+      "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
+      "rubicon": {
+        "alias": "rubiconLite",
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "featureforward"
+      }
+    },    
+    {
+      "appnexus": {
+        "alias": "oftmedia"
+      }
+    },
+    {
+      "adkernel": {
+        "alias": "headbidding"
+      }
     }
+
 ]

@@ -12,8 +12,8 @@ bin
 selenium*.log
 
 # Dev File
-
 integrationExamples/gpt/gpt.html
+integrationExamples/gpt/*-test.html
 integrationExamples/implementations/
 src/adapters/analytics/libraries
 
