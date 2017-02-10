@@ -33,7 +33,7 @@ const AolAdapter = function AolAdapter() {
     let server;
 
     if (!SERVER_MAP.hasOwnProperty(regionParam)) {
-      console.warn(`Unknown region '${regionParam}' for AOL bidder.`);
+      utils.logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
       regionParam = 'us'; // Default region.
     }
 
