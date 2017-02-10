@@ -1,7 +1,17 @@
+sudo: required
+dist: trusty
+
 language: node_js
 
 node_js:
   - "5.1"
+
+addons:
+  apt:
+    sources:
+      - google-chrome
+    packages:
+      - google-chrome-stable
 
 before_install:
   - npm install -g gulp
