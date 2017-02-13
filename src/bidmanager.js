@@ -93,6 +93,11 @@ function getBidderRequest(bidder, adUnitCode) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+  if (!adUnitCode) {
+    utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
+    return;
+  }
+
   if (bid) {
 
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
