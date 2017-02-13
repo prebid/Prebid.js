@@ -36,7 +36,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
         tid: bidRequest.params.tid, // required
         known: bidRequest.params.known || 1,
         is_video: bidRequest.mediaType == 'video',
-        video: bid.params.video,
+        video: bid.params.video || {},
         size: bidRequest.sizes[0].join("x"),
       };
       addOptional(bidRequest.params, request, ['cur', 'floor']);
