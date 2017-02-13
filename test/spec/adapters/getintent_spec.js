@@ -108,7 +108,7 @@ describe('getintent media adapter test', () => {
     });
 
     it('was called four times', () => {
-      sinon.assertTrue(bidManager.addBidResponse.callCount === 4);
+      sinon.strictEqual(bidManager.addBidResponse.callCount, 4);
     });
 
     it('will respond to the first bid', () => {
