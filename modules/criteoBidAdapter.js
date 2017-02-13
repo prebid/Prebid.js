@@ -2,6 +2,7 @@ var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
+var utils = require('src/utils');
 
 var CriteoAdapter = function CriteoAdapter() {
   var sProt = (window.location.protocol === 'http:') ? 'http:' : 'https:';
@@ -34,10 +35,9 @@ var CriteoAdapter = function CriteoAdapter() {
     // generate the bidding event
     var biddingEventFunc = function () {
       var bids = params.bids || [];
-
       var slots = [];
-
       var isAudit = false;
+      var networkid;
 
       // build slots before sending one multi-slots bid request
       for (var i = 0; i < bids.length; i++) {
@@ -47,7 +47,7 @@ var CriteoAdapter = function CriteoAdapter() {
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
             bid.params.zoneId,
-            undefined,
+            bid.params.nativeCallback ? bid.params.nativeCallback : undefined,
             bid.transactionId,
             sizes.map((size) => {
               return { width: size[0], height: size[1] }
@@ -56,7 +56,7 @@ var CriteoAdapter = function CriteoAdapter() {
           )
         );
 
-        var networkid = bid.params.networkId;
+        networkid = bid.params.networkId || networkid;
 
         isAudit |= bid.params.audit !== undefined;
       }
@@ -109,17 +109,7 @@ var CriteoAdapter = function CriteoAdapter() {
         }
 
         // register the bid response
-        var bidObject;
-        if (bidResponse) {
-          bidObject = bidfactory.createBid(1);
-          bidObject.bidderCode = _bidderCode;
-          bidObject.cpm = bidResponse.cpm;
-          bidObject.ad = bidResponse.creative;
-          bidObject.width = bidResponse.width;
-          bidObject.height = bidResponse.height;
-        } else {
-          bidObject = _invalidBidResponse();
-        }
+        let bidObject = _buildBidObject(bidResponse, slots[i]);
         bidmanager.addBidResponse(slots[i].impId, bidObject);
       }
     };
@@ -136,6 +126,52 @@ var CriteoAdapter = function CriteoAdapter() {
   function _invalidBidResponse() {
     var bidObject = bidfactory.createBid(2);
     bidObject.bidderCode = _bidderCode;
+    return bidObject;
+  }
+
+  function _buildBidObject(bidResponse, slot) {
+    let bidObject;
+    if (bidResponse) {
+      // map the common fields
+      bidObject = bidfactory.createBid(1);
+      bidObject.bidderCode = _bidderCode;
+      bidObject.cpm = bidResponse.cpm;
+
+      // in case of native
+      if (slot.nativeCallback && bidResponse.native) {
+        if (typeof slot.nativeCallback !== 'function') {
+          utils.logError('Criteo bid: nativeCallback parameter is not a function');
+        } else {
+          // store the callbacks in a global object
+          window.criteo_pubtag.native_slots = window.criteo_pubtag.native_slots || {};
+          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse.native };
+
+          // this code is executed in an iframe, we need to get a reference to the
+          // publishertag in the main window to retrieve native responses and callbacks.
+          // it doesn't work with safeframes
+          bidObject.ad = `<script type=\"text/javascript\">
+  let win = window;
+  for (const i=0; i<10; ++i) {
+    win = win.parent;
+    if (win.criteo_pubtag && win.criteo_pubtag.native_slots) {
+      let responseSlot = win.criteo_pubtag.native_slots["${bidObject.adId}"];
+      responseSlot.callback(responseSlot.nativeResponse);
+      break;
+    }
+  }
+</script>`;
+        }
+      } else {
+        // width and height are only relevant with non-native requests.
+        // native requests will always return a 2x2 zone size.
+        bidObject.width = bidResponse.width;
+        bidObject.height = bidResponse.height;
+        bidObject.ad = bidResponse.creative;
+      }
+    }
+    else {
+      bidObject = _invalidBidResponse();
+    }
     return bidObject;
   }
 
