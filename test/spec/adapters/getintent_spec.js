@@ -2,6 +2,8 @@ import Adapter from '../../../src/adapters/getintent';
 import bidManager from '../../../src/bidmanager';
 import {expect} from 'chai';
 
+var assert = require('chai').assert;
+
 describe('getintent media adapter test', () => {
 
   let adapter;
@@ -108,7 +110,7 @@ describe('getintent media adapter test', () => {
     });
 
     it('was called four times', () => {
-      sinon.strictEqual(bidManager.addBidResponse.callCount, 4);
+      assert.strictEqual(bidManager.addBidResponse.callCount, 4);
     });
 
     it('will respond to the first bid', () => {
