@@ -222,6 +222,7 @@ gulp.task('e2etest', function() {
   var cmdQueue = [];
   if(argv.browserstack) {
     var browsers = require('./browsers.json');
+    delete browsers['bs_ie_9_windows_7'];
 
     var cmdStr = ' --config nightwatch.conf.js';
     if (argv.group) {
@@ -241,7 +242,7 @@ gulp.task('e2etest', function() {
       }
     });
   }
-  
+
   return gulp.src('')
     .pipe(shell(cmdQueue.join(';')));
 });

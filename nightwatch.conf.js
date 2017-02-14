@@ -1,5 +1,7 @@
 module.exports = (function(settings) {
 	var browsers = require('./browsers.json');
+	delete browsers['bs_ie_9_windows_7'];
+	
 	for(var browser in browsers) {
 		if(browsers[browser].browser === 'iphone') continue;
 
