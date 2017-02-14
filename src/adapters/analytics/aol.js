@@ -171,7 +171,7 @@ export default utils.extend(adapter({
   getAuctionSchema(adUnit) {
     let aolParams = adUnit.aolParams;
     return {
-      pubadid: adUnit.code,
+      pubadid: this.generateAdId(adUnit),
       hbauctionid: generateAuctionId(aolParams.placement),
       hbwinner: adUnit.winner.bidder ? getBidderId(adUnit.winner.bidder) : 0,
       hbprice: adUnit.winner.cpm || 0,
@@ -184,7 +184,7 @@ export default utils.extend(adapter({
   getWinSchema(adUnit) {
     let auctionParams = adUnit.auctionParams;
     return {
-      pubadid: adUnit.code,
+      pubadid: this.generateAdId(adUnit),
       hbauctioneventts: auctionParams.hbauctioneventts,
       hbauctionid: auctionParams.hbauctionid,
       hbwinner: getBidderId(adUnit.winner.bidder),
@@ -232,8 +232,19 @@ export default utils.extend(adapter({
         return url;
 
     }
-  }
+  },
 
+  generateAdId(adUnit) {
+    let adId;
+
+    if (adUnit.adIdExtension) {
+      adId = adUnit.code + '-' + adUnit.adIdExtension;
+    } else {
+      adId = adUnit.code;
+    }
+
+    return encodeURIComponent(adId);
+  }
 });
 
 function template(strings, ...keys) {
@@ -316,6 +327,9 @@ function addAolParams(adUnit, adUnitsConf, bidsReceived) {
           adUnit.aolParams.currencyCode = currencyCode;
         }
       });
+      if (adUnitConf.adIdExtension) {
+        adUnit.adIdExtension = adUnitConf.adIdExtension;
+      }
     }
   });
   return adUnit;

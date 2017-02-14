@@ -275,9 +275,9 @@ function getAllTargeting(adUnitCode) {
  * a placement included in the outgoing bid request.
  */
 function clearPlacements() {
-  $$PREBID_GLOBAL$$._bidsRequested = $$PREBID_GLOBAL$$._bidsRequested
-    .filter(request => request.bids
-    .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.placementCode)).length > 0);
+  $$PREBID_GLOBAL$$._bidsRequested = [];
+
+  // leave bids received for ad slots not in this bid request
   $$PREBID_GLOBAL$$._bidsReceived = $$PREBID_GLOBAL$$._bidsReceived
     .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode));
 }
@@ -529,8 +529,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   auctionRunning = true;
-
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
   // we will use adUnitCodes for filtering the current auction
   $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;

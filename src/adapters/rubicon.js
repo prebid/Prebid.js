@@ -178,7 +178,7 @@ function RubiconAdapter() {
       bid.cpm = ad.cpm || 0;
       bid.ad = _renderCreative(ad.script, ad.impression_id);
       [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
-      bid.dealId = responseObj.deal;
+      bid.dealId = ad.deal;
 
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     });

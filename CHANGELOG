@@ -1,6 +1,22 @@
-AOL Prebid dev
+AOL Prebid 1.11.0
 ----------------
 Added functionality of cookie syncing upon bid request.
+
+
+AOL Prebid 1.10.0
+----------------
+Updated to Prebid 0.16.0
+
+
+AOL Prebid 1.9.1
+----------------
+Bump to patch version due to issue on build.
+
+
+AOL Prebid 1.9.0
+----------------
+Add AdID field extension for reporting.
+>>>>>>> master
 
 
 AOL Prebid 1.8.0
