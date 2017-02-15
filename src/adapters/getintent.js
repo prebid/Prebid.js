@@ -35,7 +35,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
         pid: bidRequest.params.pid, // required
         tid: bidRequest.params.tid, // required
         known: bidRequest.params.known || 1,
-        is_video: bidRequest.mediaType == 'video',
+        is_video: bidRequest.mediaType === 'video',
         video: bidRequest.params.video || {},
         size: bidRequest.sizes[0].join("x"),
       };
@@ -53,7 +53,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
             bid.cpm = bidResponse.cpm;
             bid.width = size[0];
             bid.height = size[1];
-            if (br.mediaType == 'video') {
+            if (br.mediaType === 'video') {
               bid.vastUrl = bidResponse.vast_url;
             } else {
               bid.ad = bidResponse.ad;
