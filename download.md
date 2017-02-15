@@ -525,12 +525,59 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="mantis" class="bidder-check-box"> Mantis Ad Network
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="admixer" class="bidder-check-box"> AdMixer
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="vertamedia" class="bidder-check-box"> Vertamedia
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="oftmedia" class="bidder-check-box"> 152Media
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="matomy" class="bidder-check-box"> Matomy
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="stickyadstv" class="bidder-check-box"> StickyAdsTV
+      </label>
+    </div>
+  </div>
 
 </div>
 
 <br>
 <p>
-(Version 0.18.0)
+(Version 0.19.0)
 </p>
 
 <div class="form-group">
