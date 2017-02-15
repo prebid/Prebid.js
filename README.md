@@ -31,13 +31,13 @@ If you experience errors after a version update, try a fresh install:
 
 <a name="Build"></a>
 
-## Build
+## Build for Dev
 
 To build the project on your local machine, run:
 
-    $ gulp build
+    $ gulp serve
 
-This runs some code quality checks and generates the following files:
+This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
 
 + `./build/dev/prebid.js` - Full source code for dev and debug
 + `./build/dev/prebid.js.map` - Source map for dev and debug
@@ -91,7 +91,7 @@ Having said that, you are probably safe to check your custom bundle into your pr
 
 <a name="Run"></a>
 
-## Run
+## Test locally
 
 To configure Prebid.js to run locally, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
 
