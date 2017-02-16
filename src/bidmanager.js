@@ -1,5 +1,6 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
+import {NATIVE_KEYS} from './native';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -167,6 +168,15 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
     custBidObj.sendStandardTargeting = defaultBidderSettingsMap[bidderCode].sendStandardTargeting;
+  }
+
+  // set native key value targeting
+  if (custBidObj.native) {
+    Object.keys(custBidObj.native).forEach(asset => {
+      const key = NATIVE_KEYS[asset];
+      const value = custBidObj.native[asset];
+      keyValues[key] = value;
+    });
   }
 
   return keyValues;

@@ -240,6 +240,44 @@ describe('AppNexusAdapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid available');
     });
 
+    it('handles native responses', () => {
+      RESPONSE.tags[0].ads[0].ad_type = 'native';
+      RESPONSE.tags[0].ads[0].rtb.native = {
+        "status": "ok",
+        "version": 1,
+        "native": [{
+          "type": "in-feed-standard",
+          "title": "Native Creative",
+          "description": "Great job y'all",
+          "icon_img_url": "http://cdn.adnxs.com/",
+          "main_media": [{
+            "label": "default",
+            "width": 2352,
+            "height": 1516,
+            "url": "http://cdn.adnxs.com/"
+          }],
+          "sponsored_by": "Cool Company",
+          "click_trackers": ["http://example.com"],
+          "impression_trackers": ["http://example.com"],
+          "click_url": "https://www.appnexus.com"
+        }]
+      };
+
+      adapter.callBids(REQUEST);
+      server.respondWith(JSON.stringify(RESPONSE));
+      server.respond();
+
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+
+      expect(response.native.title).to.equal('Native Creative');
+      expect(response.native.description).to.equal('Great job y\'all');
+      expect(response.native.image).to.equal('http://cdn.adnxs.com/');
+
+      RESPONSE.tags[0].ads[0].ad_type = 'banner';
+    });
+
     it('handles JSON.parse errors', () => {
       server.respondWith('');
 

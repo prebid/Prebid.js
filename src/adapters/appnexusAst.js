@@ -7,11 +7,11 @@ import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = [
-  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
-];
+const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt',
+  'language'];
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -73,6 +73,10 @@ function AppnexusAstAdapter() {
         }
         if (!utils.isEmpty(bid.params.keywords)) {
           tag.keywords = getKeywords(bid.params.keywords);
+        }
+
+        if (bid.nativeParams) {
+          tag.ad_types = ['native'];
         }
 
         if (bid.mediaType === 'video') { tag.require_asset_url = true; }
@@ -137,13 +141,13 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
-      if (cpm !== 0 && (type === 'banner' || type === 'video' || type === 'video-outstream')) {
+      if (cpm !== 0 && (SUPPORTED_AD_TYPES.includes(type))) {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
       }
 
-      if (type && (type !== 'banner' && type !== 'video' && type !== 'video-outstream')) {
+      if (type && (!SUPPORTED_AD_TYPES.includes(type))) {
         utils.logError(`${type} ad type not supported`);
       }
 
@@ -291,6 +295,15 @@ function AppnexusAstAdapter() {
           bid.adResponse.ad = bid.adResponse.ads[0];
           bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
         }
+      } else if (ad.rtb.native) {
+        const native = ad.rtb.native.native[0];
+        bid.native = {
+          title: native.title,
+          description: native.description,
+          sponsored_by: native.sponsored_by,
+          image: native.main_media[0].url,
+          click_url: native.click_url,
+        };
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;

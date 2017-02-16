@@ -738,6 +738,32 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.videoAdapters = videoAdaptersBackup;
     });
 
+    it('splits native type to individual native assets', () => {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        nativeParams: {type: 'image'},
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+
+      const nativeRequest = $$PREBID_GLOBAL$$._bidsRequested[0].bids[0].nativeParams;
+      expect(nativeRequest).to.deep.equal({
+        image: {required: true},
+        title: {required: true, len: 80},
+        brand: {required: true},
+        url: {required: true},
+        body: {required: true},
+        icon: {required: true},
+      });
+
+      resetAuction();
+    });
+
     it('should queue bid requests when a previous bid request is in process', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
       var clock = sinon.useFakeTimers();
