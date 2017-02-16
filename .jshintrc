@@ -33,6 +33,7 @@
     "sinon": false,
     "beforeEach": false,
     "afterEach": false,
-    "JSON": true
+    "JSON": true,
+    "Criteo": true
   }
 }
