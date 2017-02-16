@@ -55,7 +55,7 @@ var CentroAdapter = function CentroAdapter() {
       query.push('sz=' + size.join('x'));
     }
     //make handler name for JSONP request
-    var handlerName = handlerPrefix + bid.unit + size.join('x');
+    var handlerName = handlerPrefix + bid.unit + size.join('x') + Math.round(Math.random() * 1000);
     query.push('callback=' + handlerName);
 
     //maybe is needed add some random parameter to disable cache
@@ -77,7 +77,7 @@ var CentroAdapter = function CentroAdapter() {
     var bidObject;
     var bid = resp && resp.bid || resp;
 
-    if (bid && bid.adTag && bid.sectionID === unit) {
+    if (bid && bid.adTag && bid.sectionID == unit) {
       bidObject = bidfactory.createBid(1);
       bidObject.cpm = bid.value;
       bidObject.ad = bid.adTag;
