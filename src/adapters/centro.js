@@ -39,7 +39,7 @@ var CentroAdapter = function CentroAdapter() {
       utils.logError(LOG_ERROR_MESS.noUnit, bidderCode);
       return;
     }
-    var query = ['s=' + bid.unit];//,'url=www.abc15.com','sz=320x50'];
+    var query = ['s=' + bid.unit, 'adapter=prebid'];//,'url=www.abc15.com','sz=320x50'];
     var isDev = bid.unit.toString() === '28136';
 
     if (bid.page_url) {
