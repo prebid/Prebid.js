@@ -457,7 +457,7 @@ describe('AolAdapter', () => {
         expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
       });
 
-      it('should render pixels from pubapi response when param userSyncOn isgit sta \'bidResponse\'', () => {
+      it('should render pixels from pubapi response when param userSyncOn is set with \'bidResponse\'', () => {
         server.respondWith(JSON.stringify({
           "id": "245730051428950632",
           "cur": "USD",
