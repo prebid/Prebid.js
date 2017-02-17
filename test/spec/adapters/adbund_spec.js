@@ -7,6 +7,7 @@ describe('adbund adapter tests', function () {
 
     let sandbox;
 	let adapter;
+	let server;
 
     const request = {
         bidderCode: 'adbund',
