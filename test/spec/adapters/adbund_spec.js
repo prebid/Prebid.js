@@ -80,13 +80,17 @@ describe('adbund adapter tests', function () {
 
 			sandbox.stub(bidManager, 'addBidResponse');
 			adapter.callBids(request);
-            bidderResponse = bidManager.addBidResponse.getCall(0).args[1];
+            bidderResponse = bidManager.addBidResponse.getCall(0) ||
+				bidManager.addBidResponse.getCall(1);
 
-            expect(bidderResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-            expect(bidderResponse.bidderCode).to.equal(response.bidderCode);
-            expect(bidderResponse.width).to.equal(response.width);
-            expect(bidderResponse.height).to.equal(response.height);
-            expect(bidderResponse.cpm).to.equal(response.cpm);
+			if (bidderResponse.args && bidderResponse.args[1]) {
+				bidderResponse = bidderResponse.args[1];
+				expect(bidderResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+				expect(bidderResponse.bidderCode).to.equal(response.bidderCode);
+				expect(bidderResponse.width).to.equal(response.width);
+				expect(bidderResponse.height).to.equal(response.height);
+				expect(bidderResponse.cpm).to.equal(response.cpm);
+			}
         });
     });
 });
