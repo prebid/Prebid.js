@@ -83,7 +83,7 @@ describe('adbund adapter tests', function () {
             bidderResponse = bidManager.addBidResponse.getCall(0) ||
 				bidManager.addBidResponse.getCall(1);
 
-			if (bidderResponse.args && bidderResponse.args[1]) {
+			if (bidderResponse && bidderResponse.args && bidderResponse.args[1]) {
 				bidderResponse = bidderResponse.args[1];
 				expect(bidderResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
 				expect(bidderResponse.bidderCode).to.equal(response.bidderCode);
