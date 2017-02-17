@@ -25,6 +25,7 @@ describe('adbund adapter tests', function () {
     };
 
     const response = {
+		bidderCode: 'adbund',
         cpm: 1.06,
         height: 250,
         width: 300
@@ -32,7 +33,6 @@ describe('adbund adapter tests', function () {
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
-		adapter = new Adapter();
     });
 
     afterEach(() => {
@@ -41,25 +41,20 @@ describe('adbund adapter tests', function () {
 
     describe('adbund callBids validation', () => {
 
-        let bids = [],
-            server = new Server();
-
         beforeEach(() => {
-			server.start()
-            sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
-                bids.push(bid);
-            });
+			adapter = new Adapter();
         });
 
         afterEach(() => {
-            server.restore();
         });
 
         it('Valid bid-request', () => {
+			let bidderRequest;
+
             sandbox.stub(adapter, 'callBids');
 			adapter.callBids(request);
 
-            let bidderRequest = adapter.callBids.getCall(0).args[0];
+            bidderRequest = adapter.callBids.getCall(0).args[0];
 
             expect(bidderRequest).to.have.property('bids')
                 .that.is.an('array')
@@ -79,19 +74,18 @@ describe('adbund adapter tests', function () {
                 .to.have.property('bidfloor', 0.036);
         });
 
-        it('Valid bid-response', ()=>{
-            server.respondWith(JSON.stringify(
-                response
-            ));
-			adapter.callBids(request);
-            server.respond();
+        it('Valid bid-response', () => {
+			var bidderResponse;
 
-            expect(bids).to.be.lengthOf(1);
-            expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-            expect(bids[0].bidderCode).to.equal("adbund");
-            expect(bids[0].width).to.equal(300);
-            expect(bids[0].height).to.equal(250);
-            expect(bids[0].cpm).to.equal(1.06);
+			sandbox.stub(bidManager, 'addBidResponse');
+			adapter.callBids(request);
+            bidderResponse = bidManager.addBidResponse.getCall(0).args[1];
+
+            expect(bidderResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+            expect(bidderResponse.bidderCode).to.equal(response.bidderCode);
+            expect(bidderResponse.width).to.equal(response.width);
+            expect(bidderResponse.height).to.equal(response.height);
+            expect(bidderResponse.cpm).to.equal(response.cpm);
         });
     });
 });
