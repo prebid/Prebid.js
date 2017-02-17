@@ -6,6 +6,8 @@ import CONSTANTS from 'src/constants.json';
 describe('adbund adapter tests', function () {
 
     let sandbox;
+	let adapter;
+
     const request = {
         bidderCode: 'adbund',
         bids: [{
@@ -30,6 +32,7 @@ describe('adbund adapter tests', function () {
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
+		adapter = new Adapter();
     });
 
     afterEach(() => {
@@ -54,10 +57,10 @@ describe('adbund adapter tests', function () {
         });
 
         it('Valid bid-request', () => {
-            sandbox.stub(Adapter, 'callBids');
-			Adapter.callBids(request);
+            sandbox.stub(adapter, 'callBids');
+			adapter.callBids(request);
 
-            let bidderRequest = Adapter.callBids.getCall(0).args[0];
+            let bidderRequest = adapter.callBids.getCall(0).args[0];
 
             expect(bidderRequest).to.have.property('bids')
                 .that.is.an('array')
@@ -81,7 +84,7 @@ describe('adbund adapter tests', function () {
             server.respondWith(JSON.stringify(
                 response
             ));
-			Adapter.callBids(request);
+			adapter.callBids(request);
             server.respond();
 
             expect(bids).to.be.lengthOf(1);
