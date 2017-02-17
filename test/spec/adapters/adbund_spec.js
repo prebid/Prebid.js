@@ -41,12 +41,11 @@ describe('adbund adapter tests', function () {
 
     describe('adbund callBids validation', () => {
 
-        let bids,
-            server;
+        let bids = [],
+            server = new Server();
 
         beforeEach(() => {
-            bids = [];
-            server = sinon.fakeServer.create();
+			server.start()
             sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
                 bids.push(bid);
             });
@@ -96,7 +95,3 @@ describe('adbund adapter tests', function () {
         });
     });
 });
-
-function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
