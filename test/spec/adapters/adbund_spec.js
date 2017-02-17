@@ -1,21 +1,24 @@
 import { expect } from 'chai';
 import Adapter from '../../../src/adapters/adbund';
-import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 
 describe('adbund adapter tests', function () {
 
     let sandbox;
-    const adUnit = {
-        code: 'adbund',
-        sizes: [[300, 250]],
+    const request = {
+        bidderCode: 'adbund',
         bids: [{
             bidder: 'adbund',
             params: {
                 sid: '110238',
                 bidfloor: 0.036
-            }
+            },
+            placementCode: 'adbund',
+			sizes: [[300, 250]],
+            bidId: 'adbund_bidId',
+            bidderRequestId: 'adbund_bidderRequestId',
+            requestId: 'adbund_requestId'
         }]
     };
 
@@ -41,7 +44,6 @@ describe('adbund adapter tests', function () {
         beforeEach(() => {
             bids = [];
             server = sinon.fakeServer.create();
-
             sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
                 bids.push(bid);
             });
@@ -51,15 +53,11 @@ describe('adbund adapter tests', function () {
             server.restore();
         });
 
-        let adapter = adapterManager.bidderRegistry['adbund'];
-
         it('Valid bid-request', () => {
-            sandbox.stub(adapter, 'callBids');
-            adapterManager.callBids({
-                adUnits: [clone(adUnit)]
-            });
+            sandbox.stub(Adapter, 'callBids');
+			Adapter.callBids(request);
 
-            let bidderRequest = adapter.callBids.getCall(0).args[0];
+            let bidderRequest = Adapter.callBids.getCall(0).args[0];
 
             expect(bidderRequest).to.have.property('bids')
                 .that.is.an('array')
@@ -72,19 +70,18 @@ describe('adbund adapter tests', function () {
                 .with.property('sizes')
                 .that.is.an('array')
                 .with.lengthOf(1)
-                .that.deep.equals(adUnit.sizes);
+                .that.deep.equals(request.bids[0].sizes);
+
             expect(bidderRequest).to.have.deep.property('bids[0]')
                 .with.property('params')
-                .to.have.property('bidfloor', 0);
+                .to.have.property('bidfloor', 0.036);
         });
 
         it('Valid bid-response', ()=>{
             server.respondWith(JSON.stringify(
                 response
             ));
-            adapterManager.callBids({
-                adUnits: [clone(adUnit)]
-            });
+			Adapter.callBids(request);
             server.respond();
 
             expect(bids).to.be.lengthOf(1);
