@@ -58,7 +58,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
             } else {
               bid.ad = bidResponse.ad;
             }
-            bidmanager.addBidResponse(bidRequest.placementCode, bid);
+            bidmanager.addBidResponse(br.placementCode, bid);
           }
         });
       })(request, bidRequest);
