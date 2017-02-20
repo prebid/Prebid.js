@@ -1,152 +1,158 @@
-describe("komoona adapter", function() {
-    var expect = require('chai').expect;
-    var adapter = require('src/adapters/komoona');
-    var adLoader = require('src/adloader');
-    var bidmanager = require('src/bidmanager');
-    var STATUS = require('src/constants').STATUS;
-    var startStub;
-    var bids = {
-        "bidderCode": "komoona",
-        "requestId": "1f43cc36a6a7e",
-        "bidderRequestId": "25392d757fad47",
-        "bids": [
-            {
-                "bidder": "komoona",
-                "params": {
-                    "hbid": "abcd",
-                    "placementId": "efgh"
-                },
-                "placementCode": "div-gpt-ad-1438287399331-0",
-                "sizes": [
-                    [300, 250]
-                ],
-                "bidId": "30e5e911c00703",
-                "bidderRequestId": "25392d757fad47",
-                "requestId": "1f43cc36a6a7e"
-            }, {
-                "bidder": "komoona",
-                "params": {
-                    "hbid": "efgh",
-                    "placementId": "ijkl"
-                },
-                "placementCode": "div-gpt-ad-1438287399331-1",
-                "sizes": [
-                    [728, 90]
-                ],
-                "bidId": "48a0df61fac3ba",
-                "bidderRequestId": "25392d757fad47",
-                "requestId": "1f43cc36a6a7e"
-            }
-        ],
-        "start": 1466493146527
-    };
+import { expect } from 'chai';
+import Adapter from 'src/adapters/komoona';
+import bidmanager from 'src/bidmanager';
 
-    beforeEach(function() {
-        // we don't want to really load the script.
-        sinon.stub(adLoader, 'loadScript', function(url, cb) {
-            cb();
-        });
-        //but let's create the global function it returns so we can stub it.
-        window.KmnKB = function() {};
-        window.KmnKB.start = function() {};
-        startStub = sinon.stub(window.KmnKB, 'start');
+const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
+
+const REQUEST = {
+    "bidderCode": "komoona",
+    "requestId": "1f43cc36a6a7e",
+    "bidderRequestId": "25392d757fad47",
+    "bids": [
+        {
+            "bidder": "komoona",
+            "params": {
+                "hbid": "abcd666dcba",
+                "placementId": "abcd123123dcba"
+            },
+            "placementCode": "div-gpt-ad-1438287399331-0",
+            "sizes": [
+                [300, 250]
+            ],
+            "bidId": "30e5e911c00703",
+            "bidderRequestId": "25392d757fad47",
+            "requestId": "1f43cc36a6a7e"
+        }
+    ],
+    "start": 1466493146527
+};
+
+
+const RESPONSE = {
+  "bids": [
+    {
+      "placementid": "abcd123123dcba",
+      "uuid": "30e5e911c00703",
+      "width": 728,
+      "height": 90,
+      "cpm": 0.5,
+      "creative": "<script type=\"text/javascript\" src=\"http://creative.com/pathToNiceCreative\"></script>"
+    }
+  ]
+};
+
+describe('komoonaAdapter', () => {
+
+  let adapter;
+
+  beforeEach(() => adapter = Adapter.createNew());
+
+  describe('request function', () => {
+
+    let xhr;
+    let requests;
+    let pbConfig;
+
+    beforeEach(() => {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = request => requests.push(request);
+      pbConfig = REQUEST;
+      //just a single slot
+      pbConfig.bids = [pbConfig.bids[0]];
     });
 
-    afterEach(function() {
-        adLoader.loadScript.restore();
-        window.KmnKB.start.restore();
+    afterEach(() => xhr.restore());
+
+    it('exists and is a function', () => {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
-    it("sets kmncb config object correctly", function() {
-        adapter().callBids(bids);
-
-        var startConfig = startStub.getCall(0).args[0];
-        expect(startConfig).to.not.be.undefined;
-        expect(startConfig).to.have.property('hdbdid');
-        expect(startConfig.hdbdid).to.equal('abcd');
-        expect(startConfig).to.have.property('kb_callback');
-        expect(startConfig.kb_callback).to.be.a.funtion;
-        expect(startConfig).to.have.property('ts_as');
-        expect(startConfig).to.have.property('hb_placements');
-        expect(startConfig.hb_placements).to.have.all.members(['efgh', 'ijkl'])
-        expect(startConfig).to.have.property('encode_bid');
-        expect(startConfig.encode_bid).to.equal.undefined;
-        expect(startConfig).to.have.property('hb_placement_bidids');
-        expect(startConfig.hb_placement_bidids).to.deep.equal({efgh: '30e5e911c00703', ijkl: '48a0df61fac3ba'})
+    it('requires paramters to make request', () => {
+      adapter.callBids({});
+      expect(requests).to.be.empty;
     });
 
-    it("registers arriving bids in bidManager", function() {
-        sinon.stub(bidmanager, 'addBidResponse');
-        var bid_response = {
-            "cpm": 2.62,
-            "height": "250",
-            "width": "300",
-            "placementid": "efgh",
-            "creative": "blahblah",
-            "bidid": "30e5e911c00703"
-        };
+    it('requires placementid and hbid', () => {
+      let backup = pbConfig.bids[0].params;
+      pbConfig.bids[0].params = {placementid : 1234}; //no hbid
+      adapter.callBids(pbConfig);
+      expect(requests).to.be.empty;
 
-        pbjs._bidsRequested.push(bids);
-        adapter().callBids(bids);
+      pbConfig.bids[0].params = {hbid : 1234}; //no placementid
+      adapter.callBids(pbConfig);
+      expect(requests).to.be.empty;
 
-        var startConfig = startStub.getCall(0).args[0];
-
-        //now let's call our callbak
-        startConfig.kb_callback(bid_response);
-
-        var placementCode = bidmanager.addBidResponse.getCall(0).args[0];
-        expect(placementCode).to.not.be.undefined;
-        expect(placementCode).to.equal('div-gpt-ad-1438287399331-0');
-        var actualBidSent = bidmanager.addBidResponse.getCall(0).args[1];
-        expect(actualBidSent).to.not.be.undefined;
-        expect(actualBidSent).to.have.property('getStatusCode');
-        expect(actualBidSent.getStatusCode()).to.equal(STATUS.GOOD);
-        expect(actualBidSent).to.have.property('bidderCode', 'komoona');
-        expect(actualBidSent).to.have.property('ad', 'blahblah');
-        expect(actualBidSent).to.have.property('cpm', 2.62);
-        expect(actualBidSent).to.have.property('width', 300);
-        expect(actualBidSent).to.have.property('height', 250);
-        expect(actualBidSent).to.have.property('adId', '30e5e911c00703');
-        bidmanager.addBidResponse.restore();
+      pbConfig.bids[0].params = backup;
     });
 
-    it("registers 'no-bid' bid if no ad is sent", function() {
-        sinon.stub(bidmanager, 'addBidResponse');
-        var bid_response = {
-            "placementid": "efgh",
-            "bidid": "30e5e911c00703"
-        };
-
-        pbjs._bidsRequested.push(bids);
-        adapter().callBids(bids);
-
-        var startConfig = startStub.getCall(0).args[0];
-
-        //now let's call our callbak
-        startConfig.kb_callback(bid_response);
-
-        var placementCode = bidmanager.addBidResponse.getCall(0).args[0];
-        expect(placementCode).to.not.be.undefined;
-        expect(placementCode).to.equal('div-gpt-ad-1438287399331-0');
-        var actualBidSent = bidmanager.addBidResponse.getCall(0).args[1];
-        expect(actualBidSent).to.not.be.undefined;
-        expect(actualBidSent).to.have.property('getStatusCode');
-        expect(actualBidSent.getStatusCode()).to.equal(STATUS.NO_BID);
-        expect(actualBidSent).to.have.property('bidderCode', 'komoona');
-        expect(actualBidSent).to.have.property('adId', '30e5e911c00703');
-        bidmanager.addBidResponse.restore();
-    })
-
-    it("makes sure all is well with empty configuration", function() {
-        sinon.stub(bidmanager, 'addBidResponse');
-
-        var bid_response = {};
-
-        adapter().callBids(bid_response);
-
-        //start should never be called
-        expect(startStub.getCall(0)).to.be.null;
-
-        bidmanager.addBidResponse.restore();
+    it('sends bid request to ENDPOINT via POST', () => {
+      adapter.callBids(pbConfig);
+      expect(requests[0].url).to.equal(ENDPOINT);
+      expect(requests[0].method).to.equal('POST');
     });
+  });
+
+  describe('response handler', () => {
+
+    let server;
+
+    beforeEach(() => {
+      server = sinon.fakeServer.create();
+      sinon.stub(bidmanager, 'addBidResponse');
+    });
+
+    afterEach(() => {
+      server.restore()
+      bidmanager.addBidResponse.restore();
+    });
+
+    it('registers bids', () => {
+      server.respondWith(JSON.stringify(RESPONSE));
+
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('cpm', 0.5);
+    });
+
+    it('handles nobid responses', () => {
+      server.respondWith(JSON.stringify({
+        "bids": [{
+          "cpm": 0,
+          "creative": "",
+          "uuid": "30e5e911c00703"
+        }]
+      }));
+
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+
+    it('handles JSON.parse errors', () => {
+      server.respondWith('');
+
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property(
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
+    });
+
+  });
+
 });

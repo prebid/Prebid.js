@@ -13,12 +13,19 @@ const GumgumAdapter = function GumgumAdapter() {
   let topWindow;
   let topScreen;
   let pageViewId;
+  const requestCache = {};
+  const throttleTable = {};
+  const defaultThrottle = 3e4;
 
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
   } catch (error) {
     return utils.logError(error);
+  }
+
+  function _getTimeStamp() {
+    return new Date().getTime();
   }
 
   function _callBids({ bids }) {
@@ -36,6 +43,7 @@ const GumgumAdapter = function GumgumAdapter() {
             , params = {}
             , placementCode
             } = bidRequest;
+      const timestamp  = _getTimeStamp();
       const trackingId = params.inScreen;
       const nativeId   = params.native;
       const slotId     = params.inSlot;
@@ -52,6 +60,21 @@ const GumgumAdapter = function GumgumAdapter() {
           ', please check your implementation.'
         );
       }
+
+      /* throttle based on the latest request for this product */
+      const productId     = bid.pi;
+      const requestKey    = productId + '|' + placementCode;
+      const throttle      = throttleTable[productId];
+      const latestRequest = requestCache[requestKey];
+      if (latestRequest && throttle && (timestamp - latestRequest) < throttle) {
+        return utils.logWarn(
+          `[GumGum] The refreshes for "${ placementCode }" with the params ` +
+          `${ JSON.stringify(params) } should be at least ${ throttle / 1e3 }s apart.`
+        );
+      }
+      /* update the last request */
+      requestCache[requestKey] = timestamp;
+
       /* tracking id is required for in-image and in-screen */
       if (trackingId) bid.t = trackingId;
       /* native ads require a native placement id */
@@ -75,26 +98,30 @@ const GumgumAdapter = function GumgumAdapter() {
     });
   }
 
-  const _handleGumGumResponse = cachedBidRequest => bidResponse => {
-    const ad = bidResponse && bidResponse.ad;
-    const pag = bidResponse && bidResponse.pag;
+  const _handleGumGumResponse = cachedBidRequest => (bidResponse = {}) => {
+    const { pi: productId
+          } = cachedBidRequest;
+    const { ad = {}
+          , pag = {}
+          , thms: throttle
+          } = bidResponse;
     /* cache the pageViewId */
     if (pag && pag.pvid) pageViewId = pag.pvid;
-    /* create the bid */
     if (ad && ad.id) {
+      /* set the new throttle */
+      throttleTable[productId] = throttle || defaultThrottle;
+      /* create the bid */
       const bid = bidfactory.createBid(1);
       const { t: trackingId
-            , pi: productId
-            , placementCode
-            } = cachedBidRequest;
-      bidResponse.placementCode = placementCode;
+            } = pag;
+      bidResponse.request = cachedBidRequest;
       const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
       const gumgumAdLoader = `<script>
         (function (context, topWindow, d, s, G) {
           G = topWindow.GUMGUM;
           d = topWindow.document;
           function loadAd() {
-            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context, topWindow);
+            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context);
           }
           if (G) {
             loadAd();
