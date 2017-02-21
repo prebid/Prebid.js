@@ -45,20 +45,25 @@ function BeachfrontAdapter() {
     bidRequest = bid;
     bidRequest.width = parseInt(bid.sizes[0], 10) || undefined;
     bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
-    console.log("XXX bid is ");
+
+    // XXX testing
+    bidRequest.bidfloor = pbjs.adUnits[0].bidfloor,
+    bidRequest.cur = pbjs.adUnits[0].cur,
+    console.log("Bid request is ");
+    console.log(bidRequest);
 
     // These are the parameters that we pass into the object that becomes the bid request. This contains all the data that beachfront needs to create a bid response.
     return {
       appId: bid.params.appId,
       domain: document.location.hostname,
-      bidfloor: bid.bidfloor,
+
 
       // additional parameters that we need to get a bid:
       id:"58a38cc1cedd0c8332cac491",
       imp:[{
         "video":{
         },
-        "bidfloor": bid.bidfloor || 0.50
+        "bidfloor": bid.bidfloor
       }],
       "site":{
         "page":"http://www.rebelai.com"
@@ -68,7 +73,7 @@ function BeachfrontAdapter() {
         "ip":"100.6.143.143",
         "devicetype":1
       },
-      cur:["USD"]
+      cur:[bidRequest.cur]
     };
   }
 
@@ -107,18 +112,18 @@ function BeachfrontAdapter() {
 
     if (!parsed ) {
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
-      console.log("Status is no bid for some damn reason");
+      console.log("Status is no bid for some reason");
       return;
     }
     console.log(newBid);
     bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, newBid));
-    console.log("status is good! Bid accepted!");
+    console.log("Status is good! Bid accepted!");
   }
 
   function createBid(status, tag) {
     var bid = bidfactory.createBid(status, tag);
     if (!tag || status !== STATUS.GOOD) {
-      console.log("failing: " + tag + status);
+      console.log("Failing: " + tag + status);
       return bid;
     }
 

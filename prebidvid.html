@@ -13,61 +13,62 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <title>Prebid Video Adapter Test</title>
-        <script type="text/javascript" src="build/dist/prebid.js" async></script>
+      <script type="text/javascript" src="build/dist/prebid.js" async></script>
     <script>
       var PREBID_TIMEOUT = 1500;
 
-	var videoAdUnit = {
- 	 code: 'video',
- 	 sizes: [640,480],
-   bidfloor: 0.49,
-   cur: "USD",
- 	 mediaType: 'video',
- 	 bids: [
-   	 {
-     	 bidder: 'beachfront',
-     	 params: {
-       	 appId: '0a47f4ce-d91f-48d0-bd1c-64fa2c196f13',
-            video: {
-              skippable: false
-            }
-      	}
-    	}
-  ]
-};
+    	var videoAdUnit = {
+     	  code: 'video',
+     	  sizes: [640,480],
+        bidfloor: 0.49,
+        cur: "USD",
+     	  mediaType: 'video',
+     	  bids: [
+        	{
+          	bidder: 'beachfront',
+         	  params: {
+           	  appId: '0a47f4ce-d91f-48d0-bd1c-64fa2c196f13',
+              video: {
+                  skippable: false
+              }
+          	}
+        	}
+        ]
+      };
+
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
     </script>
 
     <script>
 
-       	pbjs.que.push(function() {
-            pbjs.addAdUnits(videoAdUnit);
-            pbjs.requestBids({
-                bidsBackHandler: function(bids){
+     	pbjs.que.push(function() {
+          pbjs.addAdUnits(videoAdUnit);
+        pbjs.requestBids({
+            bidsBackHandler: function(bids){
 
-                // Log the VAST URL, if there is one
-                try {
-                  url = bids.video.bids[0].vastUrl;
-                  console.log('Bid #0 VAST URL: ');
-                  console.log(url);
-                  } catch (e) {} // ignore
-                  var adserverTag = "https://www.techniqal.com/tmp/bf/prebid.php?";
-                  // var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/3847125/prebid_video&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&url=techniqal.com';
-                  adserverTag = adserverTag + '&correlator=' + Date.now();
+            // Log the VAST URL, if there is one
+            try {
+              url = bids.video.bids[0].vastUrl;
+              console.log('Bid #0 VAST URL: ');
+              console.log(url);
+              } catch (e) {} // ignore
+              var adserverTag = "https://www.techniqal.com/tmp/bf/prebid.php?";
+              // var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/3847125/prebid_video&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&url=techniqal.com';
+              adserverTag = adserverTag + '&correlator=' + Date.now();
 
-                   var options = {
-                     'adserver': 'dfp',
-                     'code': 'video' // Must match the code from the `videoAdUnit` above
-                   };
+              var options = {
+                'adserver': 'dfp',
+                'code': 'video' // Must match the code from the `videoAdUnit` above
+              };
 
-               // Generate DFP Video Ad Server Tag URL
-                  var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+           // Generate DFP Video Ad Server Tag URL
+              var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
 
-               // Send masterTagUrl to the video player
-                  invokeVideoPlayer(masterTagUrl);
-                }
-            });
+           // Send masterTagUrl to the video player
+              invokeVideoPlayer(masterTagUrl);
+            }
+          });
         });
 
         function sendAdserverRequest() {
@@ -97,14 +98,7 @@
     <script>
 
       var page_load_time;
-
-      page_load_time = new Date().getTime() - performance.timing.navigationStart;
-      console.log(page_load_time + "ms -- Player loading!");
-
       var vid1 = videojs('vid1');
-
-      page_load_time = new Date().getTime() - performance.timing.navigationStart;
-      console.log(page_load_time + "ms -- Player loaded!");
 
       function invokeVideoPlayer(url) {
 
@@ -112,9 +106,6 @@
         console.log(page_load_time + "ms -- Prebid VAST url = " + url);
 
         videojs("vid1").ready(function() {
-
-          page_load_time = new Date().getTime() - performance.timing.navigationStart;
-          console.log(page_load_time + "ms -- Player is ready!");
 
           var player = this;
           var vastAd = player.vastClient({
@@ -125,9 +116,6 @@
             vpaidFlashLoaderPath: "VPAIDFlash.swf",
             autoplay: true
           });
-
-          page_load_time = new Date().getTime() - performance.timing.navigationStart;
-          console.log(page_load_time + "ms -- Prebid VAST tag inserted!");
 
           player.muted(true);
           player.play();
