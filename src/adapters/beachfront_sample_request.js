@@ -18,7 +18,8 @@
       "companionad":[{"w":675,"h":380,"id":"1","topframe":0}],
       "api":[1,2],
       "companiontype":[1,2],
-      "ext":{}},
+      "ext":{}
+    },
       "instl":0,
       "bidfloor":0.142851,
       "secure":0,

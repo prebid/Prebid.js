@@ -46,35 +46,37 @@ function BeachfrontAdapter() {
     bidRequest.width = parseInt(bid.sizes[0], 10) || undefined;
     bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
 
-    // XXX testing
-    bidRequest.bidfloor = pbjs.adUnits[0].bidfloor,
-    bidRequest.cur = pbjs.adUnits[0].cur,
-    console.log("Bid request is ");
-    console.log(bidRequest);
-
-    // These are the parameters that we pass into the object that becomes the bid request. This contains all the data that beachfront needs to create a bid response.
-    return {
+    var bidRequestObject =  {
       appId: bid.params.appId,
       domain: document.location.hostname,
-
-
-      // additional parameters that we need to get a bid:
-      id:"58a38cc1cedd0c8332cac491",
       imp:[{
-        "video":{
-        },
-        "bidfloor": bid.bidfloor
+        video:{},
+        bidfloor: pbjs.adUnits[0].bidfloor
       }],
-      "site":{
-        "page":"http://www.rebelai.com"
+      site:{
+        page:"http://www.rebelai.com"
       },
       device:{
-        "ua":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36",
-        "ip":"100.6.143.143",
-        "devicetype":1
+        ua: navigator.userAgent,
+        // XXX how do i get the ip address? Looks like the server has to do it?
+        ip:"100.6.143.143",
+        // XXX if anything other than 1, no ad is returned
+        devicetype:1
       },
-      cur:[bidRequest.cur]
+      cur:[pbjs.adUnits[0].cur]
     };
+
+    console.log("bidfloor is " + pbjs.adUnits[0].bidfloor);
+
+    if (!bidRequestObject.appId || !pbjs.adUnits[0].bidfloor) {
+      console.log("Unable to process bid request: failed to pass in bidfloor or ad ID");
+      return;
+    } else {
+      console.log("Bid request is successful: ");
+      console.log(bidRequest);
+      console.log(bidRequestObject);
+      return bidRequestObject;
+    }
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
@@ -88,9 +90,9 @@ function BeachfrontAdapter() {
     }
 
     var newBid = {};
-
     newBid.price = parsed.seatbid[0].bid[0].price;
-    console.log("At least one bid came back, with a price of " + parsed.seatbid[0].bid[0].price);
+    console.log("At least one bid came back, with a CPM of " + newBid.price);
+
     // The XML from bid 0 is found at: parsed.seatbid[0].bid[0].adm
     var parserBF = new DOMParser();
     var xmlBF;
@@ -107,15 +109,14 @@ function BeachfrontAdapter() {
     var xml_uri_child = xml_uri.childNodes[0];
     console.log("XML URI: "+ xml_uri_child.nodeValue);
     newBid.url=xml_uri_child.nodeValue;
-    newBid.cmpId = 123;
+
     // Final parsed ad tag uri in the response: xml_uri_child.nodeValue
 
     if (!parsed ) {
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
-      console.log("Status is no bid for some reason");
+      console.log("Status is no bid. Check yourself.");
       return;
     }
-    console.log(newBid);
     bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, newBid));
     console.log("Status is good! Bid accepted!");
   }
