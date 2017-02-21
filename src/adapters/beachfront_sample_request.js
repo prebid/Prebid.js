@@ -1,0 +1,67 @@
+/*
+{
+  "id":"58a38cc1cedd0c8332cac491",
+  "imp":[{
+    "id":"1",
+    "video":{
+      "mimes":["video/mp4"],
+      "linearity":1,
+      "minduration":5,
+      "maxduration":60,
+      "protocol":2,
+      "protocols":[2,5],
+      "w":675,
+      "h":380,
+      "startdelay":0,
+      "sequence":1,
+      "boxingallowed":1,
+      "companionad":[{"w":675,"h":380,"id":"1","topframe":0}],
+      "api":[1,2],
+      "companiontype":[1,2],
+      "ext":{}},
+      "instl":0,
+      "bidfloor":0.142851,
+      "secure":0,
+      "bidfloorcur":"USD"
+    }],
+    "site":{
+      "id":"32643f8a-5050-4532-eab1-9881ec018658",
+    "domain":"rawstory.com",
+    "page":"http://www.rawstory.com/2017/02/kellyanne-conway-tweets-love-you-back-to-white-nationalist-and-then-quickly-deletes-it/",
+    "publisher":{
+      "id":"beachfront_32643f8a-5050-4532-eab1-9881ec018658",
+      "ext":{
+        "ssp":"beachfront"
+      }
+    }
+  },
+  "device":{
+    "dnt":0,
+    "ua":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36",
+    "ip":"100.6.143.143",
+    "geo":{
+      "lat":40.448,
+      "lon":-79.994,
+      "country":"US",
+      "city":"Pittsburgh",
+      "zip":"15227",
+      "type":2
+    },
+    "carrier":"Verizon Fios",
+    "ifa":"",
+    "language":"en",
+    "make":"",
+    "model":"Other",
+    "os":"Windows",
+    "lmt":0,
+    "js":0,
+    "devicetype":1
+  },
+  "user":{
+    "id":"852325e3b7e19303db9ac95f130e38d4c14a153a"
+  },
+  "at":1,
+  "allimps":0,
+  "cur":["USD"]
+}
+*/

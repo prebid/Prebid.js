@@ -51,6 +51,7 @@
     "vertoz",
     "widespace",
     "admixer",
+    "beachfront",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -74,6 +75,10 @@
       "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
+    }, {
+      "beachfront": {
+        "supportedMediaTypes": ["video"]
+      }
     },
     {
       "appnexus": {
@@ -90,7 +95,7 @@
       "appnexus": {
         "alias": "featureforward"
       }
-    },    
+    },
     {
       "appnexus": {
         "alias": "oftmedia"

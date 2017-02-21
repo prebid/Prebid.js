@@ -1,0 +1,140 @@
+window.pbjs.sovrnResponse({
+            "seatbid": [{
+                        "bid": [{
+                            "crid": "10761619",
+                            "adomain": ["hitachi.com"],
+                            "adid": "10761619",
+                            "impid": "1",
+                            "cid": "2371165",
+                            "id": "1",
+                            "ext": {
+                                "dspid": 94,
+                                "pricelevel": "_11",
+                                "advbrandid": 19408,
+                                "advbrand": "Hitachi"
+                            },
+                            "adm": ""
+                        }, {
+                            "crid": "10761619",
+                            "adomain": ["hitachi.com"],
+                            "adid": "10761619",
+                            "impid": "6",
+                            "cid": "2371165",
+                            "id": "4",
+                            "ext": {
+                                "dspid": 94,
+                                "pricelevel": "_6",
+                                "advbrandid": 19408,
+                                "advbrand": "Hitachi"
+                            },
+                            "adm": ""
+                        }, {
+                            "crid": "10761619",
+                            "adomain": ["hitachi.com"],
+                            "adid": "10761619",
+                            "impid": "7",
+                            "cid": "2371165",
+                            "id": "5",
+                            "ext": {
+                                "dspid": 94,
+                                "pricelevel": "_11",
+                                "advbrandid": 19408,
+                                "advbrand": "Hitachi"
+                            },
+                            "adm": ""
+                        }],
+                        "seat": "101295"
+                    }, {
+                        "bid": [{
+                                    "crid": "7697903",
+                                    "adomain": ["progressive.com"],
+                                    "adid": "7697903",
+                                    "impid": "4",
+                                    "cid": "1730455",
+                                    "id": "2",
+                                    "ext": {
+                                        "dspid": 73,
+                                        "pricelevel": "_6",
+                                        "advbrandid": 145310,
+                                        "advbrand": "Progressive
+                                        Group "},"
+                                        adm ":"
+                                        "}],"
+                                        seat ":"
+                                        10000001 "},{"
+                                        bid ":[{"
+                                        crid ":"
+                                        7755872 ","
+                                        adomain ":["
+                                        au.mathworks.com "],"
+                                        adid ":"
+                                        7755872 ","
+                                        impid ":"
+                                        5 ","
+                                        cid ":"
+                                        1741996 ","
+                                        id ":"
+                                        3 ","
+                                        ext ":{"
+                                        dspid ":81,"
+                                        pricelevel ":"
+                                        _50 ","
+                                        advbrandid ":101538,"
+                                        advbrand ":"
+                                        The MathWorks "},"
+                                        adm ":"
+                                        "}],"
+                                        seat ":"
+                                        1 "}],"
+                                        cur ":"
+                                        USD ","
+                                        id ":"
+                                        368340242 "});
+
+/*This is the full request that got the response below:*/
+/*
+elements: prebid version, imp, id, banner, tagid, bidfloor, id, banner, tagid, bidfloor, id, banner, tagid, bidfloor, domain, page...
+
+  http://ap.lijit.com/rtb/bid?callback=window.pbjs.sovrnResponse&src=prebid_prebid_0.17.0&br=%7B%22id%22%3A%22213553369300de%22%2C%22imp%22%3A%5B%7B%22id%22%3A%2216c4d28c161b609%22%2C%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C%22tagid%22%3A%22335206%22%2C%22bidfloor%22%3A%22%22%7D%2C%7B%22id%22%3A%22177913995d93607%22%2C%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C%22tagid%22%3A%22335207%22%2C%22bidfloor%22%3A%22%22%7D%2C%7B%22id%22%3A%2218f7bf3d4986466%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22tagid%22%3A%22335194%22%2C%22bidfloor%22%3A%22%22%7D%2C%7B%22id%22%3A%2219cc2bd35742923%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22tagid%22%3A%22335195%22%2C%22bidfloor%22%3A%22%22%7D%2C%7B%22id%22%3A%2220ce6f7e0ef21f1%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22tagid%22%3A%22335202%22%2C%22bidfloor%22%3A%22%22%7D%5D%2C%22site%22%3A%7B%22domain%22%3A%22aplus.com%22%2C%22page%22%3A%22%2Fa%2Fsyrian-refugee-crisis-kickstarter%3Fpbjs_debug%3Dt%22%7D%7D
+*/
+
+window.pbjs.sovrnResponse({
+  "id" : "213553369300de",
+  "seatbid" : [ {
+    "bid" : [ {
+      "id" : "a_335206_ded0520f419e41b7949788d8ed558ab8",
+      "impid" : "16c4d28c161b609",
+      "price" : 0.16644114,
+      "nurl" : "http://vap4yyz1.lijit.com/www/delivery/lg.php?bannerid=41635&campaignid=1802&rtb_tid=16ff848f-a5bd-4f07-8d7e-e7f079146827&rpid=27&seatid=166&zoneid=335206&cb=98277632&tid=a_335206_ded0520f419e41b7949788d8ed558ab8",
+      "adm" : "%3Cimg%20src%3D%22http%3A%2F%2Fuse-tor.adsrvr.org%2Fbid%2Ffeedback%2Ffederatedmedia%3Fiid%3Dd2e6bc77-8d8b-43ce-b4c0-bd3b7661b944%26crid%3Dnejt2nzp%26wp%3D0.187012%26aid%3D1%26wpc%3DUSD%26sfe%3Dad96478%26puid%3D%26tdid%3D%26pid%3D2odgrey%26ag%3Dii8qyuh%26sig%3D00BRX6kmjFnlB60thM4Liszw1t63ZDWvJLHRrRiamLw.%26cf%3D15421%26fq%3D0%26td_s%3Daplus.com%26rcats%3D%26mcat%3D%26mste%3D%26mfld%3D3%26mssi%3D%26mfsi%3Durav5az5za%26uhow%3D33%26agsa%3D%26rgco%3DUnited%2520States%26rgre%3DColorado%26rgme%3D751%26rgci%3DDenver%26rgz%3D80202%26svbttd%3D1%26dt%3DOther%26osf%3DOther%26os%3DOther%26br%3DOther%26rlangs%3Den%26mlang%3D%26svpid%3D224806%26did%3D%26rcxt%3DOther%26lat%3D38.000000%26lon%3D-97.000000%26tmpc%3D%26daid%3D%26vp%3D0%26osi%3D%26osv%3D%26bp%3D0.207791689324%26dur%3D%26crrelr%3D%22%20width%3D%221%22%20height%3D%221%22%20style%3D%22display%3A%20none%3B%22%2F%3E%3Ca%20target%3D%22_blank%22%20href%3D%22http%3A%2F%2Finsight.adsrvr.org%2Ftrack%2Fclk%3Fimp%3Dd2e6bc77-8d8b-43ce-b4c0-bd3b7661b944%26ag%3Dii8qyuh%26sig%3D00BRX6kmjFnlB60thM4Liszw1t63ZDWvJLHRrRiamLw.%26crid%3Dnejt2nzp%26cf%3D15421%26fq%3D0%26td_s%3Daplus.com%26rcats%3D%26mcat%3D%26mste%3D%26mfld%3D3%26mssi%3D%26mfsi%3Durav5az5za%26sv%3Dfederatedmedia%26uhow%3D33%26agsa%3D%26rgco%3DUnited%2520States%26rgre%3DColorado%26rgme%3D751%26rgci%3DDenver%26rgz%3D80202%26dt%3DOther%26osf%3DOther%26os%3DOther%26br%3DOther%26svpid%3D224806%26rlangs%3Den%26mlang%3D%26did%3D%26rcxt%3DOther%26tmpc%3D%26vrtd%3D%26osi%3D%26osv%3D%26daid%3D%26dnr%3D0%26vpb%3D%26svsc%3D%26dur%3D%26crrelr%3D%26svscid%3D335206%26r%3Dhttp%3A%2F%2Fwww.johnelwaychevrolet.com%2FVehicleSearchResults%3Fsearch%3Dcertified%26utm_source%3DAdTaxi%26utm_medium%3DBanner%26utm_content%3DCPO%26utm_campaign%3DJanAdTaxi%22%20alt%3D%22Click%20Me%22%3E%3Cimg%20src%3D%22http%3A%2F%2Fad.adsrvr.org%2F2odgrey%2Fomag86z%2Fnejt2nzp_728x90.png%3Fcb%3D769155%22%20border%3D%220%22%20%2F%3E%3C%2Fa%3E%3Cspan%20id%3D%22te-clearads-js-tradedesk01cont1%22%3E%3Cscript%20type%3D%22text%2Fjavascript%22%20src%3D%22https%3A%2F%2Fchoices.truste.com%2Fca%3Fpid%3Dtradedesk01%26aid%3Dtradedesk01%26cid%3Dljw3syn_ii8qyuh_nejt2nzp%26c%3Dtradedesk01cont1%26js%3Dpmw0%26w%3D728%26h%3D90%26sid%3D0%22%3E%3C%2Fscript%3E%3C%2Fspan%3E",
+      "h" : 90,
+      "w" : 728
+    } ]
+  } ]
+})
+
+
+http://ap.lijit.com/rtb/bid?callback=window.pbjs.sovrnResponse&src=prebid_prebid_0.17.0&br=%7B%22id%22%3A%22213553369300de%22%2C%22imp%22%3A%5B%7B%22id%22%3A%2216c4d28c161b609%22%2C%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C%22tagid%22%3A%22335206%22%2C%22bidfloor%22%3A%22%22%7D%5D%2C%22site%22%3A%7B%22domain%22%3A%22aplus.com%22%2C%22page%22%3A%22%2Fa%2Fsyrian-refugee-crisis-kickstarter%3Fpbjs_debug%3Dt%22%7D%7D
+
+
+
+window.pbjs.sovrnResponse(
+{
+id: "213553369300de",
+seatbid: [
+{
+bid: [
+{
+id: "a_335206_0b5207c76d7644ddac789efddf7053db",
+impid: "16c4d28c161b609",
+price: 0.13156514,
+nurl: "http://vap4sna1.lijit.com/www/delivery/lg.php?bannerid=110833&campaignid=3299&rtb_tid=3f44cfd1-30bb-4c71-b0f0-0920f2a9302d&rpid=58&seatid=5599&zoneid=335206&cb=15192333&tid=a_335206_0b5207c76d7644ddac789efddf7053db",
+adm: "%3Ciframe%20width%3D%220%22%20scrolling%3D%22no%22%20height%3D%220%22%20frameborder%3D%220%22%20src%3D%22http%3A%2F%2Fimage3.pubmatic.com%2FAdServer%2Flayer%3Fpubid%3D137711%26pimprid%3D3f44cfd1-30bb-4c71-b0f0-0920f2a9302d%26uimprid%3D5B93B20E-D0FE-495A-BEC0-DDFA220BC468%26plen%3D1096%26a%3D0.147826%26t%3DDEKaWQ9MCZjZj0xJmZwPTAuMTQ3ODI2JmVtPURVRE1TNHpNZz09PSZ0cD0xJnU9aHR0cCUzQSUyRiUyRmFrdHJhY2sucHVibWF0aWMuY29tJTJGQWRTZXJ2ZXIlMkZBZERpc3BsYXlUcmFja2VyU2VydmxldCUzRm9wZXJJZCUzRDElMjZwdWJJZCUzRDEzNzcxMSUyNnNpdGVJZCUzRDEzNzgxMiUyNmFkSWQlM0Q2MTIyOTUlMjZhZFR5cGUlM0QxMCUyNmFkU2VydmVySWQlM0QyNDMlMjZrZWZhY3QlM0QlN0JQU1BNJTdEJTI2a2F4ZWZhY3QlM0QlN0JQU1BNJTdEJTI2a2FkTmV0RnJlcXVlY3klM0QxJTI2a2Fkd2lkdGglM0Q3MjglMjZrYWRoZWlnaHQlM0Q5MCUyNmthZHNpemVpZCUzRDclMjZrbHRzdGFtcCUzRDE0ODcwMDYzMDElMjZpbmRpcmVjdEFkSWQlM0QwJTI2YWRTZXJ2ZXJPcHRpbWl6ZXJJZCUzRDIlMjZyYW5yZXElM0QwLjElMjZrcGJtdHBmYWN0JTNEJTdCUFNQTSU3RCUyNnRsZElkJTNEMjAzMDA5ODElMjZwYXNzYmFjayUzRDAlMjZpbXBySWQlM0Q1QjkzQjIwRS1EMEZFLTQ5NUEtQkVDMC1EREZBMjIwQkM0NjglMjZvaWQlM0Q1QjkzQjIwRS1EMEZFLTQ5NUEtQkVDMC1EREZBMjIwQkM0NjglMjZpYXMlM0QyNTclMjZjcklEJTNENTA1MDgyJTI2dWNyaWQlM0QyMDMxMTg4OTY1ODk5MTI0ODUyJTI2Y250cnlJZCUzRDIzMiUyNmNhbXBhaWduSWQlM0Q3ODM0JTI2Y3JlYXRpdmVJZCUzRDAlMjZwY3RyJTNEMC4wMDAwMDAlMjZ3RFNQQnlySWQlM0QxMDAwNiUyNndEc3BJZCUzRDQ1MiUyNmlzUlRCJTNEMSUyNmRvbWFpbiUzRGFwbHVzLmNvbSUyNnBhZ2VVUkwlM0ROT1BBR0VVUkxTUEVDSUZJRUQlMjZscHUlM0Rwcm9ncmVzc2l2ZS5jb20%3D%3D%22%20style%3D%22position%3Aabsolute%3Btop%3A-15000px%3Bleft%3A-15000px%22%20vspace%3D%220%22%20hspace%3D%220%22%20marginwidth%3D%220%22%20marginheight%3D%220%22%20allowtransparency%3D%22true%22%20name%3D%22pbeacon%22%3E%3C%2Fiframe%3E%3Cspan%20class%3D%22PubAPIAd%22%20%20id%3D%225B93B20E-D0FE-495A-BEC0-DDFA220BC468%22%3E%3Cscript%20type%3D'text%2Fjavascript'%20src%3D'http%3A%2F%2Fimage3.pubmatic.com%2FAdServer%2Flayer%3Fpubid%3D137711%26pimprid%3D3f44cfd1-30bb-4c71-b0f0-0920f2a9302d%26uimprid%3D5B93B20E-D0FE-495A-BEC0-DDFA220BC468%26plen%3D1392%26a%3D0.147826%26t%3DDCSaWQ9MCZjZj0xJmZwPTAuMTQ3ODI2JmVtPUxWV01TNHpNZz09PSZ0cD0wJnU9JTNDc2NyaXB0JTIwdHlwZSUzRCUyMnRleHQlMkZqYXZhc2NyaXB0JTIyJTIwc3JjJTNEJTIyaHR0cHMlM0ElMkYlMkZwci55YnAueWFob28uY29tJTJGYWIlMkZzZWN1cmUlMkZ0cnVlJTJGaW1wJTJGaGUzOXBYWm40clZod2FPdnZvWW13QTJwTThWVG1qTkY4Q2d0ckczWkxlMnl5MW5JVDdCM3ppdDhlX1phcUg3OFNSNi1sclNKN2ROcENNVjluTzFmSFJ2NU1GbkpUTmMxTXZtQXhHRmozTmFZTFc5c0plQzY2U2xrVU5pQXgxZnFPMkdyRUJoSEJyV0pCQ2kybDVJWnhwNk9WRFQtSFNyaWhXYVBNd0ZsMldzX0JGTVlfWDRoOVVCODd2Qk0yNk1vTmVkRG1YeHkwX21iV2VEZk5zZFVXSkxueHdraFBIcnlMSjRyR1lmSEtDTTMyNWF1eWdXa1hPZnVYUzRXMGJPdDFWWDJQbHBVU0Rnb21zMWoyNEN4VUlpUmpJN0VEcEVLUTVqWjRvVWI4X0hDb256TFBFRjZMMTlxVlRxNUxhOFl5MG5vQ3pyTEFQUmFycXNfRzNqc0MzaXpSbUtvTFdOVGFDbmg2MDlZR2ctZzIya3B3OXVfQWJkNzczZVVjd09ldzZDS3B0OGJoV3dCNmthZW50bi1zMXg2YXB5cVRCcDZuOUVSbEpINjBVQVFtczNfcUxPQ3N6SXFEeVRER2JXOU1VeGdiZEJReTkzcXA5eDYtdGJ2cV9McmtRVDQwU0o3V3U2bm85ZEx5c2Q0VzZCUzdxa2UyVzVDNzNRQWpFd0N1ZXZ5S3B5TEo1YVhhczNkLUZTYUdsUi1PYmMyWVBUVEo5STNPaG5idTFmc2p5NFBxU3BmdlIwZVJKN1BUMThGMEpzZnh4V0ZNSHUxQ190aUxOZURuTlR5YktLS1ZoWUMtXy1NUWZZRnEtWVZ3S0gtS3NKalFVT1FlZ1dPZzB1NmFDM2lKRk1Gdk9aRlJHd2xjYjFnaE1seS1ka3Ria0RJa0hRODVEdG9YSlhGLXg5NnNYVHp6eXNFQWtvRG9GeWpCSTlCbmVvMXFlMWNVWmhPS1RnNFE4YXctWjgwTVpTY2kwWHZnaG9FVFQ0NVdRdlJnU0ZZajdYT2RIbF9yTXYya3dKUHJDTS02Rm9ETGpjcjRrbGJkQXJUTnNBTDAydTBZZHF6MGdSbE55OGxfazJsaFpYajV2VlhmZEFyb2xzR2tvSkNlRFBGMm5zJTJGd3AlMkYlN0JQU1BNJTdEJTIyJTNFJTNDJTJGc2NyaXB0JTNF%3D'%3E%3C%2Fscript%3E%3Ciframe%20width%3D%220%22%20scrolling%3D%22no%22%20height%3D%220%22%20frameborder%3D%220%22%20src%3D%22http%3A%2F%2Fads.pubmatic.com%2FAdServer%2Fjs%2Fshowad.js%23PIX%26ptask%3DDSP%26SPug%3D1%26fp%3D1%26mpc%3D1%26u%3D%26p%3D137711%26s%3D137812%26d%3D1%26cp%3D0%26sc%3D0%26rs%3D0%26os%3D0%22%20style%3D%22position%3Aabsolute%3Btop%3A-15000px%3Bleft%3A-15000px%22%20vspace%3D%220%22%20hspace%3D%220%22%20marginwidth%3D%220%22%20marginheight%3D%220%22%20allowtransparency%3D%22true%22%20name%3D%22synciframe%22%3E%3C%2Fiframe%3E%3C%2Fspan%3E%20%3C!--%20PubMatic%20Ad%20Ends%20--%3E",
+h: 90,
+w: 728
+}
+]
+}
+]
+}
+)
