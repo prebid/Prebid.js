@@ -65,6 +65,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       try {
         document.body.appendChild(iframe);
       } catch (error) {
+        /* istanbul ignore next */
         utils.logError(error);
       }
     }
@@ -200,7 +201,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function formatAdMarkup(bid) {
     var adm = bid.adm;
     if ('nurl' in bid) {
-      adm += utils.createTrackPixelHtml(bid.nurl);
+      adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
     }
     return adm;
   }
