@@ -1,3 +1,8 @@
+AOL Prebid 1.11.0
+----------------
+Added functionality of cookie syncing upon bid response.
+
+
 AOL Prebid 1.10.0
 ----------------
 Updated to Prebid 0.16.0
