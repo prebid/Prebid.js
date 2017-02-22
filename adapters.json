@@ -11,6 +11,7 @@
     "appnexusAst",
     "conversant",
     "districtmDMX",
+    "fidelity",
     "getintent",
     "gumgum",
     "hiromedia",
@@ -37,6 +38,7 @@
     "centro",
     "roxot",
     "vertoz",
+    "widespace",
     {
       "appnexus": {
         "alias": "brealtime"
