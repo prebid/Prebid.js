@@ -9,6 +9,9 @@ permalink: /blog/header-bidding-bidder-analysis
 
 ---
 
+{: .alert.alert-warning :}
+The content on this page is from 2015 and is now obsolete.
+
 While implementing Prebid.js' adaptors for different bidders, we've noticed not all bidders return exact price to the publisher's page. Different bidders also have vastly different response latency. We hope the analysis here can help you make smart decisions when implementing header bidding. 
 
 <!--| Amazon | Estimated at $0.50 increment | 300ms | -->
@@ -28,7 +31,7 @@ While implementing Prebid.js' adaptors for different bidders, we've noticed not 
 
 *Note that the above latency estimate was done in New York, US with fast Internet connection. To provide more accurate report, publishers can implement latency trackers through the prebid.js API.
 
-###Live Test:
+### Live Test
 
 {% include live_demo.html %}
 
