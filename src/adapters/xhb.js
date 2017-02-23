@@ -8,7 +8,7 @@ const bidfactory = require('../bidfactory.js');
 
 const XhbAdapter = function XhbAdapter() {
 
-  var _defaultBidderSettings = {
+  const _defaultBidderSettings = {
     alwaysUseBid: true,
     adserverTargeting: [
       {
