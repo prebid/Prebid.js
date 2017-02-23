@@ -114,6 +114,7 @@ description: A free and open source library for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>StickyAdsTV</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>152Media</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Matomy</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Fidelity Media</h3></div>
 
     <!-- END BIDDERS -->
     </div>
