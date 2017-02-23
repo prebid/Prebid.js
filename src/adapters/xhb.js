@@ -16,6 +16,12 @@ const XhbAdapter = function XhbAdapter() {
         val: function (bidResponse) {
           return bidResponse.dealId;
         }
+      },
+      {
+        key: 'hb_xhb_adid',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
       }
     ]
   };
