@@ -120,7 +120,7 @@ This function returns the bid responses at the given moment.
 | Param               | Type    | Description                                                                                                                     |                                                           |
 |---------------------+---------+---------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------|
 | `bidder`            | String  | The bidder code. Used by ad server's line items to identify bidders                                                             |                                                 `rubicon` |
-| `adId`              | String  | The unique identifier of a bid creative. It's used by the line item's creative as in [this example](adops.html#creative-setup). |                                                     `123` |
+| `adId`              | String  | The unique identifier of a bid creative. It's used by the line item's creative as in [this example]({{site.github.url}}/adops/send-all-bids-adops.html#step-3-add-a-creative). |                                                     `123` |
 | `width`             | Integer | The width of the returned creative size.                                                                                        |                                                       300 |
 | `height`            | Integer | The height of the returned creative size.                                                                                       |                                                       250 |
 | `cpm`               | Float   | The exact bid price from the bidder                                                                                             |                                                      1.59 |
@@ -274,7 +274,7 @@ This function returns the bid responses at the given moment.
 
 ### pbjs.getBidResponsesForAdUnitCode(adUnitCode) ⇒ `Object`
 
-Returns bidResponses for the specified adUnitCode. See full documentation at [pbjs.getBidResponses()](module_pbjs.getBidResponses).
+Returns bidResponses for the specified adUnitCode. See full documentation at [pbjs.getBidResponses()](#module_pbjs.getBidResponses).
 
 **Kind**: static method of [pbjs](#module_pbjs)
 

@@ -9,9 +9,9 @@ nav_section: quick-start
 hide: true
 
 about:
-- <strong>Custom keyword targeting setup (for price).</strong>
-- Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
-- Integration with DFP's GPT single request asynchronous mode.
+- <strong>Custom keyword targeting setup (for price)</strong>
+- Standard price granularity
+- Integration with DFP's GPT single request asynchronous mode
 - One set of line items for all bidders
 
 jsfiddle_link: jsfiddle.net/prebid/bp9magow/17/embedded/html,result
@@ -34,7 +34,7 @@ pid: 100
 <div markdown="1">
 #### Line 31 to 59: Customize ad server targeting keywords
 
-In this example, the keywords sent to DFP are changed from the default `hb_pb` to `custom_bid_price_key`. It also customized the bid price from default `pbMg` ([docs here](/dev-docs/publisher-api-reference.html#bidResponse)) to custom logic. The logic is: 
+In this example, the keywords sent to DFP are changed from the default `hb_pb` to `custom_bid_price_key`. It also customized the bid price from default `pbMg` to custom logic. The logic is:
 
 - Send $0.01 granularity price when the bid price is between $0 to $3. 
 - Send $0.10 granularity price when the bid price is between $3 to $5. 

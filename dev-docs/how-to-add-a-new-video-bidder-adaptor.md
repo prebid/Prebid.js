@@ -19,7 +19,7 @@ At a high level, a bidder adaptor is responsible for:
 
 This page has instructions for writing your own video-enabled bidder adaptor.  The instructions here try to walk you through some of the code you'll need to write for your adaptor.
 
-When in doubt, use an adaptor that already has support for video for reference, such as [the AppNexus AST adaptor in the Github repo](https://github.com/prebid/Prebid.js/blob/master/src/adaptors/appnexusAst.js).  (The code samples and descriptions below are based on it.)
+When in doubt, use an adaptor that already has support for video for reference, such as [the AppNexus AST adaptor in the Github repo](https://github.com/prebid/Prebid.js/blob/master/src/adapters/appnexusAst.js).  (The code samples and descriptions below are based on it.)
 
 * TOC
 {:toc}
@@ -226,7 +226,7 @@ For usage examples of `loadScript`, see [the adapters in the repo](https://githu
 
 ## Further Reading
 
-+ [How to Add a New Bidder Adapter](http://{{site.github.url}}/dev-docs/bidder-adaptor.html)
++ [How to Add a New Bidder Adapter]({{site.github.url}}/dev-docs/bidder-adaptor.html)
 
 + [The bidder adapter sources in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters)
 
