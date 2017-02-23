@@ -9,11 +9,11 @@ nav_section: quick-start
 hide: true
 
 about:
-- Ability to <strong>refresh individual ad units</strong>. Useful for infinite scrolling ad slots.
-- Integration with DFP's GPT single request asynchronous mode.
+- Ability to <strong>refresh individual ad units</strong>. Useful for infinite scrolling ad slots
+- Integration with DFP's GPT single request asynchronous mode
 - One set of line items for all bidders
-- Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
-- Standard price granularity (pbMg see <a href="/dev-docs/publisher-api-reference.html#bidResponse">reference here</a>).
+- Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>)
+- Standard price granularity
 
 jsfiddle_link: jsfiddle.net/prebid/dzrs3gfL/10/embedded/html,result
 code_height: 2900

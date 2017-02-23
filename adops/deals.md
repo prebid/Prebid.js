@@ -56,7 +56,7 @@ Whether your Ad Ops setup [sends all bids to the ad server](/adops/send-all-bids
 
 ### Step 2: Create Key-values
 
-For each header bidding partner you work with, create a keyword in the format of `hb_deal_BIDDERCODE`, e.g., `hb_deal_pubmatic`. For more examples of the keyword format, see the [API Reference for `pbjs.getAdserverTargeting`](#module_pbjs.getAdserverTargeting).
+For each header bidding partner you work with, create a keyword in the format of `hb_deal_BIDDERCODE`, e.g., `hb_deal_pubmatic`. For more examples of the keyword format, see the [API Reference for `pbjs.getAdserverTargeting`]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.getAdserverTargeting).
 
 Note that due to [DFP's character length limit on keys](https://support.google.com/dfp_premium/answer/1628457?hl=en#Key-values), Index Exchange's key is truncated to `hb_deal_indexExchang`.
 <br>

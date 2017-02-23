@@ -59,7 +59,7 @@ There's a reason bidders recommend different set of line items for different cre
 
 Prebid.js can dynamically resize the returned creative to the right size. Here's the setup:
 
-* Submit a few creatives of size 1x1 and make them override the line items' sizes. ([How to do this]({{ site.github.url }}/adops/step-by-step.html#creatives-setup))
+* Submit a few creatives of size 1x1 and make them override the line items' sizes when you [attach creatives to the line item]({{ site.github.url }}/adops/step-by-step.html#step-3-attach-the-creative-to-the-line-item).
 * Your ad unit can accept both 300x250 and 300x600. A bidder bid $6.00 for the 300x600 size and has the highest price. Prebid.js passed the bid in, as well as a generated bid ID. 
 * The $6.00 line item got picked by the line item. 
 * Your ad server randomly choose a 1x1 creative. However, because all creatives have the same content, it does not make a difference.
@@ -102,7 +102,7 @@ This simplifies the setup and the right creative (with adId 65432) will get disp
 
 #### How about reporting?
 
-It's important to understand the fill rates and CPM from different bidders. Prebid.js therefore passes in `hb_bidder`: bidderCode. This enables DFP to report on query strings (After you've done [this step]({{ site.github.url }}/adops/step-by-step.html#query-strings)). You can therefore run queries like:
+It's important to understand the fill rates and CPM from different bidders. Prebid.js therefore passes in `hb_bidder`: bidderCode. This enables DFP to report on query strings.  You can run queries like:
 
 * For bidder X, at what CPM does it fill?
 * For bidder X, what's the fill rate out of all the winning header bidding bids?

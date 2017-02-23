@@ -21,7 +21,7 @@ This page has instructions for writing your own bidder adapter.  The instruction
 
 {: .alert.alert-success :}
 **Adding a Video Bidder Adaptor?**  
-See [How to Add a New Video Bidder Adaptor]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
+See [How to Add a New Video Bidder Adaptor]({{site.github.url}}/dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
 
 * TOC
 {:toc}
@@ -63,7 +63,7 @@ A good example of an adapter that uses this pattern for its implementation is [O
 
 ## Step 3: Design your bid params
 
-Use the `bid.params` object for defining the parameters of your ad request.  You can include tag ID, site ID, ad size, keywords, and other data, such as [video bidding information]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
+Use the `bid.params` object for defining the parameters of your ad request.  You can include tag ID, site ID, ad size, keywords, and other data, such as [video bidding information]({{site.github.url}}/dev-docs/how-to-add-a-new-video-bidder-adaptor.html).
 
 For more information about the kinds of information that can be passed using these parameters, see [the list of bidder parameters]({{site.github.url}}/dev-docs/bidders.html).
 
@@ -198,7 +198,7 @@ For usage examples, see [the working adapters in the repo](https://github.com/pr
 
 ## Further Reading
 
-+ [How to Add a New Video Bidder Adaptor]({{site.github.url}}dev-docs/how-to-add-a-new-video-bidder-adaptor.html)
++ [How to Add a New Video Bidder Adaptor]({{site.github.url}}/dev-docs/how-to-add-a-new-video-bidder-adaptor.html)
 
 + [The bidder adapter sources in the repo](https://github.com/prebid/Prebid.js/tree/master/src/adapters)
 
