@@ -41,6 +41,8 @@ var ServerBidAdapter = function ServerBidAdapter() {
     "800x250"
   ];
 
+  var bidIds = [];
+
   baseAdapter.callBids = function(params) {
 
     if (params && params.bids && utils.isArray(params.bids) && params.bids.length) {
@@ -51,13 +53,16 @@ var ServerBidAdapter = function ServerBidAdapter() {
         user: {},
         url: document.location.href,
         referrer: document.referrer,
-        enableBotFiltering: true
+        enableBotFiltering: true,
+        includePricingData: true
       };
 
       var bids = params.bids || [];
       for (var i = 0; i < bids.length; i++) {
 
         var bid = bids[i];
+
+        bidIds.push(bid.bidId);
 
         var bid_data = {
           networkId: bid.params.networkId,
@@ -67,8 +72,7 @@ var ServerBidAdapter = function ServerBidAdapter() {
           flightId: bid.params.flightId,
           adId: bid.params.adId,
           divName: bid.bidId,
-          adTypes: getSize(bid.sizes),
-          includePricingData: true
+          adTypes: bid.adTypes || getSize(bid.sizes)
         };
 
         if (bid_data.networkId && bid_data.siteId) {
@@ -87,50 +91,46 @@ var ServerBidAdapter = function ServerBidAdapter() {
 
   function _responseCallback(result) {
 
-    result = JSON.parse(result);
+    var bid;
+    var bidId;
+    var bidObj;
+    var bidCode;
+    var placementCode;
 
-    if (result && result.decisions) {
+    try {
+      result = JSON.parse(result);
+    } catch (error) {
+      utils.logError(error);
+    }
 
-      for (var key in result.decisions) {
+    for (var i = 0; i < bidIds.length; i++) {
 
-        var bid;
-        var bidCode;
-        var placementCode;
-        var bidObj = utils.getBidRequest(key);
-        var decision = result.decisions[key];
-        var price = decision.pricing && decision.pricing.clearPrice || Math.floor(Math.random() * 10) + 1;
+      bidId = bidIds[i];
+      bidObj = utils.getBidRequest(bidId);
+      bidCode = bidObj.bidder;
+      placementCode = bidObj.placementCode;
 
-        if (bidObj) {
+      //prepare a no bid response.
+      bid = bidfactory.createBid(2, bidObj);
+      bid.bidderCode = bidCode;
 
-          console.log(bidObj);
+      if (result) {
 
-          if (price && price > 0) {
+        var decision = result.decisions && result.decisions[bidId];
+        var price = decision && decision.pricing && decision.pricing.clearPrice;
 
-            bid = bidfactory.createBid(1, bidObj);
-            bidCode = bidObj.bidder;
-            placementCode = bidObj.placementCode;
-
-            bid.bidderCode = bidCode;
-            bid.cpm = price;
-            bid.width = decision.width;
-            bid.height = decision.height;
-            bid.ad = retrieveAd(decision);
-
-            bidmanager.addBidResponse(placementCode, bid);
-
-          } else {
-
-            //send a no bid response.
-            bid = bidfactory.createBid(2, bidObj);
-            bid.bidderCode = bidCode;
-
-            bidmanager.addBidResponse(placementCode, bid);
-
-          }
-
+        if (decision && price) {
+          bid = bidfactory.createBid(1, bidObj);
+          bid.bidderCode = bidCode;
+          bid.cpm = price;
+          bid.width = decision.width;
+          bid.height = decision.height;
+          bid.ad = retrieveAd(decision);
         }
 
       }
+
+      bidmanager.addBidResponse(placementCode, bid);
 
     }
 
@@ -143,7 +143,10 @@ var ServerBidAdapter = function ServerBidAdapter() {
   function getSize(sizes) {
     var result = [];
     sizes.forEach(function(size) {
-      result.push(sizeMap.indexOf(size[0] + "x" + size[1]));
+      var index = sizeMap.indexOf(size[0] + "x" + size[1]);
+      if (index >= 0) {
+        result.push(index);
+      }
     });
     return result;
   }

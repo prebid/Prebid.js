@@ -52,12 +52,13 @@ const RESPONSE = {
       }],
       "height": 90,
       "width": 728,
-      "events": []
+      "events": [],
+      "pricing":{"price":0.5,"clearPrice":0.5,"revenue":0.0005,"rateType":2,"eCPM":0.5}
     },
   }
 }
 
-describe.only('serverbidAdapter', () => {
+describe('serverbidAdapter', () => {
 
   let adapter;
 
@@ -141,11 +142,7 @@ describe.only('serverbidAdapter', () => {
 
     it('handles nobid responses', () => {
       server.respondWith(JSON.stringify({
-        "bids": [{
-          "cpm": 0,
-          "creative": "",
-          "uuid": "30e5e911c00703"
-        }]
+        "decisions": []
       }));
 
       adapter.callBids(REQUEST);
