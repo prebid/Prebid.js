@@ -497,13 +497,20 @@ describe('AolAdapter', () => {
           }]
         });
         server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(document.body.querySelectorAll('iframe[src="pixels.org"]')[0].outerHTML).to.equal
-            ('<iframe width="1" height="1" src="pixels.org" style="display: none;"></iframe>');
-        expect(document.body.querySelectorAll('iframe[src="pixels1.org"]')[0].outerHTML).to.equal
-        ('<iframe width="1" height="1" src="pixels1.org" style="display: none;"></iframe>');
-      });
 
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+
+        let assertPixelsItem = (pixelsItemSelector) => {
+          let pixelsItem = document.body.querySelectorAll(pixelsItemSelector)[0];
+
+          expect(pixelsItem.width).to.equal('1');
+          expect(pixelsItem.height).to.equal('1');
+          expect(pixelsItem.style.display).to.equal('none');
+        };
+
+        assertPixelsItem('iframe[src="pixels.org"]');
+        assertPixelsItem('iframe[src="pixels1.org"]');
+      });
     });
 
     describe('when bidCpmAdjustment is set', () => {
@@ -537,5 +544,4 @@ describe('AolAdapter', () => {
       });
     });
   });
-
 });

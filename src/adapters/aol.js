@@ -111,7 +111,7 @@ const AolAdapter = function AolAdapter() {
     let iframe = document.createElement('iframe');
     iframe.width = 1;
     iframe.height = 1;
-    iframe.style = 'display: none';
+    iframe.style.display = 'none';
     iframe.src = pixelsItem.src;
     if (document.readyState === 'interactive' ||
         document.readyState === 'complete') {
