@@ -82,7 +82,7 @@ var ServerBidAdapter = function ServerBidAdapter() {
       }
 
       if (data.placements.length) {
-        ajax(BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: false, contentType: 'application/json' });
+        ajax(BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
       }
 
     }
