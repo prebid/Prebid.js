@@ -77,7 +77,7 @@
         var adUnits = [
             {
                 code: 'div-gpt-ad-12345678-0',
-                sizes: [[300, 250], [300, 600]],
+                sizes: [[300, 250], [300, 300], [300, 600]],
                 bids: [
                     // 1 ad unit can be targeted by multiple bids.
                     {
@@ -223,6 +223,13 @@
                         params: {
                             zoneId : '30164',
                             host : 'cpm.metaadserving.com'
+                        }
+                    },
+                    {
+                    bidder: 'widespace',
+                        params: {
+                            sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
+                            cur: 'EUR'
                         }
                     }
                 ]
