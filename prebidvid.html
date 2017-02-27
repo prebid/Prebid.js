@@ -16,12 +16,12 @@
       <script type="text/javascript" src="build/dist/prebid.js" async></script>
     <script>
       var PREBID_TIMEOUT = 1500;
+      var pbjs;
 
     	var videoAdUnit = {
      	  code: 'video',
      	  sizes: [640,480],
         bidfloor: 0.49,
-        cur: "USD",
      	  mediaType: 'video',
      	  bids: [
         	{
@@ -29,7 +29,6 @@
          	  params: {
            	  appId: '0a47f4ce-d91f-48d0-bd1c-64fa2c196f13',
               video: {
-                  skippable: false
               }
           	}
         	}
@@ -49,7 +48,7 @@
             // Log the VAST URL, if there is one
             try {
               url = bids.video.bids[0].vastUrl;
-              console.log('Bid #0 VAST URL: ');
+              console.log('VAST URL from HTML: ');
               console.log(url);
               } catch (e) {} // ignore
               var adserverTag = "https://www.techniqal.com/tmp/bf/prebid.php?";
@@ -57,8 +56,8 @@
               adserverTag = adserverTag + '&correlator=' + Date.now();
 
               var options = {
-                'adserver': 'dfp',
-                'code': 'video' // Must match the code from the `videoAdUnit` above
+                adserver: 'dfp',
+                code: 'video'
               };
 
            // Generate DFP Video Ad Server Tag URL

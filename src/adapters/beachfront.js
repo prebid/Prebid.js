@@ -11,7 +11,7 @@ const ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=';
 
 function BeachfrontAdapter() {
   var baseAdapter = Adapter.createNew('beachfront'),
-      bidRequest;
+    bidRequest;
 
 
   // take bid requests and send them out to get bid responses.
@@ -38,7 +38,7 @@ function BeachfrontAdapter() {
   };
 
   function prepareAndSaveRTBRequestParams(bid) {
-    if (!bid || !bid.params || !bid.params.appId || !bid.placementCode) {
+    if (!bid || !bid.params) {
       return;
     }
 
@@ -47,7 +47,8 @@ function BeachfrontAdapter() {
     bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
 
     var bidRequestObject =  {
-      appId: bid.params.appId,
+      isPrebid: true,
+      appId: bid.params.appId || undefined,
       domain: document.location.hostname,
       imp:[{
         video:{},
@@ -58,19 +59,20 @@ function BeachfrontAdapter() {
       },
       device:{
         ua: navigator.userAgent,
-        // XXX how do i get the ip address? Looks like the server has to do it?
+        // XXX how do i get the ip address?
         ip:"100.6.143.143",
-        // XXX if anything other than 1, no ad is returned
+        // XXX if this is anything other than 1, no ad is returned
         devicetype:1
       },
-      cur:[pbjs.adUnits[0].cur]
+      cur:[pbjs.adUnits[0].cur || "USD"]
     };
 
-    console.log("bidfloor is " + pbjs.adUnits[0].bidfloor);
+    console.log("Bidfloor is $" + pbjs.adUnits[0].bidfloor);
 
-    if (!bidRequestObject.appId || !pbjs.adUnits[0].bidfloor) {
-      console.log("Unable to process bid request: failed to pass in bidfloor or ad ID");
-      return;
+    if (bidRequestObject.appId.length !== 36) {
+      console.error("Bid request failed. Ensure your appId is accurate.");
+    } else if (!pbjs.adUnits[0].bidfloor){
+      console.error("Bid request failed. No bid floor specified.");
     } else {
       console.log("Bid request is successful: ");
       console.log(bidRequest);
@@ -91,7 +93,7 @@ function BeachfrontAdapter() {
 
     var newBid = {};
     newBid.price = parsed.seatbid[0].bid[0].price;
-    console.log("At least one bid came back, with a CPM of " + newBid.price);
+    console.log("At least one bid came back, with a CPM of $" + newBid.price);
 
     // The XML from bid 0 is found at: parsed.seatbid[0].bid[0].adm
     var parserBF = new DOMParser();
