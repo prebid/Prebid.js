@@ -284,6 +284,45 @@ describe('AolAdapter', () => {
               '&param1=val1&param2=val2&param3=val3&param4=val4');
         });
 
+        it('should hit the nexage api endpoint with post data with the openrtb config', () => {
+          let bidConfig = {
+            id: 'id-1',
+              imp: [{
+              id: 'id-2',
+              banner: {
+                w: '100',
+                h: '100'
+              },
+              tagid: 'header1'
+            }]
+          };
+          adapter.callBids(createBidderRequest({
+            params: bidConfig
+          }));
+          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?');
+          expect(requests[0].requestBody).to.deep.equal(bidConfig);
+          expect(requests[0].requestHeaders).to.have.property('x-openrtb-version');
+        });
+
+        it('should not hit the nexage api endpoint with post data with the openrtb config' +
+            ' if a required parameter is missing', () => {
+          let bidConfig = {
+            id: 'id-1',
+            imp: [{
+              // id: 'id-2',
+              banner: {
+                w: '100',
+                h: '100'
+              },
+              tagid: 'header1'
+            }]
+          };
+          adapter.callBids(createBidderRequest({
+            params: bidConfig
+          }));
+          expect(requests).to.be.empty;
+        })
+        ;
       });
 
     });

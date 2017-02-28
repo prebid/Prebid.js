@@ -7,7 +7,8 @@ const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
-  const nexageapiTemplate = template`${'protocol'}://hb.nexage.com/bidRequest?dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
+  const nexageBaseApiTemplate = template`${'protocol'}://hb.nexage.com/bidRequest?`;
+  const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
@@ -62,17 +63,20 @@ const AolAdapter = function AolAdapter() {
   }
 
   function _buildNexageApiUrl(bid) {
-    const params = bid.params;
-    let ext = '';
-    utils._each(params.ext, (value, key) => {
-      ext += `&${key}=${value}`;
-    });
-    return nexageapiTemplate({
-      protocol: 'http',
-      dcn: params.dcn,
-      pos: params.pos,
-      ext : ext
-    });
+    let nexageApi = nexageBaseApiTemplate({protocol: 'http'});
+    if (bid) {
+      const params = bid.params;
+      let ext = '';
+      utils._each(params.ext, (value, key) => {
+        ext += `&${key}=${value}`;
+      });
+      nexageApi += nexageGetApiTemplate({
+        dcn: params.dcn,
+        pos: params.pos,
+        ext : ext
+      });
+    }
+    return nexageApi;
   }
 
   function _addErrorBidResponse(bid, response = {}) {
@@ -128,44 +132,66 @@ const AolAdapter = function AolAdapter() {
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
 
+  function _isRequestNexagePostReady(bid) {
+    if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
+      let imp = bid.params.imp[0];
+      return imp.id && imp.tagid
+          && ((imp.banner && imp.banner.w && imp.banner.h)
+          || (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+    }
+    return false;
+  }
+
   function _callBids(params) {
     utils._each(params.bids, bid => {
       let apiUrl;
+      let data = null;
+      let options = {
+        withCredentials: true
+      };
       if (bid.params.placement && bid.params.network) {
-        apiUrl = _buildPubapiUrl(bid);
+        apiUrl = _buildPubApiUrl(bid);
       } else if (bid.params.dcn && bid.params.pos) {
-        apiUrl = _buildNexageapiUrl(bid);
+        apiUrl = _buildNexageApiUrl(bid);
+      } else if (_isRequestNexagePostReady(bid)) {
+        apiUrl = _buildNexageApiUrl();
+        data = bid.params;
+        options.openrtb = '2.2';
+        options.method = 'POST';
+        options.contentType = 'application/json';
       }
-      ajax(apiUrl, response => {
-        // needs to be here in case bidderSettings are defined after requestBids() is called
-        if (showCpmAdjustmentWarning &&
-          $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
-          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
-        ) {
-          utils.logWarn(
-            'bidCpmAdjustment is active for the AOL adapter. ' +
-            'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-          );
-        }
-        showCpmAdjustmentWarning = false; // warning is shown at most once
+      if (apiUrl) {
+        ajax(apiUrl, response => {
+          // needs to be here in case bidderSettings are defined after requestBids() is called
+          if (showCpmAdjustmentWarning &&
+            $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
+            typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
+          ) {
+            utils.logWarn(
+              'bidCpmAdjustment is active for the AOL adapter. ' +
+              'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
+            );
+          }
+          showCpmAdjustmentWarning = false; // warning is shown at most once
 
-        if (!response && response.length <= 0) {
-          utils.logError('Empty bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          if (!response && response.length <= 0) {
+            utils.logError('Empty bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        try {
-          response = JSON.parse(response);
-        } catch (e) {
-          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          try {
+            response = JSON.parse(response);
+          } catch (e) {
+            utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        _addBidResponse(bid, response);
+          _addBidResponse(bid, response);
 
-      }, null, { withCredentials: true });
+        }, data, options);
+      }
     });
   }
 

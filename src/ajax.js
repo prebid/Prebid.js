@@ -65,6 +65,9 @@ export function ajax(url, callback, data, options = {}) {
     if (options.preflight) {
       x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     }
+    if (options.openrtb) {
+      x.setRequestHeader('x-openrtb-version', options.openrtb);
+    }
     x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
   }
   x.send(method === 'POST' && data);
