@@ -33,7 +33,8 @@ function BeachfrontAdapter() {
 
     ajax(BID_URL, handleResponse, JSON.stringify(RTBDataParams), {
       contentType: 'text/plain',
-      withCredentials: true
+      withCredentials: true,
+      method: 'POST'
     });
   };
 
@@ -68,7 +69,6 @@ function BeachfrontAdapter() {
     };
 
     console.log("Bidfloor is $" + pbjs.adUnits[0].bidfloor);
-
 
 
     console.log("XXX bidmanager object is: ");

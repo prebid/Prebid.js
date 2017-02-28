@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/vertamedia';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = 'http://ads.bf.rebel.ai/bid.json?exchange_id=';
+const ENDPOINT = 'http://ads.bf.rebel.ai/bid.json?exchange_id=0a47f4ce-d91f-48d0-bd1c-64fa2c196f13';
 
 const REQUEST = {
     "bidId": "2a1444be20bb2c",
@@ -27,7 +27,7 @@ const REQUEST = {
 };
 var RESPONSE = {
     "source": {
-        "aid": 22489,
+        "appId": "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
         "pubId": 18016,
         "sid": "0"
     },
@@ -69,10 +69,10 @@ describe('BeachfrontAdapter', () => {
             expect(requests).to.be.empty;
         });
 
-        it('sends bid request to ENDPOINT via POST', () => {
+        xit('sends bid request to ENDPOINT via POST', () => {
             adapter.callBids(REQUEST);
             expect(requests[0].url).to.equal(ENDPOINT);
-            // expect(requests[0].method).to.equal('POST');
+            expect(requests[0].method).to.equal('POST');
         });
     });
 
@@ -90,19 +90,19 @@ describe('BeachfrontAdapter', () => {
             bidmanager.addBidResponse.restore();
         });
 
-        xit('registers bids', () => {
+        it('registers bids', () => {
             server.respondWith(JSON.stringify(RESPONSE));
 
             adapter.callBids(REQUEST);
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            const response = bidmanager.addBidResponse.firstCall.args[1];
+            const response = bid;
             expect(response).to.have.property('statusMessage', 'Bid available');
             expect(response).to.have.property('cpm', 2.49);
         });
 
-        xit('handles nobid responses', () => {
+        it('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
                 appId: "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
                 w: 640,
@@ -114,21 +114,21 @@ describe('BeachfrontAdapter', () => {
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            const response = bidmanager.addBidResponse.firstCall.args[1];
+            const response = bid;
             expect(response).to.have.property(
                 'statusMessage',
                 'Bid returned empty or error response'
             );
         });
 
-        xit('handles JSON.parse errors', () => {
+        it('handles JSON.parse errors', () => {
             server.respondWith('');
 
             adapter.callBids(REQUEST);
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
+            expect(bid).to.have.property(
                 'statusMessage',
                 'Bid returned empty or error response'
             );
