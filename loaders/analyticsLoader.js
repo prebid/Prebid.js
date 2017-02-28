@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const blockLoader = require('block-loader');
-let analyticsAdapters = require('../package.json').analytics;
+let analyticsAdapters = require('../analytics.json');
 
 var options = {
   start: '/** INSERT ANALYTICS - DO NOT EDIT OR REMOVE */',

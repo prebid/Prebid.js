@@ -17,7 +17,6 @@
     "prebid"
   ],
   "globalVarName": "pbjs",
-  "analytics": [],
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
