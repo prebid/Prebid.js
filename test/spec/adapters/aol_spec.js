@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import _ from 'lodash';
+import { cloneDeep } from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
@@ -29,7 +29,7 @@ const DEFAULT_PUBAPI_RESPONSE = {
       "id": 1,
       "impid": "245730051428950632",
       "price": 0.09,
-      "adm": "<script>console.log('ad');</script>",
+      "adm": "<script>logInfo('ad');</script>",
       "crid": "0",
       "h": 90,
       "w": 728,
@@ -45,7 +45,7 @@ describe('AolAdapter', () => {
   beforeEach(() => adapter = new AolAdapter());
 
   function createBidderRequest({bids, params} = {}) {
-    var bidderRequest = _.cloneDeep(DEFAULT_BIDDER_REQUEST);
+    var bidderRequest = cloneDeep(DEFAULT_BIDDER_REQUEST);
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
     }
@@ -426,7 +426,7 @@ describe('AolAdapter', () => {
             "bid": [{
               "id": 1,
               "impid": "245730051428950632",
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "0",
               "h": 90,
               "w": 728,
@@ -449,7 +449,7 @@ describe('AolAdapter', () => {
               "id": 1,
               "impid": "245730051428950632",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -461,7 +461,7 @@ describe('AolAdapter', () => {
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.ad).to.equal("<script>console.log('ad');</script>");
+        expect(bidResponse.ad).to.equal("<script>logInfo('ad');</script>");
         expect(bidResponse.cpm).to.equal(0.09);
         expect(bidResponse.width).to.equal(728);
         expect(bidResponse.height).to.equal(90);
@@ -478,7 +478,7 @@ describe('AolAdapter', () => {
               "id": 1,
               "impid": "245730051428950632",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -494,7 +494,7 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
-          "<script>console.log('ad');</script>" +
+          "<script>logInfo('ad');</script>" +
           "<script>document.write('<img src=\"pixel.gif\">');</script>"
         );
       });
@@ -509,7 +509,7 @@ describe('AolAdapter', () => {
               "impid": "245730051428950632",
               "dealid": "12345",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -536,7 +536,7 @@ describe('AolAdapter', () => {
               "impid": "245730051428950632",
               "dealid": "12345",
               "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
+              "adm": "<script>logInfo('ad');</script>",
               "crid": "12345",
               "h": 90,
               "w": 728,
@@ -553,6 +553,87 @@ describe('AolAdapter', () => {
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.cpm).to.equal('a9334987');
       });
+
+      it('should not render pixels on pubapi response when no parameter is set', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids(DEFAULT_BIDDER_REQUEST);
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
+      });
+
+      it('should render pixels from pubapi response when param userSyncOn is set with \'bidResponse\'', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>" +
+                "<iframe src=\"pixels1.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids({
+          bidderCode: 'aol',
+          requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+          bidderRequestId: '7101db09af0db2',
+          start: new Date().getTime(),
+          bids: [{
+            bidder: 'aol',
+            bidId: '84ab500420319d',
+            bidderRequestId: '7101db09af0db2',
+            requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+            placementCode: 'foo',
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              userSyncOn: 'bidResponse'
+            }
+          }]
+        });
+        server.respond();
+
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+
+        let assertPixelsItem = (pixelsItemSelector) => {
+          let pixelsItem = document.body.querySelectorAll(pixelsItemSelector)[0];
+
+          expect(pixelsItem.width).to.equal('1');
+          expect(pixelsItem.height).to.equal('1');
+          expect(pixelsItem.style.display).to.equal('none');
+        };
+
+        assertPixelsItem('iframe[src="pixels.org"]');
+        assertPixelsItem('iframe[src="pixels1.org"]');
+      });
     });
 
     describe('when bidCpmAdjustment is set', () => {
@@ -567,8 +648,8 @@ describe('AolAdapter', () => {
       afterEach(() => {
         $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
         server.restore();
-        if (console.warn.restore) {
-          console.warn.restore();
+        if (utils.logWarn.restore) {
+          utils.logWarn.restore();
         }
       });
 

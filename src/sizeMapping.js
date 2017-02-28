@@ -44,8 +44,16 @@ function isSizeMappingValid(sizeMapping) {
 
 function getScreenWidth(win) {
   var w = win || _win || window;
-  if(w.screen && w.screen.width) {
-    return w.screen.width;
+  var d = w.document;
+
+  if (w.innerWidth) {
+    return w.innerWidth;
+  }
+  else if (d.body.clientWidth) {
+    return d.body.clientWidth;
+  }
+  else if (d.documentElement.clientWidth) {
+    return d.documentElement.clientWidth;
   }
   return 0;
 }

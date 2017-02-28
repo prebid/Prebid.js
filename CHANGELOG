@@ -3,6 +3,21 @@ AOL Prebid dev
 Nexage API implemented.
 
 
+AOL Prebid 1.12.0
+----------------
+Updated to Prebid 0.17.0
+
+
+AOL Prebid 1.11.0
+----------------
+Added functionality of cookie syncing upon bid response.
+
+
+AOL Prebid 1.10.0
+----------------
+Updated to Prebid 0.16.0
+
+
 AOL Prebid 1.9.1
 ----------------
 Bump to patch version due to issue on build.
