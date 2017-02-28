@@ -59,8 +59,8 @@ function BeachfrontAdapter() {
       },
       device:{
         ua: navigator.userAgent,
-        // XXX how do i get the ip address?
-        ip:"100.6.143.143",
+        // XXX need to get IP from device
+        ip:"100.6.143.190",
         // XXX if this is anything other than 1, no ad is returned
         devicetype:1
       },
@@ -68,6 +68,12 @@ function BeachfrontAdapter() {
     };
 
     console.log("Bidfloor is $" + pbjs.adUnits[0].bidfloor);
+
+
+
+    console.log("XXX bidmanager object is: ");
+    console.log(bidmanager);
+
 
     if (bidRequestObject.appId.length !== 36) {
       console.error("Bid request failed. Ensure your appId is accurate.");
@@ -147,6 +153,9 @@ function BeachfrontAdapter() {
 
     return bid;
   }
+
+  console.log("XXX bidmanager object is: ");
+  console.log(bidmanager);
 
   return {
     createNew: BeachfrontAdapter.createNew,

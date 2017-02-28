@@ -5,8 +5,8 @@ import bidmanager from 'src/bidmanager';
 const ENDPOINT = 'http://ads.bf.rebel.ai/bid.json?exchange_id=';
 
 const REQUEST = {
-    "bidderCode": "beachfront",
-    "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725",
+    "bidId": "2a1444be20bb2c",
+    "bidder": "beachfront",
     "bidderRequestId": "7101db09af0db2",
     "bids": [
         {
@@ -17,12 +17,13 @@ const REQUEST = {
             },
             "placementCode": "video",
             "sizes": [640, 480],
-            "bidId": "27e10573b4031d",
-            "bidderRequestId": "13908061d4c9d6",
+            "bidFloor": 2.00,
+            "bidId": "2a1444be20bb2c",
+            "bidderRequestId": "7101db09af0db2",
             "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725"
         }
     ],
-    "start": 1469479810130
+    "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725",
 };
 var RESPONSE = {
     "source": {
@@ -34,12 +35,11 @@ var RESPONSE = {
         {
             "cmpId": 9541,
             "cpm": 2.49,
-            "url": "http://rtb.vertamedia.com/vast?adid=BFDB9CC0038AD918",
+            "url": "https://ad.doubleclick.net/ddm/pfadx/N470801.134502VIDEOLOGY/B10713766.143108226;sz=0x0;ord=2022068331;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;dcmt=text/xml",
             "cur": "USD"
         }
     ]
 };
-
 
 describe('BeachfrontAdapter', () => {
 
@@ -69,21 +69,11 @@ describe('BeachfrontAdapter', () => {
             expect(requests).to.be.empty;
         });
 
-        xit('requires member && invCode', () => {
-            let backup = REQUEST.bids[0].params;
-            REQUEST.bids[0].params = {member: 1234};
-            adapter.callBids(REQUEST);
-            expect(requests).to.be.empty;
-            REQUEST.bids[0].params = backup;
-        });
-
-
         it('sends bid request to ENDPOINT via POST', () => {
             adapter.callBids(REQUEST);
             expect(requests[0].url).to.equal(ENDPOINT);
-            expect(requests[0].method).to.equal('GET');
+            // expect(requests[0].method).to.equal('POST');
         });
-
     });
 
     describe('response handler', () => {
@@ -114,7 +104,7 @@ describe('BeachfrontAdapter', () => {
 
         xit('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
-                aid: 356465468,
+                appId: "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
                 w: 640,
                 h: 480,
                 domain: 'localhost'
