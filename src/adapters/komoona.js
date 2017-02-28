@@ -1,64 +1,120 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var STATUS = require('../constants').STATUS;
+import Adapter from 'src/adapters/adapter';
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
+import * as utils from 'src/utils';
+import { ajax } from 'src/ajax';
+import { STATUS } from 'src/constants';
 
-var KomoonaAdapter = function KomoonaAdapter() {
-  var KOMOONA_BIDDER_NAME = 'komoona';
+const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
-  function _callBids(params) {
-    var kbConf = {
-      ts_as: new Date().getTime(),
-      hb_placements: [],
-      hb_placement_bidids: {},
-      kb_callback: _bid_arrived
-    };
+function KomoonaAdapter() {
 
-    var bids = params.bids || [];
-    if (!bids || !bids.length) {
+  let baseAdapter = Adapter.createNew('komoona');
+  let bidRequests = {};
+
+  /* Prebid executes this function when the page asks to send out bid requests */
+  baseAdapter.callBids = function(bidRequest) {
+    const bids = bidRequest.bids || [];
+    const tags = bids
+      .filter(bid => valid(bid))
+      .map(bid => {
+        // map request id to bid object to retrieve adUnit code in callback
+        bidRequests[bid.bidId] = bid;
+
+        let tag = {};
+        tag.sizes = bid.sizes;
+        tag.uuid = bid.bidId;
+        tag.placementid = bid.params.placementId;
+        tag.hbid = bid.params.hbid;
+
+        return tag;
+      });
+
+    if (!utils.isEmpty(tags)) {
+      const payload = JSON.stringify({bids: [...tags]});
+
+      ajax(ENDPOINT, handleResponse, payload, {
+        contentType: 'text/plain',
+        withCredentials : true
+      });
+    }
+  };
+
+  /* Notify Prebid of bid responses so bids can get in the auction */
+  function handleResponse(response) {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(response);
+    } catch (error) {
+      utils.logError(error);
+    }
+
+    if (!parsed || parsed.error) {
+      let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
+      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      utils.logError(errorMessage);
+
+      // signal this response is complete
+      Object.keys(bidRequests)
+        .map(bidId => bidRequests[bidId].placementCode)
+        .forEach(placementCode => {
+          bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
+        });
+
       return;
     }
 
-    bids.forEach((currentBid) => {
-      kbConf.hdbdid = kbConf.hdbdid || currentBid.params.hbid;
-      kbConf.encode_bid = kbConf.encode_bid || currentBid.params.encode_bid;
-      kbConf.hb_placement_bidids[currentBid.params.placementId] = currentBid.bidId;
-      kbConf.hb_placements.push(currentBid.params.placementId);
-    });
-
-    var scriptUrl = `//s.komoona.com/kb/0.1/kmn_sa_kb_c.${kbConf.hdbdid}.js`;
-
-    adloader.loadScript(scriptUrl, function() {
-      /*global KmnKB */
-      if (typeof KmnKB === 'function') {
-        KmnKB.start(kbConf);
+    parsed.bids.forEach(tag => {
+      let status;
+      if (tag.cpm > 0 && tag.creative) {
+        status = STATUS.GOOD;
+      } else {
+        status = STATUS.NO_BID;
       }
-    }, true);
+
+      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      const bid = createBid(status, tag);
+      const placement = bidRequests[bid.adId].placementCode;
+
+      bidmanager.addBidResponse(placement, bid);
+    });
   }
 
-  function _bid_arrived(bid) {
-    var bidObj = utils.getBidRequest(bid.bidid);
-    var bidStatus = bid.creative ? STATUS.GOOD : STATUS.NO_BID;
-    var bidResponse = bidfactory.createBid(bidStatus, bidObj);
-    bidResponse.bidderCode = KOMOONA_BIDDER_NAME;
+  /* Check that a bid has required paramters */
+  function valid(bid) {
+    if (bid.params.placementId && bid.params.hbid) {
+      return bid;
+    } else {
+      utils.logError('bid requires placementId and hbid params');
+    }
+  }
 
-    if (bidStatus === STATUS.GOOD) {
-      bidResponse.ad = bid.creative;
-      bidResponse.cpm = bid.cpm;
-      bidResponse.width = parseInt(bid.width);
-      bidResponse.height = parseInt(bid.height);
+  /* Create and return a bid object based on status and tag */
+  function createBid(status, tag) {
+    let bid = bidfactory.createBid(status, tag);
+    bid.code = baseAdapter.getBidderCode();
+    bid.bidderCode = baseAdapter.getBidderCode();
+
+    if (status === STATUS.GOOD) {
+      bid.cpm = tag.cpm;
+      bid.width = tag.width;
+      bid.height = tag.height;
+      bid.ad = tag.creative;
     }
 
-    var placementCode = bidObj && bidObj.placementCode;
-    bidmanager.addBidResponse(placementCode, bidResponse);
+    return bid;
   }
 
-  // Export the callBids function, so that prebid.js can execute this function
-  // when the page asks to send out bid requests.
   return {
-    callBids: _callBids,
+    createNew: KomoonaAdapter.createNew,
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
   };
+}
+
+KomoonaAdapter.createNew = function() {
+  return new KomoonaAdapter();
 };
 
 module.exports = KomoonaAdapter;
