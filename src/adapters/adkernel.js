@@ -2,19 +2,21 @@ import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
+import Adapter from 'src/adapters/adapter';
 
 /**
  * Adapter for requesting bids from AdKernel white-label platform
  * @class
  */
-const AdkernelAdapter = function AdkernelAdapter() {
-  const ADKERNEL = 'adkernel';
+const AdKernelAdapter = function AdKernelAdapter() {
   const AJAX_REQ_PARAMS = {
     contentType: 'text/plain',
     withCredentials: true,
     method: 'GET'
   };
   const EMPTY_BID_RESPONSE = {'seatbid': [{'bid': []}]};
+
+  let baseAdapter = Adapter.createNew('adkernel');
 
   /**
    * Helper object to build multiple bid requests in case of multiple zones/ad-networks
@@ -24,6 +26,7 @@ const AdkernelAdapter = function AdkernelAdapter() {
     const _dispatch = {};
     const originalBids = {};
     const site = createSite();
+    const syncedHostZones = {};
 
     //translate adunit info into rtb impression dispatched by host/zone
     this.addImp = function (bid) {
@@ -46,16 +49,34 @@ const AdkernelAdapter = function AdkernelAdapter() {
       //save rtb impression for specified ad-network host and zone
       _dispatch[host][zone].push(imp);
       originalBids[bidId] = bid;
+      //perform user-sync
+      if (!(host in syncedHostZones)){
+        syncedHostZones[host] = [];
+      }
+      if (syncedHostZones[host].indexOf(zone) === -1) {
+        syncedHostZones[host].push(zone);
+        insertUserSync(host, zone);
+      }
     };
+
+    function insertUserSync(host, zone) {
+      var iframe = utils.createInvisibleIframe();
+      iframe.src = `//${host}/user-sync?zone=${zone}`;
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+    }
 
     /**
      *  Main function to get bid requests
      */
     this.dispatch = function (callback) {
       utils._each(_dispatch, (zones, host) => {
-        utils.logMessage('processing network ' + host);
+        utils.logMessage(`processing network ${host}`);
         utils._each(zones, (impressions, zone) => {
-          utils.logMessage('processing zone ' + zone);
+          utils.logMessage(`processing zone ${zone}`);
           dispatchRtbRequest(host, zone, impressions, callback);
         });
       });
@@ -104,7 +125,7 @@ const AdkernelAdapter = function AdkernelAdapter() {
      * Build ad-network specific endpoint url
      */
     function buildEndpointUrl(host) {
-      return window.location.protocol + '//' + host + '/rtbg';
+      return `${window.location.protocol}//${host}/rtbg`;
     }
 
     function buildRequestParams(zone, rtbReq) {
@@ -119,10 +140,10 @@ const AdkernelAdapter = function AdkernelAdapter() {
   /**
    *  Main module export function implementation
    */
-  function _callBids(params) {
+  baseAdapter.callBids = function (params) {
     var bids = params.bids || [];
     processBids(bids);
-  }
+  };
 
   /**
    *  Process all bids grouped by network/zone
@@ -132,7 +153,7 @@ const AdkernelAdapter = function AdkernelAdapter() {
     //process individual bids
     utils._each(bids, (bid) => {
       if (!validateBidParams(bid.params)) {
-        utils.logError('Incorrect configuration for adkernel bidder:', bid.params);
+        utils.logError(`Incorrect configuration for adkernel bidder: ${bid.params}`);
         bidmanager.addBidResponse(bid.placementCode, createEmptyBidObject(bid));
       } else {
         dispatcher.addImp(bid);
@@ -142,10 +163,10 @@ const AdkernelAdapter = function AdkernelAdapter() {
     dispatcher.dispatch((bid, imp, bidResp) => {
       let adUnitId = bid.placementCode;
       if (bidResp) {
-        utils.logMessage('got response for ' + adUnitId);
+        utils.logMessage(`got response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, imp.banner.w, imp.banner.h));
       } else {
-        utils.logMessage('got empty response for ' + adUnitId);
+        utils.logMessage(`got empty response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createEmptyBidObject(bid));
       }
     });
@@ -156,8 +177,8 @@ const AdkernelAdapter = function AdkernelAdapter() {
    */
   function createBidObject(resp, bid, width, height) {
     return utils.extend(bidfactory.createBid(1, bid), {
-      bidderCode: ADKERNEL,
-      ad: formatAdmarkup(resp),
+      bidderCode: bid.bidder,
+      ad: formatAdMarkup(resp),
       width: width,
       height: height,
       cpm: parseFloat(resp.price)
@@ -169,14 +190,14 @@ const AdkernelAdapter = function AdkernelAdapter() {
    */
   function createEmptyBidObject(bid) {
     return utils.extend(bidfactory.createBid(2, bid), {
-      bidderCode: ADKERNEL
+      bidderCode: bid.bidder
     });
   }
 
   /**
    *  Format creative with optional nurl call
    */
-  function formatAdmarkup(bid) {
+  function formatAdMarkup(bid) {
     var adm = bid.adm;
     if ('nurl' in bid) {
       adm += utils.createTrackPixelHtml(bid.nurl);
@@ -194,14 +215,23 @@ const AdkernelAdapter = function AdkernelAdapter() {
   function createSite() {
     var location = utils.getTopWindowLocation();
     return {
-      'domain': location.hostname,
-      'page': location.pathname
+      'domain': location.hostname
     };
   }
 
   return {
-    callBids: _callBids
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
+    getBidderCode : baseAdapter.getBidderCode,
+    createNew : AdKernelAdapter.createNew
   };
 };
 
-module.exports = AdkernelAdapter;
+/**
+ * Creates new instance of AdKernel bidder adapter
+ */
+AdKernelAdapter.createNew = function() {
+  return new AdKernelAdapter();
+};
+
+module.exports = AdKernelAdapter;

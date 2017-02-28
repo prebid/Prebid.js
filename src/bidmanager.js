@@ -2,6 +2,7 @@ import {uniques, flatten, adUnitsFilter} from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
+var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
 
@@ -45,7 +46,7 @@ function bidsBackAdUnit(adUnitCode) {
     .map(request => request.bids
       .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
           bid.sizes.length :
@@ -63,7 +64,7 @@ function add(a, b) {
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
@@ -92,6 +93,11 @@ function getBidderRequest(bidder, adUnitCode) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+  if (!adUnitCode) {
+    utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
+    return;
+  }
+
   if (bid) {
 
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
@@ -129,16 +135,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && bid.cpm !== 0) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId ) ) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
-
-      if (bid.dealId) {
-        keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
-      }
-
-      bid.adserverTargeting = keyValues;
     }
 
+    bid.adserverTargeting = keyValues;
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
@@ -204,7 +205,8 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     }
 
     if (
-      typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true &&
+      (typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true ||
+      key === "hb_deal") && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
@@ -257,8 +259,12 @@ exports.executeCallback = function (timedOut) {
 
   //execute one time callback
   if (externalCallbacks.oneTime) {
+    events.emit(AUCTION_END);
     try {
       processCallbacks([externalCallbacks.oneTime]);
+    }
+    catch(e){
+      utils.logError('Error executing bidsBackHandler', null, e);
     }
     finally {
       externalCallbacks.oneTime = null;
@@ -295,25 +301,15 @@ function processCallbacks(callbackQueue, singleAdUnitCode) {
  * groupByPlacement is a reduce function that converts an array of Bid objects
  * to an object with placement codes as keys, with each key representing an object
  * with an array of `Bid` objects for that placement
- * @param prev previous value as accumulator object
- * @param item current array item
- * @param idx current index
- * @param arr the array being reduced
  * @returns {*} as { [adUnitCode]: { bids: [Bid, Bid, Bid] } }
  */
-function groupByPlacement(prev, item, idx, arr) {
-  // this uses a standard "array to map" operation that could be abstracted further
-  if (item.adUnitCode in Object.keys(prev)) {
-    // if the adUnitCode key is present in the accumulator object, continue
-    return prev;
-  } else {
-    // otherwise add the adUnitCode key to the accumulator object and set to an object with an
-    // array of Bids for that adUnitCode
-    prev[item.adUnitCode] = {
-      bids: arr.filter(bid => bid.adUnitCode === item.adUnitCode)
-    };
-    return prev;
-  }
+function groupByPlacement(bidsByPlacement, bid) {
+  if (!bidsByPlacement[bid.adUnitCode])
+    bidsByPlacement[bid.adUnitCode] = { bids: [] };
+
+  bidsByPlacement[bid.adUnitCode].bids.push(bid);
+
+  return bidsByPlacement;
 }
 
 /**
@@ -399,6 +395,11 @@ function getStandardBidderSettings() {
           key: 'hb_size',
           val: function (bidResponse) {
             return bidResponse.size;
+          }
+        }, {
+          key: 'hb_deal',
+          val: function (bidResponse) {
+            return bidResponse.dealId;
           }
         }
       ]

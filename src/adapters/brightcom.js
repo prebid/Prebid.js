@@ -112,7 +112,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Define the bid request call URL
     var bidRequestCallUrl = 'https://' + brightcomUrl +
-        '?callback=' + brightcomCallbackFunction +
+        '?callback=' + encodeURIComponent(brightcomCallbackFunction) +
         '&request=' + encodeURIComponent(JSON.stringify(brightcomBidReq));
 
     // Add the call to get the bid
