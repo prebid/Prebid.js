@@ -78,7 +78,7 @@ describe('centro adapter tests', function () {
 
             var parsedBidUrl = urlParse(bidUrl1);
             var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-            var generatedCallback = 'adCentroHandler_28136300x250';
+            var generatedCallback = 'adCentroHandler_28136300x250div-gpt-ad-12345-1';
 
             expect(parsedBidUrl.hostname).to.equal('staging.brand-server.com');
             expect(parsedBidUrl.pathname).to.equal('/hb');
@@ -92,13 +92,13 @@ describe('centro adapter tests', function () {
 
             parsedBidUrl = urlParse(bidUrl2);
             parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-            generatedCallback = 'adCentroHandler_28137728x90';
+            generatedCallback = 'adCentroHandler_28137728x90div-gpt-ad-12345-2';
 
             expect(parsedBidUrl.hostname).to.equal('t.brand-server.com');
             expect(parsedBidUrl.pathname).to.equal('/hb');
 
             expect(parsedBidUrlQueryString).to.have.property('s').and.to.equal('28137');
-            expect(parsedBidUrlQueryString).to.not.have.property('url');
+            expect(parsedBidUrlQueryString).to.have.property('url').and.to.equal(location.href);
             expect(parsedBidUrlQueryString).to.have.property('sz').and.to.equal('728x90');
             expect(parsedBidUrlQueryString).to.have.property('callback').and.to.equal(generatedCallback);
         });
@@ -158,8 +158,10 @@ describe('centro adapter tests', function () {
 
             adapter().callBids(params);
 
-            expect(window['adCentroHandler_28136300x250']).to.exist.and.to.be.a('function');
-            expect(window['adCentroHandler_111111728x90']).to.exist.and.to.be.a('function');
+            expect(window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'])
+                .to.exist.and.to.be.a('function');
+            expect(window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'])
+                .to.exist.and.to.be.a('function');
         });
 
         it('bidmanager.addBidResponse should be called with correct arguments', function () {
@@ -189,10 +191,10 @@ describe('centro adapter tests', function () {
             var response3 = {"adTag":"","height":0,"value":0,"width":0,"sectionID":222222};
             var response4 = '';
 
-            window['adCentroHandler_28136300x250'](response);
-            window['adCentroHandler_111111728x90'](response2);
-            window['adCentroHandler_222222728x90'](response3);
-            window['adCentroHandler_333333728x90'](response4);
+            window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'](response);
+            window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'](response2);
+            window['adCentroHandler_222222728x90%2F19968336%2Fheader-bid-tag-2'](response3);
+            window['adCentroHandler_333333728x90%2F19968336%2Fheader-bid-tag-3'](response4);
 
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
