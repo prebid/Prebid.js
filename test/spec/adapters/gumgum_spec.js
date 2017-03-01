@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import Adapter from '../../../src/adapters/gumgum';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
+import * as utils from '../../../src/utils';
 import { STATUS } from '../../../src/constants';
 
 describe('gumgum adapter', () => {
@@ -57,6 +58,9 @@ describe('gumgum adapter', () => {
       sizes: [ [728, 90] ]
     }]
   };
+  const pageParams = {
+    "pvid": "PVID"
+  };
   const bidderResponse = {
     "ad": {
       "id": 1,
@@ -67,7 +71,8 @@ describe('gumgum adapter', () => {
       "du": "http://example.com/",
       "price": TEST.CPM,
       "impurl": "http://example.com/"
-    }
+    },
+    "pag": pageParams
   };
 
   function mockBidResponse(response) {
@@ -94,11 +99,11 @@ describe('gumgum adapter', () => {
       adapter.callBids(bidderRequest);
     });
 
-    it('should call the endpoint once per valid bid', () => {
+    it('calls the endpoint once per valid bid', () => {
       sinon.assert.callCount(adLoader.loadScript, 4);
     });
 
-    it('should include required browser data', () => {
+    it('includes required browser data', () => {
       const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
       endpointRequest.to.include('vw');
       endpointRequest.to.include('vh');
@@ -106,7 +111,12 @@ describe('gumgum adapter', () => {
       endpointRequest.to.include('sh');
     });
 
-    it('should include the publisher identity', () => {
+    it('includes the global bid timeout', () => {
+      const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
+      endpointRequest.to.include(`tmax=${$$PREBID_GLOBAL$$.cbTimeout}`);
+    });
+
+    it('includes the publisher identity', () => {
       const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
       endpointRequest.to.include('t=' + TEST.PUBLISHER_IDENTITY);
     });
@@ -130,7 +140,7 @@ describe('gumgum adapter', () => {
   });
 
   describe('handleGumGumCB[...]', () => {
-    it('should exist and be a function', () => {
+    it('exists and is function', () => {
       expect(pbjs.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a('function');
     });
   });
@@ -143,28 +153,29 @@ describe('gumgum adapter', () => {
       successfulBid = mockBidResponse(bidderResponse);
     });
 
-    it('should add one bid', () => {
+    it('adds one bid', () => {
       sinon.assert.calledOnce(bidManager.addBidResponse);
     });
 
-    it('should pass the correct placement code as the first param', () => {
+    it('passes the correct placement code as the first param', () => {
       const [ placementCode ] = bidManager.addBidResponse.firstCall.args;
       expect(placementCode).to.eql(TEST.PLACEMENT);
     });
 
-    it('should have a GOOD status code', () => {
-      expect(successfulBid.getStatusCode()).to.eql(STATUS.GOOD);
+    it('has a GOOD status code', () => {
+      const STATUS_CODE = successfulBid.getStatusCode();
+      expect(STATUS_CODE).to.eql(STATUS.GOOD);
     });
 
-    it('should use the CPM returned by the server', () => {
+    it('uses the CPM returned by the server', () => {
       expect(successfulBid).to.have.property('cpm', TEST.CPM);
     });
 
-    it('should have an ad', () => {
+    it('has an ad', () => {
       expect(successfulBid).to.have.property('ad');
     });
 
-    it('should have the size specified by the server', () => {
+    it('has the size specified by the server', () => {
       expect(successfulBid).to.have.property('width', 728);
       expect(successfulBid).to.have.property('height', 90);
     });
@@ -176,24 +187,48 @@ describe('gumgum adapter', () => {
     let noBid;
 
     beforeEach(() => {
-      noBid = mockBidResponse({});
+      noBid = mockBidResponse(undefined);
     });
 
-    it('should add one bid', () => {
+    it('adds one bid', () => {
       sinon.assert.calledOnce(bidManager.addBidResponse);
     });
 
-    it('should have a NO_BID status code', () => {
+    it('has a NO_BID status code', () => {
       expect(noBid.getStatusCode()).to.eql(STATUS.NO_BID);
     });
 
-    it('should pass the correct placement code as the first parameter', () => {
+    it('passes the correct placement code as the first parameter', () => {
       const [ placementCode ] = bidManager.addBidResponse.firstCall.args;
       expect(placementCode).to.eql(TEST.PLACEMENT);
     });
 
-    it('should add the bidder code to the bid object', () => {
+    it('adds the bidder code to the bid object', () => {
       expect(noBid).to.have.property('bidderCode', TEST.BIDDER_CODE);
+    });
+
+  });
+
+  describe('refresh throttle', () => {
+
+    beforeEach(() => {
+      mockBidResponse(bidderResponse);
+    });
+
+    afterEach(() => {
+      if (utils.logWarn.restore) {
+        utils.logWarn.restore();
+      }
+    });
+
+    it('warns about the throttle limit', function() {
+      sinon.spy(utils, 'logWarn');
+      // call all the binds again
+      adapter.callBids(bidderRequest);
+      // the timeout for in-screen should stop one bid request
+      const warning = expect(utils.logWarn.args[0][0]);
+      warning.to.include(TEST.PLACEMENT);
+      warning.to.include('inScreen');
     });
 
   });
