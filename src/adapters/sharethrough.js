@@ -51,7 +51,12 @@ var SharethroughAdapter = function SharethroughAdapter() {
     iframe.src = url;
     iframe.style.cssText = 'display:none;';
 
-    document.body.appendChild(iframe);
+    if (document.body)
+      document.body.appendChild(iframe);
+    else
+      document.addEventListener("DOMContentLoaded", function() {
+        document.body.appendChild(iframe);
+      });
   };
 
   function _receiveMessage(event) {
