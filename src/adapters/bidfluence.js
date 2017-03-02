@@ -7,7 +7,6 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     //Callback
     window.bfPbjsCB = function (bfr) {
         var bidObject = null;
-
         if (bfr.cpm > 0) {
             bidObject = bidfactory.createBid(1);
             bidObject.bidderCode = 'bidfluence';
@@ -31,11 +30,10 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     }
 
     function call(bid) {
-
         var adunitId = utils.getBidIdParameter('adunitId', bid.params);
         /* jshint ignore:start */
         var publisherId = utils.getBidIdParameter('pubId', bid.params);
-        var reservePrice = utils.getBidIdParameter('reservePrice', bid.params);//This is optional. For dynamic reserve price only.
+        var reservePrice = utils.getBidIdParameter('reservePrice', bid.params);
         var pbjsBfobj = {
             placementCode: bid.placementCode
         };
@@ -58,5 +56,4 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
         callBids: _callBids
     };
 };
-
 module.exports = BidfluenceAdapter;
