@@ -107,6 +107,11 @@
       "getintent": {
         "supportedMediaTypes" : ["video"]
       }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
     }
 
 ]
