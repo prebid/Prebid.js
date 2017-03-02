@@ -1,3 +1,6 @@
+/* jshint -W024 */
+/* jshint expr:true */
+
 import { expect } from 'chai';
 import Adapter from 'src/adapters/serverbid';
 import bidmanager from 'src/bidmanager';
@@ -56,7 +59,7 @@ const RESPONSE = {
       "pricing":{"price":0.5,"clearPrice":0.5,"revenue":0.0005,"rateType":2,"eCPM":0.5}
     },
   }
-}
+};
 
 describe('serverbidAdapter', () => {
 
@@ -122,7 +125,7 @@ describe('serverbidAdapter', () => {
     });
 
     afterEach(() => {
-      server.restore()
+      server.restore();
       bidmanager.addBidResponse.restore();
       utils.getBidRequest.restore();
     });
