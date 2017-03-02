@@ -11,7 +11,7 @@ const AolAdapter = function AolAdapter() {
   const nexageBaseApiTemplate = template`${'protocol'}://hb.nexage.com/bidRequest?`;
   const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
   const BIDDER_CODE = 'aol';
-  const SERVER_MAP = {
+  const MP_SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
     eu: 'adserver-eu.adtech.advertising.com',
     as: 'adserver-as.adtech.advertising.com'
@@ -137,13 +137,13 @@ const AolAdapter = function AolAdapter() {
     };
   }
 
-  function _buildPubApiUrl(bid) {
+  function _buildMarketplaceUrl(bid) {
     const params = bid.params;
     const serverParam = params.server;
     let regionParam = params.region || 'us';
     let server;
 
-    if (!SERVER_MAP.hasOwnProperty(regionParam)) {
+    if (!MP_SERVER_MAP.hasOwnProperty(regionParam)) {
       utils.logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
       regionParam = 'us'; // Default region.
     }
@@ -151,7 +151,7 @@ const AolAdapter = function AolAdapter() {
     if (serverParam) {
       server = serverParam;
     } else {
-      server = SERVER_MAP[regionParam];
+      server = MP_SERVER_MAP[regionParam];
     }
 
     // Set region param, used by AOL analytics.
@@ -177,7 +177,7 @@ const AolAdapter = function AolAdapter() {
       const params = bid.params;
       let ext = '';
       utils._each(params.ext, (value, key) => {
-        ext += `&${key}=${value}`;
+        ext += encodeURI(`&${key}=${value}`);
       });
       nexageApi += nexageGetApiTemplate({
         dcn: params.dcn,
@@ -263,19 +263,21 @@ const AolAdapter = function AolAdapter() {
         withCredentials: true
       };
       if (bid.params.placement && bid.params.network) {
-        apiUrl = _buildPubApiUrl(bid);
+        apiUrl = _buildMarketplaceUrl(bid);
       } else if (bid.params.dcn && bid.params.pos) {
         apiUrl = _buildNexageApiUrl(bid);
       } else if (_isRequestNexagePostReady(bid)) {
         apiUrl = _buildNexageApiUrl();
         data = bid.params;
-        options.openrtb = '2.2';
+        options.customHeaders = {
+          'x-openrtb-version': '2.2'
+        };
         options.method = 'POST';
         options.contentType = 'application/json';
       }
       if (apiUrl) {
         ajax(apiUrl, response => {
-          // needs to be here in case bidderSettings are defined after requestBids() is called
+          // Needs to be here in case bidderSettings are defined after requestBids() is called
           if (showCpmAdjustmentWarning &&
             $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
             typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
