@@ -33,8 +33,7 @@ function BeachfrontAdapter() {
 
     ajax(BID_URL, handleResponse, JSON.stringify(RTBDataParams), {
       contentType: 'text/plain',
-      withCredentials: true,
-      method: 'POST'
+      withCredentials: true
     });
   };
 
@@ -48,12 +47,13 @@ function BeachfrontAdapter() {
     bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
 
     var bidRequestObject =  {
+
       isPrebid: true,
       appId: bid.params.appId || undefined,
       domain: document.location.hostname,
       imp:[{
         video:{},
-        bidfloor: pbjs.adUnits[0].bidfloor
+        bidfloor: bid.params.bidfloor
       }],
       site:{
         page:"http://www.rebelai.com"
@@ -65,10 +65,14 @@ function BeachfrontAdapter() {
         // XXX if this is anything other than 1, no ad is returned
         devicetype:1
       },
-      cur:[pbjs.adUnits[0].cur || "USD"]
+      cur:["USD"]
     };
 
-    console.log("Bidfloor is $" + pbjs.adUnits[0].bidfloor);
+    console.log("bid params:");
+    console.log(bid.params);
+
+    console.log("Bidfloor is $" + bid.params.bidfloor);
+
 
 
     console.log("XXX bidmanager object is: ");
@@ -77,8 +81,10 @@ function BeachfrontAdapter() {
 
     if (bidRequestObject.appId.length !== 36) {
       console.error("Bid request failed. Ensure your appId is accurate.");
-    } else if (!pbjs.adUnits[0].bidfloor){
+      return bidRequestObject;
+    } else if (!bid.params.bidfloor){
       console.error("Bid request failed. No bid floor specified.");
+      return bidRequestObject;
     } else {
       console.log("Bid request is successful: ");
       console.log(bidRequest);
@@ -93,6 +99,10 @@ function BeachfrontAdapter() {
 
     try {
       parsed = JSON.parse(response);
+
+      console.log("Parsed response: ");
+      console.log(parsed);
+
     } catch (error) {
       utils.logError(error);
     }
@@ -120,7 +130,7 @@ function BeachfrontAdapter() {
 
     // Final parsed ad tag uri in the response: xml_uri_child.nodeValue
 
-    if (!parsed ) {
+    if (!parsed || !xml_uri || !newBid.price) {
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
       console.log("Status is no bid. Check yourself.");
       return;
@@ -153,9 +163,6 @@ function BeachfrontAdapter() {
 
     return bid;
   }
-
-  console.log("XXX bidmanager object is: ");
-  console.log(bidmanager);
 
   return {
     createNew: BeachfrontAdapter.createNew,

@@ -1,23 +1,35 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/vertamedia';
+import BeachfrontAdapter from 'src/adapters/beachfront';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = 'http://ads.bf.rebel.ai/bid.json?exchange_id=0a47f4ce-d91f-48d0-bd1c-64fa2c196f13';
+const ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=0a47f4ce-d91f-48d0-bd1c-64fa2c196f13';
 
 const REQUEST = {
+    "width": 640,
+    "height": 480,
     "bidId": "2a1444be20bb2c",
     "bidder": "beachfront",
     "bidderRequestId": "7101db09af0db2",
+    "params": {
+      "appId": "whatever",
+      "video": {},
+      "placementCode": "video",
+      "sizes": [
+        640, 480
+      ]
+    },
     "bids": [
         {
+            "bidFloor": 2.00,
             "bidder": "beachfront",
             "params": {
-                appId: "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
-                video: {},
+                "appId": "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
+                "bidfloor": 2.00,
+                "video": {},
             },
             "placementCode": "video",
             "sizes": [640, 480],
-            "bidFloor": 2.00,
+
             "bidId": "2a1444be20bb2c",
             "bidderRequestId": "7101db09af0db2",
             "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725"
@@ -25,27 +37,38 @@ const REQUEST = {
     ],
     "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725",
 };
+
+
 var RESPONSE = {
-    "source": {
-        "appId": "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
-        "pubId": 18016,
-        "sid": "0"
-    },
-    "bids": [
-        {
-            "cmpId": 9541,
-            "cpm": 2.49,
-            "url": "https://ad.doubleclick.net/ddm/pfadx/N470801.134502VIDEOLOGY/B10713766.143108226;sz=0x0;ord=2022068331;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;dcmt=text/xml",
-            "cur": "USD"
-        }
-    ]
+ "id": "e926f4eaef66673dd52485ebadba9ebd",
+ "seatbid": [
+   {
+     "bid": [
+       {
+         "id": 1,
+         "impid": "1",
+         "price": "5",
+         "adid": "784858",
+         "adm": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\"><Ad id=\"1\"><Wrapper><AdSystem><![CDATA[Techniqal]]></AdSystem><VASTAdTagURI><![CDATA[http://www.techniqal.com/tmp/bf/bid_wrap.php?c=1]]></VASTAdTagURI></Wrapper></Ad></VAST>",
+         "adomain": [
+           "techniqal.com"
+         ],
+         "cid": "64045",
+         "crid": "784858"
+       }
+     ],
+     "seat": "bfio"
+   }
+ ],
+ "bidid": "7d6cb445071069b437c307bedfb69ae8",
+ "cur": "USD"
 };
 
 describe('BeachfrontAdapter', () => {
 
     let adapter;
 
-    beforeEach(() => adapter = Adapter.createNew());
+    beforeEach(() => adapter = BeachfrontAdapter.createNew());
 
     describe('request function', () => {
 
@@ -60,6 +83,12 @@ describe('BeachfrontAdapter', () => {
 
         afterEach(() => xhr.restore());
 
+
+
+        console.log("XXXXXXXX running beachfront tests");
+
+
+
         it('exists and is a function', () => {
             expect(adapter.callBids).to.exist.and.to.be.a('function');
         });
@@ -69,10 +98,12 @@ describe('BeachfrontAdapter', () => {
             expect(requests).to.be.empty;
         });
 
-        xit('sends bid request to ENDPOINT via POST', () => {
-            adapter.callBids(REQUEST);
-            expect(requests[0].url).to.equal(ENDPOINT);
-            expect(requests[0].method).to.equal('POST');
+        it('sends bid request to ENDPOINT via POST', () => {
+
+          adapter.callBids(REQUEST);
+          console.log("requests = "+requests[0]);
+          expect(requests[0].url).to.equal(ENDPOINT);
+          expect(requests[0].method).to.equal('POST');
         });
     });
 
@@ -97,14 +128,16 @@ describe('BeachfrontAdapter', () => {
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            const response = bid;
+            const response = bidmanager.addBidResponse.firstCall.args[1];
+            console.log("Response is:: ");
+            console.log(response);
             expect(response).to.have.property('statusMessage', 'Bid available');
-            expect(response).to.have.property('cpm', 2.49);
+            expect(response).to.have.property('cpm', "5");
         });
 
         it('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
-                appId: "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
+                appId: "0a47f4ce-d91f-48d0-bd1c-64fac196f13",
                 w: 640,
                 h: 480,
                 domain: 'localhost'
@@ -114,7 +147,7 @@ describe('BeachfrontAdapter', () => {
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            const response = bid;
+            const response = bidmanager.addBidResponse.firstCall.args[1];
             expect(response).to.have.property(
                 'statusMessage',
                 'Bid returned empty or error response'
@@ -122,13 +155,14 @@ describe('BeachfrontAdapter', () => {
         });
 
         it('handles JSON.parse errors', () => {
-            server.respondWith('');
+            server.respondWith("");
 
             adapter.callBids(REQUEST);
             server.respond();
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
-            expect(bid).to.have.property(
+            const response = bidmanager.addBidResponse.firstCall.args[1];
+            expect(response).to.have.property(
                 'statusMessage',
                 'Bid returned empty or error response'
             );
