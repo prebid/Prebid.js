@@ -1,23 +1,27 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
     "adkernel",
     "admedia",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
+    "getintent",
     "komoona",
+    "lifestreet",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
@@ -30,7 +34,10 @@
     "sonobi",
     "sovrn",
     "springserve",
+    "thoughtleadr",
+    "stickyadstv",
     "triplelift",
+    "twenga",
     "yieldbot",
     "nginad",
     "brightcom",
@@ -65,20 +72,40 @@
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
+    },    {
+      "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "matomy"
+      }
     },
     {
       "rubicon": {
-        "alias": "rubiconLite"
+        "alias": "rubiconLite",
+        "supportedMediaTypes": ["video"]
       }
     },
     {
       "appnexus": {
         "alias": "featureforward"
       }
+    },    
+    {
+      "appnexus": {
+        "alias": "oftmedia"
+      }
     },
     {
       "adkernel": {
         "alias": "headbidding"
+      }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
       }
     }
 

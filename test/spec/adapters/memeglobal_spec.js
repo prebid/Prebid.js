@@ -161,7 +161,7 @@ describe('memeglobal adapter tests', function () {
       expect(bidObject1.cpm).to.equal(0.09);
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.ad).to.equal('ad-code<img src="http://url" height="0px" width="0px">');
+      expect(bidObject1.ad).to.equal('ad-code<img src="http://url" height="0px" width="0px" style="display: none;">');
 
       stubAddBidResponse.calledThrice;
 
