@@ -117,7 +117,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       _fixParamNames(requestParams);
 
       publisherId = requestParams.pbId;
-	  referrer = referrer || requestParams.referrer;
+      referrer = referrer || requestParams.referrer;
       bidUrl += _setupPlacementParameters(i, requestParams);
     }
 
