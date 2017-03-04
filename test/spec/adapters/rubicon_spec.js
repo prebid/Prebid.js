@@ -277,6 +277,20 @@ describe('the rubicon adapter', () => {
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
 
         });
+
+        it('should not send a request and register an error if no account id is present', () => {
+
+          var noAccountBidderRequest = clone(bidderRequest);
+          delete noAccountBidderRequest.bids[0].params.accountId;
+
+          rubiconAdapter.callBids(noAccountBidderRequest);
+
+          expect(xhr.requests.length).to.equal(0);
+          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+
+        });
         
         it('should allow a floor override', () => {
 

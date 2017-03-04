@@ -198,6 +198,10 @@ function RubiconAdapter() {
       throw "no valid sizes";
     }
 
+    if(!/^\d+$/.test(accountId)) {
+      throw "invalid accountId provided";
+    }
+
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [
       'account_id', accountId,
