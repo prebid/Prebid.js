@@ -9,16 +9,15 @@ describe('Roxot Prebid Analytic', function () {
 
     it('should catch all events', function () {
       let config = {options: { publisherIds : ['foo'] } };
-      console.log(analytic);
-      console.log(analytic.default.enableAnalytics);
+
       analytic.default.enableAnalytics(config);
       analytic.default.track(constants.EVENTS.AUCTION_INIT, {});
+      analytic.default.track(constants.EVENTS.AUCTION_INIT, {});
+      analytic.default.track(constants.EVENTS.BID_REQUESTED, {});
+      analytic.default.track(constants.EVENTS.BID_WON, {});
+      analytic.default.track(constants.EVENTS.AUCTION_END, {});
+      analytic.default.track(constants.EVENTS.BID_WON, {});
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, {});
     });
   });
 });
