@@ -133,12 +133,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
+    if (bid.bidderCode && bid.cpm > 0) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
-
-      if (bid.dealId) {
-        keyValues[`hb_deal_${bid.bidderCode}`] = bid.dealId;
-      }
     }
 
     bid.adserverTargeting = keyValues;
@@ -210,7 +206,8 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     }
 
     if (
-      typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true &&
+      (typeof bidderSettings.suppressEmptyKeys !== "undefined" && bidderSettings.suppressEmptyKeys === true ||
+      key === "hb_deal") && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
@@ -310,6 +307,9 @@ exports.executeCallback = function (timedOut) {
     events.emit(AUCTION_END);
     try {
       processCallbacks([externalCallbacks.oneTime]);
+    }
+    catch(e){
+      utils.logError('Error executing bidsBackHandler', null, e);
     }
     finally {
       externalCallbacks.oneTime = null;
@@ -450,6 +450,11 @@ function getStandardBidderSettings() {
           key: 'hb_size',
           val: function (bidResponse) {
             return bidResponse.size;
+          }
+        }, {
+          key: 'hb_deal',
+          val: function (bidResponse) {
+            return bidResponse.dealId;
           }
         }
       ]
