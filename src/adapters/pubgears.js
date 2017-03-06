@@ -82,7 +82,7 @@ function PubGearsAdapter() {
 
   function getSlotFromBidParam(bid) {
 
-    var size = bid[SIZES][0].join('x');
+    var size = getSize(bid);
     var params = bid[PARAMS];
     var slotName = params[PUB_ZONE_PARAM];
     return [ slotName, size ].join('@');
@@ -93,6 +93,13 @@ function PubGearsAdapter() {
     var size = resource[SIZE];
     var key = [ resource[PUB_ZONE],  size ].join('@');
     return key;
+  }
+  
+  function getSize(bid) {
+
+    var sizes = bid[SIZES];
+    var size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+    return size.join('x');
   }
 
   function makeScript(slots, publisher, id, url) {
