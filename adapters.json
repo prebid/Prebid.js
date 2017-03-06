@@ -1,6 +1,7 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
@@ -13,12 +14,13 @@
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
+    "getintent",
     "komoona",
+    "lifestreet",
     "mantis",
     "openx",
     "piximedia",
@@ -32,6 +34,8 @@
     "sonobi",
     "sovrn",
     "springserve",
+    "thoughtleadr",
+    "stickyadstv",
     "triplelift",
     "twenga",
     "yieldbot",
@@ -74,6 +78,11 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
       "rubicon": {
         "alias": "rubiconLite",
         "supportedMediaTypes": ["video"]
@@ -83,10 +92,20 @@
       "appnexus": {
         "alias": "featureforward"
       }
+    },    
+    {
+      "appnexus": {
+        "alias": "oftmedia"
+      }
     },
     {
       "adkernel": {
         "alias": "headbidding"
+      }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
       }
     }
 

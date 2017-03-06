@@ -241,6 +241,17 @@ describe('Adkernel adapter', () => {
       expect(result.bids[0].ad).to.include(bidResponse1.seatbid[0].bid[0].nurl);
     });
 
+    it('should perform usersync for each unique host/zone combination', () => {
+      ajaxStub.callsArgWith(1, '');
+      const expectedSyncUrls = ['http://rtb.adkernel.com/user-sync?zone=1', 'http://rtb.adkernel.com/user-sync?zone=2',
+        'http://rtb-private.adkernel.com/user-sync?zone=1'];
+      sandbox.spy(utils, 'createInvisibleIframe');
+      doRequest([bid1_zone1, bid2_zone2, bid2_zone2, bid3_host2]);
+      expect(utils.createInvisibleIframe.calledThrice);
+      let userSyncUrls = utils.createInvisibleIframe.returnValues.map( val => val.src);
+      expect(userSyncUrls).to.be.eql(expectedSyncUrls);
+    });
+
   });
 
   describe('adapter aliasing', () => {

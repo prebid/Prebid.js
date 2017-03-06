@@ -43,6 +43,7 @@ function sendAdToCreative(adObject, remoteDomain, source) {
       message: 'Prebid Response',
       ad,
       adUrl,
+      adId,
       width,
       height
     }), remoteDomain);
