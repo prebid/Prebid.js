@@ -140,7 +140,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
         case 'iframe':
           createdElem = utils.createInvisibleIframe();
           break;
-        case 'javascript':
+        case 'js':
           createdElem = document.createElement('script');
           createdElem.type = 'text/javascript';
           createdElem.async = true;
