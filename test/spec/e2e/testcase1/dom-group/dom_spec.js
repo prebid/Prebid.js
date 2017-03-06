@@ -19,9 +19,9 @@ module.exports = {
     }
 
     browser
-      .url('http://localhost:9999/test/spec/e2e/gpt-examples/e2e_default.html')
+      .url('http://an.localhost:9999/test/spec/e2e/gpt-examples/e2e_default.html')
       .waitForElementVisible('body', 3000)
-      .pause(5000)
+      .pause(3000)
       .execute(checkAdRendering2, [], function(result) {
         this.assert.equal(result.value, true, 'Ad of div-2 not rendered');
       });

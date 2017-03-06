@@ -1,6 +1,7 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
@@ -13,11 +14,11 @@
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
+    "getintent",
     "komoona",
     "lifestreet",
     "mantis",
@@ -33,6 +34,7 @@
     "sonobi",
     "sovrn",
     "springserve",
+    "thoughtleadr",
     "stickyadstv",
     "triplelift",
     "twenga",
@@ -99,6 +101,11 @@
     {
       "adkernel": {
         "alias": "headbidding"
+      }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
       }
     }
 
