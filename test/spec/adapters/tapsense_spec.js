@@ -186,6 +186,9 @@ describe ("TapSenseAdapter", () => {
         expect(adloader.loadScript.firstCall.args[0]).to.match(
           /price_floor=0\.01&/
         );
+        expect(adloader.loadScript.firstCall.args[0]).to.match(
+          /callback=pbjs\.tapsense\.callback_with_price_.+&/
+        );
       })
     })
   });

@@ -40,7 +40,7 @@ const TapSenseAdapter = function TapSenseAdapter() {
         }
       }
       if (isValidSize) {
-        let queryString = `?price=true&jsonp=1&callback=tapsense.callback_with_price_${bid.bidId}&version=${version}&`;
+        let queryString = `?price=true&jsonp=1&callback=$$PREBID_GLOBAL$$.tapsense.callback_with_price_${bid.bidId}&version=${version}&`;
         $$PREBID_GLOBAL$$.tapsense[`callback_with_price_${bid.bidId}`] = generateCallback(bid.bidId);
         let keys = Object.keys(bid.params);
         for (let j = 0; j < keys.length; j++) {
