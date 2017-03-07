@@ -21,6 +21,7 @@ var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
+var optimizejs = require('gulp-optimize-js');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -73,6 +74,7 @@ gulp.task('webpack', function () {
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
+    .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
