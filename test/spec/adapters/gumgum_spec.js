@@ -57,6 +57,9 @@ describe('gumgum adapter', () => {
       sizes: [ [728, 90] ]
     }]
   };
+  const pageParams = {
+    "pvid": "PVID"
+  };
   const bidderResponse = {
     "ad": {
       "id": 1,
@@ -67,8 +70,13 @@ describe('gumgum adapter', () => {
       "du": "http://example.com/",
       "price": TEST.CPM,
       "impurl": "http://example.com/"
-    }
+    },
+    "pag": pageParams
   };
+  const emptyResponse = {
+    "ad": {},
+    "pag": pageParams
+  }
 
   function mockBidResponse(response) {
     sandbox.stub(bidManager, 'addBidResponse');
@@ -104,6 +112,11 @@ describe('gumgum adapter', () => {
       endpointRequest.to.include('vh');
       endpointRequest.to.include('sw');
       endpointRequest.to.include('sh');
+    });
+
+    it('should include the global bid timeout', () => {
+      const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
+      endpointRequest.to.include(`tmax=${$$PREBID_GLOBAL$$.cbTimeout}`);
     });
 
     it('should include the publisher identity', () => {
@@ -153,7 +166,8 @@ describe('gumgum adapter', () => {
     });
 
     it('should have a GOOD status code', () => {
-      expect(successfulBid.getStatusCode()).to.eql(STATUS.GOOD);
+      const STATUS_CODE = successfulBid.getStatusCode();
+      expect(STATUS_CODE).to.eql(STATUS.GOOD);
     });
 
     it('should use the CPM returned by the server', () => {
@@ -176,7 +190,7 @@ describe('gumgum adapter', () => {
     let noBid;
 
     beforeEach(() => {
-      noBid = mockBidResponse({});
+      noBid = mockBidResponse(emptyResponse);
     });
 
     it('should add one bid', () => {

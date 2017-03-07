@@ -192,13 +192,12 @@
                             impid: 36
                         }
                     },
-					{
-						bidder: 'sekindo',
-							params: {
-								spaceId: 14071,  	// REQUIRED int. To get one, contact http://www.sekindo.com
-								bidfloor: 0.2		// OPTIONAL float bid floor in $ CPM
-							}
-					},
+                    {
+                        bidder: 'sekindoUM',
+                        params: {
+                            spaceId: 14071  	// REQUIRED int. To get one, contact http://www.sekindo.com
+                        }
+                    },
                     {
                         bidder: 'memeglobal',
                         params: {
@@ -226,10 +225,16 @@
                         }
                     },
                     {
-                    bidder: 'widespace',
+                        bidder: 'widespace',
                         params: {
                             sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
                             cur: 'EUR'
+                        }
+                    },
+                    {
+                        bidder: 'smartyads',
+                        params: {
+                            banner_id: 0
                         }
                     }
                 ]
