@@ -1,7 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter} from './utils';
+import {flatten, uniques, isGptPubadsDefined, adUnitsFilter, isSrcdocSupported} from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
@@ -131,15 +131,6 @@ function setRenderSize(doc, width, height) {
     doc.defaultView.frameElement.width = width;
     doc.defaultView.frameElement.height = height;
   }
-}
-
-/**
- * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
- * @param {HTMLDocument} doc document to check support of 'srcdoc'
- */
-function isSrcdocSupported(doc) {
-  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
 //////////////////////////////////
