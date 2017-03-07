@@ -1,6 +1,6 @@
-import {ajax} from 'src/ajax';
-import adapter from 'AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
+import {ajax} from "src/ajax";
+import adapter from "AnalyticsAdapter";
+import CONSTANTS from "src/constants.json";
 
 const utils = require('../../utils');
 
@@ -35,8 +35,10 @@ function buildEventStack() {
 }
 
 function send(eventType, data, sendDataType) {
+  let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
+
   ajax(
-    url,
+    fullUrl,
     (result) => utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analityc with result' + result),
     JSON.stringify(data)
   );
@@ -63,7 +65,7 @@ export default utils.extend(adapter({url, analyticsType}),
         return;
       }
 
-      if ((eventType === bidWonConst)  && auctionStatus === 'not_started') {
+      if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
         buildBidWon(eventType, args);
         send(eventType, bidWon, 'bidWon');
         return;
