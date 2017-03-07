@@ -4,7 +4,7 @@ import CONSTANTS from "src/constants.json";
 
 const utils = require('../../utils');
 
-const url = '//pa.rxthdr.com/';
+const url = '//pa.rxthdr.com/analytic';
 const analyticsType = 'endpoint';
 
 let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
