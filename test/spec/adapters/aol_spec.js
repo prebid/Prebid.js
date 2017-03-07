@@ -3,6 +3,8 @@ import { cloneDeep } from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
+import events from 'src/events';
+import constants from 'src/constants';
 
 const DEFAULT_BIDDER_REQUEST = {
   bidderCode: 'aol',
@@ -348,7 +350,7 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
       });
 
-      it('should be added to bidmanager if returned from nexage', () => {
+      it('should be added to bidmanager if returned from nexage GET bid request', () => {
         server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
         adapter.callBids(createBidderRequest({
           params: {
@@ -358,6 +360,26 @@ describe('AolAdapter', () => {
         }));
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+      });
+
+      it('should be added to bidmanager if returned from nexage POST bid request', () => {
+        server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
+        adapter.callBids(createBidderRequest({
+          params: {
+            id: 'id-1',
+            imp: [{
+              id: 'id-2',
+              banner: {
+                w: '100',
+                h: '100'
+              },
+              tagid: 'header1'
+            }]
+          }
+        }));
+        server.respond();
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
       });
 
       it('should be added to bidmanager with correct bidderCode', () => {
@@ -634,6 +656,70 @@ describe('AolAdapter', () => {
         assertPixelsItem('iframe[src="pixels.org"]');
         assertPixelsItem('iframe[src="pixels1.org"]');
       });
+
+      it('should render pixels from nexage property nurl when auction is finished', () => {
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "nurl": "<script>document.write('<iframe src=\"pixels-nurl.org\"></iframe>);</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>" +
+            "<iframe src=\"pixels1.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids({
+          bidderCode: 'aol',
+          requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+          bidderRequestId: '7101db09af0db2',
+          start: new Date().getTime(),
+          bids: [{
+            bidder: 'aol',
+            bidId: '84ab500420319d',
+            bidderRequestId: '7101db09af0db2',
+            requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+            placementCode: 'foo',
+            params: {
+              id: 'id-1',
+              imp: [{
+                id: 'id-2',
+                banner: {
+                  w: '100',
+                  h: '100'
+                },
+                tagid: 'header1'
+              }]
+            }
+          }]
+        });
+        server.respond();
+        $$PREBID_GLOBAL$$._bidsReceived.push({
+          bidderCode: 'aol',
+          adUnitCode: 'foo',
+          cpm: 0.09,
+          bidId: '84ab500420319d'
+        });
+        events.emit(constants.EVENTS.AUCTION_END);
+        let assertPixelsItem = (pixelsItemSelector) => {
+          let pixelsItem = document.body.querySelectorAll(pixelsItemSelector)[0];
+          expect(pixelsItem.width).to.equal('1');
+          expect(pixelsItem.height).to.equal('1');
+          expect(pixelsItem.style.display).to.equal('none');
+        };
+        assertPixelsItem('iframe[src="pixels-nurl.org"]');
+      });
+
     });
 
     describe('when bidCpmAdjustment is set', () => {

@@ -3,6 +3,7 @@ const ajax = require('../ajax.js').ajax;
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const constants = require('../constants.json');
+const events = require('src/events');
 
 const AolAdapter = function AolAdapter() {
 
@@ -228,6 +229,21 @@ const AolAdapter = function AolAdapter() {
         ad += response.ext.pixels;
       }
     }
+
+    events.on(constants.EVENTS.AUCTION_END, () => {
+      if (bidData.nurl) {
+        // Winner of the auction is being determined by the one with the highest cpm, first in the queue.
+        let auction = $$PREBID_GLOBAL$$._bidsReceived.filter(bidReceived => {
+          return bidReceived.adUnitCode === bid.placementCode;
+        });
+        let winner = auction.reduce((winner, currentBid) => {
+          return (winner.cpm < currentBid.cpm) ? currentBid : winner;
+        }, {cpm: 0});
+        if (winner.bidId === bid.bidId) {
+          dropSyncCookies(bidData.nurl);
+        }
+      }
+    });
 
     const bidResponse = bidfactory.createBid(1, bid);
     bidResponse.bidderCode = BIDDER_CODE;
