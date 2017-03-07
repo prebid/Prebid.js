@@ -1,64 +1,62 @@
 //v0.0.1
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var utils = require('../utils.js');
 
-var TapSenseAdapter = function TapSenseAdapter() {
-  var version = "0.0.1";
-  var creativeSizes = [
+const bidfactory = require('../bidfactory.js');
+const bidmanager = require('../bidmanager.js');
+const adloader = require('../adloader');
+const utils = require('../utils.js');
+
+const TapSenseAdapter = function TapSenseAdapter() {
+  const version = "0.0.1";
+  const creativeSizes = [
     "320x50"
   ];
-  var validParams = [
+  const validParams = [
     "ufid",
     "refer",
-    "ad_unit_id",
+    "ad_unit_id", //required
     "device_id",
     "lat",
     "long",
-    "user",
+    "user", //required
     "price_floor",
-    "test",
-    "jsonp"
+    "test"
   ];
-  var bids;
-  window.tapsense = {};
+  const SCRIPT_URL = "https://ads04.tapsense.com/ads/headerad";
+  let bids;
+  $$PREBID_GLOBAL$$.tapsense = {};
   function _callBids(params) {
     bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      var bid = bids[i];
-      var isValidSize = false;
-      if (!bid.sizes) {
+    for (let i = 0; i < bids.length; i++) {
+      let bid = bids[i];
+      let isValidSize = false;
+      if (!bid.sizes || !bid.params.user || !bid.params.ad_unit_id) {
         return;
       }
-      for (var k = 0; k < bid.sizes.length; k++) {
-        if (creativeSizes.indexOf(bid.sizes[k].join("x")) > -1) {
+      let parsedSizes = utils.parseSizesInput(bid.sizes);
+      for (let k = 0; k < parsedSizes.length; k++) {
+        if (creativeSizes.indexOf(parsedSizes[k]) > -1) {
           isValidSize = true;
           break;
         }
       }
       if (isValidSize) {
-        if (!bid.params.scriptURL) {
-          continue;
-        }
-        var queryString = "?price=true&callback=tapsense.callback_with_price_" + bid.bidId + "&version=" + version + "&";
-        window.tapsense["callback_with_price_" + bid.bidId] = generateCallback(bid.bidId);
-        var keys = Object.keys(bid.params);
-        for (var j = 0; j < keys.length; j++) {
+        let queryString = `?price=true&jsonp=1&callback=tapsense.callback_with_price_${bid.bidId}&version=${version}&`;
+        $$PREBID_GLOBAL$$.tapsense[`callback_with_price_${bid.bidId}`] = generateCallback(bid.bidId);
+        let keys = Object.keys(bid.params);
+        for (let j = 0; j < keys.length; j++) {
           if (validParams.indexOf(keys[j]) < 0) continue;
           queryString += encodeURIComponent(keys[j]) + "=" + encodeURIComponent(bid.params[keys[j]]) + "&";
         }
-        var scriptURL = bid.params.scriptURL;
-        _requestBids(scriptURL + queryString);
+        _requestBids(SCRIPT_URL + queryString);
       }
     }
   }
 
   function generateCallback(bidId){
-    return function(response, price) {
-      var bidObj;
+    return function tapsenseCallback(response, price) {
+      let bidObj;
       if (response && price) {
-        var bidReq = utils.getBidRequest(bidId);
+        let bidReq = utils.getBidRequest(bidId);
         if (response.status.value === "ok" && response.count_ad_units > 0) {
           bidObj = bidfactory.createBid(1, bidObj);
           bidObj.cpm = price;
