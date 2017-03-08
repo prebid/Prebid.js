@@ -738,6 +738,41 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.videoAdapters = videoAdaptersBackup;
     });
 
+    it('should not callBids if a native adUnit has non-native bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.notCalled(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+    });
+
+    it('should callBids if a native adUnit has all native bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+    });
+
     it('splits native type to individual native assets', () => {
       $$PREBID_GLOBAL$$._bidsRequested = [];
 

@@ -1,5 +1,9 @@
 import { logError } from './utils';
 
+// having problem generating this with a webpack loader
+// hardcoded for now, will fix and import from adaptermanager
+const nativeAdapters = ['appnexusAst'];
+
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
   description: 'hb_native_body',
@@ -58,3 +62,12 @@ export default function(input) {
 
   return input;
 }
+
+/**
+ * Helper functions for working with native-enabled adUnits
+ * TODO: abstract this and the video helper functions into general
+ * adunit validation helper functions
+ */
+export const nativeAdUnit = adUnit => adUnit.mediaType === 'native';
+const nonNativeBidder = bid => !nativeAdapters.includes(bid.bidder);
+export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).length;
