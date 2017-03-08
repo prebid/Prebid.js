@@ -1,5 +1,5 @@
 /* prebid.js v0.21.0-pre
-Updated : 2017-03-03 */
+Updated : 2017-03-08 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -58,13 +58,13 @@ Updated : 2017-03-03 */
 
 	var _video = __webpack_require__(4);
 
-	__webpack_require__(70);
+	__webpack_require__(71);
 
 	var _url = __webpack_require__(22);
 
 	var _cpmBucketManager = __webpack_require__(12);
 
-	var _secureCreatives = __webpack_require__(99);
+	var _secureCreatives = __webpack_require__(100);
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -76,8 +76,8 @@ Updated : 2017-03-03 */
 	var bidfactory = __webpack_require__(10);
 	var adloader = __webpack_require__(13);
 	var events = __webpack_require__(8);
-	var adserver = __webpack_require__(100);
-	var targeting = __webpack_require__(101);
+	var adserver = __webpack_require__(101);
+	var targeting = __webpack_require__(102);
 
 	/* private variables */
 
@@ -1806,7 +1806,8 @@ Updated : 2017-03-03 */
 	exports.aliasBidAdapter('adkernel', 'headbidding');
 	exports.videoAdapters = ["appnexusAst", "vertamedia", "rubicon", "getintent"];
 
-	null;
+	var ga = __webpack_require__(70)['default'] || __webpack_require__(70);
+	exports.registerAnalyticsAdapter({ adapter: ga, code: 'ga' });
 
 /***/ }),
 /* 6 */
@@ -12157,11 +12158,269 @@ Updated : 2017-03-03 */
 
 	'use strict';
 
-	var _shim = __webpack_require__(71);
+	/**
+	 * ga.js - analytics adapter for google analytics
+	 */
+
+	var events = __webpack_require__(8);
+	var utils = __webpack_require__(2);
+	var CONSTANTS = __webpack_require__(3);
+
+	var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
+	var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
+	var BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
+	var BID_WON = CONSTANTS.EVENTS.BID_WON;
+
+	var _disableInteraction = { nonInteraction: true };
+	var _analyticsQueue = [];
+	var _gaGlobal = null;
+	var _enableCheck = true;
+	var _category = 'Prebid.js Bids';
+	var _eventCount = 0;
+	var _enableDistribution = false;
+	var _trackerSend = null;
+
+	/**
+	 * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
+	 * @param  {object} provider use to set GA global (if renamed);
+	 * @param  {object} options use to configure adapter;
+	 * @return {[type]}    [description]
+	 */
+	exports.enableAnalytics = function (_ref) {
+	  var provider = _ref.provider,
+	      options = _ref.options;
+
+
+	  _gaGlobal = provider || 'ga';
+	  _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
+
+	  if (options && typeof options.global !== 'undefined') {
+	    _gaGlobal = options.global;
+	  }
+	  if (options && typeof options.enableDistribution !== 'undefined') {
+	    _enableDistribution = options.enableDistribution;
+	  }
+
+	  var bid = null;
+
+	  //first send all events fired before enableAnalytics called
+
+	  var existingEvents = events.getEvents();
+	  utils._each(existingEvents, (function (eventObj) {
+	    var args = eventObj.args;
+	    if (!eventObj) {
+	      return;
+	    }
+
+	    if (eventObj.eventType === BID_REQUESTED) {
+	      bid = args;
+	      sendBidRequestToGa(bid);
+	    } else if (eventObj.eventType === BID_RESPONSE) {
+	      //bid is 2nd args
+	      bid = args;
+	      sendBidResponseToGa(bid);
+	    } else if (eventObj.eventType === BID_TIMEOUT) {
+	      var bidderArray = args;
+	      sendBidTimeouts(bidderArray);
+	    } else if (eventObj.eventType === BID_WON) {
+	      bid = args;
+	      sendBidWonToGa(bid);
+	    }
+	  }));
+
+	  //Next register event listeners to send data immediately
+
+	  //bidRequests
+	  events.on(BID_REQUESTED, (function (bidRequestObj) {
+	    sendBidRequestToGa(bidRequestObj);
+	  }));
+
+	  //bidResponses
+	  events.on(BID_RESPONSE, (function (bid) {
+	    sendBidResponseToGa(bid);
+	  }));
+
+	  //bidTimeouts
+	  events.on(BID_TIMEOUT, (function (bidderArray) {
+	    sendBidTimeouts(bidderArray);
+	  }));
+
+	  //wins
+	  events.on(BID_WON, (function (bid) {
+	    sendBidWonToGa(bid);
+	  }));
+
+	  // finally set this function to return log message, prevents multiple adapter listeners
+	  this.enableAnalytics = function _enable() {
+	    return utils.logMessage('Analytics adapter already enabled, unnecessary call to `enableAnalytics`.');
+	  };
+	};
+
+	exports.getTrackerSend = function getTrackerSend() {
+	  return _trackerSend;
+	};
+
+	/**
+	 * Check if gaGlobal or window.ga is defined on page. If defined execute all the GA commands
+	 */
+	function checkAnalytics() {
+	  if (_enableCheck && typeof window[_gaGlobal] === 'function') {
+
+	    for (var i = 0; i < _analyticsQueue.length; i++) {
+	      _analyticsQueue[i].call();
+	    }
+
+	    //override push to execute the command immediately from now on
+	    _analyticsQueue.push = function (fn) {
+	      fn.call();
+	    };
+
+	    //turn check into NOOP
+	    _enableCheck = false;
+	  }
+
+	  utils.logMessage('event count sent to GA: ' + _eventCount);
+	}
+
+	function convertToCents(dollars) {
+	  if (dollars) {
+	    return Math.floor(dollars * 100);
+	  }
+
+	  return 0;
+	}
+
+	function getLoadTimeDistribution(time) {
+	  var distribution;
+	  if (time >= 0 && time < 200) {
+	    distribution = '0-200ms';
+	  } else if (time >= 200 && time < 300) {
+	    distribution = '0200-300ms';
+	  } else if (time >= 300 && time < 400) {
+	    distribution = '0300-400ms';
+	  } else if (time >= 400 && time < 500) {
+	    distribution = '0400-500ms';
+	  } else if (time >= 500 && time < 600) {
+	    distribution = '0500-600ms';
+	  } else if (time >= 600 && time < 800) {
+	    distribution = '0600-800ms';
+	  } else if (time >= 800 && time < 1000) {
+	    distribution = '0800-1000ms';
+	  } else if (time >= 1000 && time < 1200) {
+	    distribution = '1000-1200ms';
+	  } else if (time >= 1200 && time < 1500) {
+	    distribution = '1200-1500ms';
+	  } else if (time >= 1500 && time < 2000) {
+	    distribution = '1500-2000ms';
+	  } else if (time >= 2000) {
+	    distribution = '2000ms above';
+	  }
+
+	  return distribution;
+	}
+
+	function getCpmDistribution(cpm) {
+	  var distribution;
+	  if (cpm >= 0 && cpm < 0.5) {
+	    distribution = '$0-0.5';
+	  } else if (cpm >= 0.5 && cpm < 1) {
+	    distribution = '$0.5-1';
+	  } else if (cpm >= 1 && cpm < 1.5) {
+	    distribution = '$1-1.5';
+	  } else if (cpm >= 1.5 && cpm < 2) {
+	    distribution = '$1.5-2';
+	  } else if (cpm >= 2 && cpm < 2.5) {
+	    distribution = '$2-2.5';
+	  } else if (cpm >= 2.5 && cpm < 3) {
+	    distribution = '$2.5-3';
+	  } else if (cpm >= 3 && cpm < 4) {
+	    distribution = '$3-4';
+	  } else if (cpm >= 4 && cpm < 6) {
+	    distribution = '$4-6';
+	  } else if (cpm >= 6 && cpm < 8) {
+	    distribution = '$6-8';
+	  } else if (cpm >= 8) {
+	    distribution = '$8 above';
+	  }
+
+	  return distribution;
+	}
+
+	function sendBidRequestToGa(bid) {
+	  if (bid && bid.bidderCode) {
+	    _analyticsQueue.push((function () {
+	      _eventCount++;
+	      window[_gaGlobal](_trackerSend, 'event', _category, 'Requests', bid.bidderCode, 1, _disableInteraction);
+	    }));
+	  }
+
+	  //check the queue
+	  checkAnalytics();
+	}
+
+	function sendBidResponseToGa(bid) {
+
+	  if (bid && bid.bidderCode) {
+	    _analyticsQueue.push((function () {
+	      var cpmCents = convertToCents(bid.cpm);
+	      var bidder = bid.bidderCode;
+	      if (typeof bid.timeToRespond !== 'undefined' && _enableDistribution) {
+	        _eventCount++;
+	        var dis = getLoadTimeDistribution(bid.timeToRespond);
+	        window[_gaGlobal](_trackerSend, 'event', 'Prebid.js Load Time Distribution', dis, bidder, 1, _disableInteraction);
+	      }
+
+	      if (bid.cpm > 0) {
+	        _eventCount = _eventCount + 2;
+	        var cpmDis = getCpmDistribution(bid.cpm);
+	        if (_enableDistribution) {
+	          _eventCount++;
+	          window[_gaGlobal](_trackerSend, 'event', 'Prebid.js CPM Distribution', cpmDis, bidder, 1, _disableInteraction);
+	        }
+
+	        window[_gaGlobal](_trackerSend, 'event', _category, 'Bids', bidder, cpmCents, _disableInteraction);
+	        window[_gaGlobal](_trackerSend, 'event', _category, 'Bid Load Time', bidder, bid.timeToRespond, _disableInteraction);
+	      }
+	    }));
+	  }
+
+	  //check the queue
+	  checkAnalytics();
+	}
+
+	function sendBidTimeouts(timedOutBidders) {
+
+	  _analyticsQueue.push((function () {
+	    utils._each(timedOutBidders, (function (bidderCode) {
+	      _eventCount++;
+	      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, _disableInteraction);
+	    }));
+	  }));
+
+	  checkAnalytics();
+	}
+
+	function sendBidWonToGa(bid) {
+	  var cpmCents = convertToCents(bid.cpm);
+	  _analyticsQueue.push((function () {
+	    _eventCount++;
+	    window[_gaGlobal](_trackerSend, 'event', _category, 'Wins', bid.bidderCode, cpmCents, _disableInteraction);
+	  }));
+
+	  checkAnalytics();
+	}
+
+/***/ }),
+/* 71 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _shim = __webpack_require__(72);
 
 	var _shim2 = _interopRequireDefault(_shim);
 
-	var _shim3 = __webpack_require__(96);
+	var _shim3 = __webpack_require__(97);
 
 	var _shim4 = _interopRequireDefault(_shim3);
 
@@ -12185,13 +12444,13 @@ Updated : 2017-03-03 */
 	};
 
 /***/ }),
-/* 71 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var define = __webpack_require__(72);
-	var getPolyfill = __webpack_require__(76);
+	var define = __webpack_require__(73);
+	var getPolyfill = __webpack_require__(77);
 
 	module.exports = function shimArrayPrototypeFind() {
 		var polyfill = getPolyfill();
@@ -12207,13 +12466,13 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 72 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var keys = __webpack_require__(73);
-	var foreach = __webpack_require__(75);
+	var keys = __webpack_require__(74);
+	var foreach = __webpack_require__(76);
 	var hasSymbols = typeof Symbol === 'function' && typeof Symbol() === 'symbol';
 
 	var toStr = Object.prototype.toString;
@@ -12269,7 +12528,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 73 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12278,7 +12537,7 @@ Updated : 2017-03-03 */
 	var has = Object.prototype.hasOwnProperty;
 	var toStr = Object.prototype.toString;
 	var slice = Array.prototype.slice;
-	var isArgs = __webpack_require__(74);
+	var isArgs = __webpack_require__(75);
 	var isEnumerable = Object.prototype.propertyIsEnumerable;
 	var hasDontEnumBug = !isEnumerable.call({ toString: null }, 'toString');
 	var hasProtoEnumBug = isEnumerable.call((function () {}), 'prototype');
@@ -12415,7 +12674,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 74 */
+/* 75 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -12438,7 +12697,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 75 */
+/* 76 */
 /***/ (function(module, exports) {
 
 	
@@ -12466,7 +12725,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 76 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12480,17 +12739,17 @@ Updated : 2017-03-03 */
 		})) !== 1;
 
 	  // eslint-disable-next-line global-require
-		return implemented ? Array.prototype.find : __webpack_require__(77);
+		return implemented ? Array.prototype.find : __webpack_require__(78);
 	};
 
 
 /***/ }),
-/* 77 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var ES = __webpack_require__(78);
+	var ES = __webpack_require__(79);
 
 	module.exports = function find(predicate) {
 		var list = ES.ToObject(this);
@@ -12513,7 +12772,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 78 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12522,17 +12781,17 @@ Updated : 2017-03-03 */
 	var hasSymbols = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol';
 	var symbolToStr = hasSymbols ? Symbol.prototype.toString : toStr;
 
-	var $isNaN = __webpack_require__(79);
-	var $isFinite = __webpack_require__(80);
+	var $isNaN = __webpack_require__(80);
+	var $isFinite = __webpack_require__(81);
 	var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || Math.pow(2, 53) - 1;
 
-	var assign = __webpack_require__(81);
-	var sign = __webpack_require__(82);
-	var mod = __webpack_require__(83);
-	var isPrimitive = __webpack_require__(84);
-	var toPrimitive = __webpack_require__(85);
+	var assign = __webpack_require__(82);
+	var sign = __webpack_require__(83);
+	var mod = __webpack_require__(84);
+	var isPrimitive = __webpack_require__(85);
+	var toPrimitive = __webpack_require__(86);
 	var parseInteger = parseInt;
-	var bind = __webpack_require__(90);
+	var bind = __webpack_require__(91);
 	var strSlice = bind.call(Function.call, String.prototype.slice);
 	var isBinary = bind.call(Function.call, RegExp.prototype.test, /^0b[01]+$/i);
 	var isOctal = bind.call(Function.call, RegExp.prototype.test, /^0o[0-7]+$/i);
@@ -12555,9 +12814,9 @@ Updated : 2017-03-03 */
 		return replace(value, trimRegex, '');
 	};
 
-	var ES5 = __webpack_require__(92);
+	var ES5 = __webpack_require__(93);
 
-	var hasRegExpMatcher = __webpack_require__(94);
+	var hasRegExpMatcher = __webpack_require__(95);
 
 	// https://people.mozilla.org/~jorendorff/es6-draft.html#sec-abstract-operations
 	var ES6 = assign(assign({}, ES5), {
@@ -12851,7 +13110,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 79 */
+/* 80 */
 /***/ (function(module, exports) {
 
 	module.exports = Number.isNaN || function isNaN(a) {
@@ -12860,7 +13119,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 80 */
+/* 81 */
 /***/ (function(module, exports) {
 
 	var $isNaN = Number.isNaN || function (a) { return a !== a; };
@@ -12869,7 +13128,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 81 */
+/* 82 */
 /***/ (function(module, exports) {
 
 	var has = Object.prototype.hasOwnProperty;
@@ -12884,7 +13143,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 82 */
+/* 83 */
 /***/ (function(module, exports) {
 
 	module.exports = function sign(number) {
@@ -12893,7 +13152,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 83 */
+/* 84 */
 /***/ (function(module, exports) {
 
 	module.exports = function mod(number, modulo) {
@@ -12903,7 +13162,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 84 */
+/* 85 */
 /***/ (function(module, exports) {
 
 	module.exports = function isPrimitive(value) {
@@ -12912,17 +13171,17 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 85 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var hasSymbols = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol';
 
-	var isPrimitive = __webpack_require__(86);
-	var isCallable = __webpack_require__(87);
-	var isDate = __webpack_require__(88);
-	var isSymbol = __webpack_require__(89);
+	var isPrimitive = __webpack_require__(87);
+	var isCallable = __webpack_require__(88);
+	var isDate = __webpack_require__(89);
+	var isSymbol = __webpack_require__(90);
 
 	var ordinaryToPrimitive = function OrdinaryToPrimitive(O, hint) {
 		if (typeof O === 'undefined' || O === null) {
@@ -12992,7 +13251,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 86 */
+/* 87 */
 /***/ (function(module, exports) {
 
 	module.exports = function isPrimitive(value) {
@@ -13001,7 +13260,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 87 */
+/* 88 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -13046,7 +13305,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 88 */
+/* 89 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -13072,7 +13331,7 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 89 */
+/* 90 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -13105,16 +13364,16 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 90 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var implementation = __webpack_require__(91);
+	var implementation = __webpack_require__(92);
 
 	module.exports = Function.prototype.bind || implementation;
 
 
 /***/ }),
-/* 91 */
+/* 92 */
 /***/ (function(module, exports) {
 
 	var ERROR_MESSAGE = 'Function.prototype.bind called on incompatible ';
@@ -13168,19 +13427,19 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 92 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var $isNaN = __webpack_require__(79);
-	var $isFinite = __webpack_require__(80);
+	var $isNaN = __webpack_require__(80);
+	var $isFinite = __webpack_require__(81);
 
-	var sign = __webpack_require__(82);
-	var mod = __webpack_require__(83);
+	var sign = __webpack_require__(83);
+	var mod = __webpack_require__(84);
 
-	var IsCallable = __webpack_require__(87);
-	var toPrimitive = __webpack_require__(93);
+	var IsCallable = __webpack_require__(88);
+	var toPrimitive = __webpack_require__(94);
 
 	// https://es5.github.io/#x9
 	var ES5 = {
@@ -13260,16 +13519,16 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 93 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var toStr = Object.prototype.toString;
 
-	var isPrimitive = __webpack_require__(86);
+	var isPrimitive = __webpack_require__(87);
 
-	var isCallable = __webpack_require__(87);
+	var isCallable = __webpack_require__(88);
 
 	// https://es5.github.io/#x8.12
 	var ES5internalSlots = {
@@ -13303,12 +13562,12 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 94 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var has = __webpack_require__(95);
+	var has = __webpack_require__(96);
 	var regexExec = RegExp.prototype.exec;
 	var gOPD = Object.getOwnPropertyDescriptor;
 
@@ -13348,22 +13607,22 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 95 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var bind = __webpack_require__(90);
+	var bind = __webpack_require__(91);
 
 	module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
 
 /***/ }),
-/* 96 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var define = __webpack_require__(72);
-	var getPolyfill = __webpack_require__(97);
+	var define = __webpack_require__(73);
+	var getPolyfill = __webpack_require__(98);
 
 	module.exports = function shimArrayPrototypeIncludes() {
 		var polyfill = getPolyfill();
@@ -13375,12 +13634,12 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 97 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var implementation = __webpack_require__(98);
+	var implementation = __webpack_require__(99);
 
 	module.exports = function getPolyfill() {
 		return Array.prototype.includes || implementation;
@@ -13388,12 +13647,12 @@ Updated : 2017-03-03 */
 
 
 /***/ }),
-/* 98 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
 
-	var ES = __webpack_require__(78);
+	var ES = __webpack_require__(79);
 	var $isNaN = Number.isNaN || function (a) { return a !== a; };
 	var $isFinite = Number.isFinite || function (n) { return typeof n === 'number' && global.isFinite(n); };
 	var indexOf = Array.prototype.indexOf;
@@ -13422,7 +13681,7 @@ Updated : 2017-03-03 */
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 99 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13507,7 +13766,7 @@ Updated : 2017-03-03 */
 	}
 
 /***/ }),
-/* 100 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13571,7 +13830,7 @@ Updated : 2017-03-03 */
 	};
 
 /***/ }),
-/* 101 */
+/* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
