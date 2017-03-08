@@ -301,7 +301,7 @@ function AppnexusAstAdapter() {
         const native = ad.rtb.native.native[0];
         bid.native = {
           title: native.title,
-          description: native.description,
+          body: native.description,
           sponsored_by: native.sponsored_by,
           image: native.main_media[0].url,
           click_url: native.click_url,

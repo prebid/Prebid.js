@@ -1,4 +1,4 @@
-import { logError } from './utils';
+import { getBidRequest, logError } from './utils';
 
 // having problem generating this with a webpack loader
 // hardcoded for now, will fix and import from adaptermanager
@@ -6,7 +6,7 @@ const nativeAdapters = ['appnexusAst'];
 
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
-  description: 'hb_native_body',
+  body: 'hb_native_body',
   sponsored_by: 'hb_native_brand',
   image: 'hb_native_image',
   click_url: 'hb_native_linkurl',
@@ -71,3 +71,19 @@ export default function(input) {
 export const nativeAdUnit = adUnit => adUnit.mediaType === 'native';
 const nonNativeBidder = bid => !nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).length;
+
+/*
+ * Validate that the native assets on this bid contain all assets that were
+ * marked as required in the adUnit configuration.
+ */
+export function nativeBidIsValid(bid) {
+  const bidRequest = getBidRequest(bid.adId);
+  if (!bidRequest.nativeParams) {return false;}
+
+  const requestedAssets = bidRequest.nativeParams;
+  const requiredAssets = Object.keys(requestedAssets)
+    .filter(key => requestedAssets[key].required);
+  const returnedAssets = Object.keys(bid.native);
+
+  return requiredAssets.every(asset => returnedAssets.includes(asset));
+}

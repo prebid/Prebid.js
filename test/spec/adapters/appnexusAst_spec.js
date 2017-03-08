@@ -272,7 +272,7 @@ describe('AppNexusAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
 
       expect(response.native.title).to.equal('Native Creative');
-      expect(response.native.description).to.equal('Great job y\'all');
+      expect(response.native.body).to.equal('Great job y\'all');
       expect(response.native.image).to.equal('http://cdn.adnxs.com/');
 
       RESPONSE.tags[0].ads[0].ad_type = 'banner';

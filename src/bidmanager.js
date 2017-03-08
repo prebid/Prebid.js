@@ -1,6 +1,6 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
-import {NATIVE_KEYS} from './native';
+import {NATIVE_KEYS, nativeBidIsValid} from './native';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -93,6 +93,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bid) {
+
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
+      return;
+    }
+
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
       requestId: requestId,
