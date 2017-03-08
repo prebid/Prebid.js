@@ -28,4 +28,4 @@ biddercode_longer_than_12: false
 | `long` | optional | User's longitude | `“-122.151”` |
 | `price_floor` | optional | Bid floor in dollars | `"0.04"` |
 
-Current TapSense only supports banner (320x50) ad sizes.
+Currently TapSense only supports banner (320x50) ad sizes for header bidding.
