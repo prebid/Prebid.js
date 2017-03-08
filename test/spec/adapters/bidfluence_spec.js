@@ -33,7 +33,7 @@ describe('Bidfluence Adapter', () => {
     };
 
     it('Should exist and be a function', function () {
-        expect(window.bfPbjsCB).to.exist.and.to.be.a('function');
+        expect($$PREBID_GLOBAL$$.bfPbjsCB).to.exist.and.to.be.a('function');
     });
       
     it('Shoud push a valid bid', () => {
@@ -41,7 +41,7 @@ describe('Bidfluence Adapter', () => {
         var stubAddBidResponse = sinon.stub(bidmanager, "addBidResponse");
         pbjs._bidsRequested.push(REQUEST);
         adapter();
-        window.bfPbjsCB(RESPONSE);
+        $$PREBID_GLOBAL$$.bfPbjsCB(RESPONSE);
 
         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -59,7 +59,7 @@ describe('Bidfluence Adapter', () => {
         pbjs._bidsRequested.push(REQUEST);
         adapter();
 
-        window.bfPbjsCB(NO_RESPONSE);
+        $$PREBID_GLOBAL$$.bfPbjsCB(NO_RESPONSE);
 
         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
