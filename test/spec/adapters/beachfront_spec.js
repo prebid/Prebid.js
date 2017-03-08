@@ -137,10 +137,12 @@ describe('BeachfrontAdapter', () => {
 
         it('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
-                appId: "0a47f4ce-d91f-48d0-bd1c-64fac196f13",
-                w: 640,
-                h: 480,
-                domain: 'localhost'
+              "width": 640,
+              "height": 480,
+              "bidId": "2a1444be20bb2c",
+              "bidder": "beachfront",
+              "bidderRequestId": "7101db09af0db2",
+              "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725"
             }));
 
             adapter.callBids(REQUEST);

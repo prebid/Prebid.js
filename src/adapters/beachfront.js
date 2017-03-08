@@ -37,6 +37,15 @@ function BeachfrontAdapter() {
     });
   };
 
+
+  //Example response from updated adapter:
+  // {
+  //  "bidPrice": 0.83502,
+  //  "url": "http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da:0a47f4ce-d91f-48d0-bd1c-64fa2c196f13:$%7BAUCTION_PRICE%7D&dsp=58bf26882aba5e6ad608beda,0.612&i_type=pre"
+  // }
+
+
+
   function prepareAndSaveRTBRequestParams(bid) {
     if (!bid || !bid.params) {
       return;
@@ -109,7 +118,7 @@ function BeachfrontAdapter() {
 
     var newBid = {};
     newBid.price = parsed.seatbid[0].bid[0].price;
-    console.log("At least one bid came back, with a CPM of $" + newBid.price);
+    console.log("Winning bid has a CPM of $" + newBid.price);
 
     // The XML from bid 0 is found at: parsed.seatbid[0].bid[0].adm
     var parserBF = new DOMParser();
@@ -141,6 +150,10 @@ function BeachfrontAdapter() {
 
   function createBid(status, tag) {
     var bid = bidfactory.createBid(status, tag);
+
+    bid.code = baseAdapter.getBidderCode();
+    bid.bidderCode = bidRequest.bidder;
+
     if (!tag || status !== STATUS.GOOD) {
       console.log("Failing: " + tag + status);
       return bid;
@@ -152,11 +165,9 @@ function BeachfrontAdapter() {
     bid.height = bidRequest.height;
     bid.descriptionUrl = tag.url;
     bid.vastUrl = tag.url;
-    bid.code = baseAdapter.getBidderCode();
-    bid.bidderCode = bidRequest.bidder;
+
     bid.mediaType = 'video';
 
-    bid.statusCode = 1;
 
     console.log("Bid object is ");
     console.log(bid);
