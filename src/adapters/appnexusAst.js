@@ -75,7 +75,8 @@ function AppnexusAstAdapter() {
           tag.keywords = getKeywords(bid.params.keywords);
         }
 
-        if (bid.nativeParams) {
+        if (bid.mediaType === 'native') {
+          // this is v2, will need to match v3 request format and attach assets
           tag.ad_types = ['native'];
         }
 
@@ -153,6 +154,7 @@ function AppnexusAstAdapter() {
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
+      if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
       if (type === 'video-outstream') bid.mediaType = 'video-outstream';
       const placement = bidRequests[bid.adId].placementCode;
