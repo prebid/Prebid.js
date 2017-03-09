@@ -34,8 +34,8 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     }
 
     function call(bid) {
+       /* jshint ignore:start */
         var adunitId = utils.getBidIdParameter('adunitId', bid.params);
-        /* jshint ignore:start */
         var publisherId = utils.getBidIdParameter('pubId', bid.params);
         var reservePrice = utils.getBidIdParameter('reservePrice', bid.params);
         var pbjsBfobj = {
@@ -43,20 +43,16 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
             cbID: bid.bidId
         };
         /* jshint ignore:end */
-
-        
+     
         var cb = function () {
             /* jshint ignore:start */
             FORGE.init([adunitId, publisherId, pbjsBfobj, reservePrice]);
             /* jshint ignore:end */
         };
-
         adloader.loadScript(scriptUrl, cb);
     }
-
     return {
         callBids: _callBids
     };
 };
-
 module.exports = BidfluenceAdapter;
