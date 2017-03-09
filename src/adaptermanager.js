@@ -46,7 +46,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   }
 
   bidderCodes.forEach(bidderCode => {
-    console.log('bidder code' + bidderCode);
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
