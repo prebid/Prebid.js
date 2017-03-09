@@ -1,9 +1,11 @@
 const bidmanager = require('../bidmanager.js');
 const bidfactory = require('../bidfactory.js');
 const utils = require('../utils.js');
+const adloader = require('../adloader');
 
 var BidfluenceAdapter = function BidfluenceAdapter() {
-    //Callback
+
+    const scriptUrl = "//bidfluence.azureedge.net/forge.js";
 
     $$PREBID_GLOBAL$$.bfPbjsCB = function (bfr) {
         var bidRequest = utils.getBidRequest(bfr.cbID);
@@ -42,18 +44,14 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
         };
         /* jshint ignore:end */
 
-        var s = document.createElement('script');
-        s.async = true;
-        s.id = adunitId;
-        s.onload = function () {
+        
+        var cb = function () {
             /* jshint ignore:start */
             FORGE.init([adunitId, publisherId, pbjsBfobj, reservePrice]);
-            FORGE.fire();
             /* jshint ignore:end */
         };
-        s.src = "//bidfluence.azureedge.net/forge.js";
-        var b = document.getElementsByTagName('head')[0];
-        b.parentNode.insertBefore(s, b);
+
+        adloader.loadScript(scriptUrl, cb);
     }
 
     return {
