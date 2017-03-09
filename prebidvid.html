@@ -45,14 +45,10 @@
         pbjs.requestBids({
             bidsBackHandler: function(bids){
 
-            // Log the VAST URL, if there is one
-            try {
-              url = bids.video.bids[0].vastUrl;
-              console.log('VAST URL from HTML: ');
-              console.log(url);
+              try {
+                url = bids.video.bids[0].vastUrl;
               } catch (e) {} // ignore
               var adserverTag = "https://www.techniqal.com/tmp/bf/prebid.php?";
-              // var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/3847125/prebid_video&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&url=techniqal.com';
               adserverTag = adserverTag + '&correlator=' + Date.now();
 
               var options = {
@@ -99,9 +95,6 @@
       var vid1 = videojs('vid1');
 
       function invokeVideoPlayer(url) {
-
-        page_load_time = new Date().getTime() - performance.timing.navigationStart;
-        console.log(page_load_time + "ms -- Prebid VAST url = " + url);
 
         videojs("vid1").ready(function() {
 

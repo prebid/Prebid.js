@@ -38,31 +38,10 @@ const REQUEST = {
     "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725",
 };
 
-
 var RESPONSE = {
- "id": "e926f4eaef66673dd52485ebadba9ebd",
- "seatbid": [
-   {
-     "bid": [
-       {
-         "id": 1,
-         "impid": "1",
-         "price": "5",
-         "adid": "784858",
-         "adm": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\"><Ad id=\"1\"><Wrapper><AdSystem><![CDATA[Techniqal]]></AdSystem><VASTAdTagURI><![CDATA[http://www.techniqal.com/tmp/bf/bid_wrap.php?c=1]]></VASTAdTagURI></Wrapper></Ad></VAST>",
-         "adomain": [
-           "techniqal.com"
-         ],
-         "cid": "64045",
-         "crid": "784858"
-       }
-     ],
-     "seat": "bfio"
-   }
- ],
- "bidid": "7d6cb445071069b437c307bedfb69ae8",
- "cur": "USD"
-};
+ "bidPrice": "5",
+ "url": "http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da:0a47f4ce-d91f-48d0-bd1c-64fa2c196f13:2.90&dsp=58bf26882aba5e6ad608beda,0.612&i_type=pre"
+}
 
 describe('BeachfrontAdapter', () => {
 
@@ -83,12 +62,6 @@ describe('BeachfrontAdapter', () => {
 
         afterEach(() => xhr.restore());
 
-
-
-        console.log("XXXXXXXX running beachfront tests");
-
-
-
         it('exists and is a function', () => {
             expect(adapter.callBids).to.exist.and.to.be.a('function');
         });
@@ -99,9 +72,7 @@ describe('BeachfrontAdapter', () => {
         });
 
         it('sends bid request to ENDPOINT via POST', () => {
-
           adapter.callBids(REQUEST);
-          console.log("requests = "+requests[0]);
           expect(requests[0].url).to.equal(ENDPOINT);
           expect(requests[0].method).to.equal('POST');
         });
@@ -129,20 +100,13 @@ describe('BeachfrontAdapter', () => {
             sinon.assert.calledOnce(bidmanager.addBidResponse);
 
             const response = bidmanager.addBidResponse.firstCall.args[1];
-            console.log("Response is:: ");
-            console.log(response);
             expect(response).to.have.property('statusMessage', 'Bid available');
             expect(response).to.have.property('cpm', "5");
         });
 
         it('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
-              "width": 640,
-              "height": 480,
-              "bidId": "2a1444be20bb2c",
-              "bidder": "beachfront",
-              "bidderRequestId": "7101db09af0db2",
-              "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725"
+              "bidPrice": "5"
             }));
 
             adapter.callBids(REQUEST);
@@ -157,7 +121,7 @@ describe('BeachfrontAdapter', () => {
         });
 
         it('handles JSON.parse errors', () => {
-            server.respondWith("");
+            server.respondWith('');
 
             adapter.callBids(REQUEST);
             server.respond();
