@@ -5,31 +5,31 @@ import * as utils from './utils';
 let _win;
 
 function getResponsiveAdUnits(adUnits) {
-  adUnits.forEach(function (adUnit) {
+  return adUnits.map(adUnit => {
     if(!isSizeMappingValid(adUnit.sizeMapping)){
       return adUnit;
     }
     let sizeMap = getActiveSizeMap(adUnit);
-    adUnit.bids = sizeMap.bids;
-    adUnit.sizes = sizeMap.sizes;
+    return Object.assign({}, adUnit, {
+            bids: sizeMap.bids ? sizeMap.bids : adUnit.bids,
+            sizes: sizeMap.sizes ? sizeMap.sizes : adUnit.sizes
+          });
   });
-  return adUnits;
 }
 
 function getActiveSizeMap(adUnit) {
   const width = getScreenWidth();
   if(!width) {
     //size not detected - get largest value set for desktop
-    const mapping = adUnit.sizeMapping.reduce((prev, curr) => {
+    const sizeMap = adUnit.sizeMapping.reduce((prev, curr) => {
       return prev.minWidth < curr.minWidth ? curr : prev;
     });
-    if(mapping.sizes) {
-      return mapping.sizes;
+    if(sizeMap) {
+      return sizeMap;
     }
-    return adUnit.sizes;
   }
   const sizeMap = adUnit.sizeMapping.find(sizeMapping =>{
-    return width > sizeMapping.minWidth;
+    return width >= sizeMapping.minWidth;
   });
   if (sizeMap) {
     utils.logMessage(`AdUnit : ${adUnit.code} using sizeMapping for minWidth : ${sizeMap.minWidth}`);
