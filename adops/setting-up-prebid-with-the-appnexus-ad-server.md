@@ -51,8 +51,6 @@ Otherwise, if you are [sending all bids to the ad server]({{site.github.url}}/de
 |------------------+-------|
 | `hb_pb_appnexus` | `0.1` |
 
-<span style="color: rgb(255,0,0);">FIXME</span>: <strong>do we need <code>hb_adid_appnexus</code> too?  as described in the Ad Ops 'Getting Started' and in the API docs for <code>sendAllBids</code>?</strong>
-
 We recommend using the "dense" price bucket mode (For more information about dense price bucket setup, see the API documentation for [`pbjs.setPriceGranularity`]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity).
 
 To avoid the manual work of setting up price buckets manually, you can upload the following CSV file (which has all of the buckets for dense granularity predefined) on the [key-values screen](https://wiki.appnexus.com/x/-PQdBQ):
@@ -108,7 +106,10 @@ Follow the creative setup instructions in [Add Creatives](https://wiki.appnexus.
 
 - Make sure the **Serve in iFrame** box is not checked.
 
-- The creative content should be the following HTML and JavaScript:
+- The creative content should be the HTML and JavaScript shown below.
+
+{: .alert.alert-success :}
+If you are using "send all bids" mode, the macro in the call to `renderAd` below should match the header bidding partner associated with that creative, e.g., `'#{HB_ADID_APPNEXUS}'`, `'#{HB_ADID_PARTNER}'`, etc.
 
 ```html
     <script>
