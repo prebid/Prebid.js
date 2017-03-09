@@ -7,6 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
+import { getResponsiveAdUnits } from './sizeMapping';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -428,6 +429,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 /**
  *
  * Add adunit(s)
+ * If adUnits have a sizeMapping with 'sizes' and 'bids', this will grab those arrays
+ * and put them in place of the adUnit.sizes and adUnit.bids depending on the user's
+ * screen size.
  * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
  * @alias module:$$PREBID_GLOBAL$$.addAdUnits
  */
@@ -435,9 +439,9 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
     //append array to existing
-    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
+    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, getResponsiveAdUnits(adUnitArr));
   } else if (typeof adUnitArr === objectType_object) {
-    $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
+    $$PREBID_GLOBAL$$.adUnits.push($$PREBID_GLOBAL$$.adUnits, getResponsiveAdUnits([adUnitArr]));
   }
 };
 

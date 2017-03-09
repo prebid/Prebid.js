@@ -1,7 +1,6 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, shuffle } from './utils';
-import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -16,26 +15,18 @@ let _bidderSequence = null;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
-    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
+    return adUnit.bids
+      .filter(bid => bid.bidder === bidderCode)
       .map(bid => {
-        let sizes = adUnit.sizes;
-        if (adUnit.sizeMapping) {
-          let sizeMapping = mapSizes(adUnit);
-          if (sizeMapping === '') {
-            return '';
-          }
-          sizes = sizeMapping;
-        }
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
-          sizes: sizes,
+          sizes: adUnit.sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
           requestId
         });
-      }
-      );
+      });
   }).reduce(flatten, []).filter(val => val !== '');
 }
 
@@ -55,6 +46,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   }
 
   bidderCodes.forEach(bidderCode => {
+    console.log('bidder code' + bidderCode);
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();

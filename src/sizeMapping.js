@@ -4,10 +4,19 @@
 import * as utils from './utils';
 let _win;
 
-function mapSizes(adUnit) {
-  if(!isSizeMappingValid(adUnit.sizeMapping)){
-    return adUnit.sizes;
-  }
+function getResponsiveAdUnits(adUnits) {
+  adUnits.forEach(function (adUnit) {
+    if(!isSizeMappingValid(adUnit.sizeMapping)){
+      return adUnit;
+    }
+    let sizeMap = getActiveSizeMap(adUnit);
+    adUnit.bids = sizeMap.bids;
+    adUnit.sizes = sizeMap.sizes;
+  });
+  return adUnits;
+}
+
+function getActiveSizeMap(adUnit) {
   const width = getScreenWidth();
   if(!width) {
     //size not detected - get largest value set for desktop
@@ -19,19 +28,15 @@ function mapSizes(adUnit) {
     }
     return adUnit.sizes;
   }
-  let sizes = '';
-  const mapping = adUnit.sizeMapping.find(sizeMapping =>{
+  const sizeMap = adUnit.sizeMapping.find(sizeMapping =>{
     return width > sizeMapping.minWidth;
   });
-  if(mapping && mapping.sizes){
-    sizes = mapping.sizes;
-    utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
+  if (sizeMap) {
+    utils.logMessage(`AdUnit : ${adUnit.code} using sizeMapping for minWidth : ${sizeMap.minWidth}`);
+  } else {
+    utils.logMessage(`AdUnit : ${adUnit.code} not mapped to any sizes for device width. Using default sizes and bids for adUnit. This request will be suppressed.`);
   }
-  else{
-    utils.logMessage(`AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`);
-  }
-  return sizes;
-
+  return sizeMap;
 }
 
 function isSizeMappingValid(sizeMapping) {
@@ -62,4 +67,4 @@ function setWindow(win) {
   _win = win;
 }
 
-export { mapSizes, getScreenWidth, setWindow };
+export { getResponsiveAdUnits, getActiveSizeMap, getScreenWidth, setWindow };
