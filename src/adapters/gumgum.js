@@ -10,25 +10,26 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const bidEndpoint = `https://g2.gumgum.com/hbid/imp`;
 
-  let WINDOW;
-  let SCREEN;
+  let topWindow;
+  let topScreen;
+  let pageViewId;
 
   try {
-    WINDOW = global.top;
-    SCREEN = WINDOW.screen;
+    topWindow = global.top;
+    topScreen = topWindow.screen;
   } catch (error) {
-    utils.logError(error);
-    return;
+    return utils.logError(error);
   }
 
   function _callBids({ bids }) {
     const browserParams = {
-      vw: WINDOW.innerWidth,
-      vh: WINDOW.innerHeight,
-      sw: SCREEN.width,
-      sh: SCREEN.height,
-      pu: WINDOW.location.href,
-      dpr: WINDOW.devicePixelRatio || 1
+      vw: topWindow.innerWidth,
+      vh: topWindow.innerHeight,
+      sw: topScreen.width,
+      sh: topScreen.height,
+      pu: topWindow.location.href,
+      ce: navigator.cookieEnabled,
+      dpr: topWindow.devicePixelRatio || 1
     };
     utils._each(bids, bidRequest => {
       const { bidId
@@ -38,7 +39,7 @@ const GumgumAdapter = function GumgumAdapter() {
       const trackingId = params.inScreen;
       const nativeId   = params.native;
       const slotId     = params.inSlot;
-      const bid = {};
+      const bid        = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
       /* slot/native ads need the placement id */
       switch (true) {
@@ -58,6 +59,9 @@ const GumgumAdapter = function GumgumAdapter() {
       /* slot ads require a slot id */
       if (slotId) bid.si = slotId;
 
+      /* include the pageViewId, if any */
+      if (pageViewId) bid.pv = pageViewId;
+
       const cachedBid = Object.assign({
         placementCode,
         id: bidId
@@ -73,6 +77,10 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const _handleGumGumResponse = cachedBidRequest => bidResponse => {
     const ad = bidResponse && bidResponse.ad;
+    const pag = bidResponse && bidResponse.pag;
+    /* cache the pageViewId */
+    if (pag && pag.pvid) pageViewId = pag.pvid;
+    /* create the bid */
     if (ad && ad.id) {
       const bid = bidfactory.createBid(1);
       const { t: trackingId
