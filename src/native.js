@@ -39,6 +39,19 @@ const SUPPORTED_TYPES = {
 };
 
 /**
+ * Recieves nativeParams from an adUnit. If the params were not of type 'type',
+ * passes them on directly. If they were of type 'type', translate
+ * them into the predefined specific asset requests for that type of native ad.
+ */
+export default function processNativeAdUnitParams(params) {
+  if (params && params.type && typeIsSupported(params.type)) {
+    return SUPPORTED_TYPES[params.type];
+  }
+
+  return params;
+}
+
+/**
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
@@ -48,19 +61,6 @@ function typeIsSupported(type) {
   }
 
   return true;
-}
-
-/**
- * Recieves nativeParams from an adUnit. If the params were not of type 'type',
- * passes them on directly. If they were of type 'type', translate
- * them into the predefined specific asset requests for that type of native ad.
- */
-export default function(input) {
-  if (input && input.type && typeIsSupported(input.type)) {
-    return SUPPORTED_TYPES[input.type];
-  }
-
-  return input;
 }
 
 /**
@@ -78,7 +78,7 @@ export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).
  */
 export function nativeBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest.nativeParams) {return false;}
+  if (!bidRequest || !bidRequest.nativeParams) {return false;}
 
   const requestedAssets = bidRequest.nativeParams;
   const requiredAssets = Object.keys(requestedAssets)
