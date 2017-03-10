@@ -592,3 +592,12 @@ export function shuffle(array) {
 export function adUnitsFilter(filter, bid) {
   return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
 }
+
+/**
+ * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
+ * @param {HTMLDocument} doc document to check support of 'srcdoc'
+ */
+export function isSrcdocSupported(doc) {
+  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
+  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+}
