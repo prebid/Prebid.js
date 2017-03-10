@@ -1560,6 +1560,13 @@ describe('Unit: Prebid Module', function () {
       expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
     });
 
+    it('should not find hb_adid key in lowercase for all bidders', () => {
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      $$PREBID_GLOBAL$$.enableSendAllBids();
+      $$PREBID_GLOBAL$$.setTargetingForAst();
+      const keywords = Object.keys(window.apntag.tags[adUnitCode].keywords).filter(keyword => (keyword.substring(0, 'hb_adid'.length) === 'hb_adid'));
+      expect(keywords.length).to.equal(0);
+    });
   });
 
 });
