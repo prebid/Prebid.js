@@ -1,12 +1,12 @@
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
-const adloader = require('../adloader.js');
+const ajax = require('../ajax.js');
 const utils = require('../utils.js');
 
 var QCXAdapter = function QCXAdapter() {
 
   const BIDDER_CODE 			= 'qcx';
-  const QCX_CALLBACK_URL 		= 'http://qcx.quantcast.com?';
+  const QCX_CALLBACK_URL 		= 'http://head.quantcast.com?';
   const DEFAULT_BID_FLOOR 	= 0.0000000001;
 
 
@@ -55,31 +55,27 @@ var QCXAdapter = function QCXAdapter() {
             'publisherId'   : publisherId,
             'id'            : params.requestId,
             'site'          : {
-              'page' 		: loc,
+              'page' 		: loc.href,
               'referrer' 	: referrer,
               'domain'	: domain,
             },
             'imp' 		: [{
 
               'banner'	: {
-                'battr' : [],
+                'battr' : bid.params.battr,
                 'w'		: size[0],
                 'h'		: size[1],
               },
               'id' 		: bid.params.id,
               'bidfloor'	: bid.params.bidFloor || DEFAULT_BID_FLOOR,
-              'secure'	: 0 + (loc.protocol === 'https')
             }]
           };
         });
 
         utils._each(bidRequests, function (bidRequest) {
-          adloader.loadScript(
-          utils.tryAppendQueryString(
-          utils.tryAppendQueryString(QCX_CALLBACK_URL, 'callback', '$$PREBID_GLOBAL$$.handleQcxCB'),
-          'request', JSON.stringify(bidRequest)
-          )
-          );
+          ajax.ajax(QCX_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQcxCB, JSON.stringify(bidRequest), {
+            method : 'POST'
+          });
         });
       });
     }
