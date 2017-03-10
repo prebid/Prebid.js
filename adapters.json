@@ -10,6 +10,7 @@
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -52,7 +53,6 @@
     "vertoz",
     "widespace",
     "admixer",
-    "beachfront",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -76,7 +76,8 @@
       "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
-    }, {
+    },
+    {
       "beachfront": {
         "supportedMediaTypes": ["video"]
       }

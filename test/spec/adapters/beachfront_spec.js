@@ -29,7 +29,6 @@ const REQUEST = {
             },
             "placementCode": "video",
             "sizes": [640, 480],
-
             "bidId": "2a1444be20bb2c",
             "bidderRequestId": "7101db09af0db2",
             "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725"
@@ -50,10 +49,8 @@ describe('BeachfrontAdapter', () => {
     beforeEach(() => adapter = BeachfrontAdapter.createNew());
 
     describe('request function', () => {
-
         let xhr;
         let requests;
-
         beforeEach(() => {
             xhr = sinon.useFakeXMLHttpRequest();
             requests = [];
