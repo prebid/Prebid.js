@@ -7,10 +7,12 @@
     "adform",
     "adkernel",
     "admedia",
+    "bidfluence",
     "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -29,7 +31,7 @@
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "smartadserver",
     "sekindoUM",
     "sonobi",
     "sovrn",
@@ -75,6 +77,11 @@
       }
     },    {
       "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "beachfront": {
         "supportedMediaTypes": ["video"]
       }
     },
