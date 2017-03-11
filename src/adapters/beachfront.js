@@ -6,6 +6,7 @@ import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=';
+// Allen's Prebid test exchange="3c936707-7252-436b-fe8f-149ff1ede7a3"
 
 function BeachfrontAdapter() {
   var baseAdapter = Adapter.createNew('beachfront'),
@@ -46,12 +47,10 @@ function BeachfrontAdapter() {
         bidfloor: bid.params.bidfloor
       }],
       site:{
-        page:"http://www.rebelai.com"
+        page: window.location.host
       },
       device:{
         ua: navigator.userAgent,
-        // XXX need to get IP from device
-        ip:"100.6.143.190",
         devicetype:2
       },
       cur:["USD"]
