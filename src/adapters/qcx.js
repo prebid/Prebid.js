@@ -27,10 +27,11 @@ var QCXAdapter = function QCXAdapter() {
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
-      var request = bidRequests[seatbid.id];
+      let key = seatbid.id + "-" + seatbid.width + 'x' + seatbid.height;
+      var request = bidRequests[key];
       // This line is required since this is the field
       // that bidfactory.createBid looks for
-      request.bidId = request.id;
+      request.bidId = request.imp[0].id;
       let responseBid = bidfactory.createBid(1, request);
 
       responseBid.cpm       = seatbid.cpm;
@@ -39,7 +40,7 @@ var QCXAdapter = function QCXAdapter() {
       responseBid.width     = seatbid.width;
       responseBid.bidderCode = response.biddercode;
 
-      bidmanager.addBidResponse(request.id, responseBid);
+      bidmanager.addBidResponse(request.bidId, responseBid);
     }
 
   };
@@ -61,7 +62,7 @@ var QCXAdapter = function QCXAdapter() {
           bid.sizes = [bid.sizes];
         }
         utils._each(bid.sizes, function(size) {
-          let key = params.requestId + "-" + size[0] + 'x' + size[1];
+          let key = bid.placementCode + "-" + size[0] + 'x' + size[1];
           bidRequests[key] = bidRequests[key] || {
             'publisherId'   : publisherId,
             'id'            : params.requestId,
@@ -77,7 +78,7 @@ var QCXAdapter = function QCXAdapter() {
                 'w'		: size[0],
                 'h'		: size[1],
               },
-              'id' 		: key,
+              'id' 		: bid.placementCode,
               'bidfloor'	: bid.params.bidFloor || DEFAULT_BID_FLOOR,
             }]
           };
