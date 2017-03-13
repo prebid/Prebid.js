@@ -12,9 +12,11 @@ module.exports = function (win = window) {
   };
 
   const createDummyAdTag = (width, height, divBody, color) =>
+  `<body style="margin:0;padding:0">`+
   `<div style="width:${width-4}px;height:${height-4}px;margin:0;padding:0;border:2px solid #f4fc0a;background-color:${color}">\n` +
   divBody +
-  '\n</div>';
+  `\n</div>` +
+  `\n</body>`;
 
   const validBid = bid => bid.params && utils.isStr(bid.params.sid);
 
