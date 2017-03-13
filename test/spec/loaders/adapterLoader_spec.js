@@ -5,7 +5,7 @@ const allAdapters = require('../../fixtures/allAdapters');
 const expect = require('chai').expect;
 require('../../../loaders/adapterLoader');
 
-const defaultAdapters = ["aardvark","adblade","adbutler","adequant","adform","admedia","aol","appnexus","appnexusAst","getintent","hiromedia","indexExchange","kruxlink","komoona","openx","piximedia","pubmatic","pulsepoint","rubicon","sonobi","sovrn","springserve","triplelift","yieldbot","nginad","brightcom","wideorbit","jcm","underdogmedia","memeglobal","centro","roxot",{"appnexus":{"alias":"brealtime"}},{"appnexus":{"alias":"pagescience"}},{"appnexus":{"alias":"defymedia"}},{"appnexusAst":{"supportedMediaTypes":["video"]}}];
+const defaultAdapters = ["aardvark","adblade","adbutler","adequant","adform","admedia","aol","appnexus","appnexusAst","getintent","hiromedia","indexExchange","kruxlink","komoona","openx","piximedia","pubmatic","pulsepoint","rubicon","sonobi","sovrn","springserve","triplelift","twenga","yieldbot","nginad","brightcom","wideorbit","jcm","underdogmedia","memeglobal","centro","roxot",{"appnexus":{"alias":"brealtime"}},{"appnexus":{"alias":"pagescience"}},{"appnexus":{"alias":"defymedia"}},{"appnexusAst":{"supportedMediaTypes":["video"]}}];
 
 const input = `/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
   /** END INSERT ADAPTERS */`;

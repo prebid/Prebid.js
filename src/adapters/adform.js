@@ -2,6 +2,7 @@ var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
+var STATUSCODES = require('../constants.json').STATUS;
 
 function AdformAdapter() {
 
@@ -70,7 +71,7 @@ function AdformAdapter() {
         if (adItem && adItem.response === 'banner' &&
             verifySize(adItem, bid.sizes)) {
 
-          bidObject = bidfactory.createBid(1);
+          bidObject = bidfactory.createBid(STATUSCODES.GOOD, bid);
           bidObject.bidderCode = bidder;
           bidObject.cpm = adItem.win_bid;
           bidObject.cur = adItem.win_cur;
@@ -80,7 +81,7 @@ function AdformAdapter() {
           bidObject.dealId = adItem.deal_id;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         } else {
-          bidObject = bidfactory.createBid(2);
+          bidObject = bidfactory.createBid(STATUSCODES.NO_BID, bid);
           bidObject.bidderCode = bidder;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         }
