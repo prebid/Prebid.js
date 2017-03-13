@@ -4,13 +4,13 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 
-var ServerBidAdapter = function ServerBidAdapter() {
+const ServerBidAdapter = function ServerBidAdapter() {
 
-  var baseAdapter = Adapter.createNew('serverbid');
+  const baseAdapter = Adapter.createNew('serverbid');
 
-  var BASE_URI = '//e.serverbid.com/api/v2';
+  const BASE_URI = '//e.serverbid.com/api/v2';
 
-  var sizeMap = [null,
+  const sizeMap = [null,
     "120x90",
     "120x90",
     "468x60",
@@ -41,30 +41,29 @@ var ServerBidAdapter = function ServerBidAdapter() {
     "800x250"
   ];
 
-  var bidIds = [];
+  const bidIds = [];
 
   baseAdapter.callBids = function(params) {
 
     if (params && params.bids && utils.isArray(params.bids) && params.bids.length) {
 
-      var data = {
+      const data = {
         placements: [],
         time: Date.now(),
         user: {},
-        url: document.location.href,
+        url: utils.getTopWindowUrl,
         referrer: document.referrer,
         enableBotFiltering: true,
         includePricingData: true
       };
 
-      var bids = params.bids || [];
-      for (var i = 0; i < bids.length; i++) {
-
-        var bid = bids[i];
+      const bids = params.bids || [];
+      for (let i = 0; i < bids.length; i++) {
+        const bid = bids[i];
 
         bidIds.push(bid.bidId);
 
-        var bid_data = {
+        const bid_data = {
           networkId: bid.params.networkId,
           siteId: bid.params.siteId,
           zoneIds: bid.params.zoneIds,
@@ -91,11 +90,11 @@ var ServerBidAdapter = function ServerBidAdapter() {
 
   function _responseCallback(result) {
 
-    var bid;
-    var bidId;
-    var bidObj;
-    var bidCode;
-    var placementCode;
+    let bid;
+    let bidId;
+    let bidObj;
+    let bidCode;
+    let placementCode;
 
     try {
       result = JSON.parse(result);
@@ -103,21 +102,16 @@ var ServerBidAdapter = function ServerBidAdapter() {
       utils.logError(error);
     }
 
-    for (var i = 0; i < bidIds.length; i++) {
+    for (let i = 0; i < bidIds.length; i++) {
 
       bidId = bidIds[i];
       bidObj = utils.getBidRequest(bidId);
       bidCode = bidObj.bidder;
       placementCode = bidObj.placementCode;
 
-      //prepare a no bid response.
-      bid = bidfactory.createBid(2, bidObj);
-      bid.bidderCode = bidCode;
-
       if (result) {
-
-        var decision = result.decisions && result.decisions[bidId];
-        var price = decision && decision.pricing && decision.pricing.clearPrice;
+        const decision = result.decisions && result.decisions[bidId];
+        const price = decision && decision.pricing && decision.pricing.clearPrice;
 
         if (decision && price) {
           bid = bidfactory.createBid(1, bidObj);
@@ -126,14 +120,17 @@ var ServerBidAdapter = function ServerBidAdapter() {
           bid.width = decision.width;
           bid.height = decision.height;
           bid.ad = retrieveAd(decision);
+        } else {
+          bid = bidfactory.createBid(2, bidObj);
+          bid.bidderCode = bidCode;
         }
 
+      } else {
+        bid = bidfactory.createBid(2, bidObj);
+        bid.bidderCode = bidCode;
       }
-
       bidmanager.addBidResponse(placementCode, bid);
-
     }
-
   }
 
   function retrieveAd(decision) {
@@ -141,9 +138,9 @@ var ServerBidAdapter = function ServerBidAdapter() {
   }
 
   function getSize(sizes) {
-    var result = [];
+    const result = [];
     sizes.forEach(function(size) {
-      var index = sizeMap.indexOf(size[0] + "x" + size[1]);
+      const index = sizeMap.indexOf(size[0] + "x" + size[1]);
       if (index >= 0) {
         result.push(index);
       }
