@@ -1,17 +1,19 @@
+const utils = require('../utils.js');
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const ajax = require('../ajax.js');
-const utils = require('../utils.js');
 
 var QCXAdapter = function QCXAdapter() {
 
   const BIDDER_CODE 			= 'qcx';
-  const QCX_CALLBACK_URL 		= 'http://head.quantcast.com?';
+  const QCX_CALLBACK_URL 		= 'http://localhost/demo.php?';
   const DEFAULT_BID_FLOOR 	= 0.0000000001;
+  let bidRequests = {};
 
 
   //expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleQcxCB = function (response) {
+  $$PREBID_GLOBAL$$.handleQcxCB = function (responseText) {
+    let response = JSON.parse(responseText);
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
       if (bidsRequested.length > 0) {
@@ -25,9 +27,19 @@ var QCXAdapter = function QCXAdapter() {
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
-      var request = utils.getBidRequest(seatbid.impid);
-      let bid = utils.extend(bidfactory.createBid(1), seatbid);
-      bidmanager.addBidResponse(request.placementCode, bid);
+      var request = bidRequests[seatbid.id];
+      // This line is required since this is the field
+      // that bidfactory.createBid looks for
+      request.bidId = request.id;
+      let responseBid = bidfactory.createBid(1, request);
+
+      responseBid.cpm       = seatbid.cpm;
+      responseBid.ad        = seatbid.ad;
+      responseBid.height    = seatbid.height;
+      responseBid.width     = seatbid.width;
+      responseBid.bidderCode = response.biddercode;
+
+      bidmanager.addBidResponse(request.id, responseBid);
     }
 
   };
@@ -38,7 +50,6 @@ var QCXAdapter = function QCXAdapter() {
       let loc 		= utils.getTopWindowLocation();
       let domain      = loc.hostname;
       let publisherId   = 0;
-      let bidRequests = {};
 
       if (bids.length === 0) {
         return;
@@ -50,7 +61,7 @@ var QCXAdapter = function QCXAdapter() {
           bid.sizes = [bid.sizes];
         }
         utils._each(bid.sizes, function(size) {
-          let key = size[0] + 'x' + size[1];
+          let key = params.requestId + "-" + size[0] + 'x' + size[1];
           bidRequests[key] = bidRequests[key] || {
             'publisherId'   : publisherId,
             'id'            : params.requestId,
@@ -66,7 +77,7 @@ var QCXAdapter = function QCXAdapter() {
                 'w'		: size[0],
                 'h'		: size[1],
               },
-              'id' 		: bid.params.id,
+              'id' 		: key,
               'bidfloor'	: bid.params.bidFloor || DEFAULT_BID_FLOOR,
             }]
           };
