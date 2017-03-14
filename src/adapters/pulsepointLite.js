@@ -74,7 +74,7 @@ function PulsePointLiteAdapter() {
 
   function parse(rawResponse) {
     try {
-      return JSON.parse(rawResponse)
+      return JSON.parse(rawResponse);
     } catch (ex) {
       logError('pulsepoint.safeParse', 'ERROR', ex);
       return null;
