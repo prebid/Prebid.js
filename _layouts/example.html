@@ -44,11 +44,11 @@
       </p>
 
       <p>
+        On the JSFiddle example below, click <strong>Result</strong> to see the result.
+      </p>
 
-        On the example below, click the JSFiddle <strong>Result</strong> tab
-        to see the result. Click <strong>Edit in JSFiddle</strong> to open
-        the example in a new tab.
-
+      <p>
+        Click <strong>Edit in JSFiddle</strong> to open the example in a new tab.
       </p>
 
       <p>
@@ -68,12 +68,12 @@
 
 </div>
 
-<br>
+<br />
 
 <div class="row">
 
+{% unless page.use_old_example_style == false %}
 <div class="col-sm-6">
-
 
 <table class="jsfiddle-line-number">
 <tr>
@@ -81,7 +81,7 @@
 
 {% for num in (1..page.code_lines) %}
 
-{{ num }} <br>
+{{ num }} <br/>
 
 {% endfor %}
 
@@ -96,8 +96,8 @@
 </tr>
 </table>
 
-
 </div>
+{% endunless %}
 
 <div class="col-sm-6">
 
@@ -110,7 +110,13 @@
 
 </div>
 
-  </div>
+{% if page.use_old_example_style == false %}
+  <br />
+
+  <iframe width="100%" height="{{page.code_height}}" src="//{{page.jsfiddle_link}}" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+{% endif %}
+
+</div>
 
 
 {% include foot.html %}
