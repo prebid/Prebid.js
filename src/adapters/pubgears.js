@@ -1,6 +1,7 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var consts = require('../constants.json');
+var utils = require('../utils.js');
 var d = document;
 var SCRIPT = 'script';
 var PARAMS = 'params';
@@ -26,6 +27,8 @@ var PUBLISHER_ATTRIBUTE = 'pub';
 var FLAG_ATTRIBUTE = 'flag';
 
 var AD_UNIT_CODE = 'adUnitCode';
+var PLACEMENT_CODE = 'placementCode';
+var BID_ID = 'bidId'
 var PUBLISHER_PARAM = 'publisherName';
 var PUB_ZONE_PARAM = 'pubZone';
 
@@ -62,7 +65,7 @@ function PubGearsAdapter() {
     bids.forEach(function(bid) {
 
       var name = getSlotFromBidParam(bid);
-      pendingSlots[ name ] = bid[AD_UNIT_CODE] ;
+      pendingSlots[ name ] = bid;
     });
 
     proxy = proxy || getScript(SCRIPT_ID) || makeScript(slots, publisher, SCRIPT_ID, TAG_URL);
@@ -129,20 +132,27 @@ function PubGearsAdapter() {
 
     var data = event[DETAIL];
     var slotKey = getSlotFromResource(data[RESOURCE]);
-    var adUnitCode = pendingSlots[slotKey];
+    var bidRequest = pendingSlots[slotKey]
+    var adUnitCode = bidRequest[PLACEMENT_CODE];
+    var bid = null;
 
-    if(adUnitCode)
-      bidmanager.addBidResponse(adUnitCode, buildResponse(data));
+    if(bidRequest) {
+      bid = buildResponse(data, bidRequest);
+      bidmanager.addBidResponse(adUnitCode, bid);
+      utils.logMessage('adding bid respoonse to "' + adUnitCode + '" for bid request "' + bidRequest[BID_ID] + '"');
+    }else {
+      utils.logError('Cannot get placement id for slot "' + slotKey + '"');
+    }
   }
 
-  function buildResponse(eventData) {
+  function buildResponse(eventData, bidRequest) {
 
     var resource = eventData[RESOURCE];
     var dims = resource[SIZE].split('x');
     var price = Number(eventData[GROSS_PRICE]);
     var status = isNaN(price) || price < 0 ? 2 : 1;
 
-    var response = bidfactory.createBid(status);
+    var response = bidfactory.createBid(status, bidRequest);
     response[BIDDER_CODE_RESPONSE_KEY] = BIDDER_CODE;
 
     if(status !== 1)
