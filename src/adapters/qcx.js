@@ -8,6 +8,9 @@ var QCXAdapter = function QCXAdapter() {
   const BIDDER_CODE 			= 'qcx';
   const QCX_CALLBACK_URL 		= 'http://localhost/demo.php?';
   const DEFAULT_BID_FLOOR 	= 0.0000000001;
+  // The following 2 constants are adopted from bidfactory.js codes
+  const BID_STATUS_CODE_AVAILABLE = 1;
+  const BID_STATUS_CODE_EMPTY     = 2;
   let bidRequests = {};
 
 
@@ -17,7 +20,7 @@ var QCXAdapter = function QCXAdapter() {
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
       if (bidsRequested.length > 0) {
-        let bid = bidfactory.createBid(2);
+        let bid = bidfactory.createBid(BID_STATUS_CODE_EMPTY);
         bid.bidderCode = BIDDER_CODE;
         bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
       }
@@ -27,18 +30,18 @@ var QCXAdapter = function QCXAdapter() {
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
-      let key = seatbid.id + "-" + seatbid.width + 'x' + seatbid.height;
+      let key = seatbid.placementCode + "-" + seatbid.width + 'x' + seatbid.height;
       var request = bidRequests[key];
       // This line is required since this is the field
       // that bidfactory.createBid looks for
-      request.bidId = request.imp[0].id;
-      let responseBid = bidfactory.createBid(1, request);
+      request.bidId = request.imp[0].placementCode;
+      let responseBid = bidfactory.createBid(BID_STATUS_CODE_AVAILABLE, request);
 
       responseBid.cpm       = seatbid.cpm;
       responseBid.ad        = seatbid.ad;
       responseBid.height    = seatbid.height;
       responseBid.width     = seatbid.width;
-      responseBid.bidderCode = response.biddercode;
+      responseBid.bidderCode = response.bidderCode;
 
       bidmanager.addBidResponse(request.bidId, responseBid);
     }
@@ -65,7 +68,7 @@ var QCXAdapter = function QCXAdapter() {
           let key = bid.placementCode + "-" + size[0] + 'x' + size[1];
           bidRequests[key] = bidRequests[key] || {
             'publisherId'   : publisherId,
-            'id'            : params.requestId,
+            'requestId'     : params.requestId,
             'site'          : {
               'page' 		: loc.href,
               'referrer' 	: referrer,
@@ -75,11 +78,11 @@ var QCXAdapter = function QCXAdapter() {
 
               'banner'	: {
                 'battr' : bid.params.battr,
-                'w'		: size[0],
-                'h'		: size[1],
+                'width'		: size[0],
+                'height'		: size[1],
               },
-              'id' 		: bid.placementCode,
-              'bidfloor'	: bid.params.bidFloor || DEFAULT_BID_FLOOR,
+              'placementCode'  : bid.placementCode,
+              'bidFloor'	   : bid.params.bidFloor || DEFAULT_BID_FLOOR,
             }]
           };
         });
