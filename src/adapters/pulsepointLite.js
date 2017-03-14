@@ -1,13 +1,13 @@
 import {createBid} from 'src/bidfactory';
 import {addBidResponse} from 'src/bidmanager';
-import {logError} from 'src/utils';
+import {logError,getTopWindowLocation} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 
 function PulsePointLiteAdapter() {
 
-  var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
-  var ajaxOptions = {
+  const bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
+  const ajaxOptions = {
     method: 'GET',
     withCredentials: true,
     contentType: 'text/plain'
@@ -30,14 +30,13 @@ function PulsePointLiteAdapter() {
   }
 
   function environment() {
-    var pg = pageUrl();
     return {
       cn: 1,
       ca: 'BID',
       tl: 1,
       'if': 0,
-      cwu: pg.pg,
-      cwr: pg.ref,
+      cwu: getTopWindowLocation().href,
+      cwr: referrer(),
       dw: document.documentElement.clientWidth,
       cxy: document.documentElement.clientWidth + ',' + document.documentElement.clientHeight,
       tz: new Date().getTimezoneOffset(),
@@ -45,24 +44,17 @@ function PulsePointLiteAdapter() {
     };
   }
 
-  function pageUrl() {
-    try { 
-      return {
-        pg: window.top.location.href,
-        ref: window.top.document.referrer
-      };
-    } 
-    catch (e) { 
-      return {
-        pg: location.href,
-        ref: document.referrer
-      };
+  function referrer() {
+    try {
+      return window.top.document.referrer;
+    } catch (e) {
+      return document.referrer;
     }
   }
 
   function bidResponseAvailable(bidRequest, rawResponse) {
     if (rawResponse) {
-      var bidResponse = JSON.parse(rawResponse);
+      var bidResponse = parse(rawResponse);
       if(bidResponse) {
         var adSize = bidRequest.params.cf.toUpperCase().split('X');
         var bid = createBid(STATUS.GOOD, bidRequest);
@@ -78,6 +70,15 @@ function PulsePointLiteAdapter() {
     var passback = createBid(STATUS.NO_BID, bidRequest);
     passback.bidderCode = bidRequest.bidder;
     addBidResponse(bidRequest.placementCode, passback);
+  }
+
+  function parse(rawResponse) {
+    try {
+      return JSON.parse(rawResponse)
+    } catch (ex) {
+      logError('pulsepoint.safeParse', 'ERROR', ex);
+      return null;
+    }
   }
 
   return {

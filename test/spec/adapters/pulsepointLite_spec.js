@@ -9,15 +9,15 @@ describe("PulsePoint Lite Adapter Tests", () => {
   let pulsepointAdapter = new PulsePointAdapter();
   let slotConfigs;
   let ajaxStub;
-  
+
   beforeEach(() => {
     sinon.stub(bidManager, 'addBidResponse');
     ajaxStub = sinon.stub(ajax, 'ajax');
-    
+
     slotConfigs = {
       bids: [
         {
-          placementCode: "/DfpAccount1/slot1", 
+          placementCode: "/DfpAccount1/slot1",
           bidder: "pulsepoint",
           bidId: 'bid12345',
           params: {
@@ -26,7 +26,7 @@ describe("PulsePoint Lite Adapter Tests", () => {
             cf: "300x250"
           }
         },{
-          placementCode: "/DfpAccount2/slot2", 
+          placementCode: "/DfpAccount2/slot2",
           bidder: "pulsepoint",
           bidId: 'bid23456',
           params: {
@@ -92,5 +92,17 @@ describe("PulsePoint Lite Adapter Tests", () => {
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
   });
- 
+
+  it('Verify passback when ajax call fails', () => {
+    ajaxStub.throws();
+    pulsepointAdapter.callBids(slotConfigs);
+    let placement = bidManager.addBidResponse.firstCall.args[0];
+    let bid = bidManager.addBidResponse.firstCall.args[1];
+    expect(placement).to.equal('/DfpAccount1/slot1');
+    expect(bid.bidderCode).to.equal('pulsepoint');
+    expect(bid).to.not.have.property('ad');
+    expect(bid).to.not.have.property('cpm');
+    expect(bid.adId).to.equal('bid12345');
+  });
+
 });
