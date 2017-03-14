@@ -6,6 +6,8 @@ Please see the sections below before submitting a PR.
 
 + [Contributing](#contributing)
 + [License](#license)
++ [Prerequisites](#prerequisites)
++ [Running Jekyll Locally](#running-jekyll-locally)
 + [Alphabetization of Bidder Adaptors](#alphabetization-of-bidder-adaptors)
 + [The Downloads Page](#the-downloads-page)
 + [Thanks](#thanks)
@@ -28,6 +30,51 @@ For larger changes such as reorganizing the site and moving/removing content, yo
 ## License
 
 All docs are under the license shown in the `LICENSE` file in this directory.
+
+<a name="prerequisites" />
+
+## Prerequisites
+
+The site uses [Jekyll](http://jekyllrb.com/), which is written in the [Ruby](http://www.ruby-lang.org/en/) language.
+
+To follow the instructions in the next section, you will need to install the [Bundler](http://bundler.io/) Ruby gem, probably like so:
+
+```
+$ gem install bundler
+```
+
+<a name="running-jekyll-locally" />
+
+## Running Jekyll Locally
+
+Before submitting a pull request, you should run the site locally to make sure your edits actually work.
+
+To get started editing the site and seeing your changes, clone this repo and enter the following commands in your terminal:
+
+- `cd /path/to/prebid.github.io`
+
+- `bundle install`
+
+- `bundle exec jekyll serve`
+
+You should see output that looks something like this:
+
+```
+Configuration file: /Users/rloveland/Dropbox/Code/prebid.github.io/_config.yml  
+            Source: /Users/rloveland/Dropbox/Code/prebid.github.io  
+       Destination: /Users/rloveland/Dropbox/Code/prebid.github.io/_site  
+ Incremental build: disabled. Enable with --incremental  
+      Generating...   
+                    done in 13.596 seconds.  
+ Auto-regeneration: enabled for '/Users/rloveland/Dropbox/Code/prebid.github.io'  
+Configuration file: /Users/rloveland/Dropbox/Code/prebid.github.io/_config.yml  
+    Server address: http://127.0.0.1:8080/  
+  Server running... press ctrl-c to stop.  
+...  
+...  
+```
+
+Open the `Server address` URL in your browser, and you should see a locally running copy of the site.
 
 <a name="alphabetization-of-bidder-adaptors" />
 
