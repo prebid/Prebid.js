@@ -51,7 +51,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
         placements: [],
         time: Date.now(),
         user: {},
-        url: utils.getTopWindowUrl,
+        url: utils.getTopWindowUrl(),
         referrer: document.referrer,
         enableBotFiltering: true,
         includePricingData: true
