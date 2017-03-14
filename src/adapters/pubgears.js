@@ -26,9 +26,8 @@ var SLOT_LIST_ATTRIBUTE = 'slot-list';
 var PUBLISHER_ATTRIBUTE = 'pub';
 var FLAG_ATTRIBUTE = 'flag';
 
-var AD_UNIT_CODE = 'adUnitCode';
 var PLACEMENT_CODE = 'placementCode';
-var BID_ID = 'bidId'
+var BID_ID = 'bidId';
 var PUBLISHER_PARAM = 'publisherName';
 var PUB_ZONE_PARAM = 'pubZone';
 
@@ -132,7 +131,7 @@ function PubGearsAdapter() {
 
     var data = event[DETAIL];
     var slotKey = getSlotFromResource(data[RESOURCE]);
-    var bidRequest = pendingSlots[slotKey]
+    var bidRequest = pendingSlots[slotKey];
     var adUnitCode = bidRequest[PLACEMENT_CODE];
     var bid = null;
 
