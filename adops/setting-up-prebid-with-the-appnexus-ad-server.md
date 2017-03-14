@@ -1,8 +1,8 @@
 ---
 layout: page
-title: Setting up Prebid with the AppNexus Ad Server
-head_title: Setting up Prebid with the AppNexus Ad Server
-description: Setting up Prebid with the AppNexus Ad Server
+title: Setting up Prebid with the AppNexus Publisher Ad Server
+head_title: Setting up Prebid with the AppNexus Publisher Ad Server
+description: Setting up Prebid with the AppNexus Publisher Ad Server
 pid: 3
 hide: false
 top_nav_section: adops
@@ -11,18 +11,18 @@ nav_section: tutorials
 
 <div class="bs-docs-section" markdown="1">
     
-# Setting up Prebid with the AppNexus Ad Server
+# Setting up Prebid with the AppNexus Publisher Ad Server
 {: .no_toc}
 
-This page describes how to set up the AppNexus Ad Server to work with Prebid.js from an Ad Ops perspective.
+This page describes how to set up the AppNexus Publisher Ad Server to work with Prebid.js from an Ad Ops perspective.
 
 In some cases there are links to the [AppNexus wiki](https://wiki.appnexus.com) which may require a customer login.
 
 Once the Ad Ops setup is complete, developers will need to add code to the page as shown in the example [Using Prebid.js with AppNexus as your Ad Server]({{site.github.url}}/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
 
 {: .alert.alert-success :}
-**AppNexus Ad Server Features**  
-Note that the functionality described on this page uses some features that are only available in the AppNexus Ad Server product, such as [key-value targeting](https://wiki.appnexus.com/x/-PQdBQ).  For more information, contact your AppNexus representative.
+**AppNexus Publisher Ad Server Features**  
+Note that the functionality described on this page uses some features that are only available in the AppNexus Publisher Ad Server product, such as [key-value targeting](https://wiki.appnexus.com/x/-PQdBQ).  For more information, contact your AppNexus representative.
 
 {: .alert.alert-info :}
 **Object Limits**  
