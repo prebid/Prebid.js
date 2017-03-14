@@ -24,6 +24,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   var _eventCount = 0;
   var _enableCheck = true;
   var _handlers;
+  var _pipe;
 
   if (analyticsType === LIBRARY) {
     loadScript(url, _emptyQueue);
@@ -61,6 +62,10 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   function _enqueue({ eventType, args }) {
     const _this = this;
 
+    if (typeof _pipe === 'function') {
+      args = _pipe(eventType, args);
+    }
+
     if (global && window[global] && eventType && args) {
       this.track({ eventType, args });
     } else {
@@ -74,10 +79,19 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   function _enable(config) {
     var _this = this;
 
-    _sampled = typeof config === "undefined" || typeof config.options === "undefined" ||
-               typeof config.options.sampling === "undefined" || Math.random() < parseFloat(config.options.sampling);
+    if (typeof config === 'object' && typeof config.options === 'object') {
+      _sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
 
-    if(_sampled) {
+      if (typeof config.options.pipe === 'function') {
+        _pipe = config.options.pipe;
+      }
+
+    } else {
+      _sampled = true;
+    }
+
+
+    if (_sampled) {
       //first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
         if (!event) {
