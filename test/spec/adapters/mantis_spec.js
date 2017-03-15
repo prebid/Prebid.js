@@ -97,7 +97,7 @@ describe('mantis adapter tests', function () {
 			var serverCall = adloader.loadScript.firstCall.args[0];
 
 			expect(serverCall).to.match(/buster=[0-9]+&/);
-			expect(serverCall).to.match(/tz=[0-9]+&/);
+			expect(serverCall).to.match(/tz=-?[0-9]+&/);
 			expect(serverCall).to.match(/secure=(true|false)&/);
 			expect(serverCall).to.string('property=1234&');
 			expect(serverCall).to.string('bids[0][bidId]=bidId1&');
