@@ -5,8 +5,8 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=';
-// Allen's Prebid test exchange="3c936707-7252-436b-fe8f-149ff1ede7a3"
+const DEV_ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=';
+const PROD_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
 function BeachfrontAdapter() {
   var baseAdapter = Adapter.createNew('beachfront'),
@@ -17,11 +17,13 @@ function BeachfrontAdapter() {
       return;
     }
 
-    var RTBDataParams = prepareAndSaveRTBRequestParams(bidRequests.bids[0]);
+    var bid = bidRequests.bids[0];
+
+    var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
     if (!RTBDataParams) {
       return;
     }
-    var BID_URL = ENDPOINT + RTBDataParams.appId;
+    var BID_URL = (bid.params.dev ? DEV_ENDPOINT : PROD_ENDPOINT ) + RTBDataParams.appId;
 
     ajax(BID_URL, handleResponse, JSON.stringify(RTBDataParams), {
       contentType: 'text/plain',
@@ -30,7 +32,7 @@ function BeachfrontAdapter() {
   };
 
   function prepareAndSaveRTBRequestParams(bid) {
-    if (!bid || !bid.params) {
+    if (!bid || !bid.params || !bid.params.appId) {
       return;
     }
 
@@ -38,30 +40,28 @@ function BeachfrontAdapter() {
     bidRequest.width = parseInt(bid.sizes[0], 10) || undefined;
     bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
 
+    function fetchDeviceType() {
+      return ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 1 : 2));
+    }
+
     var bidRequestObject =  {
       isPrebid: true,
-      appId: bid.params.appId || undefined,
+      appId: bid.params.appId,
       domain: document.location.hostname,
       imp:[{
         video:{},
         bidfloor: bid.params.bidfloor
       }],
       site:{
-        page: window.location.host
+        page: utils.getTopWindowLocation().host
       },
       device:{
         ua: navigator.userAgent,
-        devicetype:2
+        devicetype: fetchDeviceType()
       },
       cur:["USD"]
     };
-    if (bidRequestObject.appId.length !== 36) {
-      return bidRequestObject;
-    } else if (!bid.params.bidfloor){
-      return bidRequestObject;
-    } else {
-      return bidRequestObject;
-    }
+    return bidRequestObject;
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
@@ -81,7 +81,6 @@ function BeachfrontAdapter() {
     var newBid = {};
     newBid.price = parsed.bidPrice;
     newBid.url = parsed.url;
-
 
     bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, newBid));
   }
