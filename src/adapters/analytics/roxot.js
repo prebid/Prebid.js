@@ -52,17 +52,16 @@ function flushEvents() {
   eventStack.events = [];
 }
 
-export default utils.extend(adapter({url, analyticsType}),
+let roxotAdapter = utils.extend(adapter({url, analyticsType}),
   {
     track({eventType, args}) {
-      if (eventType === auctionInitConst) {
-        auctionStatus = 'started';
-        initOptions = args.config;
-        flushEvents();
-      }
-
       if (!checkOptions()) {
         return;
+      }
+
+      if (eventType === auctionInitConst) {
+        auctionStatus = 'started';
+        flushEvents();
       }
 
       if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
@@ -81,3 +80,13 @@ export default utils.extend(adapter({url, analyticsType}),
       }
     }
   });
+
+roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
+
+roxotAdapter.enableAnalytics = function(config) {
+  initOptions = config.options;
+  utils.logInfo('Roxot Analtyics enabled with config', initOptions);
+  roxotAdapter.originEnableAnalytics(config);
+};
+
+export default roxotAdapter;
