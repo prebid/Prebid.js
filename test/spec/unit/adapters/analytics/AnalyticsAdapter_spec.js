@@ -143,9 +143,8 @@ FEATURE: Analytics Adapters API
 
           adapter.enableAnalytics({
             options: {
-              pipe: function(eventType, args) {
+              pipe: function(eventType, bid) {
                 if(eventType === BID_RESPONSE) {
-                  let bid = copy(args);
                   let cpm = bid.cpm;
                   if (cpm >= 0 && cpm < 0.5) {
                     bid.cpm = '0-0.5';
@@ -156,14 +155,8 @@ FEATURE: Analytics Adapters API
                   } else {
                     bid.cpm = '>1.5';
                   }
-                  return bid;
                 }
-
-                return args;
-
-                function copy(obj) {
-                  return JSON.parse(JSON.stringify(obj));
-                }
+                return bid;
               }
             }
           });

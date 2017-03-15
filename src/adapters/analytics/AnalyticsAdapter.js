@@ -63,7 +63,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     const _this = this;
 
     if (typeof _pipe === 'function') {
-      args = _pipe(eventType, args);
+      args = _pipe(eventType, Object.assign({}, args));
     }
 
     if (global && window[global] && eventType && args) {
