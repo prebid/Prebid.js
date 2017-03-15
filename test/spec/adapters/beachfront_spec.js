@@ -25,7 +25,7 @@ const REQUEST = {
             "params": {
                 "appId": "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
                 "bidfloor": 2.00,
-                "video": {},
+                "dev": true
             },
             "placementCode": "video",
             "sizes": [640, 480],
