@@ -82,20 +82,20 @@ Follow the creative setup instructions in [Add Creatives](https://wiki.appnexus.
 If you are using "send all bids" mode, the macro in the call to `renderAd` below should match the header bidding partner associated with that creative, e.g., `'#{HB_ADID_APPNEXUS}'`, `'#{HB_ADID_PARTNER}'`, etc.
 
 {% highlight html %}
-    <script>
-    var w = window;
-    for (i=0;i<10;i++) {
-      w = w.parent;
-      if (w.pbjs) {
-        try {
-          w.pbjs.renderAd(document, '#{HB_ADID}');
-          break;
-        }
-        catch (e) {
-          continue;
-      }
-    }
-    </script>
+<script>
+ var w = window;
+ for (i = 0; i < 10; i++) {
+     w = w.parent;
+     if (w.pbjs) {
+         try {
+             w.pbjs.renderAd(document, '#{HB_ADID}');
+             break;
+         } catch (e) {
+             continue;
+         }
+     }
+ }
+</script>
 {% endhighlight %}
 
 {: .alert.alert-warning :}
