@@ -2,11 +2,12 @@ const utils = require('../utils.js');
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const ajax = require('../ajax.js');
+const QCX_CALLBACK_URL 		= 'http://localhost/demo.php?';
 
 var QCXAdapter = function QCXAdapter() {
 
   const BIDDER_CODE 			= 'qcx';
-  const QCX_CALLBACK_URL 		= 'http://localhost/demo.php?';
+
   const DEFAULT_BID_FLOOR 	= 0.0000000001;
   // The following 2 constants are adopted from bidfactory.js codes
   const BID_STATUS_CODE_AVAILABLE = 1;
@@ -16,6 +17,9 @@ var QCXAdapter = function QCXAdapter() {
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQcxCB = function (responseText) {
+    if(utils.isEmpty(responseText)) {
+      return;
+    }
     let response = JSON.parse(responseText);
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
@@ -48,7 +52,7 @@ var QCXAdapter = function QCXAdapter() {
 
   };
 
-  function _callBids(params) {
+  function callBids(params) {
       let bids 		= params.bids || [];
       let referrer 	= utils.getTopWindowUrl();
       let loc 		= utils.getTopWindowLocation();
@@ -99,7 +103,8 @@ var QCXAdapter = function QCXAdapter() {
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
   return {
-    callBids: _callBids
+    callBids: callBids,
+    QCX_CALLBACK_URL: QCX_CALLBACK_URL
   };
 };
 
