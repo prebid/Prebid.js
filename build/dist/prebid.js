@@ -1,5 +1,5 @@
 /* prebid.js v0.21.0-pre
-Updated : 2017-03-08 */
+Updated : 2017-03-16 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -64,7 +64,7 @@ Updated : 2017-03-08 */
 
 	var _cpmBucketManager = __webpack_require__(12);
 
-	var _secureCreatives = __webpack_require__(100);
+	var _secureCreatives = __webpack_require__(99);
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -76,8 +76,8 @@ Updated : 2017-03-08 */
 	var bidfactory = __webpack_require__(10);
 	var adloader = __webpack_require__(13);
 	var events = __webpack_require__(8);
-	var adserver = __webpack_require__(101);
-	var targeting = __webpack_require__(102);
+	var adserver = __webpack_require__(100);
+	var targeting = __webpack_require__(101);
 
 	/* private variables */
 
@@ -3869,61 +3869,63 @@ Updated : 2017-03-08 */
 	  var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
 	  try {
-	    var x = void 0;
-	    var useXDomainRequest = false;
-	    var method = options.method || (data ? 'POST' : 'GET');
+	    (function () {
+	      var x = void 0;
+	      var useXDomainRequest = false;
+	      var method = options.method || (data ? 'POST' : 'GET');
 
-	    if (!window.XMLHttpRequest) {
-	      useXDomainRequest = true;
-	    } else {
-	      x = new window.XMLHttpRequest();
-	      if (x.responseType === undefined) {
+	      if (!window.XMLHttpRequest) {
 	        useXDomainRequest = true;
-	      }
-	    }
-
-	    if (useXDomainRequest) {
-	      x = new window.XDomainRequest();
-	      x.onload = function () {
-	        callback(x.responseText, x);
-	      };
-
-	      // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-	      x.onerror = function () {
-	        utils.logMessage('xhr onerror');
-	      };
-	      x.ontimeout = function () {
-	        utils.logMessage('xhr timeout');
-	      };
-	      x.onprogress = function () {
-	        utils.logMessage('xhr onprogress');
-	      };
-	    } else {
-	      x.onreadystatechange = function () {
-	        if (x.readyState === XHR_DONE && callback) {
-	          callback(x.responseText, x);
+	      } else {
+	        x = new window.XMLHttpRequest();
+	        if (x.responseType === undefined) {
+	          useXDomainRequest = true;
 	        }
-	      };
-	    }
-
-	    if (method === 'GET' && data) {
-	      var urlInfo = (0, _url.parse)(url);
-	      _extends(urlInfo.search, data);
-	      url = (0, _url.format)(urlInfo);
-	    }
-
-	    x.open(method, url);
-
-	    if (!useXDomainRequest) {
-	      if (options.withCredentials) {
-	        x.withCredentials = true;
 	      }
-	      if (options.preflight) {
-	        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+	      if (useXDomainRequest) {
+	        x = new window.XDomainRequest();
+	        x.onload = function () {
+	          callback(x.responseText, x);
+	        };
+
+	        // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
+	        x.onerror = function () {
+	          utils.logMessage('xhr onerror');
+	        };
+	        x.ontimeout = function () {
+	          utils.logMessage('xhr timeout');
+	        };
+	        x.onprogress = function () {
+	          utils.logMessage('xhr onprogress');
+	        };
+	      } else {
+	        x.onreadystatechange = function () {
+	          if (x.readyState === XHR_DONE && callback) {
+	            callback(x.responseText, x);
+	          }
+	        };
 	      }
-	      x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
-	    }
-	    x.send(method === 'POST' && data);
+
+	      if (method === 'GET' && data) {
+	        var urlInfo = (0, _url.parse)(url);
+	        _extends(urlInfo.search, data);
+	        url = (0, _url.format)(urlInfo);
+	      }
+
+	      x.open(method, url);
+
+	      if (!useXDomainRequest) {
+	        if (options.withCredentials) {
+	          x.withCredentials = true;
+	        }
+	        if (options.preflight) {
+	          x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+	        }
+	        x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
+	      }
+	      x.send(method === 'POST' && data);
+	    })();
 	  } catch (error) {
 	    utils.logError('xhr construction', error);
 	  }
@@ -4852,14 +4854,16 @@ Updated : 2017-03-08 */
 
 	    utils._each(keywords, (function (v, k) {
 	      if (utils.isArray(v)) {
-	        var values = [];
-	        utils._each(v, (function (val) {
-	          val = utils.getValueString('keywords.' + k, val);
-	          if (val) {
-	            values.push(val);
-	          }
-	        }));
-	        v = values;
+	        (function () {
+	          var values = [];
+	          utils._each(v, (function (val) {
+	            val = utils.getValueString('keywords.' + k, val);
+	            if (val) {
+	              values.push(val);
+	            }
+	          }));
+	          v = values;
+	        })();
 	      } else {
 	        v = utils.getValueString('keywords.' + k, v);
 	        if (utils.isStr(v)) {
@@ -12420,7 +12424,7 @@ Updated : 2017-03-08 */
 
 	var _shim2 = _interopRequireDefault(_shim);
 
-	var _shim3 = __webpack_require__(97);
+	var _shim3 = __webpack_require__(96);
 
 	var _shim4 = _interopRequireDefault(_shim3);
 
@@ -13563,25 +13567,17 @@ Updated : 2017-03-08 */
 
 /***/ }),
 /* 95 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
-	var has = __webpack_require__(96);
 	var regexExec = RegExp.prototype.exec;
-	var gOPD = Object.getOwnPropertyDescriptor;
-
-	var tryRegexExecCall = function tryRegexExec(value) {
+	var tryRegexExec = function tryRegexExec(value) {
 		try {
-			var lastIndex = value.lastIndex;
-			value.lastIndex = 0;
-
 			regexExec.call(value);
 			return true;
 		} catch (e) {
 			return false;
-		} finally {
-			value.lastIndex = lastIndex;
 		}
 	};
 	var toStr = Object.prototype.toString;
@@ -13589,20 +13585,8 @@ Updated : 2017-03-08 */
 	var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
 
 	module.exports = function isRegex(value) {
-		if (!value || typeof value !== 'object') {
-			return false;
-		}
-		if (!hasToStringTag) {
-			return toStr.call(value) === regexClass;
-		}
-
-		var descriptor = gOPD(value, 'lastIndex');
-		var hasLastIndexDataProperty = descriptor && has(descriptor, 'value');
-		if (!hasLastIndexDataProperty) {
-			return false;
-		}
-
-		return tryRegexExecCall(value);
+		if (typeof value !== 'object') { return false; }
+		return hasToStringTag ? tryRegexExec(value) : toStr.call(value) === regexClass;
 	};
 
 
@@ -13610,19 +13594,10 @@ Updated : 2017-03-08 */
 /* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var bind = __webpack_require__(91);
-
-	module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
-
-
-/***/ }),
-/* 97 */
-/***/ (function(module, exports, __webpack_require__) {
-
 	'use strict';
 
 	var define = __webpack_require__(73);
-	var getPolyfill = __webpack_require__(98);
+	var getPolyfill = __webpack_require__(97);
 
 	module.exports = function shimArrayPrototypeIncludes() {
 		var polyfill = getPolyfill();
@@ -13634,12 +13609,12 @@ Updated : 2017-03-08 */
 
 
 /***/ }),
-/* 98 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var implementation = __webpack_require__(99);
+	var implementation = __webpack_require__(98);
 
 	module.exports = function getPolyfill() {
 		return Array.prototype.includes || implementation;
@@ -13647,7 +13622,7 @@ Updated : 2017-03-08 */
 
 
 /***/ }),
-/* 99 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
@@ -13681,7 +13656,7 @@ Updated : 2017-03-08 */
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 100 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13766,7 +13741,7 @@ Updated : 2017-03-08 */
 	}
 
 /***/ }),
-/* 101 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13830,7 +13805,7 @@ Updated : 2017-03-08 */
 	};
 
 /***/ }),
-/* 102 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
