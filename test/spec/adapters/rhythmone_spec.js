@@ -39,7 +39,7 @@ describe('rhythmone adapter tests', function () {
 						assert.equal(placementcode, "div-gpt-ad-1438287399331-0");
 					});
 					it("should have the expected ad response", function(){
-						assert.equal((adResponse.ad.length > 0), true);
+						assert.equal((adResponse.ad === undefined || adResponse.ad.length > 0), true);
 						assert.equal(adResponse.width, 300);
 						assert.equal(adResponse.height, 250);
 						assert.equal(adResponse.cpm, 1);
