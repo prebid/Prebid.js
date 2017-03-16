@@ -54,7 +54,8 @@ describe('rhythmone adapter tests', function () {
             if(e.toLowerCase() === "auctionend") endEvent = f;
             if(e.toLowerCase() === "bidwon") wonEvent = f;
           },
-          "getBidResponses":function(){return {"div-gpt-ad-1438287399331-0":{"bids":[{cpm:1,bidderCode:"rhythmone"},{cpm:2,bidderCode:"rhythmone"}]}};}
+          "getBidResponses":function(){return {"div-gpt-ad-1438287399331-0":{"bids":[{cpm:1,bidderCode:"rhythmone"},{cpm:2,bidderCode:"rhythmone"}]}};},
+		  "version": "v0.20.0-pre"
         }
       },
       function(url, callback){
@@ -70,10 +71,11 @@ describe('rhythmone adapter tests', function () {
 						"placementId":"xyz",
 						"keywords":"",
 						"categories":[],
-            "trace":true,
-            "method":"get",
-            "endpoint":"http://fakedomain.com"
+						"trace":true,
+						"method":"get",
+						"endpoint":"http://fakedomain.com"
 					},
+					"mediaType": "video",
 					"placementCode":"div-gpt-ad-1438287399331-0",
 					"sizes":[[300,250]]
 				}

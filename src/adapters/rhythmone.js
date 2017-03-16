@@ -191,9 +191,9 @@ module.exports = function(bidManager, global, loader){
       mediaTypes = [],
       fat = /(^v|(\.0)+$)/gi,
       i=0;
-    
+
     p("hbv", global.$$PREBID_GLOBAL$$.version.replace(fat,"")+","+version.replace(fat,""));
-    
+	
     for(; i<bids.length; i++){
 
       track(debug, 'hb', 'bidRequest');
@@ -218,7 +218,6 @@ module.exports = function(bidManager, global, loader){
     p("h", heights);
     p("floor", floors);
     p("t", mediaTypes);
-    console.log("pushing mediaTypes "+mediaTypes.join(","));
     
     endpoint += "&"+query.join("&");
     
@@ -272,8 +271,6 @@ module.exports = function(bidManager, global, loader){
               //    "h":480,
               //    "w":640}
 			
-              console.log(JSON.stringify(bid));
-			
               slotMap[bid.impid].success = 1;
               
               var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
@@ -304,7 +301,6 @@ module.exports = function(bidManager, global, loader){
           
           for(i=0; result.seatbid && i<result.seatbid.length; i++)
             for(var j=0; result.seatbid[i].bid && j<result.seatbid[i].bid.length; j++){
-              console.log("registering bid");
               registerBid(result.seatbid[i].bid[j]);
             }
         }
