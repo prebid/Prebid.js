@@ -122,7 +122,7 @@ describe('AppNexusAdapter', () => {
 
       adapter.callBids(REQUEST);
 
-      const request = JSON.parse(requests[0].requestBody).tags[0];
+      const request = JSON.parse(requests[0].requestBody);
       expect(request.user).to.exist;
       expect(request.user).to.deep.equal({
         external_uid: '123',

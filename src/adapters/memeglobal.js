@@ -106,7 +106,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         bidResponse.placementCode = placementCode;
         bidResponse.size = bidRequested.sizes;
         var responseAd = bidderBid.adm;
-        var responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
+        var responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px" style="display: none;">';
         bidResponse.creative_id = bidderBid.id;
         bidResponse.bidderCode = bidderName;
         bidResponse.cpm = responseCPM;
