@@ -1,8 +1,11 @@
 import {expect} from 'chai';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
 import LifestreetAdapter from 'src/adapters/lifestreet';
+
+function copy(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
 
 const BIDDER_REQUEST = {
   auctionStart: new Date().getTime(),
@@ -44,7 +47,7 @@ describe ('LifestreetAdapter', () => {
 
       beforeEach(() => {
         tagRequests = [];
-        request = utils.extend(request, BIDDER_REQUEST);
+        request = copy(BIDDER_REQUEST);
         sinon.stub(adloader, 'loadScript', (url, callback) => {
           tagRequests.push(url);
           callback();

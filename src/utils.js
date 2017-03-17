@@ -109,22 +109,6 @@ exports.transformAdServerTargetingObj = function (targeting) {
   }
 };
 
-//Copy all of the properties in the source objects over to the target object
-//return the target object.
-exports.extend = function (target, source) {
-  target = target || {};
-
-  this._each(source, function (value, prop) {
-    if (typeof source[prop] === objectType_object) {
-      target[prop] = this.extend(target[prop], source[prop]);
-    } else {
-      target[prop] = source[prop];
-    }
-  });
-
-  return target;
-};
-
 /**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
