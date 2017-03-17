@@ -92,8 +92,8 @@ const LifestreetAdapter = function LifestreetAdapter() {
           } catch (e) {
             return;
           }
-          if (object.message && object.message === PREBID_REQUEST_MESSAGE && object.slotName
-              && window.$$PREBID_GLOBAL$$[object.slotName]) {
+          if (object.message && object.message === PREBID_REQUEST_MESSAGE && object.slotName &&
+              window.$$PREBID_GLOBAL$$[object.slotName]) {
             ev.source.postMessage(JSON.stringify({
               message: PREBID_RESPONSE_MESSAGE,
               slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
