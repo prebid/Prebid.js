@@ -73,6 +73,11 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "gourmetads"
+      }
+    },
+    {
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
