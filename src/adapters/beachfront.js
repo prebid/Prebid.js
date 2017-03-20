@@ -5,8 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const DEV_ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=';
-const PROD_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
+const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
 function BeachfrontAdapter() {
   var baseAdapter = Adapter.createNew('beachfront'),
@@ -23,7 +22,7 @@ function BeachfrontAdapter() {
     if (!RTBDataParams) {
       return;
     }
-    var BID_URL = (bid.params.dev ? DEV_ENDPOINT : PROD_ENDPOINT ) + RTBDataParams.appId;
+    var BID_URL = ENDPOINT + RTBDataParams.appId;
 
     ajax(BID_URL, handleResponse, JSON.stringify(RTBDataParams), {
       contentType: 'text/plain',
