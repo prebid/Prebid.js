@@ -10,35 +10,44 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const bidEndpoint = `https://g2.gumgum.com/hbid/imp`;
 
-  let WINDOW;
-  let SCREEN;
+  let topWindow;
+  let topScreen;
+  let pageViewId;
+  const requestCache = {};
+  const throttleTable = {};
+  const defaultThrottle = 3e4;
 
   try {
-    WINDOW = global.top;
-    SCREEN = WINDOW.screen;
+    topWindow = global.top;
+    topScreen = topWindow.screen;
   } catch (error) {
-    utils.logError(error);
-    return;
+    return utils.logError(error);
+  }
+
+  function _getTimeStamp() {
+    return new Date().getTime();
   }
 
   function _callBids({ bids }) {
     const browserParams = {
-      vw: WINDOW.innerWidth,
-      vh: WINDOW.innerHeight,
-      sw: SCREEN.width,
-      sh: SCREEN.height,
-      pu: WINDOW.location.href,
-      dpr: WINDOW.devicePixelRatio || 1
+      vw: topWindow.innerWidth,
+      vh: topWindow.innerHeight,
+      sw: topScreen.width,
+      sh: topScreen.height,
+      pu: topWindow.location.href,
+      ce: navigator.cookieEnabled,
+      dpr: topWindow.devicePixelRatio || 1
     };
     utils._each(bids, bidRequest => {
       const { bidId
             , params = {}
             , placementCode
             } = bidRequest;
+      const timestamp  = _getTimeStamp();
       const trackingId = params.inScreen;
       const nativeId   = params.native;
       const slotId     = params.inSlot;
-      const bid = {};
+      const bid        = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
       /* slot/native ads need the placement id */
       switch (true) {
@@ -51,12 +60,30 @@ const GumgumAdapter = function GumgumAdapter() {
           ', please check your implementation.'
         );
       }
+
+      /* throttle based on the latest request for this product */
+      const productId     = bid.pi;
+      const requestKey    = productId + '|' + placementCode;
+      const throttle      = throttleTable[productId];
+      const latestRequest = requestCache[requestKey];
+      if (latestRequest && throttle && (timestamp - latestRequest) < throttle) {
+        return utils.logWarn(
+          `[GumGum] The refreshes for "${ placementCode }" with the params ` +
+          `${ JSON.stringify(params) } should be at least ${ throttle / 1e3 }s apart.`
+        );
+      }
+      /* update the last request */
+      requestCache[requestKey] = timestamp;
+
       /* tracking id is required for in-image and in-screen */
       if (trackingId) bid.t = trackingId;
       /* native ads require a native placement id */
       if (nativeId) bid.ni = nativeId;
       /* slot ads require a slot id */
       if (slotId) bid.si = slotId;
+
+      /* include the pageViewId, if any */
+      if (pageViewId) bid.pv = pageViewId;
 
       const cachedBid = Object.assign({
         placementCode,
@@ -71,22 +98,30 @@ const GumgumAdapter = function GumgumAdapter() {
     });
   }
 
-  const _handleGumGumResponse = cachedBidRequest => bidResponse => {
-    const ad = bidResponse && bidResponse.ad;
+  const _handleGumGumResponse = cachedBidRequest => (bidResponse = {}) => {
+    const { pi: productId
+          } = cachedBidRequest;
+    const { ad = {}
+          , pag = {}
+          , thms: throttle
+          } = bidResponse;
+    /* cache the pageViewId */
+    if (pag && pag.pvid) pageViewId = pag.pvid;
     if (ad && ad.id) {
+      /* set the new throttle */
+      throttleTable[productId] = throttle || defaultThrottle;
+      /* create the bid */
       const bid = bidfactory.createBid(1);
       const { t: trackingId
-            , pi: productId
-            , placementCode
-            } = cachedBidRequest;
-      bidResponse.placementCode = placementCode;
+            } = pag;
+      bidResponse.request = cachedBidRequest;
       const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
       const gumgumAdLoader = `<script>
         (function (context, topWindow, d, s, G) {
           G = topWindow.GUMGUM;
           d = topWindow.document;
           function loadAd() {
-            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context, topWindow);
+            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context);
           }
           if (G) {
             loadAd();
