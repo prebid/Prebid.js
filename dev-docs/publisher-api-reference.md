@@ -25,6 +25,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.getBidResponsesForAdUnitCode(adUnitCode)](#module_pbjs.getBidResponsesForAdUnitCode) ⇒ `Object`
   * [.getHighestCpmBids([adUnitCode])](#module_pbjs.getHighestCpmBids) ⇒ `Array`
   * [.setTargetingForGPTAsync([codeArr])](#module_pbjs.setTargetingForGPTAsync)
+  * [.setTargetingForAst()](#module_pbjs.setTargetingForAst)
   * [.allBidsAvailable()](#module_pbjs.allBidsAvailable) ⇒ `boolean`
   * [.enableSendAllBids()](#module_pbjs.enableSendAllBids)
   * [.setPriceGranularity(granularity)](#module_pbjs.setPriceGranularity)
@@ -301,6 +302,7 @@ Use this method to retrieve an array of winning bids.
 <a name="module_pbjs.setTargetingForGPTAsync"></a>
 
 ### pbjs.setTargetingForGPTAsync([codeArr])
+
 Set query string targeting on all GPT ad units. The logic for deciding query strings is described in the section Configure AdServer Targeting. Note that this function has to be called after all ad units on page are defined.
 
 **Kind**: static method of [pbjs](#module_pbjs)
@@ -310,6 +312,16 @@ Set query string targeting on all GPT ad units. The logic for deciding query str
 | Param | Scope | Type | Description |
 | --- | --- | --- | -- |
 | [codeArr] | Optional | `array` | an array of adUnitodes to set targeting for. |
+
+<hr class="full-rule">
+
+<a name="module_pbjs.setTargetingForAst"></a>
+
+### pbjs.setTargetingForAst()
+
+Set query string targeting on all AST ([AppNexus Seller Tag](https://wiki.appnexus.com/x/JAUIBQ)) ad units.  Note that this function has to be called after all ad units on page are defined.  For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server]({{site.github.url}}/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+
+**Kind**: static method of [pbjs](#module_pbjs)
 
 <hr class="full-rule">
 
