@@ -249,6 +249,17 @@ describe('AolAdapter', () => {
           expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?');
         });
 
+        it('should hit the nexage api custom endpoint if specified in the nexage config', () => {
+          adapter.callBids(createBidderRequest({
+            params: {
+              host: 'qa-hb.nexage.com',
+              dcn: '11223344',
+              pos: 'header-2324'
+            }
+          }));
+          expect(requests[0].url).to.contain('qa-hb.nexage.com/bidRequest?');
+        });
+
         it('should contain required params - dcn & pos', () => {
           adapter.callBids(createBidderRequest({
             params: {

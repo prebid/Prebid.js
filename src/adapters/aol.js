@@ -9,7 +9,7 @@ const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
-  const nexageBaseApiTemplate = template`${'protocol'}://hb.nexage.com/bidRequest?`;
+  const nexageBaseApiTemplate = template`${'protocol'}://${'host'}/bidRequest?`;
   const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
   const BIDDER_CODE = 'aol';
   const MP_SERVER_MAP = {
@@ -17,7 +17,7 @@ const AolAdapter = function AolAdapter() {
     eu: 'adserver-eu.adtech.advertising.com',
     as: 'adserver-as.adtech.advertising.com'
   };
-
+  const NEXAGE_SERVER = 'hb.nexage.com';
   const SYNC_TYPES = {
     iframe: 'IFRAME',
     img: 'IMG'
@@ -173,9 +173,12 @@ const AolAdapter = function AolAdapter() {
   }
 
   function _buildNexageApiUrl(bid) {
-    let nexageApi = nexageBaseApiTemplate({protocol: 'http'});
-    if (bid) {
-      const params = bid.params;
+    const params = bid.params;
+    let nexageApi = nexageBaseApiTemplate({
+      protocol: 'http',
+      host: params.host || NEXAGE_SERVER
+    });
+    if (params.dcn && params.pos) {
       let ext = '';
       utils._each(params.ext, (value, key) => {
         ext += encodeURI(`&${key}=${value}`);
@@ -261,7 +264,7 @@ const AolAdapter = function AolAdapter() {
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
 
-  function _isRequestNexagePostReady(bid) {
+  function _isNexageRequestPost(bid) {
     if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
       let imp = bid.params.imp[0];
       return imp.id && imp.tagid
@@ -278,18 +281,19 @@ const AolAdapter = function AolAdapter() {
       let options = {
         withCredentials: true
       };
+      let isNexageRequestPost = _isNexageRequestPost(bid);
       if (bid.params.placement && bid.params.network) {
         apiUrl = _buildMarketplaceUrl(bid);
-      } else if (bid.params.dcn && bid.params.pos) {
+      } else if(bid.params.dcn && bid.params.pos || isNexageRequestPost) {
         apiUrl = _buildNexageApiUrl(bid);
-      } else if (_isRequestNexagePostReady(bid)) {
-        apiUrl = _buildNexageApiUrl();
-        data = bid.params;
-        options.customHeaders = {
-          'x-openrtb-version': '2.2'
-        };
-        options.method = 'POST';
-        options.contentType = 'application/json';
+        if (isNexageRequestPost) {
+          data = bid.params;
+          options.customHeaders = {
+            'x-openrtb-version': '2.2'
+          };
+          options.method = 'POST';
+          options.contentType = 'application/json';
+        }
       }
       if (apiUrl) {
         ajax(apiUrl, response => {
