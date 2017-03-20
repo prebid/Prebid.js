@@ -196,7 +196,8 @@ const OpenxAdapter = function OpenxAdapter() {
   function callBids(params) {
     let isIfr,
       bids = params.bids || [],
-      currentURL = window.location.href && encodeURIComponent(window.location.href);
+      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+      currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
     }

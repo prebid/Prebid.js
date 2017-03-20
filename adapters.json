@@ -1,11 +1,13 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
     "adkernel",
     "admedia",
+    "bidfluence",
     "vertamedia",
     "aol",
     "appnexus",
@@ -13,11 +15,11 @@
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
     "kruxlink",
+    "getintent",
     "komoona",
     "lifestreet",
     "mantis",
@@ -25,11 +27,13 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "pulsepointLite",
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
@@ -52,6 +56,7 @@
     "vertoz",
     "widespace",
     "admixer",
+    "tapsense",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -100,6 +105,11 @@
     {
       "adkernel": {
         "alias": "headbidding"
+      }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
       }
     }
 

@@ -28,7 +28,8 @@ export function getBidRequests() {
           "bidderRequestId": "2946b569352ef2",
           "requestId": "1863e370099523",
           "startTime": 1462918897462,
-          "status": 1
+          "status": 1,
+          "transactionId": "fsafsa"
         },
         {
           "bidder": "appnexus",
@@ -50,7 +51,8 @@ export function getBidRequests() {
           "bidderRequestId": "2946b569352ef2",
           "requestId": "1863e370099523",
           "startTime": 1462918897463,
-          "status": 1
+          "status": 1,
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897460
@@ -79,7 +81,8 @@ export function getBidRequests() {
           ],
           "bidId": "6d11aa2d5b3659",
           "bidderRequestId": "5e1525bae3eb11",
-          "requestId": "1863e370099523"
+          "requestId": "1863e370099523",
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897463
@@ -112,7 +115,7 @@ export function getBidRequests() {
             "sizes": [
               15,
               10
-            ]
+            ],
           },
           "placementCode": "/19968336/header-bid-tag-0",
           "sizes": [
@@ -127,7 +130,8 @@ export function getBidRequests() {
           ],
           "bidId": "96aff279720d39",
           "bidderRequestId": "8778750ee15a77",
-          "requestId": "1863e370099523"
+          "requestId": "1863e370099523",
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897474
@@ -156,7 +160,8 @@ export function getBidRequests() {
           "bidId": "1144e2f0de84363",
           "bidderRequestId": "107f5e6e98dcf09",
           "requestId": "1863e370099523",
-          "startTime": 1462918897477
+          "startTime": 1462918897477,
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897475
@@ -185,7 +190,8 @@ export function getBidRequests() {
           "bidId": "135e89c039705da",
           "bidderRequestId": "12eeded736650b4",
           "requestId": "1863e370099523",
-          "status": 1
+          "status": 1,
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897477
@@ -215,7 +221,8 @@ export function getBidRequests() {
           "bidderRequestId": "167c4d79b615948",
           "requestId": "1863e370099523",
           "startTime": 1462918897480,
-          "status": 1
+          "status": 1,
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897479
@@ -245,7 +252,8 @@ export function getBidRequests() {
           "bidderRequestId": "18bed198c172a69",
           "requestId": "1863e370099523",
           "startTime": 1462918897481,
-          "status": 1
+          "status": 1,
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897480
@@ -273,7 +281,8 @@ export function getBidRequests() {
           ],
           "bidId": "21ae8131ec04f6e",
           "bidderRequestId": "20d0d30333715a7",
-          "requestId": "1863e370099523"
+          "requestId": "1863e370099523",
+          "transactionId": "fsafsa"
         }
       ],
       "start": 1462918897482
