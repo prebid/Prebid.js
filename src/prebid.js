@@ -245,11 +245,11 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   targeting.resetPresetTargeting();
-  
+
   //now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -261,8 +261,8 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   }
 
   targeting.setTargetingForAst();
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -300,7 +300,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var width = adObject.width;
         var url = adObject.adUrl;
         var ad = adObject.ad;
-        
+
         if (doc === document || adObject.mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
@@ -363,7 +363,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnits
  * @param adUnitCodes
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
+$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
