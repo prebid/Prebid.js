@@ -82,11 +82,14 @@ Open the `Server address` URL in your browser, and you should see a locally runn
 
 Please don't alphabetize the lists of adapters in your PR, either on the home page or the downloads page.
 
-The adapters are not listed in alphabetical order, they're listed in the order in which they were added to the Prebid.js repo, using (approximately) this command:
+The adapters are not listed in alphabetical order, they're listed in the order in which they were added to the Prebid.js repo, using (approximately) this command in `src/adapters`:
 
 ```
-$ for file in `git ls-files`; do HASH=`git rev-list HEAD $file | tail -n 1`; \  
-  DATE=`git show -s --format="%ci" $HASH --`; printf "%-35s %s\n" $file "$DATE"; done
+for file in `ls | grep -f <(git ls-files)`; do
+    HASH=`git rev-list HEAD $file | tail -n 1`;
+    DATE=`git show -s --format="%ci" $HASH --`;
+    printf "%-35s %-35s %s\n" $file "$DATE" $HASH;
+done | sort -d -k 2
 ```
 
 <a name="the-downloads-page" />
