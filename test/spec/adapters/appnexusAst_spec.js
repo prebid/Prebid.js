@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/appnexusAst';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
 const REQUEST = {
   'bidderCode': 'appnexusAst',
@@ -243,24 +243,25 @@ describe('AppNexusAdapter', () => {
     it('handles native responses', () => {
       RESPONSE.tags[0].ads[0].ad_type = 'native';
       RESPONSE.tags[0].ads[0].rtb.native = {
-        "status": "ok",
-        "version": 1,
-        "native": [{
-          "type": "in-feed-standard",
-          "title": "Native Creative",
-          "description": "Great job y'all",
-          "icon_img_url": "http://cdn.adnxs.com/",
-          "main_media": [{
-            "label": "default",
-            "width": 2352,
-            "height": 1516,
-            "url": "http://cdn.adnxs.com/"
-          }],
-          "sponsored_by": "Cool Company",
-          "click_trackers": ["http://example.com"],
-          "impression_trackers": ["http://example.com"],
-          "click_url": "https://www.appnexus.com"
-        }]
+        "title": "Native Creative",
+        "description": "Cool description great stuff",
+        "sponsored_by": "AppNexus",
+        "icon": {
+          "width": 0,
+          "height": 0,
+          "url": "http://cdn.adnxs.com/icon.png"
+        },
+        "main_img": {
+          "width": 2352,
+          "height": 1516,
+          "url": "http://cdn.adnxs.com/img.png"
+        },
+        "link": {
+          "url": "https://www.appnexus.com",
+          "fallback_url": "",
+          "click_trackers": ["http://nym1-ib.adnxs.com/click"]
+        },
+        "impression_trackers": ["http://example.com"],
       };
 
       adapter.callBids(REQUEST);
@@ -272,8 +273,8 @@ describe('AppNexusAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
 
       expect(response.native.title).to.equal('Native Creative');
-      expect(response.native.body).to.equal('Great job y\'all');
-      expect(response.native.image).to.equal('http://cdn.adnxs.com/');
+      expect(response.native.body).to.equal('Cool description great stuff');
+      expect(response.native.image).to.equal('http://cdn.adnxs.com/img.png');
 
       RESPONSE.tags[0].ads[0].ad_type = 'banner';
     });

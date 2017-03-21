@@ -789,11 +789,11 @@ describe('Unit: Prebid Module', function () {
       const nativeRequest = $$PREBID_GLOBAL$$._bidsRequested[0].bids[0].nativeParams;
       expect(nativeRequest).to.deep.equal({
         image: {required: true},
-        title: {required: true, len: 80},
-        brand: {required: true},
-        url: {required: true},
-        body: {required: true},
-        icon: {required: true},
+        title: {required: true},
+        sponsored_by: {required: true},
+        click_url: {required: true},
+        body: {required: false},
+        icon: {required: false},
       });
 
       resetAuction();

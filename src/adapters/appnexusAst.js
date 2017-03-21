@@ -6,7 +6,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
@@ -76,8 +76,8 @@ function AppnexusAstAdapter() {
         }
 
         if (bid.mediaType === 'native') {
-          // this is v2, will need to match v3 request format and attach assets
-          tag.ad_types = ['native'];
+          tag.native = {};
+          tag.native.layouts = [bid.nativeParams];
         }
 
         if (bid.mediaType === 'video') { tag.require_asset_url = true; }
@@ -298,13 +298,14 @@ function AppnexusAstAdapter() {
           bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
         }
       } else if (ad.rtb.native) {
-        const native = ad.rtb.native.native[0];
+        const native = ad.rtb.native;
         bid.native = {
           title: native.title,
           body: native.description,
           sponsored_by: native.sponsored_by,
-          image: native.main_media[0].url,
-          click_url: native.click_url,
+          image: native.main_img && native.main_img.url,
+          icon: native.icon && native.icon.url,
+          click_url: native.link.url,
         };
       } else {
         bid.width = ad.rtb.banner.width;

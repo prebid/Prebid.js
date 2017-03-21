@@ -9,29 +9,17 @@ export const NATIVE_KEYS = {
   body: 'hb_native_body',
   sponsored_by: 'hb_native_brand',
   image: 'hb_native_image',
+  icon: 'hb_native_icon',
   click_url: 'hb_native_linkurl',
 };
 
 const IMAGE = {
-  image: {
-    required: true,
-  },
-  title: {
-    required: true,
-    len: 80,
-  },
-  brand: {
-    required: true,
-  },
-  url: {
-    required: true,
-  },
-  body: {
-    required: true,
-  },
-  icon: {
-    required: true,
-  },
+  image: {required: true},
+  title: {required: true},
+  sponsored_by: {required: true},
+  click_url: {required: true},
+  body: {required: false},
+  icon: {required: false},
 };
 
 const SUPPORTED_TYPES = {
