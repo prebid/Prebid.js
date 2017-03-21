@@ -175,7 +175,7 @@ const AolAdapter = function AolAdapter() {
   function _buildNexageApiUrl(bid) {
     const params = bid.params;
     let nexageApi = nexageBaseApiTemplate({
-      protocol: 'http',
+      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
       host: params.host || NEXAGE_SERVER
     });
     if (params.dcn && params.pos) {
@@ -271,7 +271,6 @@ const AolAdapter = function AolAdapter() {
           && ((imp.banner && imp.banner.w && imp.banner.h)
           || (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
     }
-    return false;
   }
 
   function _callBids(params) {
