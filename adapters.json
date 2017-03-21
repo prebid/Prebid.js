@@ -28,11 +28,13 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "pulsepointLite",
     "rhythmone",
     "rubicon",
     "smartyads",
     "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
@@ -69,6 +71,11 @@
     {
       "appnexus": {
         "alias": "defymedia"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "gourmetads"
       }
     },
     {

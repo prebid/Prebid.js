@@ -149,6 +149,8 @@ Many SSPs, bidders, and publishers have contributed to this project. [20+ Bidder
 
 To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate. 
+
 ### Code Quality
 
 Code quality is defined by `.jscs` and `.jshint` files and errors are reported in the terminal.
