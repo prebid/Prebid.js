@@ -1,4 +1,6 @@
 /** @module $$PREBID_GLOBAL$$ */
+/** INSERT RENDERERS - DO NOT EDIT OR REMOVE */
+/** END INSERT RENDERERS */
 
 import { getGlobal } from './prebidGlobal';
 import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
@@ -296,13 +298,11 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
 
-        var height = adObject.height;
-        var width = adObject.width;
-        var url = adObject.adUrl;
-        var ad = adObject.ad;
+        const { height, width, url, ad, mediaType } = adObject;
 
-        if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
-          utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
+        if ((doc === document && !utils.inIframe()) || mediaType === 'video' || mediaType === 'video-outstream') {
+          // utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
+          performRenderViaRenderer(doc, adObject);
         } else if (ad) {
           doc.write(ad);
           doc.close();
@@ -326,6 +326,44 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
 
+};
+
+function performRenderViaRenderer(doc, adObject) {
+  //"{"tagId":9870122,"sizes":[[728,90],[970,250],[984,120]],"targetId":"1","member":3535,"utCalled":true,"showTagCalled":true,"displayed":false,"uuid":"355ee0cb-856c-4fd2-b68c-fbfa42f80d7a","tagNumber":0,"curWindow":null,"adResponse":null}"
+  window.apntag = { debug: true };
+  window.apntag.registerRenderer = function(id, cb) {
+    console.log('inside callback');
+    console.log(id);
+    console.log(cb);
+
+    $$PREBID_GLOBAL$$.renderOutstream(cb.renderAd, adObject);
+  };
+
+  adloader.loadScript('http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js');
+
+}
+
+$$PREBID_GLOBAL$$.renderOutstream = function(renderFn, adObject) {
+  var firstAd = adObject.adResponse.ads[0];
+  adObject.adResponse.ad = firstAd;
+  var video = adObject.adResponse.ad.rtb.video;
+  adObject.adResponse.ad.video = video;
+  var currentTag =
+  {
+    tagId: adObject.adResponse.tag_id,
+    sizes: [adObject.getSize().split('x')],
+    targetId: '123', // target div id to render video
+    uuid: adObject.adResponse.uuid, // is this the correct UUID
+    adResponse: adObject.adResponse
+  };
+
+  //load the ad
+  //invoke renderer.
+  var callback = function() {
+    console.log('callback');
+  };
+
+  renderFn(currentTag, callback);
 };
 
 /**

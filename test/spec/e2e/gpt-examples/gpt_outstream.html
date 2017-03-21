@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Prebid.js outstream video adUnit example</title>
+
+  <!-- videojs -->
+  <!--<link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">-->
+  <!--<script type="text/javascript" src="http://vjs.zencdn.net/5.9.2/video.js"></script>-->
+
+  <!-- videojs-vast-vpaid -->
+  <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css" rel="stylesheet">-->
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>-->
+
+  <!-- prebid.js -->
+  <script src="../../../../build/dev/prebid.js" async=true></script>
+
+  <!-- AN Outstream Video Player -->
+<script src="http://video.devnxs.net/rel/OutstreamRenderer/3.0.15/1490122642257/ANOutstreamVideo.full.js" async="true"></script>
+
+  <script>
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    var PREBID_TIMEOUT = 3000;
+
+    var date = new Date().getTime();
+
+    var rightSlotSizes = [ [ 300, 250 ], [ 300, 600 ], [ 300, 250 ], [ 100, 100 ] ];
+
+    function initAdserver() {
+      if (pbjs.initAdserverSet) return;
+
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.enableSendAllBids();
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+
+      pbjs.initAdserverSet = true;
+    }
+
+    // Load GPT when timeout is reached.
+    setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    /*
+     Prebid Video adUnit
+     */
+
+    var videoAdUnit = {
+      code: 'video1',
+      sizes: [ 640, 480 ],
+      mediaType: 'video-outstream',
+      bids: [
+        {
+          bidder: 'appnexusAst',
+          params: {
+            placementId: '9333431',
+            video: {
+              skipppable: true,
+              playback_method: [ 'auto_play_sound_off' ]
+            }
+          }
+        }
+      ]
+    };
+
+    pbjs.que.push(function () {
+      pbjs.addAdUnits(videoAdUnit);
+      pbjs.requestBids({
+        timeout: 3000,
+        bidsBackHandler: function (bids) {
+        }
+      });
+    });
+
+    pbjs.bidderSettings =
+    {
+      standard: {
+        adserverTargeting: [
+          {
+            key: "hb_bidder",
+            val: function (bidResponse) {
+              return bidResponse.bidderCode;
+            }
+          }, {
+            key: "hb_adid",
+            val: function (bidResponse) {
+              return bidResponse.adId;
+            }
+          }, {
+            key: "hb_pb",
+            val: function (bidResponse) {
+              return "10.00";
+            }
+          }, {
+            key: "hb_size",
+            val: function (bidResponse) {
+              return bidResponse.size;
+
+            }
+          }, {
+            key: "prebid_outstream",
+            val: function () {
+              return true;
+            }
+          }
+
+        ]
+      }
+    };
+    //load GPT library here
+    (function () {
+      var gads = document.createElement('script');
+      gads.async = true;
+      gads.type = 'text/javascript';
+      var useSSL = 'https:' == document.location.protocol;
+      gads.src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt.js';
+      var node = document.getElementsByTagName('script')[ 0 ];
+      node.parentNode.insertBefore(gads, node);
+    })();
+
+    googletag.cmd.push(function () {
+      var slot1 = googletag.defineSlot('/19968336/header-bid-tag-1', rightSlotSizes, 'video1').addService(googletag.pubads());
+      googletag.pubads().disableInitialLoad();
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+  </script>
+</head>
+
+<body>
+
+<h2>Prebid Outstream Video -- video.js</h2>
+
+<h4>outstream</h4>
+<div id='video1'>
+  <p>No response</p>
+  <script type='text/javascript'>
+    googletag.cmd.push(function () {
+      googletag.display('video1');
+    });
+  </script>
+</div>
+<div>
+  <script>
+    function combineObjectsAndSubobjects(target, source) {
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+          if (typeof target[ key ] === "object") {
+            target[ key ] = combineObjectsAndSubobjects(target[ key ], source[ key ]);
+          } else {
+            target[ key ] = source[ key ];
+          }
+        }
+      }
+      return target;
+    }
+
+    function setInitialPlaybackOptions(playbackOptions, targetOptionsObject) {
+
+      //make sure the targetOptionsObject exists
+      targetOptionsObject = targetOptionsObject ? targetOptionsObject : {};
+
+      //playback options is an array (not sure why) so lets itereate through it
+      //and set options as we see them
+      if (playbackOptions) {
+        for (var i = 0; i < playbackOptions.length; i++) {
+          console.log("eggs", playbackOptions[ i ]);
+          switch (playbackOptions[ i ]) {
+            case "auto_play_sound_on":
+              targetOptionsObject.initialPlayback = "auto";
+              targetOptionsObject.initialAudio = "on";
+              break;
+            case "auto_play_sound_off":
+              targetOptionsObject.initialPlayback = "auto";
+              targetOptionsObject.initialAudio = "off";
+              break;
+            case "click_to_play":
+              targetOptionsObject.initialPlayback = "click";
+              targetOptionsObject.initialAudio = "unknown";
+              break;
+            case "mouseover":
+              targetOptionsObject.initialPlayback = "mouseover";
+              targetOptionsObject.initialAudio = "unknown";
+              break;
+            case "auto_play_sound_unknown":
+              targetOptionsObject.initialPlayback = "auto";
+              targetOptionsObject.initialAudio = "unknown";
+              break;
+            case "max":
+              break;
+          }
+        }
+      }
+
+      return targetOptionsObject;
+    }
+
+    var _impbusObject = localStorage.getItem("impbusData");
+    var _vastXml = localStorage.getItem("vastData");
+
+    var adData = {
+      "uuid": "78e98d69-d191-493a-ae6e-bc5bff56c435",
+      "width": 1,
+      "height": 1,
+      "player_width": 640,
+      "duration_ms": 30000,
+      "frameworks": [],
+      "auction_id": "498097448993012238",
+      "ad_type": "video",
+      "buyer_member_id": 3,
+      "creative_id": 7,
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"2.0\"><Ad id=\"7\"><Wrapper><AdSystem version=\"2.0\">adnxs</AdSystem><VASTAdTagURI><![CDATA[http://a.video.devnxs.net/dsp/inline/Vast2LinearBaby.xml]]></VASTAdTagURI><Error><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=4&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Error><Impression id=\"adnxs\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=9&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Impression><Creatives><Creative id=\"4\"><Linear><TrackingEvents><Tracking event=\"start\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=2&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=5&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"midpoint\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=6&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=7&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"complete\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQ",
+      "media_type_id": 4,
+      "media_subtype_id": 64,
+      "renderer_url": "http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js",
+      "renderer_id": 2,
+      "notify": "http://impbus-outstreamdev.envnxs.com/it?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&s=739bb3c567233f7994ffdbbd0a268e9f11308520&dlo=1",
+      "utURL": "http://impbus-outstreamdev.envnxs.com/ut/notify?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&s=739bb3c567233f7994ffdbbd0a268e9f11308520&dlo=1",
+      "tag_id": 14
+    };
+
+    var ASTAdId = "78e98d69-d191-493a-ae6e-bc5bff56c435";
+    //var tagParams = adData.rendererOptions;
+    var tagParams = {
+      "width": 600,
+      "autoInitialSize": false,
+      "initialPlayback": "click",
+      "initialAudio": "off",
+      "playOnMouseover": false,
+      "audioOnMouseover": true,
+      "playVideoVisibleThreshold": 50,
+      "skippable": {
+        "enabled": true,
+        "videoThreshold": 15,
+        "videoOffset": 5,
+        "skipLocation": "top-left",
+        "skipText": "Video can be skipped in %%TIME%% seconds",
+        "skipButtonText": "SKIP"
+      },
+      "playerTechnology": [
+        "html5",
+        "flash"
+      ],
+      "adText": "Ad",
+      "showMute": true,
+      "showVolume": true,
+      "showProgressBar": true,
+      "allowFullscreen": true
+    };
+    var impbusOptions = adData;
+
+    //if tagParams is undefined, create an empty object
+    tagParams = tagParams ? tagParams : {};
+
+    //if impbusOptions is undefined, create an empty object
+    impbusOptions = impbusOptions ? impbusOptions : {};
+
+    var combinedOptionsObj = combineObjectsAndSubobjects(impbusOptions, tagParams);
+
+    combinedOptionsObj = setInitialPlaybackOptions(combinedOptionsObj.playback_methods, combinedOptionsObj);
+
+    combinedOptionsObj.targetElementId = "adDiv" //combinedOptionsObj.targetId;
+    combinedOptionsObj.vastXml = combinedOptionsObj.content;
+    combinedOptionsObj.targetId = "adDiv" //adData.targetId;
+    //tagParams.targetId = adData.targetId;
+
+    console.log(combinedOptionsObj.player_width);
+    combinedOptionsObj.width = combinedOptionsObj.player_width;
+
+    //ensure we have a flash options object
+    combinedOptionsObj.flash = combinedOptionsObj.flash ? combinedOptionsObj.flash : {};
+    //use a default URL For the flash player if it's not specified
+
+    if (!combinedOptionsObj.flash.swf) {
+      combinedOptionsObj.flash.swf = 'http' + (('https:' === window.document.location.protocol) ? 's' : '') + '://acdn.adnxs.com/video/static/player/flash/adplayer/1.0.23/AppNexusFlashPlayer.swf';
+    }
+
+    combinedOptionsObj.ASTadId = ASTAdId;
+    combinedOptionsObj.targetWindow = window;
+    combinedOptionsObj.eventCB = function () {
+    };
+
+    if (console && console.log) {
+      console.log("Outstream Renderer " + combinedOptionsObj.targetId + " ", combinedOptionsObj);
+    }
+
+    //start render outstream ad
+    pbjs.que.push(function() {
+      ANOutstreamVideo.init(combinedOptionsObj);
+    });
+  </script>
+</div>
+</body>
+</html>

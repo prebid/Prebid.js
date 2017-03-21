@@ -242,6 +242,12 @@ function AppnexusAstAdapter() {
         bid.height = ad.rtb.video.player_height;
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
+        if (ad.renderer_url) {
+          bid.rendererUrl = ad.renderer_url;
+          bid.rendererId = ad.renderer_id;
+          // store a copy for the renderer
+          bid.adResponse = tag;
+        }
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;

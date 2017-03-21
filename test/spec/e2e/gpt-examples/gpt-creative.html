@@ -1,0 +1,14 @@
+<script>
+var w = window;
+for (i = 0; i < 10; i++) {
+  w = w.parent;
+  if (w.pbjs) {
+    try {
+      w.pbjs.renderAd(document, '21e45205c1ea7b');
+      break;
+    } catch (e) {
+      continue;
+    }
+  }
+}
+</script>
