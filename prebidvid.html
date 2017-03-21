@@ -26,8 +26,11 @@
         	{
           	bidder: 'beachfront',
          	  params: {
-              bidfloor: 0.51,
-           	  appId: "770d204e-4e0b-402f-fa7f-34162cf77e3d"
+              bidfloor: .01,
+                //Rebel test appId
+              // appId: "770d204e-4e0b-402f-fa7f-34162cf77e3d"
+                //BF test appId
+              appId: "11bc5dd5-7421-4dd8-c926-40fa653bec76"
           	}
         	}
         ]
@@ -46,9 +49,11 @@
               try {
                 url = bids.video.bids[0].vastUrl;
               } catch (e) {} // ignore
+              // var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/3847125/Allen16MarchPrebidAdUnit&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&url=[referrer_url]&description_url=[description_url]'
               var adserverTag = "https://www.techniqal.com/tmp/bf/prebid.php?";
-              adserverTag = adserverTag + '&correlator=' + Date.now();
 
+
+              adserverTag = adserverTag + '&correlator=' + Date.now();
               var options = {
                 adserver: 'dfp',
                 code: 'video'

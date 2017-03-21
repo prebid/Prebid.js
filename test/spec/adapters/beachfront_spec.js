@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import BeachfrontAdapter from 'src/adapters/beachfront';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = '//ads.bf.rebel.ai/bid.json?exchange_id=0a47f4ce-d91f-48d0-bd1c-64fa2c196f13';
+const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=11bc5dd5-7421-4dd8-c926-40fa653bec76';
 
 const REQUEST = {
     "width": 640,
@@ -23,7 +23,7 @@ const REQUEST = {
             "bidFloor": 2.00,
             "bidder": "beachfront",
             "params": {
-                "appId": "0a47f4ce-d91f-48d0-bd1c-64fa2c196f13",
+                "appId": "11bc5dd5-7421-4dd8-c926-40fa653bec76",
                 "bidfloor": 2.00,
                 "dev": true
             },
