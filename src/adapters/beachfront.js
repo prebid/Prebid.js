@@ -44,7 +44,7 @@ function BeachfrontAdapter() {
     }
 
     var bidRequestObject =  {
-      isPrebid: true,
+
       appId: bid.params.appId,
       domain: document.location.hostname,
       imp:[{
@@ -56,7 +56,8 @@ function BeachfrontAdapter() {
       },
       device:{
         ua: navigator.userAgent,
-        devicetype: fetchDeviceType()
+        devicetype: fetchDeviceType(),
+        ip:"100.6.143.190"
       },
       cur:["USD"]
     };
