@@ -52,11 +52,11 @@ describe('sharethrough adapter', () => {
 
     beforeEach(() => {
        sandbox.spy(adapter.str, 'loadIFrame');
+       adapter.callBids(bidderRequest);
     });
 
     it('should call loadIFrame on the adloader for each bid', () => {
 
-      adapter.callBids(bidderRequest);
 
       firstBidUrl = adapter.str.loadIFrame.firstCall.args[0];
       secondBidUrl = adapter.str.loadIFrame.secondCall.args[0];
@@ -67,6 +67,10 @@ describe('sharethrough adapter', () => {
       expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&ijson=pbjs.strcallback&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
     });
 
+    it('should map a placement code to bidId', () => {
+      expect(window.strBids['foo']).to.contain('bidId1');
+      expect(window.strBids['bar']).to.contain('bidId2');
+    })
   });
 
   describe('strcallback', () => {
