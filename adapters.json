@@ -57,6 +57,7 @@
     "widespace",
     "admixer",
     "tapsense",
+    "trion",
     {
       "appnexus": {
         "alias": "brealtime"
