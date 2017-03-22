@@ -5,7 +5,7 @@ var utils = require('../utils.js');
 
 var PulsePointAdapter = function PulsePointAdapter() {
 
-  var getJsStaticUrl = window.location.protocol + '//tag.contextweb.com/getjs.static.js';
+  var getJsStaticUrl = window.location.protocol + '//tag-st.contextweb.com/getjs.static.js';
   var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag';
 
   function _callBids(params) {

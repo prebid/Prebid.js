@@ -91,7 +91,7 @@
     "requirejs": "^2.1.20",
     "sinon": "^1.12.1",
     "string-replace-webpack-plugin": "0.0.3",
-    "uglify-js": "^2.4.15",
+    "uglify-js": "^2.8.10",
     "url-parse": "^1.0.5",
     "webpack": "^1.12.3",
     "webpack-stream": "^3.1.0",
