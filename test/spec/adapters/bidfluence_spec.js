@@ -46,7 +46,7 @@ describe('Bidfluence Adapter', () => {
         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
 
-        expect(bidPlacementCode1).to.equal("div-1",);
+        expect(bidPlacementCode1).to.equal("div-1");
         expect(bidObject1.getStatusCode()).to.equal(1);
         expect(bidObject1.bidderCode).to.equal('bidfluence');
 
@@ -64,7 +64,7 @@ describe('Bidfluence Adapter', () => {
         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
 
-        expect(bidPlacementCode1).to.equal("div-1",);
+        expect(bidPlacementCode1).to.equal("div-1");
         expect(bidObject1.getStatusCode()).to.equal(2);
         expect(bidObject1.bidderCode).to.equal('bidfluence');
 
