@@ -72,14 +72,14 @@ describe('qcx adapter', () => {
       adapter.callBids(bidderRequest);
       sinon.assert.calledTwice(ajaxStub);
 
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL); // banner:{w:728, h:90}
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.firstCall.args[2]).to.include('div-gpt-ad-1438287399331-0');
       expect(ajaxStub.firstCall.args[2]).to.include('test-publisher');
       expect(ajaxStub.firstCall.args[2]).to.include('595ffa73-d78a-46c9-b18e-f99548a5be6b');
       expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
 
-      expect(ajaxStub.secondCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL); // banner:{w:728, h:90}
+      expect(ajaxStub.secondCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
       expect(ajaxStub.secondCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.secondCall.args[3]).to.eql({method : 'POST'});
     });
@@ -89,7 +89,7 @@ describe('qcx adapter', () => {
       adapter.callBids(bidderRequest);
       sinon.assert.calledOnce(ajaxStub);
 
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL); // banner:{w:728, h:90}
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
     });
@@ -140,7 +140,6 @@ describe('qcx adapter', () => {
       pbjs.handleQcxCB(JSON.stringify({}));
       sinon.assert.calledOnce(addBidReponseStub);
       expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
-      //expect(addBidReponseStub.firstCall.args[1]._statusCode).to.eql(1);
     });
 
     it('should add a bid object for each bid', () => {
@@ -149,7 +148,6 @@ describe('qcx adapter', () => {
       pbjs.handleQcxCB(JSON.stringify(bidderReponse));
       sinon.assert.calledOnce(addBidReponseStub);
       expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
-      //expect(addBidReponseStub.firstCall.args[1]._statusCode).to.eql(2);
     });
   });
 
