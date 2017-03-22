@@ -8,6 +8,25 @@ const bidfactory = require('../bidfactory.js');
 
 const XhbAdapter = function XhbAdapter() {
 
+  const _defaultBidderSettings = {
+    alwaysUseBid: true,
+    adserverTargeting: [
+      {
+        key: 'hb_xhb_deal',
+        val: function (bidResponse) {
+          return bidResponse.dealId;
+        }
+      },
+      {
+        key: 'hb_xhb_adid',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      }
+    ]
+  };
+  bidmanager.registerDefaultBidderSetting('xhb', _defaultBidderSettings);
+
   function buildJPTCall(bid, callbackId) {
     //determine tag params
     const placementId = utils.getBidIdParameter('placementId', bid.params);
@@ -50,7 +69,7 @@ const XhbAdapter = function XhbAdapter() {
     }
 
     //append custom attributes:
-    let paramsCopy = utils.extend({}, bid.params);
+    let paramsCopy = Object.assign({}, bid.params);
 
     //delete attributes already used
     delete paramsCopy.placementId;

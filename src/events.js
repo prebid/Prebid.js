@@ -142,7 +142,7 @@ module.exports = (function () {
   _public.getEvents = function () {
     var arrayCopy = [];
     utils._each(eventsFired, function (value) {
-      var newProp = utils.extend({}, value);
+      var newProp = Object.assign({}, value);
       arrayCopy.push(newProp);
     });
 
