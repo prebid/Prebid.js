@@ -14,6 +14,15 @@ var QCXAdapter = function QCXAdapter() {
   const BID_STATUS_CODE_EMPTY = 2;
   let bidRequests = {};
 
+  let returnEmptyBid = function() {
+      var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
+      if (bidsRequested.length > 0) {
+        let bid = bidfactory.createBid(BID_STATUS_CODE_EMPTY);
+        bid.bidderCode = BIDDER_CODE;
+        bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
+      }
+      return;
+  };
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQcxCB = function (responseText) {
@@ -22,20 +31,16 @@ var QCXAdapter = function QCXAdapter() {
     }
     let response = JSON.parse(responseText);
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
-      var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
-      if (bidsRequested.length > 0) {
-        let bid = bidfactory.createBid(BID_STATUS_CODE_EMPTY);
-        bid.bidderCode = BIDDER_CODE;
-        bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
-      }
-
-      return;
+      return returnEmptyBid();
     }
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
       let key = seatbid.placementCode + "-" + seatbid.width + 'x' + seatbid.height;
       var request = bidRequests[key];
+      if(request == null) {
+         return returnEmptyBid();
+      }
       // This line is required since this is the field
       // that bidfactory.createBid looks for
       request.bidId = request.imp[0].placementCode;
