@@ -22,7 +22,7 @@ var QCXAdapter = function QCXAdapter() {
         bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
       }
       return;
-  };
+    };
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQcxCB = function (responseText) {
@@ -38,8 +38,8 @@ var QCXAdapter = function QCXAdapter() {
       let seatbid = response.bids[i];
       let key = seatbid.placementCode + "-" + seatbid.width + 'x' + seatbid.height;
       var request = bidRequests[key];
-      if(request == null) {
-         return returnEmptyBid();
+      if(request === null) {
+        return returnEmptyBid();
       }
       // This line is required since this is the field
       // that bidfactory.createBid looks for
@@ -58,52 +58,52 @@ var QCXAdapter = function QCXAdapter() {
   };
 
   function callBids(params) {
-      let bids = params.bids || [];
-      if (bids.length === 0) {
-        return;
+    let bids = params.bids || [];
+    if (bids.length === 0) {
+      return;
+    }
+
+    let referrer = utils.getTopWindowUrl();
+    let loc = utils.getTopWindowLocation();
+    let domain = loc.hostname;
+    let publisherId = 0;
+
+    publisherId = '' + bids[0].params.publisherId;
+    utils._each(bids, function(bid) {
+      // make sure the "sizes" are an array of arrays
+      if (!(bid.sizes[0] instanceof Array)) {
+        bid.sizes = [bid.sizes];
       }
+      utils._each(bid.sizes, function(size) {
+        let key = bid.placementCode + "-" + size[0] + 'x' + size[1];
+        bidRequests[key] = bidRequests[key] || {
+          'publisherId' : publisherId,
+          'requestId' : params.requestId,
+          'site' : {
+            'page' : loc.href,
+            'referrer' : referrer,
+            'domain' : domain,
+          },
+          'imp' : [{
 
-      let referrer = utils.getTopWindowUrl();
-      let loc = utils.getTopWindowLocation();
-      let domain = loc.hostname;
-      let publisherId = 0;
-
-      publisherId = '' + bids[0].params.publisherId;
-      utils._each(bids, function(bid) {
-        // make sure the "sizes" are an array of arrays
-        if (!(bid.sizes[0] instanceof Array)) {
-          bid.sizes = [bid.sizes];
-        }
-        utils._each(bid.sizes, function(size) {
-          let key = bid.placementCode + "-" + size[0] + 'x' + size[1];
-          bidRequests[key] = bidRequests[key] || {
-            'publisherId' : publisherId,
-            'requestId' : params.requestId,
-            'site' : {
-              'page' : loc.href,
-              'referrer' : referrer,
-              'domain' : domain,
+            'banner' : {
+              'battr' : bid.params.battr,
+              'width' : size[0],
+              'height' : size[1],
             },
-            'imp' : [{
+            'placementCode' : bid.placementCode,
+            'bidFloor' : bid.params.bidFloor || DEFAULT_BID_FLOOR,
+          }]
+        };
+      });
 
-              'banner' : {
-                'battr' : bid.params.battr,
-                'width' : size[0],
-                'height' : size[1],
-              },
-              'placementCode' : bid.placementCode,
-              'bidFloor' : bid.params.bidFloor || DEFAULT_BID_FLOOR,
-            }]
-          };
-        });
-
-        utils._each(bidRequests, function (bidRequest) {
-          ajax.ajax(QCX_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQcxCB, JSON.stringify(bidRequest), {
-            method : 'POST'
-          });
+      utils._each(bidRequests, function (bidRequest) {
+        ajax.ajax(QCX_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQcxCB, JSON.stringify(bidRequest), {
+          method : 'POST'
         });
       });
-    }
+    });
+  }
 
 
   // Export the `callBids` function, so that Prebid.js can execute
