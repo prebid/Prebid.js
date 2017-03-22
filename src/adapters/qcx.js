@@ -2,7 +2,7 @@ const utils = require('../utils.js');
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const ajax = require('../ajax.js');
-const QCX_CALLBACK_URL 		= 'http://localhost/demo.php?';
+const QCX_CALLBACK_URL 		= 'http://qcx.rtb.quantserve.com:8080/qcx';
 
 var QCXAdapter = function QCXAdapter() {
 
