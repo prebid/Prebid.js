@@ -59,6 +59,8 @@ let roxotAdapter = utils.extend(adapter({url, analyticsType}),
         return;
       }
 
+      args.ad = "";
+
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
         flushEvents();
