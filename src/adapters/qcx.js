@@ -59,14 +59,15 @@ var QCXAdapter = function QCXAdapter() {
 
   function callBids(params) {
       let bids = params.bids || [];
+      if (bids.length === 0) {
+        return;
+      }
+
       let referrer = utils.getTopWindowUrl();
       let loc = utils.getTopWindowLocation();
       let domain = loc.hostname;
       let publisherId = 0;
 
-      if (bids.length === 0) {
-        return;
-      }
       publisherId = '' + bids[0].params.publisherId;
       utils._each(bids, function(bid) {
         // make sure the "sizes" are an array of arrays
