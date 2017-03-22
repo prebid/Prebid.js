@@ -590,7 +590,7 @@ export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-export function isInIframe() {
+export function inIframe() {
   try {
     return window.self !== window.top;
   } catch (e) {

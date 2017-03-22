@@ -513,6 +513,7 @@ describe('Unit: Prebid Module', function () {
     var adResponse = {};
     var spyLogError = null;
     var spyLogMessage = null;
+    var inIframe = true;
 
     beforeEach(function () {
       doc = {
@@ -535,6 +536,9 @@ describe('Unit: Prebid Module', function () {
 
       spyLogError = sinon.spy(utils, 'logError');
       spyLogMessage = sinon.spy(utils, 'logMessage');
+
+      inIframe = true;
+      sinon.stub(utils, "inIframe", () => inIframe);
     });
 
     afterEach(function () {
@@ -542,6 +546,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$._winningBids = [];
       utils.logError.restore();
       utils.logMessage.restore();
+      utils.inIframe.restore();
     });
 
     it('should require doc and id params', function () {
@@ -576,7 +581,8 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
-    it('should log an error when doc is document', () => {
+    it('should log an error when not in an iFrame', () => {
+      inIframe = false;
       $$PREBID_GLOBAL$$.renderAd(document, bidId);
       const error = 'Error trying to write ad. Ad render call ad id ' + bidId + ' was prevented from writing to the main document.';
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
