@@ -589,3 +589,11 @@ export function isSrcdocSupported(doc) {
 export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
+
+export function isInIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
