@@ -5,12 +5,11 @@ import { ajax } from 'src/ajax';
  */
 
 import adapter from 'AnalyticsAdapter';
-const utils = require('../../utils');
 
 const url = 'https://httpbin.org/post';
 const analyticsType = 'endpoint';
 
-export default utils.extend(adapter(
+export default Object.assign(adapter(
   {
     url,
     analyticsType

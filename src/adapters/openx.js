@@ -43,18 +43,16 @@ const OpenxAdapter = function OpenxAdapter() {
       };
 
       // no fill :(
-      if (!auid) {
+      if (!auid || !adUnit.pub_rev) {
         addBidResponse(null, bid);
         continue;
       }
       adUnit.used = true;
 
-      if (adUnit.pub_rev) {
-        beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
-        beaconParams.bp = adUnit.pub_rev;
-        beaconParams.ts = adUnit.ts;
-        addBidResponse(adUnit, bid);
-      }
+      beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
+      beaconParams.bp = adUnit.pub_rev;
+      beaconParams.ts = adUnit.ts;
+      addBidResponse(adUnit, bid);
       buildBoPixel(adUnit.creative[0], beaconParams);
     }
   };
@@ -198,7 +196,8 @@ const OpenxAdapter = function OpenxAdapter() {
   function callBids(params) {
     let isIfr,
       bids = params.bids || [],
-      currentURL = window.location.href && encodeURIComponent(window.location.href);
+      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+      currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
     }

@@ -89,8 +89,9 @@ targeting.setTargetingForAst = function() {
       utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`);
       //setKeywords supports string and array as value
       if(utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
-        var keywordsObj = {};
-        var nKey = (key === 'hb_adid') ? key.toUpperCase() : key;
+        let keywordsObj = {};
+        let input = 'hb_adid';
+        let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
         keywordsObj[nKey] = targeting[targetId][key];
         window.apntag.setKeywords(targetId,keywordsObj);
       }
