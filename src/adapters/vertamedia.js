@@ -36,7 +36,7 @@ function VertamediaAdapter() {
 
     bidRequest = bid;
 
-    let size = getSizes(bid.sizes)[0];
+    let size = getSize(bid.sizes);
 
     bidRequest.width = size.width;
     bidRequest.height = size.height;
@@ -49,26 +49,20 @@ function VertamediaAdapter() {
     };
   }
 
-  function getSizes(requestSizes) {
-    let sizes = [];
-    let sizeObj = {};
+  function getSize(requestSizes) {
+    var parsed = {},
+        size = utils.parseSizesInput(requestSizes)[0];
 
-    if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
-        !utils.isArray(requestSizes[0])) {
-      sizeObj.width = parseInt(requestSizes[0], 10);
-      sizeObj.height = parseInt(requestSizes[1], 10);
-      sizes.push(sizeObj);
-    } else if (typeof requestSizes === 'object') {
-      for (let i = 0; i < requestSizes.length; i++) {
-        let size = requestSizes[i];
-        sizeObj = {};
-        sizeObj.width = parseInt(size[0], 10);
-        sizeObj.height = parseInt(size[1], 10);
-        sizes.push(sizeObj);
-      }
+    if (typeof size !== 'string') {
+      return parsed;
     }
 
-    return sizes;
+    let parsedSize = size.toUpperCase().split('X');
+
+    return {
+      width: parseInt(parsedSize[0], 10) || undefined,
+      height: parseInt(parsedSize[1], 10) || undefined
+    };
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
