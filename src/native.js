@@ -1,7 +1,5 @@
 import { getBidRequest, logError } from './utils';
-
-// having problem generating this with a webpack loader
-// hardcoded for now, will fix and import from adaptermanager
+// import { nativeAdapters } from './adaptermanager';
 const nativeAdapters = ['appnexusAst'];
 
 export const NATIVE_KEYS = {
