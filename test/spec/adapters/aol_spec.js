@@ -1,5 +1,4 @@
 import {expect} from 'chai';
-import { cloneDeep } from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
@@ -45,7 +44,7 @@ describe('AolAdapter', () => {
   beforeEach(() => adapter = new AolAdapter());
 
   function createBidderRequest({bids, params} = {}) {
-    var bidderRequest = cloneDeep(DEFAULT_BIDDER_REQUEST);
+    var bidderRequest = utils.cloneJson(DEFAULT_BIDDER_REQUEST);
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
     }
