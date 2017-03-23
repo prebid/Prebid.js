@@ -3,21 +3,6 @@
 <head>
   <meta charset="utf-8"/>
   <title>Prebid.js outstream video adUnit example</title>
-
-  <!-- videojs -->
-  <!--<link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">-->
-  <!--<script type="text/javascript" src="http://vjs.zencdn.net/5.9.2/video.js"></script>-->
-
-  <!-- videojs-vast-vpaid -->
-  <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css" rel="stylesheet">-->
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>-->
-
-  <!-- prebid.js -->
-  <script src="../../../../build/dev/prebid.js" async=true></script>
-
-  <!-- AN Outstream Video Player -->
-<script src="http://video.devnxs.net/rel/OutstreamRenderer/3.0.15/1490122642257/ANOutstreamVideo.full.js" async="true"></script>
-
   <script>
 
     var pbjs = pbjs || {};
@@ -61,7 +46,7 @@
         {
           bidder: 'appnexusAst',
           params: {
-            placementId: '9333431',
+            placementId: '5768085',
             video: {
               skipppable: true,
               playback_method: [ 'auto_play_sound_off' ]
@@ -106,7 +91,7 @@
 
             }
           }, {
-            key: "prebid_outstream",
+            key: "prebid",
             val: function () {
               return true;
             }
@@ -115,6 +100,17 @@
         ]
       }
     };
+
+    // load prebid
+    (function () {
+        var d = document;
+        var pbs = d.createElement("script");
+        pbs.type = "text/javascript";
+        pbs.src = '/build/dev/prebid.js';
+        var target = d.getElementsByTagName("head")[0];
+        target.insertBefore(pbs, target.firstChild);
+    })();
+
     //load GPT library here
     (function () {
       var gads = document.createElement('script');
@@ -141,7 +137,72 @@
 
 <h2>Prebid Outstream Video -- video.js</h2>
 
-<h4>outstream</h4>
+<div style="width:50%;margin-left:auto;margin-right:auto">
+<p>
+In scelerisque sem sed tortor posuere sagittis. Fusce scelerisque odio at tincidunt ultricies. Fusce egestas, erat non finibus dictum, nulla arcu viverra nibh, at bibendum ligula nisi egestas magna. Nulla eu finibus nulla. Pellentesque at mi eget turpis consequat scelerisque. Sed lacinia, nisi sit amet egestas vestibulum, elit odio iaculis leo, et lacinia risus enim non lacus. Cras nec neque eget nunc gravida maximus. Ut hendrerit convallis sollicitudin. Donec cursus erat vel metus gravida, et pretium justo iaculis. Curabitur condimentum blandit augue, quis interdum leo. Vivamus dapibus est nec dui efficitur, eu imperdiet nulla sollicitudin. Suspendisse laoreet velit vitae arcu mollis, ac interdum lorem venenatis. Aenean nec purus varius, accumsan ex at, luctus arcu. Quisque consectetur tortor eros, placerat lacinia eros aliquam a. Proin non porttitor libero.
+</p>
+<p>
+Proin eget vulputate est. Nunc sit amet neque a tortor ullamcorper suscipit non eu neque. Quisque at massa in metus feugiat rutrum. Nulla et orci orci. Aliquam erat volutpat. Cras tincidunt metus lectus, sed suscipit augue mollis vitae. Sed quis condimentum tortor, sit amet consectetur erat. Nulla pellentesque turpis lacus, eu venenatis massa fringilla at. Duis sed pharetra turpis. Maecenas vel porttitor neque. Praesent quis felis sapien. Donec suscipit euismod dui, vitae fermentum nisi ornare in.
+</p>
+<p>
+Suspendisse tempor felis accumsan orci finibus, imperdiet mollis arcu imperdiet. In eu dolor condimentum, pulvinar nisl a, sollicitudin nunc. Ut vel lectus libero. Praesent rhoncus leo tortor, at mollis nulla sagittis eget. Quisque tempus tempor augue sed rutrum. Sed vitae volutpat quam. Proin vestibulum eros metus, a luctus erat condimentum eu. Vivamus ullamcorper ultricies dui, ac malesuada leo finibus semper. Cras diam augue, imperdiet sed efficitur id, aliquam sed purus. Praesent eget turpis quis sapien interdum sagittis. Vivamus placerat nunc a tempus fermentum. Praesent laoreet leo at tellus porta, ut viverra tortor pharetra. Quisque elit velit, eleifend eget imperdiet vel, suscipit ac nisi. Aliquam egestas mauris ut massa fringilla laoreet.
+</p>
+<p>
+Quisque ac luctus nisi, vitae ornare arcu. Proin fermentum sapien vitae odio vestibulum porta. Suspendisse faucibus sapien enim, et faucibus urna tempus et. Integer porttitor justo sed faucibus blandit. Morbi semper lectus vitae semper facilisis. Quisque molestie accumsan arcu, eget bibendum dui euismod et. Sed in mattis lacus, nec lacinia sem. Fusce sed tortor posuere, iaculis justo varius, elementum est.
+</p>
+<p>
+Etiam condimentum, eros commodo semper tristique, lorem leo pharetra massa, eget cursus justo enim id urna. Sed imperdiet mauris vitae ante bibendum elementum. Etiam eu dui porttitor leo imperdiet cursus. Maecenas consequat, neque a dapibus viverra, nunc velit volutpat nibh, ut cursus sem tortor ac arcu. Praesent convallis lacus vel nisi aliquam, in posuere libero scelerisque. Curabitur et lacinia nisl. Nunc id ligula neque. Phasellus non eros et leo ultrices ultricies. Nulla facilisi. Donec ut augue urna. Suspendisse sodales nisi at ex faucibus, et tempus magna fermentum. Proin non arcu interdum, pulvinar est at, vehicula odio. Morbi nec maximus sem. Ut eu tristique urna.
+</p>
+<p>
+Pellentesque eget quam sem. Nam interdum eleifend leo, mattis sagittis metus ornare tristique. Cras pretium odio lectus, vitae viverra massa consequat eget. Suspendisse porttitor pretium lectus in scelerisque. Phasellus euismod porta lectus eget pharetra. Ut et viverra mi, ut imperdiet lacus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nunc tempus sapien sit amet tortor rhoncus dignissim. Sed at augue et sem lacinia feugiat. Nulla vitae convallis urna. Morbi scelerisque erat quis nibh pretium, non elementum elit consectetur. Proin in feugiat nisl.
+</p>
+<p>
+Morbi et ipsum purus. Integer ut pulvinar metus. Fusce maximus ex nec purus sollicitudin gravida. Vivamus dapibus volutpat erat nec tristique. Aliquam mi dolor, pretium non elementum quis, viverra non est. Pellentesque egestas, lectus a posuere imperdiet, nisi sem elementum neque, eu volutpat arcu turpis venenatis magna. Curabitur non neque consectetur, vulputate urna sed, vestibulum lacus. Aenean mollis, risus non pulvinar egestas, lectus lectus finibus dui, sit amet pretium metus mauris vitae nibh. In non ultricies odio.
+</p>
+<p>
+Donec dictum sem ac risus molestie lobortis. Maecenas at justo vehicula, iaculis orci eget, eleifend nunc. In non justo imperdiet, blandit leo in, interdum mi. Proin feugiat libero et erat dictum efficitur. Nunc auctor lacus feugiat erat euismod cursus. Sed vehicula ante vel quam pretium blandit. Maecenas congue quis mauris vitae efficitur. Cras sit amet justo at sem dictum ornare vitae eu ex. Nunc ornare odio nec leo consectetur cursus. Mauris eu dolor tellus. Etiam dignissim ut nunc et mollis. Cras at pulvinar velit, ut tincidunt velit. Cras vitae fermentum ante. Aenean interdum dolor in scelerisque consectetur.
+</p>
+<p>
+Curabitur auctor leo sit amet massa faucibus ultrices. Maecenas dignissim libero ac cursus cursus. Curabitur eget sapien leo. Phasellus pretium blandit facilisis. Proin egestas urna a sagittis tempus. Donec in nibh ex. Vestibulum efficitur felis aliquam urna ultrices, at gravida nibh pretium. Morbi dictum vulputate pretium. Donec at nisi rutrum, pharetra nunc a, placerat felis. Quisque rhoncus congue fermentum. Quisque pharetra est at nisl sagittis suscipit. Maecenas scelerisque porta eleifend. Mauris nulla leo, consectetur at eros vel, elementum pretium diam.
+</p>
+<p>
+In nisi libero, porta ut ullamcorper a, dapibus nec velit. Vestibulum congue rhoncus congue. Nulla a libero sit amet risus feugiat hendrerit id placerat ex. In hac habitasse platea dictumst. Pellentesque ut ullamcorper risus. Nunc et ipsum nisi. Vivamus a interdum diam, hendrerit pellentesque orci.
+</p>
+<p>
+Vestibulum ut massa blandit, maximus sem vitae, vulputate mauris. Nam condimentum velit a facilisis dignissim. Nunc venenatis pharetra dapibus. Praesent ullamcorper risus sit amet molestie consectetur. Cras mauris felis, consequat et enim a, ultricies pretium enim. Nulla porttitor nunc mi, sed posuere magna venenatis non. Donec lobortis consectetur mauris, fermentum auctor dui dignissim sed. Sed vel venenatis urna. Donec velit velit, imperdiet non vulputate non, eleifend sed nisi.
+</p>
+<p>
+Proin et turpis velit. Donec tempus dictum dolor, eget eleifend lacus. Donec eu felis in ante iaculis ultrices. Mauris varius, turpis quis venenatis convallis, enim dolor ornare justo, in dictum ipsum purus quis dolor. Ut condimentum feugiat lectus ut auctor. Maecenas luctus consequat erat, nec pretium urna pulvinar in. Donec gravida rhoncus aliquet. Cras aliquet odio eget orci hendrerit, non posuere velit dignissim. Nunc tempus aliquam iaculis. Nunc viverra lobortis mauris et malesuada. Donec congue suscipit mauris. Phasellus efficitur, leo at mollis maximus, lorem mauris pretium urna, nec scelerisque ante neque eu erat. Nam rhoncus malesuada velit nec ultricies.
+</p>
+<p>
+Proin blandit in arcu sed porttitor. Morbi in erat vel risus mollis interdum. Proin vel odio semper, porttitor risus sed, tristique odio. Donec viverra massa et dui scelerisque, ac sagittis odio viverra. Aliquam lacinia enim sit amet dapibus ultrices. Nulla mollis, massa eget interdum egestas, lectus eros pretium eros, vel consectetur velit odio vel odio. Proin euismod aliquam finibus. Phasellus facilisis mollis est, non consequat lectus volutpat nec.
+</p>
+<p>
+Ut vel ultricies erat. Pellentesque non ipsum quis odio ornare tempus in cursus ex. In a turpis non quam pulvinar tincidunt. Maecenas tortor neque, dapibus a quam aliquet, dictum pellentesque leo. Sed aliquet tellus est, in tempus magna congue ut. Phasellus at tincidunt lorem, id fringilla risus. Nunc vel pulvinar massa. Aliquam erat volutpat. Phasellus semper interdum justo at eleifend. Curabitur feugiat quam sed mollis facilisis.
+</p>
+<p>
+Quisque consectetur sem a elit aliquet facilisis. Quisque dignissim velit at quam rhoncus dignissim. Proin feugiat sem at turpis ultrices imperdiet. Integer vel eros vel ante ultricies dapibus vitae eget dui. Fusce sollicitudin semper tortor at molestie. Pellentesque nec metus sed mauris aliquet iaculis. Mauris malesuada tortor nec mi dictum, feugiat euismod enim gravida. Vestibulum dapibus ut nulla vel euismod. Nunc lobortis, mauris at pretium faucibus, ligula diam venenatis nulla, in mattis sapien arcu feugiat dolor. In at dui leo. Cras elementum condimentum turpis.
+</p>
+<p>
+Donec eget dolor ac nulla lobortis bibendum. Praesent commodo accumsan ligula eget commodo. Suspendisse sit amet dignissim metus. Sed ut eros viverra, viverra lectus eget, ornare eros. Mauris elementum lacinia dapibus. Donec magna nisl, suscipit quis mattis eget, tincidunt sed sapien. Curabitur elementum nulla eget lorem gravida dapibus. Nunc vel dolor et libero pretium interdum vitae eget mauris. Vestibulum et erat in nulla sollicitudin luctus ut quis nulla.
+</p>
+<p>
+Maecenas iaculis pellentesque quam at fringilla. Donec dui elit, suscipit eget varius id, suscipit efficitur metus. Nulla rutrum ultrices tempor. Vivamus hendrerit justo ac fermentum euismod. Vestibulum tempus pulvinar tempus. Curabitur congue neque luctus dolor vehicula, non efficitur metus fringilla. Nam a imperdiet ex. Integer at est hendrerit, rutrum justo eu, ornare odio. Etiam convallis sapien a purus vehicula, eget gravida purus semper. Fusce ex enim, volutpat ac feugiat et, rhoncus vel tortor. Aenean ultrices libero sed neque fermentum tempor. Morbi tincidunt dui turpis, non mollis est dignissim at. Suspendisse molestie convallis interdum. Donec sit amet fermentum purus.
+</p>
+<p>
+Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam et ex orci. Vivamus rutrum est vel porta imperdiet. Cras ultricies tortor dolor, nec mollis felis ullamcorper vel. Praesent scelerisque vehicula sem, nec feugiat mauris tempus ac. Donec at enim non sem commodo sodales. Ut sit amet risus sit amet ante viverra venenatis. Aliquam sodales mollis est eget ultricies. Etiam pulvinar sapien et ipsum elementum pharetra.
+</p>
+<p>
+Nam blandit metus erat, sit amet congue ipsum cursus sed. In a commodo ante, sit amet tincidunt quam. Aenean lobortis et nibh in venenatis. Aliquam faucibus purus quis neque consectetur, quis consequat risus maximus. Proin mollis imperdiet felis, eget tempus ipsum scelerisque ut. Sed euismod interdum augue sed varius. Sed volutpat tellus ut risus porta accumsan.
+</p>
+<p>
+Mauris aliquet eu arcu sed pharetra. Duis nec leo volutpat libero finibus malesuada in eget velit. Aliquam facilisis urna mauris, et aliquam ipsum dictum finibus. Donec eget mi fermentum, vehicula odio at, molestie orci. In a hendrerit lectus. Aenean congue ipsum ac imperdiet suscipit. Maecenas eleifend pretium metus id mollis.
+</p>
+
+<p>
+Outstream ad is placed below this paragraph
+</p>
+
 <div id='video1'>
   <p>No response</p>
   <script type='text/javascript'>
@@ -150,155 +211,25 @@
     });
   </script>
 </div>
-<div>
-  <script>
-    function combineObjectsAndSubobjects(target, source) {
-      for (var key in source) {
-        if (source.hasOwnProperty(key)) {
-          if (typeof target[ key ] === "object") {
-            target[ key ] = combineObjectsAndSubobjects(target[ key ], source[ key ]);
-          } else {
-            target[ key ] = source[ key ];
-          }
-        }
-      }
-      return target;
-    }
 
-    function setInitialPlaybackOptions(playbackOptions, targetOptionsObject) {
+<p>
+Outstream ad is placed above this paragraph
+</p>
 
-      //make sure the targetOptionsObject exists
-      targetOptionsObject = targetOptionsObject ? targetOptionsObject : {};
+<p>
+Ut vel ultricies erat. Pellentesque non ipsum quis odio ornare tempus in cursus ex. In a turpis non quam pulvinar tincidunt. Maecenas tortor neque, dapibus a quam aliquet, dictum pellentesque leo. Sed aliquet tellus est, in tempus magna congue ut. Phasellus at tincidunt lorem, id fringilla risus. Nunc vel pulvinar massa. Aliquam erat volutpat. Phasellus semper interdum justo at eleifend. Curabitur feugiat quam sed mollis facilisis.
+</p>
+<p>
+Quisque consectetur sem a elit aliquet facilisis. Quisque dignissim velit at quam rhoncus dignissim. Proin feugiat sem at turpis ultrices imperdiet. Integer vel eros vel ante ultricies dapibus vitae eget dui. Fusce sollicitudin semper tortor at molestie. Pellentesque nec metus sed mauris aliquet iaculis. Mauris malesuada tortor nec mi dictum, feugiat euismod enim gravida. Vestibulum dapibus ut nulla vel euismod. Nunc lobortis, mauris at pretium faucibus, ligula diam venenatis nulla, in mattis sapien arcu feugiat dolor. In at dui leo. Cras elementum condimentum turpis.
+</p>
+<p>
+Donec eget dolor ac nulla lobortis bibendum. Praesent commodo accumsan ligula eget commodo. Suspendisse sit amet dignissim metus. Sed ut eros viverra, viverra lectus eget, ornare eros. Mauris elementum lacinia dapibus. Donec magna nisl, suscipit quis mattis eget, tincidunt sed sapien. Curabitur elementum nulla eget lorem gravida dapibus. Nunc vel dolor et libero pretium interdum vitae eget mauris. Vestibulum et erat in nulla sollicitudin luctus ut quis nulla.
+</p>
+<p>
+Maecenas iaculis pellentesque quam at fringilla. Donec dui elit, suscipit eget varius id, suscipit efficitur metus. Nulla rutrum ultrices tempor. Vivamus hendrerit justo ac fermentum euismod. Vestibulum tempus pulvinar tempus. Curabitur congue neque luctus dolor vehicula, non efficitur metus fringilla. Nam a imperdiet ex. Integer at est hendrerit, rutrum justo eu, ornare odio. Etiam convallis sapien a purus vehicula, eget gravida purus semper. Fusce ex enim, volutpat ac feugiat et, rhoncus vel tortor. Aenean ultrices libero sed neque fermentum tempor. Morbi tincidunt dui turpis, non mollis est dignissim at. Suspendisse molestie convallis interdum. Donec sit amet fermentum purus.
+</p>
 
-      //playback options is an array (not sure why) so lets itereate through it
-      //and set options as we see them
-      if (playbackOptions) {
-        for (var i = 0; i < playbackOptions.length; i++) {
-          console.log("eggs", playbackOptions[ i ]);
-          switch (playbackOptions[ i ]) {
-            case "auto_play_sound_on":
-              targetOptionsObject.initialPlayback = "auto";
-              targetOptionsObject.initialAudio = "on";
-              break;
-            case "auto_play_sound_off":
-              targetOptionsObject.initialPlayback = "auto";
-              targetOptionsObject.initialAudio = "off";
-              break;
-            case "click_to_play":
-              targetOptionsObject.initialPlayback = "click";
-              targetOptionsObject.initialAudio = "unknown";
-              break;
-            case "mouseover":
-              targetOptionsObject.initialPlayback = "mouseover";
-              targetOptionsObject.initialAudio = "unknown";
-              break;
-            case "auto_play_sound_unknown":
-              targetOptionsObject.initialPlayback = "auto";
-              targetOptionsObject.initialAudio = "unknown";
-              break;
-            case "max":
-              break;
-          }
-        }
-      }
-
-      return targetOptionsObject;
-    }
-
-    var _impbusObject = localStorage.getItem("impbusData");
-    var _vastXml = localStorage.getItem("vastData");
-
-    var adData = {
-      "uuid": "78e98d69-d191-493a-ae6e-bc5bff56c435",
-      "width": 1,
-      "height": 1,
-      "player_width": 640,
-      "duration_ms": 30000,
-      "frameworks": [],
-      "auction_id": "498097448993012238",
-      "ad_type": "video",
-      "buyer_member_id": 3,
-      "creative_id": 7,
-      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"2.0\"><Ad id=\"7\"><Wrapper><AdSystem version=\"2.0\">adnxs</AdSystem><VASTAdTagURI><![CDATA[http://a.video.devnxs.net/dsp/inline/Vast2LinearBaby.xml]]></VASTAdTagURI><Error><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=4&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Error><Impression id=\"adnxs\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=9&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Impression><Creatives><Creative id=\"4\"><Linear><TrackingEvents><Tracking event=\"start\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=2&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=5&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"midpoint\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=6&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&event=7&dlo=1&s=739bb3c567233f7994ffdbbd0a268e9f11308520]]></Tracking><Tracking event=\"complete\"><![CDATA[http://impbus-outstreamdev.envnxs.com/vast_track?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQ",
-      "media_type_id": 4,
-      "media_subtype_id": 64,
-      "renderer_url": "http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js",
-      "renderer_id": 2,
-      "notify": "http://impbus-outstreamdev.envnxs.com/it?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&s=739bb3c567233f7994ffdbbd0a268e9f11308520&dlo=1",
-      "utURL": "http://impbus-outstreamdev.envnxs.com/ut/notify?e=wqT_3QKqA4ChAQAAAgDWAAUIn8vQsAUQjvSGttqf5vQGGAAgASotCQAFAQj4PxEFCAwA-D8ZCQkI8D8hCQkI-D8pEQl0MA44A0ADSAJQB1gJYABoEnAAeAGAAQGKAQNVU0SSBQbwqJgBAaABAagBAbABALgBAMABBMgBANABANgBAOABAPABAIoCLnVmKCdhJywgNiwgMTQ0NDE2MDkyNyk7dWYoJ3InLCA3LCAxNDQ0MTYwOTI3KTuSApEBIXlSWGliQWdFRUFjWUFDQUpNQUE0QUVBRVNBTlFEbGdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVBQUEBAxRENFA4RUIBCgEBFC1EX0pBUQEKIEFBQVBBXzJRRQEKLEFBQUR3UC1BQkFQVQ0sLC4umgIRIWFRQ21BUQmU8ENDU0FF2AIA4AIAgAMAiAMBkAMAmAMXoAMBqgMAsAMAuAMAwAOQHMgDANgDAOADAOgDAPADAPgDAIAEAJIEAy91dJgEAA..&s=739bb3c567233f7994ffdbbd0a268e9f11308520&dlo=1",
-      "tag_id": 14
-    };
-
-    var ASTAdId = "78e98d69-d191-493a-ae6e-bc5bff56c435";
-    //var tagParams = adData.rendererOptions;
-    var tagParams = {
-      "width": 600,
-      "autoInitialSize": false,
-      "initialPlayback": "click",
-      "initialAudio": "off",
-      "playOnMouseover": false,
-      "audioOnMouseover": true,
-      "playVideoVisibleThreshold": 50,
-      "skippable": {
-        "enabled": true,
-        "videoThreshold": 15,
-        "videoOffset": 5,
-        "skipLocation": "top-left",
-        "skipText": "Video can be skipped in %%TIME%% seconds",
-        "skipButtonText": "SKIP"
-      },
-      "playerTechnology": [
-        "html5",
-        "flash"
-      ],
-      "adText": "Ad",
-      "showMute": true,
-      "showVolume": true,
-      "showProgressBar": true,
-      "allowFullscreen": true
-    };
-    var impbusOptions = adData;
-
-    //if tagParams is undefined, create an empty object
-    tagParams = tagParams ? tagParams : {};
-
-    //if impbusOptions is undefined, create an empty object
-    impbusOptions = impbusOptions ? impbusOptions : {};
-
-    var combinedOptionsObj = combineObjectsAndSubobjects(impbusOptions, tagParams);
-
-    combinedOptionsObj = setInitialPlaybackOptions(combinedOptionsObj.playback_methods, combinedOptionsObj);
-
-    combinedOptionsObj.targetElementId = "adDiv" //combinedOptionsObj.targetId;
-    combinedOptionsObj.vastXml = combinedOptionsObj.content;
-    combinedOptionsObj.targetId = "adDiv" //adData.targetId;
-    //tagParams.targetId = adData.targetId;
-
-    console.log(combinedOptionsObj.player_width);
-    combinedOptionsObj.width = combinedOptionsObj.player_width;
-
-    //ensure we have a flash options object
-    combinedOptionsObj.flash = combinedOptionsObj.flash ? combinedOptionsObj.flash : {};
-    //use a default URL For the flash player if it's not specified
-
-    if (!combinedOptionsObj.flash.swf) {
-      combinedOptionsObj.flash.swf = 'http' + (('https:' === window.document.location.protocol) ? 's' : '') + '://acdn.adnxs.com/video/static/player/flash/adplayer/1.0.23/AppNexusFlashPlayer.swf';
-    }
-
-    combinedOptionsObj.ASTadId = ASTAdId;
-    combinedOptionsObj.targetWindow = window;
-    combinedOptionsObj.eventCB = function () {
-    };
-
-    if (console && console.log) {
-      console.log("Outstream Renderer " + combinedOptionsObj.targetId + " ", combinedOptionsObj);
-    }
-
-    //start render outstream ad
-    pbjs.que.push(function() {
-      ANOutstreamVideo.init(combinedOptionsObj);
-    });
-  </script>
 </div>
+
 </body>
 </html>

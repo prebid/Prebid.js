@@ -1,6 +1,4 @@
 /** @module $$PREBID_GLOBAL$$ */
-/** INSERT RENDERERS - DO NOT EDIT OR REMOVE */
-/** END INSERT RENDERERS */
 
 import { getGlobal } from './prebidGlobal';
 import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
@@ -352,7 +350,7 @@ $$PREBID_GLOBAL$$.renderOutstream = function(renderFn, adObject) {
   {
     tagId: adObject.adResponse.tag_id,
     sizes: [adObject.getSize().split('x')],
-    targetId: '123', // target div id to render video
+    targetId: adObject.adUnitCode, // target div id to render video
     uuid: adObject.adResponse.uuid, // is this the correct UUID
     adResponse: adObject.adResponse
   };
