@@ -37,11 +37,10 @@ function PulsePointLiteAdapter() {
   }
 
   function environment() {
-    return {
+    const environment = {
       cn: 1,
       ca: 'BID',
       tl: 1,
-      if: 0,
       cwu: getTopWindowLocation().href,
       cwr: referrer(),
       dw: document.documentElement.clientWidth,
@@ -54,6 +53,10 @@ function PulsePointLiteAdapter() {
         navigator.userLanguage ||
         navigator.systemLanguage,
     };
+
+    environment['if'] = 0;
+
+    return environment;
   }
 
   function referrer() {
