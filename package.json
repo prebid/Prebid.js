@@ -4,6 +4,8 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
+    "preinstall": "chmod +x hooks/pre-commit && ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit",
+    "prettier": "prettier --single-quote --trailing-comma all --bracket-spacing --write \"{loaders,src,test}/**/*.js\"",
     "test": "gulp test && gulp mocha"
   },
   "repository": {
