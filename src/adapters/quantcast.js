@@ -2,11 +2,11 @@ const utils = require('../utils.js');
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const ajax = require('../ajax.js');
-const QCX_CALLBACK_URL = 'http://qcx.rtb.quantserve.com:8080/qcx';
+const QUANTCAST_CALLBACK_URL = 'http://global.qc.rtb.quantserve.com:8080/qchb';
 
-var QCXAdapter = function QCXAdapter() {
+var QuantcastAdapter = function QuantcastAdapter() {
 
-  const BIDDER_CODE = 'qcx';
+  const BIDDER_CODE = 'quantcast';
 
   const DEFAULT_BID_FLOOR = 0.0000000001;
   // The following 2 constants are adopted from bidfactory.js codes
@@ -25,7 +25,7 @@ var QCXAdapter = function QCXAdapter() {
     };
 
   //expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleQcxCB = function (responseText) {
+  $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
     if(utils.isEmpty(responseText)) {
       return;
     }
@@ -98,7 +98,7 @@ var QCXAdapter = function QCXAdapter() {
       });
 
       utils._each(bidRequests, function (bidRequest) {
-        ajax.ajax(QCX_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQcxCB, JSON.stringify(bidRequest), {
+        ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
           method : 'POST'
         });
       });
@@ -110,13 +110,13 @@ var QCXAdapter = function QCXAdapter() {
   // this function when the page asks to send out bid requests.
   return {
     callBids: callBids,
-    QCX_CALLBACK_URL: QCX_CALLBACK_URL
+    QUANTCAST_CALLBACK_URL: QUANTCAST_CALLBACK_URL
   };
 };
 
 exports.createNew = function() {
-  return new QCXAdapter();
+  return new QuantcastAdapter();
 };
 
 
-module.exports = QCXAdapter;
+module.exports = QuantcastAdapter;

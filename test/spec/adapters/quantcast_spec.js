@@ -1,10 +1,10 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/qcx';
+import Adapter from '../../../src/adapters/quantcast';
 import * as ajax from 'src/ajax';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
-describe('qcx adapter', () => {
+describe('quantcast adapter', () => {
 
   let bidsRequestedOriginal;
   let adapter;
@@ -12,13 +12,13 @@ describe('qcx adapter', () => {
   let ajaxStub;
 
   const bidderRequest = {
-    bidderCode: 'qcx',
+    bidderCode: 'quantcast',
     requestId : "595ffa73-d78a-46c9-b18e-f99548a5be6b",
     bidderRequestId:"1cc026909c24c8",
     bids: [
       {
         bidId: '2f7b179d443f14',
-        bidder: 'qcx',
+        bidder: 'quantcast',
         placementCode: 'div-gpt-ad-1438287399331-0',
         sizes: [[300,250],[300,600]],
         params: {
@@ -46,13 +46,13 @@ describe('qcx adapter', () => {
 
   describe('sizes', () => {
     let bidderRequest = {
-      bidderCode: 'qcx',
+      bidderCode: 'quantcast',
       requestId : "595ffa73-d78a-46c9-b18e-f99548a5be6b",
       bidderRequestId:"1cc026909c24c8",
       bids: [
         {
           bidId: '2f7b179d443f14',
-          bidder: 'qcx',
+          bidder: 'quantcast',
           placementCode: 'div-gpt-ad-1438287399331-0',
           sizes: [[300,250],[300,600]],
           params: {
@@ -72,14 +72,14 @@ describe('qcx adapter', () => {
       adapter.callBids(bidderRequest);
       sinon.assert.calledTwice(ajaxStub);
 
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.firstCall.args[2]).to.include('div-gpt-ad-1438287399331-0');
       expect(ajaxStub.firstCall.args[2]).to.include('test-publisher');
       expect(ajaxStub.firstCall.args[2]).to.include('595ffa73-d78a-46c9-b18e-f99548a5be6b');
       expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
 
-      expect(ajaxStub.secondCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
+      expect(ajaxStub.secondCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.secondCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.secondCall.args[3]).to.eql({method : 'POST'});
     });
@@ -89,20 +89,20 @@ describe('qcx adapter', () => {
       adapter.callBids(bidderRequest);
       sinon.assert.calledOnce(ajaxStub);
 
-      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QCX_CALLBACK_URL);
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
     });
   });
 
-  describe('handleQcxCB add bids to the manager', () => {
+  describe('handleQuantcastCB add bids to the manager', () => {
 
     let firstBid;
     let addBidReponseStub;
     let bidsRequestedOriginal;
     // respond
     let bidderReponse = {
-      "bidderCode": "qcx",
+      "bidderCode": "quantcast",
       "requestId" : bidderRequest.requestId,
       "bids" : [
           {
@@ -128,16 +128,16 @@ describe('qcx adapter', () => {
     });
 
     it('should exist and be a function', () => {
-      expect(pbjs.handleQcxCB).to.exist.and.to.be.a('function');
+      expect(pbjs.handleQuantcastCB).to.exist.and.to.be.a('function');
     });
 
     it('should not add bid when empty text response comes', () => {
-      pbjs.handleQcxCB();
+      pbjs.handleQuantcastCB();
       sinon.assert.notCalled(addBidReponseStub);
     });
 
     it('should not add bid when empty json response comes', () => {
-      pbjs.handleQcxCB(JSON.stringify({}));
+      pbjs.handleQuantcastCB(JSON.stringify({}));
       sinon.assert.calledOnce(addBidReponseStub);
       expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
     });
@@ -145,7 +145,7 @@ describe('qcx adapter', () => {
     it('should add a bid object for each bid', () => {
       // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
       adapter.callBids(bidderRequest);
-      pbjs.handleQcxCB(JSON.stringify(bidderReponse));
+      pbjs.handleQuantcastCB(JSON.stringify(bidderReponse));
       sinon.assert.calledOnce(addBidReponseStub);
       expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
     });
