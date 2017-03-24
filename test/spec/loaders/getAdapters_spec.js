@@ -24,10 +24,10 @@ describe('loaders/getAdapters', () => {
       it('should return custom adapter list', () => {
         mockfs({
           'adapters.json': JSON.stringify(defaultAdapters),
-          'custom-adapters.json': JSON.stringify(customAdapters),
+          'custom-adapters.json': JSON.stringify(customAdapters)
         });
         const getAdapters = proxyquire('../../../loaders/getAdapters', {
-          yargs: { argv: { adapters: 'custom-adapters.json' } },
+          yargs: { argv: { adapters: 'custom-adapters.json' } }
         });
         expect(getAdapters()).to.deep.equal(customAdapters);
       });
@@ -41,10 +41,10 @@ describe('loaders/getAdapters', () => {
           log = message;
         };
         mockfs({
-          'adapters.json': JSON.stringify(defaultAdapters),
+          'adapters.json': JSON.stringify(defaultAdapters)
         });
         const getAdapters = proxyquire('../../../loaders/getAdapters', {
-          yargs: { argv: { adapters: 'non-existent-adapters.json' } },
+          yargs: { argv: { adapters: 'non-existent-adapters.json' } }
         });
         expect(getAdapters()).to.deep.equal(defaultAdapters);
         expect(log).to.match(/non-existent-adapters.json/);
@@ -56,10 +56,10 @@ describe('loaders/getAdapters', () => {
   describe('when custom adapter list is not defined', () => {
     it('should return default adapter list', () => {
       mockfs({
-        'adapters.json': JSON.stringify(defaultAdapters),
+        'adapters.json': JSON.stringify(defaultAdapters)
       });
       const getAdapters = proxyquire('../../../loaders/getAdapters', {
-        yargs: { argv: {} },
+        yargs: { argv: {} }
       });
       expect(getAdapters()).to.deep.equal(defaultAdapters);
     });
@@ -68,10 +68,10 @@ describe('loaders/getAdapters', () => {
   describe('when default adapter list cannot be found', () => {
     it('should return empty array', () => {
       mockfs({
-        'adapters.json': mockfs.file({ mode: 0x000 }),
+        'adapters.json': mockfs.file({ mode: 0x000 })
       });
       const getAdapters = proxyquire('../../../loaders/getAdapters', {
-        yargs: { argv: {} },
+        yargs: { argv: {} }
       });
       expect(getAdapters()).to.deep.equal([]);
     });

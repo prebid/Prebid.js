@@ -15,7 +15,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
         function() {
           bid(params);
         },
-        true,
+        true
       );
     } else {
       bid(params);
@@ -48,7 +48,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
       ca: window.pp.requestActions.BID,
       cu: bidUrl,
       adUnitId: bidRequest.placementCode,
-      callback: callback,
+      callback: callback
     };
     for (var param in bidRequest.params) {
       if (bidRequest.params.hasOwnProperty(param)) {
@@ -82,7 +82,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

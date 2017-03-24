@@ -19,7 +19,7 @@ var SonobiAdapter = function SonobiAdapter() {
         JSON.stringify(_keymaker(adSlots)) +
         '&cv=' +
         _operator(bidderRequestId) +
-        ref,
+        ref
     );
   }
 
@@ -39,7 +39,7 @@ var SonobiAdapter = function SonobiAdapter() {
         var bidId = bidRequest.bidId;
         if (utils.isEmpty(sizes)) {
           utils.logError(
-            'Sonobi adapter expects sizes for ' + bidRequest.placementCode,
+            'Sonobi adapter expects sizes for ' + bidRequest.placementCode
           );
         }
         var args = sizes
@@ -68,7 +68,7 @@ var SonobiAdapter = function SonobiAdapter() {
           utils.logError(
             'The ad unit code or Sonobi Placement id for slot ' +
               bidRequest.placementCode +
-              ' is invalid',
+              ' is invalid'
           );
         }
       }
@@ -135,7 +135,7 @@ var SonobiAdapter = function SonobiAdapter() {
     formRequest: _keymaker,
     parseResponse: _trinity,
     success: _success,
-    failure: _failure,
+    failure: _failure
   };
 };
 

@@ -44,7 +44,7 @@ module.exports = (function() {
     eventsFired.push({
       eventType: eventString,
       args: eventPayload,
-      id: key,
+      id: key
     });
 
     /** Push each specific callback to the `callbacks` array.
@@ -90,10 +90,7 @@ module.exports = (function() {
       _handlers[eventString] = event;
     } else {
       utils.logError(
-        'Wrong event name : ' +
-          eventString +
-          ' Valid event names :' +
-          allEvents,
+        'Wrong event name : ' + eventString + ' Valid event names :' + allEvents
       );
     }
   };

@@ -18,36 +18,36 @@ describe('sovrn adapter tests', function() {
             bidId: 'bidId1',
             bidder: 'sovrn',
             params: {
-              tagid: '315045',
+              tagid: '315045'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidId: 'bidId2',
             bidder: 'sovrn',
             params: {
-              tagid: '315046',
+              tagid: '315046'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
+            placementCode: 'div-gpt-ad-12345-2'
           },
           {
             bidId: 'bidId3',
             bidder: 'sovrn',
             params: {
-              tagid: '315047',
+              tagid: '315047'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       // no bids returned in the response.
       var response = {
         id: '54321',
-        seatbid: [],
+        seatbid: []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -90,30 +90,30 @@ describe('sovrn adapter tests', function() {
             bidId: 'bidId1',
             bidder: 'sovrn',
             params: {
-              tagid: '315045',
+              tagid: '315045'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidId: 'bidId2',
             bidder: 'sovrn',
             params: {
-              tagid: '315046',
+              tagid: '315046'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
+            placementCode: 'div-gpt-ad-12345-2'
           },
           {
             bidId: 'bidId3',
             bidder: 'sovrn',
             params: {
-              tagid: '315047',
+              tagid: '315047'
             },
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       // Returning a single bid in the response.
@@ -130,11 +130,11 @@ describe('sovrn adapter tests', function() {
                 adm: 'ad-code',
                 h: 250,
                 w: 300,
-                ext: {},
-              },
-            ],
-          },
-        ],
+                ext: {}
+              }
+            ]
+          }
+        ]
       };
 
       pbjs._bidsRequested.push(bidderRequest);

@@ -23,18 +23,18 @@ describe('underdog media adapter test', () => {
                 cpm: 3.14,
                 ad_html: `Ad HTML for site ID ${siteId} size ${size[0]}x${size[1]}`,
                 width: size[0],
-                height: size[1],
+                height: size[1]
               });
             });
             options.callback({
-              bids: bids,
+              bids: bids
             });
           } else {
             options.callback({
-              bids: [],
+              bids: []
             });
           }
-        },
+        }
       };
     },
 
@@ -45,9 +45,9 @@ describe('underdog media adapter test', () => {
             var req = new window.udm_header_lib.BidRequest(bidRequest);
             req.send();
           });
-        },
+        }
       };
-    },
+    }
   };
 
   // The third bid here is an invalid site id and should return a 'no-bid'.
@@ -60,26 +60,26 @@ describe('underdog media adapter test', () => {
           adUnitCode: 'foo',
           sizes: [[728, 90]],
           params: {
-            siteId: '10272',
-          },
+            siteId: '10272'
+          }
         },
         {
           bidder: 'underdogmedia',
           adUnitCode: 'bar',
           sizes: [[300, 250]],
           params: {
-            siteId: '10272',
-          },
+            siteId: '10272'
+          }
         },
         {
           bidder: 'underdogmedia',
           adUnitCode: 'nothing',
           sizes: [[160, 600]],
           params: {
-            siteId: '31337',
-          },
-        },
-      ],
+            siteId: '31337'
+          }
+        }
+      ]
     });
   }
 
@@ -113,11 +113,11 @@ describe('underdog media adapter test', () => {
     it('will add the ad html to the bid object', () => {
       expect(firstBid).to.have.property(
         'ad',
-        'Ad HTML for site ID 10272 size 728x90',
+        'Ad HTML for site ID 10272 size 728x90'
       );
       expect(secondBid).to.have.property(
         'ad',
-        'Ad HTML for site ID 10272 size 300x250',
+        'Ad HTML for site ID 10272 size 300x250'
       );
       expect(thirdBid).to.not.have.property('ad');
     });

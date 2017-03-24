@@ -14,7 +14,7 @@ module.exports = {
               'hb_bidder',
               'hb_adid',
               'hb_pb',
-              'hb_size',
+              'hb_size'
             ];
           } else {
             var pbjsBidderSettings = window.pbjs.bidderSettings;
@@ -30,7 +30,7 @@ module.exports = {
                   if (bs.indexOf(value.key) == -1) {
                     bs.push(value.key);
                   }
-                },
+                }
               );
               pbjsBidderSettingsObject[prop] = bs;
             });
@@ -53,7 +53,7 @@ module.exports = {
             if (utils.isArray(result.value[0])) {
               assert.deepEqual(
                 result.value[0].sort(),
-                result.value[1][key].sort(),
+                result.value[1][key].sort()
               );
             } else {
               if (result.value[0].hasOwnProperty(key)) {
@@ -64,10 +64,10 @@ module.exports = {
               assert.deepEqual(obj1, result.value[1][key].sort());
             }
           });
-        },
+        }
       );
   },
   after: function(browser) {
     browser.end();
-  },
+  }
 };

@@ -2,7 +2,7 @@
 
 window.ExampleAnalyticsGlobalObject = function(hander, type, data) {
   console.log(
-    `call to Example Analytics library: example('${hander}', '${type}', ${JSON.stringify(data)})`,
+    `call to Example Analytics library: example('${hander}', '${type}', ${JSON.stringify(data)})`
   );
 };
 
@@ -14,13 +14,13 @@ window[window.ExampleAnalyticsGlobalObject] = function() {};
 var utils = {
   errorless: function(fn) {
     return fn;
-  },
+  }
 };
 
 var events = {
   init: function() {
     return arguments;
-  },
+  }
 };
 
 var pbjsHandlers = {
@@ -29,7 +29,7 @@ var pbjsHandlers = {
   onBidTimeout: args => console.log('pbjsHandlers bidTimeout args:', args),
   onBidRequested: args => console.log('pbjsHandlers bidRequested args:', args),
   onBidResponse: args => console.log('pbjsHandlers bidResponse args:', args),
-  onBidWon: args => console.log('pbjsHandlers bidWon args:', args),
+  onBidWon: args => console.log('pbjsHandlers bidWon args:', args)
 };
 
 // init

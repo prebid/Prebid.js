@@ -18,8 +18,8 @@ describe('triplelift adapter', () => {
         placementCode: 'foo',
         sizes: [[728, 90]],
         params: {
-          inventoryCode: 'codeA',
-        },
+          inventoryCode: 'codeA'
+        }
       },
       {
         bidId: 'bidId2',
@@ -28,10 +28,10 @@ describe('triplelift adapter', () => {
         sizes: [[300, 600]],
         params: {
           inventoryCode: 'codeB',
-          floor: 1,
-        },
-      },
-    ],
+          floor: 1
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -106,7 +106,7 @@ describe('triplelift adapter', () => {
         cpm: 0.20,
         height: 90,
         iurl: '',
-        width: 728,
+        width: 728
       };
 
       let bidderReponse2 = {
@@ -116,7 +116,7 @@ describe('triplelift adapter', () => {
         height: 600,
         iurl: '',
         width: 300,
-        deal_id: 'dealA',
+        deal_id: 'dealA'
       };
 
       pbjs.TLCB(bidderReponse1);

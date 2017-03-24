@@ -29,7 +29,7 @@ module.exports = new function() {
       for (var i = 0; i < assertions.length; i++) {
         if (assertions[i].stackTrace) {
           assertions[i].stackTrace = stackTraceFilter(
-            assertions[i].stackTrace.split('\n'),
+            assertions[i].stackTrace.split('\n')
           );
         }
       }
@@ -53,7 +53,7 @@ module.exports = new function() {
     var rendered = ejs.render(data, {
       module: module,
       moduleName: moduleName,
-      systemerr: globalResults.errmessages.join('\n'),
+      systemerr: globalResults.errmessages.join('\n')
     });
 
     if (pathParts.length) {
@@ -63,7 +63,7 @@ module.exports = new function() {
 
     var filename = path.join(
       output_folder,
-      opts.filename_prefix + moduleName + '.xml',
+      opts.filename_prefix + moduleName + '.xml'
     );
     fs.writeFile(filename, rendered, function(err) {
       callback(err);
@@ -81,7 +81,7 @@ module.exports = new function() {
         list.push(line);
         return list;
       },
-      [],
+      []
     );
 
     return stack.join('\n');

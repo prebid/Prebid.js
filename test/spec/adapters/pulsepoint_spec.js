@@ -13,8 +13,8 @@ describe('PulsePoint Adapter Tests', () => {
     /* Mocked PulsePoint library */
     window.pp = {
       requestActions: {
-        BID: 0,
-      },
+        BID: 0
+      }
     };
     /* Ad object*/
     window.pp.Ad = function(config) {
@@ -45,8 +45,8 @@ describe('PulsePoint Adapter Tests', () => {
             ct: 't10000',
             cf: '300x250',
             param1: 'value1',
-            param2: 2,
-          },
+            param2: 2
+          }
         },
         {
           placementCode: '/DfpAccount2/slot2',
@@ -55,10 +55,10 @@ describe('PulsePoint Adapter Tests', () => {
           params: {
             cp: 'p20000',
             ct: 't20000',
-            cf: '728x90',
-          },
-        },
-      ],
+            cf: '728x90'
+          }
+        }
+      ]
     };
   });
 
@@ -97,7 +97,7 @@ describe('PulsePoint Adapter Tests', () => {
   it('Verify bid', () => {
     responses['t10000'] = {
       html: 'This is an Ad',
-      bidCpm: 1.25,
+      bidCpm: 1.25
     };
     pulsepointAdapter.callBids(slotConfigs);
     let placement = bidManager.addBidResponse.firstCall.args[0];
@@ -128,7 +128,7 @@ describe('PulsePoint Adapter Tests', () => {
     let libraryLoadCall = adLoader.loadScript.firstCall.args[0];
     let callback = adLoader.loadScript.firstCall.args[1];
     expect(libraryLoadCall).to.equal(
-      'http://tag-st.contextweb.com/getjs.static.js',
+      'http://tag-st.contextweb.com/getjs.static.js'
     );
     expect(callback).to.be.a('function');
   });

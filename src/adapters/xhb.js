@@ -14,15 +14,15 @@ const XhbAdapter = function XhbAdapter() {
         key: 'hb_xhb_deal',
         val: function(bidResponse) {
           return bidResponse.dealId;
-        },
+        }
       },
       {
         key: 'hb_xhb_adid',
         val: function(bidResponse) {
           return bidResponse.adId;
-        },
-      },
-    ],
+        }
+      }
+    ]
   };
   bidmanager.registerDefaultBidderSetting('xhb', _defaultBidderSettings);
 
@@ -39,7 +39,7 @@ const XhbAdapter = function XhbAdapter() {
     jptCall = utils.tryAppendQueryString(
       jptCall,
       'callback',
-      '$$PREBID_GLOBAL$$.handleXhbCB',
+      '$$PREBID_GLOBAL$$.handleXhbCB'
     );
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -67,7 +67,7 @@ const XhbAdapter = function XhbAdapter() {
         ) {
           sizeQueryString = sizeQueryString.slice(
             0,
-            sizeQueryString.length - 1,
+            sizeQueryString.length - 1
           );
         }
       }
@@ -170,7 +170,7 @@ const XhbAdapter = function XhbAdapter() {
   // Export the callBids function, so that prebid.js can execute
   // this function when the page asks to send out bid requests.
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

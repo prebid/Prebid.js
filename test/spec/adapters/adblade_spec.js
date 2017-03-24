@@ -18,10 +18,10 @@ describe('adblade adapter', () => {
         placementCode: 'foo',
         sizes: [[728, 90]],
         params: {
-          partnerId: 1,
-        },
-      },
-    ],
+          partnerId: 1
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -52,10 +52,10 @@ describe('adblade adapter', () => {
           placementCode: 'foo',
           sizes: [[728, 90], [300, 250]],
           params: {
-            partnerId: 1,
-          },
-        },
-      ],
+            partnerId: 1
+          }
+        }
+      ]
     };
 
     it('array of arrays', () => {
@@ -63,13 +63,13 @@ describe('adblade adapter', () => {
       sinon.assert.calledTwice(adLoader.loadScript);
 
       expect(adLoader.loadScript.firstCall.args[0]).to.include(
-        '%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C',
+        '%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C'
       ); // banner:{w:728, h:90}
       expect(adLoader.loadScript.firstCall.args[0]).to.include('adblade.com');
       expect(adLoader.loadScript.firstCall.args[0]).to.include('prebidjs');
 
       expect(adLoader.loadScript.secondCall.args[0]).to.include(
-        '%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C',
+        '%22banner%22%3A%7B%22w%22%3A300%2C%22h%22%3A250%7D%2C'
       ); // banner:{w:300, h:250}
       expect(adLoader.loadScript.secondCall.args[0]).to.include('adblade.com');
       expect(adLoader.loadScript.secondCall.args[0]).to.include('prebidjs');
@@ -81,7 +81,7 @@ describe('adblade adapter', () => {
       sinon.assert.calledOnce(adLoader.loadScript);
 
       expect(adLoader.loadScript.firstCall.args[0]).to.include(
-        '%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C',
+        '%22banner%22%3A%7B%22w%22%3A728%2C%22h%22%3A90%7D%2C'
       ); // banner:{w:728, h:90}
       expect(adLoader.loadScript.firstCall.args[0]).to.include('adblade.com');
       expect(adLoader.loadScript.firstCall.args[0]).to.include('prebidjs');
@@ -134,11 +134,11 @@ describe('adblade adapter', () => {
                 id: '1',
                 adm: '<div></div>',
                 impid: 'bidId1',
-                cid: '99',
-              },
-            ],
-          },
-        ],
+                cid: '99'
+              }
+            ]
+          }
+        ]
       };
       pbjs.adbladeResponse(bidderReponse);
 

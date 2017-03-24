@@ -24,8 +24,8 @@ describe('the rubicon adapter', () => {
       size_id: 201,
       aeParams: {
         'p_aso.video.ext.skip': '1',
-        'p_aso.video.ext.skipdelay': '15',
-      },
+        'p_aso.video.ext.skipdelay': '15'
+      }
     };
   }
 
@@ -47,17 +47,17 @@ describe('the rubicon adapter', () => {
             keywords: ['a', 'b', 'c'],
             inventory: {
               rating: '5-star',
-              prodtype: 'tech',
+              prodtype: 'tech'
             },
             visitor: {
               ucat: 'new',
-              lastsearch: 'iphone',
+              lastsearch: 'iphone'
             },
             position: 'atf',
-            referrer: 'localhost',
-          },
-        },
-      ],
+            referrer: 'localhost'
+          }
+        }
+      ]
     };
 
     bidderRequest = {
@@ -75,25 +75,25 @@ describe('the rubicon adapter', () => {
             keywords: ['a', 'b', 'c'],
             inventory: {
               rating: '5-star',
-              prodtype: 'tech',
+              prodtype: 'tech'
             },
             visitor: {
               ucat: 'new',
-              lastsearch: 'iphone',
+              lastsearch: 'iphone'
             },
             position: 'atf',
-            referrer: 'localhost',
+            referrer: 'localhost'
           },
           placementCode: '/19968336/header-bid-tag-0',
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
-          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-        },
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a'
+        }
       ],
       start: 1472239426002,
       auctionStart: 1472239426000,
-      timeout: 5000,
+      timeout: 5000
     };
   });
 
@@ -108,7 +108,7 @@ describe('the rubicon adapter', () => {
       sandbox.stub(rubiconAdapter, 'callBids');
 
       adapterManager.callBids({
-        adUnits: [clone(adUnit)],
+        adUnits: [clone(adUnit)]
       });
 
       let bidderRequest = rubiconAdapter.callBids.getCall(0).args[0];
@@ -155,7 +155,7 @@ describe('the rubicon adapter', () => {
         [300, 250],
         [640, 480],
         [1, 1],
-        [336, 280],
+        [336, 280]
       ]);
 
       expect(ordering).to.deep.equal([15, 16, 43, 65]);
@@ -166,7 +166,7 @@ describe('the rubicon adapter', () => {
         [320, 50],
         [640, 480],
         [336, 280],
-        [200, 600],
+        [200, 600]
       ]);
 
       expect(ordering).to.deep.equal([16, 43, 65, 126]);
@@ -179,7 +179,7 @@ describe('the rubicon adapter', () => {
         [640, 480],
         [300, 250],
         [336, 280],
-        [200, 600],
+        [200, 600]
       ]);
       expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
 
@@ -190,7 +190,7 @@ describe('the rubicon adapter', () => {
         [640, 480],
         [336, 280],
         [200, 600],
-        [728, 90],
+        [728, 90]
       ]);
       expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
 
@@ -201,7 +201,7 @@ describe('the rubicon adapter', () => {
         [640, 480],
         [336, 280],
         [200, 600],
-        [728, 90],
+        [728, 90]
       ]);
       expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
     });
@@ -239,7 +239,7 @@ describe('the rubicon adapter', () => {
           query = parseQuery(query);
 
           expect(path).to.equal(
-            '//fastlane.rubiconproject.com/a/api/fastlane.json',
+            '//fastlane.rubiconproject.com/a/api/fastlane.json'
           );
 
           let expectedQuery = {
@@ -258,7 +258,7 @@ describe('the rubicon adapter', () => {
             'tg_v.lastsearch': 'iphone',
             'tg_i.rating': '5-star',
             'tg_i.prodtype': 'tech',
-            rf: 'localhost',
+            rf: 'localhost'
           };
 
           // test that all values above are both present and correct
@@ -339,7 +339,7 @@ describe('the rubicon adapter', () => {
           let post = JSON.parse(request.requestBody);
 
           expect(url).to.equal(
-            '//optimized-by-adv.rubiconproject.com/v1/auction/video',
+            '//optimized-by-adv.rubiconproject.com/v1/auction/video'
           );
 
           expect(post).to.have.property('page_url').that.is.a('string');
@@ -445,9 +445,9 @@ describe('the rubicon adapter', () => {
                   targeting: [
                     {
                       key: 'rpfl_14062',
-                      values: ['15_tier_all_test'],
-                    },
-                  ],
+                      values: ['15_tier_all_test']
+                    }
+                  ]
                 },
                 {
                   status: 'ok',
@@ -464,12 +464,12 @@ describe('the rubicon adapter', () => {
                   targeting: [
                     {
                       key: 'rpfl_14062',
-                      values: ['15_tier_all_test'],
-                    },
-                  ],
-                },
-              ],
-            }),
+                      values: ['15_tier_all_test']
+                    }
+                  ]
+                }
+              ]
+            })
           );
 
           rubiconAdapter.callBids(bidderRequest);
@@ -489,7 +489,7 @@ describe('the rubicon adapter', () => {
             .contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(
-              `<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`,
+              `<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`
             );
 
           expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
@@ -501,7 +501,7 @@ describe('the rubicon adapter', () => {
             .contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(
-              `<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`,
+              `<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`
             );
         });
 
@@ -520,10 +520,10 @@ describe('the rubicon adapter', () => {
                 {
                   status: 'ok',
                   cpm: 0,
-                  size_id: 15,
-                },
-              ],
-            }),
+                  size_id: 15
+                }
+              ]
+            })
           );
 
           rubiconAdapter.callBids(bidderRequest);
@@ -546,8 +546,8 @@ describe('the rubicon adapter', () => {
               alt_size_ids: [43],
               tracking: '',
               inventory: {},
-              ads: [],
-            }),
+              ads: []
+            })
           );
 
           rubiconAdapter.callBids(bidderRequest);
@@ -572,10 +572,10 @@ describe('the rubicon adapter', () => {
               inventory: {},
               ads: [
                 {
-                  status: 'not_ok',
-                },
-              ],
-            }),
+                  status: 'not_ok'
+                }
+              ]
+            })
           );
 
           rubiconAdapter.callBids(bidderRequest);
@@ -614,10 +614,10 @@ describe('the rubicon adapter', () => {
                 {
                   status: 'ok',
                   cpm: 0.8,
-                  size_id: 15,
-                },
-              ],
-            }),
+                  size_id: 15
+                }
+              ]
+            })
           );
 
           addBidResponseAction = function() {
@@ -651,7 +651,7 @@ describe('the rubicon adapter', () => {
                     tier: 'tier0200',
                     targeting: {
                       rpfl_8000: '201_tier0200',
-                      rpfl_elemid: '/19968336/header-bid-tag-0',
+                      rpfl_elemid: '/19968336/header-bid-tag-0'
                     },
                     impression_id: 'a40fe16e-d08d-46a9-869d-2e1573599e0c',
                     site_id: 88888,
@@ -660,12 +660,12 @@ describe('the rubicon adapter', () => {
                     creative_depot_url: 'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
                     ad_id: 999999,
                     size_id: 201,
-                    advertiser: 12345,
-                  },
-                ],
+                    advertiser: 12345
+                  }
+                ]
               },
-              account_id: 7780,
-            }),
+              account_id: 7780
+            })
           );
 
           rubiconAdapter.callBids(bidderRequest);
@@ -682,13 +682,13 @@ describe('the rubicon adapter', () => {
           expect(bids[0].creative_id).to.equal(999999);
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].descriptionUrl).to.equal(
-            'a40fe16e-d08d-46a9-869d-2e1573599e0c',
+            'a40fe16e-d08d-46a9-869d-2e1573599e0c'
           );
           expect(bids[0].vastUrl).to.equal(
-            'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
+            'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal(
-            'a40fe16e-d08d-46a9-869d-2e1573599e0c',
+            'a40fe16e-d08d-46a9-869d-2e1573599e0c'
           );
         });
       });

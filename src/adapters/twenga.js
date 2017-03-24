@@ -25,13 +25,13 @@ TwengaAdapter = function TwengaAdapter() {
     bidUrl = utils.tryAppendQueryString(
       bidUrl,
       'callback',
-      '$$PREBID_GLOBAL$$.handleTwCB',
+      '$$PREBID_GLOBAL$$.handleTwCB'
     );
     bidUrl = utils.tryAppendQueryString(bidUrl, 'callback_uid', callbackId);
     bidUrl = utils.tryAppendQueryString(
       bidUrl,
       'referrer',
-      utils.getTopWindowUrl(),
+      utils.getTopWindowUrl()
     );
     if (bid.params) {
       for (var key in bid.params) {
@@ -138,7 +138,7 @@ TwengaAdapter = function TwengaAdapter() {
         //no response data
         // @if NODE_ENV='debug'
         utils.logMessage(
-          'No prebid response from Twenga for placement code ' + placementCode,
+          'No prebid response from Twenga for placement code ' + placementCode
         );
 
         // @endif
@@ -160,7 +160,7 @@ TwengaAdapter = function TwengaAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     createNew: TwengaAdapter.createNew,
-    buildBidCall: buildBidCall,
+    buildBidCall: buildBidCall
   };
 };
 

@@ -79,10 +79,10 @@ var NginAdAdapter = function NginAdAdapter() {
         id: bid.bidId,
         banner: {
           w: whArr[0],
-          h: whArr[1],
+          h: whArr[1]
         },
         tagid: tagId,
-        bidfloor: bidFloor,
+        bidfloor: bidFloor
       };
 
       nginadImps.push(imp);
@@ -97,8 +97,8 @@ var NginAdAdapter = function NginAdAdapter() {
       imp: nginadImps,
       site: {
         domain: domain,
-        page: page,
-      },
+        page: page
+      }
     };
 
     var scriptUrl = window.location.protocol +
@@ -191,7 +191,7 @@ var NginAdAdapter = function NginAdAdapter() {
   }; // nginadResponse
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

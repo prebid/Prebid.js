@@ -20,13 +20,13 @@ describe('Utils', function() {
     it('should replace all given tokens in a String', function() {
       var tokensToReplace = {
         foo: 'bar',
-        zap: 'quux',
+        zap: 'quux'
       };
 
       var output = utils.replaceTokenInString(
         'hello %FOO%, I am %ZAP%',
         tokensToReplace,
-        '%',
+        '%'
       );
       assert.equal(output, 'hello bar, I am quux');
     });
@@ -42,7 +42,7 @@ describe('Utils', function() {
     it('should return value of the key in input object', function() {
       var obj = {
         a: 'valueA',
-        b: 'valueB',
+        b: 'valueB'
       };
       var output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
@@ -51,7 +51,7 @@ describe('Utils', function() {
     it('should return empty string, if the key is not existsed in the object', function() {
       var obj = {
         a: 'valueA',
-        b: 'valueB',
+        b: 'valueB'
       };
       var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
@@ -84,7 +84,7 @@ describe('Utils', function() {
     it('should append query string to existing using the input obj', function() {
       var obj = {
         a: '1',
-        b: '2',
+        b: '2'
       };
 
       var output = utils.parseQueryStringParameters(obj);
@@ -108,7 +108,7 @@ describe('Utils', function() {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(
-        obj[Object.keys(obj)[0]],
+        obj[Object.keys(obj)[0]]
       );
       var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       assert.equal(output, expected);
@@ -125,17 +125,17 @@ describe('Utils', function() {
     it('should merge two input object', function() {
       var target = {
         a: '1',
-        b: '2',
+        b: '2'
       };
 
       var source = {
-        c: '3',
+        c: '3'
       };
 
       var expectedResult = {
         a: '1',
         b: '2',
-        c: '3',
+        c: '3'
       };
 
       var output = Object.assign(target, source);
@@ -145,7 +145,7 @@ describe('Utils', function() {
     it('should merge two input object even though target object is empty', function() {
       var target = {};
       var source = {
-        c: '3',
+        c: '3'
       };
 
       var output = Object.assign(target, source);
@@ -155,7 +155,7 @@ describe('Utils', function() {
     it('just return target object, if the source object is empty', function() {
       var target = {
         a: '1',
-        b: '2',
+        b: '2'
       };
       var source = {};
 
@@ -496,11 +496,11 @@ describe('Utils', function() {
     it('should pick the existing highest cpm', function() {
       var previous = {
         cpm: 2,
-        timeToRespond: 100,
+        timeToRespond: 100
       };
       var current = {
         cpm: 1,
-        timeToRespond: 100,
+        timeToRespond: 100
       };
       assert.equal(utils.getHighestCpm(previous, current), previous);
     });
@@ -508,11 +508,11 @@ describe('Utils', function() {
     it('should pick the new highest cpm', function() {
       var previous = {
         cpm: 1,
-        timeToRespond: 100,
+        timeToRespond: 100
       };
       var current = {
         cpm: 2,
-        timeToRespond: 100,
+        timeToRespond: 100
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
     });
@@ -520,11 +520,11 @@ describe('Utils', function() {
     it('should pick the fastest cpm in case of tie', function() {
       var previous = {
         cpm: 1,
-        timeToRespond: 100,
+        timeToRespond: 100
       };
       var current = {
         cpm: 1,
-        timeToRespond: 50,
+        timeToRespond: 50
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
     });

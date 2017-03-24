@@ -1,7 +1,7 @@
 export function parseQS(query) {
   return !query ? {} : query.replace(/^\?/, '').split('&').reduce((
         acc,
-        criteria,
+        criteria
       ) => {
         let [k, v] = criteria.split('=');
         if (/\[\]$/.test(k)) {
@@ -21,7 +21,7 @@ export function formatQS(query) {
       k =>
         Array.isArray(query[k])
           ? query[k].map(v => `${k}[]=${v}`).join('&')
-          : `${k}=${query[k]}`,
+          : `${k}=${query[k]}`
     )
     .join('&');
 }
@@ -36,7 +36,7 @@ export function parse(url) {
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host,
+    host: parsed.host
   };
 }
 

@@ -28,9 +28,9 @@ describe('wideorbit adapter tests', function() {
             bidder: 'wideorbit',
             params: {
               pbId: 1,
-              pId: 101,
+              pId: 101
             },
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidder: 'wideorbit',
@@ -40,11 +40,11 @@ describe('wideorbit adapter tests', function() {
               page: 'Page 1',
               width: 100,
               height: 200,
-              subPublisher: 'Sub Publisher 1',
+              subPublisher: 'Sub Publisher 1'
             },
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -61,9 +61,9 @@ describe('wideorbit adapter tests', function() {
             params: {
               PBiD: 1,
               PID: 101,
-              ReferRer: 'http://www.foo.com?param1=param1&param2=param2',
+              ReferRer: 'http://www.foo.com?param1=param1&param2=param2'
             },
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidder: 'wideorbit',
@@ -73,11 +73,11 @@ describe('wideorbit adapter tests', function() {
               Page: 'Page 1',
               widTH: 100,
               HEIGHT: 200,
-              SUBPublisher: 'Sub Publisher 1',
+              SUBPublisher: 'Sub Publisher 1'
             },
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -176,9 +176,9 @@ describe('wideorbit adapter tests', function() {
                 width: 100,
                 height: 200,
                 subPublisher: 'Sub Publisher 1',
-                atf: true,
+                atf: true
               },
-              placementCode: 'div-gpt-ad-12345-1',
+              placementCode: 'div-gpt-ad-12345-1'
             },
             {
               bidder: 'wideorbit',
@@ -189,11 +189,11 @@ describe('wideorbit adapter tests', function() {
                 width: 200,
                 height: 300,
                 rank: 123,
-                ecpm: 1.8,
+                ecpm: 1.8
               },
-              placementCode: 'div-gpt-ad-12345-2',
-            },
-          ],
+              placementCode: 'div-gpt-ad-12345-2'
+            }
+          ]
         };
 
         adapter().callBids(params);
@@ -307,20 +307,20 @@ describe('wideorbit adapter tests', function() {
                 pbId: 1,
                 pId: 101,
                 atf: true,
-                ecpm: 0.8,
+                ecpm: 0.8
               },
-              placementCode: 'div-gpt-ad-12345-1',
+              placementCode: 'div-gpt-ad-12345-1'
             },
             {
               bidder: 'wideorbit',
               params: {
                 pbId: 1,
                 pId: 102,
-                rank: 123,
+                rank: 123
               },
-              placementCode: 'div-gpt-ad-12345-2',
-            },
-          ],
+              placementCode: 'div-gpt-ad-12345-2'
+            }
+          ]
         };
 
         adapter().callBids(params);
@@ -415,7 +415,7 @@ describe('wideorbit adapter tests', function() {
         Width: 50,
         Height: 100,
         Source: '<div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
-        TrackingCodes: ['https://www.admeta.com/1.gif'],
+        TrackingCodes: ['https://www.admeta.com/1.gif']
       },
       {
         ExtPlacementId: 'div-gpt-ad-12345-2',
@@ -426,8 +426,8 @@ describe('wideorbit adapter tests', function() {
         Source: '<div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
         TrackingCodes: [
           'http://www.admeta.com/2a.gif',
-          '<img src="http://www.admeta.com/2b.gif"></img>',
-        ],
+          '<img src="http://www.admeta.com/2b.gif"></img>'
+        ]
       },
       {
         ExtPlacementId: 'div-gpt-ad-12345-3',
@@ -436,13 +436,13 @@ describe('wideorbit adapter tests', function() {
         Width: 150,
         Height: 250,
         Source: '<div data-id="div-gpt-ad-12345-3">The AD 3 itself...</div>',
-        TrackingCodes: ['http://www.admeta.com/3.gif'],
-      },
+        TrackingCodes: ['http://www.admeta.com/3.gif']
+      }
     ];
 
     it('callback function should exist', function() {
       expect($$PREBID_GLOBAL$$.handleWideOrbitCallback).to.exist.and.to.be.a(
-        'function',
+        'function'
       );
     });
 
@@ -456,9 +456,9 @@ describe('wideorbit adapter tests', function() {
             bidder: 'wideorbit',
             params: {
               pbId: 1,
-              pId: 101,
+              pId: 101
             },
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidder: 'wideorbit',
@@ -468,29 +468,29 @@ describe('wideorbit adapter tests', function() {
               page: 'Page 1',
               width: 100,
               height: 200,
-              subPublisher: 'Sub Publisher 1',
+              subPublisher: 'Sub Publisher 1'
             },
-            placementCode: 'div-gpt-ad-12345-2',
+            placementCode: 'div-gpt-ad-12345-2'
           },
           {
             bidder: 'wideorbit',
             params: {
               pbId: 1,
-              pId: 102,
+              pId: 102
             },
-            placementCode: 'div-gpt-ad-12345-3',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-3'
+          }
+        ]
       };
 
       var response = {
         UserMatchings: [
           {
             Type: 'redirect',
-            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif',
-          },
+            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
+          }
         ],
-        Placements: placements,
+        Placements: placements
       };
 
       adapter().callBids(params);
@@ -506,7 +506,7 @@ describe('wideorbit adapter tests', function() {
       expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
       expect(bidObject1.cpm).to.equal(1.3);
       expect(bidObject1.ad).to.equal(
-        '<img src="https://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
+        '<img src="https://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>'
       );
       expect(bidObject1.width).to.equal(50);
       expect(bidObject1.height).to.equal(100);
@@ -516,7 +516,7 @@ describe('wideorbit adapter tests', function() {
       expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
       expect(bidObject2.cpm).to.equal(1.50);
       expect(bidObject2.ad).to.equal(
-        '<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
+        '<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>'
       );
       expect(bidObject2.width).to.equal(100);
       expect(bidObject2.height).to.equal(200);
@@ -530,17 +530,17 @@ describe('wideorbit adapter tests', function() {
       sinon.assert.calledWith(
         stubAddBidResponse,
         bidPlacementCode1,
-        bidObject1,
+        bidObject1
       );
       sinon.assert.calledWith(
         stubAddBidResponse,
         bidPlacementCode2,
-        bidObject2,
+        bidObject2
       );
       sinon.assert.calledWith(
         stubAddBidResponse,
         bidPlacementCode3,
-        bidObject3,
+        bidObject3
       );
 
       sinon.assert.calledThrice(stubAddBidResponse);
@@ -555,10 +555,10 @@ describe('wideorbit adapter tests', function() {
         UserMatchings: [
           {
             Type: 'redirect',
-            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif',
-          },
+            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
+          }
         ],
-        Placements: placements,
+        Placements: placements
       };
 
       $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
@@ -578,10 +578,10 @@ describe('wideorbit adapter tests', function() {
         UserMatchings: [
           {
             Type: 'iframe',
-            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.ashx',
-          },
+            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.ashx'
+          }
         ],
-        Placements: placements,
+        Placements: placements
       };
 
       $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
@@ -601,10 +601,10 @@ describe('wideorbit adapter tests', function() {
         UserMatchings: [
           {
             Type: 'js',
-            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js',
-          },
+            Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+          }
         ],
-        Placements: placements,
+        Placements: placements
       };
 
       $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);

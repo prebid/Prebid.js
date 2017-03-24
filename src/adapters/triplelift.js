@@ -36,7 +36,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     tlCall = utils.tryAppendQueryString(
       tlCall,
       'callback',
-      '$$PREBID_GLOBAL$$.TLCB',
+      '$$PREBID_GLOBAL$$.TLCB'
     );
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
@@ -102,7 +102,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
       if (bidObj) {
         utils.logMessage(
           'JSONP callback function called for inventory code: ' +
-            bidObj.params.inventoryCode,
+            bidObj.params.inventoryCode
         );
       }
       // @endif
@@ -123,7 +123,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         if (bidObj) {
           utils.logMessage(
             'No prebid response from TripleLift for inventory code: ' +
-              bidObj.params.inventoryCode,
+              bidObj.params.inventoryCode
           );
         }
         // @endif
@@ -140,7 +140,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 module.exports = TripleLiftAdapter;

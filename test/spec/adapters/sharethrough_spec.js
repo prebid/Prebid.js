@@ -16,8 +16,8 @@ describe('sharethrough adapter', () => {
         sizes: [[600, 300]],
         placementCode: 'foo',
         params: {
-          pkey: 'aaaa1111',
-        },
+          pkey: 'aaaa1111'
+        }
       },
       {
         bidder: 'sharethrough',
@@ -25,10 +25,10 @@ describe('sharethrough adapter', () => {
         sizes: [[700, 400]],
         placementCode: 'bar',
         params: {
-          pkey: 'bbbb2222',
-        },
-      },
-    ],
+          pkey: 'bbbb2222'
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -62,11 +62,11 @@ describe('sharethrough adapter', () => {
 
       expect(firstBidUrl).to.contain(
         adapter.str.STR_BTLR_HOST +
-          '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&',
+          '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&'
       );
       expect(secondBidUrl).to.contain(
         adapter.str.STR_BTLR_HOST +
-          '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&',
+          '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&'
       );
     });
   });
@@ -97,10 +97,10 @@ describe('sharethrough adapter', () => {
           {
             cpm: 12.34,
             auctionWinId: 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-            version: 1,
-          },
+            version: 1
+          }
         ],
-        stxUserId: '',
+        stxUserId: ''
       };
 
       let bidderReponse2 = {
@@ -110,10 +110,10 @@ describe('sharethrough adapter', () => {
           {
             cpm: 12.35,
             auctionWinId: 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
-            version: 1,
-          },
+            version: 1
+          }
         ],
-        stxUserId: '',
+        stxUserId: ''
       };
 
       pbjs.strcallback(JSON.stringify(bidderReponse1));

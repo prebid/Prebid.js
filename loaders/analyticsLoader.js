@@ -15,7 +15,7 @@ var options = {
       .map(file => file.replace(/\.[^/.]+$/, ''));
 
     let adapters = analyticsAdapters.map(
-      adapter => adapter.length ? adapter : Object.keys(adapter)[0],
+      adapter => adapter.length ? adapter : Object.keys(adapter)[0]
     );
 
     let inserts = adapters.filter(adapter => {
@@ -23,7 +23,7 @@ var options = {
         return adapter;
       } else {
         console.log(
-          `Prebid Warning: no adapter found for ${adapter}, continuing.`,
+          `Prebid Warning: no adapter found for ${adapter}, continuing.`
         );
       }
     });
@@ -41,7 +41,7 @@ var options = {
         exports.registerAnalyticsAdapter({ adapter: ${adapter}, code: '${adapter}' });\n`;
       })
       .join('');
-  },
+  }
 };
 
 module.exports = blockLoader(options);

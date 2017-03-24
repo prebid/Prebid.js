@@ -20,7 +20,7 @@ var YieldbotAdapter = function YieldbotAdapter() {
     BID_STATUS: {
       PENDING: 0,
       AVAILABLE: 1,
-      EMPTY: 2,
+      EMPTY: 2
     },
     definedSlots: [],
     pageLevelOption: false,
@@ -139,10 +139,10 @@ var YieldbotAdapter = function YieldbotAdapter() {
 
         bidmanager.addBidResponse(placementCode, bid);
       });
-    },
+    }
   };
   return {
-    callBids: ybotlib.callBids,
+    callBids: ybotlib.callBids
   };
 };
 

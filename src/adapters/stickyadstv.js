@@ -48,7 +48,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
           }
         });
       },
-      true,
+      true
     );
   }
 
@@ -71,18 +71,18 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
           var price = extractPrice(bidRequest.vast);
 
           callback(
-            formatBidObject(bidRequest, true, price, adHtml, size[0], size[1]),
+            formatBidObject(bidRequest, true, price, adHtml, size[0], size[1])
           );
         },
-        bid,
+        bid
       ),
       onError: bind(
         function() {
           var bidRequest = this;
           callback(formatBidObject(bidRequest, false));
         },
-        bid,
-      ),
+        bid
+      )
     };
 
     var config = {
@@ -90,7 +90,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       playerSize: size[0] + 'x' + size[1],
       vastUrlParams: bid.params.vastUrlParams,
       componentId: 'prebid-sticky' +
-        (bid.params.format ? '-' + bid.params.format : ''),
+        (bid.params.format ? '-' + bid.params.format : '')
     };
 
     if (bid.params.format === 'screen-roll') {
@@ -235,7 +235,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
     if (!priceData) {
       console.warn(
-        "StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact.",
+        "StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact."
       );
     }
 
@@ -300,7 +300,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     formatAdHTML: formatAdHTML,
     getBiggerSize: getBiggerSize,
     getBid: getBid,
-    getTopMostWindow: getTopMostWindow,
+    getTopMostWindow: getTopMostWindow
   };
 };
 

@@ -45,9 +45,9 @@ function sendAdToCreative(adObject, remoteDomain, source) {
         adUrl,
         adId,
         width,
-        height,
+        height
       }),
-      remoteDomain,
+      remoteDomain
     );
   }
 }
@@ -62,7 +62,7 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
           return slot.getAdUnitPath() === adUnitCode ||
             slot.getSlotElementId() === adUnitCode;
         })
-        .getSlotElementId(),
+        .getSlotElementId()
     )
     .querySelector('iframe');
 

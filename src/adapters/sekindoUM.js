@@ -55,7 +55,7 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     } else {
       if (bidObj) {
         utils.logMessage(
-          'No prebid response for placement ' + bidObj.placementCode,
+          'No prebid response for placement ' + bidObj.placementCode
         );
       } else {
         utils.logMessage('sekindoUM callback general error');
@@ -79,13 +79,13 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     scriptSrc = utils.tryAppendQueryString(
       scriptSrc,
       'hbobj',
-      '$$PREBID_GLOBAL$$',
+      '$$PREBID_GLOBAL$$'
     );
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
     scriptSrc = utils.tryAppendQueryString(
       scriptSrc,
       'hbto',
-      $$PREBID_GLOBAL$$.bidderTimeout,
+      $$PREBID_GLOBAL$$.bidderTimeout
     );
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
@@ -93,7 +93,7 @@ sekindoUMAdapter = function sekindoUMAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

@@ -16,10 +16,10 @@ describe('Publisher API _ Alias Bidder', function() {
         {
           bidder: 'appnexus',
           params: {
-            placementId: '5215561',
-          },
-        },
-      ],
+            placementId: '5215561'
+          }
+        }
+      ]
     };
 
     $$PREBID_GLOBAL$$.addAdUnits(adUnit);

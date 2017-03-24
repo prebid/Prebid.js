@@ -4,65 +4,65 @@ const _lgPriceConfig = {
     {
       min: 0,
       max: 5,
-      increment: 0.5,
-    },
-  ],
+      increment: 0.5
+    }
+  ]
 };
 const _mgPriceConfig = {
   buckets: [
     {
       min: 0,
       max: 20,
-      increment: 0.1,
-    },
-  ],
+      increment: 0.1
+    }
+  ]
 };
 const _hgPriceConfig = {
   buckets: [
     {
       min: 0,
       max: 20,
-      increment: 0.01,
-    },
-  ],
+      increment: 0.01
+    }
+  ]
 };
 const _densePriceConfig = {
   buckets: [
     {
       min: 0,
       max: 3,
-      increment: 0.01,
+      increment: 0.01
     },
     {
       min: 3,
       max: 8,
-      increment: 0.05,
+      increment: 0.05
     },
     {
       min: 8,
       max: 20,
-      increment: 0.5,
-    },
-  ],
+      increment: 0.5
+    }
+  ]
 };
 const _autoPriceConfig = {
   buckets: [
     {
       min: 0,
       max: 5,
-      increment: 0.05,
+      increment: 0.05
     },
     {
       min: 5,
       max: 10,
-      increment: 0.1,
+      increment: 0.1
     },
     {
       min: 10,
       max: 20,
-      increment: 0.5,
-    },
-  ],
+      increment: 0.5
+    }
+  ]
 };
 
 function getPriceBucketString(cpm, customConfig) {
@@ -78,7 +78,7 @@ function getPriceBucketString(cpm, customConfig) {
     high: cpmFloat === '' ? '' : getCpmStringValue(cpm, _hgPriceConfig),
     auto: cpmFloat === '' ? '' : getCpmStringValue(cpm, _autoPriceConfig),
     dense: cpmFloat === '' ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom: cpmFloat === '' ? '' : getCpmStringValue(cpm, customConfig),
+    custom: cpmFloat === '' ? '' : getCpmStringValue(cpm, customConfig)
   };
 }
 
@@ -95,8 +95,8 @@ function getCpmStringValue(cpm, config) {
       return curr;
     },
     {
-      max: 0,
-    },
+      max: 0
+    }
   );
   let bucket = config.buckets.find(bucket => {
     if (cpm > cap.max) {

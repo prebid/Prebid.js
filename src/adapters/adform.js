@@ -6,7 +6,7 @@ var STATUSCODES = require('../constants.json').STATUS;
 
 function AdformAdapter() {
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 
   function _callBids(params) {
@@ -18,7 +18,7 @@ function AdformAdapter() {
       ['adxDomain', 'adx.adform.net'],
       ['url', null],
       ['tid', null],
-      ['callback', '$$PREBID_GLOBAL$$.' + callbackName],
+      ['callback', '$$PREBID_GLOBAL$$.' + callbackName]
     ];
 
     for ((i = 0), (l = bids.length); i < l; i++) {

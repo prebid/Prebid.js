@@ -22,8 +22,8 @@ describe('PulsePoint Lite Adapter Tests', () => {
           params: {
             cp: 'p10000',
             ct: 't10000',
-            cf: '300x250',
-          },
+            cf: '300x250'
+          }
         },
         {
           placementCode: '/DfpAccount2/slot2',
@@ -32,10 +32,10 @@ describe('PulsePoint Lite Adapter Tests', () => {
           params: {
             cp: 'p20000',
             ct: 't20000',
-            cf: '728x90',
-          },
-        },
-      ],
+            cf: '728x90'
+          }
+        }
+      ]
     };
   });
 
@@ -68,8 +68,8 @@ describe('PulsePoint Lite Adapter Tests', () => {
     ajaxStub.firstCall.args[1](
       JSON.stringify({
         html: 'This is an Ad',
-        bidCpm: 1.25,
-      }),
+        bidCpm: 1.25
+      })
     );
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];

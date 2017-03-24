@@ -119,7 +119,7 @@ module.exports = function() {
       referrer: document.referrer,
       tz: new Date().getTimezoneOffset(),
       buster: new Date().getTime(),
-      secure: isSecure(),
+      secure: isSecure()
     };
 
     if (!inIframe() || isAmp()) {
@@ -215,14 +215,14 @@ module.exports = function() {
               bidId: bid.bidId,
               sizes: bid.sizes.map(function(size) {
                 return { width: size[0], height: size[1] };
-              }),
+              })
             };
           }),
-          version: 1,
+          version: 1
         };
 
         adloader.loadScript(buildMantisUrl('/website/prebid', url));
-      },
+      }
     };
   };
 

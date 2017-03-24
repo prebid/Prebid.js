@@ -7,7 +7,7 @@ describe('helpers.url', () => {
 
     beforeEach(() => {
       parsed = parse(
-        'http://example.com:3000/pathname/?search=test&foo=bar#hash',
+        'http://example.com:3000/pathname/?search=test&foo=bar#hash'
       );
     });
 
@@ -31,7 +31,7 @@ describe('helpers.url', () => {
       expect(parsed).to.have.property('search');
       expect(parsed.search).to.eql({
         foo: 'bar',
-        search: 'test',
+        search: 'test'
       });
     });
 
@@ -53,16 +53,16 @@ describe('helpers.url', () => {
           port: 3000,
           pathname: '/pathname/',
           search: { foo: 'bar', search: 'test' },
-          hash: 'hash',
-        }),
+          hash: 'hash'
+        })
       ).to.equal('http://example.com:3000/pathname/?foo=bar&search=test#hash');
     });
 
     it('will use defaults for missing properties', () => {
       expect(
         format({
-          hostname: 'example.com',
-        }),
+          hostname: 'example.com'
+        })
       ).to.equal('http://example.com');
     });
   });

@@ -31,7 +31,7 @@ var Slot = function Slot({ code, divId }) {
 
     clearTargeting: function clearTargeting() {
       return window.googletag.pubads().getSlots();
-    },
+    }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
   return slot;
@@ -54,7 +54,7 @@ window.googletag = {
 
       setSlots: function(slots) {
         self._slots = slots;
-      },
+      }
     };
-  },
+  }
 };

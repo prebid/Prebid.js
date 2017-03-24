@@ -28,7 +28,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       'atf',
       'pId',
       'pbId',
-      'referrer',
+      'referrer'
     ],
       prop;
 
@@ -69,7 +69,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       ['o', pos],
       ['gid', encodeURIComponent(params.tagId)],
       ['rpos', params.atf ? 1001 : 0],
-      ['ecpm', params.ecpm || ''],
+      ['ecpm', params.ecpm || '']
     ]);
   }
 
@@ -81,7 +81,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     return _setParams(pageRepeatParamId, [
       ['o', pos],
       ['pId', params.pId],
-      ['rank', _getRankParam(params.rank, pos)],
+      ['rank', _getRankParam(params.rank, pos)]
     ]);
   }
 
@@ -96,9 +96,9 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
         'subp',
         params.subPublisher
           ? encodeURIComponent(decodeURIComponent(params.subPublisher))
-          : '',
+          : ''
       ],
-      ['rank', _getRankParam(params.rank, pos)],
+      ['rank', _getRankParam(params.rank, pos)]
     ]);
   }
 
@@ -106,14 +106,14 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     publisherId,
     placementCount,
     placementsComponent,
-    referrer,
+    referrer
   ) {
     return _setParams(base + pageImpression, [
       ['pbId', publisherId],
       ['pc', placementCount],
       ['cts', new Date().getTime()],
       ['cb', Math.floor(Math.random() * 100000000)],
-      ['referrer', encodeURIComponent(referrer || '')],
+      ['referrer', encodeURIComponent(referrer || '')]
     ]) + placementsComponent;
   }
 
@@ -233,7 +233,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

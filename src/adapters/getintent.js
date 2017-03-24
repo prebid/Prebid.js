@@ -17,7 +17,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
         function() {
           bid(params);
         },
-        true,
+        true
       );
     } else {
       bid(params);
@@ -42,7 +42,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
         known: bidRequest.params.known || 1,
         is_video: bidRequest.mediaType === 'video',
         video: bidRequest.params.video || {},
-        size: bidRequest.sizes[0].join('x'),
+        size: bidRequest.sizes[0].join('x')
       };
       addOptional(bidRequest.params, request, ['cur', 'floor']);
       (function(r, br) {
@@ -72,7 +72,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

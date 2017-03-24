@@ -10,7 +10,7 @@ const AolAdapter = function AolAdapter() {
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
     eu: 'adserver-eu.adtech.advertising.com',
-    as: 'adserver-as.adtech.advertising.com',
+    as: 'adserver-as.adtech.advertising.com'
   };
 
   function template(strings, ...keys) {
@@ -56,7 +56,7 @@ const AolAdapter = function AolAdapter() {
       bidfloor: typeof params.bidFloor !== 'undefined'
         ? `;bidfloor=${params.bidFloor.toString()}`
         : '',
-      misc: new Date().getTime(), // cache busting
+      misc: new Date().getTime() // cache busting
     });
   }
 
@@ -130,7 +130,7 @@ const AolAdapter = function AolAdapter() {
           ) {
             utils.logWarn(
               'bidCpmAdjustment is active for the AOL adapter. ' +
-                'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.',
+                'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
             );
           }
           showCpmAdjustmentWarning = false; // warning is shown at most once
@@ -152,13 +152,13 @@ const AolAdapter = function AolAdapter() {
           _addBidResponse(bid, response);
         },
         null,
-        { withCredentials: true },
+        { withCredentials: true }
       );
     });
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

@@ -8,11 +8,11 @@ var HeaderTagRequest = '/cygnus';
 var SlotThreshold = 20;
 var ADAPTER_CODE = 'indexExchange';
 var DefaultValue = {
-  dealID: 'IXDeal',
+  dealID: 'IXDeal'
 };
 window.pbjs = window.pbjs || {};
 var ResponseStatus = {
-  noBid: 'Bid returned empty or error response',
+  noBid: 'Bid returned empty or error response'
 };
 
 describe('indexExchange adapter - Response', function() {
@@ -41,14 +41,14 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON);
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -65,14 +65,14 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
       var pair = prebidResponsePair.matched[i];
       assert.equal(
         pair.prebid.length,
         1,
-        'Only one bid is ferched into prebid',
+        'Only one bid is ferched into prebid'
       );
       assert.equal(
         pair.prebid[0].siteID,
@@ -80,7 +80,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -88,7 +88,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -96,7 +96,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -104,7 +104,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -112,7 +112,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -120,45 +120,45 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
   it('test_prebid_indexAdapter_response_1_2: pass on bid for single slot with single size -> bid fetched into prebid', function() {
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix, 'slot1', [
-        IndexUtils.supportedSizes[0],
-      ]),
+        IndexUtils.supportedSizes[0]
+      ])
     ];
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
       requestJSON,
       undefined,
       undefined,
-      [[true]],
+      [[true]]
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -175,23 +175,23 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     assert.equal(
       prebidResponsePair.matched.length,
       0,
-      'No bids are added to prebid',
+      'No bids are added to prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       1,
-      'no Adapter response for prebid is from AS bid',
+      'no Adapter response for prebid is from AS bid'
     );
   });
 
@@ -200,7 +200,7 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON);
@@ -209,7 +209,7 @@ describe('indexExchange adapter - Response', function() {
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
       asResponse,
-      [[1000, 3000, 2000]],
+      [[1000, 3000, 2000]]
     );
 
     var adapterResponse = {};
@@ -226,7 +226,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -240,7 +240,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' siteID is set to ' +
-            pair.expected[j].siteID,
+            pair.expected[j].siteID
         );
         assert.equal(
           pair.prebid[j].bidderCode,
@@ -248,7 +248,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' bidderCode is set to ' +
-            pair.expected[j].bidderCode,
+            pair.expected[j].bidderCode
         );
         assert.equal(
           pair.prebid[j].width,
@@ -256,7 +256,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' width is set to ' +
-            pair.expected[j].width,
+            pair.expected[j].width
         );
         assert.equal(
           pair.prebid[j].height,
@@ -264,7 +264,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' height is set to ' +
-            pair.expected[j].height,
+            pair.expected[j].height
         );
         assert.equal(
           pair.prebid[j].ad,
@@ -272,7 +272,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' ad is set to ' +
-            pair.expected[j].ad,
+            pair.expected[j].ad
         );
         assert.equal(
           pair.prebid[j].cpm,
@@ -280,7 +280,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' cpm is set to ' +
-            pair.expected[j].cpm,
+            pair.expected[j].cpm
         );
       }
     }
@@ -288,12 +288,12 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -301,13 +301,13 @@ describe('indexExchange adapter - Response', function() {
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix, 'slot1', [
         IndexUtils.supportedSizes[0],
-        IndexUtils.supportedSizes[1],
-      ]),
+        IndexUtils.supportedSizes[1]
+      ])
     ];
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     // pass on bid on second size
@@ -316,13 +316,13 @@ describe('indexExchange adapter - Response', function() {
       requestJSON,
       undefined,
       undefined,
-      [[false, true]],
+      [[false, true]]
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -339,13 +339,13 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     assert.equal(
       prebidResponsePair.matched.length,
       1,
-      'one slot is added to prebid',
+      'one slot is added to prebid'
     );
     var pair = prebidResponsePair.matched[0];
     assert.equal(
@@ -354,7 +354,7 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' siteID is set to ' +
-        pair.expected[0].siteID,
+        pair.expected[0].siteID
     );
     assert.equal(
       pair.prebid[0].bidderCode,
@@ -362,7 +362,7 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' bidderCode is set to ' +
-        pair.expected[0].bidderCode,
+        pair.expected[0].bidderCode
     );
     assert.equal(
       pair.prebid[0].width,
@@ -370,7 +370,7 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' width is set to ' +
-        pair.expected[0].width,
+        pair.expected[0].width
     );
     assert.equal(
       pair.prebid[0].height,
@@ -378,7 +378,7 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' height is set to ' +
-        pair.expected[0].height,
+        pair.expected[0].height
     );
     assert.equal(
       pair.prebid[0].ad,
@@ -386,7 +386,7 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' ad is set to ' +
-        pair.expected[0].ad,
+        pair.expected[0].ad
     );
     assert.equal(
       pair.prebid[0].cpm,
@@ -394,18 +394,18 @@ describe('indexExchange adapter - Response', function() {
       'adapter response for ' +
         pair.placementCode +
         ' cpm is set to ' +
-        pair.expected[0].cpm,
+        pair.expected[0].cpm
     );
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -413,13 +413,13 @@ describe('indexExchange adapter - Response', function() {
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix, 'slot1', [
         IndexUtils.supportedSizes[0],
-        IndexUtils.supportedSizes[1],
-      ]),
+        IndexUtils.supportedSizes[1]
+      ])
     ];
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     // pass on bid on all bids
@@ -428,13 +428,13 @@ describe('indexExchange adapter - Response', function() {
       requestJSON,
       undefined,
       undefined,
-      [[true, true]],
+      [[true, true]]
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -451,23 +451,23 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     assert.equal(
       prebidResponsePair.matched.length,
       0,
-      'no bids fetched into prebid',
+      'no bids fetched into prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid[0][0].statusMessage,
       ResponseStatus.noBid,
-      'Bid response status is set to ' + ResponseStatus.noBid,
+      'Bid response status is set to ' + ResponseStatus.noBid
     );
   });
 
@@ -476,7 +476,7 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON);
@@ -485,7 +485,7 @@ describe('indexExchange adapter - Response', function() {
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
       asResponse,
-      [[1000, 3000, 2000]],
+      [[1000, 3000, 2000]]
     );
 
     var adapterResponse = {};
@@ -502,7 +502,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -515,7 +515,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -523,7 +523,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -531,7 +531,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -539,7 +539,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -547,7 +547,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -555,19 +555,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -576,26 +576,26 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     var passOnBid = [
       [false], // bids back on first slot
-      [true], // pass on bid on second slot
+      [true] // pass on bid on second slot
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
       requestJSON,
       undefined,
       undefined,
-      passOnBid,
+      passOnBid
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
       asResponse,
-      [[1000, 3000, 2000]],
+      [[1000, 3000, 2000]]
     );
 
     var adapterResponse = {};
@@ -612,13 +612,13 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     assert.equal(
       prebidResponsePair.matched.length,
       1,
-      '1 bid from ad server is fetched into prebid',
+      '1 bid from ad server is fetched into prebid'
     );
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
       var pair = prebidResponsePair.matched[i];
@@ -630,7 +630,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -638,7 +638,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -646,7 +646,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -654,7 +654,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -662,7 +662,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -670,19 +670,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       1,
-      'One slot passed on bid from Ad Server',
+      'One slot passed on bid from Ad Server'
     );
   });
 
@@ -691,26 +691,26 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
 
     var passOnBid = [
       [true], // pass on bid on the first slot
-      [true], // pass on bid on the second slot
+      [true] // pass on bid on the second slot
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
       requestJSON,
       undefined,
       undefined,
-      passOnBid,
+      passOnBid
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
       asResponse,
-      [[1000, 3000, 2000]],
+      [[1000, 3000, 2000]]
     );
 
     var adapterResponse = {};
@@ -727,24 +727,24 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     assert.equal(
       prebidResponsePair.matched.length,
       0,
-      'no bids from ad server is fetched into prebid',
+      'no bids from ad server is fetched into prebid'
     );
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       2,
-      'two slots passed on bid from Ad Server',
+      'two slots passed on bid from Ad Server'
     );
   });
 
@@ -753,14 +753,14 @@ describe('indexExchange adapter - Response', function() {
 
     var refreshSetup = [
       { price: 1000, request: 'request-1' },
-      { price: 1000, request: 'request-2' },
+      { price: 1000, request: 'request-2' }
     ];
     for (var i = 0; i < refreshSetup.length; i++) {
       var requestParams = refreshSetup[i];
 
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
 
       // first ix call
@@ -768,12 +768,12 @@ describe('indexExchange adapter - Response', function() {
         configuredBids,
         requestJSON,
         [[requestParams.price]],
-        requestParams.request,
+        requestParams.request
       );
       cygnus_index_parse_res(asResponse);
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
         configuredBids,
-        asResponse,
+        asResponse
       );
 
       var adapterResponse = {};
@@ -790,7 +790,7 @@ describe('indexExchange adapter - Response', function() {
 
       var prebidResponsePair = IndexUtils.matchOnPlacementCode(
         expectedAdapterResponse,
-        adapterResponse,
+        adapterResponse
       );
 
       for (var j = 0; j < prebidResponsePair.matched.length; j++) {
@@ -804,7 +804,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' siteID is set to ' +
-              pair.expected[k].siteID,
+              pair.expected[k].siteID
           );
           assert.equal(
             pair.prebid[k].bidderCode,
@@ -812,7 +812,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' bidderCode is set to ' +
-              pair.expected[k].bidderCode,
+              pair.expected[k].bidderCode
           );
           assert.equal(
             pair.prebid[k].width,
@@ -820,7 +820,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' width is set to ' +
-              pair.expected[k].width,
+              pair.expected[k].width
           );
           assert.equal(
             pair.prebid[k].height,
@@ -828,7 +828,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' height is set to ' +
-              pair.expected[k].height,
+              pair.expected[k].height
           );
           assert.equal(
             pair.prebid[k].ad,
@@ -836,7 +836,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' ad is set to ' +
-              pair.expected[k].ad,
+              pair.expected[k].ad
           );
           assert.equal(
             pair.prebid[k].cpm,
@@ -844,7 +844,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' cpm is set to ' +
-              pair.expected[k].cpm,
+              pair.expected[k].cpm
           );
         }
       }
@@ -852,12 +852,12 @@ describe('indexExchange adapter - Response', function() {
       assert.equal(
         prebidResponsePair.unmatched.expected.length,
         0,
-        'All AS bid response translated to Adapter response for prebid',
+        'All AS bid response translated to Adapter response for prebid'
       );
       assert.equal(
         prebidResponsePair.unmatched.prebid.length,
         0,
-        'All Adapter response for prebid is from AS bid',
+        'All Adapter response for prebid is from AS bid'
       );
 
       bidManager.addBidResponse.reset();
@@ -870,14 +870,14 @@ describe('indexExchange adapter - Response', function() {
 
     var refreshSetup = [
       { price: 8000, request: 'request-1' },
-      { price: 1000, request: 'request-2' },
+      { price: 1000, request: 'request-2' }
     ];
     for (var i = 0; i < refreshSetup.length; i++) {
       var requestParams = refreshSetup[i];
 
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
 
       // first ix call
@@ -885,13 +885,13 @@ describe('indexExchange adapter - Response', function() {
         configuredBids,
         requestJSON,
         [[requestParams.price]],
-        requestParams.request,
+        requestParams.request
       );
       cygnus_index_parse_res(asResponse);
 
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
         configuredBids,
-        asResponse,
+        asResponse
       );
 
       var adapterResponse = {};
@@ -908,7 +908,7 @@ describe('indexExchange adapter - Response', function() {
 
       var prebidResponsePair = IndexUtils.matchOnPlacementCode(
         expectedAdapterResponse,
-        adapterResponse,
+        adapterResponse
       );
 
       for (var j = 0; j < prebidResponsePair.matched.length; j++) {
@@ -922,7 +922,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' siteID is set to ' +
-              pair.expected[k].siteID,
+              pair.expected[k].siteID
           );
           assert.equal(
             pair.prebid[k].bidderCode,
@@ -930,7 +930,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' bidderCode is set to ' +
-              pair.expected[k].bidderCode,
+              pair.expected[k].bidderCode
           );
           assert.equal(
             pair.prebid[k].width,
@@ -938,7 +938,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' width is set to ' +
-              pair.expected[k].width,
+              pair.expected[k].width
           );
           assert.equal(
             pair.prebid[k].height,
@@ -946,7 +946,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' height is set to ' +
-              pair.expected[k].height,
+              pair.expected[k].height
           );
           assert.equal(
             pair.prebid[k].ad,
@@ -954,7 +954,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' ad is set to ' +
-              pair.expected[k].ad,
+              pair.expected[k].ad
           );
           assert.equal(
             pair.prebid[k].cpm,
@@ -962,7 +962,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' cpm is set to ' +
-              pair.expected[k].cpm,
+              pair.expected[k].cpm
           );
         }
       }
@@ -970,12 +970,12 @@ describe('indexExchange adapter - Response', function() {
       assert.equal(
         prebidResponsePair.unmatched.expected.length,
         0,
-        'All AS bid response translated to Adapter response for prebid',
+        'All AS bid response translated to Adapter response for prebid'
       );
       assert.equal(
         prebidResponsePair.unmatched.prebid.length,
         0,
-        'All Adapter response for prebid is from AS bid',
+        'All Adapter response for prebid is from AS bid'
       );
       bidManager.addBidResponse.reset();
       adapterResponse = {}; // initialize adapterReaponse for refresh test
@@ -987,14 +987,14 @@ describe('indexExchange adapter - Response', function() {
 
     var refreshSetup = [
       { price: 1000, request: 'request-1' },
-      { price: 8000, request: 'request-2' },
+      { price: 8000, request: 'request-2' }
     ];
     for (var i = 0; i < refreshSetup.length; i++) {
       var requestParams = refreshSetup[i];
 
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
 
       // first ix call
@@ -1002,13 +1002,13 @@ describe('indexExchange adapter - Response', function() {
         configuredBids,
         requestJSON,
         [[requestParams.price]],
-        requestParams.request,
+        requestParams.request
       );
       cygnus_index_parse_res(asResponse);
 
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
         configuredBids,
-        asResponse,
+        asResponse
       );
 
       var adapterResponse = {};
@@ -1025,7 +1025,7 @@ describe('indexExchange adapter - Response', function() {
 
       var prebidResponsePair = IndexUtils.matchOnPlacementCode(
         expectedAdapterResponse,
-        adapterResponse,
+        adapterResponse
       );
 
       for (var j = 0; j < prebidResponsePair.matched.length; j++) {
@@ -1039,7 +1039,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' siteID is set to ' +
-              pair.expected[k].siteID,
+              pair.expected[k].siteID
           );
           assert.equal(
             pair.prebid[k].bidderCode,
@@ -1047,7 +1047,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' bidderCode is set to ' +
-              pair.expected[k].bidderCode,
+              pair.expected[k].bidderCode
           );
           assert.equal(
             pair.prebid[k].width,
@@ -1055,7 +1055,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' width is set to ' +
-              pair.expected[k].width,
+              pair.expected[k].width
           );
           assert.equal(
             pair.prebid[k].height,
@@ -1063,7 +1063,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' height is set to ' +
-              pair.expected[k].height,
+              pair.expected[k].height
           );
           assert.equal(
             pair.prebid[k].ad,
@@ -1071,7 +1071,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' ad is set to ' +
-              pair.expected[k].ad,
+              pair.expected[k].ad
           );
           assert.equal(
             pair.prebid[k].cpm,
@@ -1079,7 +1079,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' cpm is set to ' +
-              pair.expected[k].cpm,
+              pair.expected[k].cpm
           );
         }
       }
@@ -1087,12 +1087,12 @@ describe('indexExchange adapter - Response', function() {
       assert.equal(
         prebidResponsePair.unmatched.expected.length,
         0,
-        'All AS bid response translated to Adapter response for prebid',
+        'All AS bid response translated to Adapter response for prebid'
       );
       assert.equal(
         prebidResponsePair.unmatched.prebid.length,
         0,
-        'All Adapter response for prebid is from AS bid',
+        'All Adapter response for prebid is from AS bid'
       );
       bidManager.addBidResponse.reset();
       adapterResponse = {}; // initialize adapterReaponse for refresh test
@@ -1104,14 +1104,14 @@ describe('indexExchange adapter - Response', function() {
 
     var refreshSetup = [
       { price: 1000, request: 'request-1', passOnBid: false },
-      { price: 1000, request: 'request-2', passOnBid: true },
+      { price: 1000, request: 'request-2', passOnBid: true }
     ];
     for (var i = 0; i < refreshSetup.length; i++) {
       var requestParams = refreshSetup[i];
 
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
 
       // first ix call
@@ -1120,12 +1120,12 @@ describe('indexExchange adapter - Response', function() {
         requestJSON,
         [[requestParams.price]],
         requestParams.request,
-        [[requestParams.passOnBid]],
+        [[requestParams.passOnBid]]
       );
       cygnus_index_parse_res(asResponse);
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
         configuredBids,
-        asResponse,
+        asResponse
       );
 
       var adapterResponse = {};
@@ -1142,7 +1142,7 @@ describe('indexExchange adapter - Response', function() {
 
       var prebidResponsePair = IndexUtils.matchOnPlacementCode(
         expectedAdapterResponse,
-        adapterResponse,
+        adapterResponse
       );
 
       for (var j = 0; j < prebidResponsePair.matched.length; j++) {
@@ -1156,7 +1156,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' siteID is set to ' +
-              pair.expected[k].siteID,
+              pair.expected[k].siteID
           );
           assert.equal(
             pair.prebid[k].bidderCode,
@@ -1164,7 +1164,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' bidderCode is set to ' +
-              pair.expected[k].bidderCode,
+              pair.expected[k].bidderCode
           );
           assert.equal(
             pair.prebid[k].width,
@@ -1172,7 +1172,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' width is set to ' +
-              pair.expected[k].width,
+              pair.expected[k].width
           );
           assert.equal(
             pair.prebid[k].height,
@@ -1180,7 +1180,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' height is set to ' +
-              pair.expected[k].height,
+              pair.expected[k].height
           );
           assert.equal(
             pair.prebid[k].ad,
@@ -1188,7 +1188,7 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' ad is set to ' +
-              pair.expected[k].ad,
+              pair.expected[k].ad
           );
           assert.equal(
             pair.prebid[k].cpm,
@@ -1196,26 +1196,26 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' cpm is set to ' +
-              pair.expected[k].cpm,
+              pair.expected[k].cpm
           );
         }
       }
       assert.equal(
         prebidResponsePair.unmatched.expected.length,
         0,
-        'All AS bid response translated to Adapter response for prebid',
+        'All AS bid response translated to Adapter response for prebid'
       );
       if (requestParams.passOnBid) {
         assert.equal(
           prebidResponsePair.unmatched.prebid.length,
           1,
-          '1 Adapter response is missing',
+          '1 Adapter response is missing'
         );
       } else {
         assert.equal(
           prebidResponsePair.unmatched.prebid.length,
           0,
-          'All Adapter response for prebid is from AS bid',
+          'All Adapter response for prebid is from AS bid'
         );
       }
 
@@ -1229,8 +1229,8 @@ describe('indexExchange adapter - Response', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.unsupportedSizes[0]],
-      ),
+        [IndexUtils.unsupportedSizes[0]]
+      )
     ];
 
     var refreshSetup = [{ request: 'request-1' }, { request: 'request-2' }];
@@ -1240,7 +1240,7 @@ describe('indexExchange adapter - Response', function() {
       adapter.callBids({ bids: configuredBids });
       assert.isUndefined(
         adLoader.loadScript.firstCall.args[0],
-        'no ad server request for ' + requestParams.request,
+        'no ad server request for ' + requestParams.request
       );
     }
   });
@@ -1250,12 +1250,12 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: 'ixDeal' } }, // first slot first size
-      ],
+        { ext: { dealid: 'ixDeal' } } // first slot first size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1263,13 +1263,13 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
 
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1286,7 +1286,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
       var pair = prebidResponsePair.matched[i];
@@ -1297,7 +1297,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[i].siteID,
+          pair.expected[i].siteID
       );
       assert.equal(
         pair.prebid[i].bidderCode,
@@ -1305,7 +1305,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[i].bidderCode,
+          pair.expected[i].bidderCode
       );
       assert.equal(
         pair.prebid[i].width,
@@ -1313,7 +1313,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[i].width,
+          pair.expected[i].width
       );
       assert.equal(
         pair.prebid[i].height,
@@ -1321,7 +1321,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[i].height,
+          pair.expected[i].height
       );
       assert.equal(
         pair.prebid[i].ad,
@@ -1329,7 +1329,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[i].ad,
+          pair.expected[i].ad
       );
       assert.equal(
         pair.prebid[i].cpm,
@@ -1337,7 +1337,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[i].cpm,
+          pair.expected[i].cpm
       );
       assert.equal(
         pair.prebid[i].dealId,
@@ -1345,19 +1345,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' deaiid is set to ' +
-          pair.expected[i].dealId,
+          pair.expected[i].dealId
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1366,12 +1366,12 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: '239' } }, // first slot first size
-      ],
+        { ext: { dealid: '239' } } // first slot first size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1379,12 +1379,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1401,7 +1401,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -1413,7 +1413,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[i].siteID,
+          pair.expected[i].siteID
       );
       assert.equal(
         pair.prebid[i].bidderCode,
@@ -1421,7 +1421,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[i].bidderCode,
+          pair.expected[i].bidderCode
       );
       assert.equal(
         pair.prebid[i].width,
@@ -1429,7 +1429,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[i].width,
+          pair.expected[i].width
       );
       assert.equal(
         pair.prebid[i].height,
@@ -1437,7 +1437,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[i].height,
+          pair.expected[i].height
       );
       assert.equal(
         pair.prebid[i].ad,
@@ -1445,7 +1445,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[i].ad,
+          pair.expected[i].ad
       );
       assert.equal(
         pair.prebid[i].cpm,
@@ -1453,7 +1453,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[i].cpm,
+          pair.expected[i].cpm
       );
       assert.equal(
         pair.prebid[i].dealId,
@@ -1461,19 +1461,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' deaiid is set to ' +
-          pair.expected[i].dealId,
+          pair.expected[i].dealId
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1482,12 +1482,12 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: '1234Deal' } }, // first slot first size
-      ],
+        { ext: { dealid: '1234Deal' } } // first slot first size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1495,12 +1495,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1517,7 +1517,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -1529,7 +1529,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[i].siteID,
+          pair.expected[i].siteID
       );
       assert.equal(
         pair.prebid[i].bidderCode,
@@ -1537,7 +1537,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[i].bidderCode,
+          pair.expected[i].bidderCode
       );
       assert.equal(
         pair.prebid[i].width,
@@ -1545,7 +1545,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[i].width,
+          pair.expected[i].width
       );
       assert.equal(
         pair.prebid[i].height,
@@ -1553,7 +1553,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[i].height,
+          pair.expected[i].height
       );
       assert.equal(
         pair.prebid[i].ad,
@@ -1561,7 +1561,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[i].ad,
+          pair.expected[i].ad
       );
       assert.equal(
         pair.prebid[i].cpm,
@@ -1569,7 +1569,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[i].cpm,
+          pair.expected[i].cpm
       );
       assert.equal(
         pair.prebid[i].dealId,
@@ -1577,19 +1577,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' deaiid is set to ' +
-          pair.expected[i].dealId,
+          pair.expected[i].dealId
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1598,12 +1598,12 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: 'deal1234' } }, // first slot first size
-      ],
+        { ext: { dealid: 'deal1234' } } // first slot first size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1611,12 +1611,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     ); // Alpha numeric starting with non-numeric
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1633,7 +1633,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -1645,7 +1645,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[i].siteID,
+          pair.expected[i].siteID
       );
       assert.equal(
         pair.prebid[i].bidderCode,
@@ -1653,7 +1653,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[i].bidderCode,
+          pair.expected[i].bidderCode
       );
       assert.equal(
         pair.prebid[i].width,
@@ -1661,7 +1661,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[i].width,
+          pair.expected[i].width
       );
       assert.equal(
         pair.prebid[i].height,
@@ -1669,7 +1669,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[i].height,
+          pair.expected[i].height
       );
       assert.equal(
         pair.prebid[i].ad,
@@ -1677,7 +1677,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[i].ad,
+          pair.expected[i].ad
       );
       assert.equal(
         pair.prebid[i].cpm,
@@ -1685,7 +1685,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[i].cpm,
+          pair.expected[i].cpm
       );
       assert.equal(
         pair.prebid[i].dealId,
@@ -1693,19 +1693,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' deaiid is set to ' +
-          pair.expected[i].dealId,
+          pair.expected[i].dealId
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1715,17 +1715,17 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
         {
-          ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' },
+          ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' }
         }, // first slot first size
         {
-          ext: { deal: 'deal2', dealid: 'ixDealID2', dealname: 'deal name 2' },
-        }, // first slot second size
-      ],
+          ext: { deal: 'deal2', dealid: 'ixDealID2', dealname: 'deal name 2' }
+        } // first slot second size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1733,12 +1733,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1755,7 +1755,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
       var pair = prebidResponsePair.matched[i];
@@ -1767,7 +1767,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' siteID is set to ' +
-            pair.expected[i].siteID,
+            pair.expected[i].siteID
         );
         assert.equal(
           pair.prebid[j].bidderCode,
@@ -1775,7 +1775,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' bidderCode is set to ' +
-            pair.expected[i].bidderCode,
+            pair.expected[i].bidderCode
         );
         assert.equal(
           pair.prebid[j].width,
@@ -1783,7 +1783,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' width is set to ' +
-            pair.expected[i].width,
+            pair.expected[i].width
         );
         assert.equal(
           pair.prebid[j].height,
@@ -1791,7 +1791,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' height is set to ' +
-            pair.expected[i].height,
+            pair.expected[i].height
         );
         assert.equal(
           pair.prebid[j].ad,
@@ -1799,7 +1799,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' ad is set to ' +
-            pair.expected[i].ad,
+            pair.expected[i].ad
         );
         assert.equal(
           pair.prebid[j].cpm,
@@ -1807,7 +1807,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' cpm is set to ' +
-            pair.expected[i].cpm,
+            pair.expected[i].cpm
         );
         assert.equal(
           pair.prebid[j].dealId,
@@ -1815,19 +1815,19 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' deaiid is set to ' +
-            pair.expected[i].dealId,
+            pair.expected[i].dealId
         );
       }
     }
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1837,15 +1837,15 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
         {
-          ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' },
-        }, // first slot first size
+          ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' }
+        } // first slot first size
         // No deal on first slot second size
-      ],
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1853,12 +1853,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -1875,7 +1875,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -1888,7 +1888,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' siteID is set to ' +
-            pair.expected[i].siteID,
+            pair.expected[i].siteID
         );
         assert.equal(
           pair.prebid[j].bidderCode,
@@ -1896,7 +1896,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' bidderCode is set to ' +
-            pair.expected[i].bidderCode,
+            pair.expected[i].bidderCode
         );
         assert.equal(
           pair.prebid[j].width,
@@ -1904,7 +1904,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' width is set to ' +
-            pair.expected[i].width,
+            pair.expected[i].width
         );
         assert.equal(
           pair.prebid[j].height,
@@ -1912,7 +1912,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' height is set to ' +
-            pair.expected[i].height,
+            pair.expected[i].height
         );
         assert.equal(
           pair.prebid[j].ad,
@@ -1920,7 +1920,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' ad is set to ' +
-            pair.expected[i].ad,
+            pair.expected[i].ad
         );
         assert.equal(
           pair.prebid[j].cpm,
@@ -1928,7 +1928,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' cpm is set to ' +
-            pair.expected[i].cpm,
+            pair.expected[i].cpm
         );
         if (i === 0) {
           assert.equal(
@@ -1937,12 +1937,12 @@ describe('indexExchange adapter - Response', function() {
             'adapter response for ' +
               pair.placementCode +
               ' deaiid is set to ' +
-              pair.expected[i].dealId,
+              pair.expected[i].dealId
           );
         } else {
           assert.isUndefined(
             pair.prebid[j].dealId,
-            'adapter response for ' + pair.placementCode + ' deaiid is not set',
+            'adapter response for ' + pair.placementCode + ' deaiid is not set'
           );
         }
       }
@@ -1951,12 +1951,12 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -1966,15 +1966,15 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
         {},
-        {},
+        {}
         // No deal on first slot first size
         // No deal on first slot second size
-      ],
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -1982,13 +1982,13 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
 
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -2005,7 +2005,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -2017,7 +2017,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' siteID is set to ' +
-            pair.expected[i].siteID,
+            pair.expected[i].siteID
         );
         assert.equal(
           pair.prebid[i].bidderCode,
@@ -2025,7 +2025,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' bidderCode is set to ' +
-            pair.expected[i].bidderCode,
+            pair.expected[i].bidderCode
         );
         assert.equal(
           pair.prebid[i].width,
@@ -2033,7 +2033,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' width is set to ' +
-            pair.expected[i].width,
+            pair.expected[i].width
         );
         assert.equal(
           pair.prebid[i].height,
@@ -2041,7 +2041,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' height is set to ' +
-            pair.expected[i].height,
+            pair.expected[i].height
         );
         assert.equal(
           pair.prebid[i].ad,
@@ -2049,7 +2049,7 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' ad is set to ' +
-            pair.expected[i].ad,
+            pair.expected[i].ad
         );
         assert.equal(
           pair.prebid[i].cpm,
@@ -2057,23 +2057,23 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' cpm is set to ' +
-            pair.expected[i].cpm,
+            pair.expected[i].cpm
         );
         assert.isUndefined(
           pair.prebid[i].dealId,
-          'adapter response for ' + pair.placementCode + ' deaiid is not set',
+          'adapter response for ' + pair.placementCode + ' deaiid is not set'
         );
       }
     }
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -2083,15 +2083,15 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: 'ixDeal1' } }, // first slot first size
+        { ext: { dealid: 'ixDeal1' } } // first slot first size
       ],
       [
-        { ext: { dealid: 'ixDeal2' } }, // second slot first size
-      ],
+        { ext: { dealid: 'ixDeal2' } } // second slot first size
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -2099,12 +2099,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -2121,7 +2121,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -2132,7 +2132,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -2140,7 +2140,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -2148,7 +2148,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -2156,7 +2156,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -2164,7 +2164,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -2172,7 +2172,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
       assert.equal(
         pair.prebid[0].dealId,
@@ -2180,19 +2180,19 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' deaiid is set to ' +
-          pair.expected[0].dealId,
+          pair.expected[0].dealId
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -2202,16 +2202,16 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        { ext: { dealid: 'ixDeal1' } }, // first slot first size
+        { ext: { dealid: 'ixDeal1' } } // first slot first size
       ],
       [
-        {},
+        {}
         // no deal on second slot first size
-      ],
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -2219,12 +2219,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -2241,7 +2241,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
     var count = 0;
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -2252,7 +2252,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -2260,7 +2260,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -2268,7 +2268,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -2276,7 +2276,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -2284,7 +2284,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -2292,7 +2292,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
       if (count === 0) {
         // if first slot, check deal parameter
@@ -2302,14 +2302,14 @@ describe('indexExchange adapter - Response', function() {
           'adapter response for ' +
             pair.placementCode +
             ' deaiid is set to ' +
-            pair.expected[0].dealId,
+            pair.expected[0].dealId
         );
       } else {
         assert.isUndefined(
           pair.prebid[0].dealId,
           'adapter response for ' +
             pair.placementCode +
-            ' deaiid is not defined',
+            ' deaiid is not defined'
         );
       }
       count++;
@@ -2318,12 +2318,12 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
@@ -2333,17 +2333,17 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var optionalResponseParam = [
       [
-        {},
+        {}
         // no deal on first slot first size
       ],
       [
-        {},
+        {}
         // no deal on second slot first size
-      ],
+      ]
     ];
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
@@ -2351,12 +2351,12 @@ describe('indexExchange adapter - Response', function() {
       undefined,
       undefined,
       undefined,
-      optionalResponseParam,
+      optionalResponseParam
     );
     cygnus_index_parse_res(asResponse);
     var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(
       configuredBids,
-      asResponse,
+      asResponse
     );
 
     var adapterResponse = {};
@@ -2373,7 +2373,7 @@ describe('indexExchange adapter - Response', function() {
 
     var prebidResponsePair = IndexUtils.matchOnPlacementCode(
       expectedAdapterResponse,
-      adapterResponse,
+      adapterResponse
     );
 
     for (var i = 0; i < prebidResponsePair.matched.length; i++) {
@@ -2384,7 +2384,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' siteID is set to ' +
-          pair.expected[0].siteID,
+          pair.expected[0].siteID
       );
       assert.equal(
         pair.prebid[0].bidderCode,
@@ -2392,7 +2392,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' bidderCode is set to ' +
-          pair.expected[0].bidderCode,
+          pair.expected[0].bidderCode
       );
       assert.equal(
         pair.prebid[0].width,
@@ -2400,7 +2400,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' width is set to ' +
-          pair.expected[0].width,
+          pair.expected[0].width
       );
       assert.equal(
         pair.prebid[0].height,
@@ -2408,7 +2408,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' height is set to ' +
-          pair.expected[0].height,
+          pair.expected[0].height
       );
       assert.equal(
         pair.prebid[0].ad,
@@ -2416,7 +2416,7 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' ad is set to ' +
-          pair.expected[0].ad,
+          pair.expected[0].ad
       );
       assert.equal(
         pair.prebid[0].cpm,
@@ -2424,38 +2424,38 @@ describe('indexExchange adapter - Response', function() {
         'adapter response for ' +
           pair.placementCode +
           ' cpm is set to ' +
-          pair.expected[0].cpm,
+          pair.expected[0].cpm
       );
       assert.isUndefined(
         pair.prebid[0].dealId,
-        'adapter response for ' + pair.placementCode + ' deaiid is not defined',
+        'adapter response for ' + pair.placementCode + ' deaiid is not defined'
       );
     }
 
     assert.equal(
       prebidResponsePair.unmatched.expected.length,
       0,
-      'All AS bid response translated to Adapter response for prebid',
+      'All AS bid response translated to Adapter response for prebid'
     );
     assert.equal(
       prebidResponsePair.unmatched.prebid.length,
       0,
-      'All Adapter response for prebid is from AS bid',
+      'All Adapter response for prebid is from AS bid'
     );
   });
 
   it('test_prebid_indexAdapter_tier: one slot with multiple tier -> all tier bids are fetched into prebid', function() {
     var slotConfig = {
       tier2SiteID: IndexUtils.DefaultSiteID + 1,
-      tier3SiteID: IndexUtils.DefaultSiteID + 2,
+      tier3SiteID: IndexUtils.DefaultSiteID + 2
     };
     var configuredBids = [
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        slotConfig,
-      ),
+        slotConfig
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2463,15 +2463,15 @@ describe('indexExchange adapter - Response', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2481,7 +2481,7 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       sidMatched.matched.length,
       3,
-      'Three slots are configured and sent to AS',
+      'Three slots are configured and sent to AS'
     );
     // check normal site id
     var normalSitePair = sidMatched.matched[0];
@@ -2490,7 +2490,7 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       normalSitePair.sent.ext.sid,
       expectedSlotID,
-      'request ' + normalSitePair.name + ' site ID is set to ' + expectedSlotID,
+      'request ' + normalSitePair.name + ' site ID is set to ' + expectedSlotID
     );
     assert.isString(normalSitePair.sent.ext.sid, 'type of slot ID is string');
 
@@ -2498,7 +2498,7 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       normalSitePair.sent.ext.siteID,
       expectedSiteID,
-      'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID,
+      'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID
     );
     assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -2511,7 +2511,7 @@ describe('indexExchange adapter - Response', function() {
       'request ' +
         tier2SitePair.name +
         ' site ID is set to ' +
-        expectedTierSlotID,
+        expectedTierSlotID
     );
     assert.isString(tier2SitePair.sent.ext.sid, 'type of slot ID is string');
 
@@ -2522,7 +2522,7 @@ describe('indexExchange adapter - Response', function() {
       'request ' +
         normalSitePair.name +
         ' site ID is set to ' +
-        expectedTierSiteID,
+        expectedTierSiteID
     );
     assert.isNumber(tier2SitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -2535,7 +2535,7 @@ describe('indexExchange adapter - Response', function() {
       'request ' +
         tier3SitePair.name +
         ' site ID is set to ' +
-        expectedTierSlotID,
+        expectedTierSlotID
     );
     assert.isString(tier3SitePair.sent.ext.sid, 'type of slot ID is string');
 
@@ -2546,7 +2546,7 @@ describe('indexExchange adapter - Response', function() {
       'request ' +
         normalSitePair.name +
         ' site ID is set to ' +
-        expectedTier3SiteID,
+        expectedTier3SiteID
     );
     assert.isNumber(tier3SitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -2554,12 +2554,12 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
   });
 
@@ -2577,7 +2577,7 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON);
     cygnus_index_parse_res(asResponse);
@@ -2586,7 +2586,7 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       callback_requestID,
       requestJSON.r.id,
-      'callback requestID matches with actual request ID: ' + requestJSON.r.id,
+      'callback requestID matches with actual request ID: ' + requestJSON.r.id
     );
     assert.equal(callback_slots.length, 1, 'callback slots include one slot');
   });
@@ -2605,14 +2605,14 @@ describe('indexExchange adapter - Response', function() {
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
       requestJSON,
       undefined,
       undefined,
-      [[true]],
+      [[true]]
     ); // pass on bid
     cygnus_index_parse_res(asResponse);
 
@@ -2620,11 +2620,11 @@ describe('indexExchange adapter - Response', function() {
     assert.equal(
       callback_requestID,
       requestJSON.r.id,
-      'callback requestID matches with actual request ID: ' + requestJSON.r.id,
+      'callback requestID matches with actual request ID: ' + requestJSON.r.id
     );
     assert.isUndefined(
       callback_slots,
-      'callback slot is undefined because all bids passed on bid',
+      'callback slot is undefined because all bids passed on bid'
     );
   });
 
@@ -2639,27 +2639,27 @@ describe('indexExchange adapter - Response', function() {
         IndexUtils.DefaultPlacementCodePrefix + slotID_1,
         slotID_1,
         [slotSizes_1, slotSizes_2],
-        { slotSize: slotSizes_1 },
+        { slotSize: slotSizes_1 }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + slotID_2,
         slotID_2,
         [slotSizes_1, slotSizes_2],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     var asResponse = IndexUtils.getBidResponse(
       configuredBids,
       requestJSON,
       undefined,
       undefined,
-      [[true]],
+      [[true]]
     ); // pass on bid
     cygnus_index_parse_res(asResponse);
 

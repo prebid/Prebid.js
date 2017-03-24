@@ -12,10 +12,10 @@ describe('Bidfluence Adapter', () => {
         bidder: 'bidfluence',
         params: {
           pubId: '747efe9c-5f8a-4b6e-872b-8e9939816298',
-          adunitId: 'c4bbd807-7d22-485f-80f1-ba008ef1c619',
-        },
-      },
-    ],
+          adunitId: 'c4bbd807-7d22-485f-80f1-ba008ef1c619'
+        }
+      }
+    ]
   };
 
   var RESPONSE = {
@@ -23,7 +23,7 @@ describe('Bidfluence Adapter', () => {
     cpm: 0.9,
     width: 300,
     height: 250,
-    placementCode: 'div-1',
+    placementCode: 'div-1'
   };
 
   var NO_RESPONSE = {
@@ -31,7 +31,7 @@ describe('Bidfluence Adapter', () => {
     cpm: 0,
     width: 300,
     height: 250,
-    placementCode: 'div-1',
+    placementCode: 'div-1'
   };
 
   it('Should exist and be a function', function() {

@@ -89,7 +89,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
       bidObject.bidderCode = bidObj.bidder;
       utils.logMessage(
-        'No prebid response from Admedia for placement code ' + placementCode,
+        'No prebid response from Admedia for placement code ' + placementCode
       );
     }
 
@@ -99,7 +99,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
   // Export the callBids function, so that prebid.js can execute this function
   // when the page asks to send out bid requests.
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

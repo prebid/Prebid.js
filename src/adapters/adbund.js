@@ -8,7 +8,7 @@ var adBundAdapter = function adBundAdapter() {
   var timezone = new Date().getTimezoneOffset();
   var bidAPIs = [
     'http://us-east-engine.adbund.xyz/prebid/ad/get',
-    'http://us-west-engine.adbund.xyz/prebid/ad/get',
+    'http://us-west-engine.adbund.xyz/prebid/ad/get'
   ];
   //Based on the time zone to select the interface to the server
   var bidAPI = bidAPIs[timezone < 0 ? 0 : 1];
@@ -43,7 +43,7 @@ var adBundAdapter = function adBundAdapter() {
     var info = {
       referrer: utils.getTopWindowUrl(),
       domain: utils.getTopWindowLocation().hostname,
-      ua: window.navigator.userAgent,
+      ua: window.navigator.userAgent
     };
     var param = Object.assign({}, bid.params, info);
     param.sizes = JSON.stringify(param.sizes || bid.sizes);
@@ -59,7 +59,7 @@ var adBundAdapter = function adBundAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

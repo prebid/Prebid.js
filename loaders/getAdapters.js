@@ -30,7 +30,7 @@ module.exports = function getAdapters() {
   } catch (e) {
     console.log(
       `Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
-        'using default adapters.json',
+        'using default adapters.json'
     );
     return load(defaultAdapters);
   }

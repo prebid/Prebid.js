@@ -5,7 +5,7 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
-  getAdUnits,
+  getAdUnits
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -28,7 +28,7 @@ $$PREBID_GLOBAL$$._bidsRequested = getBidRequests();
 $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
 $$PREBID_GLOBAL$$.adUnits = getAdUnits();
 $$PREBID_GLOBAL$$._adUnitCodes = $$PREBID_GLOBAL$$.adUnits.map(
-  unit => unit.code,
+  unit => unit.code
 );
 
 function resetAuction() {
@@ -38,7 +38,7 @@ function resetAuction() {
   $$PREBID_GLOBAL$$._bidsReceived = getBidResponses();
   $$PREBID_GLOBAL$$.adUnits = getAdUnits();
   $$PREBID_GLOBAL$$._adUnitCodes = $$PREBID_GLOBAL$$.adUnits.map(
-    unit => unit.code,
+    unit => unit.code
   );
 }
 
@@ -69,7 +69,7 @@ var Slot = function Slot(elementId, pathId) {
 
     clearTargeting: function clearTargeting() {
       return googletag.pubads().getSlots();
-    },
+    }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
   return slot;
@@ -79,7 +79,7 @@ var createSlotArray = function createSlotArray() {
   return [
     new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]),
     new Slot(config.adUnitElementIDs[1], config.adUnitCodes[1]),
-    new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2]),
+    new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2])
   ];
 };
 
@@ -102,15 +102,15 @@ window.googletag = {
 
       setSlots: function(slots) {
         self._slots = slots;
-      },
+      }
     };
-  },
+  }
 };
 
 var createTagAST = function() {
   var tags = {};
   tags[config.adUnitCodes[0]] = {
-    keywords: {},
+    keywords: {}
   };
   return tags;
 };
@@ -130,12 +130,12 @@ window.apntag = {
         self.tags[key].keywords[id] = param;
       else if (!utils.isArray(self.tags[key].keywords[id]))
         self.tags[key].keywords[id] = [self.tags[key].keywords[id]].concat(
-          param,
+          param
         );
       else
         self.tags[key].keywords[id] = self.tags[key].keywords[id].concat(param);
     });
-  },
+  }
 };
 
 describe('Unit: Prebid Module', function() {
@@ -148,12 +148,12 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.enableSendAllBids();
       var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr(
-        adUnitCode,
+        adUnitCode
       );
       assert.equal(
         expected,
         result,
-        'returns expected string of ad targeting info',
+        'returns expected string of ad targeting info'
       );
     });
 
@@ -162,9 +162,9 @@ describe('Unit: Prebid Module', function() {
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr();
       assert.ok(
         spyLogMessage.calledWith(
-          'Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode',
+          'Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode'
         ),
-        'expected message was logged',
+        'expected message was logged'
       );
       assert.equal(result, undefined, 'result is undefined');
       utils.logMessage.restore();
@@ -176,13 +176,13 @@ describe('Unit: Prebid Module', function() {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.enableSendAllBids();
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode(
-        adUnitCode,
+        adUnitCode
       );
       const expected = getAdServerTargeting()[adUnitCode];
       assert.deepEqual(
         result,
         expected,
-        'returns expected' + ' targeting info object',
+        'returns expected' + ' targeting info object'
       );
     });
   });
@@ -211,15 +211,15 @@ describe('Unit: Prebid Module', function() {
           hb_size: '300x250',
           hb_pb: '10.00',
           hb_adid: '233bcbee889d46d',
-          hb_bidder: 'appnexus',
+          hb_bidder: 'appnexus'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
           hb_size: '728x90',
           hb_pb: '10.00',
           hb_adid: '24bd938435ec3fc',
-          hb_bidder: 'appnexus',
-        },
+          hb_bidder: 'appnexus'
+        }
       };
       assert.deepEqual(targeting, expected);
     });
@@ -235,14 +235,14 @@ describe('Unit: Prebid Module', function() {
       // Let's make sure we're getting the expected losing bid.
       assert.equal(
         $$PREBID_GLOBAL$$._bidsReceived[0]['bidderCode'],
-        'triplelift',
+        'triplelift'
       );
       assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['cpm'], 0.112256);
 
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
       $$PREBID_GLOBAL$$._bidsReceived[0]['alwaysUseBid'] = true;
       $$PREBID_GLOBAL$$._bidsReceived[0]['adserverTargeting'] = {
-        always_use_me: 'abc',
+        always_use_me: 'abc'
       };
 
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
@@ -250,7 +250,7 @@ describe('Unit: Prebid Module', function() {
       // Ensure targeting for both ad placements includes the custom key.
       assert.equal(
         targeting['/19968336/header-bid-tag-0'].hasOwnProperty('always_use_me'),
-        true,
+        true
       );
 
       var expected = {
@@ -260,15 +260,15 @@ describe('Unit: Prebid Module', function() {
           hb_pb: '10.00',
           hb_adid: '233bcbee889d46d',
           hb_bidder: 'appnexus',
-          always_use_me: 'abc',
+          always_use_me: 'abc'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
           hb_size: '728x90',
           hb_pb: '10.00',
           hb_adid: '24bd938435ec3fc',
-          hb_bidder: 'appnexus',
-        },
+          hb_bidder: 'appnexus'
+        }
       };
 
       assert.deepEqual(targeting, expected);
@@ -287,28 +287,28 @@ describe('Unit: Prebid Module', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'custom_ad_id',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 return bidResponse.pbMg;
-              },
+              }
             },
             {
               key: 'foobar',
               val: function(bidResponse) {
                 return bidResponse.size;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
@@ -320,7 +320,7 @@ describe('Unit: Prebid Module', function() {
           hb_pb: '10.00',
           hb_adid: '233bcbee889d46d',
           hb_bidder: 'appnexus',
-          custom_ad_id: '233bcbee889d46d',
+          custom_ad_id: '233bcbee889d46d'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
@@ -328,8 +328,8 @@ describe('Unit: Prebid Module', function() {
           hb_pb: '10.00',
           hb_adid: '24bd938435ec3fc',
           hb_bidder: 'appnexus',
-          custom_ad_id: '24bd938435ec3fc',
-        },
+          custom_ad_id: '24bd938435ec3fc'
+        }
       };
 
       assert.deepEqual(targeting, expected);
@@ -347,12 +347,12 @@ describe('Unit: Prebid Module', function() {
       var expected = {
         '/19968336/header-bid-tag-0': {
           foobar: '300x250',
-          custom_ad_id: '233bcbee889d46d',
+          custom_ad_id: '233bcbee889d46d'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
-          custom_ad_id: '24bd938435ec3fc',
-        },
+          custom_ad_id: '24bd938435ec3fc'
+        }
       };
 
       assert.deepEqual(targeting, expected);
@@ -379,13 +379,13 @@ describe('Unit: Prebid Module', function() {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const result = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
       const bids = getBidResponses().filter(
-        bid => bid.adUnitCode === adUnitCode,
+        bid => bid.adUnitCode === adUnitCode
       );
       const compare = { bids: bids };
       assert.deepEqual(
         result,
         compare,
-        'expected id responses for ad unit code are returned',
+        'expected id responses for ad unit code are returned'
       );
     });
   });
@@ -419,7 +419,7 @@ describe('Unit: Prebid Module', function() {
       assert.deepEqual(
         slots[1].spySetTargeting.args,
         targeting,
-        'google tag targeting options not matching',
+        'google tag targeting options not matching'
       );
     });
 
@@ -429,7 +429,7 @@ describe('Unit: Prebid Module', function() {
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
       expect(slots[0].spySetTargeting.args).to.deep.contain.members([
-        ['hb_bidder', 'appnexus'],
+        ['hb_bidder', 'appnexus']
       ]);
     });
 
@@ -455,21 +455,21 @@ describe('Unit: Prebid Module', function() {
 
         var expected = getTargetingKeysBidLandscape();
         expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
-      },
+      }
     );
 
     it('should set targeting for bids with `alwaysUseBid=true`', function() {
       // Make sure we're getting the expected losing bid.
       assert.equal(
         $$PREBID_GLOBAL$$._bidsReceived[0]['bidderCode'],
-        'triplelift',
+        'triplelift'
       );
       assert.equal($$PREBID_GLOBAL$$._bidsReceived[0]['cpm'], 0.112256);
 
       // Modify the losing bid to have `alwaysUseBid=true` and a custom `adserverTargeting` key.
       $$PREBID_GLOBAL$$._bidsReceived[0]['alwaysUseBid'] = true;
       $$PREBID_GLOBAL$$._bidsReceived[0]['adserverTargeting'] = {
-        always_use_me: 'abc',
+        always_use_me: 'abc'
       };
 
       var slots = createSlotArray();
@@ -484,7 +484,7 @@ describe('Unit: Prebid Module', function() {
         ['hb_size', '300x250'],
         ['foobar', '300x250'],
         ['always_use_me', 'abc'],
-        ['foobar', '300x250'],
+        ['foobar', '300x250']
       ];
 
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
@@ -537,15 +537,15 @@ describe('Unit: Prebid Module', function() {
         defaultView: {
           frameElement: {
             width: 0,
-            height: 0,
-          },
-        },
+            height: 0
+          }
+        }
       };
 
       adResponse = {
         adId: bidId,
         width: 300,
-        height: 250,
+        height: 250
       };
       $$PREBID_GLOBAL$$._bidsReceived.push(adResponse);
 
@@ -556,7 +556,7 @@ describe('Unit: Prebid Module', function() {
     afterEach(function() {
       $$PREBID_GLOBAL$$._bidsReceived.splice(
         $$PREBID_GLOBAL$$._bidsReceived.indexOf(adResponse),
-        1,
+        1
       );
       $$PREBID_GLOBAL$$._winningBids = [];
       utils.logError.restore();
@@ -568,7 +568,7 @@ describe('Unit: Prebid Module', function() {
       var error = 'Error trying to write ad Id :undefined to the page. Missing document or adId';
       assert.ok(
         spyLogError.calledWith(error),
-        'expected param error was logged',
+        'expected param error was logged'
       );
     });
 
@@ -577,7 +577,7 @@ describe('Unit: Prebid Module', function() {
       var message = 'Calling renderAd with adId :' + bidId;
       assert.ok(
         spyLogMessage.calledWith(message),
-        'expected message was logged',
+        'expected message was logged'
       );
     });
 
@@ -600,7 +600,7 @@ describe('Unit: Prebid Module', function() {
         '"></IFRAME>';
       assert.ok(
         doc.write.calledWith(iframe),
-        'url was written to iframe in doc',
+        'url was written to iframe in doc'
       );
     });
 
@@ -639,7 +639,7 @@ describe('Unit: Prebid Module', function() {
         error.message;
       assert.ok(
         spyLogError.calledWith(errorMessage),
-        'expected error was logged',
+        'expected error was logged'
       );
     });
 
@@ -672,12 +672,12 @@ describe('Unit: Prebid Module', function() {
     it('should add bidsBackHandler callback to bidmanager', () => {
       var spyAddOneTimeCallBack = sinon.spy(bidmanager, 'addOneTimeCallback');
       var requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
+        bidsBackHandler: function bidsBackHandlerCallback() {}
       };
       $$PREBID_GLOBAL$$.requestBids(requestObj);
       assert.ok(
         spyAddOneTimeCallBack.calledWith(requestObj.bidsBackHandler),
-        'called bidmanager.addOneTimeCallback',
+        'called bidmanager.addOneTimeCallback'
       );
       bidmanager.addOneTimeCallback.restore();
     });
@@ -690,7 +690,7 @@ describe('Unit: Prebid Module', function() {
 
       assert.ok(
         logMessageSpy.calledWith('No adUnits configured. No bids requested.'),
-        'expected message was logged',
+        'expected message was logged'
       );
       utils.logMessage.restore();
     });
@@ -701,7 +701,7 @@ describe('Unit: Prebid Module', function() {
       var requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
 
-        timeout: 2000,
+        timeout: 2000
       };
 
       $$PREBID_GLOBAL$$.requestBids(requestObj);
@@ -709,7 +709,7 @@ describe('Unit: Prebid Module', function() {
       clock.tick(requestObj.timeout - 1);
       assert.ok(
         spyExecuteCallback.notCalled,
-        'bidmanager.executeCallback not called',
+        'bidmanager.executeCallback not called'
       );
 
       clock.tick(1);
@@ -727,7 +727,7 @@ describe('Unit: Prebid Module', function() {
 
       assert.ok(
         spyExecuteCallback.calledOnce,
-        'callback executed immediately when adUnits is' + ' empty',
+        'callback executed immediately when adUnits is' + ' empty'
       );
 
       bidmanager.executeCallback.restore();
@@ -740,7 +740,7 @@ describe('Unit: Prebid Module', function() {
         bidsBackHandler: function bidsBackHandlerCallback() {
           var test = undefined;
           return test.test;
-        },
+        }
       };
 
       expect(() => {
@@ -766,9 +766,9 @@ describe('Unit: Prebid Module', function() {
           mediaType: 'video',
           bids: [
             { bidder: 'appnexus', params: { placementId: 'id' } },
-            { bidder: 'appnexusAst', params: { placementId: 'id' } },
-          ],
-        },
+            { bidder: 'appnexusAst', params: { placementId: 'id' } }
+          ]
+        }
       ];
 
       $$PREBID_GLOBAL$$.requestBids({ adUnits });
@@ -786,8 +786,8 @@ describe('Unit: Prebid Module', function() {
         {
           code: 'adUnit-code',
           mediaType: 'video',
-          bids: [{ bidder: 'appnexusAst', params: { placementId: 'id' } }],
-        },
+          bids: [{ bidder: 'appnexusAst', params: { placementId: 'id' } }]
+        }
       ];
 
       $$PREBID_GLOBAL$$.requestBids({ adUnits });
@@ -804,20 +804,20 @@ describe('Unit: Prebid Module', function() {
         adUnitCodes: ['/19968336/header-bid-tag1'],
         bidsBackHandler: function bidsBackHandlerCallback() {},
 
-        timeout: 2000,
+        timeout: 2000
       };
 
       var requestObj2 = {
         adUnitCodes: ['/19968336/header-bid-tag-0'],
         bidsBackHandler: function bidsBackHandlerCallback() {},
 
-        timeout: 2000,
+        timeout: 2000
       };
 
       assert.equal(
         $$PREBID_GLOBAL$$._bidsReceived.length,
         8,
-        '_bidsReceived contains 8 bids',
+        '_bidsReceived contains 8 bids'
       );
 
       $$PREBID_GLOBAL$$.requestBids(requestObj1);
@@ -827,44 +827,44 @@ describe('Unit: Prebid Module', function() {
       assert.ok(
         spyCallBids.calledOnce,
         'When two requests for bids are made only one should' +
-          ' callBids immediately',
+          ' callBids immediately'
       );
       assert.equal(
         $$PREBID_GLOBAL$$._bidsReceived.length,
         7,
-        '_bidsReceived now contains 7 bids',
+        '_bidsReceived now contains 7 bids'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$._bidsReceived.find(bid =>
           requestObj1.adUnitCodes.includes(bid.adUnitCode)),
         undefined,
-        'Placements' + ' for' + ' current request have been cleared of bids',
+        'Placements' + ' for' + ' current request have been cleared of bids'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$._bidsReceived.filter(bid =>
           requestObj2.adUnitCodes.includes(bid.adUnitCode)).length,
         7,
-        'Placements' + ' for previous request have not been cleared of bids',
+        'Placements' + ' for previous request have not been cleared of bids'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$._adUnitCodes,
         ['/19968336/header-bid-tag1'],
-        '_adUnitCodes is' + ' for first request',
+        '_adUnitCodes is' + ' for first request'
       );
       assert.ok(
         $$PREBID_GLOBAL$$._bidsReceived.length > 0,
-        '_bidsReceived contains bids',
+        '_bidsReceived contains bids'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$.getBidResponses(),
         {},
         'yet getBidResponses returns' +
-          ' empty object for first request (no matching bids for current placement',
+          ' empty object for first request (no matching bids for current placement'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$.getAdserverTargeting(),
         {},
-        'getAdserverTargeting' + ' returns empty object for first request',
+        'getAdserverTargeting' + ' returns empty object for first request'
       );
       clock.tick(1);
 
@@ -873,12 +873,12 @@ describe('Unit: Prebid Module', function() {
       assert.ok(
         spyCallBids.calledTwice,
         'The second queued request should callBids when the' +
-          ' first request has completed',
+          ' first request has completed'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$._adUnitCodes,
         ['/19968336/header-bid-tag-0'],
-        '_adUnitCodes is' + 'now for second request',
+        '_adUnitCodes is' + 'now for second request'
       );
       assert.deepEqual(
         $$PREBID_GLOBAL$$.getBidResponses(),
@@ -909,8 +909,8 @@ describe('Unit: Prebid Module', function() {
                   hb_adid: '26e0795ab963896',
                   hb_pb: '10.00',
                   hb_size: '300x250',
-                  foobar: '300x250',
-                },
+                  foobar: '300x250'
+                }
               },
               {
                 bidderCode: 'brealtime',
@@ -937,8 +937,8 @@ describe('Unit: Prebid Module', function() {
                   hb_adid: '275bd666f5a5a5d',
                   hb_pb: '10.00',
                   hb_size: '300x250',
-                  foobar: '300x250',
-                },
+                  foobar: '300x250'
+                }
               },
               {
                 bidderCode: 'pubmatic',
@@ -966,8 +966,8 @@ describe('Unit: Prebid Module', function() {
                   hb_adid: '28f4039c636b6a7',
                   hb_pb: '10.00',
                   hb_size: '300x250',
-                  foobar: '300x250',
-                },
+                  foobar: '300x250'
+                }
               },
               {
                 bidderCode: 'rubicon',
@@ -993,13 +993,13 @@ describe('Unit: Prebid Module', function() {
                   hb_adid: '29019e2ab586a5a',
                   hb_pb: '10.00',
                   hb_size: '300x600',
-                  foobar: '300x600',
-                },
-              },
-            ],
-          },
+                  foobar: '300x600'
+                }
+              }
+            ]
+          }
         },
-        'getBidResponses returns info for current bid request',
+        'getBidResponses returns info for current bid request'
       );
 
       assert.deepEqual(
@@ -1010,10 +1010,10 @@ describe('Unit: Prebid Module', function() {
             hb_size: '300x250',
             hb_pb: '10.00',
             hb_adid: '233bcbee889d46d',
-            hb_bidder: 'appnexus',
-          },
+            hb_bidder: 'appnexus'
+          }
         },
-        'targeting info returned for current placements',
+        'targeting info returned for current placements'
       );
       resetAuction();
       adaptermanager.callBids.restore();
@@ -1029,9 +1029,9 @@ describe('Unit: Prebid Module', function() {
         spyLogError.calledWith(
           'The event handler provided is not a function and was not set on event "' +
             event +
-            '".',
+            '".'
         ),
-        'expected error was logged',
+        'expected error was logged'
       );
       utils.logError.restore();
     });
@@ -1044,9 +1044,9 @@ describe('Unit: Prebid Module', function() {
         spyLogError.calledWith(
           'The id provided is not valid for event "' +
             event +
-            '" and no handler was set.',
+            '" and no handler was set.'
         ),
-        'expected error was logged',
+        'expected error was logged'
       );
       utils.logError.restore();
     });
@@ -1091,9 +1091,9 @@ describe('Unit: Prebid Module', function() {
       assert.equal(id, null, 'id returned was null');
       assert.ok(
         spyLogError.calledWith(
-          'error registering callback. Check method signature',
+          'error registering callback. Check method signature'
         ),
-        'expected error was logged',
+        'expected error was logged'
       );
       utils.logError.restore();
     });
@@ -1103,7 +1103,7 @@ describe('Unit: Prebid Module', function() {
       var id = $$PREBID_GLOBAL$$.addCallback('event', Function);
       assert.ok(
         spyAddCallback.calledWith(id, Function, 'event'),
-        'called bidmanager.addCallback',
+        'called bidmanager.addCallback'
       );
       bidmanager.addCallback.restore();
     });
@@ -1120,12 +1120,12 @@ describe('Unit: Prebid Module', function() {
     it('should register bidAdaptor with adaptermanager', () => {
       var registerBidAdapterSpy = sinon.spy(
         adaptermanager,
-        'registerBidAdapter',
+        'registerBidAdapter'
       );
       $$PREBID_GLOBAL$$.registerBidAdapter(Function, 'biddercode');
       assert.ok(
         registerBidAdapterSpy.called,
-        'called adaptermanager.registerBidAdapter',
+        'called adaptermanager.registerBidAdapter'
       );
       adaptermanager.registerBidAdapter.restore();
     });
@@ -1141,7 +1141,7 @@ describe('Unit: Prebid Module', function() {
         errorObject.message;
       assert.ok(
         spyLogError.calledWith(errorMessage),
-        'expected error was caught',
+        'expected error was caught'
       );
       utils.logError.restore();
     });
@@ -1153,14 +1153,14 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.bidsAvailableForAdapter(bidderCode);
 
       const requestedBids = $$PREBID_GLOBAL$$._bidsRequested.find(
-        bid => bid.bidderCode === bidderCode,
+        bid => bid.bidderCode === bidderCode
       );
       requestedBids.bids.forEach(bid => {
         assert.equal(bid.bidderCode, bidderCode, 'bidderCode was set');
         assert.equal(
           bid.statusMessage,
           'Bid available',
-          'bid set as available',
+          'bid set as available'
         );
       });
     });
@@ -1178,7 +1178,7 @@ describe('Unit: Prebid Module', function() {
       assert.equal(
         defaultStatusBid.getStatusCode(),
         0,
-        'bid has correct status',
+        'bid has correct status'
       );
     });
   });
@@ -1192,7 +1192,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.addBidResponse(adUnitCode, bid);
       assert.ok(
         addBidResponseStub.calledWith(adUnitCode, bid),
-        'called bidmanager.addBidResponse',
+        'called bidmanager.addBidResponse'
       );
       bidmanager.addBidResponse.restore();
     });
@@ -1208,7 +1208,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.loadScript(tagSrc, callback, useCache);
       assert.ok(
         loadScriptSpy.calledWith(tagSrc, callback, useCache),
-        'called adloader.loadScript',
+        'called adloader.loadScript'
       );
       adloader.loadScript.restore();
     });
@@ -1268,7 +1268,7 @@ describe('Unit: Prebid Module', function() {
 
       var requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 20,
+        timeout: 20
       };
       var adUnits = [
         {
@@ -1276,10 +1276,10 @@ describe('Unit: Prebid Module', function() {
           bids: [
             {
               bidder: 'appnexus',
-              params: { placementId: '123' },
-            },
-          ],
-        },
+              params: { placementId: '123' }
+            }
+          ]
+        }
       ];
       $$PREBID_GLOBAL$$.adUnits = adUnits;
       $$PREBID_GLOBAL$$.requestBids(requestObj);
@@ -1288,11 +1288,11 @@ describe('Unit: Prebid Module', function() {
         function() {
           assert.ok(
             eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT),
-            'emitted events BID_TIMEOUT',
+            'emitted events BID_TIMEOUT'
           );
           events.emit.restore();
         },
-        100,
+        100
       );
     });
   });
@@ -1306,7 +1306,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.aliasBidder(bidderCode, alias);
       assert.ok(
         aliasBidAdapterSpy.calledWith(bidderCode, alias),
-        'called adaptermanager.aliasBidAdapterSpy',
+        'called adaptermanager.aliasBidAdapterSpy'
       );
       adaptermanager.aliasBidAdapter.restore();
     });
@@ -1334,14 +1334,14 @@ describe('Unit: Prebid Module', function() {
     it('should call bidmanager.setPriceGranularity with granularity', () => {
       const setPriceGranularitySpy = sinon.spy(
         bidmanager,
-        'setPriceGranularity',
+        'setPriceGranularity'
       );
       const granularity = 'low';
 
       $$PREBID_GLOBAL$$.setPriceGranularity(granularity);
       assert.ok(
         setPriceGranularitySpy.called,
-        'called bidmanager.setPriceGranularity',
+        'called bidmanager.setPriceGranularity'
       );
       bidmanager.setPriceGranularity.restore();
     });
@@ -1354,15 +1354,15 @@ describe('Unit: Prebid Module', function() {
           {
             min: 0,
             max: 3,
-            increment: 0.01,
+            increment: 0.01
           },
           {
             //missing min prop
             max: 18,
             increment: 0.05,
-            cap: true,
-          },
-        ],
+            cap: true
+          }
+        ]
       };
 
       $$PREBID_GLOBAL$$.setPriceGranularity(badConfig);
@@ -1373,11 +1373,11 @@ describe('Unit: Prebid Module', function() {
     it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
       const setCustomPriceBucket = sinon.spy(
         bidmanager,
-        'setCustomPriceBucket',
+        'setCustomPriceBucket'
       );
       const setPriceGranularitySpy = sinon.spy(
         bidmanager,
-        'setPriceGranularity',
+        'setPriceGranularity'
       );
       const goodConfig = {
         buckets: [
@@ -1385,20 +1385,20 @@ describe('Unit: Prebid Module', function() {
             min: 0,
             max: 3,
             increment: 0.01,
-            cap: true,
-          },
-        ],
+            cap: true
+          }
+        ]
       };
 
       $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
       assert.ok(
         setCustomPriceBucket.called,
-        'called bidmanager.setCustomPriceBucket',
+        'called bidmanager.setCustomPriceBucket'
       );
       bidmanager.setCustomPriceBucket.restore();
       assert.ok(
         setPriceGranularitySpy.calledWith('custom'),
-        'called bidmanager.setPriceGranularity',
+        'called bidmanager.setPriceGranularity'
       );
       bidmanager.setPriceGranularity.restore();
     });
@@ -1423,7 +1423,7 @@ describe('Unit: Prebid Module', function() {
 
       var requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 2000,
+        timeout: 2000
       };
 
       $$PREBID_GLOBAL$$.requestBids(requestObj);
@@ -1440,7 +1440,7 @@ describe('Unit: Prebid Module', function() {
               bidder: 'appnexus',
               params: {
                 placementId: '4799418',
-                test: 'me',
+                test: 'me'
               },
               placementCode: '/19968336/header-bid-tag1',
               sizes: [[728, 90], [970, 90]],
@@ -1448,11 +1448,11 @@ describe('Unit: Prebid Module', function() {
               bidderRequestId: '2946b569352ef2',
               requestId: '1863e370099523',
               startTime: 1462918897462,
-              status: 1,
-            },
+              status: 1
+            }
           ],
-          start: 1462918897460,
-        },
+          start: 1462918897460
+        }
       ];
 
       $$PREBID_GLOBAL$$._bidsReceived = [];
@@ -1483,10 +1483,10 @@ describe('Unit: Prebid Module', function() {
             hb_adid: '24bd938435ec3fc',
             hb_pb: '10.00',
             hb_size: '728x90',
-            foobar: '728x90',
-          },
+            foobar: '728x90'
+          }
         },
-        bidfactory.createBid(2),
+        bidfactory.createBid(2)
       );
 
       var adUnits = [
@@ -1495,10 +1495,10 @@ describe('Unit: Prebid Module', function() {
           bids: [
             {
               bidder: 'appnexus',
-              params: { placementId: '123' },
-            },
-          ],
-        },
+              params: { placementId: '123' }
+            }
+          ]
+        }
       ];
       $$PREBID_GLOBAL$$.adUnits = adUnits;
 
@@ -1507,7 +1507,7 @@ describe('Unit: Prebid Module', function() {
       assert.equal(
         spyClearAuction.callCount,
         1,
-        'AUCTION_END event emitted more than once',
+        'AUCTION_END event emitted more than once'
       );
 
       clock1.restore();
@@ -1522,9 +1522,9 @@ describe('Unit: Prebid Module', function() {
         bids: [
           {
             bidder: 'appnexus',
-            params: { placementId: '123' },
-          },
-        ],
+            params: { placementId: '123' }
+          }
+        ]
       };
       const adUnit2 = {
         code: 'adUnit2',
@@ -1534,10 +1534,10 @@ describe('Unit: Prebid Module', function() {
             params: {
               accountId: '1234',
               siteId: '1234',
-              zoneId: '1234',
-            },
-          },
-        ],
+              zoneId: '1234'
+            }
+          }
+        ]
       };
       const adUnits = [adUnit1, adUnit2];
       $$PREBID_GLOBAL$$.adUnits = adUnits;
@@ -1587,9 +1587,9 @@ describe('Unit: Prebid Module', function() {
             hb_pb: '10.00',
             hb_size: '300x250',
             foobar: '300x250',
-            hb_deal_appnexusDummyName: '1234',
-          },
-        },
+            hb_deal_appnexusDummyName: '1234'
+          }
+        }
       ];
 
       var result = $$PREBID_GLOBAL$$.getAdserverTargeting();
@@ -1604,7 +1604,7 @@ describe('Unit: Prebid Module', function() {
 
     var options = {
       adserver: 'dfp',
-      code: '/19968336/header-bid-tag-0',
+      code: '/19968336/header-bid-tag-0'
     };
 
     beforeEach(() => {
@@ -1638,9 +1638,9 @@ describe('Unit: Prebid Module', function() {
             hb_pb: '10.00',
             hb_size: '300x250',
             foobar: '300x250',
-            hb_deal_appnexusAst: '1234',
-          },
-        },
+            hb_deal_appnexusAst: '1234'
+          }
+        }
       ];
     });
 
@@ -1652,11 +1652,11 @@ describe('Unit: Prebid Module', function() {
       var logErrorSpy = sinon.spy(utils, 'logError');
       var options = {
         adserver: 'anyother',
-        code: '/19968336/header-bid-tag-0',
+        code: '/19968336/header-bid-tag-0'
       };
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(
         adserverTag,
-        options,
+        options
       );
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
@@ -1666,7 +1666,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$._bidsReceived = [];
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(
         adserverTag,
-        options,
+        options
       );
       expect(masterTagUrl).to.equal(adserverTag);
     });
@@ -1676,7 +1676,7 @@ describe('Unit: Prebid Module', function() {
       var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(
         adserverTag,
-        options,
+        options
       );
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
@@ -1688,7 +1688,7 @@ describe('Unit: Prebid Module', function() {
       sinon.spy(utils, 'shuffle');
       const requestObj = {
         bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 2000,
+        timeout: 2000
       };
 
       $$PREBID_GLOBAL$$.setBidderSequence('random');
@@ -1705,20 +1705,20 @@ describe('Unit: Prebid Module', function() {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
       expect(highestCpmBids.length).to.equal(2);
       expect(highestCpmBids[0]).to.deep.equal(
-        $$PREBID_GLOBAL$$._bidsReceived[1],
+        $$PREBID_GLOBAL$$._bidsReceived[1]
       );
       expect(highestCpmBids[1]).to.deep.equal(
-        $$PREBID_GLOBAL$$._bidsReceived[2],
+        $$PREBID_GLOBAL$$._bidsReceived[2]
       );
     });
 
     it('returns an array containing the highest bid object for the given adUnitCode', () => {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids(
-        '/19968336/header-bid-tag-0',
+        '/19968336/header-bid-tag-0'
       );
       expect(highestCpmBids.length).to.equal(1);
       expect(highestCpmBids[0]).to.deep.equal(
-        $$PREBID_GLOBAL$$._bidsReceived[1],
+        $$PREBID_GLOBAL$$._bidsReceived[1]
       );
     });
 
@@ -1731,7 +1731,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$._bidsReceived = [$$PREBID_GLOBAL$$._bidsReceived[0]];
       $$PREBID_GLOBAL$$._bidsReceived[0].cpm = 0;
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids(
-        '/19968336/header-bid-tag-0',
+        '/19968336/header-bid-tag-0'
       );
       expect(highestCpmBids.length).to.equal(0);
       resetAuction();
@@ -1751,7 +1751,7 @@ describe('Unit: Prebid Module', function() {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const bidder = 'appnexus';
       const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(
-        bid => bid.adUnitCode === adUnitCode && bid.bidderCode === bidder,
+        bid => bid.adUnitCode === adUnitCode && bid.bidderCode === bidder
       );
 
       var expectedAdserverTargeting = bids[0].adserverTargeting;
@@ -1763,7 +1763,7 @@ describe('Unit: Prebid Module', function() {
 
       $$PREBID_GLOBAL$$.setTargetingForAst();
       expect(newAdserverTargeting).to.deep.equal(
-        window.apntag.tags[adUnitCode].keywords,
+        window.apntag.tags[adUnitCode].keywords
       );
     });
 
@@ -1772,7 +1772,7 @@ describe('Unit: Prebid Module', function() {
       $$PREBID_GLOBAL$$.enableSendAllBids();
       $$PREBID_GLOBAL$$.setTargetingForAst();
       const keywords = Object.keys(
-        window.apntag.tags[adUnitCode].keywords,
+        window.apntag.tags[adUnitCode].keywords
       ).filter(keyword => keyword.substring(0, 'hb_adid'.length) === 'hb_adid');
       expect(keywords.length).to.equal(0);
     });

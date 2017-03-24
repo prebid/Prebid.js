@@ -6,7 +6,7 @@ const AdServer = function(attr) {
   this.code = attr.code;
   this.getWinningBidByCode = function() {
     var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(
-      bid => bid.adUnitCode === this.code,
+      bid => bid.adUnitCode === this.code
     );
     return bidObject;
   };
@@ -21,7 +21,7 @@ exports.dfpAdserver = function(options, urlComponents) {
     env: 'vp',
     gdfp_req: '1',
     impl: 's',
-    unviewed_position_start: '1',
+    unviewed_position_start: '1'
   };
 
   var dfpParamsWithVariableValue = [
@@ -31,7 +31,7 @@ exports.dfpAdserver = function(options, urlComponents) {
     'url',
     'correlator',
     'description_url',
-    'hl',
+    'hl'
   ];
 
   var getCustomParams = function(targeting) {
@@ -41,10 +41,10 @@ exports.dfpAdserver = function(options, urlComponents) {
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
     this.urlComponents.search.description_url = encodeURIComponent(
-      bid.descriptionUrl,
+      bid.descriptionUrl
     );
     this.urlComponents.search.cust_params = getCustomParams(
-      bid.adserverTargeting,
+      bid.adserverTargeting
     );
     this.urlComponents.search.correlator = Date.now();
   };

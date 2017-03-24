@@ -15,10 +15,10 @@ var CONSTANTS = {
       sandbox: {
         topFrameLimit: 10,
         queryValue: 'sandbox',
-        siteID: '999990',
-      },
-    },
-  },
+        siteID: '999990'
+      }
+    }
+  }
 };
 
 var OPEN_MARKET = 'IOM';
@@ -105,11 +105,11 @@ window.cygnus_index_parse_res = function(response) {
             undefined
           ) {
             _IndexRequestData.targetIDToCreative[noTargetModeTargetID] = [
-              bid.adm,
+              bid.adm
             ];
           } else {
             _IndexRequestData.targetIDToCreative[noTargetModeTargetID].push(
-              bid.adm,
+              bid.adm
             );
           }
           var impBid = {};
@@ -188,12 +188,12 @@ var cygnus_index_adunits = [
   [970, 250],
   [300, 1050],
   [970, 90],
-  [180, 150],
+  [180, 150]
 ]; // jshint ignore:line
 
 var getIndexDebugMode = function() {
   return getParameterByName(
-    CONSTANTS.INDEX_DEBUG_MODE.queryParam,
+    CONSTANTS.INDEX_DEBUG_MODE.queryParam
   ).toUpperCase();
 };
 
@@ -233,7 +233,7 @@ var cygnus_index_start = function() {
     '\f': '\\f',
     '\r': '\\r',
     '"': '\\"',
-    '\\': '\\\\',
+    '\\': '\\\\'
   };
 
   function escapeCharacter(character) {
@@ -299,7 +299,7 @@ var cygnus_index_start = function() {
     this.requestID = String(
       new Date().getTime() % 2592000 * 256 +
         _IndexRequestData.requestCounter +
-        256,
+        256
     );
     this.initialized = true;
   }
@@ -374,10 +374,10 @@ var cygnus_index_start = function() {
     bidFloor,
     bidFloorCurrency,
     slotID,
-    siteID,
+    siteID
   ) {
     var impObj = {
-      id: String(this.impressions.length + 1),
+      id: String(this.impressions.length + 1)
     };
     if (typeof width !== 'number' || width <= 1) {
       return null;
@@ -479,7 +479,7 @@ var cygnus_index_start = function() {
     var req = new OpenRTBRequest(
       cygnus_index_args.siteID,
       cygnus_index_args.parseFn,
-      cygnus_index_args.timeout,
+      cygnus_index_args.timeout
     );
     if (cygnus_index_args.url && typeof cygnus_index_args.url === 'string') {
       req.setPageOverride(cygnus_index_args.url);
@@ -498,11 +498,11 @@ var cygnus_index_start = function() {
         slotDef.bidfloor,
         slotDef.bidfloorcur,
         slotDef.id,
-        slotDef.siteID,
+        slotDef.siteID
       );
       if (impID) {
         _IndexRequestData.impIDToSlotID[req.requestID][impID] = String(
-          slotDef.id,
+          slotDef.id
         );
       }
     }
@@ -531,7 +531,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     /* 0 */
     'id',
     /* 1 */
-    'siteID',
+    'siteID'
   ];
   var firstAdUnitCode = '';
 
@@ -586,7 +586,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
         if (!validSize) {
           utils.logMessage(
-            ADAPTER_NAME + ' slot excluded from request due to no valid sizes',
+            ADAPTER_NAME + ' slot excluded from request due to no valid sizes'
           );
           continue;
         }
@@ -611,7 +611,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var siteID = Number(bid.params.siteID);
         if (typeof siteID !== 'number' || siteID % 1 != 0 || siteID <= 0) {
           utils.logMessage(
-            ADAPTER_NAME + ' slot excluded from request due to invalid siteID',
+            ADAPTER_NAME + ' slot excluded from request due to invalid siteID'
           );
           continue;
         }
@@ -629,7 +629,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               ADAPTER_NAME +
                 ' bid contains invalid slot ID from ' +
                 bid.placementCode +
-                '. Discarding slot',
+                '. Discarding slot'
             );
             continue;
           }
@@ -637,7 +637,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           sizeID++;
           var size = {
             width: bid.sizes[j][0],
-            height: bid.sizes[j][1],
+            height: bid.sizes[j][1]
           };
 
           var slotName = usingSizeSpecificSiteID
@@ -651,9 +651,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               id: slotName,
               width: size.width,
               height: size.height,
-              siteID: siteID || cygnus_index_args.siteID,
+              siteID: siteID || cygnus_index_args.siteID
             },
-            cygnus_index_args.slots,
+            cygnus_index_args.slots
           );
 
           if (bid.params.tier2SiteID) {
@@ -667,9 +667,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
                 id: 'T1_' + slotName,
                 width: size.width,
                 height: size.height,
-                siteID: tier2SiteID,
+                siteID: tier2SiteID
               },
-              cygnus_index_args.slots,
+              cygnus_index_args.slots
             );
           }
 
@@ -684,9 +684,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
                 id: 'T2_' + slotName,
                 width: size.width,
                 height: size.height,
-                siteID: tier3SiteID,
+                siteID: tier3SiteID
               },
-              cygnus_index_args.slots,
+              cygnus_index_args.slots
             );
           }
         }
@@ -696,7 +696,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     if (cygnus_index_args.slots.length > 20) {
       utils.logError(
         'Too many unique sizes on slots, will use the first 20.',
-        ADAPTER_NAME,
+        ADAPTER_NAME
       );
     }
 
@@ -730,7 +730,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             if (!match) {
               utils.logError(
                 'Unable to parse ' + cpmAndSlotId + ', skipping slot',
-                ADAPTER_NAME,
+                ADAPTER_NAME
               );
               continue;
             }
@@ -767,7 +767,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
                 _IndexRequestData.targetAggregate['private'][adUnitCode].push(
                   slotID +
                     '_' +
-                    _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID,
+                    _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID
                 );
               } else {
                 if (
@@ -777,7 +777,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
                 )
                   _IndexRequestData.targetAggregate['open'][adUnitCode] = [];
                 _IndexRequestData.targetAggregate['open'][adUnitCode].push(
-                  slotID + '_' + currentCPM,
+                  slotID + '_' + currentCPM
                 );
               }
               bids.push(bid);
@@ -848,7 +848,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

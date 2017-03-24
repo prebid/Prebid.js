@@ -11,7 +11,7 @@ var AllowedAdUnits = [
   [970, 250],
   [300, 1050],
   [970, 90],
-  [180, 150],
+  [180, 150]
 ];
 var UnsupportedAdUnits = [
   [700, 100],
@@ -23,7 +23,7 @@ var UnsupportedAdUnits = [
   [900, 200],
   [300, 1000],
   [900, 90],
-  [100, 100],
+  [100, 100]
 ];
 
 exports.supportedSizes = AllowedAdUnits;
@@ -113,7 +113,7 @@ exports.createBidSlots = function(numSlot, numSize) {
       requestSizes[j] = AllowedAdUnits[(i + j) % AllowedAdUnits.length];
 
     bids[i] = _createBidSlot(mkPlacementCode(i, j), 'slot-' + i, requestSizes, {
-      siteID: DefaultSiteID + i,
+      siteID: DefaultSiteID + i
     });
   }
   return bids;
@@ -208,9 +208,9 @@ exports.matchOnPlacementCode = function(expected, prebid) {
       return {
         expected: pair.left,
         prebid: pair.right,
-        placementCode: pair.name,
+        placementCode: pair.name
       };
-    }),
+    })
   };
 };
 
@@ -244,7 +244,7 @@ exports.matchBidsOnSID = function(lhs, rhs) {
 
   return {
     unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly },
-    matched: matched,
+    matched: matched
   };
 };
 
@@ -263,7 +263,7 @@ exports.matchBidsOnSize = function(lhs, rhs) {
 
   var lstore = createObjectFromArray(configured);
   var rstore = createObjectFromArray(
-    rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]),
+    rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid])
   );
 
   var compared = compareOnKeys(lstore, rstore);
@@ -273,7 +273,7 @@ exports.matchBidsOnSize = function(lhs, rhs) {
 
   return {
     unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly },
-    matched: matched,
+    matched: matched
   };
 };
 
@@ -283,7 +283,7 @@ exports.getBidResponse = function(
   optionalPriceLevel,
   optionalResponseIdentifier,
   optionalPassOnBid,
-  optionalResponseParam,
+  optionalResponseParam
 ) {
   if (typeof configuredBids === 'undefined' || typeof urlJSON === 'undefined')
     return {};

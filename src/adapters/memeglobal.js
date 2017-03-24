@@ -63,19 +63,19 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
           id: bidReq.bidId,
           banner: {
             w: adW,
-            h: adH,
+            h: adH
           },
           tagid: bidReq.placementCode,
-          bidfloor: bidFloor,
-        },
+          bidfloor: bidFloor
+        }
       ],
       site: {
         domain: domain,
         page: page,
         publisher: {
-          id: tagId,
-        },
-      },
+          id: tagId
+        }
+      }
     };
 
     var scriptUrl = '//' +
@@ -90,7 +90,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
   function getBidSetForBidder() {
     return $$PREBID_GLOBAL$$._bidsRequested.find(
-      bidSet => bidSet.bidderCode === bidderName,
+      bidSet => bidSet.bidderCode === bidderName
     );
   }
 
@@ -143,7 +143,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

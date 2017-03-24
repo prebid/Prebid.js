@@ -5,9 +5,9 @@ export function makeAdSlot(overrides = {}) {
   return Object.assign(
     makeSlot({
       code: overrides.code,
-      divId: overrides.divId,
+      divId: overrides.divId
     }),
-    overrides,
+    overrides
   );
 }
 
@@ -16,9 +16,9 @@ export function makeAdUnit(overrides = {}) {
     {
       code: `ad-unit-code-${randomFive()}`,
       sizes: [[300, 250], [300, 600]],
-      bids: [],
+      bids: []
     },
-    overrides,
+    overrides
   );
 }
 
@@ -29,11 +29,11 @@ export function makeBidder(overrides = {}) {
       bidder: `${faker.company.bsBuzz()}Media`,
       params: {
         abc: faker.random.alphaNumeric(10),
-        xyz: faker.random.number({ max: 10, precision: 2 }),
+        xyz: faker.random.number({ max: 10, precision: 2 })
       },
-      callBids: sinon.spy(),
+      callBids: sinon.spy()
     },
-    overrides,
+    overrides
   );
 
   return adapter;
@@ -44,9 +44,9 @@ export function makeRequest(overrides = {}) {
     {
       adUnits: overrides.adUnits,
       bidsBackHandler: sinon.spy(),
-      timeout: 2000,
+      timeout: 2000
     },
-    overrides,
+    overrides
   );
 }
 

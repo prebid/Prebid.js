@@ -25,12 +25,12 @@ describe('openx adapter tests', function() {
             bidder: 'openx',
             params: {
               delDomain: 'delDomain1',
-              unit: '1234',
+              unit: '1234'
             },
             sizes: [[300, 250]],
-            placementCode: 'test-gpt-div-1234',
-          },
-        ],
+            placementCode: 'test-gpt-div-1234'
+          }
+        ]
       };
 
       // empty ads in bidresponse
@@ -39,8 +39,8 @@ describe('openx adapter tests', function() {
           version: 1,
           count: 1,
           pixels: 'http://testpixels.net',
-          ad: [],
-        },
+          ad: []
+        }
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -69,12 +69,12 @@ describe('openx adapter tests', function() {
           bidder: 'openx',
           params: {
             delDomain: 'delDomain1',
-            unit: '1234',
+            unit: '1234'
           },
           sizes: [[300, 250]],
-          placementCode: 'test-gpt-div-1234',
-        },
-      ],
+          placementCode: 'test-gpt-div-1234'
+        }
+      ]
     };
 
     // empty ads in bidresponse
@@ -106,13 +106,13 @@ describe('openx adapter tests', function() {
                 tracking: {
                   impression: 'test_impression',
                   inview: 'test_inview',
-                  click: 'test_click',
-                },
-              },
-            ],
-          },
-        ],
-      },
+                  click: 'test_click'
+                }
+              }
+            ]
+          }
+        ]
+      }
     };
 
     pbjs._bidsRequested.push(bidderRequest);
@@ -146,12 +146,12 @@ describe('openx adapter tests', function() {
           bidder: 'openx',
           params: {
             delDomain: 'delDomain1',
-            unit: '1234',
+            unit: '1234'
           },
           sizes: [[300, 250]],
-          placementCode: 'test-gpt-div-1234',
-        },
-      ],
+          placementCode: 'test-gpt-div-1234'
+        }
+      ]
     };
 
     // Empty pub rev in bid response
@@ -183,13 +183,13 @@ describe('openx adapter tests', function() {
                 tracking: {
                   impression: 'test_impression',
                   inview: 'test_inview',
-                  click: 'test_click',
-                },
-              },
-            ],
-          },
-        ],
-      },
+                  click: 'test_click'
+                }
+              }
+            ]
+          }
+        ]
+      }
     };
 
     pbjs._bidsRequested.push(bidderRequest);
@@ -221,10 +221,10 @@ describe('openx adapter tests', function() {
           sizes: [[300, 250], [300, 600]],
           params: {
             delDomain: 'testdelDomain',
-            unit: 1234,
-          },
-        },
-      ],
+            unit: 1234
+          }
+        }
+      ]
     };
     adapter().callBids(params);
 
@@ -246,10 +246,10 @@ describe('openx adapter tests', function() {
           params: {
             delDomain: 'testdelDomain',
             unit: 1234,
-            customParams: { test1: 'testval1' },
-          },
-        },
-      ],
+            customParams: { test1: 'testval1' }
+          }
+        }
+      ]
     };
     adapter().callBids(params);
 

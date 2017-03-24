@@ -46,25 +46,25 @@ describe('centro adapter tests', function() {
             sizes: [[300, 250]],
             params: {
               unit: 28136,
-              page_url: 'http://test_url.ru',
+              page_url: 'http://test_url.ru'
             },
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidder: 'centro',
             sizes: [[728, 90]],
             params: {
-              unit: 28137,
+              unit: 28137
             },
-            placementCode: 'div-gpt-ad-12345-2',
+            placementCode: 'div-gpt-ad-12345-2'
           },
           {
             bidder: 'centro',
             sizes: [[728, 90]],
             params: {},
-            placementCode: 'div-gpt-ad-12345-3',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-3'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -136,45 +136,45 @@ describe('centro adapter tests', function() {
           bidder: 'centro',
           sizes: [[300, 250]],
           params: {
-            unit: 28136,
+            unit: 28136
           },
-          placementCode: '/19968336/header-bid-tag-0',
+          placementCode: '/19968336/header-bid-tag-0'
         },
         {
           bidder: 'centro',
           sizes: [[728, 90]],
           params: {
-            unit: 111111,
+            unit: 111111
           },
-          placementCode: '/19968336/header-bid-tag-1',
+          placementCode: '/19968336/header-bid-tag-1'
         },
         {
           bidder: 'centro',
           sizes: [[728, 90]],
           params: {
-            unit: 222222,
+            unit: 222222
           },
-          placementCode: '/19968336/header-bid-tag-2',
+          placementCode: '/19968336/header-bid-tag-2'
         },
         {
           bidder: 'centro',
           sizes: [[728, 90]],
           params: {
-            unit: 333333,
+            unit: 333333
           },
-          placementCode: '/19968336/header-bid-tag-3',
-        },
-      ],
+          placementCode: '/19968336/header-bid-tag-3'
+        }
+      ]
     };
 
     it('callback function should exist', function() {
       adapter().callBids(params);
 
       expect(
-        window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'],
+        window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0']
       ).to.exist.and.to.be.a('function');
       expect(
-        window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'],
+        window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1']
       ).to.exist.and.to.be.a('function');
     });
 
@@ -205,7 +205,7 @@ describe('centro adapter tests', function() {
         _comment: '',
         value: 0.2,
         width: 300,
-        sectionID: 28136,
+        sectionID: 28136
       };
       var response2 = {
         adTag: '',
@@ -213,28 +213,28 @@ describe('centro adapter tests', function() {
         height: 0,
         value: 0,
         width: 0,
-        sectionID: 111111,
+        sectionID: 111111
       };
       var response3 = {
         adTag: '',
         height: 0,
         value: 0,
         width: 0,
-        sectionID: 222222,
+        sectionID: 222222
       };
       var response4 = '';
 
       window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'](
-        response,
+        response
       );
       window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'](
-        response2,
+        response2
       );
       window['adCentroHandler_222222728x90%2F19968336%2Fheader-bid-tag-2'](
-        response3,
+        response3
       );
       window['adCentroHandler_333333728x90%2F19968336%2Fheader-bid-tag-3'](
-        response4,
+        response4
       );
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -247,13 +247,13 @@ describe('centro adapter tests', function() {
       var bidObject4 = stubAddBidResponse.getCall(3).args[1];
 
       expect(logErrorSpy.getCall(0).args[0]).to.equal(
-        'Requested unit is 111111. No bid.',
+        'Requested unit is 111111. No bid.'
       );
       expect(logErrorSpy.getCall(1).args[0]).to.equal(
-        'Requested unit is 222222. Bid has missmatch format.',
+        'Requested unit is 222222. Bid has missmatch format.'
       );
       expect(logErrorSpy.getCall(2).args[0]).to.equal(
-        'Requested unit is 333333. Response has no bid.',
+        'Requested unit is 333333. Response has no bid.'
       );
 
       expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');

@@ -12,13 +12,13 @@ describe('replaceTokenInString', function() {
   it('should replace all given tokens in a String', function() {
     var tokensToReplace = {
       foo: 'bar',
-      zap: 'quux',
+      zap: 'quux'
     };
 
     var output = utils.replaceTokenInString(
       'hello %FOO%, I am %ZAP%',
       tokensToReplace,
-      '%',
+      '%'
     );
     assert.equal(output, 'hello bar, I am quux');
   });
@@ -66,7 +66,7 @@ describe('bidmanager.js', function() {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: bidPbMg,
-        hb_size: size,
+        hb_size: size
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -80,36 +80,36 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return bidResponse.pbHg;
-              },
+              }
             },
             {
               key: 'hb_size',
               val: function(bidResponse) {
                 return bidResponse.size;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: bidPbHg,
-        hb_size: size,
+        hb_size: size
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -123,36 +123,36 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return bidResponse.pbHg;
-              },
+              }
             },
             {
               key: 'hb_size',
               val: function(bidResponse) {
                 return bidResponse.size;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: bidPbHg,
-        hb_size: size,
+        hb_size: size
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -166,36 +166,36 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return bidResponse.pbHg;
-              },
+              }
             },
             {
               key: 'hb_size',
               val: function(bidResponse) {
                 return bidResponse.size;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: bidPbMg,
-        hb_size: size,
+        hb_size: size
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -206,7 +206,7 @@ describe('bidmanager.js', function() {
         appnexus: {
           bidCpmAdjustment: function(bidCpm) {
             return bidCpm * 0.7;
-          },
+          }
         },
         standard: {
           adserverTargeting: [
@@ -214,23 +214,23 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return 10.00;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = { hb_bidder: bidderCode, hb_adid: adId, hb_pb: 10.0 };
@@ -249,22 +249,22 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return 15.00;
-              },
-            },
-          ],
+              }
+            }
+          ]
         },
         standard: {
           adserverTargeting: [
@@ -272,36 +272,36 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 //change default here
                 return 10.00;
-              },
+              }
             },
             {
               key: 'hb_size',
               val: function(bidResponse) {
                 return bidResponse.size;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: 15.0,
-        hb_size: '300x250',
+        hb_size: '300x250'
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -317,29 +317,29 @@ describe('bidmanager.js', function() {
               key: 'hb_bidder',
               val: function(bidResponse) {
                 return bidResponse.bidderCode;
-              },
+              }
             },
             {
               key: 'hb_adid',
               val: function(bidResponse) {
                 return bidResponse.adId;
-              },
+              }
             },
             {
               key: 'hb_pb',
               val: function(bidResponse) {
                 return bidResponse.pbHg;
-              },
-            },
-          ],
-        },
+              }
+            }
+          ]
+        }
       };
 
       var expected = {
         hb_bidder: bidderCode,
         hb_adid: adId,
         hb_pb: 5.57,
-        hb_size: '300x250',
+        hb_size: '300x250'
       };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
@@ -354,18 +354,18 @@ describe('bidmanager.js', function() {
           adserverTargeting: [
             {
               key: 'aKeyWithAValue',
-              val: 42,
+              val: 42
             },
             {
               key: 'aKeyWithAnEmptyValue',
-              val: '',
-            },
-          ],
-        },
+              val: ''
+            }
+          ]
+        }
       };
 
       var expected = {
-        aKeyWithAValue: 42,
+        aKeyWithAValue: 42
       };
 
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
@@ -378,7 +378,7 @@ describe('bidmanager.js', function() {
       const bid = Object.assign(
         {},
         bidfactory.createBid(2),
-        fixtures.getBidResponses()[5],
+        fixtures.getBidResponses()[5]
       );
 
       assert.equal(bid.cpm, 0.5);
@@ -394,11 +394,11 @@ describe('bidmanager.js', function() {
               return 0;
             }
             return bidCpm * 0.5;
-          },
+          }
         },
         standard: {
-          adserverTargeting: [],
-        },
+          adserverTargeting: []
+        }
       };
 
       // negative
@@ -429,7 +429,7 @@ describe('bidmanager.js', function() {
       const bid = Object.assign(
         {},
         bidfactory.createBid(2),
-        fixtures.getBidResponses()[5],
+        fixtures.getBidResponses()[5]
       );
 
       // 0 - 3 dollars
@@ -441,7 +441,7 @@ describe('bidmanager.js', function() {
       assert.equal(
         registeredBid.pbDg,
         expectedIncrement,
-        '0 - 3 hits at to 1 cent increment',
+        '0 - 3 hits at to 1 cent increment'
       );
 
       // 3 - 8 dollars
@@ -452,7 +452,7 @@ describe('bidmanager.js', function() {
       assert.equal(
         registeredBid.pbDg,
         expectedIncrement,
-        '3 - 8 hits at 5 cent increment',
+        '3 - 8 hits at 5 cent increment'
       );
 
       // 8 - 20 dollars
@@ -463,7 +463,7 @@ describe('bidmanager.js', function() {
       assert.equal(
         registeredBid.pbDg,
         expectedIncrement,
-        '8 - 20 hits at 50 cent increment',
+        '8 - 20 hits at 50 cent increment'
       );
 
       // 20+ dollars
@@ -478,7 +478,7 @@ describe('bidmanager.js', function() {
       const bid = Object.assign(
         {},
         bidfactory.createBid(2),
-        fixtures.getBidResponses()[0],
+        fixtures.getBidResponses()[0]
       );
 
       bid.dealId = 'test deal';
@@ -487,7 +487,7 @@ describe('bidmanager.js', function() {
       assert.equal(
         addedBid.adserverTargeting[`hb_deal`],
         bid.dealId,
-        'dealId placed in adserverTargeting',
+        'dealId placed in adserverTargeting'
       );
     });
 
@@ -495,12 +495,12 @@ describe('bidmanager.js', function() {
       const bid1 = Object.assign(
         {},
         bidfactory.createBid(2),
-        fixtures.getBidResponses()[1],
+        fixtures.getBidResponses()[1]
       );
       const bid2 = Object.assign(
         {},
         bidfactory.createBid(2),
-        fixtures.getBidResponses()[3],
+        fixtures.getBidResponses()[3]
       );
 
       bidmanager.addBidResponse(bid1.adUnitCode, Object.assign({}, bid1));

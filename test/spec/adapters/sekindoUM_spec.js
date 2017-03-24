@@ -16,10 +16,10 @@ describe('sekindoUM Adapter Tests', () => {
         requestId: 'sekindo_requestId',
         placementCode: 'foo',
         params: {
-          spaceId: 14071,
-        },
-      },
-    ],
+          spaceId: 14071
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -61,7 +61,7 @@ describe('sekindoUM Adapter Tests', () => {
         cpm: 0.23,
         width: 300,
         height: 250,
-        ad: '<h1>test ad</h1>',
+        ad: '<h1>test ad</h1>'
       };
 
       $$PREBID_GLOBAL$$.sekindoCB(bidderRequest.bids[0].bidId, HB_bid);

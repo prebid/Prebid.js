@@ -24,7 +24,7 @@ function VertamediaAdapter() {
     ajax(ENDPOINT, handleResponse, RTBDataParams, {
       contentType: 'text/plain',
       withCredentials: true,
-      method: 'GET',
+      method: 'GET'
     });
   };
 
@@ -41,7 +41,7 @@ function VertamediaAdapter() {
       aid: bid.params.aid,
       w: parseInt(bid.sizes[0], 10) || undefined,
       h: parseInt(bid.sizes[1], 10) || undefined,
-      domain: document.location.hostname,
+      domain: document.location.hostname
     };
   }
 
@@ -58,7 +58,7 @@ function VertamediaAdapter() {
     if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
       bidmanager.addBidResponse(
         bidRequest.placementCode,
-        createBid(STATUS.NO_BID),
+        createBid(STATUS.NO_BID)
       );
 
       return;
@@ -66,7 +66,7 @@ function VertamediaAdapter() {
 
     bidmanager.addBidResponse(
       bidRequest.placementCode,
-      createBid(STATUS.GOOD, parsed.bids[0]),
+      createBid(STATUS.GOOD, parsed.bids[0])
     );
   }
 
@@ -94,7 +94,7 @@ function VertamediaAdapter() {
   return {
     createNew: VertamediaAdapter.createNew,
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
+    setBidderCode: baseAdapter.setBidderCode
   };
 }
 

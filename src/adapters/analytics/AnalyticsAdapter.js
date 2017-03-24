@@ -19,7 +19,7 @@ const BUNDLE = 'bundle';
 var _timedOutBidders = [];
 
 export default function AnalyticsAdapter(
-  { url, analyticsType, global, handler },
+  { url, analyticsType, global, handler }
 ) {
   var _queue = [];
   var _eventCount = 0;
@@ -40,7 +40,7 @@ export default function AnalyticsAdapter(
     getAdapterType: () => analyticsType,
     getGlobal: () => global,
     getHandler: () => handler,
-    getUrl: () => url,
+    getUrl: () => url
   };
 
   function _track({ eventType, args }) {
@@ -108,7 +108,7 @@ export default function AnalyticsAdapter(
     // finally set this function to return log message, prevents multiple adapter listeners
     this.enableAnalytics = function _enable() {
       return utils.logMessage(
-        `Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`,
+        `Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`
       );
     };
   }

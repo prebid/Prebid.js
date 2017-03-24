@@ -23,7 +23,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
       str.ajax(scriptUrl, $$PREBID_GLOBAL$$.strcallback, undefined, {
-        withCredentials: true,
+        withCredentials: true
       });
     }
   }
@@ -99,7 +99,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   return {
     callBids: _callBids,
-    str: str,
+    str: str
   };
 };
 

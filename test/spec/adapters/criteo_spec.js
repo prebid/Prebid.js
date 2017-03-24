@@ -19,10 +19,10 @@ describe('criteo adapter test', () => {
         sizes: [[250, 350]],
         params: {
           zoneId: 32934,
-          audit: 'true',
-        },
-      },
-    ],
+          audit: 'true'
+        }
+      }
+    ]
   };
 
   let validResponse = {
@@ -30,9 +30,9 @@ describe('criteo adapter test', () => {
       {
         impid: 'foo',
         cpm: 1.12,
-        creative: '<iframe src="fakeIframeSrc" height="250" width=\'350\'></iframe>',
-      },
-    ],
+        creative: '<iframe src="fakeIframeSrc" height="250" width=\'350\'></iframe>'
+      }
+    ]
   };
   let invalidResponse = { slots: [{ impid: 'unknownSlot' }] };
 
@@ -45,8 +45,8 @@ describe('criteo adapter test', () => {
         sizes: [[250, 350]],
         params: {
           zoneId: 32934,
-          audit: 'true',
-        },
+          audit: 'true'
+        }
       },
       {
         bidder: 'criteo',
@@ -54,10 +54,10 @@ describe('criteo adapter test', () => {
         sizes: [[250, 350]],
         params: {
           zoneId: 32935,
-          audit: 'true',
-        },
-      },
-    ],
+          audit: 'true'
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe('criteo adapter test', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create({
         autoRespond: true,
-        respondImmediately: true,
+        respondImmediately: true
       });
       server.respondWith(JSON.stringify(validResponse));
     });
@@ -88,7 +88,7 @@ describe('criteo adapter test', () => {
             return bid.getStatusCode() == CONSTANTS.STATUS.GOOD;
           });
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);
@@ -103,7 +103,7 @@ describe('criteo adapter test', () => {
           callCount++;
 
           if (callCount == 2) done();
-        },
+        }
       );
 
       adapter.callBids(validMultiBid);
@@ -116,7 +116,7 @@ describe('criteo adapter test', () => {
         function(adUnitCode, bid) {
           expect(bid).to.have.property('bidderCode', 'criteo');
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);
@@ -129,7 +129,7 @@ describe('criteo adapter test', () => {
         function(adUnitCode, bid) {
           expect(bid).to.have.property('cpm', 1.12);
           done();
-        },
+        }
       );
       adapter.callBids(validBid);
     });
@@ -141,10 +141,10 @@ describe('criteo adapter test', () => {
         function(adUnitCode, bid) {
           expect(bid).to.have.property(
             'ad',
-            '<iframe src="fakeIframeSrc" height="250" width=\'350\'></iframe>',
+            '<iframe src="fakeIframeSrc" height="250" width=\'350\'></iframe>'
           );
           done();
-        },
+        }
       );
       adapter.callBids(validBid);
     });
@@ -156,7 +156,7 @@ describe('criteo adapter test', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create({
         autoRespond: true,
-        respondImmediately: true,
+        respondImmediately: true
       });
     });
 
@@ -171,7 +171,7 @@ describe('criteo adapter test', () => {
             return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID;
           });
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);
@@ -188,7 +188,7 @@ describe('criteo adapter test', () => {
             return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID;
           });
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);
@@ -205,7 +205,7 @@ describe('criteo adapter test', () => {
             return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID;
           });
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);
@@ -222,7 +222,7 @@ describe('criteo adapter test', () => {
             return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID;
           });
           done();
-        },
+        }
       );
 
       adapter.callBids(validBid);

@@ -40,12 +40,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210093',
+              zoneID: '210093'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -64,12 +64,12 @@ describe('adbutler adapter tests', function() {
             params: {
               accountID: '167283',
               zoneID: '210093',
-              keyword: 'fish',
+              keyword: 'fish'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -93,12 +93,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210093',
+              zoneID: '210093'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -108,7 +108,7 @@ describe('adbutler adapter tests', function() {
         cpm: 1.5,
         width: 300,
         height: 250,
-        place: 0,
+        place: 0
       };
 
       adapter().callBids(params);
@@ -154,12 +154,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210085',
+              zoneID: '210085'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -167,7 +167,7 @@ describe('adbutler adapter tests', function() {
         zone_id: 210085,
         width: 728,
         height: 90,
-        place: 0,
+        place: 0
       };
 
       adapter().callBids(params);
@@ -210,12 +210,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210085',
+              zoneID: '210085'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -225,7 +225,7 @@ describe('adbutler adapter tests', function() {
         cpm: 1.5,
         width: 728,
         height: 90,
-        place: 0,
+        place: 0
       };
 
       adapter().callBids(params);
@@ -265,12 +265,12 @@ describe('adbutler adapter tests', function() {
             params: {
               accountID: '167283',
               zoneID: '210093',
-              minCPM: '5.00',
+              minCPM: '5.00'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -280,7 +280,7 @@ describe('adbutler adapter tests', function() {
         cpm: 1.5,
         width: 300,
         height: 250,
-        place: 0,
+        place: 0
       };
 
       adapter().callBids(params);
@@ -321,12 +321,12 @@ describe('adbutler adapter tests', function() {
             params: {
               accountID: '167283',
               zoneID: '210093',
-              maxCPM: '1.00',
+              maxCPM: '1.00'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -336,7 +336,7 @@ describe('adbutler adapter tests', function() {
         cpm: 1.5,
         width: 300,
         height: 250,
-        place: 0,
+        place: 0
       };
 
       adapter().callBids(params);
@@ -378,12 +378,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210093',
+              zoneID: '210093'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -394,7 +394,7 @@ describe('adbutler adapter tests', function() {
         width: 300,
         height: 250,
         place: 0,
-        ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+        ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">'
       };
 
       adapter().callBids(params);
@@ -435,12 +435,12 @@ describe('adbutler adapter tests', function() {
             bidder: 'adbutler',
             params: {
               accountID: '167283',
-              zoneID: '210093',
+              zoneID: '210093'
             },
             requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/123456/header-bid-tag-1'
+          }
+        ]
       };
 
       var response = {
@@ -452,7 +452,7 @@ describe('adbutler adapter tests', function() {
         height: 250,
         place: 0,
         ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
-        tracking_pixels: ['http://tracking.pixel.com/params=info'],
+        tracking_pixels: ['http://tracking.pixel.com/params=info']
       };
 
       adapter().callBids(params);
@@ -477,7 +477,7 @@ describe('adbutler adapter tests', function() {
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(1);
       expect(bidObject1.ad).to.have.string(
-        'http://tracking.pixel.com/params=info',
+        'http://tracking.pixel.com/params=info'
       );
 
       stubAddBidResponse.restore();

@@ -14,7 +14,7 @@ var CentroAdapter = function CentroAdapter() {
       noBid: 'Response has no bid.',
       anotherCode: 'Bid has another bidderCode - ',
       undefBid: 'Bid is undefined',
-      unitNum: 'Requested unit is ',
+      unitNum: 'Requested unit is '
     };
 
   function _makeHandler(handlerName, unit, placementCode) {
@@ -67,7 +67,7 @@ var CentroAdapter = function CentroAdapter() {
       (document.location.protocol === 'https:' ? 'https:' : 'http:') +
         (isDev ? devUrl : baseUrl) +
         '?' +
-        query.join('&'),
+        query.join('&')
     );
   }
 
@@ -102,7 +102,7 @@ var CentroAdapter = function CentroAdapter() {
           (bid
             ? bid.statusMessage || LOG_ERROR_MESS.noAdTag
             : LOG_ERROR_MESS.noBid),
-        bidderCode,
+        bidderCode
       );
       bidObject = bidfactory.createBid(2);
     }
@@ -130,7 +130,7 @@ var CentroAdapter = function CentroAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

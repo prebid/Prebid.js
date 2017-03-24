@@ -49,7 +49,7 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600',
+  126: '200x600'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -65,11 +65,11 @@ function RubiconAdapter() {
             VIDEO_ENDPOINT,
             bidCallback,
             buildVideoRequestPayload(bid, bidderRequest),
-            { withCredentials: true },
+            { withCredentials: true }
           );
         } else {
           ajax(buildOptimizedCall(bid), bidCallback, undefined, {
-            withCredentials: true,
+            withCredentials: true
           });
         }
       } catch (err) {
@@ -77,7 +77,7 @@ function RubiconAdapter() {
           'Error sending rubicon request for placement code ' +
             bid.placementCode,
           null,
-          err,
+          err
         );
         addErrorBid();
       }
@@ -85,20 +85,20 @@ function RubiconAdapter() {
       function bidCallback(responseText) {
         try {
           utils.logMessage(
-            'XHR callback function called for ad ID: ' + bid.bidId,
+            'XHR callback function called for ad ID: ' + bid.bidId
           );
           handleRpCB(responseText, bid);
         } catch (err) {
           if (typeof err === 'string') {
             utils.logWarn(
-              `${err} when processing rubicon response for placement code ${bid.placementCode}`,
+              `${err} when processing rubicon response for placement code ${bid.placementCode}`
             );
           } else {
             utils.logError(
               'Error processing rubicon response for placement code ' +
                 bid.placementCode,
               null,
-              err,
+              err
             );
           }
           addErrorBid();
@@ -149,7 +149,7 @@ function RubiconAdapter() {
         (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
       stash_creatives: true,
       ae_pass_through_parameters: params.video.aeParams,
-      slots: [],
+      slots: []
     };
 
     // Define the slot object
@@ -162,7 +162,7 @@ function RubiconAdapter() {
       name: bid.placementCode,
       language: params.video.language,
       width: size[0],
-      height: size[1],
+      height: size[1]
     };
 
     // check and add inventory, keywords, visitor and size_id data
@@ -202,7 +202,7 @@ function RubiconAdapter() {
       visitor,
       inventory,
       userId,
-      referrer: pageUrl,
+      referrer: pageUrl
     } = bid.params;
 
     // defaults
@@ -213,7 +213,7 @@ function RubiconAdapter() {
     var parsedSizes = RubiconAdapter.masSizeOrdering(
       Array.isArray(bid.params.sizes)
         ? bid.params.sizes.map(size => (sizeMap[size] || '').split('x'))
-        : bid.sizes,
+        : bid.sizes
     );
 
     if (parsedSizes.length < 1) {
@@ -247,7 +247,7 @@ function RubiconAdapter() {
       'kw',
       keywords,
       'tk_user_key',
-      userId,
+      userId
     ];
 
     if (visitor !== null && typeof visitor === 'object') {
@@ -264,7 +264,7 @@ function RubiconAdapter() {
       'rand',
       Math.random(),
       'rf',
-      !pageUrl ? utils.getTopWindowUrl() : pageUrl,
+      !pageUrl ? utils.getTopWindowUrl() : pageUrl
     );
 
     return queryString
@@ -277,7 +277,7 @@ function RubiconAdapter() {
                 encodeURIComponent(queryString[index + 1]) +
                 '&'
             : memo,
-        FASTLANE_ENDPOINT + '?',
+        FASTLANE_ENDPOINT + '?'
       )
       .slice(0, -1); // remove trailing &
   }
@@ -355,7 +355,7 @@ function RubiconAdapter() {
 
   return Object.assign(Adapter.createNew(RUBICON_BIDDER_CODE), {
     callBids: _callBids,
-    createNew: RubiconAdapter.createNew,
+    createNew: RubiconAdapter.createNew
   });
 }
 
@@ -374,7 +374,7 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
           }
           return result;
         },
-        [],
+        []
       )
       .sort((first, second) => {
         // sort by MAS_SIZE_PRIORITY priority order

@@ -38,7 +38,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
     '185x185',
     '620x45',
     '300x125',
-    '800x250',
+    '800x250'
   ];
 
   const bidIds = [];
@@ -54,7 +54,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
         url: utils.getTopWindowUrl(),
         referrer: document.referrer,
         enableBotFiltering: true,
-        includePricingData: true,
+        includePricingData: true
       };
 
       const bids = params.bids || [];
@@ -71,7 +71,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
           flightId: bid.params.flightId,
           adId: bid.params.adId,
           divName: bid.bidId,
-          adTypes: bid.adTypes || getSize(bid.sizes),
+          adTypes: bid.adTypes || getSize(bid.sizes)
         };
 
         if (bid_data.networkId && bid_data.siteId) {
@@ -83,7 +83,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
         ajax(BASE_URI, _responseCallback, JSON.stringify(data), {
           method: 'POST',
           withCredentials: true,
-          contentType: 'application/json',
+          contentType: 'application/json'
         });
       }
     }
@@ -154,7 +154,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
   return {
-    callBids: baseAdapter.callBids,
+    callBids: baseAdapter.callBids
   };
 };
 

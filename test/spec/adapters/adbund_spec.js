@@ -15,22 +15,22 @@ describe('adbund adapter tests', function() {
         bidder: 'adbund',
         params: {
           sid: '110238',
-          bidfloor: 0.036,
+          bidfloor: 0.036
         },
         placementCode: 'adbund',
         sizes: [[300, 250]],
         bidId: 'adbund_bidId',
         bidderRequestId: 'adbund_bidderRequestId',
-        requestId: 'adbund_requestId',
-      },
-    ],
+        requestId: 'adbund_requestId'
+      }
+    ]
   };
 
   const response = {
     bidderCode: 'adbund',
     cpm: 1.06,
     height: 250,
-    width: 300,
+    width: 300
   };
 
   beforeEach(() => {

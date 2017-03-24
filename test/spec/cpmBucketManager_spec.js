@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {
   getPriceBucketString,
-  isValidePriceConfig,
+  isValidePriceConfig
 } from 'src/cpmBucketManager';
 let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
@@ -12,7 +12,7 @@ describe('cpmBucketManager', () => {
       let output = getPriceBucketString(input[i]);
       let jsonOutput = JSON.stringify(output);
       expect(jsonOutput).to.deep.equal(
-        JSON.stringify(cpmFixtures.priceStringOutputs[i]),
+        JSON.stringify(cpmFixtures.priceStringOutputs[i])
       );
     }
   });
@@ -25,16 +25,16 @@ describe('cpmBucketManager', () => {
           precision: 4,
           min: 0,
           max: 3,
-          increment: 0.01,
+          increment: 0.01
         },
         {
           precision: 4,
           min: 3,
           max: 18,
           increment: 0.05,
-          cap: true,
-        },
-      ],
+          cap: true
+        }
+      ]
     };
     let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.5000"}';
     let output = getPriceBucketString(cpm, customConfig);
@@ -47,15 +47,15 @@ describe('cpmBucketManager', () => {
         {
           min: 0,
           max: 3,
-          increment: 0.01,
+          increment: 0.01
         },
         {
           //missing min prop
           max: 18,
           increment: 0.05,
-          cap: true,
-        },
-      ],
+          cap: true
+        }
+      ]
     };
 
     expect(isValidePriceConfig(badConfig)).to.be.false;

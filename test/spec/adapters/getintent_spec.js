@@ -17,28 +17,28 @@ describe('getintent media adapter test', () => {
           {
             ad: `Ad Markup ${pid} ${tid}`,
             cpm: 2.71,
-            size: `${bidRequest.size}`,
+            size: `${bidRequest.size}`
           },
-          bidRequest,
+          bidRequest
         );
       } else if (pid == 'p3') {
         callback(
           {
-            no_bid: 1,
+            no_bid: 1
           },
-          bidRequest,
+          bidRequest
         );
       } else if (pid == 'p4') {
         callback(
           {
             vast_url: `http://test.com?pid=${pid}&tid=${tid}`,
             cpm: 2.88,
-            size: `${bidRequest.size}`,
+            size: `${bidRequest.size}`
           },
-          bidRequest,
+          bidRequest
         );
       }
-    },
+    }
   };
 
   function callOut() {
@@ -52,8 +52,8 @@ describe('getintent media adapter test', () => {
           params: {
             pid: 'p1',
             tid: 't1',
-            cur: 'USD',
-          },
+            cur: 'USD'
+          }
         },
         {
           bidder: 'getintent',
@@ -62,8 +62,8 @@ describe('getintent media adapter test', () => {
           params: {
             pid: 'p2',
             tid: 't1',
-            cur: 'USD',
-          },
+            cur: 'USD'
+          }
         },
         {
           bidder: 'getintent',
@@ -72,8 +72,8 @@ describe('getintent media adapter test', () => {
           params: {
             pid: 'p3',
             tid: 't2',
-            cur: 'USD',
-          },
+            cur: 'USD'
+          }
         },
         {
           bidder: 'getintent',
@@ -83,10 +83,10 @@ describe('getintent media adapter test', () => {
           params: {
             pid: 'p4',
             tid: 't3',
-            cur: 'USD',
-          },
-        },
-      ],
+            cur: 'USD'
+          }
+        }
+      ]
     });
   }
 
@@ -147,7 +147,7 @@ describe('getintent media adapter test', () => {
     it('will respond to the video bid', () => {
       expect(videoBid).to.have.property(
         'vastUrl',
-        'http://test.com?pid=p4&tid=t3',
+        'http://test.com?pid=p4&tid=t3'
       );
       expect(videoBid).to.have.property('cpm', 2.88);
       expect(videoBid).to.have.property('width', '480');

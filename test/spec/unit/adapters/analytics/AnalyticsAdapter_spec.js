@@ -12,7 +12,7 @@ const config = {
   url: 'http://localhost:9999/src/adapters/analytics/libraries/example.js',
   analyticsType: 'library',
   global: 'ExampleAnalyticsGlobalObject',
-  handler: 'on',
+  handler: 'on'
 };
 
 window[config.global] = () => {};
@@ -34,12 +34,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[0][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[0][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();
@@ -64,12 +64,12 @@ FEATURE: Analytics Adapters API
       it(`THEN should queue the event first and then track it\n`, () => {
         assert.ok(
           spyTestGlobal.args[0][1] === eventType,
-          `with expected event type\n`,
+          `with expected event type\n`
         );
         assert.deepEqual(
           spyTestGlobal.args[0][2],
           args,
-          `with expected event data\n`,
+          `with expected event data\n`
         );
       });
       window[config.global].restore();
@@ -89,12 +89,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[2][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[2][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();
@@ -113,12 +113,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[3][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[3][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();
@@ -137,12 +137,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[4][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[4][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();
@@ -161,12 +161,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[5][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[5][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();
@@ -185,12 +185,12 @@ FEATURE: Analytics Adapters API
     it(`THEN should call \`window.${config.global}\` function\n`, () => {
       assert.ok(
         spyTestGlobal.args[5][1] === eventType,
-        `with expected event type\n`,
+        `with expected event type\n`
       );
       assert.deepEqual(
         spyTestGlobal.args[5][2],
         args,
-        `with expected event data\n`,
+        `with expected event data\n`
       );
     });
     window[config.global].restore();

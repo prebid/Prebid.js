@@ -18,21 +18,21 @@ describe('Roxot adapter tests', function() {
             bidId: 'id1',
             bidder: 'roxot',
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidId: 'id2',
             bidder: 'roxot',
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       // no bids returned in the response.
       var response = {
         id: '123',
-        bids: [],
+        bids: []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -68,15 +68,15 @@ describe('Roxot adapter tests', function() {
             bidId: 'id1',
             bidder: 'roxot',
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-1',
+            placementCode: 'div-gpt-ad-12345-1'
           },
           {
             bidId: 'id2',
             bidder: 'roxot',
             sizes: [[320, 50]],
-            placementCode: 'div-gpt-ad-12345-2',
-          },
-        ],
+            placementCode: 'div-gpt-ad-12345-2'
+          }
+        ]
       };
 
       // Returning a single bid in the response.
@@ -89,9 +89,9 @@ describe('Roxot adapter tests', function() {
             nurl: 'http://roxot.example.com',
             adm: '<<creative>>',
             h: 320,
-            w: 50,
-          },
-        ],
+            w: 50
+          }
+        ]
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -113,7 +113,7 @@ describe('Roxot adapter tests', function() {
       expect(bidObject1.height).to.equal(320);
       expect(bidObject1.width).to.equal(50);
       expect(bidObject1.ad).to.equal(
-        '<<creative>><img src="http://roxot.example.com">',
+        '<<creative>><img src="http://roxot.example.com">'
       );
 
       expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');

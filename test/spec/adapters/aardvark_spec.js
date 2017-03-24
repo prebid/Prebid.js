@@ -18,8 +18,8 @@ describe('aardvark adapter tests', function() {
         rtkid: 1,
         params: {
           ai: 'AH5S',
-          sc: 'BirH',
-        },
+          sc: 'BirH'
+        }
       },
       {
         bidId: 'bidId2',
@@ -29,10 +29,10 @@ describe('aardvark adapter tests', function() {
         rtkid: 1,
         params: {
           ai: 'AH5S',
-          sc: '661h',
-        },
-      },
-    ],
+          sc: '661h'
+        }
+      }
+    ]
   },
     bidderRequestCustomHost = {
       bidderCode: 'aardvark',
@@ -46,8 +46,8 @@ describe('aardvark adapter tests', function() {
           params: {
             ai: 'AH5S',
             sc: 'BirH',
-            host: 'custom.server.com',
-          },
+            host: 'custom.server.com'
+          }
         },
         {
           bidId: 'bidId2',
@@ -58,10 +58,10 @@ describe('aardvark adapter tests', function() {
           params: {
             ai: 'AH5S',
             sc: '661h',
-            host: 'custom.server.com',
-          },
-        },
-      ],
+            host: 'custom.server.com'
+          }
+        }
+      ]
     },
     // respond
     bidderResponse = [
@@ -73,7 +73,7 @@ describe('aardvark adapter tests', function() {
         id: 'BirH',
         nurl: '',
         width: '728',
-        cid: 'bidId1',
+        cid: 'bidId1'
       },
       {
         adm: '<div></div>',
@@ -83,8 +83,8 @@ describe('aardvark adapter tests', function() {
         id: '661h',
         nurl: '',
         width: '300',
-        cid: 'bidId2',
-      },
+        cid: 'bidId2'
+      }
     ];
 
   beforeEach(() => {
@@ -108,7 +108,7 @@ describe('aardvark adapter tests', function() {
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
       expect(adloader.loadScript.firstCall.args[0]).to.eql(
-        '//thor.rtk.io/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2',
+        '//thor.rtk.io/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2'
       );
     });
   });
@@ -121,7 +121,7 @@ describe('aardvark adapter tests', function() {
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
       expect(adloader.loadScript.firstCall.args[0]).to.eql(
-        '//custom.server.com/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2',
+        '//custom.server.com/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2'
       );
     });
   });
@@ -129,7 +129,7 @@ describe('aardvark adapter tests', function() {
   describe('aardvarkResponse', () => {
     it('should exist and be a function', () => {
       expect($$PREBID_GLOBAL$$.aardvarkResponse).to.exist.and.to.be.a(
-        'function',
+        'function'
       );
     });
   });

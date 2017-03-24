@@ -14,7 +14,7 @@ const VIDEO_TARGETING = [
   'startdelay',
   'skippable',
   'playback_method',
-  'frameworks',
+  'frameworks'
 ];
 const USER_PARAMS = [
   'age',
@@ -22,7 +22,7 @@ const USER_PARAMS = [
   'segments',
   'gender',
   'dnt',
-  'language',
+  'language'
 ];
 
 /**
@@ -114,7 +114,7 @@ function AppnexusAstAdapter() {
       const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials: true,
+        withCredentials: true
       });
     }
   };
@@ -284,7 +284,7 @@ function AppnexusAstAdapter() {
   return {
     createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
+    setBidderCode: baseAdapter.setBidderCode
   };
 }
 

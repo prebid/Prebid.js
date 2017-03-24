@@ -43,7 +43,7 @@ const defaultAdapters = [
   { appnexus: { alias: 'brealtime' } },
   { appnexus: { alias: 'pagescience' } },
   { appnexus: { alias: 'defymedia' } },
-  { appnexusAst: { supportedMediaTypes: ['video'] } },
+  { appnexusAst: { supportedMediaTypes: ['video'] } }
 ];
 
 const input = `/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
@@ -53,7 +53,7 @@ describe('adapterLoader.js', () => {
   it('should replace with the default set of adapters', () => {
     const getAdapterStub = () => defaultAdapters;
     const loader = proxyquire('../../../loaders/adapterLoader', {
-      './getAdapters': getAdapterStub,
+      './getAdapters': getAdapterStub
     });
     let output = loader(input);
     expect(output).to.equal(allAdapters.getAllAdaptersString());
@@ -61,12 +61,12 @@ describe('adapterLoader.js', () => {
 
   it('should return custom adapter list if file exists', () => {
     const customAdapter = [
-      { customAdapterName: { srcPath: '/somepath/customAdapterName.js' } },
+      { customAdapterName: { srcPath: '/somepath/customAdapterName.js' } }
     ];
     const getAdapterStub = () => customAdapter;
     const loader = proxyquire('../../../loaders/adapterLoader', {
       fs: { existsSync: () => true },
-      './getAdapters': getAdapterStub,
+      './getAdapters': getAdapterStub
     });
     let output = loader(input);
     const expected = "let customAdapterName = require('/somepath/customAdapterName.js');\n      exports.registerBidAdapter(new customAdapterName, 'customAdapterName');\nexports.videoAdapters = [];";
@@ -76,12 +76,12 @@ describe('adapterLoader.js', () => {
   it('should ignore custom adapters that that do not exist', () => {
     const customAdapter = [
       'appnexus',
-      { customAdapterName: { srcPath: '/somepath/customAdapterName.js' } },
+      { customAdapterName: { srcPath: '/somepath/customAdapterName.js' } }
     ];
     const getAdapterStub = () => customAdapter;
     const loader = proxyquire('../../../loaders/adapterLoader', {
       fs: { existsSync: () => false },
-      './getAdapters': getAdapterStub,
+      './getAdapters': getAdapterStub
     });
     let output = loader(input);
     const expected = "var AppnexusAdapter = require('./adapters/appnexus.js');\n    exports.registerBidAdapter(new AppnexusAdapter(), 'appnexus');\nexports.videoAdapters = [];";

@@ -11,8 +11,8 @@ function setupResponse(resp) {
     requestPrebid: stub.returns({
       then: function(cb) {
         return cb(resp);
-      },
-    }),
+      }
+    })
   };
   return stub;
 }
@@ -42,10 +42,10 @@ describe('thoughtleadr adapter tests', function() {
           placementCode: 'abc-123',
           sizes: [[300, 250], [400, 400]],
           params: {
-            placementId: 'test-placement',
-          },
-        },
-      ],
+            placementId: 'test-placement'
+          }
+        }
+      ]
     };
   });
 
@@ -71,8 +71,8 @@ describe('thoughtleadr adapter tests', function() {
     it('should use window.tldr.config.root_url', function() {
       window.tldr = {
         config: {
-          root_url: 'http://example.loc/',
-        },
+          root_url: 'http://example.loc/'
+        }
       };
       adapter.callBids(request);
       chai_1
@@ -96,15 +96,15 @@ describe('thoughtleadr adapter tests', function() {
         bidder: 'thoughtleadr',
         placementCode: 'abc-123',
         sizes: [[300, 250], [400, 400]],
-        params: {},
+        params: {}
       });
       request.bids.push({
         bidder: 'thoughtleadr',
         placementCode: 'abc-123',
         sizes: [[300, 250], [400, 400]],
         params: {
-          incorrectParam: 123,
-        },
+          incorrectParam: 123
+        }
       });
       var requestPlacement = sinon.spy(adapter, 'requestPlacement');
       adapter.callBids(request);
@@ -119,13 +119,13 @@ describe('thoughtleadr adapter tests', function() {
     beforeEach(function() {
       tldrRequestPrebid = setupResponse({
         config: {
-          abc: 567,
+          abc: 567
         },
         bid: {
           code: 1,
           cpm: 12,
-          ad: 'asd',
-        },
+          ad: 'asd'
+        }
       });
     });
 
@@ -150,8 +150,8 @@ describe('thoughtleadr adapter tests', function() {
       tldrRequestPrebid = setupResponse({
         config: {},
         bid: {
-          code: 2,
-        },
+          code: 2
+        }
       });
       adapter.requestPlacement(bid);
       chai_1.expect(createBid.callCount).to.be.equal(1);
@@ -179,7 +179,7 @@ describe('thoughtleadr adapter tests', function() {
             throw new Error('should not be any other messages');
           }
         },
-        false,
+        false
       );
       window.postMessage({ TLDR_REQUEST: { rid: rid } }, '*');
     });

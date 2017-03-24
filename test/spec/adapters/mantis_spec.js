@@ -32,8 +32,8 @@ describe('mantis adapter tests', function() {
         placementCode: 'foo',
         sizes: [[728, 90]],
         params: {
-          property: '1234',
-        },
+          property: '1234'
+        }
       },
       {
         bidId: 'bidId2',
@@ -41,10 +41,10 @@ describe('mantis adapter tests', function() {
         placementCode: 'bar',
         sizes: [[300, 600], [300, 250]],
         params: {
-          property: '1234',
-        },
-      },
-    ],
+          property: '1234'
+        }
+      }
+    ]
   };
 
   describe('callBids', () => {
@@ -52,7 +52,7 @@ describe('mantis adapter tests', function() {
       sandbox.stub(bidmanager, 'addBidResponse');
       sandbox.stub(adloader, 'loadScript', function(url) {
         var jsonp = eval(
-          decodeURIComponent(url.match(/jsonp=(.*)&property/)[1]),
+          decodeURIComponent(url.match(/jsonp=(.*)&property/)[1])
         );
 
         jsonp({
@@ -61,9 +61,9 @@ describe('mantis adapter tests', function() {
               cpm: 1,
               html: '<script></script>',
               width: 300,
-              height: 600,
-            },
-          },
+              height: 600
+            }
+          }
         });
       });
 
@@ -149,8 +149,8 @@ describe('mantis adapter tests', function() {
         tagName: 'AMP-AD',
         location: {
           href: 'bar',
-          referrer: 'baz',
-        },
+          referrer: 'baz'
+        }
       };
 
       mantis.callBids(callBidExample);

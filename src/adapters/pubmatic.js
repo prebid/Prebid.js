@@ -107,13 +107,13 @@ var PubmaticAdapter = function PubmaticAdapter() {
       ) {
         bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(
           /([a-z]+);(.[^;]*)/ig,
-          '$1=$2',
+          '$1=$2'
         );
       }
 
       adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(
         result,
-        pair,
+        pair
       ) {
         var parts = pair.split('=');
         result[parts[0]] = parts[1];
@@ -128,7 +128,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
         adResponse.cpm = Number(adUnitInfo.bid);
         adResponse.ad = unescape(adUnit.creative_tag); // jshint ignore:line
         adResponse.ad += utils.createTrackPixelIframeHtml(
-          decodeURIComponent(adUnit.tracking_url),
+          decodeURIComponent(adUnit.tracking_url)
         );
         adResponse.width = dimensions[0];
         adResponse.height = dimensions[1];
@@ -145,7 +145,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

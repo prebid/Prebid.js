@@ -69,7 +69,7 @@ describe('Adform adapter', () => {
       assert.equal(_bid[0], 'code-2');
       assert.equal(
         _bidObject.statusMessage,
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
       assert.equal(_bidObject.bidderCode, 'adform');
     });
@@ -81,7 +81,7 @@ describe('Adform adapter', () => {
       assert.equal(_bid[0], 'code-3');
       assert.equal(
         _bidObject.statusMessage,
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
       assert.equal(_bidObject.bidderCode, 'adform');
     });
@@ -103,15 +103,15 @@ describe('Adform adapter', () => {
           banner: '<tag>',
           win_bid: 1.1,
           win_cur: 'EUR',
-          deal_id: 'deal-1',
+          deal_id: 'deal-1'
         },
         {},
         {
           response: 'banner',
           width: 50,
           height: 50,
-          banner: '<tag>',
-        },
+          banner: '<tag>'
+        }
       ]);
     });
   });
@@ -129,10 +129,10 @@ describe('Adform adapter', () => {
           sizes: [[100, 100], [90, 90]],
           params: {
             mid: 1,
-            url: 'some// there',
+            url: 'some// there'
           },
           adxDomain: 'newdomain',
-          tid: 45,
+          tid: 45
         },
         {
           bidId: '123',
@@ -141,8 +141,8 @@ describe('Adform adapter', () => {
           params: {
             mid: 2,
             tid: 145,
-            someVar: 'someValue',
-          },
+            someVar: 'someValue'
+          }
         },
         {
           bidId: 'a1b',
@@ -150,10 +150,10 @@ describe('Adform adapter', () => {
           sizes: [[50, 40], [40, 50]],
           params: {
             mid: 3,
-            pdom: 'home',
-          },
-        },
-      ],
+            pdom: 'home'
+          }
+        }
+      ]
     });
   });
 
@@ -173,13 +173,13 @@ function parseUrl(url) {
     query: query
       .filter(i => ~i.indexOf('='))
       .map(i => i.replace('?', ''))
-      .reduce(toObject, {}),
+      .reduce(toObject, {})
   };
 }
 
 function fromBase64(input) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split(
-    '',
+    ''
   );
   let bc = 0, bs, buffer, idx = 0, output = '';
   for (

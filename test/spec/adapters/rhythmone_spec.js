@@ -18,14 +18,14 @@ describe('rhythmone adapter tests', function() {
               cid: '35857',
               cat: [],
               h: 250,
-              w: 300,
-            },
+              w: 300
+            }
           ],
           seat: '14',
-          group: 0,
-        },
+          group: 0
+        }
       ],
-      bidid: 'ff8b09b1-5264-52be-4b7b-0156526452bf',
+      bidid: 'ff8b09b1-5264-52be-4b7b-0156526452bf'
     };
 
     var endEvent = function() {}, wonEvent = function() {};
@@ -43,7 +43,7 @@ describe('rhythmone adapter tests', function() {
             assert.equal(adResponse.cpm, 1);
             assert.equal(adResponse.bidderCode, 'rhythmone');
           });
-        },
+        }
       },
       {
         navigator: {},
@@ -57,19 +57,19 @@ describe('rhythmone adapter tests', function() {
               'div-gpt-ad-1438287399331-0': {
                 bids: [
                   { cpm: 1, bidderCode: 'rhythmone' },
-                  { cpm: 2, bidderCode: 'rhythmone' },
-                ],
-              },
+                  { cpm: 2, bidderCode: 'rhythmone' }
+                ]
+              }
             };
-          },
-        },
+          }
+        }
       },
       function(url, callback) {
         callback(JSON.stringify(fakeResponse), {
           status: 200,
-          responseText: JSON.stringify(fakeResponse),
+          responseText: JSON.stringify(fakeResponse)
         });
-      },
+      }
     );
 
     z.callBids({
@@ -83,18 +83,18 @@ describe('rhythmone adapter tests', function() {
             categories: [],
             trace: true,
             method: 'get',
-            endpoint: 'http://fakedomain.com',
+            endpoint: 'http://fakedomain.com'
           },
           placementCode: 'div-gpt-ad-1438287399331-0',
-          sizes: [[300, 250]],
-        },
-      ],
+          sizes: [[300, 250]]
+        }
+      ]
     });
 
     endEvent();
     wonEvent({
       bidderCode: 'rhythmone',
-      adUnitCode: 'div-gpt-ad-1438287399331-0',
+      adUnitCode: 'div-gpt-ad-1438287399331-0'
     });
   });
 });

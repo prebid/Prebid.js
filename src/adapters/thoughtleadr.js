@@ -18,7 +18,7 @@ var ThoughtleadrAdapter = (function() {
       adloader_1.loadScript(
         rootUrl + 'page.js',
         this.handleBids.bind(this, params),
-        true,
+        true
       );
     } else {
       this.handleBids(params);
@@ -48,7 +48,7 @@ var ThoughtleadrAdapter = (function() {
           utils.logError(
             'invalid response from tldr.requestPrebid',
             undefined,
-            undefined,
+            undefined
           );
           return;
         }
@@ -62,7 +62,7 @@ var ThoughtleadrAdapter = (function() {
           ) {
             ev.source.postMessage(
               { TLDR_RESPONSE: { config: params.config, rid: rid } },
-              location.origin,
+              location.origin
             );
           }
           _this.stopListen();
@@ -72,7 +72,7 @@ var ThoughtleadrAdapter = (function() {
           function() {
             return _this.stopListen();
           },
-          5000,
+          5000
         );
 
         var bidObject;
@@ -109,7 +109,7 @@ var ThoughtleadrAdapter = (function() {
     }
     return {
       width: sizes[0],
-      height: sizes[1],
+      height: sizes[1]
     };
   };
   return ThoughtleadrAdapter;

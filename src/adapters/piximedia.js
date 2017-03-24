@@ -44,7 +44,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
                 url = tryAppendPixiQueryString(
                   url,
                   'site_id',
-                  encodeURIComponent(value),
+                  encodeURIComponent(value)
                 );
                 break;
 
@@ -52,7 +52,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
                 url = tryAppendPixiQueryString(
                   url,
                   'placement_id',
-                  encodeURIComponent(value),
+                  encodeURIComponent(value)
                 );
                 break;
 
@@ -60,7 +60,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
                 url = tryAppendPixiQueryString(
                   url,
                   'l_id',
-                  encodeURIComponent(value),
+                  encodeURIComponent(value)
                 );
                 break;
 
@@ -74,14 +74,14 @@ var PiximediaAdapter = function PiximediaAdapter() {
                     url,
                     key,
                     encodeURIComponent(
-                      (value(baseAdapter, params, bid) || '').toString(),
-                    ),
+                      (value(baseAdapter, params, bid) || '').toString()
+                    )
                   );
                 } else {
                   url = tryAppendPixiQueryString(
                     url,
                     key,
-                    encodeURIComponent((value || '').toString()),
+                    encodeURIComponent((value || '').toString())
                   );
                 }
                 break;
@@ -92,27 +92,27 @@ var PiximediaAdapter = function PiximediaAdapter() {
         url = tryAppendPixiQueryString(
           url,
           'jsonp',
-          '$$PREBID_GLOBAL$$.handlePiximediaCallback',
+          '$$PREBID_GLOBAL$$.handlePiximediaCallback'
         );
         url = tryAppendPixiQueryString(
           url,
           'sizes',
-          encodeURIComponent(sizes.join(',')),
+          encodeURIComponent(sizes.join(','))
         );
         url = tryAppendPixiQueryString(url, 'cbid', encodeURIComponent(cbid));
         url = tryAppendPixiQueryString(
           url,
           'rand',
-          String(Math.floor(Math.random() * 1000000000)),
+          String(Math.floor(Math.random() * 1000000000))
         );
 
         bidStash[cbid] = {
           bidObj: bid,
           url: url,
-          start: new Date().getTime(),
+          start: new Date().getTime()
         };
         utils.logMessage(
-          '[Piximedia] Dispatching header Piximedia to URL ' + url,
+          '[Piximedia] Dispatching header Piximedia to URL ' + url
         );
         adloader.loadScript(url);
       }
@@ -173,7 +173,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
               stash.url +
               ' (time: ' +
               String(timelapsed) +
-              ')',
+              ')'
           );
           utils.logMessage(
             '[Piximedia] ======> BID placementCode: ' +
@@ -185,7 +185,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
               ' Format: ' +
               String(bid.width) +
               'x' +
-              String(bid.height),
+              String(bid.height)
           );
         } else {
           /* we have no ads to display */
@@ -198,10 +198,10 @@ var PiximediaAdapter = function PiximediaAdapter() {
               stash.url +
               ' (time: ' +
               String(timelapsed) +
-              ')',
+              ')'
           );
           utils.logMessage(
-            '[Piximedia] ======> NOBID placementCode: ' + bidObj.placementCode,
+            '[Piximedia] ======> NOBID placementCode: ' + bidObj.placementCode
           );
         }
 
@@ -209,7 +209,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
         bidStash[bidResponse.cbid] = null;
       } else {
         utils.logMessage(
-          "[Piximedia] Couldn't find stash for cbid=" + bidResponse.cbid,
+          "[Piximedia] Couldn't find stash for cbid=" + bidResponse.cbid
         );
       }
     }
@@ -219,7 +219,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode: baseAdapter.getBidderCode,
+    getBidderCode: baseAdapter.getBidderCode
   };
 };
 

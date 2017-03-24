@@ -14,7 +14,7 @@ function Adapter(code) {
   return {
     callBids: callBids,
     setBidderCode: setBidderCode,
-    getBidderCode: getBidderCode,
+    getBidderCode: getBidderCode
   };
 }
 

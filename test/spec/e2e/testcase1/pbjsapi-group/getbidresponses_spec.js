@@ -16,7 +16,7 @@ module.exports = {
         function(result) {
           //browser.assert.first(false, 'Bid response empty');
           assert.isOk(result.value, 'Bid response empty');
-        },
+        }
       );
   },
   'check keys': function(browser) {
@@ -36,16 +36,16 @@ module.exports = {
           'requestId',
           'bidder',
           'adUnitCode',
-          'timeToRespond',
+          'timeToRespond'
         ];
         Object.keys(result.value).forEach(function(key) {
           var compare = Object.keys(result.value[key]);
           assert.includeMembers(compare, expected, 'include members');
         });
-      },
+      }
     );
   },
   after: function(browser) {
     browser.end();
-  },
+  }
 };

@@ -19,7 +19,7 @@ describe('sharethrough analytics adapter', () => {
         let eventType = 'bidRequested';
         let args = {
           bidderCode: 'sharethrough',
-          bids: { '0': { placementCode: 'fake placement Code' } },
+          bids: { '0': { placementCode: 'fake placement Code' } }
         };
         sharethroughAnalytics.track({ eventType, args });
       });
@@ -27,7 +27,7 @@ describe('sharethrough analytics adapter', () => {
       it('placementCodeSet contains a value', () => {
         expect(
           sharethroughAnalytics.placementCodeSet['fake placement Code'] ==
-            undefined,
+            undefined
         ).to.equal(false);
       });
     });
@@ -39,14 +39,14 @@ describe('sharethrough analytics adapter', () => {
     beforeEach(() => {
       fireLoseBeaconStub = sandbox.stub(
         sharethroughAnalytics,
-        'fireLoseBeacon',
+        'fireLoseBeacon'
       );
     });
 
     describe('when bidderCode is not sharethrough and sharethrough is in bid', () => {
       beforeEach(() => {
         sharethroughAnalytics.placementCodeSet['div-gpt-ad-1460505748561-0'] = {
-          adserverRequestId: '0eca470d-fcac-48e6-845a-c86483ccaa0c',
+          adserverRequestId: '0eca470d-fcac-48e6-845a-c86483ccaa0c'
         };
         var args = {
           bidderCode: 'someoneelse',
@@ -75,8 +75,8 @@ describe('sharethrough analytics adapter', () => {
             hb_bidder: 'sharethrough',
             hb_adid: '23fbe93a90c924',
             hb_pb: '3.90',
-            hb_size: '600x300',
-          },
+            hb_size: '600x300'
+          }
         };
 
         sharethroughAnalytics.bidWon(args);
@@ -95,7 +95,7 @@ describe('sharethrough analytics adapter', () => {
         'someoneelse',
         10.0,
         'arid',
-        'losebeacontype',
+        'losebeacontype'
       );
     });
 
@@ -103,7 +103,7 @@ describe('sharethrough analytics adapter', () => {
       let winUrl = sharethroughAnalytics.fireBeacon.firstCall.args[0];
       expect(winUrl).to.contain(
         sharethroughAnalytics.STR_BEACON_HOST +
-          'winnerBidderCode=someoneelse&winnerCpm=10&arid=arid&type=losebeacontype&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&',
+          'winnerBidderCode=someoneelse&winnerCpm=10&arid=arid&type=losebeacontype&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&'
       );
     });
   });

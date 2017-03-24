@@ -10,7 +10,7 @@ var RoxotAdapter = function RoxotAdapter() {
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 
   function _callBids(bidReqs) {
@@ -24,8 +24,8 @@ var RoxotAdapter = function RoxotAdapter() {
       bids: bidReqs,
       site: {
         domain: domain,
-        page: page,
-      },
+        page: page
+      }
     };
 
     var scriptUrl = '//' +

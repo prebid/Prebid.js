@@ -226,7 +226,7 @@ var errLogFn = (function(hasLogger) {
 var debugTurnedOn = function() {
   if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
     $$PREBID_GLOBAL$$.logging = getParameterByName(
-      CONSTANTS.DEBUG_MODE,
+      CONSTANTS.DEBUG_MODE
     ).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
@@ -300,7 +300,7 @@ exports.hasValidBidRequest = function(paramObj, requiredParamsArr, adapter) {
       this.logError(
         'Params are missing for bid request. One of these required paramaters are missing: ' +
           requiredParamsArr,
-        adapter,
+        adapter
       );
       return false;
     }
@@ -516,7 +516,7 @@ exports.getValueString = function(param, val, defaultValue) {
     return val.toString();
   }
   this.logWarn(
-    'Unsuported type for param: ' + param + ' required type: String',
+    'Unsuported type for param: ' + param + ' required type: String'
   );
 };
 

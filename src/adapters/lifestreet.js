@@ -87,7 +87,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
             } else {
               _addSlotBidResponse(bid, 0, null, 0, 0);
             }
-          },
+          }
         };
         for (let property in bid.params) {
           if (property === 'jstag_url' || property === 'timeout') {
@@ -117,14 +117,14 @@ const LifestreetAdapter = function LifestreetAdapter() {
               ev.source.postMessage(
                 JSON.stringify({
                   message: PREBID_RESPONSE_MESSAGE,
-                  slotObject: window.$$PREBID_GLOBAL$$[object.slotName],
+                  slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
                 }),
-                '*',
+                '*'
               );
               window.$$PREBID_GLOBAL$$[object.slotName].destroy();
             }
           },
-          false,
+          false
         );
       } else {
         _addSlotBidResponse(bid, 0, null, 0, 0);
@@ -189,7 +189,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

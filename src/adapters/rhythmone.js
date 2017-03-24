@@ -50,11 +50,11 @@ module.exports = function(bidManager, global, loader) {
             callback(
               -1,
               'http error ' + response.status,
-              response.responseText,
+              response.responseText
             );
         },
         false,
-        { method: 'GET', withCredentials: true },
+        { method: 'GET', withCredentials: true }
       );
     } else {
       loader(
@@ -66,15 +66,15 @@ module.exports = function(bidManager, global, loader) {
             callback(
               -1,
               'http error ' + response.status,
-              response.responseText,
+              response.responseText
             );
         },
         postData,
         {
           method: 'POST',
           contentType: 'application/json',
-          withCredentials: true,
-        },
+          withCredentials: true
+        }
       );
     }
   }
@@ -105,7 +105,7 @@ module.exports = function(bidManager, global, loader) {
             for (var k in placementCodes)
               if (placementCodes[k] === false) track(debug, 'hb', 'bidLost');
           },
-          50,
+          50
         );
       }
     });
@@ -129,7 +129,7 @@ module.exports = function(bidManager, global, loader) {
     for (var i = 0; i < params.bids.length; i++) {
       if (params.bids[i].success !== 1) {
         logToConsole(
-          'registering nobid for slot ' + params.bids[i].placementCode,
+          'registering nobid for slot ' + params.bids[i].placementCode
         );
         var bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = bidderCode;
@@ -156,7 +156,7 @@ module.exports = function(bidManager, global, loader) {
     endpoint = applyMacros(endpoint, {
       placementid: bidParams.placementId,
       zone: defaultZone,
-      path: defaultPath,
+      path: defaultPath
     });
 
     function p(k, v) {
@@ -204,14 +204,14 @@ module.exports = function(bidManager, global, loader) {
     var o = {
       device: {
         langauge: global.navigator.language,
-        dnt: global.navigator.doNotTrack === 1 ? 1 : 0,
+        dnt: global.navigator.doNotTrack === 1 ? 1 : 0
       },
       at: 2,
       site: {},
       tmax: 3000,
       cur: [currency],
       id: utils.generateUUID(),
-      imp: [],
+      imp: []
     };
 
     setIfPresent(o.site, 'page', function() {
@@ -233,11 +233,11 @@ module.exports = function(bidManager, global, loader) {
     });
 
     o.device.devicetype = /(ios|ipod|ipad|iphone|android)/i.test(
-      global.navigator.userAgent,
+      global.navigator.userAgent
     )
       ? 1
       : /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(
-          global.navigator.userAgent,
+          global.navigator.userAgent
         )
           ? 3
           : 2;
@@ -266,8 +266,8 @@ module.exports = function(bidManager, global, loader) {
             id: utils.generateUUID(),
             pos: 0,
             w: bids[i].sizes[j][0],
-            h: bids[i].sizes[j][1],
-          },
+            h: bids[i].sizes[j][1]
+          }
         });
       }
     }
@@ -336,7 +336,7 @@ module.exports = function(bidManager, global, loader) {
                   'registering bid ' +
                     placementCode +
                     ' ' +
-                    JSON.stringify(pbResponse),
+                    JSON.stringify(pbResponse)
                 );
 
                 track(debug, 'hb', 'bidResponse', 1);
@@ -362,7 +362,7 @@ module.exports = function(bidManager, global, loader) {
 
         // when all bids are complete, log a report
         track(debug, 'hb', 'bidsComplete');
-      },
+      }
     );
 
     logToConsole('version: ' + version);

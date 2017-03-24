@@ -40,8 +40,8 @@ var CriteoAdapter = function CriteoAdapter() {
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
-            bid.params.zoneId,
-          ),
+            bid.params.zoneId
+          )
         );
 
         isAudit |= bid.params.audit !== undefined;
@@ -53,7 +53,7 @@ var CriteoAdapter = function CriteoAdapter() {
         slots,
         _callbackSuccess(slots),
         _callbackError(slots),
-        _callbackError(slots), // timeout handled as error
+        _callbackError(slots) // timeout handled as error
       );
 
       // process the event as soon as possible
@@ -127,7 +127,7 @@ var CriteoAdapter = function CriteoAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

@@ -52,10 +52,10 @@ var SovrnAdapter = function SovrnAdapter() {
         id: bid.bidId,
         banner: {
           w: adW,
-          h: adH,
+          h: adH
         },
         tagid: tagId,
-        bidfloor: bidFloor,
+        bidfloor: bidFloor
       };
       sovrnImps.push(imp);
     });
@@ -66,8 +66,8 @@ var SovrnAdapter = function SovrnAdapter() {
       imp: sovrnImps,
       site: {
         domain: domain,
-        page: page,
-      },
+        page: page
+      }
     };
 
     var scriptUrl = '//' +
@@ -82,11 +82,11 @@ var SovrnAdapter = function SovrnAdapter() {
 
   function addBlankBidResponses(impidsWithBidBack) {
     var missing = $$PREBID_GLOBAL$$._bidsRequested.find(
-      bidSet => bidSet.bidderCode === 'sovrn',
+      bidSet => bidSet.bidderCode === 'sovrn'
     );
     if (missing) {
       missing = missing.bids.filter(
-        bid => impidsWithBidBack.indexOf(bid.bidId) < 0,
+        bid => impidsWithBidBack.indexOf(bid.bidId) < 0
       );
     } else {
       missing = [];
@@ -172,7 +172,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }; // sovrnResponse
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

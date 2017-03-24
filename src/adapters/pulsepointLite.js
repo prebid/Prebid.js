@@ -9,7 +9,7 @@ function PulsePointLiteAdapter() {
   const ajaxOptions = {
     method: 'GET',
     withCredentials: true,
-    contentType: 'text/plain',
+    contentType: 'text/plain'
   };
 
   function _callBids(bidderRequest) {
@@ -26,7 +26,7 @@ function PulsePointLiteAdapter() {
             bidResponseAvailable(bidRequest, bidResponse);
           },
           null,
-          ajaxOptions,
+          ajaxOptions
         );
       } catch (e) {
         //register passback on any exceptions while attempting to fetch response.
@@ -51,7 +51,7 @@ function PulsePointLiteAdapter() {
       ln: navigator.language ||
         navigator.browserLanguage ||
         navigator.userLanguage ||
-        navigator.systemLanguage,
+        navigator.systemLanguage
     };
 
     environment['if'] = 0;
@@ -97,7 +97,7 @@ function PulsePointLiteAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 }
 

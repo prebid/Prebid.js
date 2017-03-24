@@ -11,7 +11,7 @@ var SmartAdServer = function SmartAdServer() {
       var bidObject;
       if (adUnit) {
         utils.logMessage(
-          `[SmartAdServer] bid response for placementCode ${bid.placementCode}`,
+          `[SmartAdServer] bid response for placementCode ${bid.placementCode}`
         );
         bidObject = bidfactory.createBid(1);
         bidObject.bidderCode = 'smartadserver';
@@ -24,7 +24,7 @@ var SmartAdServer = function SmartAdServer() {
         bidmanager.addBidResponse(bid.placementCode, bidObject);
       } else {
         utils.logMessage(
-          `[SmartAdServer] no bid response for placementCode ${bid.placementCode}`,
+          `[SmartAdServer] no bid response for placementCode ${bid.placementCode}`
         );
         bidObject = bidfactory.createBid(2);
         bidObject.bidderCode = 'smartadserver';
@@ -49,11 +49,11 @@ var SmartAdServer = function SmartAdServer() {
           tgt: encodeURIComponent(bid.params.target || ''),
           tag: bid.placementCode,
           sizes: bid.sizes.map(size => size[0] + 'x' + size[1]).join(','),
-          async: 1,
+          async: 1
         };
         adloader.loadScript(url.format(adCall));
       }
-    },
+    }
   };
 };
 

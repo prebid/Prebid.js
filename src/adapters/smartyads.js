@@ -38,7 +38,7 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600',
+  126: '200x600'
 };
 
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -50,34 +50,34 @@ function SmartyadsAdapter() {
     bids.forEach(bid => {
       try {
         ajax(buildOptimizedCall(bid), bidCallback, undefined, {
-          withCredentials: true,
+          withCredentials: true
         });
       } catch (err) {
         utils.logError(
           'Error sending smartyads request for placement code ' +
             bid.placementCode,
           null,
-          err,
+          err
         );
       }
 
       function bidCallback(responseText) {
         try {
           utils.logMessage(
-            'XHR callback function called for ad ID: ' + bid.bidId,
+            'XHR callback function called for ad ID: ' + bid.bidId
           );
           handleRpCB(responseText, bid);
         } catch (err) {
           if (typeof err === 'string') {
             utils.logWarn(
-              `${err} when processing smartyads response for placement code ${bid.placementCode}`,
+              `${err} when processing smartyads response for placement code ${bid.placementCode}`
             );
           } else {
             utils.logError(
               'Error processing smartyads response for placement code ' +
                 bid.placementCode,
               null,
-              err,
+              err
             );
           }
 
@@ -98,7 +98,7 @@ function SmartyadsAdapter() {
     var parsedSizes = SmartyadsAdapter.masSizeOrdering(
       Array.isArray(bid.params.sizes)
         ? bid.params.sizes.map(size => (sizeMap[size] || '').split('x'))
-        : bid.sizes,
+        : bid.sizes
     );
 
     if (parsedSizes.length < 1) {
@@ -140,7 +140,7 @@ function SmartyadsAdapter() {
       'bidId',
       bid.bidId,
       'checkOn',
-      'rf',
+      'rf'
     ];
 
     return queryString
@@ -153,7 +153,7 @@ function SmartyadsAdapter() {
                 encodeURIComponent(queryString[index + 1]) +
                 '&'
             : memo,
-        '//ssp-nj.webtradehub.com/?',
+        '//ssp-nj.webtradehub.com/?'
       )
       .slice(0, -1);
   }
@@ -176,7 +176,7 @@ function SmartyadsAdapter() {
   return Object.assign(Adapter.createNew(SMARTYADS_BIDDER_CODE), {
     // SMARTYADS_BIDDER_CODE smartyads
     callBids: _callBids,
-    createNew: SmartyadsAdapter.createNew,
+    createNew: SmartyadsAdapter.createNew
   });
 }
 
@@ -195,7 +195,7 @@ SmartyadsAdapter.masSizeOrdering = function(sizes) {
           }
           return result;
         },
-        [],
+        []
       )
       .sort((first, second) => {
         // sort by MAS_SIZE_PRIORITY priority order

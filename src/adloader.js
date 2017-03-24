@@ -9,7 +9,7 @@ exports.loadScript = function(tagSrc, callback, cacheRequest) {
   if (!tagSrc) {
     utils.logError(
       'Error attempting to request empty URL',
-      'adloader.js:loadScript',
+      'adloader.js:loadScript'
     );
     return;
   }
@@ -28,7 +28,7 @@ exports.loadScript = function(tagSrc, callback, cacheRequest) {
     } else {
       _requestCache[tagSrc] = {
         loaded: false,
-        callbacks: [],
+        callbacks: []
       };
       if (callback && typeof callback === 'function') {
         _requestCache[tagSrc].callbacks.push(callback);
@@ -44,7 +44,7 @@ exports.loadScript = function(tagSrc, callback, cacheRequest) {
           utils.logError(
             'Error executing callback',
             'adloader.js:loadScript',
-            e,
+            e
           );
         }
       });

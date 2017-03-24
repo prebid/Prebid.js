@@ -9,7 +9,7 @@ const STR_VERSION = '0.1.0';
 export default Object.assign(
   adapter({
     emptyUrl,
-    analyticsType,
+    analyticsType
   }),
   {
     STR_BEACON_HOST: document.location.protocol +
@@ -44,7 +44,7 @@ export default Object.assign(
           curBidderCode,
           args.cpm,
           strBid.adserverRequestId,
-          'headerBidLose',
+          'headerBidLose'
         );
       }
     },
@@ -54,12 +54,12 @@ export default Object.assign(
       loseBeaconUrl = utils.tryAppendQueryString(
         loseBeaconUrl,
         'winnerBidderCode',
-        winningBidderCode,
+        winningBidderCode
       );
       loseBeaconUrl = utils.tryAppendQueryString(
         loseBeaconUrl,
         'winnerCpm',
-        winningCPM,
+        winningCPM
       );
       loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'arid', arid);
       loseBeaconUrl = utils.tryAppendQueryString(loseBeaconUrl, 'type', type);
@@ -77,6 +77,6 @@ export default Object.assign(
     fireBeacon(theUrl) {
       const img = new Image();
       img.src = theUrl;
-    },
-  },
+    }
+  }
 );

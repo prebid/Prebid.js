@@ -45,9 +45,9 @@ describe('jcm adapter tests', function() {
             bidder: 'jcm',
             params: { siteId: '3608', adSizes: '300x250' },
             requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0',
-          },
-        ],
+            placementCode: '/19968336/header-bid-tag-0'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -66,9 +66,9 @@ describe('jcm adapter tests', function() {
             bidder: 'jcm',
             params: { siteId: '3608', adSizes: '300x250' },
             requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0',
-          },
-        ],
+            placementCode: '/19968336/header-bid-tag-0'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -119,7 +119,7 @@ describe('jcm adapter tests', function() {
             bidder: 'jcm',
             params: { siteId: '3608', adSizes: '300x250' },
             requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0',
+            placementCode: '/19968336/header-bid-tag-0'
           },
           {
             bidId: '3c9408cdbf2f69',
@@ -127,9 +127,9 @@ describe('jcm adapter tests', function() {
             bidder: 'jcm',
             params: { siteId: '3608', adSizes: '728x90' },
             requestId: '10b327aa396610',
-            placementCode: '/19968336/header-bid-tag-1',
-          },
-        ],
+            placementCode: '/19968336/header-bid-tag-1'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -188,7 +188,7 @@ describe('jcm adapter tests', function() {
           bidder: 'jcm',
           params: { siteId: '3608', adSizes: '300x250' },
           requestId: '10b327aa396609',
-          placementCode: '/19968336/header-bid-tag-0',
+          placementCode: '/19968336/header-bid-tag-0'
         },
         {
           bidId: '3c9408cdbf2f69',
@@ -196,9 +196,9 @@ describe('jcm adapter tests', function() {
           bidder: 'jcm',
           params: { siteId: '3608', adSizes: '728x90' },
           requestId: '10b327aa396610',
-          placementCode: '/19968336/header-bid-tag-1',
-        },
-      ],
+          placementCode: '/19968336/header-bid-tag-1'
+        }
+      ]
     };
 
     var response = '{"bids":[{"width":300,"cpm":3,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_300x250.png%22%3E","callbackId":"3c9408cdbf2f68","height":250},{"width":728,"cpm":0,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_728x90.png%22%3E","callbackId":"3c9408cdbf2f69","height":90}]}';
@@ -235,7 +235,7 @@ describe('jcm adapter tests', function() {
       expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');
       expect(bidObject1.cpm).to.equal(3);
       expect(bidObject1.ad).to.equal(
-        '<img src="http://media.adfrontiers.com/imgs/partnership_300x250.png">',
+        '<img src="http://media.adfrontiers.com/imgs/partnership_300x250.png">'
       );
       expect(bidObject1.width).to.equal(300);
       expect(bidObject1.height).to.equal(250);

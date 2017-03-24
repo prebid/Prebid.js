@@ -13,31 +13,31 @@ const REQUEST = {
       bidder: 'vertamedia',
       params: {
         aid: 22489,
-        placementId: '123456',
+        placementId: '123456'
       },
       placementCode: '/19968336/header-bid-tag1',
       sizes: [640, 480],
       bidId: '84ab500420319d',
       bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-    },
+      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6'
+    }
   ],
-  start: 1469479810130,
+  start: 1469479810130
 };
 var RESPONSE = {
   source: {
     aid: 22489,
     pubId: 18016,
-    sid: '0',
+    sid: '0'
   },
   bids: [
     {
       cmpId: 9541,
       cpm: 4.5,
       url: 'http://rtb.vertamedia.com/vast?adid=BFDB9CC0038AD918',
-      cur: 'USD',
-    },
-  ],
+      cur: 'USD'
+    }
+  ]
 };
 
 describe('VertamediaAdater', () => {
@@ -112,8 +112,8 @@ describe('VertamediaAdater', () => {
           aid: 356465468,
           w: 640,
           h: 480,
-          domain: 'localhost',
-        }),
+          domain: 'localhost'
+        })
       );
 
       adapter.callBids(REQUEST);
@@ -123,7 +123,7 @@ describe('VertamediaAdater', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
 
@@ -136,7 +136,7 @@ describe('VertamediaAdater', () => {
 
       expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
   });

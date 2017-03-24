@@ -17,8 +17,8 @@ describe('Vertoz Adapter', () => {
         placementCode: 'foo',
         sizes: [[300, 250]],
         params: {
-          placementId: 'VZ-HB-123',
-        },
+          placementId: 'VZ-HB-123'
+        }
       },
       {
         bidId: 'bidId2',
@@ -26,8 +26,8 @@ describe('Vertoz Adapter', () => {
         placementCode: 'bar',
         sizes: [[728, 90]],
         params: {
-          placementId: 'VZ-HB-456',
-        },
+          placementId: 'VZ-HB-456'
+        }
       },
       {
         bidId: 'bidId3',
@@ -35,10 +35,10 @@ describe('Vertoz Adapter', () => {
         placementCode: 'coo',
         sizes: [[300, 600]],
         params: {
-          placementId: '',
-        },
-      },
-    ],
+          placementId: ''
+        }
+      }
+    ]
   };
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe('Vertoz Adapter', () => {
       ad: '<div></div>',
       slotBidId: 'bidId1',
       nurl: '<img></img>',
-      statusText: 'vertoz:success',
+      statusText: 'vertoz:success'
     };
 
     beforeEach(() => {
@@ -114,7 +114,7 @@ describe('Vertoz Adapter', () => {
       let bidderResponse = {
         vzhPlacementId: 'VZ-HB-456',
         slotBidId: 'bidId2',
-        statusText: 'vertoz:NO_BIDS',
+        statusText: 'vertoz:NO_BIDS'
       };
 
       beforeEach(() => {

@@ -35,13 +35,13 @@ const GumgumAdapter = function GumgumAdapter() {
       sh: topScreen.height,
       pu: topWindow.location.href,
       ce: navigator.cookieEnabled,
-      dpr: topWindow.devicePixelRatio || 1,
+      dpr: topWindow.devicePixelRatio || 1
     };
     utils._each(bids, bidRequest => {
       const {
         bidId,
         params = {},
-        placementCode,
+        placementCode
       } = bidRequest;
       const timestamp = _getTimeStamp();
       const trackingId = params.inScreen;
@@ -66,7 +66,7 @@ const GumgumAdapter = function GumgumAdapter() {
         default:
           return utils.logWarn(
             `[GumGum] No product selected for the placement ${placementCode}` +
-              ', please check your implementation.',
+              ', please check your implementation.'
           );
       }
 
@@ -78,7 +78,7 @@ const GumgumAdapter = function GumgumAdapter() {
       if (latestRequest && throttle && timestamp - latestRequest < throttle) {
         return utils.logWarn(
           `[GumGum] The refreshes for "${placementCode}" with the params ` +
-            `${JSON.stringify(params)} should be at least ${throttle / 1e3}s apart.`,
+            `${JSON.stringify(params)} should be at least ${throttle / 1e3}s apart.`
         );
       }
       /* update the last request */
@@ -97,13 +97,13 @@ const GumgumAdapter = function GumgumAdapter() {
       const cachedBid = Object.assign(
         {
           placementCode,
-          id: bidId,
+          id: bidId
         },
-        bid,
+        bid
       );
 
       const callback = {
-        jsonp: `$$PREBID_GLOBAL$$.handleGumGumCB['${bidId}']`,
+        jsonp: `$$PREBID_GLOBAL$$.handleGumGumCB['${bidId}']`
       };
       CALLBACKS[bidId] = _handleGumGumResponse(cachedBid);
       const query = Object.assign(callback, browserParams, bid);
@@ -115,12 +115,12 @@ const GumgumAdapter = function GumgumAdapter() {
   const _handleGumGumResponse = cachedBidRequest =>
     (bidResponse = {}) => {
       const {
-        pi: productId,
+        pi: productId
       } = cachedBidRequest;
       const {
         ad = {},
         pag = {},
-        thms: throttle,
+        thms: throttle
       } = bidResponse;
       /* cache the pageViewId */
       if (pag && pag.pvid) pageViewId = pag.pvid;
@@ -130,7 +130,7 @@ const GumgumAdapter = function GumgumAdapter() {
         /* create the bid */
         const bid = bidfactory.createBid(1);
         const {
-          t: trackingId,
+          t: trackingId
         } = pag;
         bidResponse.request = cachedBidRequest;
         const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
@@ -153,7 +153,7 @@ const GumgumAdapter = function GumgumAdapter() {
           ad: gumgumAdLoader,
           width: ad.width,
           height: ad.height,
-          bidderCode: BIDDER_CODE,
+          bidderCode: BIDDER_CODE
         });
         bidmanager.addBidResponse(cachedBidRequest.placementCode, bid);
       } else {
@@ -167,7 +167,7 @@ const GumgumAdapter = function GumgumAdapter() {
   window.$$PREBID_GLOBAL$$.handleGumGumCB = CALLBACKS;
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

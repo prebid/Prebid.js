@@ -33,7 +33,7 @@ function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
-          requestId,
+          requestId
         });
       });
     })
@@ -47,7 +47,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
 
   const auctionInit = {
     timestamp: auctionStart,
-    requestId,
+    requestId
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
@@ -67,7 +67,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
         bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
         start: new Date().getTime(),
         auctionStart: auctionStart,
-        timeout: cbTimeout,
+        timeout: cbTimeout
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
         utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
@@ -77,7 +77,7 @@ exports.callBids = ({ adUnits, cbTimeout }) => {
       }
     } else {
       utils.logError(
-        `Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`,
+        `Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`
       );
     }
   });
@@ -91,7 +91,7 @@ exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
       utils.logError(
         'Bidder adaptor error for bidder code: ' +
           bidderCode +
-          'bidder must implement a callBids() function',
+          'bidder must implement a callBids() function'
       );
     }
   } else {
@@ -108,7 +108,7 @@ exports.aliasBidAdapter = function(bidderCode, alias) {
     if (typeof bidAdaptor === CONSTANTS.objectType_undefined) {
       utils.logError(
         'bidderCode "' + bidderCode + '" is not an existing bidder.',
-        'adaptermanager.aliasBidAdapter',
+        'adaptermanager.aliasBidAdapter'
       );
     } else {
       try {
@@ -117,7 +117,7 @@ exports.aliasBidAdapter = function(bidderCode, alias) {
           //newAdapter = new bidAdaptor.constructor(alias);
           utils.logError(
             bidderCode + ' bidder does not currently support aliasing.',
-            'adaptermanager.aliasBidAdapter',
+            'adaptermanager.aliasBidAdapter'
           );
         } else {
           newAdapter = bidAdaptor.createNew();
@@ -127,7 +127,7 @@ exports.aliasBidAdapter = function(bidderCode, alias) {
       } catch (e) {
         utils.logError(
           bidderCode + ' bidder does not currently support aliasing.',
-          'adaptermanager.aliasBidAdapter',
+          'adaptermanager.aliasBidAdapter'
         );
       }
     }
@@ -144,12 +144,12 @@ exports.registerAnalyticsAdapter = function({ adapter, code }) {
     } else {
       utils.logError(
         `Prebid Error: Analytics adaptor error for analytics "${code}"
-        analytics adapter must implement an enableAnalytics() function`,
+        analytics adapter must implement an enableAnalytics() function`
       );
     }
   } else {
     utils.logError(
-      'Prebid Error: analyticsAdapter or analyticsCode not specified',
+      'Prebid Error: analyticsAdapter or analyticsCode not specified'
     );
   }
 };
@@ -166,7 +166,7 @@ exports.enableAnalytics = function(config) {
     } else {
       utils.logError(
         `Prebid Error: no analytics adapter found in registry for
-        ${adapterConfig.provider}.`,
+        ${adapterConfig.provider}.`
       );
     }
   });

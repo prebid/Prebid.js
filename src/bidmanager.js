@@ -30,7 +30,7 @@ exports.getTimedOutBidders = function() {
         $$PREBID_GLOBAL$$._bidsReceived
           .map(getBidders)
           .filter(uniques)
-          .indexOf(bidder) < 0,
+          .indexOf(bidder) < 0
     );
 };
 
@@ -59,7 +59,7 @@ function bidsBackAdUnit(adUnitCode) {
     .reduce(add, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(
-    bid => bid.adUnitCode === adUnitCode,
+    bid => bid.adUnitCode === adUnitCode
   ).length;
   return requested === received;
 }
@@ -79,7 +79,7 @@ function bidsBackAll() {
     .reduce((a, b) => a + b, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(
-    adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes),
+    adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)
   ).length;
 
   return requested === received;
@@ -92,7 +92,7 @@ exports.bidsBackAll = function() {
 function getBidderRequest(bidder, adUnitCode) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
     return request.bids.filter(
-      bid => bid.bidder === bidder && bid.placementCode === adUnitCode,
+      bid => bid.bidder === bidder && bid.placementCode === adUnitCode
     ).length > 0;
   }) || { start: null, requestId: null };
 }
@@ -103,7 +103,7 @@ function getBidderRequest(bidder, adUnitCode) {
 exports.addBidResponse = function(adUnitCode, bid) {
   if (!adUnitCode) {
     utils.logWarn(
-      'No adUnitCode supplied to addBidResponse, response discarded',
+      'No adUnitCode supplied to addBidResponse, response discarded'
     );
     return;
   }
@@ -116,7 +116,7 @@ exports.addBidResponse = function(adUnitCode, bid) {
       requestTimestamp: start,
       cpm: bid.cpm || 0,
       bidder: bid.bidderCode,
-      adUnitCode,
+      adUnitCode
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
@@ -231,7 +231,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
       (utils.isEmptyStr(value) || value === null || value === undefined)
     ) {
       utils.logInfo(
-        "suppressing empty key '" + key + "' from adserver targeting",
+        "suppressing empty key '" + key + "' from adserver targeting"
       );
     } else {
       keyValues[key] = value;
@@ -245,14 +245,14 @@ exports.setPriceGranularity = function setPriceGranularity(granularity) {
   var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
   if (
     Object.keys(granularityOptions).filter(
-      option => granularity === granularityOptions[option],
+      option => granularity === granularityOptions[option]
     )
   ) {
     _granularity = granularity;
   } else {
     utils.logWarn(
       'Prebid Warning: setPriceGranularity was called with invalid setting, using' +
-        ' `medium` as default.',
+        ' `medium` as default.'
     );
     _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
   }
@@ -313,7 +313,7 @@ function processCallbacks(callbackQueue, singleAdUnitCode) {
       const bids = [
         $$PREBID_GLOBAL$$._bidsReceived
           .filter(adUnitsFilter.bind(this, adUnitCodes))
-          .reduce(groupByPlacement, {}),
+          .reduce(groupByPlacement, {})
       ];
 
       callback.apply($$PREBID_GLOBAL$$, bids);
@@ -400,13 +400,13 @@ function getStandardBidderSettings() {
           key: 'hb_bidder',
           val: function(bidResponse) {
             return bidResponse.bidderCode;
-          },
+          }
         },
         {
           key: 'hb_adid',
           val: function(bidResponse) {
             return bidResponse.adId;
-          },
+          }
         },
         {
           key: 'hb_pb',
@@ -424,21 +424,21 @@ function getStandardBidderSettings() {
             } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
               return bidResponse.pbCg;
             }
-          },
+          }
         },
         {
           key: 'hb_size',
           val: function(bidResponse) {
             return bidResponse.size;
-          },
+          }
         },
         {
           key: 'hb_deal',
           val: function(bidResponse) {
             return bidResponse.dealId;
-          },
-        },
-      ],
+          }
+        }
+      ]
     };
   }
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];

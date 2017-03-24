@@ -6,7 +6,7 @@ import {
   uniques,
   isGptPubadsDefined,
   adUnitsFilter,
-  isSrcdocSupported,
+  isSrcdocSupported
 } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
@@ -37,7 +37,7 @@ var auctionRunning = false;
 var bidRequestQueue = [];
 
 var eventValidators = {
-  bidWon: checkDefinedPlacement,
+  bidWon: checkDefinedPlacement
 };
 
 /* Public vars */
@@ -91,7 +91,7 @@ $$PREBID_GLOBAL$$.que.push = function(cmd) {
     }
   } else {
     utils.logError(
-      'Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function',
+      'Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function'
     );
   }
 };
@@ -132,7 +132,7 @@ function clearPlacements() {
 
   // leave bids received for ad slots not in this bid request
   $$PREBID_GLOBAL$$._bidsReceived = $$PREBID_GLOBAL$$._bidsReceived.filter(
-    bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode),
+    bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode)
   );
 }
 
@@ -158,7 +158,7 @@ function setRenderSize(doc, width, height) {
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
   utils.logInfo(
     'Invoking $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr',
-    arguments,
+    arguments
   );
 
   // call to retrieve bids array
@@ -167,7 +167,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function(adunitCode) {
     return utils.transformAdServerTargetingObj(res);
   } else {
     utils.logMessage(
-      'Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode',
+      'Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode'
     );
   }
 };
@@ -197,11 +197,11 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function(adUnitCode) {
           .map(target => {
             return {
               [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(
-                ', ',
-              ),
+                ', '
+              )
             };
           })
-          .reduce((p, c) => Object.assign(c, p), {}),
+          .reduce((p, c) => Object.assign(c, p), {})
       };
     })
     .reduce(
@@ -210,7 +210,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function(adUnitCode) {
         accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
         return accumulator;
       },
-      {},
+      {}
     );
 };
 
@@ -223,7 +223,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function(adUnitCode) {
 $$PREBID_GLOBAL$$.getBidResponses = function() {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
   const responses = $$PREBID_GLOBAL$$._bidsReceived.filter(
-    adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes),
+    adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)
   );
 
   // find the last requested id to get responses for most recent auction only
@@ -237,12 +237,12 @@ $$PREBID_GLOBAL$$.getBidResponses = function() {
     .map(adUnitCode =>
       responses.filter(
         bid =>
-          bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode,
+          bid.requestId === currentRequestId && bid.adUnitCode === adUnitCode
       ))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids },
+        [bids[0].adUnitCode]: { bids: bids }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -257,10 +257,10 @@ $$PREBID_GLOBAL$$.getBidResponses = function() {
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function(adUnitCode) {
   const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(
-    bid => bid.adUnitCode === adUnitCode,
+    bid => bid.adUnitCode === adUnitCode
   );
   return {
-    bids: bids,
+    bids: bids
   };
 };
 
@@ -271,7 +271,7 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function(adUnitCode) {
 $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function() {
   utils.logInfo(
     'Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync',
-    arguments,
+    arguments
   );
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -325,7 +325,7 @@ $$PREBID_GLOBAL$$.renderAd = function(doc, id) {
     try {
       //lookup ad by ad Id
       var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(
-        bid => bid.adId === id,
+        bid => bid.adId === id
       );
       if (adObject) {
         //save winning bids
@@ -340,7 +340,7 @@ $$PREBID_GLOBAL$$.renderAd = function(doc, id) {
 
         if (doc === document || adObject.mediaType === 'video') {
           utils.logError(
-            `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`,
+            `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`
           );
         } else if (ad) {
           if (isSrcdocSupported(doc)) {
@@ -352,30 +352,30 @@ $$PREBID_GLOBAL$$.renderAd = function(doc, id) {
           setRenderSize(doc, width, height);
         } else if (url) {
           doc.write(
-            `<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`,
+            `<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`
           );
           doc.close();
           setRenderSize(doc, width, height);
         } else {
           utils.logError(
-            'Error trying to write ad. No ad for bid response id: ' + id,
+            'Error trying to write ad. No ad for bid response id: ' + id
           );
         }
       } else {
         utils.logError(
-          'Error trying to write ad. Cannot find ad by given id : ' + id,
+          'Error trying to write ad. Cannot find ad by given id : ' + id
         );
       }
     } catch (e) {
       utils.logError(
-        'Error trying to write ad Id :' + id + ' to the page:' + e.message,
+        'Error trying to write ad Id :' + id + ' to the page:' + e.message
       );
     }
   } else {
     utils.logError(
       'Error trying to write ad Id :' +
         id +
-        ' to the page. Missing document or adId',
+        ' to the page. Missing document or adId'
     );
   }
 };
@@ -412,7 +412,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function(
-  { bidsBackHandler, timeout, adUnits, adUnitCodes } = {},
+  { bidsBackHandler, timeout, adUnits, adUnitCodes } = {}
 ) {
   events.emit('requestBids');
   const cbTimeout = ($$PREBID_GLOBAL$$.cbTimeout = timeout ||
@@ -435,7 +435,7 @@ $$PREBID_GLOBAL$$.requestBids = function(
     .filter(hasNonVideoBidder);
   invalidVideoAdUnits.forEach(adUnit => {
     utils.logError(
-      `adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`,
+      `adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`
     );
     for (let i = 0; i < adUnits.length; i++) {
       if (adUnits[i].code === adUnit.code) {
@@ -450,7 +450,7 @@ $$PREBID_GLOBAL$$.requestBids = function(
         bidsBackHandler,
         timeout: cbTimeout,
         adUnits,
-        adUnitCodes,
+        adUnitCodes
       });
     });
     return;
@@ -528,7 +528,7 @@ $$PREBID_GLOBAL$$.onEvent = function(event, handler, id) {
     utils.logError(
       'The event handler provided is not a function and was not set on event "' +
         event +
-        '".',
+        '".'
     );
     return;
   }
@@ -537,7 +537,7 @@ $$PREBID_GLOBAL$$.onEvent = function(event, handler, id) {
     utils.logError(
       'The id provided is not valid for event "' +
         event +
-        '" and no handler was set.',
+        '" and no handler was set.'
     );
     return;
   }
@@ -612,7 +612,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function(bidderAdaptor, bidderCode) {
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function(options) {
   utils.logInfo(
     'Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter',
-    arguments,
+    arguments
   );
   try {
     adaptermanager.registerAnalyticsAdapter(options);
@@ -624,7 +624,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function(options) {
 $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function(bidderCode) {
   utils.logInfo(
     'Invoking $$PREBID_GLOBAL$$.bidsAvailableForAdapter',
-    arguments,
+    arguments
   );
 
   $$PREBID_GLOBAL$$._bidsRequested
@@ -632,7 +632,7 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function(bidderCode) {
     .bids.map(bid => {
       return Object.assign(bid, bidfactory.createBid(1), {
         bidderCode,
-        adUnitCode: bid.placementCode,
+        adUnitCode: bid.placementCode
       });
     })
     .map(bid => $$PREBID_GLOBAL$$._bidsReceived.push(bid));
@@ -679,7 +679,7 @@ $$PREBID_GLOBAL$$.enableAnalytics = function(config) {
     adaptermanager.enableAnalytics(config);
   } else {
     utils.logError(
-      '$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}',
+      '$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}'
     );
   }
 };
@@ -691,7 +691,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function(bidderCode, alias) {
   } else {
     utils.logError(
       'bidderCode and alias must be passed as arguments',
-      '$$PREBID_GLOBAL$$.aliasBidder',
+      '$$PREBID_GLOBAL$$.aliasBidder'
     );
   }
 };
@@ -720,7 +720,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function(granularity) {
   } else if (typeof granularity === 'object') {
     if (!isValidePriceConfig(granularity)) {
       utils.logError(
-        'Invalid custom price value passed to `setPriceGranularity()`',
+        'Invalid custom price value passed to `setPriceGranularity()`'
       );
       return;
     }
@@ -745,11 +745,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function() {
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function(
   adserverTag,
-  options,
+  options
 ) {
   utils.logInfo(
     'Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag',
-    arguments,
+    arguments
   );
   var urlComponents = parseURL(adserverTag);
 
@@ -763,7 +763,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function(
     var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
     if (!dfpAdserverObj.verifyAdserverTag()) {
       utils.logError(
-        'Invalid adserverTag, required google params are missing in query string',
+        'Invalid adserverTag, required google params are missing in query string'
       );
     }
     dfpAdserverObj.appendQueryParams();

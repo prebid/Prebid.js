@@ -19,11 +19,11 @@ describe('fidelity adapter tests', function() {
             bidId: 'bidId-123456-1',
             bidder: 'fidelity',
             params: {
-              zoneid: '37',
+              zoneid: '37'
             },
-            placementCode: 'div-gpt-ad-123456-1',
-          },
-        ],
+            placementCode: 'div-gpt-ad-123456-1'
+          }
+        ]
       };
 
       adapter().callBids(bidderRequest);
@@ -43,11 +43,11 @@ describe('fidelity adapter tests', function() {
             bidId: 'bidId-123456-1',
             bidder: 'fidelity',
             params: {
-              zoneid: '37',
+              zoneid: '37'
             },
-            placementCode: 'div-gpt-ad-123456-1',
-          },
-        ],
+            placementCode: 'div-gpt-ad-123456-1'
+          }
+        ]
       };
 
       adapter().callBids(bidderRequest);
@@ -70,11 +70,11 @@ describe('fidelity adapter tests', function() {
               server: 't.fidelity-media.com',
               loc: 'http://locurl',
               click: 'http://clickurl',
-              subid: '000',
+              subid: '000'
             },
-            placementCode: 'div-gpt-ad-123456-1',
-          },
-        ],
+            placementCode: 'div-gpt-ad-123456-1'
+          }
+        ]
       };
 
       adapter().callBids(bidderRequest);
@@ -123,17 +123,17 @@ describe('fidelity adapter tests', function() {
             bidId: 'bidId-123456-1',
             bidder: 'fidelity',
             params: {
-              zoneid: '37',
+              zoneid: '37'
             },
-            placementCode: 'div-gpt-ad-123456-1',
-          },
-        ],
+            placementCode: 'div-gpt-ad-123456-1'
+          }
+        ]
       };
 
       // no bids returned in the response.
       var response = {
         id: '543210',
-        seatbid: [],
+        seatbid: []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -162,11 +162,11 @@ describe('fidelity adapter tests', function() {
             bidId: 'bidId-123456-1',
             bidder: 'fidelity',
             params: {
-              zoneid: '37',
+              zoneid: '37'
             },
-            placementCode: 'div-gpt-ad-123456-1',
-          },
-        ],
+            placementCode: 'div-gpt-ad-123456-1'
+          }
+        ]
       };
 
       // Returning a single bid in the response.
@@ -181,11 +181,11 @@ describe('fidelity adapter tests', function() {
                 price: 0.09,
                 adm: '<<creative>>',
                 height: 90,
-                width: 728,
-              },
-            ],
-          },
-        ],
+                width: 728
+              }
+            ]
+          }
+        ]
       };
 
       pbjs._bidsRequested.push(bidderRequest);

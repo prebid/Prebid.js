@@ -12,7 +12,7 @@ const analyticsType = 'endpoint';
 export default Object.assign(
   adapter({
     url,
-    analyticsType,
+    analyticsType
   }),
   {
     // Override AnalyticsAdapter functions by supplying custom methods
@@ -22,8 +22,8 @@ export default Object.assign(
         url,
         result =>
           console.log('Analytics Endpoint Example2: result = ' + result),
-        JSON.stringify({ eventType, args }),
+        JSON.stringify({ eventType, args })
       );
-    },
-  },
+    }
+  }
 );

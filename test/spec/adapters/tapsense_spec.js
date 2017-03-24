@@ -27,35 +27,35 @@ const DEFAULT_BIDDER_REQUEST = {
         lat: 'thisislat',
         long: 'thisisalong',
         user: 'thisisanidfa',
-        price_floor: 0.01,
-      },
-    },
-  ],
+        price_floor: 0.01
+      }
+    }
+  ]
 };
 
 const SUCCESSFUL_RESPONSE = {
   count_ad_units: 1,
   status: {
-    value: 'ok',
+    value: 'ok'
   },
   ad_units: [
     {
       html: '<html><head></head><body></body></html>',
-      imp_url: 'https://i.tapsense.com',
-    },
+      imp_url: 'https://i.tapsense.com'
+    }
   ],
   id: 'thisisanid',
   width: 320,
   height: 50,
-  time: new Date().getTime(),
+  time: new Date().getTime()
 };
 
 const UNSUCCESSFUL_RESPONSE = {
   count_ad_units: 0,
   status: {
-    value: 'nofill', //will be set in test
+    value: 'nofill' //will be set in test
   },
-  time: new Date().getTime(),
+  time: new Date().getTime()
 };
 
 function duplicate(obj) {
@@ -126,7 +126,7 @@ describe('TapSenseAdapter', () => {
         makeSuccessfulRequest(adapter);
         sinon.assert.calledOnce(adloader.loadScript);
         expect(adloader.loadScript.firstCall.args[0]).to.contain(
-          'ads04.tapsense.com',
+          'ads04.tapsense.com'
         );
       });
       it('handles a singles array for size parameter', () => {
@@ -134,7 +134,7 @@ describe('TapSenseAdapter', () => {
         modifiedReq.bids[0].sizes = [320, 50];
         adapter.callBids(modifiedReq);
         expect(adloader.loadScript.firstCall.args[0]).to.contain(
-          'ads04.tapsense.com',
+          'ads04.tapsense.com'
         );
       });
       it('handles a string for size parameter', () => {
@@ -142,7 +142,7 @@ describe('TapSenseAdapter', () => {
         modifiedReq.bids[0].sizes = '320x50';
         adapter.callBids(modifiedReq);
         expect(adloader.loadScript.firstCall.args[0]).to.contain(
-          'ads04.tapsense.com',
+          'ads04.tapsense.com'
         );
       });
       it('handles a string with multiple sizes for size parameter', () => {
@@ -150,42 +150,42 @@ describe('TapSenseAdapter', () => {
         modifiedReq.bids[0].sizes = '320x50,500x500';
         adapter.callBids(modifiedReq);
         expect(adloader.loadScript.firstCall.args[0]).to.contain(
-          'ads04.tapsense.com',
+          'ads04.tapsense.com'
         );
       });
       it('appends bid params as a query string when requesting ad', () => {
         makeSuccessfulRequest(adapter);
         sinon.assert.calledOnce(adloader.loadScript);
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /ufid=thisisaufid&/,
+          /ufid=thisisaufid&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /refer=thisisarefer&/,
+          /refer=thisisarefer&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /version=[^&]+&/,
+          /version=[^&]+&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(/jsonp=1&/);
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /ad_unit_id=thisisanadunitid&/,
+          /ad_unit_id=thisisanadunitid&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /device_id=thisisadeviceid&/,
+          /device_id=thisisadeviceid&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /lat=thisislat&/,
+          /lat=thisislat&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /long=thisisalong&/,
+          /long=thisisalong&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /user=thisisanidfa&/,
+          /user=thisisanidfa&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /price_floor=0\.01&/,
+          /price_floor=0\.01&/
         );
         expect(adloader.loadScript.firstCall.args[0]).to.match(
-          /callback=pbjs\.tapsense\.callback_with_price_.+&/,
+          /callback=pbjs\.tapsense\.callback_with_price_.+&/
         );
       });
     });
@@ -201,7 +201,7 @@ describe('TapSenseAdapter', () => {
     it('generates callback in namespaced object with correct bidder id', () => {
       makeSuccessfulRequest(adapter);
       expect(
-        pbjs.tapsense.callback_with_price_2b211418dd0575,
+        pbjs.tapsense.callback_with_price_2b211418dd0575
       ).to.exist.and.to.be.a('function');
     });
   });
@@ -224,19 +224,19 @@ describe('TapSenseAdapter', () => {
       beforeEach(() => {
         pbjs.tapsense.callback_with_price_2b211418dd0575(
           SUCCESSFUL_RESPONSE,
-          1.2,
+          1.2
         );
       });
       it('called the bidmanager and registers a bid', () => {
         sinon.assert.calledOnce(bidmanager.addBidResponse);
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(1);
       });
       it('should have the correct placementCode', () => {
         sinon.assert.calledOnce(bidmanager.addBidResponse);
         expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal(
-          'thisisatest',
+          'thisisatest'
         );
       });
     });
@@ -244,18 +244,18 @@ describe('TapSenseAdapter', () => {
       beforeEach(() => {
         pbjs.tapsense.callback_with_price_2b211418dd0575(
           UNSUCCESSFUL_RESPONSE,
-          1.2,
+          1.2
         );
       });
       it('should call the bidmanger and register an invalid bid', () => {
         sinon.assert.calledOnce(bidmanager.addBidResponse);
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(2);
       });
       it('should have the correct placementCode', () => {
         expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal(
-          'thisisatest',
+          'thisisatest'
         );
       });
     });

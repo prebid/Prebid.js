@@ -12,16 +12,16 @@ const REQUEST = {
     {
       bidder: 'appnexusAst',
       params: {
-        placementId: '4799418',
+        placementId: '4799418'
       },
       placementCode: '/19968336/header-bid-tag1',
       sizes: [[728, 90], [970, 90]],
       bidId: '84ab500420319d',
       bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-    },
+      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6'
+    }
   ],
-  start: 1469479810130,
+  start: 1469479810130
 };
 
 const RESPONSE = {
@@ -49,18 +49,18 @@ const RESPONSE = {
             banner: {
               width: 728,
               height: 90,
-              content: '<!-- Creative -->',
+              content: '<!-- Creative -->'
             },
             trackers: [
               {
-                impression_urls: ['http://lax1-ib.adnxs.com/impression'],
-              },
-            ],
-          },
-        },
-      ],
-    },
-  ],
+                impression_urls: ['http://lax1-ib.adnxs.com/impression']
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
 };
 
 describe('AppNexusAdapter', () => {
@@ -101,7 +101,7 @@ describe('AppNexusAdapter', () => {
       REQUEST.bids[0].params.video = {
         id: 123,
         minduration: 100,
-        foobar: 'invalid',
+        foobar: 'invalid'
       };
 
       adapter.callBids(REQUEST);
@@ -109,7 +109,7 @@ describe('AppNexusAdapter', () => {
       const request = JSON.parse(requests[0].requestBody).tags[0];
       expect(request.video).to.deep.equal({
         id: 123,
-        minduration: 100,
+        minduration: 100
       });
 
       delete REQUEST.bids[0].params.video;
@@ -118,7 +118,7 @@ describe('AppNexusAdapter', () => {
     it('attaches valid user params to the tag', () => {
       REQUEST.bids[0].params.user = {
         external_uid: '123',
-        foobar: 'invalid',
+        foobar: 'invalid'
       };
 
       adapter.callBids(REQUEST);
@@ -126,7 +126,7 @@ describe('AppNexusAdapter', () => {
       const request = JSON.parse(requests[0].requestBody);
       expect(request.user).to.exist;
       expect(request.user).to.deep.equal({
-        external_uid: '123',
+        external_uid: '123'
       });
 
       delete REQUEST.bids[0].params.user;
@@ -145,7 +145,7 @@ describe('AppNexusAdapter', () => {
         singleArrNum: [5],
         multiValMixed: ['value1', 2, 'value3'],
         singleValNum: 123,
-        badValue: { foo: 'bar' }, // should be dropped
+        badValue: { foo: 'bar' } // should be dropped
       };
 
       adapter.callBids(REQUEST);
@@ -154,24 +154,24 @@ describe('AppNexusAdapter', () => {
       expect(request.keywords).to.deep.equal([
         {
           key: 'single',
-          value: ['val'],
+          value: ['val']
         },
         {
           key: 'singleArr',
-          value: ['val'],
+          value: ['val']
         },
         {
           key: 'singleArrNum',
-          value: ['5'],
+          value: ['5']
         },
         {
           key: 'multiValMixed',
-          value: ['value1', '2', 'value3'],
+          value: ['value1', '2', 'value3']
         },
         {
           key: 'singleValNum',
-          value: ['123'],
-        },
+          value: ['123']
+        }
       ]);
 
       delete REQUEST.bids[0].params.keywords;
@@ -212,10 +212,10 @@ describe('AppNexusAdapter', () => {
               uuid: '84ab500420319d',
               tag_id: 5976557,
               auction_id: '297492697822162468',
-              nobid: true,
-            },
-          ],
-        }),
+              nobid: true
+            }
+          ]
+        })
       );
 
       adapter.callBids(REQUEST);
@@ -225,7 +225,7 @@ describe('AppNexusAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
 
@@ -241,14 +241,14 @@ describe('AppNexusAdapter', () => {
                   cpm: 0.500000,
                   rtb: {
                     video: {
-                      content: '<!-- Creative -->',
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        }),
+                      content: '<!-- Creative -->'
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        })
       );
 
       adapter.callBids(REQUEST);
@@ -269,7 +269,7 @@ describe('AppNexusAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
   });

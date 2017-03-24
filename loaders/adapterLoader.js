@@ -24,7 +24,7 @@ const videoAdapters = adapters.filter(getVideoAdapters).map(getNames);
 var options = {
   start: '/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */',
   end: '/** END INSERT ADAPTERS */',
-  process: insertAdapters,
+  process: insertAdapters
 };
 
 /**
@@ -36,7 +36,7 @@ function insertAdapters() {
   if (!adapters) {
     console.log(
       'Prebid Warning: adapters config not found in adapters.json, no adapters will' +
-        ' be loaded',
+        ' be loaded'
     );
     return '';
   }
@@ -58,20 +58,20 @@ function insertAdapters() {
       customAdapters.map(adapter => {
         return `let ${adapter.name} = require('${adapter.srcPath}');
       exports.registerBidAdapter(new ${adapter.name}, '${adapter.name}');\n`;
-      }),
+      })
     )
     .concat(
       aliases.map(adapter => {
         const name = getNameStr(adapter);
         return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
-      }),
+      })
     )
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 
   if (!inserts.length) {
     console.log(
-      'No matching adapters found for config, no adapters will be loaded.',
+      'No matching adapters found for config, no adapters will be loaded.'
     );
     return '';
   }
@@ -156,7 +156,7 @@ function getCustomAdapters(adapter) {
   }
   return {
     name: getNames(adapter),
-    srcPath: srcPath,
+    srcPath: srcPath
   };
 }
 

@@ -59,9 +59,9 @@ describe('hiromedia adapter', function() {
       bidder: BIDDER_CODE,
       sizes: [size],
       params: {
-        accountId: '1337',
+        accountId: '1337'
       },
-      placementCode: 'div-gpt-ad-12345-' + placementId,
+      placementCode: 'div-gpt-ad-12345-' + placementId
     };
   };
 
@@ -93,7 +93,7 @@ describe('hiromedia adapter', function() {
 
     it('responds with status `NO_BID` for placements that are not in the allowed size', () => {
       const params = {
-        bids: [unallowedPlacement()],
+        bids: [unallowedPlacement()]
       };
 
       adapter.callBids(params);
@@ -108,7 +108,7 @@ describe('hiromedia adapter', function() {
 
     it('invokes a single bid request for a single valid placement', () => {
       const params = {
-        bids: [allowedPlacement()],
+        bids: [allowedPlacement()]
       };
 
       adapter.callBids(params);
@@ -168,7 +168,7 @@ describe('hiromedia adapter', function() {
       placement.sizes.unshift([300, 600]);
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -189,7 +189,7 @@ describe('hiromedia adapter', function() {
       placement.sizes.unshift([305, 245]);
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -208,7 +208,7 @@ describe('hiromedia adapter', function() {
       placement.params.allowedSize = [728, 90];
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -221,7 +221,7 @@ describe('hiromedia adapter', function() {
       placement.params.allowedSize = [728, 90];
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -235,7 +235,7 @@ describe('hiromedia adapter', function() {
       placement.params.sizeTolerance = 10;
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -249,7 +249,7 @@ describe('hiromedia adapter', function() {
       placement.params.sizeTolerance = 20;
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -262,7 +262,7 @@ describe('hiromedia adapter', function() {
       delete placement.params;
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -277,7 +277,7 @@ describe('hiromedia adapter', function() {
       placement.params.bidUrl = DEFAULT_ENDPOINT + '?someparam=value';
 
       const params = {
-        bids: [placement],
+        bids: [placement]
       };
 
       adapter.callBids(params);
@@ -296,7 +296,7 @@ describe('hiromedia adapter', function() {
 
     it('batches similar bid requests for similar sized placements', () => {
       const params = {
-        bids: [allowedPlacement(), allowedPlacement()],
+        bids: [allowedPlacement(), allowedPlacement()]
       };
 
       adapter.callBids(params);
@@ -331,7 +331,7 @@ describe('hiromedia adapter', function() {
       const response = {
         batchKey: [DEFAULT_ENDPOINT, '1337', '300x250'].join('-'),
         cpm: 0.4,
-        ad: '<script src="ad.js"></script>',
+        ad: '<script src="ad.js"></script>'
       };
 
       // Instead of the dead stub defined in the top scope, we'll use
@@ -343,7 +343,7 @@ describe('hiromedia adapter', function() {
       });
 
       const params = {
-        bids: [allowedPlacement(), allowedPlacement()],
+        bids: [allowedPlacement(), allowedPlacement()]
       };
 
       adapter.callBids(params);
@@ -387,7 +387,7 @@ describe('hiromedia adapter', function() {
         batchKey: [DEFAULT_ENDPOINT, '1337', '300x250'].join('-'),
         cpm: 0.4,
         chance: 0.25,
-        ad: '<script src="ad.js"></script>',
+        ad: '<script src="ad.js"></script>'
       };
 
       // List of "random" values. We check that the first two pass and the last
@@ -414,7 +414,7 @@ describe('hiromedia adapter', function() {
       });
 
       const params = {
-        bids: [allowedPlacement()],
+        bids: [allowedPlacement()]
       };
 
       adapter.callBids(params);

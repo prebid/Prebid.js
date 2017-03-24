@@ -83,7 +83,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
             bidResponse.height = height;
             bidResponse.ad = aBResponseObject.ad_code;
             bidResponse.ad += addTrackingPixels(
-              aBResponseObject.tracking_pixels,
+              aBResponseObject.tracking_pixels
             );
           } else {
             bidResponse = bidfactory.createBid(2, bidObj);
@@ -136,7 +136,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
   // Export the callBids function, so that prebid.js can execute this function
   // when the page asks to send out bid requests.
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

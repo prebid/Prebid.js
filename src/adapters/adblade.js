@@ -43,16 +43,16 @@ var AdbladeAdapter = function AdbladeAdapter() {
             publisher: {
               id: partnerId,
               name: referrer,
-              domain: domain,
-            },
+              domain: domain
+            }
           },
           id: params.requestId,
           imp: [],
           device: {
-            ua: window.navigator.userAgent,
+            ua: window.navigator.userAgent
           },
           cur: ['USD'],
-          user: {},
+          user: {}
         };
 
         bidRequests[key].imp.push({
@@ -61,9 +61,9 @@ var AdbladeAdapter = function AdbladeAdapter() {
           tag: bid.placementCode,
           banner: {
             w: size[0],
-            h: size[1],
+            h: size[1]
           },
-          secure: 0 + (loc.protocol === 'https'),
+          secure: 0 + (loc.protocol === 'https')
         });
       });
     });
@@ -74,11 +74,11 @@ var AdbladeAdapter = function AdbladeAdapter() {
           utils.tryAppendQueryString(
             BASE_URI,
             'callback',
-            '$$PREBID_GLOBAL$$.adbladeResponse',
+            '$$PREBID_GLOBAL$$.adbladeResponse'
           ),
           'json',
-          JSON.stringify(bidRequest),
-        ),
+          JSON.stringify(bidRequest)
+        )
       );
     });
   }
@@ -95,7 +95,7 @@ var AdbladeAdapter = function AdbladeAdapter() {
     ) {
       // handle empty bids
       var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(
-        bidSet => bidSet.bidderCode === BIDDER_CODE,
+        bidSet => bidSet.bidderCode === BIDDER_CODE
       ).bids;
       if (bidsRequested.length > 0) {
         let bid = bidfactory.createBid(2);
@@ -128,7 +128,7 @@ var AdbladeAdapter = function AdbladeAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

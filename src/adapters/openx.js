@@ -22,7 +22,7 @@ const OpenxAdapter = function OpenxAdapter() {
     }
 
     let bids = $$PREBID_GLOBAL$$._bidsRequested.find(
-      bidSet => bidSet.bidderCode === 'openx',
+      bidSet => bidSet.bidderCode === 'openx'
     ).bids;
     for (let i = 0; i < bids.length; i++) {
       let bid = bids[i];
@@ -45,7 +45,7 @@ const OpenxAdapter = function OpenxAdapter() {
         bd: +new Date() - startTime,
         br: '0', // maybe 0, t, or p
         bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout, // For the timeout per bid request
-        bs: window.location.hostname,
+        bs: window.location.hostname
       };
 
       // no fill :(
@@ -116,7 +116,7 @@ const OpenxAdapter = function OpenxAdapter() {
   function addBidResponse(adUnit, bid) {
     let bidResponse = bidfactory.createBid(
       adUnit ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID,
-      bid,
+      bid
     );
     bidResponse.bidderCode = BIDDER_CODE;
 
@@ -237,14 +237,14 @@ const OpenxAdapter = function OpenxAdapter() {
         ee: 'api_sync_write',
         ef: 'bt%2Cdb',
         be: 1,
-        bc: BIDDER_CONFIG,
+        bc: BIDDER_CONFIG
       },
-      delDomain,
+      delDomain
     );
   }
 
   return {
-    callBids: callBids,
+    callBids: callBids
   };
 };
 

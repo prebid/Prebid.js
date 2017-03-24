@@ -5,5 +5,5 @@ export const pbjsTestOnly = {
 
   clearAllAdUnits() {
     $$PREBID_GLOBAL$$.adUnits = [];
-  },
+  }
 };

@@ -12,7 +12,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   const AJAX_REQ_PARAMS = {
     contentType: 'text/plain',
     withCredentials: true,
-    method: 'GET',
+    method: 'GET'
   };
   const EMPTY_BID_RESPONSE = { seatbid: [{ bid: [] }] };
 
@@ -106,7 +106,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
           });
         },
         params,
-        AJAX_REQ_PARAMS,
+        AJAX_REQ_PARAMS
       );
     }
 
@@ -122,8 +122,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
         at: 1,
         device: {
           ip: 'caller',
-          ua: 'caller',
-        },
+          ua: 'caller'
+        }
       };
     }
 
@@ -138,7 +138,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       return {
         zone: encodeURIComponent(zone),
         ad_type: 'rtb',
-        r: encodeURIComponent(JSON.stringify(rtbReq)),
+        r: encodeURIComponent(JSON.stringify(rtbReq))
       };
     }
   }
@@ -160,7 +160,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     utils._each(bids, bid => {
       if (!validateBidParams(bid.params)) {
         utils.logError(
-          `Incorrect configuration for adkernel bidder: ${bid.params}`,
+          `Incorrect configuration for adkernel bidder: ${bid.params}`
         );
         bidmanager.addBidResponse(bid.placementCode, createEmptyBidObject(bid));
       } else {
@@ -174,7 +174,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
         utils.logMessage(`got response for ${adUnitId}`);
         bidmanager.addBidResponse(
           adUnitId,
-          createBidObject(bidResp, bid, imp.banner.w, imp.banner.h),
+          createBidObject(bidResp, bid, imp.banner.w, imp.banner.h)
         );
       } else {
         utils.logMessage(`got empty response for ${adUnitId}`);
@@ -192,7 +192,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       ad: formatAdMarkup(resp),
       width: width,
       height: height,
-      cpm: parseFloat(resp.price),
+      cpm: parseFloat(resp.price)
     });
   }
 
@@ -201,7 +201,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
    */
   function createEmptyBidObject(bid) {
     return Object.assign(bidfactory.createBid(2, bid), {
-      bidderCode: bid.bidder,
+      bidderCode: bid.bidder
     });
   }
 
@@ -227,7 +227,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function createSite() {
     var location = utils.getTopWindowLocation();
     return {
-      domain: location.hostname,
+      domain: location.hostname
     };
   }
 
@@ -235,7 +235,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode,
-    createNew: AdKernelAdapter.createNew,
+    createNew: AdKernelAdapter.createNew
   };
 };
 

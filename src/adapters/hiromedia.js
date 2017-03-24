@@ -57,7 +57,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   var DEFAULT_BID_PARAMS = {
     bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get',
     allowedSize: [300, 250],
-    sizeTolerance: 5,
+    sizeTolerance: 5
   };
 
   /**
@@ -103,7 +103,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
       'hiromedia.callBids, addBidResponse for ' +
         placementCode +
         ' status: ' +
-        bidStatus,
+        bidStatus
     );
     bidmanager.addBidResponse(placementCode, bidObject);
   }
@@ -174,26 +174,26 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     var browsers = [
       {
         name: 'Mobile',
-        stringSearch: 'Mobi',
+        stringSearch: 'Mobi'
       },
       {
-        name: 'Edge',
+        name: 'Edge'
       },
       {
-        name: 'Chrome',
+        name: 'Chrome'
       },
       {
-        name: 'Firefox',
+        name: 'Firefox'
       },
       {
         name: 'IE',
-        versionSearch: /MSIE\s(\d+)/,
+        versionSearch: /MSIE\s(\d+)/
       },
       {
         name: 'IE',
         stringSearch: 'Trident',
-        versionSearch: /rv:(\d+)/,
-      },
+        versionSearch: /rv:(\d+)/
+      }
     ];
 
     var name = '';
@@ -217,7 +217,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
 
     return {
       name: name,
-      version: version,
+      version: version
     };
   }
 
@@ -341,7 +341,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     var batchParams = [
       bidParams.bidUrl,
       bidParams.accountId,
-      bidInfo.selectedSize.join('x'),
+      bidInfo.selectedSize.join('x')
     ];
 
     return batchParams.join('-');
@@ -366,7 +366,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
 
     if (bids) {
       utils.logMessage(
-        'hiromedia.processBids, processing ' + bids.length + ' bids',
+        'hiromedia.processBids, processing ' + bids.length + ' bids'
       );
 
       bids.forEach(function(bid) {
@@ -379,14 +379,14 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
         var hasValidBidRequest = utils.hasValidBidRequest(
           bidParams,
           REQUIRED_BID_PARAMS,
-          BIDDER_CODE,
+          BIDDER_CODE
         );
         var shouldBid = hasValidBidRequest && selectedSize !== undefined;
         var bidInfo = {
           bid: bid,
           bidParams: bidParams,
           selectedSize: selectedSize,
-          shouldBid: shouldBid,
+          shouldBid: shouldBid
         };
 
         if (shouldBid) {
@@ -463,7 +463,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
           'hiromedia.callBids, bidInfo ' +
             bid.placementCode +
             ' ' +
-            bidInfo.shouldBid,
+            bidInfo.shouldBid
         );
 
         if (bidInfo.shouldBid) {
@@ -482,7 +482,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
               browserVersion: browser.version,
               domain: domain,
               selectedSize: utils.parseSizesInput([bidInfo.selectedSize]),
-              placementSizes: utils.parseSizesInput(bid.sizes),
+              placementSizes: utils.parseSizesInput(bid.sizes)
             });
           }
         } else {
@@ -494,7 +494,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
   // JSDoc typedefs
   /**

@@ -13,16 +13,16 @@ const REQUEST = {
       bidder: 'komoona',
       params: {
         hbid: 'abcd666dcba',
-        placementId: 'abcd123123dcba',
+        placementId: 'abcd123123dcba'
       },
       placementCode: 'div-gpt-ad-1438287399331-0',
       sizes: [[300, 250]],
       bidId: '30e5e911c00703',
       bidderRequestId: '25392d757fad47',
-      requestId: '1f43cc36a6a7e',
-    },
+      requestId: '1f43cc36a6a7e'
+    }
   ],
-  start: 1466493146527,
+  start: 1466493146527
 };
 
 const RESPONSE = {
@@ -33,9 +33,9 @@ const RESPONSE = {
       width: 728,
       height: 90,
       cpm: 0.5,
-      creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>',
-    },
-  ],
+      creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>'
+    }
+  ]
 };
 
 describe('komoonaAdapter', () => {
@@ -120,10 +120,10 @@ describe('komoonaAdapter', () => {
             {
               cpm: 0,
               creative: '',
-              uuid: '30e5e911c00703',
-            },
-          ],
-        }),
+              uuid: '30e5e911c00703'
+            }
+          ]
+        })
       );
 
       adapter.callBids(REQUEST);
@@ -133,7 +133,7 @@ describe('komoonaAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
 
@@ -147,7 +147,7 @@ describe('komoonaAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response',
+        'Bid returned empty or error response'
       );
     });
   });

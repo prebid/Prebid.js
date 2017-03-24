@@ -30,7 +30,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
         placementCode: bidRequest.placementCode,
         divId: bidRequest.params.divId,
         subId: bidRequest.params.subId,
-        callback: callback,
+        callback: callback
       });
     }
     var udmBidRequest = new window.udm_header_lib.BidRequestArray(mapped_bids);
@@ -59,7 +59,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
           bid.ad = udm_bid.ad_html;
         } else {
           utils.logMessage(
-            'Underdogmedia bid is lacking both ad_url and ad_html, skipping bid',
+            'Underdogmedia bid is lacking both ad_url and ad_html, skipping bid'
           );
           continue;
         }
@@ -74,7 +74,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

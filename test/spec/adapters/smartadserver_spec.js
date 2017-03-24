@@ -20,12 +20,12 @@ describe('smartadserver adapter tests', function() {
           pageId: '5678',
           formatId: '90',
           target: 'test=prebid',
-          currency: 'EUR',
+          currency: 'EUR'
         },
         requestId: 'efgh5678',
-        placementCode: 'sas_42',
-      },
-    ],
+        placementCode: 'sas_42'
+      }
+    ]
   };
 
   var DEFAULT_PARAMS_WO_OPTIONAL = {
@@ -39,19 +39,19 @@ describe('smartadserver adapter tests', function() {
           domain: 'http://www.smartadserver.com',
           siteId: '1234',
           pageId: '5678',
-          formatId: '90',
+          formatId: '90'
         },
         requestId: 'efgh5678',
-        placementCode: 'sas_42',
-      },
-    ],
+        placementCode: 'sas_42'
+      }
+    ]
   };
 
   var BID_RESPONSE = {
     cpm: 0.42,
     ad: 'fake ad content',
     width: 300,
-    height: 250,
+    height: 250
   };
 
   it('set url parameters', function() {
@@ -132,7 +132,7 @@ describe('smartadserver adapter tests', function() {
     var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
 
     expect(bidResponsePlacementCode).to.equal(
-      DEFAULT_PARAMS.bids[0].placementCode,
+      DEFAULT_PARAMS.bids[0].placementCode
     );
     expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
     expect(bidResponseAd).to.have
@@ -159,7 +159,7 @@ describe('smartadserver adapter tests', function() {
     var bidResponseAd = stubAddBidResponse.getCall(0).args[1];
 
     expect(bidResponsePlacementCode).to.equal(
-      DEFAULT_PARAMS.bids[0].placementCode,
+      DEFAULT_PARAMS.bids[0].placementCode
     );
     expect(bidResponseAd.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
     expect(bidResponseAd).to.have

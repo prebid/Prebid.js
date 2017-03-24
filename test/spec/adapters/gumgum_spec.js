@@ -14,7 +14,7 @@ describe('gumgum adapter', () => {
     PUBLISHER_IDENTITY: 'ggumtest',
     BIDDER_CODE: 'gumgum',
     PLACEMENT: 'placementId',
-    CPM: 2,
+    CPM: 2
   };
   const bidderRequest = {
     bidderCode: TEST.BIDDER_CODE,
@@ -26,8 +26,8 @@ describe('gumgum adapter', () => {
         placementCode: TEST.PLACEMENT,
         sizes: [[728, 90]],
         params: {
-          inScreen: TEST.PUBLISHER_IDENTITY,
-        },
+          inScreen: TEST.PUBLISHER_IDENTITY
+        }
       },
       {
         // in-image
@@ -36,8 +36,8 @@ describe('gumgum adapter', () => {
         placementCode: TEST.PLACEMENT,
         sizes: [[728, 90]],
         params: {
-          inImage: TEST.PUBLISHER_IDENTITY,
-        },
+          inImage: TEST.PUBLISHER_IDENTITY
+        }
       },
       {
         // native
@@ -46,8 +46,8 @@ describe('gumgum adapter', () => {
         placementCode: TEST.PLACEMENT,
         sizes: [[728, 90]],
         params: {
-          native: 10,
-        },
+          native: 10
+        }
       },
       {
         // slot
@@ -56,20 +56,20 @@ describe('gumgum adapter', () => {
         placementCode: TEST.PLACEMENT,
         sizes: [[728, 90]],
         params: {
-          inSlot: 10,
-        },
+          inSlot: 10
+        }
       },
       {
         // no identity
         bidId: 'NoIdentityBidId',
         bidder: TEST.BIDDER_CODE,
         placementCode: TEST.PLACEMENT,
-        sizes: [[728, 90]],
-      },
-    ],
+        sizes: [[728, 90]]
+      }
+    ]
   };
   const pageParams = {
-    pvid: 'PVID',
+    pvid: 'PVID'
   };
   const bidderResponse = {
     ad: {
@@ -80,9 +80,9 @@ describe('gumgum adapter', () => {
       ii: true,
       du: 'http://example.com/',
       price: TEST.CPM,
-      impurl: 'http://example.com/',
+      impurl: 'http://example.com/'
     },
-    pag: pageParams,
+    pag: pageParams
   };
 
   function mockBidResponse(response) {
@@ -150,7 +150,7 @@ describe('gumgum adapter', () => {
   describe('handleGumGumCB[...]', () => {
     it('exists and is function', () => {
       expect(pbjs.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a(
-        'function',
+        'function'
       );
     });
   });

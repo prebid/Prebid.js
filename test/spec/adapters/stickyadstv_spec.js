@@ -18,8 +18,8 @@ describe('StickyAdsTV Adapter', function() {
         sizes: [[300, 250]],
         params: {
           zoneId: '2003',
-          format: 'screen-roll',
-        },
+          format: 'screen-roll'
+        }
       },
       {
         bidId: 'bidId2',
@@ -27,8 +27,8 @@ describe('StickyAdsTV Adapter', function() {
         placementCode: 'bar',
         sizes: [[728, 90]],
         params: {
-          zoneId: '5562003',
-        },
+          zoneId: '5562003'
+        }
       },
       {
         bidId: 'bidId3',
@@ -36,8 +36,8 @@ describe('StickyAdsTV Adapter', function() {
         placementCode: '',
         sizes: [[300, 600]],
         params: {
-          zoneId: '123456',
-        },
+          zoneId: '123456'
+        }
       },
       {
         bidId: 'bidId4',
@@ -45,10 +45,10 @@ describe('StickyAdsTV Adapter', function() {
         placementCode: 'coo',
         sizes: [[300, 600]],
         params: {
-          wrong: 'missing zoneId',
-        },
-      },
-    ],
+          wrong: 'missing zoneId'
+        }
+      }
+    ]
   };
 
   beforeEach(function() {
@@ -78,7 +78,7 @@ describe('StickyAdsTV Adapter', function() {
 
       url = adLoader.loadScript.firstCall.args[0];
       expect(url).to.equal(
-        '//cdn.stickyadstv.com/prime-time/screen-roll.min.js',
+        '//cdn.stickyadstv.com/prime-time/screen-roll.min.js'
       );
 
       url = adLoader.loadScript.secondCall.args[0];
@@ -102,7 +102,7 @@ describe('StickyAdsTV Adapter', function() {
                   getPricing: function() {
                     getPricingCalled = true;
                     return { currency: 'USD', price: 4.000 };
-                  },
+                  }
                 };
               };
 
@@ -110,14 +110,14 @@ describe('StickyAdsTV Adapter', function() {
                 loadConfig = config;
                 listener.onSuccess();
               };
-            },
+            }
           },
           screenroll: {
             getPlayerSize: function() {
               return '123x456';
-            },
-          },
-        },
+            }
+          }
+        }
       };
 
       adapter.getBid(bidderRequest.bids[0], function(bidObject) {
@@ -136,7 +136,7 @@ describe('StickyAdsTV Adapter', function() {
       expect(bidResponse).to.have.property('cpm', 4.000);
       expect(bidResponse).to.have.property(
         'ad',
-        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["foo"];var config = {  preloadedVast:vast};topWindow.com.stickyadstv.screenroll.start(config);</script>',
+        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["foo"];var config = {  preloadedVast:vast};topWindow.com.stickyadstv.screenroll.start(config);</script>'
       );
       expect(bidResponse).to.have.property('bidderCode', 'stickyadstv');
       expect(bidResponse).to.have.property('currencyCode', 'USD');
@@ -163,7 +163,7 @@ describe('StickyAdsTV Adapter', function() {
         { currency: 'EUR', price: '1.2345' },
         '<div>sample</div>',
         200,
-        300,
+        300
       );
 
       expect(result).to.have.property('cpm', '1.2345');
@@ -182,7 +182,7 @@ describe('StickyAdsTV Adapter', function() {
         null,
         '<div>sample</div>',
         200,
-        300,
+        300
       );
 
       expect(result).to.have.property('bidderCode', 'stickyadstv');
@@ -196,7 +196,7 @@ describe('StickyAdsTV Adapter', function() {
         { currency: 'EUR', price: '1.2345' },
         '<div>sample</div>',
         200,
-        300,
+        300
       );
 
       expect(result).to.have.property('bidderCode', 'stickyadstv');
@@ -208,11 +208,11 @@ describe('StickyAdsTV Adapter', function() {
     it('should create an inBanner ad format', function() {
       let result = adapter.formatAdHTML(
         { placementCode: 'placementCodeValue', params: {} },
-        [200, 300],
+        [200, 300]
       );
 
       expect(result).to.equal(
-        '<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>',
+        '<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>'
       );
     });
 
@@ -220,13 +220,13 @@ describe('StickyAdsTV Adapter', function() {
       let result = adapter.formatAdHTML(
         {
           placementCode: 'placementCodeValue',
-          params: { format: 'intext-roll', auto: 'v2', smartPlay: 'true' },
+          params: { format: 'intext-roll', auto: 'v2', smartPlay: 'true' }
         },
-        [200, 300],
+        [200, 300]
       );
 
       expect(result).to.equal(
-        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,auto:"v2",smartPlay:"true"};topWindow.com.stickyadstv.intextroll.start(config);</script>',
+        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,auto:"v2",smartPlay:"true"};topWindow.com.stickyadstv.intextroll.start(config);</script>'
       );
     });
 
@@ -234,13 +234,13 @@ describe('StickyAdsTV Adapter', function() {
       let result = adapter.formatAdHTML(
         {
           placementCode: 'placementCodeValue',
-          params: { format: 'screen-roll', smartPlay: 'true' },
+          params: { format: 'screen-roll', smartPlay: 'true' }
         },
-        [200, 300],
+        [200, 300]
       );
 
       expect(result).to.equal(
-        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:"true"};topWindow.com.stickyadstv.screenroll.start(config);</script>',
+        '<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:"true"};topWindow.com.stickyadstv.screenroll.start(config);</script>'
       );
     });
   });
@@ -251,7 +251,7 @@ describe('StickyAdsTV Adapter', function() {
         [1, 4000],
         [4000, 1],
         [200, 300],
-        [0, 0],
+        [0, 0]
       ]);
 
       expect(result[0]).to.equal(200);

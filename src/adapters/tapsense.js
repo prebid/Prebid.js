@@ -17,7 +17,7 @@ const TapSenseAdapter = function TapSenseAdapter() {
     'long',
     'user', //required
     'price_floor',
-    'test',
+    'test'
   ];
   const SCRIPT_URL = 'https://ads04.tapsense.com/ads/headerad';
   let bids;
@@ -82,7 +82,7 @@ const TapSenseAdapter = function TapSenseAdapter() {
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

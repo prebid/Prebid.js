@@ -2,7 +2,7 @@ import {
   uniques,
   isGptPubadsDefined,
   getHighestCpm,
-  adUnitsFilter,
+  adUnitsFilter
 } from './utils';
 const bidmanager = require('./bidmanager.js');
 const utils = require('./utils.js');
@@ -41,7 +41,7 @@ targeting.getAllTargeting = function(adUnitCode) {
     .concat(
       $$PREBID_GLOBAL$$._sendAllBids
         ? getBidLandscapeTargeting(adUnitCodes)
-        : [],
+        : []
     );
 
   //store a reference of the targeting keys
@@ -63,14 +63,14 @@ targeting.setTargeting = function(targetingConfig) {
       .filter(
         targeting =>
           Object.keys(targeting)[0] === slot.getAdUnitPath() ||
-          Object.keys(targeting)[0] === slot.getSlotElementId(),
+          Object.keys(targeting)[0] === slot.getSlotElementId()
       )
       .forEach(targeting =>
         targeting[Object.keys(targeting)[0]].forEach(key => {
           key[Object.keys(key)[0]]
             .map(value => {
               utils.logMessage(
-                `Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`,
+                `Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`
               );
               return value;
             })
@@ -99,7 +99,7 @@ targeting.getWinningBids = function(adUnitCode) {
           adUnitCode: adUnitCode,
           cpm: 0,
           adserverTargeting: {},
-          timeToRespond: 0,
+          timeToRespond: 0
         }));
 };
 
@@ -108,7 +108,7 @@ targeting.setTargetingForAst = function() {
   Object.keys(targeting).forEach(targetId =>
     Object.keys(targeting[targetId]).forEach(key => {
       utils.logMessage(
-        `Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`,
+        `Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`
       );
       //setKeywords supports string and array as value
       if (
@@ -137,11 +137,11 @@ function getWinningBidTargeting() {
           key =>
             typeof winner.sendStandardTargeting === 'undefined' ||
             winner.sendStandardTargeting ||
-            standardKeys.indexOf(key) === -1,
+            standardKeys.indexOf(key) === -1
         )
         .map(key => ({
-          [key.substring(0, 20)]: [winner.adserverTargeting[key]],
-        })),
+          [key.substring(0, 20)]: [winner.adserverTargeting[key]]
+        }))
     };
   });
 
@@ -176,7 +176,7 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 
               return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
             })
-            .filter(key => key), // remove empty elements
+            .filter(key => key) // remove empty elements
         };
       }
     })
@@ -194,10 +194,10 @@ function getBidLandscapeTargeting(adUnitCodes) {
           [bid.adUnitCode]: getTargetingMap(
             bid,
             standardKeys.filter(
-              key => typeof bid.adserverTargeting[key] !== 'undefined',
-            ), // mainly for possibly
+              key => typeof bid.adserverTargeting[key] !== 'undefined'
+            ) // mainly for possibly
             // unset hb_deal
-          ),
+          )
         };
       }
     })
@@ -208,8 +208,8 @@ function getTargetingMap(bid, keys) {
   return keys.map(key => {
     return {
       [`${key}_${bid.bidderCode}`.substring(0, 20)]: [
-        bid.adserverTargeting[key],
-      ],
+        bid.adserverTargeting[key]
+      ]
     };
   });
 }

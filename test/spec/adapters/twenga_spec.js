@@ -20,12 +20,12 @@ describe('twenga adapter tests', function() {
           publisherId: 5678,
           currency: 'USD',
           bidFloor: 0.5,
-          country: 'DE',
+          country: 'DE'
         },
         requestId: 'tw_efgh5678',
-        placementCode: 'tw_42',
-      },
-    ],
+        placementCode: 'tw_42'
+      }
+    ]
   };
 
   var BID_RESPONSE = {
@@ -34,9 +34,9 @@ describe('twenga adapter tests', function() {
       width: 300,
       height: 250,
       ad: '//rtb.t.c4tw.net',
-      creative_id: 'test',
+      creative_id: 'test'
     },
-    callback_uid: 'tw_abcd1234',
+    callback_uid: 'tw_abcd1234'
   };
 
   it('sets url parameters', function() {
@@ -104,9 +104,9 @@ describe('twenga adapter tests', function() {
         bids: [
           {
             bidId: parsedBidUrlQueryString.callback_uid,
-            placementCode: DEFAULT_PARAMS.bids[0].placementCode,
-          },
-        ],
+            placementCode: DEFAULT_PARAMS.bids[0].placementCode
+          }
+        ]
       });
 
       var callback = stringToFunction(parsedBidUrlQueryString.callback);

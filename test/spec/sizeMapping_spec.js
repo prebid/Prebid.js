@@ -6,31 +6,31 @@ var validAdUnit = {
   sizeMapping: [
     {
       minWidth: 1024,
-      sizes: [[300, 250], [728, 90]],
+      sizes: [[300, 250], [728, 90]]
     },
     {
       minWidth: 480,
-      sizes: [120, 60],
+      sizes: [120, 60]
     },
     {
       minWidth: 0,
-      sizes: [20, 20],
-    },
-  ],
+      sizes: [20, 20]
+    }
+  ]
 };
 
 var invalidAdUnit = {
   sizes: [300, 250],
-  sizeMapping: {}, // wrong type
+  sizeMapping: {} // wrong type
 };
 
 var invalidAdUnit2 = {
   sizes: [300, 250],
   sizeMapping: [
     {
-      foo: 'bar', //bad
-    },
-  ],
+      foo: 'bar' //bad
+    }
+  ]
 };
 
 let mockWindow = {};
@@ -39,13 +39,13 @@ function resetMockWindow() {
   mockWindow = {
     document: {
       body: {
-        clientWidth: 1024,
+        clientWidth: 1024
       },
       documentElement: {
-        clientWidth: 1024,
-      },
+        clientWidth: 1024
+      }
     },
-    innerWidth: 1024,
+    innerWidth: 1024
   };
 }
 

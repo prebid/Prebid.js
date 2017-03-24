@@ -28,35 +28,35 @@ function WidespaceAdapter() {
         (prev, curr) => {
           return prev ? `${prev},${curr}` : curr;
         },
-        sizeQueryString,
+        sizeQueryString
       );
 
       var requestURL = baseURL;
       requestURL = utils.tryAppendQueryString(
         requestURL,
         'hb.name',
-        'prebidjs',
+        'prebidjs'
       );
       requestURL = utils.tryAppendQueryString(
         requestURL,
         'hb.callback',
-        callbackName,
+        callbackName
       );
       requestURL = utils.tryAppendQueryString(
         requestURL,
         'hb.callbackUid',
-        callbackUid,
+        callbackUid
       );
       requestURL = utils.tryAppendQueryString(
         requestURL,
         'hb.sizes',
-        sizeQueryString,
+        sizeQueryString
       );
       requestURL = utils.tryAppendQueryString(requestURL, 'sid', sid);
       requestURL = utils.tryAppendQueryString(
         requestURL,
         'hb.currency',
-        currency,
+        currency
       );
 
       // Expose the callback
@@ -121,7 +121,7 @@ function WidespaceAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 }
 

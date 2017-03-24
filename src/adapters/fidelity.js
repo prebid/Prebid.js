@@ -60,7 +60,7 @@ var FidelityAdapter = function FidelityAdapter() {
 
   function addBlankBidResponses(placementsWithBidsBack) {
     var allFidelityBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(
-      bidSet => bidSet.bidderCode === FIDELITY_BIDDER_NAME,
+      bidSet => bidSet.bidderCode === FIDELITY_BIDDER_NAME
     );
 
     if (allFidelityBidRequests && allFidelityBidRequests.bids) {
@@ -106,7 +106,7 @@ var FidelityAdapter = function FidelityAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

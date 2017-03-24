@@ -22,9 +22,9 @@ const PREBID_RESPONSE = function() {
       callbackId: '1490bd6bdc59ce',
       width: 300,
       height: 250,
-      banner: 'html',
+      banner: 'html'
     },
-    callback_uid: '1490bd6bdc59ce',
+    callback_uid: '1490bd6bdc59ce'
   };
 };
 const PREBID_PARAMS = {
@@ -41,11 +41,11 @@ const PREBID_PARAMS = {
       placementCode: 'golden',
       params: {
         placement: 109801,
-        floor: '1.00',
+        floor: '1.00'
       },
-      sizes: [[300, 250], [300, 600]],
-    },
-  ],
+      sizes: [[300, 250], [300, 600]]
+    }
+  ]
 };
 
 function resetDm() {
@@ -70,8 +70,8 @@ function activated() {
         return size;
       },
 
-      run(a, b, c) {},
-    },
+      run(a, b, c) {}
+    }
   };
 }
 
@@ -84,18 +84,18 @@ function definitions() {
         adUnitCode: 'golden',
         sizes: [[728, 90]],
         params: {
-          siteId: '101000',
-        },
+          siteId: '101000'
+        }
       },
       {
         bidder: 'districtmDMX',
         adUnitCode: 'stevealliance',
         sizes: [[300, 250]],
         params: {
-          siteId: '101000',
-        },
-      },
-    ],
+          siteId: '101000'
+        }
+      }
+    ]
   });
 }
 describe('DistrictM adapter test', () => {
@@ -131,10 +131,10 @@ describe('DistrictM adapter test', () => {
       activated();
 
       expect(window.hb_dmx_res.auction.fixSize([728, 90])[0]).to.equal(
-        ['728x90'][0],
+        ['728x90'][0]
       );
       expect(
-        window.hb_dmx_res.auction.fixSize([[300, 250], [300, 600]]).toString(),
+        window.hb_dmx_res.auction.fixSize([[300, 250], [300, 600]]).toString()
       ).to.equal(['300x250', '300x600'].toString());
     });
   });
@@ -178,7 +178,7 @@ describe('DistrictM adapter test', () => {
       let sendBids = districtm.sendBids(PREBID_PARAMS);
       sendBids.forEach(sb => {
         expect(sb.sizes.toString()).to.equal(
-          [[300, 250], [300, 600]].toString(),
+          [[300, 250], [300, 600]].toString()
         );
       });
     });

@@ -11,35 +11,35 @@ describe('Adkernel adapter', () => {
     bidId: 'Bid_01',
     params: { zoneId: 1, host: 'rtb.adkernel.com' },
     placementCode: 'ad-unit-1',
-    sizes: [[300, 250]],
+    sizes: [[300, 250]]
   },
     bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: { zoneId: 2, host: 'rtb.adkernel.com' },
       placementCode: 'ad-unit-2',
-      sizes: [[728, 90]],
+      sizes: [[728, 90]]
     },
     bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: { zoneId: 1, host: 'rtb-private.adkernel.com' },
       placementCode: 'ad-unit-2',
-      sizes: [[728, 90]],
+      sizes: [[728, 90]]
     },
     bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: { host: 'rtb-private.adkernel.com' },
       placementCode: 'ad-unit-1',
-      sizes: [[728, 90]],
+      sizes: [[728, 90]]
     },
     bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: { zoneId: 1 },
       placementCode: 'ad-unit-1',
-      sizes: [[728, 90]],
+      sizes: [[728, 90]]
     };
 
   const bidResponse1 = {
@@ -52,12 +52,12 @@ describe('Adkernel adapter', () => {
             impid: 'Bid_01',
             price: 3.01,
             nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-            adm: '<!-- admarkup here -->',
-          },
-        ],
-      },
+            adm: '<!-- admarkup here -->'
+          }
+        ]
+      }
     ],
-    cur: 'USD',
+    cur: 'USD'
   },
     bidResponse2 = {
       id: 'bid2',
@@ -68,12 +68,12 @@ describe('Adkernel adapter', () => {
               id: '2',
               impid: 'Bid_02',
               price: 1.31,
-              adm: '<!-- admarkup here -->',
-            },
-          ],
-        },
+              adm: '<!-- admarkup here -->'
+            }
+          ]
+        }
       ],
-      cur: 'USD',
+      cur: 'USD'
     };
 
   let adapter, sandbox, ajaxStub;
@@ -91,7 +91,7 @@ describe('Adkernel adapter', () => {
   function doRequest(bids) {
     adapter.callBids({
       bidderCode: 'adkernel',
-      bids: bids,
+      bids: bids
     });
   }
 
@@ -106,8 +106,8 @@ describe('Adkernel adapter', () => {
     it("empty request shouldn't generate exception", () => {
       expect(
         adapter.callBids({
-          bidderCode: 'adkernel',
-        }),
+          bidderCode: 'adkernel'
+        })
       ).to.be.an('undefined');
     });
 
@@ -115,10 +115,10 @@ describe('Adkernel adapter', () => {
       doRequest([bid_without_zone]);
       sinon.assert.notCalled(ajaxStub);
       expect(
-        bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
     });
 
@@ -126,10 +126,10 @@ describe('Adkernel adapter', () => {
       doRequest([bid_without_host]);
       sinon.assert.notCalled(ajaxStub);
       expect(
-        bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
     });
   });
@@ -143,14 +143,14 @@ describe('Adkernel adapter', () => {
           protocol: 'https:',
           hostname: 'example.com',
           host: 'example.com',
-          pathname: '/index.html',
+          pathname: '/index.html'
         };
       });
 
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
       doRequest([bid1_zone1]);
       bidRequest = JSON.parse(
-        decodeURIComponent(ajaxStub.getCall(0).args[2].r),
+        decodeURIComponent(ajaxStub.getCall(0).args[2].r)
       );
     });
 
@@ -234,20 +234,20 @@ describe('Adkernel adapter', () => {
       ajaxStub.onCall(1).callsArgWith(1, JSON.stringify(bidResponse2));
       doRequest([bid1_zone1, bid2_zone2]);
       expect(
-        bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.GOOD);
       expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
       expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
       expect(
-        bidmanager.addBidResponse.secondCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.secondCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.GOOD);
       expect(bidmanager.addBidResponse.secondCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
       expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal(
-        'ad-unit-2',
+        'ad-unit-2'
       );
     });
 
@@ -256,20 +256,20 @@ describe('Adkernel adapter', () => {
       ajaxStub.onCall(1).callsArgWith(1, '');
       doRequest([bid1_zone1, bid2_zone2]);
       expect(
-        bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.GOOD);
       expect(bidmanager.addBidResponse.firstCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
       expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
       expect(
-        bidmanager.addBidResponse.secondCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.secondCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(bidmanager.addBidResponse.secondCall.args[1].bidderCode).to.equal(
-        'adkernel',
+        'adkernel'
       );
       expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal(
-        'ad-unit-2',
+        'ad-unit-2'
       );
     });
 
@@ -278,7 +278,7 @@ describe('Adkernel adapter', () => {
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
       doRequest([bid1_zone1]);
       expect(
-        bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
       ).to.equal(CONSTANTS.STATUS.GOOD);
       expect(utils.createTrackPixelHtml.calledOnce);
       let result = pbjs.getBidResponsesForAdUnitCode(bid1_zone1.placementCode);
@@ -291,13 +291,13 @@ describe('Adkernel adapter', () => {
       const expectedSyncUrls = [
         'http://rtb.adkernel.com/user-sync?zone=1',
         'http://rtb.adkernel.com/user-sync?zone=2',
-        'http://rtb-private.adkernel.com/user-sync?zone=1',
+        'http://rtb-private.adkernel.com/user-sync?zone=1'
       ];
       sandbox.spy(utils, 'createInvisibleIframe');
       doRequest([bid1_zone1, bid2_zone2, bid2_zone2, bid3_host2]);
       expect(utils.createInvisibleIframe.calledThrice);
       let userSyncUrls = utils.createInvisibleIframe.returnValues.map(
-        val => val.src,
+        val => val.src
       );
       expect(userSyncUrls).to.be.eql(expectedSyncUrls);
     });

@@ -18,10 +18,10 @@ describe('Sonobi adapter tests', () => {
         placementCode: 'adUnit_p',
         sizes: [[300, 250], [300, 600]],
         params: {
-          placement_id: '1a2b3c4d5e6f1a2b3c4d',
-        },
-      },
-    ],
+          placement_id: '1a2b3c4d5e6f1a2b3c4d'
+        }
+      }
+    ]
   };
   const adUnit_pd = {
     bidderCode: 'sonobi',
@@ -33,10 +33,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           placement_id: '1a2b3c4d5e6f1a2b3c4d',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_pdf = {
     bidderCode: 'sonobi',
@@ -49,10 +49,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           placement_id: '1a2b3c4d5e6f1a2b3c4d',
           dom_id: 'div-gpt-ad-12345-0',
-          floor: '1',
-        },
-      },
-    ],
+          floor: '1'
+        }
+      }
+    ]
   };
   const adUnit_a = {
     bidderCode: 'sonobi',
@@ -63,10 +63,10 @@ describe('Sonobi adapter tests', () => {
         placementCode: 'adUnit_a',
         sizes: [[300, 250], [300, 600]],
         params: {
-          ad_unit: '/7780971/sparks_prebid_MR',
-        },
-      },
-    ],
+          ad_unit: '/7780971/sparks_prebid_MR'
+        }
+      }
+    ]
   };
   const adUnit_ad = {
     bidderCode: 'sonobi',
@@ -78,10 +78,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           ad_unit: '/7780971/sparks_prebid_MR',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_af = {
     bidderCode: 'sonobi',
@@ -93,10 +93,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           ad_unit: '/7780971/sparks_prebid_MR',
-          floor: '1',
-        },
-      },
-    ],
+          floor: '1'
+        }
+      }
+    ]
   };
   const adUnit_adf = {
     bidderCode: 'sonobi',
@@ -109,10 +109,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           ad_unit: '/7780971/sparks_prebid_MR',
           dom_id: 'div-gpt-ad-12345-0',
-          floor: '1',
-        },
-      },
-    ],
+          floor: '1'
+        }
+      }
+    ]
   };
   const adUnit_A = {
     bidderCode: 'sonobi',
@@ -123,10 +123,10 @@ describe('Sonobi adapter tests', () => {
         placementCode: 'adUnit_A',
         sizes: [[300, 250], [300, 600]],
         params: {
-          ad_unit: '/7780971/sparks_prebid_MR',
-        },
-      },
-    ],
+          ad_unit: '/7780971/sparks_prebid_MR'
+        }
+      }
+    ]
   };
   const adUnit_Ad = {
     bidderCode: 'sonobi',
@@ -138,10 +138,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           ad_unit: '7780971/sparks_prebid_MR',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_Af = {
     bidderCode: 'sonobi',
@@ -153,10 +153,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           ad_unit: '7780971/sparks_prebid_MR',
-          floor: '1',
-        },
-      },
-    ],
+          floor: '1'
+        }
+      }
+    ]
   };
   const adUnit_Adf = {
     bidderCode: 'sonobi',
@@ -169,10 +169,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           ad_unit: '7780971/sparks_prebid_MR',
           dom_id: 'div-gpt-ad-12345-0',
-          floor: '1',
-        },
-      },
-    ],
+          floor: '1'
+        }
+      }
+    ]
   };
   //  You guys surprise me all the time new and exciting ways to break this simple adapter.
   const adUnit_m1hb = {
@@ -185,10 +185,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           ad_unit: '1a2b3c4d5e6f1a2b3c4d',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_m2hb = {
     bidderCode: 'sonobi',
@@ -201,10 +201,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           ad_unit: '/7780971/sparks_prebid_MR',
           placement_id: 'OPTIONAL',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_m3hb = {
     bidderCode: 'sonobi',
@@ -217,10 +217,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           ad_unit: '/7780971/sparks_prebid_MR',
           placement_id: '',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_m4hb = {
     bidderCode: 'sonobi',
@@ -233,10 +233,10 @@ describe('Sonobi adapter tests', () => {
         params: {
           ad_unit: '',
           placement_id: '1a2b3c4d5e6f1a2b3c4d',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   const adUnit_m5hb = {
     bidderCode: 'sonobi',
@@ -248,10 +248,10 @@ describe('Sonobi adapter tests', () => {
         sizes: [[300, 250], [300, 600]],
         params: {
           placement_id: '/7780971/sparks_prebid_MR',
-          dom_id: 'div-gpt-ad-12345-0',
-        },
-      },
-    ],
+          dom_id: 'div-gpt-ad-12345-0'
+        }
+      }
+    ]
   };
   //  FTFY
   const sbi_adUnits = {
@@ -270,7 +270,7 @@ describe('Sonobi adapter tests', () => {
     adUnit_m2hb: adUnit_m2hb,
     adUnit_m3hb: adUnit_m3hb,
     adUnit_m4hb: adUnit_m4hb,
-    adUnit_m5hb: adUnit_m5hb,
+    adUnit_m5hb: adUnit_m5hb
   };
 
   //  Run the same test against all the (now tons of) different configurations
@@ -323,10 +323,10 @@ describe('Sonobi adapter tests', () => {
           sbi_size: '300x250',
           sbi_apoc: 'premium',
           sbi_aid: '159.60.7533347',
-          sbi_mouse: 4.20,
-        },
+          sbi_mouse: 4.20
+        }
       },
-      sbi_dc: 'mco-1-',
+      sbi_dc: 'mco-1-'
     };
 
     const sbi_video_bid = {
@@ -335,10 +335,10 @@ describe('Sonobi adapter tests', () => {
           sbi_size: 'outstream',
           sbi_apoc: 'premium',
           sbi_aid: '159.60.7533347',
-          sbi_mouse: 4.20,
-        },
+          sbi_mouse: 4.20
+        }
       },
-      sbi_dc: 'mco-1-',
+      sbi_dc: 'mco-1-'
     };
 
     const sbi_deal_bid = {
@@ -348,17 +348,17 @@ describe('Sonobi adapter tests', () => {
           sbi_apoc: 'premium',
           sbi_aid: '159.60.7533347',
           sbi_mouse: 4.20,
-          sbi_dozer: 'apex-test-deal',
-        },
+          sbi_dozer: 'apex-test-deal'
+        }
       },
-      sbi_dc: 'mco-1-',
+      sbi_dc: 'mco-1-'
     };
 
     const sbi_noBid = {
       slots: {
-        sbi_a: {},
+        sbi_a: {}
       },
-      sbi_dc: 'mco-1-',
+      sbi_dc: 'mco-1-'
     };
 
     beforeEach(() => {

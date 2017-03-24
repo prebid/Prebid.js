@@ -50,7 +50,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
           bidderCode +
           ' (' +
           AARDVARK_BIDDER_CODE +
-          ')',
+          ')'
       );
 
     adloader.loadScript(
@@ -64,8 +64,8 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
         '&rtkreferer=',
         ref,
         '&',
-        bidIds.join('&'),
-      ].join(''),
+        bidIds.join('&')
+      ].join('')
     );
   },
   registerBidResponse = function(bidderCode, rawBidResponse) {
@@ -73,12 +73,12 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
       return utils.logWarn(
         'Aardvark bid received with an error, ignoring... [' +
           rawBidResponse.error +
-          ']',
+          ']'
       );
 
     if (!rawBidResponse.cid)
       return utils.logWarn(
-        'Aardvark bid received without a callback id, ignoring...',
+        'Aardvark bid received without a callback id, ignoring...'
       );
 
     var bidObj = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][
@@ -92,7 +92,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
         'Aardvark bid received with a non matching shortcode ' +
           rawBidResponse.id +
           ' instead of ' +
-          bidObj.params.sc,
+          bidObj.params.sc
       );
 
     var bidResponse = bidfactory.createBid(constants.STATUS.GOOD, bidObj);
@@ -119,7 +119,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
       ])
         if (
           $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode].hasOwnProperty(
-            bidRequestId,
+            bidRequestId
           )
         ) {
           var bidRequest = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][
@@ -128,7 +128,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
           if (!bidRequest.responded) {
             var bidResponse = bidfactory.createBid(
               constants.STATUS.NO_BID,
-              bidRequest,
+              bidRequest
             );
             bidResponse.bidderCode = bidRequest.bidder;
             bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
@@ -160,7 +160,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
     return {
       callBids: baseAdapter.callBids,
       setBidderCode: baseAdapter.setBidderCode,
-      createNew: exports.createNew,
+      createNew: exports.createNew
     };
   };
 

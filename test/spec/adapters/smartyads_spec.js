@@ -14,10 +14,10 @@ describe('Smartyads adapter tests', function() {
       {
         bidder: 'smartyads',
         params: {
-          banner_id: 0,
-        },
-      },
-    ],
+          banner_id: 0
+        }
+      }
+    ]
   };
 
   const response = {
@@ -26,7 +26,7 @@ describe('Smartyads adapter tests', function() {
     cpm: 0.5,
     deal: 'bf063e2e025c',
     height: 240,
-    width: 360,
+    width: 360
   };
 
   beforeEach(() => {
@@ -58,7 +58,7 @@ describe('Smartyads adapter tests', function() {
     it('Valid bid-request', () => {
       sandbox.stub(adapter, 'callBids');
       adapterManager.callBids({
-        adUnits: [clone(adUnit)],
+        adUnits: [clone(adUnit)]
       });
 
       let bidderRequest = adapter.callBids.getCall(0).args[0];
@@ -87,7 +87,7 @@ describe('Smartyads adapter tests', function() {
     it('Valid bid-response', () => {
       server.respondWith(JSON.stringify(response));
       adapterManager.callBids({
-        adUnits: [clone(adUnit)],
+        adUnits: [clone(adUnit)]
       });
       server.respond();
 
@@ -111,7 +111,7 @@ describe('Smartyads adapter tests', function() {
         [300, 250],
         [640, 480],
         [1, 1],
-        [336, 280],
+        [336, 280]
       ]);
       expect(ordering).to.deep.equal([15, 16, 43, 65]);
     });
@@ -121,7 +121,7 @@ describe('Smartyads adapter tests', function() {
         [320, 50],
         [640, 480],
         [336, 280],
-        [200, 600],
+        [200, 600]
       ]);
       expect(ordering).to.deep.equal([16, 43, 65, 126]);
     });
@@ -133,7 +133,7 @@ describe('Smartyads adapter tests', function() {
         [640, 480],
         [300, 250],
         [336, 280],
-        [200, 600],
+        [200, 600]
       ]);
       expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
 
@@ -144,7 +144,7 @@ describe('Smartyads adapter tests', function() {
         [640, 480],
         [336, 280],
         [200, 600],
-        [728, 90],
+        [728, 90]
       ]);
       expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
 
@@ -155,7 +155,7 @@ describe('Smartyads adapter tests', function() {
         [640, 480],
         [336, 280],
         [200, 600],
-        [728, 90],
+        [728, 90]
       ]);
       expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
     });

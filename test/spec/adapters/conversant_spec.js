@@ -16,8 +16,8 @@ describe('Conversant adapter tests', function() {
         sizes: [[300, 600]],
         params: {
           site_id: '87293',
-          secure: false,
-        },
+          secure: false
+        }
       },
       {
         bidId: 'bidId2',
@@ -26,8 +26,8 @@ describe('Conversant adapter tests', function() {
         sizes: [[300, 600]],
         params: {
           site_id: '87293',
-          secure: false,
-        },
+          secure: false
+        }
       },
       {
         bidId: 'bidId3',
@@ -36,15 +36,15 @@ describe('Conversant adapter tests', function() {
         sizes: [[300, 600], [160, 600]],
         params: {
           site_id: '87293',
-          secure: false,
-        },
-      },
-    ],
+          secure: false
+        }
+      }
+    ]
   };
 
   it('The Conversant response should exist and be a function', function() {
     expect($$PREBID_GLOBAL$$.conversantResponse).to.exist.and.to.be.a(
-      'function',
+      'function'
     );
   });
 
@@ -68,7 +68,7 @@ describe('Conversant adapter tests', function() {
               {
                 id: 1111111,
                 impid: 'bidId1',
-                price: 0,
+                price: 0
               },
               {
                 id: 2345,
@@ -77,11 +77,11 @@ describe('Conversant adapter tests', function() {
                 nurl: '',
                 adm: 'adm2',
                 h: 300,
-                w: 600,
-              },
-            ],
-          },
-        ],
+                w: 600
+              }
+            ]
+          }
+        ]
       };
 
       $$PREBID_GLOBAL$$.conversantResponse(bidResponse);
@@ -150,7 +150,7 @@ describe('Conversant adapter tests', function() {
                 adm: 'adm',
                 h: 250,
                 w: 300,
-                ext: {},
+                ext: {}
               },
               {
                 id: 2345,
@@ -159,7 +159,7 @@ describe('Conversant adapter tests', function() {
                 nurl: '',
                 adm: 'adm2',
                 h: 300,
-                w: 600,
+                w: 600
               },
               {
                 id: 33333,
@@ -168,11 +168,11 @@ describe('Conversant adapter tests', function() {
                 nurl: '',
                 adm: 'adm3',
                 h: 160,
-                w: 600,
-              },
-            ],
-          },
-        ],
+                w: 600
+              }
+            ]
+          }
+        ]
       };
 
       $$PREBID_GLOBAL$$.conversantResponse(bidResponse);
@@ -222,7 +222,7 @@ describe('Conversant adapter tests', function() {
               adm: 'adm',
               h: 250,
               w: 300,
-              ext: {},
+              ext: {}
             },
             {
               id: 2222,
@@ -231,7 +231,7 @@ describe('Conversant adapter tests', function() {
               nurl: '',
               adm: 'adm2',
               h: 300,
-              w: 600,
+              w: 600
             },
             {
               id: 3333,
@@ -240,11 +240,11 @@ describe('Conversant adapter tests', function() {
               nurl: '',
               adm: 'adm3',
               h: 160,
-              w: 600,
-            },
-          ],
-        },
-      ],
+              w: 600
+            }
+          ]
+        }
+      ]
     };
 
     beforeEach(function() {
@@ -262,12 +262,12 @@ describe('Conversant adapter tests', function() {
         { 'Content-type': 'text/javascript' },
         "$$PREBID_GLOBAL$$.conversantResponse('" +
           JSON.stringify(bidResponse) +
-          "')",
+          "')"
       ];
       server.respondWith(
         'POST',
         new RegExp('media.msg.dotomi.com/s2s/header'),
-        resp,
+        resp
       );
     });
 

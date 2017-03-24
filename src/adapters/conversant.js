@@ -46,7 +46,7 @@ var ConversantAdapter = function() {
       dnt: getDNT() ? 1 : 0,
       language: n[language].split('-')[0],
       make: n.vendor ? n.vendor : '',
-      ua: n.userAgent,
+      ua: n.userAgent
     };
   };
 
@@ -94,12 +94,12 @@ var ConversantAdapter = function() {
         id: bid.bidId,
         banner: {
           w: adW,
-          h: adH,
+          h: adH
         },
         secure: secure,
         bidfloor: bidfloor ? bidfloor : 0,
         displaymanager: 'Prebid.js',
-        displaymanagerver: VERSION,
+        displaymanagerver: VERSION
       };
 
       conversantImps.push(imp);
@@ -112,28 +112,28 @@ var ConversantAdapter = function() {
       site: {
         id: siteId,
         mobile: document.querySelector(
-          'meta[name="viewport"][content*="width=device-width"]',
+          'meta[name="viewport"][content*="width=device-width"]'
         ) !== null
           ? 1
           : 0,
-        page: page,
+        page: page
       },
 
       device: getDevice(),
-      at: 1,
+      at: 1
     };
 
     var url = secure
       ? 'https:' + conversantUrl
       : location.protocol + conversantUrl;
     ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
-      withCredentials: true,
+      withCredentials: true
     });
   };
 
   var addEmptyBidResponses = function(placementsWithBidsBack) {
     var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(
-      bidSet => bidSet.bidderCode === 'conversant',
+      bidSet => bidSet.bidderCode === 'conversant'
     );
 
     if (allConversantBidRequests && allConversantBidRequests.bids) {
@@ -231,7 +231,7 @@ var ConversantAdapter = function() {
     if (path) {
       adloader.loadScript(path, function() {
         var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(
-          bidSet => bidSet.bidderCode === 'conversant',
+          bidSet => bidSet.bidderCode === 'conversant'
         );
 
         if ($$PREBID_GLOBAL$$.conversantDebugResponse) {
@@ -242,7 +242,7 @@ var ConversantAdapter = function() {
   }; // conversantResponse
 
   return {
-    callBids: callBids,
+    callBids: callBids
   };
 };
 

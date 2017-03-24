@@ -36,8 +36,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], unsupportedSize],
-      ),
+        [IndexUtils.supportedSizes[0], unsupportedSize]
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -46,15 +46,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -67,12 +67,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -80,26 +80,26 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       unsupportedSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(unsupportedSize),
+        JSON.stringify(unsupportedSize)
     );
   });
 
@@ -111,14 +111,14 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'supported',
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'unspported',
         'slot_2',
         [unsupportedSize],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -127,15 +127,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -148,12 +148,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -161,37 +161,37 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       unsupportedSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(unsupportedSize),
+        JSON.stringify(unsupportedSize)
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.id,
       'slot_2',
-      'configured bid not in impression obj id is slot_2',
+      'configured bid not in impression obj id is slot_2'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.siteID,
       IndexUtils.DefaultSiteID + 1,
       'configured bid not in impression obj siteID is ' +
-        (IndexUtils.DefaultSiteID + 1),
+        (IndexUtils.DefaultSiteID + 1)
     );
   });
 
@@ -203,14 +203,14 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'supported1',
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'supported2',
         'slot_2',
         [IndexUtils.supportedSizes[1]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -219,15 +219,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -240,12 +240,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -253,19 +253,19 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      '0 configured bid is not in impression Obj',
+      '0 configured bid is not in impression Obj'
     );
   });
 
@@ -277,20 +277,20 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'unsupported1',
         'slot_1',
         [IndexUtils.unsupportedSizes[0]],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'unsupported2',
         'slot_2',
         [IndexUtils.unsupportedSizes[1]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(
       adLoader.loadScript.firstCall.args[0],
-      'no request made to IX demand',
+      'no request made to IX demand'
     );
   });
 
@@ -304,16 +304,16 @@ describe('indexExchange adapter - Validation', function() {
         [
           IndexUtils.supportedSizes[0],
           unsupportedSize,
-          IndexUtils.supportedSizes[1],
+          IndexUtils.supportedSizes[1]
         ],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported',
         'slot_2',
         [IndexUtils.supportedSizes[2], IndexUtils.supportedSizes[3]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -322,15 +322,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -343,12 +343,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -356,37 +356,37 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       unsupportedSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(unsupportedSize),
+        JSON.stringify(unsupportedSize)
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.id,
       'slot_1',
-      'configured bid not in impression obj id is slot_1',
+      'configured bid not in impression obj id is slot_1'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.siteID,
       IndexUtils.DefaultSiteID,
       'configured bid not in impression obj siteID is ' +
-        IndexUtils.DefaultSiteID,
+        IndexUtils.DefaultSiteID
     );
   });
 
@@ -399,14 +399,14 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'somesupported',
         'slot_1',
         [unsupportedSize1, IndexUtils.supportedSizes[1], unsupportedSize2],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported',
         'slot_2',
         [IndexUtils.supportedSizes[2], IndexUtils.supportedSizes[3]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -415,15 +415,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -436,12 +436,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -449,56 +449,56 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       2,
-      '2 configured bid is not in impression Obj',
+      '2 configured bid is not in impression Obj'
     );
 
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       unsupportedSize1,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(unsupportedSize1),
+        JSON.stringify(unsupportedSize1)
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.id,
       'slot_1',
-      'configured bid not in impression obj id is slot_1',
+      'configured bid not in impression obj id is slot_1'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.siteID,
       IndexUtils.DefaultSiteID,
       'configured bid not in impression obj siteID is ' +
-        IndexUtils.DefaultSiteID,
+        IndexUtils.DefaultSiteID
     );
 
     assert.equal(
       sidMatched.unmatched.configured[1].size,
       unsupportedSize2,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(unsupportedSize2),
+        JSON.stringify(unsupportedSize2)
     );
     assert.equal(
       sidMatched.unmatched.configured[1].params.id,
       'slot_1',
-      'configured bid not in impression obj id is slot_1',
+      'configured bid not in impression obj id is slot_1'
     );
     assert.equal(
       sidMatched.unmatched.configured[1].params.siteID,
       IndexUtils.DefaultSiteID,
       'configured bid not in impression obj siteID is ' +
-        IndexUtils.DefaultSiteID,
+        IndexUtils.DefaultSiteID
     );
   });
 
@@ -508,14 +508,14 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported1',
         'slot_1',
         [IndexUtils.supportedSizes[0], IndexUtils.supportedSizes[1]],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported2',
         'slot_2',
         [IndexUtils.supportedSizes[2], IndexUtils.supportedSizes[3]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -524,15 +524,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -545,12 +545,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -558,20 +558,20 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      '0 configured bid is not in impression Obj',
+      '0 configured bid is not in impression Obj'
     );
   });
 
@@ -581,20 +581,20 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported1',
         'slot_1',
         [IndexUtils.unsupportedSizes[0], IndexUtils.unsupportedSizes[1]],
-        { siteID: IndexUtils.DefaultSiteID },
+        { siteID: IndexUtils.DefaultSiteID }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + 'allsupported2',
         'slot_2',
         [IndexUtils.unsupportedSizes[2], IndexUtils.unsupportedSizes[3]],
-        { siteID: IndexUtils.DefaultSiteID + 1 },
-      ),
+        { siteID: IndexUtils.DefaultSiteID + 1 }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(
       adLoader.loadScript.firstCall.args[0],
-      'No request to IX demand',
+      'No request to IX demand'
     );
   });
 
@@ -605,8 +605,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -614,16 +614,16 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.equal(
       requestJSON.t,
       testTimeout,
-      't parameter matches timeout and is included in AS request parameter',
+      't parameter matches timeout and is included in AS request parameter'
     );
   });
 
@@ -634,8 +634,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -643,16 +643,16 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.equal(
       requestJSON.t,
       testTimeout,
-      't parameter matches timeout and is included in AS request parameter',
+      't parameter matches timeout and is included in AS request parameter'
     );
   });
 
@@ -663,8 +663,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -672,15 +672,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -691,8 +691,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -700,15 +700,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -719,8 +719,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -728,15 +728,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -747,8 +747,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -756,15 +756,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -775,8 +775,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -784,15 +784,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -803,8 +803,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -812,15 +812,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -831,8 +831,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -840,15 +840,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -859,8 +859,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -868,16 +868,16 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.equal(
       requestJSON.t,
       testTimeout,
-      't parameter matches timeout and is included in AS request parameter',
+      't parameter matches timeout and is included in AS request parameter'
     );
   });
 
@@ -886,8 +886,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0]],
-      ),
+        [IndexUtils.supportedSizes[0]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -895,15 +895,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -914,8 +914,8 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
         [IndexUtils.supportedSizes[0]],
-        { timeout: testTimeout },
-      ),
+        { timeout: testTimeout }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -923,15 +923,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isUndefined(
       requestJSON.t,
-      't parameter is not included in AS request parameter',
+      't parameter is not included in AS request parameter'
     );
   });
 
@@ -939,53 +939,53 @@ describe('indexExchange adapter - Validation', function() {
     {
       testname: 'test_prebid_indexAdapter_slotid_integer: slot ID is integer -> slot ID sent to AS in string',
       slotID: 123,
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_quoted_integer: slot ID is quoted_integer -> slot ID sent to AS in string',
       slotID: '123',
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_float: slot ID is float -> slot ID sent to AS in string',
       slotID: 123.45,
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_string: slot ID is string -> slot ID sent to AS in string',
       slotID: 'string',
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_array: slot ID is array -> slot is not sent to AS',
       slotID: ['arrayelement1', 'arrayelement2'],
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_hash: slot ID is hash -> slot is not sent to AS',
       slotID: { hashName: 'hashKey' },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_zero: slot ID is zero integer -> slot ID sent to AS in string',
       slotID: 0,
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_negative: slot ID is negative integer -> slot ID sent to AS in string',
       slotID: -100,
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_undefined: slot ID is undefined -> slot is not sent to AS',
       slotID: undefined,
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_slotid_missing: slot ID is missing -> slot is not sent to AS',
       param: { missingSlotID: true },
-      expected: 'invalid',
-    },
+      expected: 'invalid'
+    }
   ];
 
   function base_prebid_indexAdapter_slotid(testname, slotID, expected, param) {
@@ -995,8 +995,8 @@ describe('indexExchange adapter - Validation', function() {
           IndexUtils.DefaultPlacementCodePrefix,
           slotID,
           [IndexUtils.supportedSizes[0]],
-          param,
-        ),
+          param
+        )
       ];
       adapter.callBids({ bids: configuredBids });
       if (expected == 'pass') {
@@ -1004,15 +1004,15 @@ describe('indexExchange adapter - Validation', function() {
         assert.include(
           adLoader.loadScript.firstCall.args[0],
           HeaderTagRequest,
-          'request is headertag request',
+          'request is headertag request'
         );
 
         var requestJSON = IndexUtils.parseIndexRequest(
-          adLoader.loadScript.firstCall.args[0],
+          adLoader.loadScript.firstCall.args[0]
         );
         assert.isNotNull(
           requestJSON.r.imp,
-          'headertag request include impression object',
+          'headertag request include impression object'
         );
 
         var impressionObj = requestJSON.r.imp;
@@ -1028,7 +1028,7 @@ describe('indexExchange adapter - Validation', function() {
           assert.equal(
             actualSlotID,
             expectedSlotID,
-            'request ' + pair.name + ' slot ID is set to ' + expectedSlotID,
+            'request ' + pair.name + ' slot ID is set to ' + expectedSlotID
           );
           assert.isString(actualSlotID, 'slotID is string');
         }
@@ -1036,12 +1036,12 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.unmatched.configured.length,
           0,
-          'All configured bids are in impression Obj',
+          'All configured bids are in impression Obj'
         );
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       } else if (expected == 'invalid') {
         //case where callBids throws out request due to missing params
@@ -1050,7 +1050,7 @@ describe('indexExchange adapter - Validation', function() {
         assert.strictEqual(
           typeof indexBidRequest,
           'undefined',
-          'No request to AS',
+          'No request to AS'
         );
       }
     });
@@ -1062,7 +1062,7 @@ describe('indexExchange adapter - Validation', function() {
       test.testname,
       test.slotID,
       test.expected,
-      test.param,
+      test.param
     );
   }
 
@@ -1071,13 +1071,13 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0]],
+        [IndexUtils.supportedSizes[0]]
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_2',
-        [IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
     assert.isTrue(adLoader.loadScript.called, 'loadScript get request');
@@ -1085,15 +1085,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1108,7 +1108,7 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         actualSlotID,
         expectedSlotID,
-        'request ' + pair.name + ' slot ID is set to ' + expectedSlotID,
+        'request ' + pair.name + ' slot ID is set to ' + expectedSlotID
       );
       assert.isString(actualSlotID, 'slotID is string');
     }
@@ -1116,12 +1116,12 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
   });
 
@@ -1132,28 +1132,28 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         slotName,
-        [IndexUtils.supportedSizes[0]],
+        [IndexUtils.supportedSizes[0]]
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         slotName,
-        [secondSlotSize],
-      ),
+        [secondSlotSize]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
     assert.isTrue(adLoader.loadScript.called, 'loadScript get request');
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1168,7 +1168,7 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         actualSlotID,
         expectedSlotID,
-        'request ' + pair.name + ' slot ID is set to ' + expectedSlotID,
+        'request ' + pair.name + ' slot ID is set to ' + expectedSlotID
       );
       assert.isString(actualSlotID, 'slotID is string');
     }
@@ -1176,24 +1176,24 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       secondSlotSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(secondSlotSize),
+        JSON.stringify(secondSlotSize)
     );
     assert.equal(
       sidMatched.unmatched.configured[0].params.id,
       slotName,
-      'slot name is ' + slotName,
+      'slot name is ' + slotName
     );
   });
 
@@ -1201,58 +1201,58 @@ describe('indexExchange adapter - Validation', function() {
     {
       testname: 'test_prebid_indexAdapter_siteid_integer: site ID is integer -> siteID ID sent to AS as integer',
       param: { siteID: 12345 },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_quoted_integer: site ID is quoted integer -> siteID ID sent to AS as integer',
       param: { siteID: '12345' },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_float: site ID is float -> slot is ignored',
       param: { siteID: 12.345 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_string: site ID is string -> slot is ignored',
       param: { siteID: 'string' },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_array: site ID is array with int -> siteID sent to AS as integer',
       param: { siteID: [12345] },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_array: site ID is array with quoted int -> siteID sent to AS as integer',
       param: { siteID: ['12345'] },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_array: site ID is array with alpha string -> slot is ignored',
       param: { siteID: ['ABC'] },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_hash: site ID is hash -> slot is ignored',
       param: { siteID: { 12345: 678 } },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_zero: site ID is zero integer -> slot is ignored',
       param: { siteID: 0 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_negative: site ID is a negative integer -> slot is ignored',
       param: { siteID: -1234 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_siteid_missing: site ID is missing -> slot is ignored',
       param: { missingSiteID: true },
-      expected: 'invalid',
-    },
+      expected: 'invalid'
+    }
   ];
 
   function base_prebid_indexAdapter_siteid(testname, param, expected) {
@@ -1262,8 +1262,8 @@ describe('indexExchange adapter - Validation', function() {
           IndexUtils.DefaultPlacementCodePrefix,
           'slot_1',
           [IndexUtils.supportedSizes[0]],
-          param,
-        ),
+          param
+        )
       ];
 
       adapter.callBids({ bids: configuredBids });
@@ -1272,15 +1272,15 @@ describe('indexExchange adapter - Validation', function() {
         assert.include(
           adLoader.loadScript.firstCall.args[0],
           HeaderTagRequest,
-          'request is headertag request',
+          'request is headertag request'
         );
 
         var requestJSON = IndexUtils.parseIndexRequest(
-          adLoader.loadScript.firstCall.args[0],
+          adLoader.loadScript.firstCall.args[0]
         );
         assert.isNotNull(
           requestJSON.r.imp,
-          'headertag request include impression object',
+          'headertag request include impression object'
         );
 
         var impressionObj = requestJSON.r.imp;
@@ -1296,7 +1296,7 @@ describe('indexExchange adapter - Validation', function() {
           assert.equal(
             actualSiteID,
             expectedSiteID,
-            'request ' + pair.name + ' site ID is set to ' + expectedSiteID,
+            'request ' + pair.name + ' site ID is set to ' + expectedSiteID
           );
           assert.isNumber(actualSiteID, 'site ID is integer');
         }
@@ -1304,12 +1304,12 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.unmatched.configured.length,
           0,
-          'All configured bids are in impression Obj',
+          'All configured bids are in impression Obj'
         );
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       } else if (expected == 'invalid') {
         //case where callBids throws out request due to missing params
@@ -1317,7 +1317,7 @@ describe('indexExchange adapter - Validation', function() {
       } else {
         assert.isUndefined(
           adLoader.loadScript.firstCall.args[0],
-          'No request to AS',
+          'No request to AS'
         );
       }
     });
@@ -1334,14 +1334,14 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + '1',
         'slot_1',
-        [IndexUtils.supportedSizes[0]],
+        [IndexUtils.supportedSizes[0]]
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix + '2',
         'slot_2',
         [IndexUtils.supportedSizes[1]],
-        { siteID: 123.45 },
-      ),
+        { siteID: 123.45 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -1350,15 +1350,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1368,7 +1368,7 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.matched.length,
       1,
-      'one slot is configured and sent to AS',
+      'one slot is configured and sent to AS'
     );
 
     for (var i = 0; i < sidMatched.matched.length; i++) {
@@ -1379,7 +1379,7 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         actualSiteID,
         expectedSiteID,
-        'request ' + pair.name + ' site ID is set to ' + expectedSiteID,
+        'request ' + pair.name + ' site ID is set to ' + expectedSiteID
       );
       assert.isNumber(actualSiteID, 'site ID is integer');
     }
@@ -1387,12 +1387,12 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      'float site ID configured bid is missing in impression Obj',
+      'float site ID configured bid is missing in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
   });
 
@@ -1400,48 +1400,48 @@ describe('indexExchange adapter - Validation', function() {
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_integer: tier2 site ID is integer -> siteID ID sent to AS in integer',
       param: { tier2SiteID: 12345 },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_quoted_integer: tier2 site ID is quoted integer -> siteID ID sent to AS in integer',
       param: { tier2SiteID: '12345' },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_float: tier2 site ID is float -> slot is ignored',
       param: { tier2SiteID: 12.345 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_string: tier2 site ID is string -> slot is ignored',
       param: { tier2SiteID: 'string' },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_array: tier2 site ID is array -> slot is ignored',
       param: { tier2SiteID: [12345] },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_hash: tier2 site ID is hash -> slot is ignored',
       param: { tier2SiteID: { 12345: 678 } },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_zero: tier2 site ID is zero integer -> slot is ignored',
       param: { tier2SiteID: 0 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_negative: tier2 site ID is a negative integer -> slot is ignored',
       param: { tier2SiteID: -1234 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier2siteid_missing: tier2 site ID is missing -> slot is ignored',
       param: { missingtier2SiteID: true },
-      expected: 'fail',
-    },
+      expected: 'fail'
+    }
   ];
   function base_prebid_indexAdapter_tier2siteid(testname, param, expected) {
     it(testname, function() {
@@ -1450,8 +1450,8 @@ describe('indexExchange adapter - Validation', function() {
           IndexUtils.DefaultPlacementCodePrefix,
           'slot_1',
           [IndexUtils.supportedSizes[0]],
-          param,
-        ),
+          param
+        )
       ];
       adapter.callBids({ bids: configuredBids });
 
@@ -1459,15 +1459,15 @@ describe('indexExchange adapter - Validation', function() {
       assert.include(
         adLoader.loadScript.firstCall.args[0],
         HeaderTagRequest,
-        'request is headertag request',
+        'request is headertag request'
       );
 
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
       assert.isNotNull(
         requestJSON.r.imp,
-        'headertag request include impression object',
+        'headertag request include impression object'
       );
 
       var impressionObj = requestJSON.r.imp;
@@ -1478,7 +1478,7 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.matched.length,
           2,
-          'Two slots are configured and sent to AS',
+          'Two slots are configured and sent to AS'
         );
 
         // check normal site id
@@ -1491,11 +1491,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSlotID,
+            expectedSlotID
         );
         assert.isString(
           normalSitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedSiteID = normalSitePair.configured.params.siteID;
@@ -1505,7 +1505,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSiteID,
+            expectedSiteID
         );
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1520,11 +1520,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             tier2SitePair.name +
             ' site ID is set to ' +
-            expectedTierSlotID,
+            expectedTierSlotID
         );
         assert.isString(
           tier2SitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedTierSiteID = tier2SitePair.configured.params.tier2SiteID;
@@ -1534,7 +1534,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedTierSiteID,
+            expectedTierSiteID
         );
         assert.isNumber(tier2SitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1542,18 +1542,18 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.unmatched.configured.length,
           0,
-          'All configured bids are in impression Obj',
+          'All configured bids are in impression Obj'
         );
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       } else {
         assert.equal(
           sidMatched.matched.length,
           1,
-          'one slot is configured and sent to AS',
+          'one slot is configured and sent to AS'
         );
 
         // check normal site id
@@ -1566,11 +1566,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSlotID,
+            expectedSlotID
         );
         assert.isString(
           normalSitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedSiteID = normalSitePair.configured.params.siteID;
@@ -1580,7 +1580,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSiteID,
+            expectedSiteID
         );
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1589,19 +1589,19 @@ describe('indexExchange adapter - Validation', function() {
           assert.equal(
             sidMatched.unmatched.configured.length,
             0,
-            'one configured bid is missing in impression Obj',
+            'one configured bid is missing in impression Obj'
           );
         } else {
           assert.equal(
             sidMatched.unmatched.configured.length,
             1,
-            'one configured bid is missing in impression Obj',
+            'one configured bid is missing in impression Obj'
           );
         }
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       }
     });
@@ -1612,7 +1612,7 @@ describe('indexExchange adapter - Validation', function() {
     base_prebid_indexAdapter_tier2siteid(
       test.testname,
       test.param,
-      test.expected,
+      test.expected
     );
   }
 
@@ -1620,48 +1620,48 @@ describe('indexExchange adapter - Validation', function() {
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_integer: tier3 site ID is integer -> siteID ID sent to AS in integer',
       param: { tier3SiteID: 12345 },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_quoted_integer: tier3 site ID is quoted integer -> siteID ID sent to AS in integer',
       param: { tier3SiteID: '12345' },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_float: tier3 site ID is float -> slot is ignored',
       param: { tier3SiteID: 12.345 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_string: tier3 site ID is string -> slot is ignored',
       param: { tier3SiteID: 'string' },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_array: tier3 site ID is array -> slot is ignored',
       param: { tier3SiteID: [12345] },
-      expected: 'pass',
+      expected: 'pass'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_hash: tier3 site ID is hash -> slot is ignored',
       param: { tier3SiteID: { 12345: 678 } },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_zero: tier3 site ID is zero integer -> slot is ignored',
       param: { tier3SiteID: 0 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_negative: tier3 site ID is a negative integer -> slot is ignored',
       param: { tier3SiteID: -1234 },
-      expected: 'fail',
+      expected: 'fail'
     },
     {
       testname: 'test_prebid_indexAdapter_tier3siteid_missing: tier3 site ID is missing -> slot is ignored',
       param: { missingtier3SiteID: true },
-      expected: 'fail',
-    },
+      expected: 'fail'
+    }
   ];
   function base_prebid_indexAdapter_tier3siteid(testname, param, expected) {
     it(testname, function() {
@@ -1670,8 +1670,8 @@ describe('indexExchange adapter - Validation', function() {
           IndexUtils.DefaultPlacementCodePrefix,
           'slot_1',
           [IndexUtils.supportedSizes[0]],
-          param,
-        ),
+          param
+        )
       ];
       adapter.callBids({ bids: configuredBids });
 
@@ -1679,15 +1679,15 @@ describe('indexExchange adapter - Validation', function() {
       assert.include(
         adLoader.loadScript.firstCall.args[0],
         HeaderTagRequest,
-        'request is headertag request',
+        'request is headertag request'
       );
 
       var requestJSON = IndexUtils.parseIndexRequest(
-        adLoader.loadScript.firstCall.args[0],
+        adLoader.loadScript.firstCall.args[0]
       );
       assert.isNotNull(
         requestJSON.r.imp,
-        'headertag request include impression object',
+        'headertag request include impression object'
       );
 
       var impressionObj = requestJSON.r.imp;
@@ -1698,7 +1698,7 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.matched.length,
           2,
-          'Two slots are configured and sent to AS',
+          'Two slots are configured and sent to AS'
         );
 
         // check normal site id
@@ -1711,11 +1711,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSlotID,
+            expectedSlotID
         );
         assert.isString(
           normalSitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedSiteID = normalSitePair.configured.params.siteID;
@@ -1725,7 +1725,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSiteID,
+            expectedSiteID
         );
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1740,11 +1740,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             tier3SitePair.name +
             ' site ID is set to ' +
-            expectedTierSlotID,
+            expectedTierSlotID
         );
         assert.isString(
           tier3SitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedTierSiteID = tier3SitePair.configured.params.tier3SiteID;
@@ -1754,7 +1754,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedTierSiteID,
+            expectedTierSiteID
         );
         assert.isNumber(tier3SitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1762,18 +1762,18 @@ describe('indexExchange adapter - Validation', function() {
         assert.equal(
           sidMatched.unmatched.configured.length,
           0,
-          'All configured bids are in impression Obj',
+          'All configured bids are in impression Obj'
         );
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       } else {
         assert.equal(
           sidMatched.matched.length,
           1,
-          'one slot is configured and sent to AS',
+          'one slot is configured and sent to AS'
         );
 
         // check normal site id
@@ -1786,11 +1786,11 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSlotID,
+            expectedSlotID
         );
         assert.isString(
           normalSitePair.sent.ext.sid,
-          'type of slot ID is string',
+          'type of slot ID is string'
         );
 
         var expectedSiteID = normalSitePair.configured.params.siteID;
@@ -1800,7 +1800,7 @@ describe('indexExchange adapter - Validation', function() {
           'request ' +
             normalSitePair.name +
             ' site ID is set to ' +
-            expectedSiteID,
+            expectedSiteID
         );
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
@@ -1809,19 +1809,19 @@ describe('indexExchange adapter - Validation', function() {
           assert.equal(
             sidMatched.unmatched.configured.length,
             0,
-            'one configured bid is missing in impression Obj',
+            'one configured bid is missing in impression Obj'
           );
         } else {
           assert.equal(
             sidMatched.unmatched.configured.length,
             1,
-            'one configured bid is missing in impression Obj',
+            'one configured bid is missing in impression Obj'
           );
         }
         assert.equal(
           sidMatched.unmatched.sent.length,
           0,
-          'All bids in impression object are from configured bids',
+          'All bids in impression object are from configured bids'
         );
       }
     });
@@ -1832,18 +1832,18 @@ describe('indexExchange adapter - Validation', function() {
     base_prebid_indexAdapter_tier3siteid(
       test.testname,
       test.param,
-      test.expected,
+      test.expected
     );
   }
 
   it('test_prebid_indexAdapter_siteID_multiple: multiple slots have same siteIDs -> all slots in ad server request with the same site IDs', function() {
     var first_slot = {
       slotName: 'slot1',
-      siteID: 111111,
+      siteID: 111111
     };
     var second_slot = {
       slotName: 'slot2',
-      siteID: 111111, // same as first slot
+      siteID: 111111 // same as first slot
     };
 
     var configuredBids = [
@@ -1851,23 +1851,23 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         first_slot['slotName'],
         [IndexUtils.supportedSizes[0]],
-        { siteID: first_slot['siteID'] },
+        { siteID: first_slot['siteID'] }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         second_slot['slotName'],
         [IndexUtils.supportedSizes[1]],
-        { siteID: second_slot['siteID'] },
-      ),
+        { siteID: second_slot['siteID'] }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1882,7 +1882,7 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         actualSiteID,
         expectedSiteID,
-        'request ' + pair.name + ' site ID is set to ' + expectedSiteID,
+        'request ' + pair.name + ' site ID is set to ' + expectedSiteID
       );
       assert.isNumber(actualSiteID, 'site ID is number');
     }
@@ -1890,23 +1890,23 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
   });
 
   it('test_prebid_indexAdapter_siteID_different: multiple slots have different siteIDs -> all slots in ad server request with the different site IDs', function() {
     var first_slot = {
       slotName: 'slot1',
-      siteID: 111111,
+      siteID: 111111
     };
     var second_slot = {
       slotName: 'slot2',
-      siteID: 222222,
+      siteID: 222222
     };
 
     var configuredBids = [
@@ -1914,23 +1914,23 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         first_slot['slotName'],
         [IndexUtils.supportedSizes[0]],
-        { siteID: first_slot['siteID'] },
+        { siteID: first_slot['siteID'] }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         second_slot['slotName'],
         [IndexUtils.supportedSizes[1]],
-        { siteID: second_slot['siteID'] },
-      ),
+        { siteID: second_slot['siteID'] }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1945,7 +1945,7 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         actualSiteID,
         expectedSiteID,
-        'request ' + pair.name + ' site ID is set to ' + expectedSiteID,
+        'request ' + pair.name + ' site ID is set to ' + expectedSiteID
       );
       assert.isNumber(actualSiteID, 'site ID is number');
     }
@@ -1953,12 +1953,12 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
   });
 
@@ -1967,8 +1967,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        IndexUtils.supportedSizes[0],
-      ),
+        IndexUtils.supportedSizes[0]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -1977,15 +1977,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -1998,12 +1998,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2011,19 +2011,19 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'All configured bids are in impression Obj',
+      'All configured bids are in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
   });
 
@@ -2033,12 +2033,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [
-          IndexUtils.supportedSizes[0],
-          oneDimSize,
-          IndexUtils.supportedSizes[1],
-        ],
-      ),
+        [IndexUtils.supportedSizes[0], oneDimSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2046,15 +2042,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2068,12 +2064,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2081,25 +2077,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       oneDimSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(oneDimSize),
+        JSON.stringify(oneDimSize)
     );
   });
 
@@ -2108,14 +2104,14 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [],
-      ),
+        []
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(
       adLoader.loadScript.firstCall.args[0],
-      'no request made to AS',
+      'no request made to AS'
     );
   });
 
@@ -2128,9 +2124,9 @@ describe('indexExchange adapter - Validation', function() {
         [
           IndexUtils.supportedSizes[0],
           invalidSize,
-          IndexUtils.supportedSizes[1],
-        ],
-      ),
+          IndexUtils.supportedSizes[1]
+        ]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2138,15 +2134,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2160,12 +2156,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2173,25 +2169,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       invalidSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(invalidSize),
+        JSON.stringify(invalidSize)
     );
   });
 
@@ -2204,9 +2200,9 @@ describe('indexExchange adapter - Validation', function() {
         [
           IndexUtils.supportedSizes[0],
           invalidSize,
-          IndexUtils.supportedSizes[1],
-        ],
-      ),
+          IndexUtils.supportedSizes[1]
+        ]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2214,15 +2210,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2236,12 +2232,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2249,25 +2245,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       invalidSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(invalidSize),
+        JSON.stringify(invalidSize)
     );
   });
 
@@ -2277,8 +2273,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2286,15 +2282,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2308,12 +2304,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2321,19 +2317,19 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      '0 configured bid is not in impression Obj',
+      '0 configured bid is not in impression Obj'
     );
   });
 
@@ -2343,8 +2339,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2352,15 +2348,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2374,12 +2370,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2387,39 +2383,39 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
   it('test_prebid_indexAdapter_size_string_1_pba23: height and width string -> invalid size, no ad server request for invalid size ', function() {
     var otherSize = [
       String(IndexUtils.supportedSizes[0][0]),
-      String(IndexUtils.supportedSizes[0][1]),
+      String(IndexUtils.supportedSizes[0][1])
     ];
     var configuredBids = [
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[1], otherSize, IndexUtils.supportedSizes[2]],
-      ),
+        [IndexUtils.supportedSizes[1], otherSize, IndexUtils.supportedSizes[2]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2427,15 +2423,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2449,12 +2445,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2462,19 +2458,19 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       0,
-      'all configured bids are in impression Obj',
+      'all configured bids are in impression Obj'
     );
   });
 
@@ -2484,8 +2480,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2493,15 +2489,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2515,12 +2511,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2528,25 +2524,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2555,14 +2551,14 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        'gallery',
-      ),
+        'gallery'
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(
       adLoader.loadScript.firstCall.args[0],
-      'no request made to AS',
+      'no request made to AS'
     );
   });
 
@@ -2572,8 +2568,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2581,15 +2577,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2603,12 +2599,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2616,25 +2612,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2644,8 +2640,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2653,15 +2649,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2675,12 +2671,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2688,25 +2684,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2715,14 +2711,14 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        { 728: 90 },
-      ),
+        { 728: 90 }
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(
       adLoader.loadScript.firstCall.args[0],
-      'no request made to AS',
+      'no request made to AS'
     );
   });
 
@@ -2732,8 +2728,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]],
-      ),
+        [IndexUtils.supportedSizes[0], otherSize, IndexUtils.supportedSizes[1]]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2741,15 +2737,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2763,12 +2759,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2776,25 +2772,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2807,8 +2803,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [valid1Size, otherSize, valid2Size],
-      ),
+        [valid1Size, otherSize, valid2Size]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2816,15 +2812,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2838,12 +2834,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2851,25 +2847,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2882,8 +2878,8 @@ describe('indexExchange adapter - Validation', function() {
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         'slot_1',
-        [valid1Size, otherSize, valid2Size],
-      ),
+        [valid1Size, otherSize, valid2Size]
+      )
     ];
     adapter.callBids({ bids: configuredBids });
 
@@ -2891,15 +2887,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2913,12 +2909,12 @@ describe('indexExchange adapter - Validation', function() {
       assert.equal(
         pair.sent.banner.w,
         pair.configured.size[0],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[0],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[0]
       );
       assert.equal(
         pair.sent.banner.h,
         pair.configured.size[1],
-        'request ' + pair.name + ' width is set to ' + pair.configured.size[1],
+        'request ' + pair.name + ' width is set to ' + pair.configured.size[1]
       );
       assert.equal(
         pair.sent.ext.siteID,
@@ -2926,25 +2922,25 @@ describe('indexExchange adapter - Validation', function() {
         'request ' +
           pair.name +
           ' siteID is set to ' +
-          pair.configured.params.siteID,
+          pair.configured.params.siteID
       );
     }
 
     assert.equal(
       sidMatched.unmatched.sent.length,
       0,
-      'All bids in impression object are from configured bids',
+      'All bids in impression object are from configured bids'
     );
     assert.equal(
       sidMatched.unmatched.configured.length,
       1,
-      '1 configured bid is not in impression Obj',
+      '1 configured bid is not in impression Obj'
     );
     assert.equal(
       sidMatched.unmatched.configured[0].size,
       otherSize,
       'configured bid not in impression obj size width is' +
-        JSON.stringify(otherSize),
+        JSON.stringify(otherSize)
     );
   });
 
@@ -2959,14 +2955,14 @@ describe('indexExchange adapter - Validation', function() {
         IndexUtils.DefaultPlacementCodePrefix,
         slotID_1,
         [slotSizes_1, slotSizes_2],
-        { slotSize: [728, 'invalid'] },
+        { slotSize: [728, 'invalid'] }
       ),
       IndexUtils.createBidSlot(
         IndexUtils.DefaultPlacementCodePrefix,
         slotID_2,
         [slotSizes_1, slotSizes_2],
-        { slotSize: slotSizes_2 },
-      ),
+        { slotSize: slotSizes_2 }
+      )
     ];
 
     adapter.callBids({ bids: configuredBids });
@@ -2976,15 +2972,15 @@ describe('indexExchange adapter - Validation', function() {
     assert.include(
       adLoader.loadScript.firstCall.args[0],
       HeaderTagRequest,
-      'request is headertag request',
+      'request is headertag request'
     );
 
     var requestJSON = IndexUtils.parseIndexRequest(
-      adLoader.loadScript.firstCall.args[0],
+      adLoader.loadScript.firstCall.args[0]
     );
     assert.isNotNull(
       requestJSON.r.imp,
-      'headertag request include impression object',
+      'headertag request include impression object'
     );
 
     var impressionObj = requestJSON.r.imp;
@@ -2993,22 +2989,22 @@ describe('indexExchange adapter - Validation', function() {
     assert.equal(
       impressionObj[0].banner.w,
       slotSizes_2[0],
-      'the width made in the request matches with request: ' + slotSizes_2[0],
+      'the width made in the request matches with request: ' + slotSizes_2[0]
     );
     assert.equal(
       impressionObj[0].banner.h,
       slotSizes_2[1],
-      'the height made in the request matches with request: ' + slotSizes_2[1],
+      'the height made in the request matches with request: ' + slotSizes_2[1]
     );
     assert.equal(
       impressionObj[0].ext.sid,
       slotID_2,
-      'slotID in the request matches with configuration: ' + slotID_2,
+      'slotID in the request matches with configuration: ' + slotID_2
     );
     assert.equal(
       impressionObj[0].ext.siteID,
       IndexUtils.DefaultSiteID,
-      'siteID in the request matches with request: ' + IndexUtils.DefaultSiteID,
+      'siteID in the request matches with request: ' + IndexUtils.DefaultSiteID
     );
   });
 });

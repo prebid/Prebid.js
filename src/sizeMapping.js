@@ -26,11 +26,11 @@ function mapSizes(adUnit) {
   if (mapping && mapping.sizes) {
     sizes = mapping.sizes;
     utils.logMessage(
-      `AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`,
+      `AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`
     );
   } else {
     utils.logMessage(
-      `AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`,
+      `AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`
     );
   }
   return sizes;

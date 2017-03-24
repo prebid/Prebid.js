@@ -18,7 +18,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
       var params = {
         sizes: utils.parseSizesInput(bid.sizes).join('-'),
         zone: bid.params && bid.params.zone,
-        callback_uid: bid.placementCode,
+        callback_uid: bid.placementCode
       };
       if (params.zone) {
         _requestBid(invUrl, params);
@@ -33,7 +33,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
   function _requestBid(url, params) {
     Ajax.ajax(url, _responseCallback, params, {
       method: 'GET',
-      withCredentials: true,
+      withCredentials: true
     });
   }
 
@@ -63,7 +63,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
 
   return {
     callBids: _callBids,
-    responseCallback: _responseCallback,
+    responseCallback: _responseCallback
   };
 };
 

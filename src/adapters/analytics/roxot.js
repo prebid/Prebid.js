@@ -9,7 +9,7 @@ const analyticsType = 'endpoint';
 export default Object.assign(
   adapter({
     url,
-    analyticsType,
+    analyticsType
   }),
   {
     track({ eventType, args }) {
@@ -20,10 +20,10 @@ export default Object.assign(
             'Event ' +
               eventType +
               ' sent to roxot analytics with result ' +
-              result,
+              result
           ),
-        JSON.stringify({ eventType, args }),
+        JSON.stringify({ eventType, args })
       );
-    },
-  },
+    }
+  }
 );

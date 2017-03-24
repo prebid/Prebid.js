@@ -75,13 +75,13 @@ module.exports = function() {
         bid.bidderCode = 'adequant';
         bidmanager.addBidResponse(placement_code, bid);
         utils.logMessage(
-          'No bid response from Adequant for placement code ' + placement_code,
+          'No bid response from Adequant for placement code ' + placement_code
         );
       }
     }
   }
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };

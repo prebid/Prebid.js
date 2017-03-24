@@ -17,10 +17,10 @@ const DEFAULT_BIDDER_REQUEST = {
       placementCode: 'foo',
       params: {
         placement: 1234567,
-        network: '9599.1',
-      },
-    },
-  ],
+        network: '9599.1'
+      }
+    }
+  ]
 };
 const DEFAULT_PUBAPI_RESPONSE = {
   id: '245730051428950632',
@@ -36,11 +36,11 @@ const DEFAULT_PUBAPI_RESPONSE = {
           crid: '0',
           h: 90,
           w: 728,
-          ext: { sizeid: 225 },
-        },
-      ],
-    },
-  ],
+          ext: { sizeid: 225 }
+        }
+      ]
+    }
+  ]
 };
 
 describe('AolAdapter', () => {
@@ -84,7 +84,7 @@ describe('AolAdapter', () => {
       it('should hit the default pubapi endpoint', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         expect(requests[0].url).to.contain(
-          'adserver-us.adtech.advertising.com/pubapi/3.0/',
+          'adserver-us.adtech.advertising.com/pubapi/3.0/'
         );
       });
 
@@ -94,12 +94,12 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              region: 'eu',
-            },
-          }),
+              region: 'eu'
+            }
+          })
         );
         expect(requests[0].url).to.contain(
-          'adserver-eu.adtech.advertising.com/pubapi/3.0/',
+          'adserver-eu.adtech.advertising.com/pubapi/3.0/'
         );
       });
 
@@ -109,12 +109,12 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              region: 'an',
-            },
-          }),
+              region: 'an'
+            }
+          })
         );
         expect(requests[0].url).to.contain(
-          'adserver-us.adtech.advertising.com/pubapi/3.0/',
+          'adserver-us.adtech.advertising.com/pubapi/3.0/'
         );
       });
 
@@ -124,12 +124,12 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              server: 'adserver-eu.adtech.advertising.com',
-            },
-          }),
+              server: 'adserver-eu.adtech.advertising.com'
+            }
+          })
         );
         expect(requests[0].url).to.contain(
-          'adserver-eu.adtech.advertising.com/pubapi/3.0/',
+          'adserver-eu.adtech.advertising.com/pubapi/3.0/'
         );
       });
 
@@ -153,9 +153,9 @@ describe('AolAdapter', () => {
           createBidderRequest({
             params: {
               placement: 1234567,
-              network: '9599.1',
-            },
-          }),
+              network: '9599.1'
+            }
+          })
         );
         expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/');
       });
@@ -165,12 +165,12 @@ describe('AolAdapter', () => {
           createBidderRequest({
             params: {
               placement: 1234567,
-              network: '9599.1',
-            },
-          }),
+              network: '9599.1'
+            }
+          })
         );
         expect(requests[0].url).to.contain(
-          '/pubapi/3.0/9599.1/1234567/0/0/ADTECH;',
+          '/pubapi/3.0/9599.1/1234567/0/0/ADTECH;'
         );
       });
 
@@ -180,9 +180,9 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              pageId: 12345,
-            },
-          }),
+              pageId: 12345
+            }
+          })
         );
         expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/12345/');
       });
@@ -193,9 +193,9 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              sizeId: 12345,
-            },
-          }),
+              sizeId: 12345
+            }
+          })
         );
         expect(requests[0].url).to.contain('/12345/ADTECH;');
       });
@@ -205,9 +205,9 @@ describe('AolAdapter', () => {
           createBidderRequest({
             params: {
               placement: 1234567,
-              network: '9599.1',
-            },
-          }),
+              network: '9599.1'
+            }
+          })
         );
         expect(requests[0].url).to.match(/alias=\w+?;/);
       });
@@ -218,12 +218,12 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              alias: 'desktop_articlepage_something_box_300_250',
-            },
-          }),
+              alias: 'desktop_articlepage_something_box_300_250'
+            }
+          })
         );
         expect(requests[0].url).to.contain(
-          'alias=desktop_articlepage_something_box_300_250',
+          'alias=desktop_articlepage_something_box_300_250'
         );
       });
 
@@ -232,9 +232,9 @@ describe('AolAdapter', () => {
           createBidderRequest({
             params: {
               placement: 1234567,
-              network: '9599.1',
-            },
-          }),
+              network: '9599.1'
+            }
+          })
         );
         expect(requests[0].url).not.to.contain('bidfloor=');
       });
@@ -245,9 +245,9 @@ describe('AolAdapter', () => {
             params: {
               placement: 1234567,
               network: '9599.1',
-              bidFloor: 0.80,
-            },
-          }),
+              bidFloor: 0.80
+            }
+          })
         );
         expect(requests[0].url).to.contain('bidfloor=0.8');
       });
@@ -280,7 +280,7 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
           'bidderCode',
-          'aol',
+          'aol'
         );
       });
 
@@ -291,7 +291,7 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
           'adId',
-          DEFAULT_BIDDER_REQUEST.bids[0].bidId,
+          DEFAULT_BIDDER_REQUEST.bids[0].bidId
         );
       });
 
@@ -301,7 +301,7 @@ describe('AolAdapter', () => {
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(2);
       });
 
@@ -311,7 +311,7 @@ describe('AolAdapter', () => {
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(2);
       });
 
@@ -320,14 +320,14 @@ describe('AolAdapter', () => {
           JSON.stringify({
             id: '245730051428950632',
             cur: 'USD',
-            seatbid: [],
-          }),
+            seatbid: []
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(2);
       });
 
@@ -336,15 +336,15 @@ describe('AolAdapter', () => {
           JSON.stringify({
             id: '245730051428950632',
             cur: 'USD',
-            seatbid: [],
-          }),
+            seatbid: []
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
           'adId',
-          DEFAULT_BIDDER_REQUEST.bids[0].bidId,
+          DEFAULT_BIDDER_REQUEST.bids[0].bidId
         );
       });
 
@@ -363,18 +363,18 @@ describe('AolAdapter', () => {
                     crid: '0',
                     h: 90,
                     w: 728,
-                    ext: { sizeid: 225 },
-                  },
-                ],
-              },
-            ],
-          }),
+                    ext: { sizeid: 225 }
+                  }
+                ]
+              }
+            ]
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         expect(
-          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
         ).to.equal(2);
       });
 
@@ -394,12 +394,12 @@ describe('AolAdapter', () => {
                     crid: '12345',
                     h: 90,
                     w: 728,
-                    ext: { sizeid: 225 },
-                  },
-                ],
-              },
-            ],
-          }),
+                    ext: { sizeid: 225 }
+                  }
+                ]
+              }
+            ]
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -429,15 +429,15 @@ describe('AolAdapter', () => {
                     crid: '12345',
                     h: 90,
                     w: 728,
-                    ext: { sizeid: 225 },
-                  },
-                ],
-              },
+                    ext: { sizeid: 225 }
+                  }
+                ]
+              }
             ],
             ext: {
-              pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>',
-            },
-          }),
+              pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
+            }
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -445,7 +445,7 @@ describe('AolAdapter', () => {
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
           "<script>logInfo('ad');</script>" +
-            '<script>document.write(\'<img src="pixel.gif">\');</script>',
+            '<script>document.write(\'<img src="pixel.gif">\');</script>'
         );
       });
 
@@ -467,13 +467,13 @@ describe('AolAdapter', () => {
                     h: 90,
                     w: 728,
                     ext: {
-                      sizeid: 225,
-                    },
-                  },
-                ],
-              },
-            ],
-          }),
+                      sizeid: 225
+                    }
+                  }
+                ]
+              }
+            ]
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -501,13 +501,13 @@ describe('AolAdapter', () => {
                     w: 728,
                     ext: {
                       sizeid: 225,
-                      encp: 'a9334987',
-                    },
-                  },
-                ],
-              },
-            ],
-          }),
+                      encp: 'a9334987'
+                    }
+                  }
+                ]
+              }
+            ]
+          })
         );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -539,8 +539,8 @@ describe('AolAdapter', () => {
         server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
         $$PREBID_GLOBAL$$.bidderSettings = {
           aol: {
-            bidCpmAdjustment: function() {},
-          },
+            bidCpmAdjustment: function() {}
+          }
         };
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();

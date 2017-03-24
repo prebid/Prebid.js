@@ -14,16 +14,16 @@ describe('Publisher API _ AdUnits', function() {
             params: {
               pgid: '2342353',
               unit: '234234',
-              jstag_url: 'http://',
-            },
+              jstag_url: 'http://'
+            }
           },
           {
             bidder: 'appnexus',
             params: {
-              placementId: '234235',
-            },
-          },
-        ],
+              placementId: '234235'
+            }
+          }
+        ]
       },
       {
         code: '/1996833/slot-2',
@@ -34,17 +34,17 @@ describe('Publisher API _ AdUnits', function() {
             params: {
               rp_account: '4934',
               rp_site: '13945',
-              rp_zonesize: '23948-15',
-            },
+              rp_zonesize: '23948-15'
+            }
           },
           {
             bidder: 'appnexus',
             params: {
-              placementId: '827326',
-            },
-          },
-        ],
-      },
+              placementId: '827326'
+            }
+          }
+        ]
+      }
     ];
     pbjsTestOnly.clearAllAdUnits();
     $$PREBID_GLOBAL$$.addAdUnits(adUnits);
@@ -72,24 +72,24 @@ describe('Publisher API _ AdUnits', function() {
       assert.strictEqual(
         bids1[0].params.pgid,
         '2342353',
-        'adUnit1 bids1 params.pgid',
+        'adUnit1 bids1 params.pgid'
       );
       assert.strictEqual(
         bids1[0].params.unit,
         '234234',
-        'adUnit1 bids1 params.unit',
+        'adUnit1 bids1 params.unit'
       );
       assert.strictEqual(
         bids1[0].params.jstag_url,
         'http://',
-        'adUnit1 bids1 params.jstag_url',
+        'adUnit1 bids1 params.jstag_url'
       );
 
       assert.strictEqual(bids1[1].bidder, 'appnexus', 'adUnit1 bids2 bidder');
       assert.strictEqual(
         bids1[1].params.placementId,
         '234235',
-        'adUnit1 bids2 params.placementId',
+        'adUnit1 bids2 params.placementId'
       );
 
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
@@ -98,24 +98,24 @@ describe('Publisher API _ AdUnits', function() {
       assert.strictEqual(
         bids2[0].params.rp_account,
         '4934',
-        'adUnit2 bids1 params.rp_account',
+        'adUnit2 bids1 params.rp_account'
       );
       assert.strictEqual(
         bids2[0].params.rp_zonesize,
         '23948-15',
-        'adUnit2 bids1 params.rp_zonesize',
+        'adUnit2 bids1 params.rp_zonesize'
       );
       assert.strictEqual(
         bids2[0].params.rp_site,
         '13945',
-        'adUnit2 bids1 params.rp_site',
+        'adUnit2 bids1 params.rp_site'
       );
 
       assert.strictEqual(bids2[1].bidder, 'appnexus', 'adUnit2 bids2 bidder');
       assert.strictEqual(
         bids2[1].params.placementId,
         '827326',
-        'adUnit2 bids2 params.placementId',
+        'adUnit2 bids2 params.placementId'
       );
     });
 
@@ -133,24 +133,24 @@ describe('Publisher API _ AdUnits', function() {
       assert.strictEqual(
         bids2[0].params.rp_account,
         '4934',
-        'adUnit2 bids1 params.rp_account',
+        'adUnit2 bids1 params.rp_account'
       );
       assert.strictEqual(
         bids2[0].params.rp_zonesize,
         '23948-15',
-        'adUnit2 bids1 params.rp_zonesize',
+        'adUnit2 bids1 params.rp_zonesize'
       );
       assert.strictEqual(
         bids2[0].params.rp_site,
         '13945',
-        'adUnit2 bids1 params.rp_site',
+        'adUnit2 bids1 params.rp_site'
       );
 
       assert.strictEqual(bids2[1].bidder, 'appnexus', 'adUnit2 bids2 bidder');
       assert.strictEqual(
         bids2[1].params.placementId,
         '827326',
-        'adUnit2 bids2 params.placementId',
+        'adUnit2 bids2 params.placementId'
       );
     });
   });
@@ -173,24 +173,24 @@ describe('Publisher API _ AdUnits', function() {
       assert.strictEqual(
         bids2[0].params.rp_account,
         '4934',
-        'adUnit2 bids1 params.rp_account',
+        'adUnit2 bids1 params.rp_account'
       );
       assert.strictEqual(
         bids2[0].params.rp_zonesize,
         '23948-15',
-        'adUnit2 bids1 params.rp_zonesize',
+        'adUnit2 bids1 params.rp_zonesize'
       );
       assert.strictEqual(
         bids2[0].params.rp_site,
         '13945',
-        'adUnit2 bids1 params.rp_site',
+        'adUnit2 bids1 params.rp_site'
       );
 
       assert.strictEqual(bids2[1].bidder, 'appnexus', 'adUnit2 bids2 bidder');
       assert.strictEqual(
         bids2[1].params.placementId,
         '827326',
-        'adUnit2 bids2 params.placementId',
+        'adUnit2 bids2 params.placementId'
       );
     });
   });

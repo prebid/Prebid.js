@@ -32,7 +32,7 @@ function KomoonaAdapter() {
 
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials: true,
+        withCredentials: true
       });
     }
   };
@@ -108,7 +108,7 @@ function KomoonaAdapter() {
   return {
     createNew: KomoonaAdapter.createNew,
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
+    setBidderCode: baseAdapter.setBidderCode
   };
 }
 

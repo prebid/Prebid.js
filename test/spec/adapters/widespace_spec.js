@@ -10,7 +10,7 @@ const TEST = {
   CPM: 2.0,
   PLACEMENT_CODE: 'aPlacementCode',
   SID: 'f666bfaf-69cf-4ed9-9262-08247bb274e4',
-  CUR: 'EUR',
+  CUR: 'EUR'
 };
 
 const BID_REQUEST = {
@@ -22,17 +22,17 @@ const BID_REQUEST = {
       bidder: TEST.BIDDER_CODE,
       params: {
         sid: TEST.SID,
-        cur: TEST.CUR,
+        cur: TEST.CUR
       },
       placementCode: TEST.PLACEMENT_CODE,
       sizes: [[320, 320], [320, 250]],
       bidId: '45c7f5afb996c1',
       bidderRequestId: '7101db09af0db3',
-      requestId: 'e155185b-3eac-4f3c-8182-cdb57a69df3d',
-    },
+      requestId: 'e155185b-3eac-4f3c-8182-cdb57a69df3d'
+    }
   ],
   start: 1479664180396,
-  timeout: 5000,
+  timeout: 5000
 };
 
 const BID_RESPONSE = [
@@ -46,8 +46,8 @@ const BID_RESPONSE = [
     currency: 'EUR',
     code: '<p>This is a banner</p>',
     callbackUid: '45c7f5afb996c1',
-    callback: 'pbjs.widespaceHandleCB',
-  },
+    callback: 'pbjs.widespaceHandleCB'
+  }
 ];
 
 const BID_NOAD_RESPONSE = [
@@ -61,8 +61,8 @@ const BID_NOAD_RESPONSE = [
     currency: 'EUR',
     code: '',
     callbackUid: '45c7f5afb996c1',
-    callback: 'pbjs.widespaceHandleCB',
-  },
+    callback: 'pbjs.widespaceHandleCB'
+  }
 ];
 
 describe('WidespaceAdapter', () => {

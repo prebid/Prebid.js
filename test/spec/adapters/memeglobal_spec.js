@@ -26,7 +26,7 @@ describe('memeglobal adapter tests', function() {
         requestId: null,
         bidder: 'memeglobal',
         bidderCode: 'memeglobal',
-        bids: [],
+        bids: []
       };
       pbjs._bidsRequested.push(bidderRequest);
     }
@@ -48,9 +48,9 @@ describe('memeglobal adapter tests', function() {
             bidder: 'memeglobal',
             params: { siteId: '3608', adSizes: '300x250' },
             requestId: '10b327aa396609',
-            placementCode: 'header-bid-tag-0',
-          },
-        ],
+            placementCode: 'header-bid-tag-0'
+          }
+        ]
       };
 
       adapter().callBids(params);
@@ -68,9 +68,9 @@ describe('memeglobal adapter tests', function() {
             bidder: 'memeglobal',
             params: { siteId: '3608', adSizes: '300x250' },
             requestId: '10b327aa396609',
-            placementCode: 'header-bid-tag-0',
-          },
-        ],
+            placementCode: 'header-bid-tag-0'
+          }
+        ]
       };
 
       adapter().callBids({});
@@ -87,15 +87,15 @@ describe('memeglobal adapter tests', function() {
         bidId: 'bidId1',
         bidder: 'memeglobal',
         params: {
-          tagid: '007',
+          tagid: '007'
         },
         sizes: [[300, 250]],
-        placementCode: 'test-1',
+        placementCode: 'test-1'
       };
       // no bids returned in the response.
       var response = {
         id: '54321',
-        seatbid: [],
+        seatbid: []
       };
       var bidSet = getBidSetForBidder();
       bidSet.bids.push(bid);
@@ -125,10 +125,10 @@ describe('memeglobal adapter tests', function() {
         bidId: 'bidId2',
         bidder: 'memeglobal',
         params: {
-          tagid: '315045',
+          tagid: '315045'
         },
         sizes: [[320, 50]],
-        placementCode: 'test-2',
+        placementCode: 'test-2'
       };
 
       // Returning a single bid in the response.
@@ -145,11 +145,11 @@ describe('memeglobal adapter tests', function() {
                 adm: 'ad-code',
                 h: 250,
                 w: 300,
-                ext: {},
-              },
-            ],
-          },
-        ],
+                ext: {}
+              }
+            ]
+          }
+        ]
       };
 
       var bidSet = getBidSetForBidder();
@@ -167,7 +167,7 @@ describe('memeglobal adapter tests', function() {
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.width).to.equal(300);
       expect(bidObject1.ad).to.equal(
-        'ad-code<img src="http://url" height="0px" width="0px" style="display: none;">',
+        'ad-code<img src="http://url" height="0px" width="0px" style="display: none;">'
       );
 
       stubAddBidResponse.calledThrice;

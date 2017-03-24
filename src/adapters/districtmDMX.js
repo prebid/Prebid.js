@@ -46,7 +46,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
   return {
     callBids: this.callBids,
     sendBids: this.sendBids,
-    handlerRes: this.handlerRes,
+    handlerRes: this.handlerRes
   };
 };
 

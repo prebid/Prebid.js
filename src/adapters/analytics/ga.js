@@ -91,7 +91,7 @@ exports.enableAnalytics = function({ provider, options }) {
   // finally set this function to return log message, prevents multiple adapter listeners
   this.enableAnalytics = function _enable() {
     return utils.logMessage(
-      `Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`,
+      `Analytics adapter already enabled, unnecessary call to \`enableAnalytics\`.`
     );
   };
 };
@@ -196,7 +196,7 @@ function sendBidRequestToGa(bid) {
         'Requests',
         bid.bidderCode,
         1,
-        _disableInteraction,
+        _disableInteraction
       );
     });
   }
@@ -220,7 +220,7 @@ function sendBidResponseToGa(bid) {
           dis,
           bidder,
           1,
-          _disableInteraction,
+          _disableInteraction
         );
       }
 
@@ -236,7 +236,7 @@ function sendBidResponseToGa(bid) {
             cpmDis,
             bidder,
             1,
-            _disableInteraction,
+            _disableInteraction
           );
         }
 
@@ -247,7 +247,7 @@ function sendBidResponseToGa(bid) {
           'Bids',
           bidder,
           cpmCents,
-          _disableInteraction,
+          _disableInteraction
         );
         window[_gaGlobal](
           _trackerSend,
@@ -256,7 +256,7 @@ function sendBidResponseToGa(bid) {
           'Bid Load Time',
           bidder,
           bid.timeToRespond,
-          _disableInteraction,
+          _disableInteraction
         );
       }
     });
@@ -276,7 +276,7 @@ function sendBidTimeouts(timedOutBidders) {
         _category,
         'Timeouts',
         bidderCode,
-        _disableInteraction,
+        _disableInteraction
       );
     });
   });
@@ -295,7 +295,7 @@ function sendBidWonToGa(bid) {
       'Wins',
       bid.bidderCode,
       cpmCents,
-      _disableInteraction,
+      _disableInteraction
     );
   });
 

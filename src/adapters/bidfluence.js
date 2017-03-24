@@ -37,7 +37,7 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     var reservePrice = utils.getBidIdParameter('reservePrice', bid.params);
     var pbjsBfobj = {
       placementCode: bid.placementCode,
-      cbID: bid.bidId,
+      cbID: bid.bidId
     };
 
     var cb = function() {
@@ -48,7 +48,7 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     adloader.loadScript(scriptUrl, cb);
   }
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

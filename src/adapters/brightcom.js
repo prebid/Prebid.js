@@ -68,15 +68,15 @@ var BrightcomAdapter = function BrightcomAdapter() {
         id: utils.getUniqueIdentifierStr(),
         banner: {
           w: adWidth,
-          h: adHeight,
+          h: adHeight
         },
-        tagid: tagId,
+        tagid: tagId
       };
 
       // If ref exists, create it (in the "ext" object)
       if (ref !== '') {
         imp.ext = {
-          refoverride: ref,
+          refoverride: ref
         };
       }
 
@@ -95,11 +95,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
       imp: brightcomImps,
       site: {
         publisher: {
-          id: pubId,
+          id: pubId
         },
         domain: siteDomain,
-        page: sitePage,
-      },
+        page: sitePage
+      }
     };
 
     // Add timeout data, if available
@@ -138,7 +138,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
       brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
         // Get the bid request data
         var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(
-          bidSet => bidSet.bidderCode === 'brightcom',
+          bidSet => bidSet.bidderCode === 'brightcom'
         ).bids[0]; // this assumes a single request only
 
         // Make sure the bid exists
@@ -212,7 +212,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
   };
 
   return {
-    callBids: _callBids,
+    callBids: _callBids
   };
 };
 

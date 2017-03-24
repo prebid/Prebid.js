@@ -58,7 +58,7 @@ exports.assertion = function(expected, msg) {
         return 'hello';
       },
       [],
-      execcallback,
+      execcallback
     );
 
     //var result = {'value':'hello'};
