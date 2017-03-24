@@ -583,6 +583,18 @@ describe('the rubicon adapter', () => {
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
         });
 
+        it('should handle error contacting endpoint', () => {
+          server.respondWith([404, {}, ""]);
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          server.respond();
+
+          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+        });
+
         it('should not register an error bid when a success call to addBidResponse throws an error', () => {
 
           server.respondWith(JSON.stringify({

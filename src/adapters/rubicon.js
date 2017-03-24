@@ -62,9 +62,29 @@ function RubiconAdapter() {
       try {
         // Video endpoint only accepts POST calls
         if (bid.mediaType === 'video') {
-          ajax(VIDEO_ENDPOINT, bidCallback, buildVideoRequestPayload(bid, bidderRequest), {withCredentials: true});
+          ajax(
+            VIDEO_ENDPOINT,
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            buildVideoRequestPayload(bid, bidderRequest),
+            {
+              withCredentials: true
+            }
+          );
         } else {
-          ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+          ajax(
+            buildOptimizedCall(bid),
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            undefined,
+            {
+              withCredentials: true
+            }
+          );
         }
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
@@ -83,6 +103,11 @@ function RubiconAdapter() {
           }
           addErrorBid();
         }
+      }
+
+      function bidError(err, xhr) {
+        utils.logError('Request for rubicon responded with:', xhr.status, err);
+        addErrorBid();
       }
 
       function addErrorBid() {
