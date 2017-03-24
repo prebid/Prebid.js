@@ -2,7 +2,7 @@
 jsfiles=$(git diff --cached --name-only --diff-filter=ACM | grep '\.js$' | tr '\n' ' ')
 [ -z "$jsfiles" ] && exit 0
 
-diffs=$(node_modules/.bin/prettier --single-quote --trailing-comma all --bracket-spacing -l $jsfiles)
+diffs=$(node_modules/.bin/prettier --single-quote --trailing-comma none --bracket-spacing -l $jsfiles)
 [ -z "$diffs" ] && exit 0
 
 echo >&2 "Javascript files must be formatted with prettier. Please run:"
