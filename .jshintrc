@@ -6,6 +6,7 @@
   "eqeqeq": true,
   "freeze": true,
   "immed": true,
+  "laxbreak": true,
   "maxdepth": 5,
   "newcap": true,
   "noarg": true,
