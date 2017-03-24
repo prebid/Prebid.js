@@ -46,7 +46,7 @@ function bidsBackAdUnit(adUnitCode) {
     .map(request => request.bids
       .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten)
+    .reduce(flatten, [])
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
           bid.sizes.length :
@@ -64,7 +64,7 @@ function add(a, b) {
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
-    .reduce(flatten)
+    .reduce(flatten, [])
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
     .map(bid => {
       return bid.bidder === 'indexExchange' ?
@@ -93,6 +93,11 @@ function getBidderRequest(bidder, adUnitCode) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+  if (!adUnitCode) {
+    utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
+    return;
+  }
+
   if (bid) {
 
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
@@ -130,7 +135,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && bid.cpm > 0) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId ) ) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
     }
 
@@ -337,7 +342,7 @@ function adjustBids(bid) {
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
     if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, utils.extend({}, bid));
+        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);

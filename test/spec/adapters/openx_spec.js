@@ -7,6 +7,9 @@ describe('openx adapter tests', function () {
   const adloader = require('src/adloader');
   const CONSTANTS = require('src/constants.json');
 
+  before(() => sinon.stub(document.body, 'appendChild'));
+  after(() => document.body.appendChild.restore());
+
   describe('test openx callback responce', function () {
 
     it('should exist and be a function', function () {
