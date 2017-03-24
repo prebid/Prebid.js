@@ -7,7 +7,7 @@ import bidManager from '../../../src/bidmanager';
 import adapter from '../../../src/adapters/adform';
 
 describe('Adform adapter', () => {
-  let _adapter, sandbox; 
+  let _adapter, sandbox;
 
   describe('request', () => {
     it('should create callback method on PREBID_GLOBAL', () => {
@@ -32,7 +32,6 @@ describe('Adform adapter', () => {
       assert.equal(_query.rp, 4);
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
-
 
     it('should correctly form bid items', () => {
       const _items = parseUrl(adLoader.loadScript.args[0][0]).items;
@@ -68,7 +67,10 @@ describe('Adform adapter', () => {
       const _bidObject = _bid[1];
 
       assert.equal(_bid[0], 'code-2');
-      assert.equal(_bidObject.statusMessage, 'Bid returned empty or error response');
+      assert.equal(
+        _bidObject.statusMessage,
+        'Bid returned empty or error response'
+      );
       assert.equal(_bidObject.bidderCode, 'adform');
     });
 
@@ -77,7 +79,10 @@ describe('Adform adapter', () => {
       const _bidObject = _bid[1];
 
       assert.equal(_bid[0], 'code-3');
-      assert.equal(_bidObject.statusMessage, 'Bid returned empty or error response');
+      assert.equal(
+        _bidObject.statusMessage,
+        'Bid returned empty or error response'
+      );
       assert.equal(_bidObject.bidderCode, 'adform');
     });
 
@@ -121,7 +126,7 @@ describe('Adform adapter', () => {
         {
           bidId: 'abc',
           placementCode: 'code-1',
-          sizes: [ [ 100, 100], [ 90, 90 ] ],
+          sizes: [[100, 100], [90, 90]],
           params: {
             mid: 1,
             url: 'some// there'
@@ -132,7 +137,7 @@ describe('Adform adapter', () => {
         {
           bidId: '123',
           placementCode: 'code-2',
-          sizes: [ [ 100, 100] ],
+          sizes: [[100, 100]],
           params: {
             mid: 2,
             tid: 145,
@@ -142,13 +147,14 @@ describe('Adform adapter', () => {
         {
           bidId: 'a1b',
           placementCode: 'code-3',
-          sizes: [ [ 50, 40], [ 40, 50 ] ],
+          sizes: [[50, 40], [40, 50]],
           params: {
             mid: 3,
             pdom: 'home'
           }
         }
-    ]});
+      ]
+    });
   });
 
   afterEach(() => {
@@ -162,23 +168,26 @@ function parseUrl(url) {
   return {
     path: parts.join('/'),
     items: query
-      .filter((i) => ! ~i.indexOf('='))
-      .map((i) => fromBase64(i)
-        .split('&')
-        .reduce(toObject, {})),
+      .filter(i => !~i.indexOf('='))
+      .map(i => fromBase64(i).split('&').reduce(toObject, {})),
     query: query
-      .filter((i) => ~i.indexOf('='))
-      .map((i) => i.replace('?', ''))
+      .filter(i => ~i.indexOf('='))
+      .map(i => i.replace('?', ''))
       .reduce(toObject, {})
   };
 }
 
 function fromBase64(input) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split('');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split(
+    ''
+  );
   let bc = 0, bs, buffer, idx = 0, output = '';
-  for (; buffer = input.charAt(idx++);
-    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-      bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+  for (
+    ;
+    (buffer = input.charAt(idx++));
+    ~buffer && ((bs = bc % 4 ? bs * 64 + buffer : buffer), bc++ % 4)
+      ? (output += String.fromCharCode(255 & bs >> (-2 * bc & 6)))
+      : 0
   ) {
     buffer = chars.indexOf(buffer);
   }

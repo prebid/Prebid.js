@@ -28,8 +28,10 @@ module.exports = function getAdapters() {
     fs.statSync(customAdapters);
     return load(customAdapters);
   } catch (e) {
-    console.log(`Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
-      'using default adapters.json');
+    console.log(
+      `Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
+        'using default adapters.json'
+    );
     return load(defaultAdapters);
   }
 };

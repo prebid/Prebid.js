@@ -5,8 +5,7 @@
 import adapter from 'AnalyticsAdapter';
 
 export default adapter({
-    global: 'PulsePointPrebidAnalytics',
-    handler: 'on',
-    analyticsType: 'bundle'
-  });
-
+  global: 'PulsePointPrebidAnalytics',
+  handler: 'on',
+  analyticsType: 'bundle'
+});

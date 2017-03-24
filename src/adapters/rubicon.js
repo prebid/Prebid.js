@@ -19,42 +19,41 @@ const VIDEO_ENDPOINT = '//optimized-by-adv.rubiconproject.com/v1/auction/video';
 const TIMEOUT_BUFFER = 500;
 
 var sizeMap = {
-  1:'468x60',
-  2:'728x90',
-  8:'120x600',
-  9:'160x600',
-  10:'300x600',
-  15:'300x250',
-  16:'336x280',
-  19:'300x100',
-  43:'320x50',
-  44:'300x50',
-  48:'300x300',
-  54:'300x1050',
-  55:'970x90',
-  57:'970x250',
-  58:'1000x90',
-  59:'320x80',
-  61:'1000x1000',
-  65:'640x480',
-  67:'320x480',
-  68:'1800x1000',
-  72:'320x320',
-  73:'320x160',
-  83:'480x300',
-  94:'970x310',
-  96:'970x210',
-  101:'480x320',
-  102:'768x1024',
-  113:'1000x300',
-  117:'320x100',
-  125:'800x250',
-  126:'200x600'
+  1: '468x60',
+  2: '728x90',
+  8: '120x600',
+  9: '160x600',
+  10: '300x600',
+  15: '300x250',
+  16: '336x280',
+  19: '300x100',
+  43: '320x50',
+  44: '300x50',
+  48: '300x300',
+  54: '300x1050',
+  55: '970x90',
+  57: '970x250',
+  58: '1000x90',
+  59: '320x80',
+  61: '1000x1000',
+  65: '640x480',
+  67: '320x480',
+  68: '1800x1000',
+  72: '320x320',
+  73: '320x160',
+  83: '480x300',
+  94: '970x310',
+  96: '970x210',
+  101: '480x320',
+  102: '768x1024',
+  113: '1000x300',
+  117: '320x100',
+  125: '800x250',
+  126: '200x600'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
-
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -62,24 +61,45 @@ function RubiconAdapter() {
       try {
         // Video endpoint only accepts POST calls
         if (bid.mediaType === 'video') {
-          ajax(VIDEO_ENDPOINT, bidCallback, buildVideoRequestPayload(bid, bidderRequest), {withCredentials: true});
+          ajax(
+            VIDEO_ENDPOINT,
+            bidCallback,
+            buildVideoRequestPayload(bid, bidderRequest),
+            { withCredentials: true }
+          );
         } else {
-          ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+          ajax(buildOptimizedCall(bid), bidCallback, undefined, {
+            withCredentials: true
+          });
         }
-      } catch(err) {
-        utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
+      } catch (err) {
+        utils.logError(
+          'Error sending rubicon request for placement code ' +
+            bid.placementCode,
+          null,
+          err
+        );
         addErrorBid();
       }
 
       function bidCallback(responseText) {
         try {
-          utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
+          utils.logMessage(
+            'XHR callback function called for ad ID: ' + bid.bidId
+          );
           handleRpCB(responseText, bid);
         } catch (err) {
           if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing rubicon response for placement code ${bid.placementCode}`);
+            utils.logWarn(
+              `${err} when processing rubicon response for placement code ${bid.placementCode}`
+            );
           } else {
-            utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
+            utils.logError(
+              'Error processing rubicon response for placement code ' +
+                bid.placementCode,
+              null,
+              err
+            );
           }
           addErrorBid();
         }
@@ -102,31 +122,31 @@ function RubiconAdapter() {
 
     let params = bid.params;
 
-    if(!params || typeof params.video !== 'object') {
+    if (!params || typeof params.video !== 'object') {
       throw 'Invalid Video Bid';
     }
 
     let size;
-    if(params.video.playerWidth && params.video.playerHeight) {
-      size = [
-        params.video.playerWidth,
-        params.video.playerHeight
-      ];
-    } else if(
-        Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
-        Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
+    if (params.video.playerWidth && params.video.playerHeight) {
+      size = [params.video.playerWidth, params.video.playerHeight];
+    } else if (
+      Array.isArray(bid.sizes) &&
+      bid.sizes.length > 0 &&
+      Array.isArray(bid.sizes[0]) &&
+      bid.sizes[0].length > 1
     ) {
       size = bid.sizes[0];
     } else {
       throw 'Invalid Video Bid - No size provided';
     }
 
-    let postData =  {
+    let postData = {
       page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
-      resolution:  _getScreenResolution(),
+      resolution: _getScreenResolution(),
       account_id: params.accountId,
       integration: getIntegration(),
-      timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
+      timeout: bidderRequest.timeout -
+        (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
       stash_creatives: true,
       ae_pass_through_parameters: params.video.aeParams,
       slots: []
@@ -146,27 +166,27 @@ function RubiconAdapter() {
     };
 
     // check and add inventory, keywords, visitor and size_id data
-    if(params.video.size_id) {
+    if (params.video.size_id) {
       slotData.size_id = params.video.size_id;
     } else {
       throw 'Invalid Video Bid - Invalid Ad Type!';
     }
 
-    if(params.inventory && typeof params.inventory === 'object') {
+    if (params.inventory && typeof params.inventory === 'object') {
       slotData.inventory = params.inventory;
     }
 
-    if(params.keywords && Array.isArray(params.keywords)) {
+    if (params.keywords && Array.isArray(params.keywords)) {
       slotData.keywords = params.keywords;
     }
 
-    if(params.visitor && typeof params.visitor === 'object') {
+    if (params.visitor && typeof params.visitor === 'object') {
       slotData.visitor = params.visitor;
     }
 
     postData.slots.push(slotData);
 
-    return(JSON.stringify(postData));
+    return JSON.stringify(postData);
   }
 
   function buildOptimizedCall(bid) {
@@ -190,55 +210,80 @@ function RubiconAdapter() {
     position = position || 'btf';
 
     // use rubicon sizes if provided, otherwise adUnit.sizes
-    var parsedSizes = RubiconAdapter.masSizeOrdering(Array.isArray(bid.params.sizes) ?
-      bid.params.sizes.map(size => (sizeMap[size] || '').split('x')) : bid.sizes
+    var parsedSizes = RubiconAdapter.masSizeOrdering(
+      Array.isArray(bid.params.sizes)
+        ? bid.params.sizes.map(size => (sizeMap[size] || '').split('x'))
+        : bid.sizes
     );
 
-    if(parsedSizes.length < 1) {
+    if (parsedSizes.length < 1) {
       throw 'no valid sizes';
     }
 
-    if(!/^\d+$/.test(accountId)) {
+    if (!/^\d+$/.test(accountId)) {
       throw 'invalid accountId provided';
     }
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [
-      'account_id', accountId,
-      'site_id', siteId,
-      'zone_id', zoneId,
-      'size_id', parsedSizes[0],
-      'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
-      'p_pos', position,
-      'rp_floor', floor,
-      'tk_flint', getIntegration(),
-      'p_screen_res', _getScreenResolution(),
-      'kw', keywords,
-      'tk_user_key', userId
+      'account_id',
+      accountId,
+      'site_id',
+      siteId,
+      'zone_id',
+      zoneId,
+      'size_id',
+      parsedSizes[0],
+      'alt_size_ids',
+      parsedSizes.slice(1).join(',') || undefined,
+      'p_pos',
+      position,
+      'rp_floor',
+      floor,
+      'tk_flint',
+      getIntegration(),
+      'p_screen_res',
+      _getScreenResolution(),
+      'kw',
+      keywords,
+      'tk_user_key',
+      userId
     ];
 
-    if(visitor !== null && typeof visitor === 'object') {
-      utils._each(visitor, (item, key) => queryString.push(`tg_v.${key}`, item));
+    if (visitor !== null && typeof visitor === 'object') {
+      utils._each(visitor, (item, key) =>
+        queryString.push(`tg_v.${key}`, item));
     }
 
-    if(inventory !== null && typeof inventory === 'object') {
-      utils._each(inventory, (item, key) => queryString.push(`tg_i.${key}`, item));
+    if (inventory !== null && typeof inventory === 'object') {
+      utils._each(inventory, (item, key) =>
+        queryString.push(`tg_i.${key}`, item));
     }
 
     queryString.push(
-      'rand', Math.random(),
-      'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
+      'rand',
+      Math.random(),
+      'rf',
+      !pageUrl ? utils.getTopWindowUrl() : pageUrl
     );
 
-    return queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined ?
-        memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
-      FASTLANE_ENDPOINT + '?'
-    ).slice(0, -1); // remove trailing &
+    return queryString
+      .reduce(
+        (memo, curr, index) =>
+          index % 2 === 0 && queryString[index + 1] !== undefined
+            ? memo +
+                curr +
+                '=' +
+                encodeURIComponent(queryString[index + 1]) +
+                '&'
+            : memo,
+        FASTLANE_ENDPOINT + '?'
+      )
+      .slice(0, -1); // remove trailing &
   }
 
-  let _renderCreative = (script, impId) => `<html>
+  let _renderCreative = (script, impId) =>
+    `<html>
 <head><script type='text/javascript'>inDapIF=true;</script></head>
 <body style='margin : 0; padding: 0;'>
 <!-- Rubicon Project Ad Tag -->
@@ -250,11 +295,11 @@ function RubiconAdapter() {
 
   function handleRpCB(responseText, bidRequest) {
     var responseObj = JSON.parse(responseText), // can throw
-        ads = responseObj.ads,
-        adResponseKey = bidRequest.placementCode;
+      ads = responseObj.ads,
+      adResponseKey = bidRequest.placementCode;
 
     // check overall response
-    if(typeof responseObj !== 'object' || responseObj.status !== 'ok') {
+    if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
       throw 'bad response';
     }
 
@@ -264,7 +309,7 @@ function RubiconAdapter() {
     }
 
     // check the ad response
-    if(!Array.isArray(ads) || ads.length < 1) {
+    if (!Array.isArray(ads) || ads.length < 1) {
       throw 'invalid ad response';
     }
 
@@ -272,7 +317,7 @@ function RubiconAdapter() {
     ads = ads.sort(_adCpmSort);
 
     ads.forEach(ad => {
-      if(ad.status !== 'ok') {
+      if (ad.status !== 'ok') {
         throw 'bad ad status';
       }
 
@@ -291,9 +336,10 @@ function RubiconAdapter() {
         bid.impression_id = ad.impression_id;
       } else {
         bid.ad = _renderCreative(ad.script, ad.impression_id);
-        [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
+        [bid.width, bid.height] = sizeMap[ad.size_id]
+          .split('x')
+          .map(num => Number(num));
       }
-
 
       try {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);
@@ -316,33 +362,39 @@ function RubiconAdapter() {
 RubiconAdapter.masSizeOrdering = function(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
-  return utils.parseSizesInput(sizes)
-    // map sizes while excluding non-matches
-    .reduce((result, size) => {
-      let mappedSize = parseInt(sizeMap[size], 10);
-      if(mappedSize) {
-        result.push(mappedSize);
-      }
-      return result;
-    }, [])
-    .sort((first, second) => {
-      // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
+  return (
+    utils
+      .parseSizesInput(sizes)
+      // map sizes while excluding non-matches
+      .reduce(
+        (result, size) => {
+          let mappedSize = parseInt(sizeMap[size], 10);
+          if (mappedSize) {
+            result.push(mappedSize);
+          }
+          return result;
+        },
+        []
+      )
+      .sort((first, second) => {
+        // sort by MAS_SIZE_PRIORITY priority order
+        let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
           secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
-      if(firstPriority > -1 || secondPriority > -1) {
-        if(firstPriority === -1) {
-          return 1;
+        if (firstPriority > -1 || secondPriority > -1) {
+          if (firstPriority === -1) {
+            return 1;
+          }
+          if (secondPriority === -1) {
+            return -1;
+          }
+          return firstPriority - secondPriority;
         }
-        if(secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
-      }
 
-      // and finally ascending order
-      return first - second;
-    });
+        // and finally ascending order
+        return first - second;
+      })
+  );
 };
 
 RubiconAdapter.createNew = function() {
@@ -350,4 +402,3 @@ RubiconAdapter.createNew = function() {
 };
 
 module.exports = RubiconAdapter;
-

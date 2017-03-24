@@ -1,98 +1,91 @@
-describe('aardvark adapter tests', function () {
+describe('aardvark adapter tests', function() {
   const expect = require('chai').expect;
   const adapter = require('src/adapters/aardvark');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
-  const constants  = require('src/constants.json');
+  const constants = require('src/constants.json');
 
-  var aardvark,
-      sandbox,
-      bidsRequestedOriginal;
+  var aardvark, sandbox, bidsRequestedOriginal;
 
   const bidderRequest = {
-          bidderCode: 'aardvark',
-          bids: [
-            {
-              bidId: 'bidId1',
-              bidder: 'aardvark',
-              placementCode: 'foo',
-              sizes: [[728, 90]],
-              rtkid: 1,
-              params: {
-                ai: 'AH5S',
-                sc: 'BirH'
-              }
-            },
-            {
-              bidId: 'bidId2',
-              bidder: 'aardvark',
-              placementCode: 'bar',
-              sizes: [[300, 600]],
-              rtkid: 1,
-              params: {
-                ai: 'AH5S',
-                sc: '661h'
-              }
-            }
-          ]
-        },
-
-        bidderRequestCustomHost = {
-          bidderCode: 'aardvark',
-          bids: [
-            {
-              bidId: 'bidId1',
-              bidder: 'aardvark',
-              placementCode: 'foo',
-              sizes: [[728, 90]],
-              rtkid: 1,
-              params: {
-                ai: 'AH5S',
-                sc: 'BirH',
-                host: 'custom.server.com'
-              }
-            },
-            {
-              bidId: 'bidId2',
-              bidder: 'aardvark',
-              placementCode: 'bar',
-              sizes: [[300, 600]],
-              rtkid: 1,
-              params: {
-                ai: 'AH5S',
-                sc: '661h',
-                host: 'custom.server.com'
-              }
-            }
-          ]
-        },
-
-
-
-        // respond
-        bidderResponse = [
-          {
-            "adm": "<div></div>",
-            "cpm": 0.39440,
-            "ex": "",
-            "height": "90",
-            "id": "BirH",
-            "nurl": "",
-            "width": "728",
-            "cid": "bidId1"
-          },
-          {
-            "adm": "<div></div>",
-            "cpm": 0.03485,
-            "ex": "",
-            "height": "600",
-            "id": "661h",
-            "nurl": "",
-            "width": "300",
-            "cid": "bidId2"
+    bidderCode: 'aardvark',
+    bids: [
+      {
+        bidId: 'bidId1',
+        bidder: 'aardvark',
+        placementCode: 'foo',
+        sizes: [[728, 90]],
+        rtkid: 1,
+        params: {
+          ai: 'AH5S',
+          sc: 'BirH'
+        }
+      },
+      {
+        bidId: 'bidId2',
+        bidder: 'aardvark',
+        placementCode: 'bar',
+        sizes: [[300, 600]],
+        rtkid: 1,
+        params: {
+          ai: 'AH5S',
+          sc: '661h'
+        }
+      }
+    ]
+  },
+    bidderRequestCustomHost = {
+      bidderCode: 'aardvark',
+      bids: [
+        {
+          bidId: 'bidId1',
+          bidder: 'aardvark',
+          placementCode: 'foo',
+          sizes: [[728, 90]],
+          rtkid: 1,
+          params: {
+            ai: 'AH5S',
+            sc: 'BirH',
+            host: 'custom.server.com'
           }
-        ];
-
+        },
+        {
+          bidId: 'bidId2',
+          bidder: 'aardvark',
+          placementCode: 'bar',
+          sizes: [[300, 600]],
+          rtkid: 1,
+          params: {
+            ai: 'AH5S',
+            sc: '661h',
+            host: 'custom.server.com'
+          }
+        }
+      ]
+    },
+    // respond
+    bidderResponse = [
+      {
+        adm: '<div></div>',
+        cpm: 0.39440,
+        ex: '',
+        height: '90',
+        id: 'BirH',
+        nurl: '',
+        width: '728',
+        cid: 'bidId1'
+      },
+      {
+        adm: '<div></div>',
+        cpm: 0.03485,
+        ex: '',
+        height: '600',
+        id: '661h',
+        nurl: '',
+        width: '300',
+        cid: 'bidId2'
+      }
+    ];
 
   beforeEach(() => {
     aardvark = new adapter();
@@ -101,13 +94,11 @@ describe('aardvark adapter tests', function () {
     $$PREBID_GLOBAL$$._bidsRequested = [];
   });
 
-
   afterEach(() => {
     sandbox.restore();
 
     $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
   });
-
 
   describe('callBids', () => {
     beforeEach(() => {
@@ -117,10 +108,10 @@ describe('aardvark adapter tests', function () {
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
       expect(adloader.loadScript.firstCall.args[0]).to.eql(
-        '//thor.rtk.io/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2');
+        '//thor.rtk.io/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2'
+      );
     });
   });
-
 
   describe('callBids with custom host', () => {
     beforeEach(() => {
@@ -130,18 +121,18 @@ describe('aardvark adapter tests', function () {
     it('should load script', () => {
       sinon.assert.calledOnce(adloader.loadScript);
       expect(adloader.loadScript.firstCall.args[0]).to.eql(
-        '//custom.server.com/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2');
+        '//custom.server.com/AH5S/BirH_661h/aardvark/?jsonp=$$PREBID_GLOBAL$$.aardvarkResponse&rtkreferer=localhost:9876&BirH=bidId1&661h=bidId2'
+      );
     });
   });
-
 
   describe('aardvarkResponse', () => {
     it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.aardvarkResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.aardvarkResponse).to.exist.and.to.be.a(
+        'function'
+      );
     });
   });
-
-
 
   describe('add empty bids if no bid returned', () => {
     let firstBid;
@@ -185,9 +176,7 @@ describe('aardvark adapter tests', function () {
       expect(firstBid).to.have.property('bidderCode', 'aardvark');
       expect(secondBid).to.have.property('bidderCode', 'aardvark');
     });
-
   });
-
 
   describe('add bids to the manager', () => {
     let firstBid;
@@ -248,9 +237,4 @@ describe('aardvark adapter tests', function () {
       expect(secondBid).to.have.property('height', 600);
     });
   });
-
-
-
-
 });
-

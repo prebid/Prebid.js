@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {cloneJson} from 'src/utils';
+import { expect } from 'chai';
+import { cloneJson } from 'src/utils';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
 import LifestreetAdapter from 'src/adapters/lifestreet';
@@ -8,27 +8,29 @@ const BIDDER_REQUEST = {
   auctionStart: new Date().getTime(),
   bidderCode: 'lifestreet',
   bidderRequestId: '42af176a304779',
-  bids: [{
-    bidId: '5b19582c30a2d9',
-    bidder: 'lifestreet',
-    bidderRequestId: '42af176a304779',
-    params: {
-      ad_size: '160x600',
-      adkey: '78c',
-      jstag_url: '//ads.lfstmedia.com/getad?site=285071',
-      slot: 'slot166704',
-      timeout: 1500
-    },
-    placementCode: 'bar',
-    requestId: '6657bfa9-46b9-4ed8-9ce5-956f96efb13d',
-    sizes: [[160, 600]]
-  }],
+  bids: [
+    {
+      bidId: '5b19582c30a2d9',
+      bidder: 'lifestreet',
+      bidderRequestId: '42af176a304779',
+      params: {
+        ad_size: '160x600',
+        adkey: '78c',
+        jstag_url: '//ads.lfstmedia.com/getad?site=285071',
+        slot: 'slot166704',
+        timeout: 1500
+      },
+      placementCode: 'bar',
+      requestId: '6657bfa9-46b9-4ed8-9ce5-956f96efb13d',
+      sizes: [[160, 600]]
+    }
+  ],
   requestId: '6657bfa9-46b9-4ed8-9ce5-956f96efb13d',
   start: new Date().getTime() + 4,
   timeout: 3000
 };
 
-describe ('LifestreetAdapter', () => {
+describe('LifestreetAdapter', () => {
   let adapter;
   beforeEach(() => adapter = new LifestreetAdapter());
 
@@ -50,7 +52,7 @@ describe ('LifestreetAdapter', () => {
           callback();
         });
         slotParams = {};
-        window.LSM_Slot = (params) => {
+        window.LSM_Slot = params => {
           slotParams = params;
         };
       });
@@ -100,7 +102,7 @@ describe ('LifestreetAdapter', () => {
         expect(tagRequests).to.be.empty;
       });
 
-      it ('adkey is not provided', () => {
+      it('adkey is not provided', () => {
         request.bids[0].params.adkey = '';
         adapter.callBids(request);
         expect(tagRequests).to.be.empty;
@@ -116,7 +118,9 @@ describe ('LifestreetAdapter', () => {
         window.LSM_Slot = undefined;
         adapter.callBids(request);
         expect(tagRequests.length).to.equal(1);
-        expect(tagRequests[0]).to.contain('ads.lfstmedia.com/getad?site=285071');
+        expect(tagRequests[0]).to.contain(
+          'ads.lfstmedia.com/getad?site=285071'
+        );
       });
 
       it('LSM_Slot function should contain expected parameters', () => {
@@ -152,7 +156,7 @@ describe ('LifestreetAdapter', () => {
         price = 1.0;
         width = 160;
         height = 600;
-        window.LSM_Slot = (params) => {
+        window.LSM_Slot = params => {
           params._onload(slot, '', price, width, height);
         };
       });
@@ -166,34 +170,51 @@ describe ('LifestreetAdapter', () => {
         window.LSM_Slot = undefined;
         adapter.callBids(BIDDER_REQUEST);
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
+        ).to.equal(2);
       });
 
       it('nobid for error response', () => {
-        slot.state = () => { return 'error'; };
+        slot.state = () => {
+          return 'error';
+        };
         adapter.callBids(BIDDER_REQUEST);
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode()
+        ).to.equal(2);
       });
 
       it('show existing slot', () => {
         let isShown = false;
-        slot.state = () => { return 'loaded'; };
-        slot.getSlotObjectName = () => { return ''; };
-        slot.show = () => { isShown = true; };
+        slot.state = () => {
+          return 'loaded';
+        };
+        slot.getSlotObjectName = () => {
+          return '';
+        };
+        slot.show = () => {
+          isShown = true;
+        };
         adapter.callBids(BIDDER_REQUEST);
         expect(bidmanager.addBidResponse.calledOnce).to.be.false;
         expect(isShown).to.be.true;
       });
 
       it('should bid', () => {
-        slot.state = () => { return 'loaded'; };
-        slot.getSlotObjectName = () => { return 'Test Slot'; };
+        slot.state = () => {
+          return 'loaded';
+        };
+        slot.getSlotObjectName = () => {
+          return 'Test Slot';
+        };
         adapter.callBids(BIDDER_REQUEST);
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.getStatusCode()).to.equal(1);
-        expect(bidResponse.ad).to.equal(`<div id="LSM_AD"></div>
+        expect(bidResponse.ad).to.equal(
+          `<div id="LSM_AD"></div>
              <script type="text/javascript" src='//ads.lfstmedia.com/getad?site=285071'></script>
              <script>
               function receivedLSMMessage(ev) {
@@ -221,7 +242,8 @@ describe ('LifestreetAdapter', () => {
                 message: 'LSMPrebid Request',
                 slotName: 'Test Slot'
               }), '*');
-            </script>`);
+            </script>`
+        );
         expect(bidResponse.cpm).to.equal(1.0);
         expect(bidResponse.width).to.equal(160);
         expect(bidResponse.height).to.equal(600);

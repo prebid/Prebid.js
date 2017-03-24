@@ -8,7 +8,6 @@ var adloader = require('../adloader');
  * Adapter for requesting bids from Brightcom
  */
 var BrightcomAdapter = function BrightcomAdapter() {
-
   // Set Brightcom Bidder URL
   var brightcomUrl = 'hb.iselephant.com/auc/ortb';
 
@@ -19,11 +18,9 @@ var BrightcomAdapter = function BrightcomAdapter() {
   var brightcomCallbackFunction = 'window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$||window.parent.$$PREBID_GLOBAL$$||window.top.$$PREBID_GLOBAL$$;window.$$PREBID_GLOBAL$$.brightcomResponse';
 
   // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
-  var reqAdUnitsCode = [],
-      resAdUnitsCode = [];
+  var reqAdUnitsCode = [], resAdUnitsCode = [];
 
   function _callBids(params) {
-
     var bidRequests = params.bids || [];
 
     // Get page data
@@ -38,12 +35,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Go through the requests and build array of impressions
     utils._each(bidRequests, function(bid) {
-
       // Get impression details
       var tagId = utils.getBidIdParameter('tagId', bid.params);
       var ref = utils.getBidIdParameter('ref', bid.params);
-      var adWidth=0;
-      var adHeight=0;
+      var adWidth = 0;
+      var adHeight = 0;
 
       // If no publisher id is set, use the current
       if (pubId === '') {
@@ -53,7 +49,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
       // Brightcom supports only 1 size per impression
       // Check if the array contains 1 size or array of sizes
-      if (bid.sizes.length === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+      if (
+        bid.sizes.length === 2 &&
+        typeof bid.sizes[0] === 'number' &&
+        typeof bid.sizes[1] === 'number'
+      ) {
         // The array contains 1 size (the items are the values)
         adWidth = bid.sizes[0];
         adHeight = bid.sizes[1];
@@ -87,14 +87,13 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
       // Add current ad unit's code to tracking
       reqAdUnitsCode.push(bid.placementCode);
-
     });
 
     // Build the bid request
     var brightcomBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
-      site:{
+      site: {
         publisher: {
           id: pubId
         },
@@ -111,9 +110,12 @@ var BrightcomAdapter = function BrightcomAdapter() {
     }
 
     // Define the bid request call URL
-    var bidRequestCallUrl = 'https://' + brightcomUrl +
-        '?callback=' + encodeURIComponent(brightcomCallbackFunction) +
-        '&request=' + encodeURIComponent(JSON.stringify(brightcomBidReq));
+    var bidRequestCallUrl = 'https://' +
+      brightcomUrl +
+      '?callback=' +
+      encodeURIComponent(brightcomCallbackFunction) +
+      '&request=' +
+      encodeURIComponent(JSON.stringify(brightcomBidReq));
 
     // Add the call to get the bid
     adloader.loadScript(bidRequestCallUrl);
@@ -121,25 +123,26 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.brightcomResponse = function(brightcomResponseObj) {
-
     var bid = {};
 
     // Make sure response is valid
     if (
-        (brightcomResponseObj) && (brightcomResponseObj.id) &&
-        (brightcomResponseObj.seatbid) && (brightcomResponseObj.seatbid.length !== 0) &&
-        (brightcomResponseObj.seatbid[0].bid) && (brightcomResponseObj.seatbid[0].bid.length !== 0)
+      brightcomResponseObj &&
+      brightcomResponseObj.id &&
+      brightcomResponseObj.seatbid &&
+      brightcomResponseObj.seatbid.length !== 0 &&
+      brightcomResponseObj.seatbid[0].bid &&
+      brightcomResponseObj.seatbid[0].bid.length !== 0
     ) {
-
       // Go through the received bids
-      brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
-
+      brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
         // Get the bid request data
-        var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+        var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(
+          bidSet => bidSet.bidderCode === 'brightcom'
+        ).bids[0]; // this assumes a single request only
 
         // Make sure the bid exists
         if (bidRequest) {
-
           var placementCode = bidRequest.placementCode;
           bidRequest.status = CONSTANTS.STATUS.GOOD;
 
@@ -149,7 +152,9 @@ var BrightcomAdapter = function BrightcomAdapter() {
           // Get the creative
           var responseCreative = curBid.adm;
           // Build the NURL element
-          var responseNurl = '<img src="' + curBid.nurl + '" width="1" height="1" style="display:none" />';
+          var responseNurl = '<img src="' +
+            curBid.nurl +
+            '" width="1" height="1" style="display:none" />';
           // Build the ad to display:
           var responseAd = decodeURIComponent(responseCreative + responseNurl);
 
@@ -166,7 +171,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
           // Since Brightcom currently supports only 1 size, if multiple sizes are provided - take the first
           var adWidth, adHeight;
-          if ((bidRequest.sizes.length === 2) && (typeof bidRequest.sizes[0] === 'number') && (typeof bidRequest.sizes[1] === 'number')) {
+          if (
+            bidRequest.sizes.length === 2 &&
+            typeof bidRequest.sizes[0] === 'number' &&
+            typeof bidRequest.sizes[1] === 'number'
+          ) {
             // Only one size is provided
             adWidth = bidRequest.sizes[0];
             adHeight = bidRequest.sizes[1];
@@ -185,10 +194,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
           // Add current ad unit's code to tracking
           resAdUnitsCode.push(placementCode);
-
         }
       });
-
     }
 
     // Define all unreceived ad unit codes as invalid (if Brightcom don't want to bid on an impression, it won't include it in the response)
@@ -202,7 +209,6 @@ var BrightcomAdapter = function BrightcomAdapter() {
         bidmanager.addBidResponse(adUnitCode, bid);
       }
     }
-
   };
 
   return {

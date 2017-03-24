@@ -1,4 +1,4 @@
-import {parse as parseURL, format as formatURL} from './url';
+import { parse as parseURL, format as formatURL } from './url';
 
 var utils = require('./utils');
 
@@ -22,7 +22,7 @@ export function ajax(url, callback, data, options = {}) {
 
     if (!window.XMLHttpRequest) {
       useXDomainRequest = true;
-    } else{
+    } else {
       x = new window.XMLHttpRequest();
       if (x.responseType === undefined) {
         useXDomainRequest = true;
@@ -31,22 +31,22 @@ export function ajax(url, callback, data, options = {}) {
 
     if (useXDomainRequest) {
       x = new window.XDomainRequest();
-      x.onload = function () {
+      x.onload = function() {
         callback(x.responseText, x);
       };
 
       // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-      x.onerror = function () {
+      x.onerror = function() {
         utils.logMessage('xhr onerror');
       };
-      x.ontimeout = function () {
+      x.ontimeout = function() {
         utils.logMessage('xhr timeout');
       };
       x.onprogress = function() {
         utils.logMessage('xhr onprogress');
       };
     } else {
-      x.onreadystatechange = function () {
+      x.onreadystatechange = function() {
         if (x.readyState === XHR_DONE && callback) {
           callback(x.responseText, x);
         }

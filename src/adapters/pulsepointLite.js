@@ -1,11 +1,10 @@
-import {createBid} from 'src/bidfactory';
-import {addBidResponse} from 'src/bidmanager';
-import {logError,getTopWindowLocation} from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
+import { createBid } from 'src/bidfactory';
+import { addBidResponse } from 'src/bidmanager';
+import { logError, getTopWindowLocation } from 'src/utils';
+import { ajax } from 'src/ajax';
+import { STATUS } from 'src/constants';
 
 function PulsePointLiteAdapter() {
-
   const bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
   const ajaxOptions = {
     method: 'GET',
@@ -17,11 +16,19 @@ function PulsePointLiteAdapter() {
     bidderRequest.bids.forEach(bidRequest => {
       try {
         var params = Object.assign({}, environment(), bidRequest.params);
-        var url = bidUrl + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
-        ajax(url, (bidResponse) => {
-          bidResponseAvailable(bidRequest, bidResponse);
-        }, null, ajaxOptions);
-      } catch(e) {
+        var url = bidUrl +
+          Object.keys(params)
+            .map(k => k + '=' + encodeURIComponent(params[k]))
+            .join('&');
+        ajax(
+          url,
+          bidResponse => {
+            bidResponseAvailable(bidRequest, bidResponse);
+          },
+          null,
+          ajaxOptions
+        );
+      } catch (e) {
         //register passback on any exceptions while attempting to fetch response.
         logError('pulsepoint.requestBid', 'ERROR', e);
         bidResponseAvailable(bidRequest);
@@ -30,18 +37,26 @@ function PulsePointLiteAdapter() {
   }
 
   function environment() {
-    return {
+    const environment = {
       cn: 1,
       ca: 'BID',
       tl: 1,
-      'if': 0,
       cwu: getTopWindowLocation().href,
       cwr: referrer(),
       dw: document.documentElement.clientWidth,
-      cxy: document.documentElement.clientWidth + ',' + document.documentElement.clientHeight,
+      cxy: document.documentElement.clientWidth +
+        ',' +
+        document.documentElement.clientHeight,
       tz: new Date().getTimezoneOffset(),
-      ln: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)
+      ln: navigator.language ||
+        navigator.browserLanguage ||
+        navigator.userLanguage ||
+        navigator.systemLanguage
     };
+
+    environment['if'] = 0;
+
+    return environment;
   }
 
   function referrer() {
@@ -55,7 +70,7 @@ function PulsePointLiteAdapter() {
   function bidResponseAvailable(bidRequest, rawResponse) {
     if (rawResponse) {
       var bidResponse = parse(rawResponse);
-      if(bidResponse) {
+      if (bidResponse) {
         var adSize = bidRequest.params.cf.toUpperCase().split('X');
         var bid = createBid(STATUS.GOOD, bidRequest);
         bid.bidderCode = bidRequest.bidder;
@@ -84,7 +99,6 @@ function PulsePointLiteAdapter() {
   return {
     callBids: _callBids
   };
-
 }
 
 module.exports = PulsePointLiteAdapter;

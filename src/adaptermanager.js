@@ -14,10 +14,10 @@ exports.bidderRegistry = _bidderRegistry;
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
-function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
-  return adUnits.map(adUnit => {
-    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => {
+function getBids({ bidderCode, requestId, bidderRequestId, adUnits }) {
+  return adUnits
+    .map(adUnit => {
+      return adUnit.bids.filter(bid => bid.bidder === bidderCode).map(bid => {
         let sizes = adUnit.sizes;
         if (adUnit.sizeMapping) {
           let sizeMapping = mapSizes(adUnit);
@@ -29,24 +29,25 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
-          transactionId : adUnit.transactionId,
+          transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
           requestId
         });
-      }
-      );
-  }).reduce(flatten, []).filter(val => val !== '');
+      });
+    })
+    .reduce(flatten, [])
+    .filter(val => val !== '');
 }
 
-exports.callBids = ({adUnits, cbTimeout}) => {
+exports.callBids = ({ adUnits, cbTimeout }) => {
   const requestId = utils.generateUUID();
   const auctionStart = Date.now();
 
   const auctionInit = {
     timestamp: auctionStart,
-    requestId,
+    requestId
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
@@ -63,7 +64,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
+        bids: getBids({ bidderCode, requestId, bidderRequestId, adUnits }),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout
@@ -75,47 +76,59 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         adapter.callBids(bidderRequest);
       }
     } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
+      utils.logError(
+        `Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`
+      );
     }
   });
 };
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+exports.registerBidAdapter = function(bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
-
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
       _bidderRegistry[bidderCode] = bidAdaptor;
-
     } else {
-      utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
+      utils.logError(
+        'Bidder adaptor error for bidder code: ' +
+          bidderCode +
+          'bidder must implement a callBids() function'
+      );
     }
-
   } else {
     utils.logError('bidAdaptor or bidderCode not specified');
   }
 };
 
-exports.aliasBidAdapter = function (bidderCode, alias) {
+exports.aliasBidAdapter = function(bidderCode, alias) {
   var existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === CONSTANTS.objectType_undefined) {
     var bidAdaptor = _bidderRegistry[bidderCode];
 
     if (typeof bidAdaptor === CONSTANTS.objectType_undefined) {
-      utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+      utils.logError(
+        'bidderCode "' + bidderCode + '" is not an existing bidder.',
+        'adaptermanager.aliasBidAdapter'
+      );
     } else {
       try {
         let newAdapter = null;
         if (bidAdaptor instanceof BaseAdapter) {
           //newAdapter = new bidAdaptor.constructor(alias);
-          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+          utils.logError(
+            bidderCode + ' bidder does not currently support aliasing.',
+            'adaptermanager.aliasBidAdapter'
+          );
         } else {
           newAdapter = bidAdaptor.createNew();
           newAdapter.setBidderCode(alias);
           this.registerBidAdapter(newAdapter, alias);
         }
       } catch (e) {
-        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        utils.logError(
+          bidderCode + ' bidder does not currently support aliasing.',
+          'adaptermanager.aliasBidAdapter'
+        );
       }
     }
   } else {
@@ -123,22 +136,25 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({adapter, code}) {
+exports.registerAnalyticsAdapter = function({ adapter, code }) {
   if (adapter && code) {
-
     if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
       adapter.code = code;
       _analyticsRegistry[code] = adapter;
     } else {
-      utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
-        analytics adapter must implement an enableAnalytics() function`);
+      utils.logError(
+        `Prebid Error: Analytics adaptor error for analytics "${code}"
+        analytics adapter must implement an enableAnalytics() function`
+      );
     }
   } else {
-    utils.logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
+    utils.logError(
+      'Prebid Error: analyticsAdapter or analyticsCode not specified'
+    );
   }
 };
 
-exports.enableAnalytics = function (config) {
+exports.enableAnalytics = function(config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
@@ -148,13 +164,15 @@ exports.enableAnalytics = function (config) {
     if (adapter) {
       adapter.enableAnalytics(adapterConfig);
     } else {
-      utils.logError(`Prebid Error: no analytics adapter found in registry for
-        ${adapterConfig.provider}.`);
+      utils.logError(
+        `Prebid Error: no analytics adapter found in registry for
+        ${adapterConfig.provider}.`
+      );
     }
   });
 };
 
-exports.setBidderSequence = function (order) {
+exports.setBidderSequence = function(order) {
   _bidderSequence = order;
 };
 

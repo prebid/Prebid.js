@@ -1,15 +1,14 @@
-describe('sovrn adapter tests', function () {
+describe('sovrn adapter tests', function() {
   const expect = require('chai').expect;
   const adapter = require('src/adapters/sovrn');
   const bidmanager = require('src/bidmanager');
 
-  describe('sovrnResponse', function () {
-
-    it('should exist and be a function', function () {
+  describe('sovrnResponse', function() {
+    it('should exist and be a function', function() {
       expect(pbjs.sovrnResponse).to.exist.and.to.be.a('function');
     });
 
-    it('should add empty bid responses if no bids returned', function () {
+    it('should add empty bid responses if no bids returned', function() {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       var bidderRequest = {
@@ -41,19 +40,19 @@ describe('sovrn adapter tests', function () {
             },
             sizes: [[320, 50]],
             placementCode: 'div-gpt-ad-12345-2'
-          },
+          }
         ]
       };
 
       // no bids returned in the response.
       var response = {
-        "id": "54321",
-        "seatbid": []
+        id: '54321',
+        seatbid: []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
-      adapter()
+      adapter();
 
       pbjs.sovrnResponse(response);
 
@@ -81,7 +80,7 @@ describe('sovrn adapter tests', function () {
       stubAddBidResponse.restore();
     });
 
-    it('should add a bid response for bids returned and empty bid responses for the rest', function () {
+    it('should add a bid response for bids returned and empty bid responses for the rest', function() {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       var bidderRequest = {
@@ -113,30 +112,34 @@ describe('sovrn adapter tests', function () {
             },
             sizes: [[320, 50]],
             placementCode: 'div-gpt-ad-12345-2'
-          },
+          }
         ]
       };
 
       // Returning a single bid in the response.
       var response = {
-        "id": "54321111",
-        "seatbid": [ {
-          "bid" : [ {
-            "id" : "1111111",
-            "impid" : "bidId2",
-            "price" : 0.09,
-            "nurl" : "http://url",
-            "adm" : "ad-code",
-            "h" : 250,
-            "w" : 300,
-            "ext" : { }
-          } ]
-        } ]
+        id: '54321111',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '1111111',
+                impid: 'bidId2',
+                price: 0.09,
+                nurl: 'http://url',
+                adm: 'ad-code',
+                h: 250,
+                w: 300,
+                ext: {}
+              }
+            ]
+          }
+        ]
       };
 
       pbjs._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
-      adapter()
+      adapter();
 
       pbjs.sovrnResponse(response);
 
@@ -171,4 +174,3 @@ describe('sovrn adapter tests', function () {
     });
   });
 });
-

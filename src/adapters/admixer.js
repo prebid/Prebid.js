@@ -16,14 +16,13 @@ var AdmixerAdapter = function AdmixerAdapter() {
     for (var i = 0, ln = bids.length; i < ln; i++) {
       var bid = bids[i];
       var params = {
-        'sizes': utils.parseSizesInput(bid.sizes).join('-'),
-        'zone': bid.params && bid.params.zone,
-        'callback_uid': bid.placementCode
+        sizes: utils.parseSizesInput(bid.sizes).join('-'),
+        zone: bid.params && bid.params.zone,
+        callback_uid: bid.placementCode
       };
       if (params.zone) {
         _requestBid(invUrl, params);
-      }
-      else {
+      } else {
         var bidObject = bidfactory.createBid(2);
         bidObject.bidderCode = 'admixer';
         bidmanager.addBidResponse(params.callback_uid, bidObject);
@@ -32,14 +31,17 @@ var AdmixerAdapter = function AdmixerAdapter() {
   }
 
   function _requestBid(url, params) {
-    Ajax.ajax(url, _responseCallback, params, {method: 'GET', withCredentials: true});
+    Ajax.ajax(url, _responseCallback, params, {
+      method: 'GET',
+      withCredentials: true
+    });
   }
 
   function _responseCallback(adUnit) {
     try {
       adUnit = JSON.parse(adUnit);
     } catch (_error) {
-      adUnit = {result: {cpm: 0}};
+      adUnit = { result: { cpm: 0 } };
       utils.logError(_error);
     }
     var adUnitCode = adUnit.callback_uid;

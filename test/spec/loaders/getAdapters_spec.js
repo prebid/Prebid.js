@@ -7,13 +7,12 @@ const expect = require('chai').expect;
 require('../../../loaders/getAdapters');
 
 describe('loaders/getAdapters', () => {
-
   let defaultAdapters;
   let customAdapters;
 
   beforeEach(() => {
-    defaultAdapters = [ 'adapter 1', 'adapter 2', 'adapter 3' ];
-    customAdapters = [ 'adapter 1' ];
+    defaultAdapters = ['adapter 1', 'adapter 2', 'adapter 3'];
+    customAdapters = ['adapter 1'];
   });
 
   afterEach(() => {
@@ -21,9 +20,7 @@ describe('loaders/getAdapters', () => {
   });
 
   describe('when custom adapter list is defined', () => {
-
     describe('and exists', () => {
-
       it('should return custom adapter list', () => {
         mockfs({
           'adapters.json': JSON.stringify(defaultAdapters),
@@ -34,15 +31,13 @@ describe('loaders/getAdapters', () => {
         });
         expect(getAdapters()).to.deep.equal(customAdapters);
       });
-
     });
 
     describe('and does not exist', () => {
-
       it('should return default adapter list and show warning', () => {
         let log;
         const consoleLog = console.log.bind(console);
-        console.log = (message) => {
+        console.log = message => {
           log = message;
         };
         mockfs({
@@ -55,13 +50,10 @@ describe('loaders/getAdapters', () => {
         expect(log).to.match(/non-existent-adapters.json/);
         console.log = consoleLog;
       });
-
     });
-
   });
 
   describe('when custom adapter list is not defined', () => {
-
     it('should return default adapter list', () => {
       mockfs({
         'adapters.json': JSON.stringify(defaultAdapters)
@@ -71,11 +63,9 @@ describe('loaders/getAdapters', () => {
       });
       expect(getAdapters()).to.deep.equal(defaultAdapters);
     });
-
   });
 
   describe('when default adapter list cannot be found', () => {
-
     it('should return empty array', () => {
       mockfs({
         'adapters.json': mockfs.file({ mode: 0x000 })
@@ -85,7 +75,5 @@ describe('loaders/getAdapters', () => {
       });
       expect(getAdapters()).to.deep.equal([]);
     });
-
   });
-
 });

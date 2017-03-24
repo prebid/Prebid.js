@@ -5,7 +5,7 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var RoxotAdapter = function RoxotAdapter() {
-  var roxotUrl = "r.rxthdr.com";
+  var roxotUrl = 'r.rxthdr.com';
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 
@@ -28,9 +28,13 @@ var RoxotAdapter = function RoxotAdapter() {
       }
     };
 
-    var scriptUrl = '//' + roxotUrl + '?callback=$$PREBID_GLOBAL$$.roxotResponseHandler' +
-      '&src=' + CONSTANTS.REPO_AND_VERSION +
-      '&br=' + encodeURIComponent(JSON.stringify(roxotBidReqs));
+    var scriptUrl = '//' +
+      roxotUrl +
+      '?callback=$$PREBID_GLOBAL$$.roxotResponseHandler' +
+      '&src=' +
+      CONSTANTS.REPO_AND_VERSION +
+      '&br=' +
+      encodeURIComponent(JSON.stringify(roxotBidReqs));
 
     adloader.loadScript(scriptUrl);
   }
@@ -50,15 +54,18 @@ var RoxotAdapter = function RoxotAdapter() {
     return allBidResponse;
 
     function isResponseInvalid() {
-      return !roxotResponseObject || !roxotResponseObject.bids || !Array.isArray(roxotResponseObject.bids) || roxotResponseObject.bids.length <= 0;
+      return !roxotResponseObject ||
+        !roxotResponseObject.bids ||
+        !Array.isArray(roxotResponseObject.bids) ||
+        roxotResponseObject.bids.length <= 0;
     }
 
     function pushRoxotBid(roxotBid) {
       var placementCode = '';
 
-      var bidReq = $$PREBID_GLOBAL$$
-          ._bidsRequested.find(bidSet => bidSet.bidderCode === 'roxot')
-          .bids.find(bid => bid.bidId === roxotBid.bidId);
+      var bidReq = $$PREBID_GLOBAL$$._bidsRequested
+        .find(bidSet => bidSet.bidderCode === 'roxot')
+        .bids.find(bid => bid.bidId === roxotBid.bidId);
 
       if (!bidReq) {
         return pushErrorBid(placementCode);
@@ -89,8 +96,8 @@ var RoxotAdapter = function RoxotAdapter() {
     }
 
     function fillPlacementEmptyBid(places) {
-      $$PREBID_GLOBAL$$
-        ._bidsRequested.find(bidSet => bidSet.bidderCode === 'roxot')
+      $$PREBID_GLOBAL$$._bidsRequested
+        .find(bidSet => bidSet.bidderCode === 'roxot')
         .bids.forEach(fillIfNotFilled);
 
       function fillIfNotFilled(bid) {

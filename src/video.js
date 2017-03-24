@@ -5,4 +5,5 @@ import { videoAdapters } from './adaptermanager';
  */
 export const videoAdUnit = adUnit => adUnit.mediaType === 'video';
 const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
-export const hasNonVideoBidder = adUnit => adUnit.bids.filter(nonVideoBidder).length;
+export const hasNonVideoBidder = adUnit =>
+  adUnit.bids.filter(nonVideoBidder).length;

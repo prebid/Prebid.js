@@ -6,10 +6,23 @@ import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
-const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skippable', 'playback_method', 'frameworks'];
+const VIDEO_TARGETING = [
+  'id',
+  'mimes',
+  'minduration',
+  'maxduration',
+  'startdelay',
+  'skippable',
+  'playback_method',
+  'frameworks'
+];
 const USER_PARAMS = [
-  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
+  'age',
+  'external_uid',
+  'segments',
+  'gender',
+  'dnt',
+  'language'
 ];
 
 /**
@@ -18,7 +31,6 @@ const USER_PARAMS = [
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
   let usersync = false;
@@ -28,81 +40,81 @@ function AppnexusAstAdapter() {
     const bids = bidRequest.bids || [];
     var member = 0;
     let userObj;
-    const tags = bids
-      .filter(bid => valid(bid))
-      .map(bid => {
-        // map request id to bid object to retrieve adUnit code in callback
-        bidRequests[bid.bidId] = bid;
+    const tags = bids.filter(bid => valid(bid)).map(bid => {
+      // map request id to bid object to retrieve adUnit code in callback
+      bidRequests[bid.bidId] = bid;
 
-        let tag = {};
-        tag.sizes = getSizes(bid.sizes);
-        tag.primary_size = tag.sizes[0];
-        tag.uuid = bid.bidId;
-        if(bid.params.placementId) {
-          tag.id = parseInt(bid.params.placementId, 10);
-        } else {
-          tag.code = bid.params.invCode;
-        }
-        tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-        tag.prebid = true;
-        tag.disable_psa = true;
-        member = parseInt(bid.params.member, 10);
-        if (bid.params.reserve) {
-          tag.reserve = bid.params.reserve;
-        }
-        if (bid.params.position) {
-          tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
-        }
-        if (bid.params.trafficSourceCode) {
-          tag.traffic_source_code = bid.params.trafficSourceCode;
-        }
-        if (bid.params.privateSizes) {
-          tag.private_sizes = getSizes(bid.params.privateSizes);
-        }
-        if (bid.params.supplyType) {
-          tag.supply_type = bid.params.supplyType;
-        }
-        if (bid.params.pubClick) {
-          tag.pubclick = bid.params.pubClick;
-        }
-        if (bid.params.extInvCode) {
-          tag.ext_inv_code = bid.params.extInvCode;
-        }
-        if (bid.params.externalImpId) {
-          tag.external_imp_id = bid.params.externalImpId;
-        }
-        if (!utils.isEmpty(bid.params.keywords)) {
-          tag.keywords = getKeywords(bid.params.keywords);
-        }
+      let tag = {};
+      tag.sizes = getSizes(bid.sizes);
+      tag.primary_size = tag.sizes[0];
+      tag.uuid = bid.bidId;
+      if (bid.params.placementId) {
+        tag.id = parseInt(bid.params.placementId, 10);
+      } else {
+        tag.code = bid.params.invCode;
+      }
+      tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
+      tag.prebid = true;
+      tag.disable_psa = true;
+      member = parseInt(bid.params.member, 10);
+      if (bid.params.reserve) {
+        tag.reserve = bid.params.reserve;
+      }
+      if (bid.params.position) {
+        tag.position = { above: 1, below: 2 }[bid.params.position] || 0;
+      }
+      if (bid.params.trafficSourceCode) {
+        tag.traffic_source_code = bid.params.trafficSourceCode;
+      }
+      if (bid.params.privateSizes) {
+        tag.private_sizes = getSizes(bid.params.privateSizes);
+      }
+      if (bid.params.supplyType) {
+        tag.supply_type = bid.params.supplyType;
+      }
+      if (bid.params.pubClick) {
+        tag.pubclick = bid.params.pubClick;
+      }
+      if (bid.params.extInvCode) {
+        tag.ext_inv_code = bid.params.extInvCode;
+      }
+      if (bid.params.externalImpId) {
+        tag.external_imp_id = bid.params.externalImpId;
+      }
+      if (!utils.isEmpty(bid.params.keywords)) {
+        tag.keywords = getKeywords(bid.params.keywords);
+      }
 
-        if (bid.mediaType === 'video') {tag.require_asset_url = true;}
-        if (bid.params.video) {
-          tag.video = {};
-          // place any valid video params on the tag
-          Object.keys(bid.params.video)
-            .filter(param => VIDEO_TARGETING.includes(param))
-            .forEach(param => tag.video[param] = bid.params.video[param]);
-        }
+      if (bid.mediaType === 'video') {
+        tag.require_asset_url = true;
+      }
+      if (bid.params.video) {
+        tag.video = {};
+        // place any valid video params on the tag
+        Object.keys(bid.params.video)
+          .filter(param => VIDEO_TARGETING.includes(param))
+          .forEach(param => tag.video[param] = bid.params.video[param]);
+      }
 
-        if (bid.params.user) {
-          userObj = {};
-          Object.keys(bid.params.user)
-            .filter(param => USER_PARAMS.includes(param))
-            .forEach(param => userObj[param] = bid.params.user[param]);
-        }
+      if (bid.params.user) {
+        userObj = {};
+        Object.keys(bid.params.user)
+          .filter(param => USER_PARAMS.includes(param))
+          .forEach(param => userObj[param] = bid.params.user[param]);
+      }
 
-        return tag;
-      });
+      return tag;
+    });
 
     if (!utils.isEmpty(tags)) {
-      const payloadJson = {tags: [...tags], user: userObj};
+      const payloadJson = { tags: [...tags], user: userObj };
       if (member > 0) {
         payloadJson.member_id = member;
       }
       const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true
       });
     }
   };
@@ -119,7 +131,9 @@ function AppnexusAstAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) {
+        errorMessage += `: ${parsed.error}`;
+      }
       utils.logError(errorMessage);
 
       // signal this response is complete
@@ -147,7 +161,7 @@ function AppnexusAstAdapter() {
         utils.logError(`${type} ad type not supported`);
       }
 
-      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       if (type === 'video') bid.mediaType = 'video';
       const placement = bidRequests[bid.adId].placementCode;
@@ -168,7 +182,7 @@ function AppnexusAstAdapter() {
 
   /* Check that a bid has required paramters */
   function valid(bid) {
-    if (bid.params.placementId || bid.params.member && bid.params.invCode) {
+    if (bid.params.placementId || (bid.params.member && bid.params.invCode)) {
       return bid;
     } else {
       utils.logError('bid requires placementId or (member and invCode) params');
@@ -182,17 +196,22 @@ function AppnexusAstAdapter() {
     utils._each(keywords, (v, k) => {
       if (utils.isArray(v)) {
         let values = [];
-        utils._each(v, (val) => {
+        utils._each(v, val => {
           val = utils.getValueString('keywords.' + k, val);
-          if (val) {values.push(val);}
+          if (val) {
+            values.push(val);
+          }
         });
         v = values;
       } else {
         v = utils.getValueString('keywords.' + k, v);
-        if (utils.isStr(v)) {v = [v];}
-        else {return;} // unsuported types - don't send a key
+        if (utils.isStr(v)) {
+          v = [v];
+        } else {
+          return;
+        } // unsuported types - don't send a key
       }
-      arrs.push({key: k, value: v});
+      arrs.push({ key: k, value: v });
     });
 
     return arrs;
@@ -203,8 +222,11 @@ function AppnexusAstAdapter() {
     let sizes = [];
     let sizeObj = {};
 
-    if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
-       !utils.isArray(requestSizes[0])) {
+    if (
+      utils.isArray(requestSizes) &&
+      requestSizes.length === 2 &&
+      !utils.isArray(requestSizes[0])
+    ) {
       sizeObj.width = parseInt(requestSizes[0], 10);
       sizeObj.height = parseInt(requestSizes[1], 10);
       sizes.push(sizeObj);
@@ -262,9 +284,8 @@ function AppnexusAstAdapter() {
   return {
     createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
+    setBidderCode: baseAdapter.setBidderCode
   };
-
 }
 
 AppnexusAstAdapter.createNew = function() {

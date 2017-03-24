@@ -3,7 +3,6 @@ import Adapter from '../../../src/adapters/sharethrough';
 import bidManager from '../../../src/bidmanager';
 
 describe('sharethrough adapter', () => {
-
   let adapter;
   let sandbox;
   let bidsRequestedOriginal;
@@ -14,7 +13,7 @@ describe('sharethrough adapter', () => {
       {
         bidder: 'sharethrough',
         bidId: 'bidId1',
-        sizes: [[600,300]],
+        sizes: [[600, 300]],
         placementCode: 'foo',
         params: {
           pkey: 'aaaa1111'
@@ -23,7 +22,7 @@ describe('sharethrough adapter', () => {
       {
         bidder: 'sharethrough',
         bidId: 'bidId2',
-        sizes: [[700,400]],
+        sizes: [[700, 400]],
         placementCode: 'bar',
         params: {
           pkey: 'bbbb2222'
@@ -46,16 +45,14 @@ describe('sharethrough adapter', () => {
   });
 
   describe('callBids', () => {
-
     let firstBidUrl;
     let secondBidUrl;
 
     beforeEach(() => {
-       sandbox.spy(adapter.str, 'ajax');
+      sandbox.spy(adapter.str, 'ajax');
     });
 
     it('should call ajax to make a request for each bid', () => {
-
       adapter.callBids(bidderRequest);
 
       firstBidUrl = adapter.str.ajax.firstCall.args[0];
@@ -63,23 +60,25 @@ describe('sharethrough adapter', () => {
 
       sinon.assert.calledTwice(adapter.str.ajax);
 
-      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
-      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
+      expect(firstBidUrl).to.contain(
+        adapter.str.STR_BTLR_HOST +
+          '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&'
+      );
+      expect(secondBidUrl).to.contain(
+        adapter.str.STR_BTLR_HOST +
+          '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&'
+      );
     });
-
   });
 
   describe('strcallback', () => {
-
     it('should exist and be a function', () => {
       let shit = sandbox.stub(pbjs, 'strcallback');
       expect(pbjs.strcallback).to.exist.and.to.be.a('function');
     });
-
   });
 
   describe('bid requests', () => {
-
     let firstBid;
     let secondBid;
 
@@ -92,30 +91,30 @@ describe('sharethrough adapter', () => {
       // respond
 
       let bidderReponse1 = {
-                              "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
-                              "bidId": "bidId1",
-                              "creatives": [
-                                {
-                                  "cpm": 12.34,
-                                  "auctionWinId": "b2882d5e-bf8b-44da-a91c-0c11287b8051",
-                                  "version": 1
-                                }
-                              ],
-                              "stxUserId": ""
-                            };
+        adserverRequestId: '40b6afd5-6134-4fbb-850a-bb8972a46994',
+        bidId: 'bidId1',
+        creatives: [
+          {
+            cpm: 12.34,
+            auctionWinId: 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
+            version: 1
+          }
+        ],
+        stxUserId: ''
+      };
 
       let bidderReponse2 = {
-                              "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
-                              "bidId": "bidId2",
-                              "creatives": [
-                                {
-                                  "cpm": 12.35,
-                                  "auctionWinId": "b2882d5e-bf8b-44da-a91c-0c11287b8051",
-                                  "version": 1
-                                }
-                              ],
-                              "stxUserId": ""
-                            };
+        adserverRequestId: '40b6afd5-6134-4fbb-850a-bb8972a46994',
+        bidId: 'bidId2',
+        creatives: [
+          {
+            cpm: 12.35,
+            auctionWinId: 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
+            version: 1
+          }
+        ],
+        stxUserId: ''
+      };
 
       pbjs.strcallback(JSON.stringify(bidderReponse1));
       pbjs.strcallback(JSON.stringify(bidderReponse2));
@@ -172,7 +171,5 @@ describe('sharethrough adapter', () => {
       expect(firstBid).to.have.property('pkey', 'aaaa1111');
       expect(secondBid).to.have.property('pkey', 'bbbb2222');
     });
-
   });
-
 });

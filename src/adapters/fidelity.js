@@ -10,15 +10,17 @@ var FidelityAdapter = function FidelityAdapter() {
 
   function _callBids(params) {
     var bids = params.bids || [];
-    bids.forEach(function (currentBid) {
+    bids.forEach(function(currentBid) {
       var server = currentBid.params.server || FIDELITY_SERVER_NAME;
-      var m3_u = window.location.protocol + '//'+server+'/delivery/hb.php?';
+      var m3_u = window.location.protocol + '//' + server + '/delivery/hb.php?';
       m3_u += 'callback=window.$$PREBID_GLOBAL$$.fidelityResponse';
-      m3_u += '&requestid='+utils.getUniqueIdentifierStr();
-      m3_u += '&impid='+currentBid.bidId;
-      m3_u += '&zoneid='+currentBid.params.zoneid;
-      m3_u += '&cb='+Math.floor(Math.random()*99999999999);
-      m3_u += document.charset ? '&charset='+document.charset : (document.characterSet ? '&charset='+document.characterSet : '');
+      m3_u += '&requestid=' + utils.getUniqueIdentifierStr();
+      m3_u += '&impid=' + currentBid.bidId;
+      m3_u += '&zoneid=' + currentBid.params.zoneid;
+      m3_u += '&cb=' + Math.floor(Math.random() * 99999999999);
+      m3_u += document.charset
+        ? '&charset=' + document.charset
+        : document.characterSet ? '&charset=' + document.characterSet : '';
 
       var loc;
       try {
@@ -31,35 +33,41 @@ var FidelityAdapter = function FidelityAdapter() {
 
       var subid = currentBid.params.subid || 'hb';
       m3_u += '&subid=' + subid;
-      if (document.referrer) m3_u += '&referer=' + encodeURIComponent(document.referrer);
-      if (currentBid.params.click) m3_u += '&ct0=' + encodeURIComponent(currentBid.params.click);
+      if (document.referrer)
+        m3_u += '&referer=' + encodeURIComponent(document.referrer);
+      if (currentBid.params.click)
+        m3_u += '&ct0=' + encodeURIComponent(currentBid.params.click);
       m3_u += '&flashver=' + encodeURIComponent(getFlashVersion());
 
       adloader.loadScript(m3_u);
     });
   }
 
-  function getFlashVersion(){
+  function getFlashVersion() {
     var plugins, plugin, result;
 
     if (navigator.plugins && navigator.plugins.length > 0) {
       plugins = navigator.plugins;
       for (var i = 0; i < plugins.length && !result; i++) {
         plugin = plugins[i];
-        if (plugin.name.indexOf("Shockwave Flash") > -1) {
-          result = plugin.description.split("Shockwave Flash ")[1];
+        if (plugin.name.indexOf('Shockwave Flash') > -1) {
+          result = plugin.description.split('Shockwave Flash ')[1];
         }
       }
     }
-    return result ? result : "";
+    return result ? result : '';
   }
 
   function addBlankBidResponses(placementsWithBidsBack) {
-    var allFidelityBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === FIDELITY_BIDDER_NAME);
+    var allFidelityBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(
+      bidSet => bidSet.bidderCode === FIDELITY_BIDDER_NAME
+    );
 
-    if (allFidelityBidRequests && allFidelityBidRequests.bids){
-      utils._each(allFidelityBidRequests.bids, function (fidelityBid) {
-        if (!utils.contains(placementsWithBidsBack, fidelityBid.placementCode)) {
+    if (allFidelityBidRequests && allFidelityBidRequests.bids) {
+      utils._each(allFidelityBidRequests.bids, function(fidelityBid) {
+        if (
+          !utils.contains(placementsWithBidsBack, fidelityBid.placementCode)
+        ) {
           // Add a no-bid response for this placement.
           var bid = bidfactory.createBid(STATUS.NO_BID, fidelityBid);
           bid.bidderCode = FIDELITY_BIDDER_NAME;
@@ -68,11 +76,16 @@ var FidelityAdapter = function FidelityAdapter() {
       });
     }
   }
-  
-  $$PREBID_GLOBAL$$.fidelityResponse = function(responseObj) {
 
-    if (!responseObj || !responseObj.seatbid || responseObj.seatbid.length === 0 || !responseObj.seatbid[0].bid || responseObj.seatbid[0].bid.length === 0) {
-      addBlankBidResponses([]); 
+  $$PREBID_GLOBAL$$.fidelityResponse = function(responseObj) {
+    if (
+      !responseObj ||
+      !responseObj.seatbid ||
+      responseObj.seatbid.length === 0 ||
+      !responseObj.seatbid[0].bid ||
+      responseObj.seatbid[0].bid.length === 0
+    ) {
+      addBlankBidResponses([]);
       return;
     }
 

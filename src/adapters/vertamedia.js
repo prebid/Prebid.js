@@ -8,10 +8,9 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = Adapter.createNew('vertamedia'),
-      bidRequest;
+  var baseAdapter = Adapter.createNew('vertamedia'), bidRequest;
 
-  baseAdapter.callBids = function (bidRequests) {
+  baseAdapter.callBids = function(bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
       return;
     }
@@ -57,12 +56,18 @@ function VertamediaAdapter() {
     }
 
     if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
-      bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
+      bidmanager.addBidResponse(
+        bidRequest.placementCode,
+        createBid(STATUS.NO_BID)
+      );
 
       return;
     }
 
-    bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, parsed.bids[0]));
+    bidmanager.addBidResponse(
+      bidRequest.placementCode,
+      createBid(STATUS.GOOD, parsed.bids[0])
+    );
   }
 
   function createBid(status, tag) {
@@ -91,10 +96,9 @@ function VertamediaAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
   };
-
 }
 
-VertamediaAdapter.createNew = function () {
+VertamediaAdapter.createNew = function() {
   return new VertamediaAdapter();
 };
 

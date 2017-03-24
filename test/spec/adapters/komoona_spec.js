@@ -5,50 +5,45 @@ import bidmanager from 'src/bidmanager';
 const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 const REQUEST = {
-    "bidderCode": "komoona",
-    "requestId": "1f43cc36a6a7e",
-    "bidderRequestId": "25392d757fad47",
-    "bids": [
-        {
-            "bidder": "komoona",
-            "params": {
-                "hbid": "abcd666dcba",
-                "placementId": "abcd123123dcba"
-            },
-            "placementCode": "div-gpt-ad-1438287399331-0",
-            "sizes": [
-                [300, 250]
-            ],
-            "bidId": "30e5e911c00703",
-            "bidderRequestId": "25392d757fad47",
-            "requestId": "1f43cc36a6a7e"
-        }
-    ],
-    "start": 1466493146527
+  bidderCode: 'komoona',
+  requestId: '1f43cc36a6a7e',
+  bidderRequestId: '25392d757fad47',
+  bids: [
+    {
+      bidder: 'komoona',
+      params: {
+        hbid: 'abcd666dcba',
+        placementId: 'abcd123123dcba'
+      },
+      placementCode: 'div-gpt-ad-1438287399331-0',
+      sizes: [[300, 250]],
+      bidId: '30e5e911c00703',
+      bidderRequestId: '25392d757fad47',
+      requestId: '1f43cc36a6a7e'
+    }
+  ],
+  start: 1466493146527
 };
 
-
 const RESPONSE = {
-  "bids": [
+  bids: [
     {
-      "placementid": "abcd123123dcba",
-      "uuid": "30e5e911c00703",
-      "width": 728,
-      "height": 90,
-      "cpm": 0.5,
-      "creative": "<script type=\"text/javascript\" src=\"http://creative.com/pathToNiceCreative\"></script>"
+      placementid: 'abcd123123dcba',
+      uuid: '30e5e911c00703',
+      width: 728,
+      height: 90,
+      cpm: 0.5,
+      creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>'
     }
   ]
 };
 
 describe('komoonaAdapter', () => {
-
   let adapter;
 
   beforeEach(() => adapter = Adapter.createNew());
 
   describe('request function', () => {
-
     let xhr;
     let requests;
     let pbConfig;
@@ -75,11 +70,11 @@ describe('komoonaAdapter', () => {
 
     it('requires placementid and hbid', () => {
       let backup = pbConfig.bids[0].params;
-      pbConfig.bids[0].params = {placementid : 1234}; //no hbid
+      pbConfig.bids[0].params = { placementid: 1234 }; //no hbid
       adapter.callBids(pbConfig);
       expect(requests).to.be.empty;
 
-      pbConfig.bids[0].params = {hbid : 1234}; //no placementid
+      pbConfig.bids[0].params = { hbid: 1234 }; //no placementid
       adapter.callBids(pbConfig);
       expect(requests).to.be.empty;
 
@@ -94,7 +89,6 @@ describe('komoonaAdapter', () => {
   });
 
   describe('response handler', () => {
-
     let server;
 
     beforeEach(() => {
@@ -103,7 +97,7 @@ describe('komoonaAdapter', () => {
     });
 
     afterEach(() => {
-      server.restore()
+      server.restore();
       bidmanager.addBidResponse.restore();
     });
 
@@ -120,13 +114,17 @@ describe('komoonaAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      server.respondWith(JSON.stringify({
-        "bids": [{
-          "cpm": 0,
-          "creative": "",
-          "uuid": "30e5e911c00703"
-        }]
-      }));
+      server.respondWith(
+        JSON.stringify({
+          bids: [
+            {
+              cpm: 0,
+              creative: '',
+              uuid: '30e5e911c00703'
+            }
+          ]
+        })
+      );
 
       adapter.callBids(REQUEST);
       server.respond();
@@ -152,7 +150,5 @@ describe('komoonaAdapter', () => {
         'Bid returned empty or error response'
       );
     });
-
   });
-
 });

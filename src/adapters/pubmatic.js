@@ -9,7 +9,6 @@ var bidmanager = require('../bidmanager.js');
  * @constructor
  */
 var PubmaticAdapter = function PubmaticAdapter() {
-
   var bids;
   var _pm_pub_id;
   var _pm_optimize_adslots = [];
@@ -29,8 +28,6 @@ var PubmaticAdapter = function PubmaticAdapter() {
   }
 
   function _getBids() {
-
-
     //create the iframe
     iframe = utils.createInvisibleIframe();
 
@@ -47,7 +44,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
   function _createRequestContent() {
     var content = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"' +
       ' "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><scr' +
-      'ipt>inDapIF=true;</scr' + 'ipt></head>';
+      'ipt>inDapIF=true;</scr' +
+      'ipt></head>';
     content += '<body>';
     content += '<scr' + 'ipt>';
     content += '' +
@@ -58,11 +56,15 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
     var map = {};
     map.PM_PUB_ID = _pm_pub_id;
-    map.PM_OPTIMIZE_ADSLOTS = _pm_optimize_adslots.map(function (adSlot) {
-      return "'" + adSlot + "'";
-    }).join(',');
+    map.PM_OPTIMIZE_ADSLOTS = _pm_optimize_adslots
+      .map(function(adSlot) {
+        return "'" + adSlot + "'";
+      })
+      .join(',');
 
-    content += '<scr' + 'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' + 'ipt>';
+    content += '<scr' +
+      'ipt src="https://ads.pubmatic.com/AdServer/js/gshowad.js"></scr' +
+      'ipt>';
     content += '<scr' + 'ipt>';
     content += '</scr' + 'ipt>';
     content += '</body></html>';
@@ -71,14 +73,13 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return content;
   }
 
-  $$PREBID_GLOBAL$$.handlePubmaticCallback = function () {
+  $$PREBID_GLOBAL$$.handlePubmaticCallback = function() {
     let bidDetailsMap = {};
     let progKeyValueMap = {};
     try {
       bidDetailsMap = iframe.contentWindow.bidDetailsMap;
       progKeyValueMap = iframe.contentWindow.progKeyValueMap;
-    }
-    catch(e) {
+    } catch (e) {
       utils.logError(e, 'Error parsing Pubmatic response');
     }
 
@@ -101,11 +102,19 @@ var PubmaticAdapter = function PubmaticAdapter() {
       // if using DFP GPT, the params string comes in the format:
       // "bidstatus;1;bid;5.0000;bidid;hb_test@468x60;wdeal;"
       // the code below detects and handles this.
-      if (bidInfoMap[bid.adSlot] && bidInfoMap[bid.adSlot].indexOf('=') === -1) {
-        bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(/([a-z]+);(.[^;]*)/ig, '$1=$2');
+      if (
+        bidInfoMap[bid.adSlot] && bidInfoMap[bid.adSlot].indexOf('=') === -1
+      ) {
+        bidInfoMap[bid.adSlot] = bidInfoMap[bid.adSlot].replace(
+          /([a-z]+);(.[^;]*)/ig,
+          '$1=$2'
+        );
       }
 
-      adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function (result, pair) {
+      adUnitInfo = (bidInfoMap[bid.adSlot] || '').split(';').reduce(function(
+        result,
+        pair
+      ) {
         var parts = pair.split('=');
         result[parts[0]] = parts[1];
         return result;
@@ -117,8 +126,10 @@ var PubmaticAdapter = function PubmaticAdapter() {
         adResponse.bidderCode = 'pubmatic';
         adResponse.adSlot = bid.adSlot;
         adResponse.cpm = Number(adUnitInfo.bid);
-        adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
-        adResponse.ad += utils.createTrackPixelIframeHtml(decodeURIComponent(adUnit.tracking_url));
+        adResponse.ad = unescape(adUnit.creative_tag); // jshint ignore:line
+        adResponse.ad += utils.createTrackPixelIframeHtml(
+          decodeURIComponent(adUnit.tracking_url)
+        );
         adResponse.width = dimensions[0];
         adResponse.height = dimensions[1];
         adResponse.dealId = adUnitInfo.wdeal;
@@ -136,7 +147,6 @@ var PubmaticAdapter = function PubmaticAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = PubmaticAdapter;

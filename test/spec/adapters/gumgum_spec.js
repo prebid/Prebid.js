@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import Adapter from '../../../src/adapters/gumgum';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
@@ -7,7 +7,6 @@ import { STATUS } from '../../../src/constants';
 
 describe('gumgum adapter', () => {
   'use strict';
-
   let adapter;
   let sandbox;
 
@@ -19,60 +18,71 @@ describe('gumgum adapter', () => {
   };
   const bidderRequest = {
     bidderCode: TEST.BIDDER_CODE,
-    bids: [{ // in-screen
-      bidId: 'InScreenBidId',
-      bidder: TEST.BIDDER_CODE,
-      placementCode: TEST.PLACEMENT,
-      sizes: [ [728, 90] ],
-      params: {
-        inScreen: TEST.PUBLISHER_IDENTITY
+    bids: [
+      {
+        // in-screen
+        bidId: 'InScreenBidId',
+        bidder: TEST.BIDDER_CODE,
+        placementCode: TEST.PLACEMENT,
+        sizes: [[728, 90]],
+        params: {
+          inScreen: TEST.PUBLISHER_IDENTITY
+        }
+      },
+      {
+        // in-image
+        bidId: 'InImageBidId',
+        bidder: TEST.BIDDER_CODE,
+        placementCode: TEST.PLACEMENT,
+        sizes: [[728, 90]],
+        params: {
+          inImage: TEST.PUBLISHER_IDENTITY
+        }
+      },
+      {
+        // native
+        bidId: 'NativeBidId',
+        bidder: TEST.BIDDER_CODE,
+        placementCode: TEST.PLACEMENT,
+        sizes: [[728, 90]],
+        params: {
+          native: 10
+        }
+      },
+      {
+        // slot
+        bidId: 'InSlotBidId',
+        bidder: TEST.BIDDER_CODE,
+        placementCode: TEST.PLACEMENT,
+        sizes: [[728, 90]],
+        params: {
+          inSlot: 10
+        }
+      },
+      {
+        // no identity
+        bidId: 'NoIdentityBidId',
+        bidder: TEST.BIDDER_CODE,
+        placementCode: TEST.PLACEMENT,
+        sizes: [[728, 90]]
       }
-    }, { // in-image
-      bidId: 'InImageBidId',
-      bidder: TEST.BIDDER_CODE,
-      placementCode: TEST.PLACEMENT,
-      sizes: [ [728, 90] ],
-      params: {
-        inImage: TEST.PUBLISHER_IDENTITY
-      }
-    }, { // native
-      bidId: 'NativeBidId',
-      bidder: TEST.BIDDER_CODE,
-      placementCode: TEST.PLACEMENT,
-      sizes: [ [728, 90] ],
-      params: {
-        native: 10
-      }
-    }, { // slot
-      bidId: 'InSlotBidId',
-      bidder: TEST.BIDDER_CODE,
-      placementCode: TEST.PLACEMENT,
-      sizes: [ [728, 90] ],
-      params: {
-        inSlot: 10
-      }
-    }, { // no identity
-      bidId: 'NoIdentityBidId',
-      bidder: TEST.BIDDER_CODE,
-      placementCode: TEST.PLACEMENT,
-      sizes: [ [728, 90] ]
-    }]
+    ]
   };
   const pageParams = {
-    "pvid": "PVID"
+    pvid: 'PVID'
   };
   const bidderResponse = {
-    "ad": {
-      "id": 1,
-      "width": 728,
-      "height": 90,
-      "markup": "<div>some fancy ad</div>",
-      "ii": true,
-      "du": "http://example.com/",
-      "price": TEST.CPM,
-      "impurl": "http://example.com/"
+    ad: {
+      id: 1,
+      width: 728,
+      height: 90,
+      markup: '<div>some fancy ad</div>',
+      ii: true,
+      du: 'http://example.com/',
+      price: TEST.CPM,
+      impurl: 'http://example.com/'
     },
-    "pag": pageParams
+    pag: pageParams
   };
 
   function mockBidResponse(response) {
@@ -93,7 +103,6 @@ describe('gumgum adapter', () => {
   });
 
   describe('callBids', () => {
-
     beforeEach(() => {
       sandbox.stub(adLoader, 'loadScript');
       adapter.callBids(bidderRequest);
@@ -136,17 +145,17 @@ describe('gumgum adapter', () => {
     it('last call should be slot', () => {
       expect(adLoader.loadScript.lastCall.args[0]).to.include('pi=3');
     });
-
   });
 
   describe('handleGumGumCB[...]', () => {
     it('exists and is function', () => {
-      expect(pbjs.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a('function');
+      expect(pbjs.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a(
+        'function'
+      );
     });
   });
 
   describe('respond with a successful bid', () => {
-
     let successfulBid;
 
     beforeEach(() => {
@@ -158,7 +167,7 @@ describe('gumgum adapter', () => {
     });
 
     it('passes the correct placement code as the first param', () => {
-      const [ placementCode ] = bidManager.addBidResponse.firstCall.args;
+      const [placementCode] = bidManager.addBidResponse.firstCall.args;
       expect(placementCode).to.eql(TEST.PLACEMENT);
     });
 
@@ -179,11 +188,9 @@ describe('gumgum adapter', () => {
       expect(successfulBid).to.have.property('width', 728);
       expect(successfulBid).to.have.property('height', 90);
     });
-
   });
 
   describe('respond with an empty bid', () => {
-
     let noBid;
 
     beforeEach(() => {
@@ -199,18 +206,16 @@ describe('gumgum adapter', () => {
     });
 
     it('passes the correct placement code as the first parameter', () => {
-      const [ placementCode ] = bidManager.addBidResponse.firstCall.args;
+      const [placementCode] = bidManager.addBidResponse.firstCall.args;
       expect(placementCode).to.eql(TEST.PLACEMENT);
     });
 
     it('adds the bidder code to the bid object', () => {
       expect(noBid).to.have.property('bidderCode', TEST.BIDDER_CODE);
     });
-
   });
 
   describe('refresh throttle', () => {
-
     beforeEach(() => {
       mockBidResponse(bidderResponse);
     });
@@ -230,7 +235,5 @@ describe('gumgum adapter', () => {
       warning.to.include(TEST.PLACEMENT);
       warning.to.include('inScreen');
     });
-
   });
-
 });

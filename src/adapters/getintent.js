@@ -7,13 +7,18 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
 
 var GetIntentAdapter = function GetIntentAdapter() {
-  var headerBiddingStaticJS = window.location.protocol + '//cdn.adhigh.net/adserver/hb.js';
+  var headerBiddingStaticJS = window.location.protocol +
+    '//cdn.adhigh.net/adserver/hb.js';
 
   function _callBids(params) {
     if (typeof window.gi_hb === 'undefined') {
-      adloader.loadScript(headerBiddingStaticJS, function() {
-        bid(params);
-      }, true);
+      adloader.loadScript(
+        headerBiddingStaticJS,
+        function() {
+          bid(params);
+        },
+        true
+      );
     } else {
       bid(params);
     }
@@ -37,10 +42,10 @@ var GetIntentAdapter = function GetIntentAdapter() {
         known: bidRequest.params.known || 1,
         is_video: bidRequest.mediaType === 'video',
         video: bidRequest.params.video || {},
-        size: bidRequest.sizes[0].join("x"),
+        size: bidRequest.sizes[0].join('x')
       };
       addOptional(bidRequest.params, request, ['cur', 'floor']);
-      (function (r, br) {
+      (function(r, br) {
         window.gi_hb.makeBid(r, function(bidResponse) {
           if (bidResponse.no_bid === 1) {
             var nobid = bidfactory.createBid(STATUS.NO_BID);

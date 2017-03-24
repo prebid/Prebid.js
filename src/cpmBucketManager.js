@@ -1,58 +1,68 @@
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
-  'buckets': [{
-    'min': 0,
-    'max': 5,
-    'increment': 0.5
-  }]
+  buckets: [
+    {
+      min: 0,
+      max: 5,
+      increment: 0.5
+    }
+  ]
 };
 const _mgPriceConfig = {
-  'buckets': [{
-    'min': 0,
-    'max': 20,
-    'increment': 0.1
-  }]
+  buckets: [
+    {
+      min: 0,
+      max: 20,
+      increment: 0.1
+    }
+  ]
 };
 const _hgPriceConfig = {
-  'buckets': [{
-    'min': 0,
-    'max': 20,
-    'increment': 0.01
-  }]
+  buckets: [
+    {
+      min: 0,
+      max: 20,
+      increment: 0.01
+    }
+  ]
 };
 const _densePriceConfig = {
-  'buckets': [{
-      'min': 0,
-      'max': 3,
-      'increment': 0.01
+  buckets: [
+    {
+      min: 0,
+      max: 3,
+      increment: 0.01
     },
     {
-      'min': 3,
-      'max': 8,
-      'increment': 0.05
+      min: 3,
+      max: 8,
+      increment: 0.05
     },
     {
-      'min': 8,
-      'max': 20,
-      'increment': 0.5
-    }]
+      min: 8,
+      max: 20,
+      increment: 0.5
+    }
+  ]
 };
 const _autoPriceConfig = {
-  'buckets': [{
-      'min': 0,
-      'max': 5,
-      'increment': 0.05
+  buckets: [
+    {
+      min: 0,
+      max: 5,
+      increment: 0.05
     },
     {
-      'min': 5,
-      'max': 10,
-      'increment': 0.1
+      min: 5,
+      max: 10,
+      increment: 0.1
     },
     {
-      'min': 10,
-      'max': 20,
-      'increment': 0.5
-    }]
+      min: 10,
+      max: 20,
+      increment: 0.5
+    }
+  ]
 };
 
 function getPriceBucketString(cpm, customConfig) {
@@ -63,12 +73,12 @@ function getPriceBucketString(cpm, customConfig) {
   }
 
   return {
-    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig),
-    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig),
-    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig),
-    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig),
-    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
+    low: cpmFloat === '' ? '' : getCpmStringValue(cpm, _lgPriceConfig),
+    med: cpmFloat === '' ? '' : getCpmStringValue(cpm, _mgPriceConfig),
+    high: cpmFloat === '' ? '' : getCpmStringValue(cpm, _hgPriceConfig),
+    auto: cpmFloat === '' ? '' : getCpmStringValue(cpm, _autoPriceConfig),
+    dense: cpmFloat === '' ? '' : getCpmStringValue(cpm, _densePriceConfig),
+    custom: cpmFloat === '' ? '' : getCpmStringValue(cpm, customConfig)
   };
 }
 
@@ -77,14 +87,17 @@ function getCpmStringValue(cpm, config) {
   if (!isValidePriceConfig(config)) {
     return cpmStr;
   }
-  const cap = config.buckets.reduce((prev,curr) => {
-    if (prev.max > curr.max) {
-      return prev;
+  const cap = config.buckets.reduce(
+    (prev, curr) => {
+      if (prev.max > curr.max) {
+        return prev;
+      }
+      return curr;
+    },
+    {
+      max: 0
     }
-    return curr;
-  }, {
-    'max': 0,
-  });
+  );
   let bucket = config.buckets.find(bucket => {
     if (cpm > cap.max) {
       const precision = bucket.precision || _defaultPrecision;
@@ -105,7 +118,7 @@ function isValidePriceConfig(config) {
   }
   let isValid = true;
   config.buckets.forEach(bucket => {
-    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
+    if (typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
       isValid = false;
     }
   });

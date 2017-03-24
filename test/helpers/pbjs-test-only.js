@@ -1,5 +1,4 @@
 export const pbjsTestOnly = {
-
   getAdUnits() {
     return $$PREBID_GLOBAL$$.adUnits;
   },

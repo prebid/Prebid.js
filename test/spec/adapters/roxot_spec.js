@@ -1,15 +1,14 @@
-describe('Roxot adapter tests', function(){
+describe('Roxot adapter tests', function() {
   const expect = require('chai').expect;
   const adapter = require('src/adapters/roxot');
   const bidmanager = require('src/bidmanager');
 
-  describe('roxotResponseHandler', function () {
-
-    it('should exist and be a function', function () {
+  describe('roxotResponseHandler', function() {
+    it('should exist and be a function', function() {
       expect(pbjs.roxotResponseHandler).to.exist.and.to.be.a('function');
     });
 
-    it('should add empty bid responses if no bids returned', function () {
+    it('should add empty bid responses if no bids returned', function() {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       var bidderRequest = {
@@ -26,15 +25,14 @@ describe('Roxot adapter tests', function(){
             bidder: 'roxot',
             sizes: [[320, 50]],
             placementCode: 'div-gpt-ad-12345-2'
-          },
+          }
         ]
       };
 
-
       // no bids returned in the response.
       var response = {
-        "id": "123",
-        "bids": []
+        id: '123',
+        bids: []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -61,7 +59,6 @@ describe('Roxot adapter tests', function(){
     });
 
     it('should add a bid response for bids returned and empty bid responses for the rest', () => {
-
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       var bidderRequest = {
@@ -78,23 +75,24 @@ describe('Roxot adapter tests', function(){
             bidder: 'roxot',
             sizes: [[320, 50]],
             placementCode: 'div-gpt-ad-12345-2'
-          },
+          }
         ]
       };
 
       // Returning a single bid in the response.
       var response = {
-        "id": "12345",
-        "bids": [
+        id: '12345',
+        bids: [
           {
-            "bidId" : "id1",
-            "cpm" : 0.09,
-            "nurl" : "http://roxot.example.com",
-            "adm" : "<<creative>>",
-            "h" : 320,
-            "w" : 50
+            bidId: 'id1',
+            cpm: 0.09,
+            nurl: 'http://roxot.example.com',
+            adm: '<<creative>>',
+            h: 320,
+            w: 50
           }
-        ]};
+        ]
+      };
 
       pbjs._bidsRequested.push(bidderRequest);
 
@@ -114,7 +112,9 @@ describe('Roxot adapter tests', function(){
       expect(bidObject1.cpm).to.equal(0.09);
       expect(bidObject1.height).to.equal(320);
       expect(bidObject1.width).to.equal(50);
-      expect(bidObject1.ad).to.equal('<<creative>><img src="http://roxot.example.com">');
+      expect(bidObject1.ad).to.equal(
+        '<<creative>><img src="http://roxot.example.com">'
+      );
 
       expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
       expect(bidObject2.getStatusCode()).to.equal(2);

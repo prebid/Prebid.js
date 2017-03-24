@@ -6,22 +6,20 @@ const adloader = require('../adloader');
 const utils = require('../utils.js');
 
 const TapSenseAdapter = function TapSenseAdapter() {
-  const version = "0.0.1";
-  const creativeSizes = [
-    "320x50"
-  ];
+  const version = '0.0.1';
+  const creativeSizes = ['320x50'];
   const validParams = [
-    "ufid",
-    "refer",
-    "ad_unit_id", //required
-    "device_id",
-    "lat",
-    "long",
-    "user", //required
-    "price_floor",
-    "test"
+    'ufid',
+    'refer',
+    'ad_unit_id', //required
+    'device_id',
+    'lat',
+    'long',
+    'user', //required
+    'price_floor',
+    'test'
   ];
-  const SCRIPT_URL = "https://ads04.tapsense.com/ads/headerad";
+  const SCRIPT_URL = 'https://ads04.tapsense.com/ads/headerad';
   let bids;
   $$PREBID_GLOBAL$$.tapsense = {};
   function _callBids(params) {
@@ -41,23 +39,28 @@ const TapSenseAdapter = function TapSenseAdapter() {
       }
       if (isValidSize) {
         let queryString = `?price=true&jsonp=1&callback=$$PREBID_GLOBAL$$.tapsense.callback_with_price_${bid.bidId}&version=${version}&`;
-        $$PREBID_GLOBAL$$.tapsense[`callback_with_price_${bid.bidId}`] = generateCallback(bid.bidId);
+        $$PREBID_GLOBAL$$.tapsense[
+          `callback_with_price_${bid.bidId}`
+        ] = generateCallback(bid.bidId);
         let keys = Object.keys(bid.params);
         for (let j = 0; j < keys.length; j++) {
           if (validParams.indexOf(keys[j]) < 0) continue;
-          queryString += encodeURIComponent(keys[j]) + "=" + encodeURIComponent(bid.params[keys[j]]) + "&";
+          queryString += encodeURIComponent(keys[j]) +
+            '=' +
+            encodeURIComponent(bid.params[keys[j]]) +
+            '&';
         }
         _requestBids(SCRIPT_URL + queryString);
       }
     }
   }
 
-  function generateCallback(bidId){
+  function generateCallback(bidId) {
     return function tapsenseCallback(response, price) {
       let bidObj;
       if (response && price) {
         let bidReq = utils.getBidRequest(bidId);
-        if (response.status.value === "ok" && response.count_ad_units > 0) {
+        if (response.status.value === 'ok' && response.count_ad_units > 0) {
           bidObj = bidfactory.createBid(1, bidObj);
           bidObj.cpm = price;
           bidObj.width = response.width;
@@ -68,7 +71,6 @@ const TapSenseAdapter = function TapSenseAdapter() {
         }
         bidObj.bidderCode = bidReq.bidder;
         bidmanager.addBidResponse(bidReq.placementCode, bidObj);
-
       } else {
         utils.logMessage('No prebid response');
       }

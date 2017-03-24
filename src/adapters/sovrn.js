@@ -24,7 +24,7 @@ var SovrnAdapter = function SovrnAdapter() {
     var sovrnImps = [];
 
     //build impression array for sovrn
-    utils._each(bidReqs, function (bid) {
+    utils._each(bidReqs, function(bid) {
       var tagId = utils.getBidIdParameter('tagid', bid.params);
       var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
       var adW = 0;
@@ -32,9 +32,15 @@ var SovrnAdapter = function SovrnAdapter() {
 
       //sovrn supports only one size per tagid, so we just take the first size if there are more
       //if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
+      var bidSizes = Array.isArray(bid.params.sizes)
+        ? bid.params.sizes
+        : bid.sizes;
       var sizeArrayLength = bidSizes.length;
-      if (sizeArrayLength === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+      if (
+        sizeArrayLength === 2 &&
+        typeof bidSizes[0] === 'number' &&
+        typeof bidSizes[1] === 'number'
+      ) {
         adW = bidSizes[0];
         adH = bidSizes[1];
       } else {
@@ -42,8 +48,7 @@ var SovrnAdapter = function SovrnAdapter() {
         adH = bidSizes[0][1];
       }
 
-      var imp =
-      {
+      var imp = {
         id: bid.bidId,
         banner: {
           w: adW,
@@ -65,21 +70,29 @@ var SovrnAdapter = function SovrnAdapter() {
       }
     };
 
-    var scriptUrl = '//' + sovrnUrl + '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
-      '&src=' + CONSTANTS.REPO_AND_VERSION +
-      '&br=' + encodeURIComponent(JSON.stringify(sovrnBidReq));
+    var scriptUrl = '//' +
+      sovrnUrl +
+      '?callback=window.$$PREBID_GLOBAL$$.sovrnResponse' +
+      '&src=' +
+      CONSTANTS.REPO_AND_VERSION +
+      '&br=' +
+      encodeURIComponent(JSON.stringify(sovrnBidReq));
     adloader.loadScript(scriptUrl);
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(
+      bidSet => bidSet.bidderCode === 'sovrn'
+    );
     if (missing) {
-      missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+      missing = missing.bids.filter(
+        bid => impidsWithBidBack.indexOf(bid.bidId) < 0
+      );
     } else {
       missing = [];
     }
 
-    missing.forEach(function (bidRequest) {
+    missing.forEach(function(bidRequest) {
       // Add a no-bid response for this bid request.
       var bid = {};
       bid = bidfactory.createBid(2, bidRequest);
@@ -89,22 +102,27 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   //expose the callback to the global object:
-  $$PREBID_GLOBAL$$.sovrnResponse = function (sovrnResponseObj) {
+  $$PREBID_GLOBAL$$.sovrnResponse = function(sovrnResponseObj) {
     // valid object?
     if (sovrnResponseObj && sovrnResponseObj.id) {
       // valid object w/ bid responses?
-      if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
+      if (
+        sovrnResponseObj.seatbid &&
+        sovrnResponseObj.seatbid.length !== 0 &&
+        sovrnResponseObj.seatbid[0].bid &&
+        sovrnResponseObj.seatbid[0].bid.length !== 0
+      ) {
         var impidsWithBidBack = [];
-        sovrnResponseObj.seatbid[0].bid.forEach(function (sovrnBid) {
-
+        sovrnResponseObj.seatbid[0].bid.forEach(function(sovrnBid) {
           var responseCPM;
           var placementCode = '';
           var id = sovrnBid.impid;
           var bid = {};
 
           // try to fetch the bid request we sent Sovrn
-          var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-          .find(bid => bid.bidId === id);
+          var bidObj = $$PREBID_GLOBAL$$._bidsRequested
+            .find(bidSet => bidSet.bidderCode === 'sovrn')
+            .bids.find(bid => bid.bidId === id);
 
           if (bidObj) {
             placementCode = bidObj.placementCode;
@@ -151,7 +169,6 @@ var SovrnAdapter = function SovrnAdapter() {
       //no response data for all requests
       addBlankBidResponses([]);
     }
-
   }; // sovrnResponse
 
   return {

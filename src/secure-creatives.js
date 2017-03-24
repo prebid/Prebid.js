@@ -8,7 +8,6 @@ import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;
 
-
 export function listenMessagesFromCreative() {
   addEventListener('message', receiveMessage, false);
 }
@@ -23,7 +22,7 @@ function receiveMessage(ev) {
   }
 
   if (data.adId) {
-    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function (bid) {
+    const adObject = $$PREBID_GLOBAL$$._bidsReceived.find(function(bid) {
       return bid.adId === data.adId;
     });
 
@@ -39,23 +38,33 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 
   if (adId) {
     resizeRemoteCreative(adObject);
-    source.postMessage(JSON.stringify({
-      message: 'Prebid Response',
-      ad,
-      adUrl,
-      adId,
-      width,
-      height
-    }), remoteDomain);
+    source.postMessage(
+      JSON.stringify({
+        message: 'Prebid Response',
+        ad,
+        adUrl,
+        adId,
+        width,
+        height
+      }),
+      remoteDomain
+    );
   }
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(window.googletag.pubads()
-    .getSlots().find(slot => {
-      return slot.getAdUnitPath() === adUnitCode ||
-        slot.getSlotElementId() === adUnitCode;
-    }).getSlotElementId()).querySelector('iframe');
+  const iframe = document
+    .getElementById(
+      window.googletag
+        .pubads()
+        .getSlots()
+        .find(slot => {
+          return slot.getAdUnitPath() === adUnitCode ||
+            slot.getSlotElementId() === adUnitCode;
+        })
+        .getSlotElementId()
+    )
+    .querySelector('iframe');
 
   iframe.width = '' + width;
   iframe.height = '' + height;

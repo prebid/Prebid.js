@@ -5,7 +5,7 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var adBundAdapter = function adBundAdapter() {
-  var timezone = (new Date()).getTimezoneOffset();
+  var timezone = new Date().getTimezoneOffset();
   var bidAPIs = [
     'http://us-east-engine.adbund.xyz/prebid/ad/get',
     'http://us-west-engine.adbund.xyz/prebid/ad/get'
@@ -25,7 +25,7 @@ var adBundAdapter = function adBundAdapter() {
   }
 
   function _createCallback(bid) {
-    return function (data) {
+    return function(data) {
       var response;
       if (data && data.cpm) {
         response = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
@@ -53,7 +53,7 @@ var adBundAdapter = function adBundAdapter() {
   }
 
   function _callBids(params) {
-    (params.bids || []).forEach(function (bid) {
+    (params.bids || []).forEach(function(bid) {
       _requestBids(bid);
     });
   }

@@ -9,8 +9,7 @@ function Adapter(code) {
     return bidderCode;
   }
 
-  function callBids() {
-  }
+  function callBids() {}
 
   return {
     callBids: callBids,
@@ -19,6 +18,6 @@ function Adapter(code) {
   };
 }
 
-exports.createNew = function (bidderCode) {
+exports.createNew = function(bidderCode) {
   return new Adapter(bidderCode);
 };

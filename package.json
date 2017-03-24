@@ -4,6 +4,8 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
+    "preinstall": "mkdir -p .git/hooks ; chmod +x hooks/pre-commit ; ln -s -f ../../hooks/pre-commit .git/hooks/pre-commit",
+    "prettier": "prettier --single-quote --trailing-comma none --bracket-spacing --write \"{loaders,src,test}/**/*.js\"",
     "test": "gulp test && gulp mocha"
   },
   "repository": {
@@ -86,6 +88,7 @@
     "nightwatch": "^0.9.5",
     "open": "0.0.5",
     "phantomjs": "^1.9.18",
+    "prettier": "^0.22.0",
     "proxyquire": "^1.7.10",
     "querystringify": "0.0.3",
     "requirejs": "^2.1.20",

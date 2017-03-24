@@ -4,12 +4,14 @@ var adloader = require('../adloader.js');
 var utils = require('../utils.js');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
-
-  var getJsStaticUrl = window.location.protocol + '//bid.underdog.media/udm_header_lib.js';
+  var getJsStaticUrl = window.location.protocol +
+    '//bid.underdog.media/udm_header_lib.js';
 
   function _callBids(params) {
     if (typeof window.udm_header_lib === 'undefined') {
-      adloader.loadScript(getJsStaticUrl, function () { bid(params); });
+      adloader.loadScript(getJsStaticUrl, function() {
+        bid(params);
+      });
     } else {
       bid(params);
     }
@@ -36,14 +38,14 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   }
 
   function bidResponseCallback(bid) {
-    return function (bidResponse) {
+    return function(bidResponse) {
       bidResponseAvailable(bid, bidResponse);
     };
   }
 
   function bidResponseAvailable(bidRequest, bidResponse) {
-    if(bidResponse.bids.length > 0){
-      for(var i = 0; i < bidResponse.bids.length; i++){
+    if (bidResponse.bids.length > 0) {
+      for (var i = 0; i < bidResponse.bids.length; i++) {
         var udm_bid = bidResponse.bids[i];
         var bid = bidfactory.createBid(1);
         bid.bidderCode = bidRequest.bidder;
@@ -51,19 +53,20 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
         bid.width = udm_bid.width;
         bid.height = udm_bid.height;
 
-        if(udm_bid.ad_url !== undefined){
+        if (udm_bid.ad_url !== undefined) {
           bid.adUrl = udm_bid.ad_url;
-        }
-        else if(udm_bid.ad_html !== undefined){
+        } else if (udm_bid.ad_html !== undefined) {
           bid.ad = udm_bid.ad_html;
-        }else{
-          utils.logMessage('Underdogmedia bid is lacking both ad_url and ad_html, skipping bid');
+        } else {
+          utils.logMessage(
+            'Underdogmedia bid is lacking both ad_url and ad_html, skipping bid'
+          );
           continue;
         }
 
         bidmanager.addBidResponse(bidRequest.placementCode, bid);
       }
-    }else{
+    } else {
       var nobid = bidfactory.createBid(2);
       nobid.bidderCode = bidRequest.bidder;
       bidmanager.addBidResponse(bidRequest.placementCode, nobid);
@@ -73,7 +76,6 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = UnderdogMediaAdapter;

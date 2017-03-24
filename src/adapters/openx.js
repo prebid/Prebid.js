@@ -11,7 +11,7 @@ const OpenxAdapter = function OpenxAdapter() {
 
   let pdNode = null;
 
-  $$PREBID_GLOBAL$$.oxARJResponse = function (oxResponseObj) {
+  $$PREBID_GLOBAL$$.oxARJResponse = function(oxResponseObj) {
     let adUnits = oxResponseObj.ads.ad;
     if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
       makePDCall(oxResponseObj.ads.pixels);
@@ -21,7 +21,9 @@ const OpenxAdapter = function OpenxAdapter() {
       adUnits = [];
     }
 
-    let bids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'openx').bids;
+    let bids = $$PREBID_GLOBAL$$._bidsRequested.find(
+      bidSet => bidSet.bidderCode === 'openx'
+    ).bids;
     for (let i = 0; i < bids.length; i++) {
       let bid = bids[i];
       let auid = null;
@@ -29,16 +31,20 @@ const OpenxAdapter = function OpenxAdapter() {
       // find the adunit in the response
       for (let j = 0; j < adUnits.length; j++) {
         adUnit = adUnits[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit,bid) && !adUnit.used) {
+        if (
+          String(bid.params.unit) === String(adUnit.adunitid) &&
+          adUnitHasValidSizeFromBid(adUnit, bid) &&
+          !adUnit.used
+        ) {
           auid = adUnit.adunitid;
           break;
         }
       }
 
       let beaconParams = {
-        bd: +(new Date()) - startTime,
+        bd: +new Date() - startTime,
         br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout , // For the timeout per bid request
+        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout, // For the timeout per bid request
         bs: window.location.hostname
       };
 
@@ -69,8 +75,7 @@ const OpenxAdapter = function OpenxAdapter() {
       try {
         tWin = window.top;
         tDoc = window.top.document;
-      }
-      catch (e) {
+      } catch (e) {
         return;
       }
       docEl = tDoc.documentElement;
@@ -90,8 +95,8 @@ const OpenxAdapter = function OpenxAdapter() {
   function makePDCall(pixelsUrl) {
     let pdFrame = utils.createInvisibleIframe();
     let name = 'openx-pd';
-    pdFrame.setAttribute("id", name);
-    pdFrame.setAttribute("name", name);
+    pdFrame.setAttribute('id', name);
+    pdFrame.setAttribute('name', name);
     let rootNode = document.body;
 
     if (!rootNode) {
@@ -109,7 +114,10 @@ const OpenxAdapter = function OpenxAdapter() {
   }
 
   function addBidResponse(adUnit, bid) {
-    let bidResponse = bidfactory.createBid(adUnit ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID, bid);
+    let bidResponse = bidfactory.createBid(
+      adUnit ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID,
+      bid
+    );
     bidResponse.bidderCode = BIDDER_CODE;
 
     if (adUnit) {
@@ -136,7 +144,8 @@ const OpenxAdapter = function OpenxAdapter() {
         }
       }
     }
-    return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
+    return utils
+      ._map(Object.keys(params), key => `${key}=${params[key]}`)
       .join('&');
   }
 
@@ -152,7 +161,7 @@ const OpenxAdapter = function OpenxAdapter() {
 
   function adUnitHasValidSizeFromBid(adUnit, bid) {
     let sizes = utils.parseSizesInput(bid.sizes);
-    let sizeLength = sizes && sizes.length || 0;
+    let sizeLength = (sizes && sizes.length) || 0;
     let found = false;
     let creative = adUnit.creative && adUnit.creative[0];
     let creative_size = String(creative.width) + 'x' + String(creative.height);
@@ -175,14 +184,16 @@ const OpenxAdapter = function OpenxAdapter() {
     }
 
     params.auid = utils._map(bids, bid => bid.params.unit).join('%2C');
-    params.aus = utils._map(bids, bid => {
-      return utils.parseSizesInput(bid.sizes).join(',');
-    }).join('|');
+    params.aus = utils
+      ._map(bids, bid => {
+        return utils.parseSizesInput(bid.sizes).join(',');
+      })
+      .join('|');
 
-    bids.forEach(function (bid) {
+    bids.forEach(function(bid) {
       for (let customParam in bid.params.customParams) {
         if (bid.params.customParams.hasOwnProperty(customParam)) {
-          params["c." + customParam] = bid.params.customParams[customParam];
+          params['c.' + customParam] = bid.params.customParams[customParam];
         }
       }
     });
@@ -196,12 +207,13 @@ const OpenxAdapter = function OpenxAdapter() {
   function callBids(params) {
     let isIfr,
       bids = params.bids || [],
-      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+      currentURL = window.parent !== window
+        ? document.referrer
+        : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
-    }
-    catch (e) {
+    } catch (e) {
       isIfr = false;
     }
     if (bids.length === 0) {
@@ -212,20 +224,23 @@ const OpenxAdapter = function OpenxAdapter() {
 
     startTime = new Date(params.start);
 
-    buildRequest(bids, {
-      ju: currentURL,
-      jr: currentURL,
-      ch: document.charSet || document.characterSet,
-      res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
-      ifr: isIfr,
-      tz: startTime.getTimezoneOffset(),
-      tws: getViewportDimensions(isIfr),
-      ee: 'api_sync_write',
-      ef: 'bt%2Cdb',
-      be: 1,
-      bc: BIDDER_CONFIG
-    },
-      delDomain);
+    buildRequest(
+      bids,
+      {
+        ju: currentURL,
+        jr: currentURL,
+        ch: document.charSet || document.characterSet,
+        res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+        ifr: isIfr,
+        tz: startTime.getTimezoneOffset(),
+        tws: getViewportDimensions(isIfr),
+        ee: 'api_sync_write',
+        ef: 'bt%2Cdb',
+        be: 1,
+        bc: BIDDER_CONFIG
+      },
+      delDomain
+    );
   }
 
   return {

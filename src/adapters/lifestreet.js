@@ -21,14 +21,29 @@ const LifestreetAdapter = function LifestreetAdapter() {
         timeout = bid.params.timeout;
       }
       let shouldRequest = false;
-      if (jstagUrl && jstagUrl.length > 0 && slot && slot.length > 0 &&
-          adkey && adkey.length > 0 && adSize && adSize.length > 0) {
+      if (
+        jstagUrl &&
+        jstagUrl.length > 0 &&
+        slot &&
+        slot.length > 0 &&
+        adkey &&
+        adkey.length > 0 &&
+        adSize &&
+        adSize.length > 0
+      ) {
         let adSizeArray = adSize.split('x');
         for (let i = 0; i < adSizeArray.length; ++i) {
           adSizeArray[i] = +adSizeArray[i];
         }
-        if (bid.sizes && (bid.sizes instanceof Array) && bid.sizes.length > 0 && adSizeArray.length > 1) {
-          bid.sizes = !(bid.sizes[0] instanceof Array) ? [ bid.sizes ] : bid.sizes;
+        if (
+          bid.sizes &&
+          bid.sizes instanceof Array &&
+          bid.sizes.length > 0 &&
+          adSizeArray.length > 1
+        ) {
+          bid.sizes = !(bid.sizes[0] instanceof Array)
+            ? [bid.sizes]
+            : bid.sizes;
           for (let i = 0; i < bid.sizes.length; ++i) {
             let size = bid.sizes[i];
             if (size.length > 1) {
@@ -84,22 +99,33 @@ const LifestreetAdapter = function LifestreetAdapter() {
         }
         /*jshint newcap: false */
         LSM_Slot(slotTagParams);
-        window.addEventListener('message', (ev) => {
-          let key = ev.message ? 'message' : 'data';
-          let object = {};
-          try {
-            object = JSON.parse(ev[key]);
-          } catch (e) {
-            return;
-          }
-          if (object.message && object.message === PREBID_REQUEST_MESSAGE && object.slotName) {
-            ev.source.postMessage(JSON.stringify({
-              message: PREBID_RESPONSE_MESSAGE,
-              slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
-            }), '*');
-            window.$$PREBID_GLOBAL$$[object.slotName].destroy();
-          }
-        }, false);
+        window.addEventListener(
+          'message',
+          ev => {
+            let key = ev.message ? 'message' : 'data';
+            let object = {};
+            try {
+              object = JSON.parse(ev[key]);
+            } catch (e) {
+              return;
+            }
+            if (
+              object.message &&
+              object.message === PREBID_REQUEST_MESSAGE &&
+              object.slotName
+            ) {
+              ev.source.postMessage(
+                JSON.stringify({
+                  message: PREBID_RESPONSE_MESSAGE,
+                  slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
+                }),
+                '*'
+              );
+              window.$$PREBID_GLOBAL$$[object.slotName].destroy();
+            }
+          },
+          false
+        );
       } else {
         _addSlotBidResponse(bid, 0, null, 0, 0);
       }
@@ -122,7 +148,9 @@ const LifestreetAdapter = function LifestreetAdapter() {
   function _constructLSMAd(jsTagUrl, slotName) {
     if (jsTagUrl && slotName) {
       return `<div id="LSM_AD"></div>
-             <script type="text/javascript" src='` + jsTagUrl + `'></script>
+             <script type="text/javascript" src='` +
+        jsTagUrl +
+        `'></script>
              <script>
               function receivedLSMMessage(ev) {
                 var key = ev.message ? 'message' : 'data';
@@ -132,7 +160,9 @@ const LifestreetAdapter = function LifestreetAdapter() {
                 } catch (e) {
                   return;
                 }
-                if (object.message === '` + PREBID_RESPONSE_MESSAGE + `' && object.slotObject) {
+                if (object.message === '` +
+        PREBID_RESPONSE_MESSAGE +
+        `' && object.slotObject) {
                   var slot  = object.slotObject;
                   slot.__proto__ = slotapi.Slot.prototype;
                   slot.getProperties()['_onload'] = function(slot) {
@@ -146,8 +176,12 @@ const LifestreetAdapter = function LifestreetAdapter() {
               }
               window.addEventListener('message', receivedLSMMessage, false);
               window.parent.postMessage(JSON.stringify({
-                message: '` + PREBID_REQUEST_MESSAGE + `',
-                slotName: '` + slotName +`'
+                message: '` +
+        PREBID_REQUEST_MESSAGE +
+        `',
+                slotName: '` +
+        slotName +
+        `'
               }), '*');
             </script>`;
     }
