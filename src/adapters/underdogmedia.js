@@ -5,7 +5,7 @@ var utils = require('../utils.js');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
-  const UDM_ADAPTER_VERSION = "1.0.0";
+  const UDM_ADAPTER_VERSION = '1.0.0';
   var getJsStaticUrl = window.location.protocol + '//udmserve.net/udm/img.fetch?tid=1;dt=9;callback=$$PREBID_GLOBAL$$.handleUnderdogMediaCB;';
   var bidParams = {};
 
@@ -36,8 +36,8 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
           mid.useCount = 0;
         }
         var size_not_found = true;
-        for (var size of bidParam.sizes) {
-          if (size[0].toString() === mid.width.toString() && size[1].toString() === mid.height.toString()) {
+        for (var size of utils.parseSizesInput(bidParam.sizes)) {
+          if (size === mid.width + 'x' + mid.height) {
             size_not_found = false;
           }
         }
@@ -50,7 +50,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
         bid.width = mid.width;
         bid.height = mid.height;
 
-        bid.cpm = mid.cpm;
+        bid.cpm = parseFloat(mid.cpm);
         if (bid.cpm <= 0) {
           continue;
         }

@@ -41,9 +41,7 @@ describe('underdogmedia adapter test', () => {
       {
         bidder: 'underdogmedia',
         adUnitCode: 'nothing',
-        sizes: [
-          [160, 600]
-        ],
+        sizes: [160, 600],
         params: {
           siteId: '31337'
         }
