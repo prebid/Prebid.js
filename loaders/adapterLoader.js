@@ -9,7 +9,9 @@ const blockLoader = require('block-loader');
 const getAdapters = require('./getAdapters');
 
 const adapters = getAdapters();
-const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
+const files = fs
+  .readdirSync('src/adapters')
+  .map(file => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.filter(getStandardAdapters).filter(getUniques);
 //adapters loaded from `srcPath`
 const customAdapters = adapters.map(getCustomAdapters).filter(adapter => {
@@ -22,7 +24,7 @@ const videoAdapters = adapters.filter(getVideoAdapters).map(getNames);
 var options = {
   start: '/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */',
   end: '/** END INSERT ADAPTERS */',
-  process: insertAdapters
+  process: insertAdapters,
 };
 
 /**
@@ -31,10 +33,11 @@ var options = {
  * @returns {*}
  */
 function insertAdapters() {
-
   if (!adapters) {
-    console.log('Prebid Warning: adapters config not found in adapters.json, no adapters will' +
-      ' be loaded');
+    console.log(
+      'Prebid Warning: adapters config not found in adapters.json, no adapters will' +
+        ' be loaded',
+    );
     return '';
   }
 
@@ -46,23 +49,30 @@ function insertAdapters() {
     }
   });
 
-  inserts = inserts.map(name => {
-    return `var ${adapterName(name)} = require('./adapters/${name}.js');
+  inserts = inserts
+    .map(name => {
+      return `var ${adapterName(name)} = require('./adapters/${name}.js');
     exports.registerBidAdapter(new ${adapterName(name)}(), '${name}');\n`;
-  })
-    .concat(customAdapters.map(adapter => {
-      return `let ${adapter.name} = require('${adapter.srcPath}');
+    })
+    .concat(
+      customAdapters.map(adapter => {
+        return `let ${adapter.name} = require('${adapter.srcPath}');
       exports.registerBidAdapter(new ${adapter.name}, '${adapter.name}');\n`;
-    }))
-    .concat(aliases.map(adapter => {
-      const name = getNameStr(adapter);
-      return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
-    }))
+      }),
+    )
+    .concat(
+      aliases.map(adapter => {
+        const name = getNameStr(adapter);
+        return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
+      }),
+    )
     .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 
   if (!inserts.length) {
-    console.log('No matching adapters found for config, no adapters will be loaded.');
+    console.log(
+      'No matching adapters found for config, no adapters will be loaded.',
+    );
     return '';
   }
   return inserts;
@@ -119,7 +129,9 @@ function getAliases(adapter) {
  */
 function getVideoAdapters(adapter) {
   const name = getNameStr(adapter);
-  return adapter && name && adapter[name].supportedMediaTypes &&
+  return adapter &&
+    name &&
+    adapter[name].supportedMediaTypes &&
     adapter[name].supportedMediaTypes.includes('video');
 }
 
@@ -144,7 +156,7 @@ function getCustomAdapters(adapter) {
   }
   return {
     name: getNames(adapter),
-    srcPath: srcPath
+    srcPath: srcPath,
   };
 }
 

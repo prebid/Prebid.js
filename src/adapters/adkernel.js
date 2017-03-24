@@ -1,7 +1,7 @@
 import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
+import { ajax } from 'src/ajax';
 import Adapter from 'src/adapters/adapter';
 
 /**
@@ -12,9 +12,9 @@ const AdKernelAdapter = function AdKernelAdapter() {
   const AJAX_REQ_PARAMS = {
     contentType: 'text/plain',
     withCredentials: true,
-    method: 'GET'
+    method: 'GET',
   };
-  const EMPTY_BID_RESPONSE = {'seatbid': [{'bid': []}]};
+  const EMPTY_BID_RESPONSE = { seatbid: [{ bid: [] }] };
 
   let baseAdapter = Adapter.createNew('adkernel');
 
@@ -29,7 +29,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     const syncedHostZones = {};
 
     //translate adunit info into rtb impression dispatched by host/zone
-    this.addImp = function (bid) {
+    this.addImp = function(bid) {
       let host = bid.params.host;
       let zone = bid.params.zoneId;
       let size = bid.sizes[0];
@@ -42,7 +42,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       if (!(zone in _dispatch[host])) {
         _dispatch[host][zone] = [];
       }
-      let imp = {'id': bidId, 'banner': {'w': size[0], 'h': size[1]}};
+      let imp = { id: bidId, banner: { w: size[0], h: size[1] } };
       if (utils.getTopWindowLocation().protocol === 'https:') {
         imp.secure = 1;
       }
@@ -50,7 +50,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       _dispatch[host][zone].push(imp);
       originalBids[bidId] = bid;
       //perform user-sync
-      if (!(host in syncedHostZones)){
+      if (!(host in syncedHostZones)) {
         syncedHostZones[host] = [];
       }
       if (syncedHostZones[host].indexOf(zone) === -1) {
@@ -73,7 +73,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     /**
      *  Main function to get bid requests
      */
-    this.dispatch = function (callback) {
+    this.dispatch = function(callback) {
       utils._each(_dispatch, (zones, host) => {
         utils.logMessage(`processing network ${host}`);
         utils._each(zones, (impressions, zone) => {
@@ -87,22 +87,27 @@ const AdKernelAdapter = function AdKernelAdapter() {
       let url = buildEndpointUrl(host);
       let rtbRequest = buildRtbRequest(impressions);
       let params = buildRequestParams(zone, rtbRequest);
-      ajax(url, (bidResp) => {
-        bidResp = bidResp === '' ? EMPTY_BID_RESPONSE : JSON.parse(bidResp);
-        utils._each(rtbRequest.imp, (imp) => {
-          let bidFound = false;
-          utils._each(bidResp.seatbid[0].bid, (bid) => {
-            /* istanbul ignore else */
-            if (!bidFound && bid.impid === imp.id) {
-              bidFound = true;
-              callback(originalBids[imp.id], imp, bid);
+      ajax(
+        url,
+        bidResp => {
+          bidResp = bidResp === '' ? EMPTY_BID_RESPONSE : JSON.parse(bidResp);
+          utils._each(rtbRequest.imp, imp => {
+            let bidFound = false;
+            utils._each(bidResp.seatbid[0].bid, bid => {
+              /* istanbul ignore else */
+              if (!bidFound && bid.impid === imp.id) {
+                bidFound = true;
+                callback(originalBids[imp.id], imp, bid);
+              }
+            });
+            if (!bidFound) {
+              callback(originalBids[imp.id], imp);
             }
           });
-          if (!bidFound) {
-            callback(originalBids[imp.id], imp);
-          }
-        });
-      }, params, AJAX_REQ_PARAMS);
+        },
+        params,
+        AJAX_REQ_PARAMS,
+      );
     }
 
     /**
@@ -111,14 +116,14 @@ const AdKernelAdapter = function AdKernelAdapter() {
      */
     function buildRtbRequest(imps) {
       return {
-        'id': utils.getUniqueIdentifierStr(),
-        'imp': imps,
-        'site': site,
-        'at': 1,
-        'device': {
-          'ip': 'caller',
-          'ua': 'caller'
-        }
+        id: utils.getUniqueIdentifierStr(),
+        imp: imps,
+        site: site,
+        at: 1,
+        device: {
+          ip: 'caller',
+          ua: 'caller',
+        },
       };
     }
 
@@ -131,9 +136,9 @@ const AdKernelAdapter = function AdKernelAdapter() {
 
     function buildRequestParams(zone, rtbReq) {
       return {
-        'zone': encodeURIComponent(zone),
-        'ad_type': 'rtb',
-        'r': encodeURIComponent(JSON.stringify(rtbReq))
+        zone: encodeURIComponent(zone),
+        ad_type: 'rtb',
+        r: encodeURIComponent(JSON.stringify(rtbReq)),
       };
     }
   }
@@ -141,7 +146,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   /**
    *  Main module export function implementation
    */
-  baseAdapter.callBids = function (params) {
+  baseAdapter.callBids = function(params) {
     var bids = params.bids || [];
     processBids(bids);
   };
@@ -152,9 +157,11 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function processBids(bids) {
     const dispatcher = new RtbRequestDispatcher();
     //process individual bids
-    utils._each(bids, (bid) => {
+    utils._each(bids, bid => {
       if (!validateBidParams(bid.params)) {
-        utils.logError(`Incorrect configuration for adkernel bidder: ${bid.params}`);
+        utils.logError(
+          `Incorrect configuration for adkernel bidder: ${bid.params}`,
+        );
         bidmanager.addBidResponse(bid.placementCode, createEmptyBidObject(bid));
       } else {
         dispatcher.addImp(bid);
@@ -165,7 +172,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
       let adUnitId = bid.placementCode;
       if (bidResp) {
         utils.logMessage(`got response for ${adUnitId}`);
-        bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, imp.banner.w, imp.banner.h));
+        bidmanager.addBidResponse(
+          adUnitId,
+          createBidObject(bidResp, bid, imp.banner.w, imp.banner.h),
+        );
       } else {
         utils.logMessage(`got empty response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createEmptyBidObject(bid));
@@ -182,7 +192,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       ad: formatAdMarkup(resp),
       width: width,
       height: height,
-      cpm: parseFloat(resp.price)
+      cpm: parseFloat(resp.price),
     });
   }
 
@@ -191,7 +201,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
    */
   function createEmptyBidObject(bid) {
     return Object.assign(bidfactory.createBid(2, bid), {
-      bidderCode: bid.bidder
+      bidderCode: bid.bidder,
     });
   }
 
@@ -207,7 +217,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
   }
 
   function validateBidParams(params) {
-    return typeof params.host !== 'undefined' && typeof params.zoneId !== 'undefined';
+    return typeof params.host !== 'undefined' &&
+      typeof params.zoneId !== 'undefined';
   }
 
   /**
@@ -216,15 +227,15 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function createSite() {
     var location = utils.getTopWindowLocation();
     return {
-      'domain': location.hostname
+      domain: location.hostname,
     };
   }
 
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode : baseAdapter.getBidderCode,
-    createNew : AdKernelAdapter.createNew
+    getBidderCode: baseAdapter.getBidderCode,
+    createNew: AdKernelAdapter.createNew,
   };
 };
 

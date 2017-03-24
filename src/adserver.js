@@ -1,28 +1,38 @@
-import {formatQS} from './url';
+import { formatQS } from './url';
 
 //Adserver parent class
 const AdServer = function(attr) {
   this.name = attr.adserver;
   this.code = attr.code;
   this.getWinningBidByCode = function() {
-    var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adUnitCode === this.code);
+    var bidObject = $$PREBID_GLOBAL$$._bidsReceived.find(
+      bid => bid.adUnitCode === this.code,
+    );
     return bidObject;
   };
 };
 
 //DFP ad server
-exports.dfpAdserver = function (options, urlComponents) {
+exports.dfpAdserver = function(options, urlComponents) {
   var adserver = new AdServer(options);
   adserver.urlComponents = urlComponents;
 
   var dfpReqParams = {
-    'env' : 'vp',
-    'gdfp_req' : '1',
-    'impl' : 's',
-    'unviewed_position_start' : '1'
+    env: 'vp',
+    gdfp_req: '1',
+    impl: 's',
+    unviewed_position_start: '1',
   };
 
-  var dfpParamsWithVariableValue = ['output', 'iu', 'sz', 'url', 'correlator', 'description_url', 'hl'];
+  var dfpParamsWithVariableValue = [
+    'output',
+    'iu',
+    'sz',
+    'url',
+    'correlator',
+    'description_url',
+    'hl',
+  ];
 
   var getCustomParams = function(targeting) {
     return encodeURIComponent(formatQS(targeting));
@@ -30,19 +40,28 @@ exports.dfpAdserver = function (options, urlComponents) {
 
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
-    this.urlComponents.search.description_url = encodeURIComponent(bid.descriptionUrl);
-    this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
+    this.urlComponents.search.description_url = encodeURIComponent(
+      bid.descriptionUrl,
+    );
+    this.urlComponents.search.cust_params = getCustomParams(
+      bid.adserverTargeting,
+    );
     this.urlComponents.search.correlator = Date.now();
   };
 
   adserver.verifyAdserverTag = function() {
-    for(var key in dfpReqParams) {
-      if(!this.urlComponents.search.hasOwnProperty(key) || this.urlComponents.search[key] !== dfpReqParams[key]) {
+    for (var key in dfpReqParams) {
+      if (
+        !this.urlComponents.search.hasOwnProperty(key) ||
+        this.urlComponents.search[key] !== dfpReqParams[key]
+      ) {
         return false;
       }
     }
-    for(var i in dfpParamsWithVariableValue) {
-      if(!this.urlComponents.search.hasOwnProperty(dfpParamsWithVariableValue[i])) {
+    for (var i in dfpParamsWithVariableValue) {
+      if (
+        !this.urlComponents.search.hasOwnProperty(dfpParamsWithVariableValue[i])
+      ) {
         return false;
       }
     }

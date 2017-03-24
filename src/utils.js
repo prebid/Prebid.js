@@ -14,9 +14,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
-}
+} catch (e) {}
 
 /*
  *   Substitutes into a string from a given map using the token
@@ -27,9 +25,9 @@ catch (e) {
  *   map['something'] = 'something else';
  *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
  */
-exports.replaceTokenInString = function (str, map, token) {
-  this._each(map, function (value, key) {
-    value = (value === undefined) ? '' : value;
+exports.replaceTokenInString = function(str, map, token) {
+  this._each(map, function(value, key) {
+    value = value === undefined ? '' : value;
 
     var keyString = token + key.toUpperCase() + token;
     var re = new RegExp(keyString, 'g');
@@ -41,9 +39,9 @@ exports.replaceTokenInString = function (str, map, token) {
 };
 
 /* utility method to get incremental integer starting from 1 */
-var getIncrementalInteger = (function () {
+var getIncrementalInteger = (function() {
   var count = 0;
-  return function () {
+  return function() {
     count++;
     return count;
   };
@@ -63,13 +61,12 @@ exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
  * https://gist.github.com/jed/982883 via node-uuid
  */
 exports.generateUUID = function generateUUID(placeholder) {
-  return placeholder ?
-    (placeholder ^ Math.random() * 16 >> placeholder/4).toString(16)
-    :
-    ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
+  return placeholder
+    ? (placeholder ^ Math.random() * 16 >> placeholder / 4).toString(16)
+    : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
-exports.getBidIdParameter = function (key, paramsObj) {
+exports.getBidIdParameter = function(key, paramsObj) {
   if (paramsObj && paramsObj[key]) {
     return paramsObj[key];
   }
@@ -77,9 +74,9 @@ exports.getBidIdParameter = function (key, paramsObj) {
   return '';
 };
 
-exports.tryAppendQueryString = function (existingUrl, key, value) {
+exports.tryAppendQueryString = function(existingUrl, key, value) {
   if (value) {
-    return existingUrl += key + '=' + encodeURIComponent(value) + '&';
+    return (existingUrl += key + '=' + encodeURIComponent(value) + '&');
   }
 
   return existingUrl;
@@ -87,7 +84,7 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
 
 //parse a query string object passed in bid params
 //bid params should be an object such as {key: "value", key1 : "value1"}
-exports.parseQueryStringParameters = function (queryObj) {
+exports.parseQueryStringParameters = function(queryObj) {
   var result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k))
@@ -98,12 +95,12 @@ exports.parseQueryStringParameters = function (queryObj) {
 };
 
 //transform an AdServer targeting bids into a query string to send to the adserver
-exports.transformAdServerTargetingObj = function (targeting) {
+exports.transformAdServerTargetingObj = function(targeting) {
   // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
-
     return getKeys(targeting)
-      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
+      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`)
+      .join('&');
   } else {
     return '';
   }
@@ -114,7 +111,7 @@ exports.transformAdServerTargetingObj = function (targeting) {
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
-exports.parseSizesInput = function (sizeObj) {
+exports.parseSizesInput = function(sizeObj) {
   var parsedSizes = [];
 
   //if a string for now we can assume it is a single size, like "300x250"
@@ -138,32 +135,38 @@ exports.parseSizesInput = function (sizeObj) {
     //don't process empty array
     if (sizeArrayLength > 0) {
       //if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
+      if (
+        sizeArrayLength === 2 &&
+        typeof sizeObj[0] === objectType_number &&
+        typeof sizeObj[1] === objectType_number
+      ) {
         parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
       } else {
         //otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
           parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
         }
-
       }
     }
   }
 
   return parsedSizes;
-
 };
 
 //parse a GPT style sigle size array, (i.e [300,250])
 //into an AppNexus style string, (i.e. 300x250)
-exports.parseGPTSingleSizeArray = function (singleSize) {
+exports.parseGPTSingleSizeArray = function(singleSize) {
   //if we aren't exactly 2 items in this array, it is invalid
-  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (
+    this.isArray(singleSize) &&
+    singleSize.length === 2 &&
+    (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))
+  ) {
     return singleSize[0] + 'x' + singleSize[1];
   }
 };
 
-exports.getTopWindowLocation = function () {
+exports.getTopWindowLocation = function() {
   let location;
   try {
     location = window.top.location;
@@ -174,7 +177,7 @@ exports.getTopWindowLocation = function () {
   return location;
 };
 
-exports.getTopWindowUrl = function () {
+exports.getTopWindowUrl = function() {
   let href;
   try {
     href = this.getTopWindowLocation().href;
@@ -185,44 +188,46 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
-exports.logWarn = function (msg) {
+exports.logWarn = function(msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
   }
 };
 
-exports.logInfo = function (msg, args) {
+exports.logInfo = function(msg, args) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     if (infoLogger) {
       if (!args || args.length === 0) {
         args = '';
       }
 
-      infoLogger('INFO: ' + msg + ((args === '') ? '' : ' : params : '), args);
+      infoLogger('INFO: ' + msg + (args === '' ? '' : ' : params : '), args);
     }
   }
 };
 
-exports.logMessage = function (msg) {
+exports.logMessage = function(msg) {
   if (debugTurnedOn() && hasConsoleLogger()) {
     console.log('MESSAGE: ' + msg);
   }
 };
 
 function hasConsoleLogger() {
-  return (window.console && window.console.log);
+  return window.console && window.console.log;
 }
 
 exports.hasConsoleLogger = hasConsoleLogger;
 
-var errLogFn = (function (hasLogger) {
+var errLogFn = (function(hasLogger) {
   if (!hasLogger) return '';
   return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
+})(hasConsoleLogger());
 
-var debugTurnedOn = function () {
+var debugTurnedOn = function() {
   if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
-    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    $$PREBID_GLOBAL$$.logging = getParameterByName(
+      CONSTANTS.DEBUG_MODE,
+    ).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
 
@@ -231,7 +236,7 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
+exports.logError = function(msg, code, exception) {
   var errCode = code || 'ERROR';
   if (debugTurnedOn() && hasConsoleLogger()) {
     console[errLogFn](console, errCode + ': ' + msg, exception || '');
@@ -260,7 +265,7 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
  *   Check if a given parameter name exists in query string
  *   and if it does return the value
  */
-var getParameterByName = function (name) {
+var getParameterByName = function(name) {
   var regexS = '[\\?&]' + name + '=([^&#]*)';
   var regex = new RegExp(regexS);
   var results = regex.exec(window.location.search);
@@ -277,7 +282,7 @@ var getParameterByName = function (name) {
  * @param  {string[]} requiredParamsArr [description]
  * @return {bool}                   Bool if paramaters are valid
  */
-exports.hasValidBidRequest = function (paramObj, requiredParamsArr, adapter) {
+exports.hasValidBidRequest = function(paramObj, requiredParamsArr, adapter) {
   var found = false;
 
   function findParam(value, key) {
@@ -292,7 +297,11 @@ exports.hasValidBidRequest = function (paramObj, requiredParamsArr, adapter) {
     this._each(paramObj, findParam);
 
     if (!found) {
-      this.logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
+      this.logError(
+        'Params are missing for bid request. One of these required paramaters are missing: ' +
+          requiredParamsArr,
+        adapter,
+      );
       return false;
     }
   }
@@ -301,7 +310,7 @@ exports.hasValidBidRequest = function (paramObj, requiredParamsArr, adapter) {
 };
 
 // Handle addEventListener gracefully in older browsers
-exports.addEventHandler = function (element, event, func) {
+exports.addEventHandler = function(element, event, func) {
   if (element.addEventListener) {
     element.addEventListener(event, func, true);
   } else if (element.attachEvent) {
@@ -315,19 +324,19 @@ exports.addEventHandler = function (element, event, func) {
  * @param {String} _t type string (e.g., Array)
  * @return {Boolean} if object is of type _t
  */
-exports.isA = function (object, _t) {
+exports.isA = function(object, _t) {
   return toString.call(object) === '[object ' + _t + ']';
 };
 
-exports.isFn = function (object) {
+exports.isFn = function(object) {
   return this.isA(object, t_Fn);
 };
 
-exports.isStr = function (object) {
+exports.isStr = function(object) {
   return this.isA(object, t_Str);
 };
 
-exports.isArray = function (object) {
+exports.isArray = function(object) {
   return this.isA(object, t_Arr);
 };
 
@@ -341,7 +350,7 @@ exports.isNumber = function(object) {
  * @param {*} object object to test
  * @return {Boolean} if object is empty
  */
-exports.isEmpty = function (object) {
+exports.isEmpty = function(object) {
   if (!object) return true;
   if (this.isArray(object) || this.isStr(object)) {
     return !(object.length > 0); // jshint ignore:line
@@ -369,7 +378,7 @@ exports.isEmptyStr = function(str) {
  * @param {Array|Object} object
  * @param {Function(value, key, object)} fn
  */
-exports._each = function (object, fn) {
+exports._each = function(object, fn) {
   if (this.isEmpty(object)) return;
   if (this.isFn(object.forEach)) return object.forEach(fn, this);
 
@@ -377,7 +386,8 @@ exports._each = function (object, fn) {
   var l = object.length;
 
   if (l > 0) {
-    for (; k < l; k++) fn(object[k], k, object);
+    for (; k < l; k++)
+      fn(object[k], k, object);
   } else {
     for (k in object) {
       if (hasOwnProperty.call(object, k)) fn.call(this, object[k], k);
@@ -385,7 +395,7 @@ exports._each = function (object, fn) {
   }
 };
 
-exports.contains = function (a, obj) {
+exports.contains = function(a, obj) {
   if (this.isEmpty(a)) {
     return false;
   }
@@ -404,14 +414,14 @@ exports.contains = function (a, obj) {
   return false;
 };
 
-exports.indexOf = (function () {
+exports.indexOf = (function() {
   if (Array.prototype.indexOf) {
     return Array.prototype.indexOf;
   }
 
   // ie8 no longer supported
   //return polyfills.indexOf;
-}());
+})();
 
 /**
  * Map an array or object into another array
@@ -420,22 +430,24 @@ exports.indexOf = (function () {
  * @param {Function(value, key, object)} callback
  * @return {Array}
  */
-exports._map = function (object, callback) {
+exports._map = function(object, callback) {
   if (this.isEmpty(object)) return [];
   if (this.isFn(object.map)) return object.map(callback);
   var output = [];
-  this._each(object, function (value, key) {
+  this._each(object, function(value, key) {
     output.push(callback(value, key, object));
   });
 
   return output;
 };
 
-var hasOwn = function (objectToCheck, propertyToCheckFor) {
+var hasOwn = function(objectToCheck, propertyToCheckFor) {
   if (objectToCheck.hasOwnProperty) {
     return objectToCheck.hasOwnProperty(propertyToCheckFor);
   } else {
-    return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
+    return typeof objectToCheck[propertyToCheckFor] !== 'undefined' &&
+      objectToCheck.constructor.prototype[propertyToCheckFor] !==
+        objectToCheck[propertyToCheckFor];
   }
 };
 /**
@@ -443,7 +455,7 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
  * @param  {string} url URL to be requested
  * @return {string}     HTML snippet that contains the img src = set to `url`
  */
-exports.createTrackPixelHtml = function (url) {
+exports.createTrackPixelHtml = function(url) {
   if (!url) {
     return '';
   }
@@ -459,7 +471,7 @@ exports.createTrackPixelHtml = function (url) {
  * @param  {string} url plain URL to be requested
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url) {
+exports.createTrackPixelIframeHtml = function(url) {
   if (!url) {
     return '';
   }
@@ -472,7 +484,7 @@ exports.createTrackPixelIframeHtml = function (url) {
  * @param  {object} iframe reference
  * @return {object}        iframe `document` reference
  */
-exports.getIframeDocument = function (iframe) {
+exports.getIframeDocument = function(iframe) {
   if (!iframe) {
     return;
   }
@@ -486,8 +498,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 
@@ -498,13 +509,15 @@ exports.getValueString = function(param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
-  if (this.isStr(val) ) {
+  if (this.isStr(val)) {
     return val;
   }
   if (this.isNumber(val)) {
     return val.toString();
   }
-  this.logWarn('Unsuported type for param: ' + param + ' required type: String');
+  this.logWarn(
+    'Unsuported type for param: ' + param + ' required type: String',
+  );
 };
 
 export function uniques(value, index, arry) {
@@ -516,7 +529,9 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id) {
-  return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  return $$PREBID_GLOBAL$$._bidsRequested
+    .map(bidSet => bidSet.bids.find(bid => bid.bidId === id))
+    .find(bid => bid);
 }
 
 export function getKeys(obj) {
@@ -529,12 +544,18 @@ export function getValue(obj, key) {
 
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
-  return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten).filter(uniques);
+  return adUnits
+    .map(unit => unit.bids.map(bid => bid.bidder).reduce(flatten, []))
+    .reduce(flatten)
+    .filter(uniques);
 }
 
 export function isGptPubadsDefined() {
-  if (window.googletag && exports.isFn(window.googletag.pubads) && exports.isFn(window.googletag.pubads().getSlots)) {
+  if (
+    window.googletag &&
+    exports.isFn(window.googletag.pubads) &&
+    exports.isFn(window.googletag.pubads().getSlots)
+  ) {
     return true;
   }
 }
@@ -574,7 +595,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
 }
 
 /**
@@ -583,7 +604,9 @@ export function adUnitsFilter(filter, bid) {
  */
 export function isSrcdocSupported(doc) {
   //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+  return !!doc.defaultView &&
+    'srcdoc' in doc.defaultView.frameElement &&
+    !/firefox/i.test(navigator.userAgent);
 }
 
 export function cloneJson(obj) {

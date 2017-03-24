@@ -3,9 +3,7 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
 var utils = require('src/utils.js');
 
-
 var JCMAdapter = function JCMAdapter() {
-
   window.pbjs = window.pbjs || {};
   window.pbjs.processJCMResponse = function(JCMResponse) {
     if (JCMResponse) {
@@ -22,12 +20,17 @@ var JCMAdapter = function JCMAdapter() {
             bidObject.ad = decodeURIComponent(bid.ad.replace(/\+/g, '%20'));
             bidObject.width = bid.width;
             bidObject.height = bid.height;
-            bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
-          }
-          else {
+            bidmanager.addBidResponse(
+              utils.getBidRequest(bid.callbackId).placementCode,
+              bidObject,
+            );
+          } else {
             bidObject = bidfactory.createBid(2);
             bidObject.bidderCode = 'jcm';
-            bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
+            bidmanager.addBidResponse(
+              utils.getBidRequest(bid.callbackId).placementCode,
+              bidObject,
+            );
           }
         }
       }
@@ -35,39 +38,37 @@ var JCMAdapter = function JCMAdapter() {
   };
 
   function _callBids(params) {
-
     var BidRequest = {
-      bids: []
+      bids: [],
     };
 
     for (var i = 0; i < params.bids.length; i++) {
-
-      var adSizes = "";
+      var adSizes = '';
       var bid = params.bids[i];
       for (var x = 0; x < bid.sizes.length; x++) {
         adSizes += utils.parseGPTSingleSizeArray(bid.sizes[x]);
-        if (x !== (bid.sizes.length - 1)) {
+        if (x !== bid.sizes.length - 1) {
           adSizes += ',';
         }
       }
 
-
       BidRequest.bids.push({
-        "callbackId"   : bid.bidId,
-        "siteId"       : bid.params.siteId,
-        "adSizes"	   : adSizes
+        callbackId: bid.bidId,
+        siteId: bid.params.siteId,
+        adSizes: adSizes,
       });
     }
 
     var JSONStr = JSON.stringify(BidRequest);
-    var reqURL = document.location.protocol+"//media.adfrontiers.com/pq?t=hb&bids=" + encodeURIComponent(JSONStr);
+    var reqURL = document.location.protocol +
+      '//media.adfrontiers.com/pq?t=hb&bids=' +
+      encodeURIComponent(JSONStr);
     adloader.loadScript(reqURL);
   }
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
-
 };
 
 module.exports = JCMAdapter;

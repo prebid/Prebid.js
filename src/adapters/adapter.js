@@ -9,16 +9,15 @@ function Adapter(code) {
     return bidderCode;
   }
 
-  function callBids() {
-  }
+  function callBids() {}
 
   return {
     callBids: callBids,
     setBidderCode: setBidderCode,
-    getBidderCode: getBidderCode
+    getBidderCode: getBidderCode,
   };
 }
 
-exports.createNew = function (bidderCode) {
+exports.createNew = function(bidderCode) {
   return new Adapter(bidderCode);
 };

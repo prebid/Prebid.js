@@ -48,18 +48,21 @@ exports.assertion = function(expected, msg) {
       console.log(result);
       console.log(callback.toString());
       if (callback) {
-			  return callback.call(_this, result.value);
-		  }
+        return callback.call(_this, result.value);
+      }
     };
 
-    this.api.execute(function(){
-      //cusotm logic
-      return 'hello';
-    }, [], execcallback);
+    this.api.execute(
+      function() {
+        //cusotm logic
+        return 'hello';
+      },
+      [],
+      execcallback,
+    );
 
     //var result = {'value':'hello'};
 
     return this;
   };
-
 };

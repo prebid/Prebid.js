@@ -7,9 +7,7 @@ var bidfactory = require('../bidfactory.js');
 *  Use to create a TripleLiftAdapter object
 */
 
-
 var TripleLiftAdapter = function TripleLiftAdapter() {
-
   function _callBids(params) {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
@@ -26,7 +24,6 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     }
   }
 
-
   function buildTLCall(bid, callbackId) {
     //determine tag params
     var inventoryCode = utils.getBidIdParameter('inventoryCode', bid.params);
@@ -36,7 +33,11 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var tlURI = '//tlx.3lift.com/header/auction?';
     var tlCall = document.location.protocol + tlURI;
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback', '$$PREBID_GLOBAL$$.TLCB');
+    tlCall = utils.tryAppendQueryString(
+      tlCall,
+      'callback',
+      '$$PREBID_GLOBAL$$.TLCB',
+    );
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
@@ -76,11 +77,15 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     try {
       // check for Flash support in IE
       var fo = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash');
-      if (fo) { hasFlash = 1; }
+      if (fo) {
+        hasFlash = 1;
+      }
     } catch (e) {
-      if (navigator.mimeTypes &&
+      if (
+        navigator.mimeTypes &&
         navigator.mimeTypes['application/x-shockwave-flash'] !== undefined &&
-        navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
+        navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin
+      ) {
         hasFlash = 1;
       }
     }
@@ -94,12 +99,16 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
       var placementCode = bidObj && bidObj.placementCode;
 
       // @if NODE_ENV='debug'
-      if (bidObj) { utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode); }
+      if (bidObj) {
+        utils.logMessage(
+          'JSONP callback function called for inventory code: ' +
+            bidObj.params.inventoryCode,
+        );
+      }
       // @endif
 
       var bid = [];
       if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
-
         bid = bidfactory.createBid(1, bidObj);
         bid.bidderCode = 'triplelift';
         bid.cpm = tlResponseObj.cpm;
@@ -108,30 +117,30 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.height = tlResponseObj.height;
         bid.dealId = tlResponseObj.deal_id;
         bidmanager.addBidResponse(placementCode, bid);
-
       } else {
         // no response data
         // @if NODE_ENV='debug'
-        if (bidObj) {utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);}
+        if (bidObj) {
+          utils.logMessage(
+            'No prebid response from TripleLift for inventory code: ' +
+              bidObj.params.inventoryCode,
+          );
+        }
         // @endif
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
-
     } else {
       // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
       // @endif
-
     }
-
   };
 
   return {
-    callBids: _callBids
-
+    callBids: _callBids,
   };
 };
 module.exports = TripleLiftAdapter;

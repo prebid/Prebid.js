@@ -1,10 +1,9 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import PulsePointAdapter from '../../../src/adapters/pulsepoint';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
-describe("PulsePoint Adapter Tests", () => {
-
+describe('PulsePoint Adapter Tests', () => {
   let pulsepointAdapter = new PulsePointAdapter();
   let slotConfigs;
   let requests = [];
@@ -14,8 +13,8 @@ describe("PulsePoint Adapter Tests", () => {
     /* Mocked PulsePoint library */
     window.pp = {
       requestActions: {
-        BID: 0
-      }
+        BID: 0,
+      },
     };
     /* Ad object*/
     window.pp.Ad = function(config) {
@@ -38,27 +37,28 @@ describe("PulsePoint Adapter Tests", () => {
     slotConfigs = {
       bids: [
         {
-          placementCode: "/DfpAccount1/slot1", 
-          bidder: "pulsepoint",
+          placementCode: '/DfpAccount1/slot1',
+          bidder: 'pulsepoint',
           bidId: 'bid12345',
           params: {
-            cp: "p10000",
-            ct: "t10000",
-            cf: "300x250",
-            param1: "value1",
-            param2: 2
-          }
-        },{
-          placementCode: "/DfpAccount2/slot2", 
-          bidder: "pulsepoint",
+            cp: 'p10000',
+            ct: 't10000',
+            cf: '300x250',
+            param1: 'value1',
+            param2: 2,
+          },
+        },
+        {
+          placementCode: '/DfpAccount2/slot2',
+          bidder: 'pulsepoint',
           bidId: 'bid23456',
           params: {
-            cp: "p20000",
-            ct: "t20000",
-            cf: "728x90"
-          }
-        }
-      ]
+            cp: 'p20000',
+            ct: 't20000',
+            cf: '728x90',
+          },
+        },
+      ],
     };
   });
 
@@ -97,7 +97,7 @@ describe("PulsePoint Adapter Tests", () => {
   it('Verify bid', () => {
     responses['t10000'] = {
       html: 'This is an Ad',
-      bidCpm: 1.25
+      bidCpm: 1.25,
     };
     pulsepointAdapter.callBids(slotConfigs);
     let placement = bidManager.addBidResponse.firstCall.args[0];
@@ -127,7 +127,9 @@ describe("PulsePoint Adapter Tests", () => {
     pulsepointAdapter.callBids(slotConfigs);
     let libraryLoadCall = adLoader.loadScript.firstCall.args[0];
     let callback = adLoader.loadScript.firstCall.args[1];
-    expect(libraryLoadCall).to.equal('http://tag-st.contextweb.com/getjs.static.js');
+    expect(libraryLoadCall).to.equal(
+      'http://tag-st.contextweb.com/getjs.static.js',
+    );
     expect(callback).to.be.a('function');
   });
 
@@ -161,5 +163,4 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
   });
-
 });

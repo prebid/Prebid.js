@@ -1,28 +1,43 @@
 var bidfactory = require('../bidfactory.js'),
-    bidmanager = require('../bidmanager.js'),
-    utils = require('../utils.js'),
-    adloader = require('../adloader');
+  bidmanager = require('../bidmanager.js'),
+  utils = require('../utils.js'),
+  adloader = require('../adloader');
 
 var WideOrbitAdapter = function WideOrbitAdapter() {
   var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
-      pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
-      pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
-      pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
-      base = (window.location.protocol) + '//p{pbId}.atemda.com/',
-      bids,
-      adapterName = 'wideorbit';
+    pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
+    pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
+    pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
+    base = window.location.protocol + '//p{pbId}.atemda.com/',
+    bids,
+    adapterName = 'wideorbit';
 
   function _fixParamNames(param) {
     if (!param) {
       return;
     }
 
-    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'],
-        prop;
+    var properties = [
+      'site',
+      'page',
+      'width',
+      'height',
+      'rank',
+      'subPublisher',
+      'ecpm',
+      'atf',
+      'pId',
+      'pbId',
+      'referrer',
+    ],
+      prop;
 
-    utils._each(properties, function (correctName) {
+    utils._each(properties, function(correctName) {
       for (prop in param) {
-        if (param.hasOwnProperty(prop) && prop.toLowerCase() === correctName.toLowerCase()) {
+        if (
+          param.hasOwnProperty(prop) &&
+          prop.toLowerCase() === correctName.toLowerCase()
+        ) {
           param[correctName] = param[prop];
           break;
         }
@@ -43,7 +58,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   function _setParams(str, keyValuePairs) {
-    utils._each(keyValuePairs, function (keyValuePair) {
+    utils._each(keyValuePairs, function(keyValuePair) {
       str = _setParam(str, keyValuePair[0], keyValuePair[1]);
     });
     return str;
@@ -54,7 +69,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       ['o', pos],
       ['gid', encodeURIComponent(params.tagId)],
       ['rpos', params.atf ? 1001 : 0],
-      ['ecpm', params.ecpm || '']
+      ['ecpm', params.ecpm || ''],
     ]);
   }
 
@@ -66,7 +81,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     return _setParams(pageRepeatParamId, [
       ['o', pos],
       ['pId', params.pId],
-      ['rank', _getRankParam(params.rank, pos)]
+      ['rank', _getRankParam(params.rank, pos)],
     ]);
   }
 
@@ -77,18 +92,28 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
       ['wName', encodeURIComponent(decodeURIComponent(params.page))],
       ['width', params.width],
       ['height', params.height],
-      ['subp', params.subPublisher ? encodeURIComponent(decodeURIComponent(params.subPublisher)) : ''],
-      ['rank', _getRankParam(params.rank, pos)]
+      [
+        'subp',
+        params.subPublisher
+          ? encodeURIComponent(decodeURIComponent(params.subPublisher))
+          : '',
+      ],
+      ['rank', _getRankParam(params.rank, pos)],
     ]);
   }
 
-  function _setupAdCall(publisherId, placementCount, placementsComponent, referrer) {
+  function _setupAdCall(
+    publisherId,
+    placementCount,
+    placementsComponent,
+    referrer,
+  ) {
     return _setParams(base + pageImpression, [
       ['pbId', publisherId],
       ['pc', placementCount],
       ['cts', new Date().getTime()],
       ['cb', Math.floor(Math.random() * 100000000)],
-      ['referrer', encodeURIComponent(referrer || '')]
+      ['referrer', encodeURIComponent(referrer || '')],
     ]) + placementsComponent;
   }
 
@@ -103,9 +128,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   function _callBids(params) {
-    var publisherId,
-      bidUrl = '',
-      i, referrer;
+    var publisherId, bidUrl = '', i, referrer;
 
     bids = params.bids || [];
 
@@ -129,10 +152,9 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   function _processUserMatchings(userMatchings) {
-    var headElem = document.getElementsByTagName('head')[0],
-        createdElem;
+    var headElem = document.getElementsByTagName('head')[0], createdElem;
 
-    utils._each(userMatchings, function (userMatching) {
+    utils._each(userMatchings, function(userMatching) {
       switch (userMatching.Type) {
         case 'redirect':
           createdElem = document.createElement('img');
@@ -162,15 +184,19 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   function _isUrl(scr) {
-    return scr.slice(0, 6) === "http:/" || scr.slice(0, 7) === "https:/" || scr.slice(0, 2) === "//";
+    return scr.slice(0, 6) === 'http:/' ||
+      scr.slice(0, 7) === 'https:/' ||
+      scr.slice(0, 2) === '//';
   }
 
   function _buildAdCode(placement) {
     var adCode = placement.Source, pixelTag;
 
-    utils._each(placement.TrackingCodes, function (trackingCode) {
+    utils._each(placement.TrackingCodes, function(trackingCode) {
       if (_isUrl(trackingCode)) {
-        pixelTag = '<img src="' + trackingCode + '" width="0" height="0" style="position:absolute"></img>';
+        pixelTag = '<img src="' +
+          trackingCode +
+          '" width="0" height="0" style="position:absolute"></img>';
       } else {
         pixelTag = trackingCode;
       }
@@ -181,15 +207,14 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
-  window.$$PREBID_GLOBAL$$.handleWideOrbitCallback = function (response) {
-    var bidResponse,
-      bidObject;
+  window.$$PREBID_GLOBAL$$.handleWideOrbitCallback = function(response) {
+    var bidResponse, bidObject;
 
     utils.logMessage('WO response. Placements: ' + response.Placements.length);
 
     _processUserMatchings(response.UserMatchings);
 
-    utils._each(bids, function (bid) {
+    utils._each(bids, function(bid) {
       bidResponse = _getBidResponse(bid.placementCode, response.Placements);
 
       if (bidResponse && bidResponse.Type === 'DirectHTML') {
@@ -208,7 +233,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   };
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };
 

@@ -4,10 +4,9 @@ var adloader = require('../adloader');
 
 var SpringServeAdapter;
 SpringServeAdapter = function SpringServeAdapter() {
-
   function buildSpringServeCall(bid) {
-
-    var spCall = window.location.protocol + '//bidder.springserve.com/display/hbid?';
+    var spCall = window.location.protocol +
+      '//bidder.springserve.com/display/hbid?';
 
     //get width and height from bid attribute
     var size = bid.sizes[0];
@@ -24,11 +23,14 @@ SpringServeAdapter = function SpringServeAdapter() {
     //maps param attributes to request parameters
     var requestAttrMap = {
       sp: 'supplyPartnerId',
-      imp_id: 'impId'
+      imp_id: 'impId',
     };
 
     for (var property in requestAttrMap) {
-      if (requestAttrMap.hasOwnProperty && params.hasOwnProperty(requestAttrMap[property])) {
+      if (
+        requestAttrMap.hasOwnProperty &&
+        params.hasOwnProperty(requestAttrMap[property])
+      ) {
         spCall += '&';
         spCall += property;
         spCall += '=';
@@ -62,15 +64,23 @@ SpringServeAdapter = function SpringServeAdapter() {
     }
   }
 
-  $$PREBID_GLOBAL$$.handleSpringServeCB = function (responseObj) {
-    if (responseObj && responseObj.seatbid && responseObj.seatbid.length > 0 &&
-      responseObj.seatbid[0].bid[0] !== undefined) {
+  $$PREBID_GLOBAL$$.handleSpringServeCB = function(responseObj) {
+    if (
+      responseObj &&
+      responseObj.seatbid &&
+      responseObj.seatbid.length > 0 &&
+      responseObj.seatbid[0].bid[0] !== undefined
+    ) {
       //look up the request attributs stored in the bidmanager
       var responseBid = responseObj.seatbid[0].bid[0];
       //var requestObj = bidmanager.getPlacementIdByCBIdentifer(responseBid.impid);
-      var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve');
+      var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(
+        bidSet => bidSet.bidderCode === 'springserve',
+      );
       if (requestBids && requestBids.bids.length > 0) {
-        requestBids = requestBids.bids.filter(bid => bid.params && bid.params.impId === +responseBid.impid);
+        requestBids = requestBids.bids.filter(
+          bid => bid.params && bid.params.impId === +responseBid.impid,
+        );
       } else {
         requestBids = [];
       }
@@ -88,9 +98,13 @@ SpringServeAdapter = function SpringServeAdapter() {
         }
       }
 
-      if (requestBids[0]) {bid.bidderCode = requestBids[0].bidder;}
+      if (requestBids[0]) {
+        bid.bidderCode = requestBids[0].bidder;
+      }
 
-      if (responseBid.hasOwnProperty('price') && responseBid.hasOwnProperty('adm')) {
+      if (
+        responseBid.hasOwnProperty('price') && responseBid.hasOwnProperty('adm')
+      ) {
         //assign properties from the response to the bid object
         bid.cpm = responseBid.price;
         bid.ad = responseBid.adm;
@@ -108,7 +122,7 @@ SpringServeAdapter = function SpringServeAdapter() {
   // when the page asks to send out bid requests.
   return {
     callBids: _callBids,
-    buildSpringServeCall: buildSpringServeCall
+    buildSpringServeCall: buildSpringServeCall,
   };
 };
 

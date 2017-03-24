@@ -3,8 +3,8 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var CriteoAdapter = function CriteoAdapter() {
-
-  var _publisherTagUrl = window.location.protocol + '//static.criteo.net/js/ld/publishertag.js';
+  var _publisherTagUrl = window.location.protocol +
+    '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
   var _profileId = 125;
 
@@ -13,13 +13,8 @@ var CriteoAdapter = function CriteoAdapter() {
       // publisherTag not loaded yet
 
       _pushBidRequestEvent(params);
-      adloader.loadScript(
-        _publisherTagUrl,
-        function () {},
-        true
-      );
-    }
-    else {
+      adloader.loadScript(_publisherTagUrl, function() {}, true);
+    } else {
       // publisherTag already loaded
       _pushBidRequestEvent(params);
     }
@@ -27,14 +22,12 @@ var CriteoAdapter = function CriteoAdapter() {
 
   // send bid request to criteo direct bidder handler
   function _pushBidRequestEvent(params) {
-
     // if we want to be fully asynchronous, we must first check window.criteo_pubtag in case publishertag.js is not loaded yet.
     window.Criteo = window.Criteo || {};
     window.Criteo.events = window.Criteo.events || [];
 
     // generate the bidding event
-    var biddingEventFunc = function () {
-
+    var biddingEventFunc = function() {
       var bids = params.bids || [];
 
       var slots = [];
@@ -47,8 +40,8 @@ var CriteoAdapter = function CriteoAdapter() {
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
-            bid.params.zoneId
-          )
+            bid.params.zoneId,
+          ),
         );
 
         isAudit |= bid.params.audit !== undefined;
@@ -60,7 +53,7 @@ var CriteoAdapter = function CriteoAdapter() {
         slots,
         _callbackSuccess(slots),
         _callbackError(slots),
-        _callbackError(slots) // timeout handled as error
+        _callbackError(slots), // timeout handled as error
       );
 
       // process the event as soon as possible
@@ -68,14 +61,12 @@ var CriteoAdapter = function CriteoAdapter() {
     };
 
     window.Criteo.events.push(biddingEventFunc);
-
   }
 
   function parseBidResponse(bidsResponse) {
     try {
       return JSON.parse(bidsResponse);
-    }
-    catch (error) {
+    } catch (error) {
       return {};
     }
   }
@@ -85,18 +76,20 @@ var CriteoAdapter = function CriteoAdapter() {
   }
 
   function _callbackSuccess(slots) {
-    return function (bidsResponse) {
+    return function(bidsResponse) {
       var jsonbidsResponse = parseBidResponse(bidsResponse);
 
-      if (isNoBidResponse(jsonbidsResponse))
-        return _callbackError(slots)();
+      if (isNoBidResponse(jsonbidsResponse)) return _callbackError(slots)();
 
       for (var i = 0; i < slots.length; i++) {
         var bidResponse = null;
 
         // look for the matching bid response
         for (var j = 0; j < jsonbidsResponse.slots.length; j++) {
-          if (jsonbidsResponse.slots[j] && jsonbidsResponse.slots[j].impid === slots[i].impId) {
+          if (
+            jsonbidsResponse.slots[j] &&
+            jsonbidsResponse.slots[j].impid === slots[i].impId
+          ) {
             bidResponse = jsonbidsResponse.slots.splice(j, 1)[0];
             break;
           }
@@ -111,8 +104,7 @@ var CriteoAdapter = function CriteoAdapter() {
           bidObject.ad = bidResponse.creative;
           bidObject.width = bidResponse.width;
           bidObject.height = bidResponse.height;
-        }
-        else {
+        } else {
           bidObject = _invalidBidResponse();
         }
         bidmanager.addBidResponse(slots[i].impId, bidObject);
@@ -121,7 +113,7 @@ var CriteoAdapter = function CriteoAdapter() {
   }
 
   function _callbackError(slots) {
-    return function () {
+    return function() {
       for (var i = 0; i < slots.length; i++) {
         bidmanager.addBidResponse(slots[i].impId, _invalidBidResponse());
       }
@@ -135,7 +127,7 @@ var CriteoAdapter = function CriteoAdapter() {
   }
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };
 

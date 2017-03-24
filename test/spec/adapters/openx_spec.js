@@ -1,5 +1,4 @@
-describe('openx adapter tests', function () {
-
+describe('openx adapter tests', function() {
   const expect = require('chai').expect;
   const assert = require('chai').assert;
   const adapter = require('src/adapters/openx');
@@ -10,13 +9,12 @@ describe('openx adapter tests', function () {
   before(() => sinon.stub(document.body, 'appendChild'));
   after(() => document.body.appendChild.restore());
 
-  describe('test openx callback responce', function () {
-
-    it('should exist and be a function', function () {
+  describe('test openx callback responce', function() {
+    it('should exist and be a function', function() {
       expect(pbjs.oxARJResponse).to.exist.and.to.be.a('function');
     });
 
-    it('should add empty bid responses if no bids returned', function () {
+    it('should add empty bid responses if no bids returned', function() {
       let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       let bidderRequest = {
@@ -27,23 +25,22 @@ describe('openx adapter tests', function () {
             bidder: 'openx',
             params: {
               delDomain: 'delDomain1',
-              unit: '1234'
+              unit: '1234',
             },
             sizes: [[300, 250]],
-            placementCode: 'test-gpt-div-1234'
-          }
-        ]
+            placementCode: 'test-gpt-div-1234',
+          },
+        ],
       };
 
       // empty ads in bidresponse
       let response = {
-        "ads":
-        {
-          "version": 1,
-          "count": 1,
-          "pixels": "http://testpixels.net",
-          "ad": []
-        }
+        ads: {
+          version: 1,
+          count: 1,
+          pixels: 'http://testpixels.net',
+          ad: [],
+        },
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -61,7 +58,7 @@ describe('openx adapter tests', function () {
     });
   });
 
-  it('should add bid responses if bids are returned', function () {
+  it('should add bid responses if bids are returned', function() {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
     let bidderRequest = {
@@ -72,50 +69,50 @@ describe('openx adapter tests', function () {
           bidder: 'openx',
           params: {
             delDomain: 'delDomain1',
-            unit: '1234'
+            unit: '1234',
           },
           sizes: [[300, 250]],
-          placementCode: 'test-gpt-div-1234'
-        }
-      ]
+          placementCode: 'test-gpt-div-1234',
+        },
+      ],
     };
 
     // empty ads in bidresponse
     let response = {
-      "ads":
-      {
-        "version": 1,
-        "count": 1,
-        "pixels": "http://testpixels.net",
-        "ad": [
+      ads: {
+        version: 1,
+        count: 1,
+        pixels: 'http://testpixels.net',
+        ad: [
           {
-            "adunitid": 1234,
-            "adid": 5678,
-            "type": "html",
-            "html": "test_html",
-            "framed": 1,
-            "is_fallback": 0,
-            "ts": "ts",
-            "cpipc": 1000,
-            "pub_rev": "1000",
-            "adv_id": "adv_id",
-            "brand_id": "",
-            "creative": [
+            adunitid: 1234,
+            adid: 5678,
+            type: 'html',
+            html: 'test_html',
+            framed: 1,
+            is_fallback: 0,
+            ts: 'ts',
+            cpipc: 1000,
+            pub_rev: '1000',
+            adv_id: 'adv_id',
+            brand_id: '',
+            creative: [
               {
-                "width": "300",
-                "height": "250",
-                "target": "_blank",
-                "mime": "text/html",
-                "media": "test_media",
-                "tracking": {
-                  "impression": "test_impression",
-                  "inview": "test_inview",
-                  "click": "test_click"
-                }
-              }
-            ]
-          }]
-      }
+                width: '300',
+                height: '250',
+                target: '_blank',
+                mime: 'text/html',
+                media: 'test_media',
+                tracking: {
+                  impression: 'test_impression',
+                  inview: 'test_inview',
+                  click: 'test_click',
+                },
+              },
+            ],
+          },
+        ],
+      },
     };
 
     pbjs._bidsRequested.push(bidderRequest);
@@ -138,7 +135,7 @@ describe('openx adapter tests', function () {
     stubAddBidResponse.restore();
   });
 
-  it('should add no fill bid responses if bids are returned, but have empty pub rev', function () {
+  it('should add no fill bid responses if bids are returned, but have empty pub rev', function() {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
     let bidderRequest = {
@@ -149,50 +146,50 @@ describe('openx adapter tests', function () {
           bidder: 'openx',
           params: {
             delDomain: 'delDomain1',
-            unit: '1234'
+            unit: '1234',
           },
           sizes: [[300, 250]],
-          placementCode: 'test-gpt-div-1234'
-        }
-      ]
+          placementCode: 'test-gpt-div-1234',
+        },
+      ],
     };
 
     // Empty pub rev in bid response
     let response = {
-      "ads":
-      {
-        "version": 1,
-        "count": 1,
-        "pixels": "http://testpixels.net",
-        "ad": [
+      ads: {
+        version: 1,
+        count: 1,
+        pixels: 'http://testpixels.net',
+        ad: [
           {
-            "adunitid": 1234,
-            "adid": 5678,
-            "type": "html",
-            "html": "test_html",
-            "framed": 1,
-            "is_fallback": 1,
-            "ts": "ts",
-            "cpipc": 1000,
-            "pub_rev": "",
-            "adv_id": "adv_id",
-            "brand_id": "",
-            "creative": [
+            adunitid: 1234,
+            adid: 5678,
+            type: 'html',
+            html: 'test_html',
+            framed: 1,
+            is_fallback: 1,
+            ts: 'ts',
+            cpipc: 1000,
+            pub_rev: '',
+            adv_id: 'adv_id',
+            brand_id: '',
+            creative: [
               {
-                "width": "300",
-                "height": "250",
-                "target": "_blank",
-                "mime": "text/html",
-                "media": "test_media",
-                "tracking": {
-                  "impression": "test_impression",
-                  "inview": "test_inview",
-                  "click": "test_click"
-                }
-              }
-            ]
-          }]
-      }
+                width: '300',
+                height: '250',
+                target: '_blank',
+                mime: 'text/html',
+                media: 'test_media',
+                tracking: {
+                  impression: 'test_impression',
+                  inview: 'test_inview',
+                  click: 'test_click',
+                },
+              },
+            ],
+          },
+        ],
+      },
     };
 
     pbjs._bidsRequested.push(bidderRequest);
@@ -209,14 +206,14 @@ describe('openx adapter tests', function () {
     stubAddBidResponse.restore();
   });
 
-  it('should not call loadscript when inputting with empty params', function () {
+  it('should not call loadscript when inputting with empty params', function() {
     let spyLoadScript = sinon.spy(adloader, 'loadScript');
     adapter().callBids({});
     assert(!spyLoadScript.called);
     spyLoadScript.restore();
   });
 
-  it('should call loadscript with the correct params', function () {
+  it('should call loadscript with the correct params', function() {
     let spyLoadScript = sinon.spy(adloader, 'loadScript');
     let params = {
       bids: [
@@ -224,10 +221,10 @@ describe('openx adapter tests', function () {
           sizes: [[300, 250], [300, 600]],
           params: {
             delDomain: 'testdelDomain',
-            unit: 1234
-          }
-        }
-      ]
+            unit: 1234,
+          },
+        },
+      ],
     };
     adapter().callBids(params);
 
@@ -240,7 +237,7 @@ describe('openx adapter tests', function () {
     spyLoadScript.restore();
   });
 
-  it('should send out custom params on bids that have customParams specified', function () {
+  it('should send out custom params on bids that have customParams specified', function() {
     let spyLoadScript = sinon.spy(adloader, 'loadScript');
     let params = {
       bids: [
@@ -249,10 +246,10 @@ describe('openx adapter tests', function () {
           params: {
             delDomain: 'testdelDomain',
             unit: 1234,
-            customParams: {'test1': 'testval1'}
-          }
-        }
-      ]
+            customParams: { test1: 'testval1' },
+          },
+        },
+      ],
     };
     adapter().callBids(params);
 
@@ -265,5 +262,4 @@ describe('openx adapter tests', function () {
     expect(bidUrl).to.include('c.test1=testval1');
     spyLoadScript.restore();
   });
-
 });

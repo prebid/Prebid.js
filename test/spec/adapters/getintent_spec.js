@@ -1,11 +1,10 @@
 import Adapter from '../../../src/adapters/getintent';
 import bidManager from '../../../src/bidmanager';
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 var assert = require('chai').assert;
 
 describe('getintent media adapter test', () => {
-
   let adapter;
 
   window.gi_hb = {
@@ -13,72 +12,81 @@ describe('getintent media adapter test', () => {
       var pid = bidRequest.pid;
       var tid = bidRequest.tid;
 
-      if (pid == "p1" || pid == "p2") {
-         callback({
-           ad : `Ad Markup ${pid} ${tid}`,
-           cpm : 2.71,
-           size : `${bidRequest.size}`
-         }, bidRequest);
-      } else if (pid == "p3") {
-        callback({
-          no_bid: 1
-        }, bidRequest);
-      } else if (pid == "p4") {
-        callback({
-           vast_url : `http://test.com?pid=${pid}&tid=${tid}`,
-           cpm : 2.88,
-           size : `${bidRequest.size}`
-         }, bidRequest);
+      if (pid == 'p1' || pid == 'p2') {
+        callback(
+          {
+            ad: `Ad Markup ${pid} ${tid}`,
+            cpm: 2.71,
+            size: `${bidRequest.size}`,
+          },
+          bidRequest,
+        );
+      } else if (pid == 'p3') {
+        callback(
+          {
+            no_bid: 1,
+          },
+          bidRequest,
+        );
+      } else if (pid == 'p4') {
+        callback(
+          {
+            vast_url: `http://test.com?pid=${pid}&tid=${tid}`,
+            cpm: 2.88,
+            size: `${bidRequest.size}`,
+          },
+          bidRequest,
+        );
       }
-    }
+    },
   };
 
   function callOut() {
     adapter.callBids({
-      bidderCode: "getintent",
+      bidderCode: 'getintent',
       bids: [
         {
-          bidder: "getintent",
-          adUnitCode: "test1",
-          sizes: [[320,240]],
+          bidder: 'getintent',
+          adUnitCode: 'test1',
+          sizes: [[320, 240]],
           params: {
-            pid: "p1",
-            tid: "t1",
-            cur: "USD"
-          }
+            pid: 'p1',
+            tid: 't1',
+            cur: 'USD',
+          },
         },
         {
-          bidder: "getintent",
-          adUnitCode: "test2",
-          sizes: [[720,90]],
+          bidder: 'getintent',
+          adUnitCode: 'test2',
+          sizes: [[720, 90]],
           params: {
-            pid: "p2",
-            tid: "t1",
-            cur: "USD"
-          }
+            pid: 'p2',
+            tid: 't1',
+            cur: 'USD',
+          },
         },
         {
-          bidder: "getintent",
-          adUnitCode: "test3",
-          sizes: [[400,500]],
+          bidder: 'getintent',
+          adUnitCode: 'test3',
+          sizes: [[400, 500]],
           params: {
-            pid: "p3",
-            tid: "t2",
-            cur: "USD"
-          }
+            pid: 'p3',
+            tid: 't2',
+            cur: 'USD',
+          },
         },
         {
-          bidder: "getintent",
-          adUnitCode: "test4",
+          bidder: 'getintent',
+          adUnitCode: 'test4',
           mediaType: 'video',
-          sizes: [[480,352]],
+          sizes: [[480, 352]],
           params: {
-            pid: "p4",
-            tid: "t3",
-            cur: "USD"
-          }
-        }
-      ]
+            pid: 'p4',
+            tid: 't3',
+            cur: 'USD',
+          },
+        },
+      ],
     });
   }
 
@@ -86,11 +94,9 @@ describe('getintent media adapter test', () => {
     adapter = new Adapter();
   });
 
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   describe('adding bids to the manager', () => {
-
     let firstBid;
     let secondBid;
     let thirdBid;
@@ -137,13 +143,15 @@ describe('getintent media adapter test', () => {
       expect(secondBid).to.have.property('bidderCode', 'getintent');
       expect(thirdBid).to.have.property('bidderCode', 'getintent');
     });
-    
+
     it('will respond to the video bid', () => {
-      expect(videoBid).to.have.property('vastUrl', 'http://test.com?pid=p4&tid=t3');
+      expect(videoBid).to.have.property(
+        'vastUrl',
+        'http://test.com?pid=p4&tid=t3',
+      );
       expect(videoBid).to.have.property('cpm', 2.88);
       expect(videoBid).to.have.property('width', '480');
       expect(videoBid).to.have.property('height', '352');
     });
   });
-
 });

@@ -3,8 +3,7 @@ var mkpath = require('mkpath');
 var path = require('path');
 var ejs = require('ejs');
 
-module.exports = new (function() {
-
+module.exports = new function() {
   var tmpl = __dirname + '/junit.xml.ejs';
   var tmplData;
   var globalResults;
@@ -14,7 +13,7 @@ module.exports = new (function() {
       cb(tmplData);
       return;
     }
-    fs.readFile(tmpl, function (err, data) {
+    fs.readFile(tmpl, function(err, data) {
       if (err) {
         throw err;
       }
@@ -29,7 +28,9 @@ module.exports = new (function() {
       var assertions = testcase.assertions;
       for (var i = 0; i < assertions.length; i++) {
         if (assertions[i].stackTrace) {
-          assertions[i].stackTrace = stackTraceFilter(assertions[i].stackTrace.split('\n'));
+          assertions[i].stackTrace = stackTraceFilter(
+            assertions[i].stackTrace.split('\n'),
+          );
         }
       }
 
@@ -50,17 +51,20 @@ module.exports = new (function() {
     adaptAssertions(module);
 
     var rendered = ejs.render(data, {
-        module     : module,
-        moduleName : moduleName,
-        systemerr  : globalResults.errmessages.join('\n'),
-      });
+      module: module,
+      moduleName: moduleName,
+      systemerr: globalResults.errmessages.join('\n'),
+    });
 
     if (pathParts.length) {
       output_folder = path.join(output_folder, pathParts.join(path.sep));
       mkpath.sync(output_folder);
     }
 
-    var filename = path.join(output_folder, opts.filename_prefix + moduleName + '.xml');
+    var filename = path.join(
+      output_folder,
+      opts.filename_prefix + moduleName + '.xml',
+    );
     fs.writeFile(filename, rendered, function(err) {
       callback(err);
       globalResults.errmessages.length = 0;
@@ -68,24 +72,23 @@ module.exports = new (function() {
   }
 
   function stackTraceFilter(parts) {
-    var stack = parts.reduce(function(list, line) {
-      if (contains(line, [
-          'node_modules',
-          '(node.js:',
-          '(events.js:'
-      ])) {
-        return list;
-      }
+    var stack = parts.reduce(
+      function(list, line) {
+        if (contains(line, ['node_modules', '(node.js:', '(events.js:'])) {
+          return list;
+        }
 
-      list.push(line);
-      return list;
-    }, []);
+        list.push(line);
+        return list;
+      },
+      [],
+    );
 
     return stack.join('\n');
   }
 
   function contains(str, text) {
-    if( Object.prototype.toString.call( text ) === '[object Array]' ) {
+    if (Object.prototype.toString.call(text) === '[object Array]') {
       for (var i = 0; i < text.length; i++) {
         if (contains(str, text[i])) {
           return true;
@@ -96,7 +99,7 @@ module.exports = new (function() {
   }
 
   this.write = function(results, options, callback) {
-    options.filename_prefix = process.env.__NIGHTWATCH_ENV+'_';
+    options.filename_prefix = process.env.__NIGHTWATCH_ENV + '_';
     globalResults = results;
     var keys = Object.keys(results.modules);
 
@@ -104,7 +107,7 @@ module.exports = new (function() {
       var moduleKey = keys.shift();
 
       writeReport(moduleKey, data, options, function(err) {
-        if (err || (keys.length === 0)) {
+        if (err || keys.length === 0) {
           callback(err);
         } else {
           createReport(data);
@@ -112,5 +115,4 @@ module.exports = new (function() {
       });
     });
   };
-
-})();
+}();

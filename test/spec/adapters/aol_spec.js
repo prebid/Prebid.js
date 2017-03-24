@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
@@ -8,42 +8,47 @@ const DEFAULT_BIDDER_REQUEST = {
   requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
   bidderRequestId: '7101db09af0db2',
   start: new Date().getTime(),
-  bids: [{
-    bidder: 'aol',
-    bidId: '84ab500420319d',
-    bidderRequestId: '7101db09af0db2',
-    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-    placementCode: 'foo',
-    params: {
-      placement: 1234567,
-      network: '9599.1'
-    }
-  }]
+  bids: [
+    {
+      bidder: 'aol',
+      bidId: '84ab500420319d',
+      bidderRequestId: '7101db09af0db2',
+      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+      placementCode: 'foo',
+      params: {
+        placement: 1234567,
+        network: '9599.1',
+      },
+    },
+  ],
 };
 const DEFAULT_PUBAPI_RESPONSE = {
-  "id": "245730051428950632",
-  "cur": "USD",
-  "seatbid": [{
-    "bid": [{
-      "id": 1,
-      "impid": "245730051428950632",
-      "price": 0.09,
-      "adm": "<script>logInfo('ad');</script>",
-      "crid": "0",
-      "h": 90,
-      "w": 728,
-      "ext": {"sizeid": 225}
-    }]
-  }]
+  id: '245730051428950632',
+  cur: 'USD',
+  seatbid: [
+    {
+      bid: [
+        {
+          id: 1,
+          impid: '245730051428950632',
+          price: 0.09,
+          adm: "<script>logInfo('ad');</script>",
+          crid: '0',
+          h: 90,
+          w: 728,
+          ext: { sizeid: 225 },
+        },
+      ],
+    },
+  ],
 };
 
 describe('AolAdapter', () => {
-
   let adapter;
 
   beforeEach(() => adapter = new AolAdapter());
 
-  function createBidderRequest({bids, params} = {}) {
+  function createBidderRequest({ bids, params } = {}) {
     var bidderRequest = utils.cloneJson(DEFAULT_BIDDER_REQUEST);
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
@@ -78,40 +83,54 @@ describe('AolAdapter', () => {
 
       it('should hit the default pubapi endpoint', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+        expect(requests[0].url).to.contain(
+          'adserver-us.adtech.advertising.com/pubapi/3.0/',
+        );
       });
 
       it('should hit endpoint based on the region config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            region: 'eu'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              region: 'eu',
+            },
+          }),
+        );
+        expect(requests[0].url).to.contain(
+          'adserver-eu.adtech.advertising.com/pubapi/3.0/',
+        );
       });
 
       it('should hit the default endpoint in case of unknown region config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            region: 'an'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              region: 'an',
+            },
+          }),
+        );
+        expect(requests[0].url).to.contain(
+          'adserver-us.adtech.advertising.com/pubapi/3.0/',
+        );
       });
 
       it('should hit endpoint based on the server config option', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            server: 'adserver-eu.adtech.advertising.com'
-          }
-        }));
-        expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              server: 'adserver-eu.adtech.advertising.com',
+            },
+          }),
+        );
+        expect(requests[0].url).to.contain(
+          'adserver-eu.adtech.advertising.com/pubapi/3.0/',
+        );
       });
 
       it('should be the pubapi bid request', () => {
@@ -130,93 +149,111 @@ describe('AolAdapter', () => {
       });
 
       it('should contain required params - placement & network', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+            },
+          }),
+        );
         expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/');
       });
 
       it('should contain pageId and sizeId of 0 if params are missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
-        expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/0/0/ADTECH;');
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+            },
+          }),
+        );
+        expect(requests[0].url).to.contain(
+          '/pubapi/3.0/9599.1/1234567/0/0/ADTECH;',
+        );
       });
 
       it('should contain pageId optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            pageId: 12345
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              pageId: 12345,
+            },
+          }),
+        );
         expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/12345/');
       });
 
       it('should contain sizeId optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            sizeId: 12345
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              sizeId: 12345,
+            },
+          }),
+        );
         expect(requests[0].url).to.contain('/12345/ADTECH;');
       });
 
       it('should contain generated alias if alias param is missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+            },
+          }),
+        );
         expect(requests[0].url).to.match(/alias=\w+?;/);
       });
 
       it('should contain alias optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            alias: 'desktop_articlepage_something_box_300_250'
-          }
-        }));
-        expect(requests[0].url).to.contain('alias=desktop_articlepage_something_box_300_250');
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              alias: 'desktop_articlepage_something_box_300_250',
+            },
+          }),
+        );
+        expect(requests[0].url).to.contain(
+          'alias=desktop_articlepage_something_box_300_250',
+        );
       });
 
       it('should not contain bidfloor if bidFloor param is missing', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1'
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+            },
+          }),
+        );
         expect(requests[0].url).not.to.contain('bidfloor=');
       });
 
       it('should contain bidFloor optional param', () => {
-        adapter.callBids(createBidderRequest({
-          params: {
-            placement: 1234567,
-            network: '9599.1',
-            bidFloor: 0.80
-          }
-        }));
+        adapter.callBids(
+          createBidderRequest({
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              bidFloor: 0.80,
+            },
+          }),
+        );
         expect(requests[0].url).to.contain('bidfloor=0.8');
       });
-
     });
 
     describe('bid response', () => {
-
       let server;
 
       beforeEach(() => {
@@ -241,7 +278,10 @@ describe('AolAdapter', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'aol');
+        expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
+          'bidderCode',
+          'aol',
+        );
       });
 
       it('should have adId matching the bidId from related bid request', () => {
@@ -249,8 +289,10 @@ describe('AolAdapter', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1])
-          .to.have.property('adId', DEFAULT_BIDDER_REQUEST.bids[0].bidId);
+        expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
+          'adId',
+          DEFAULT_BIDDER_REQUEST.bids[0].bidId,
+        );
       });
 
       it('should be added to bidmanager as invalid in case of empty response', () => {
@@ -258,7 +300,9 @@ describe('AolAdapter', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        ).to.equal(2);
       });
 
       it('should be added to bidmanager as invalid in case of invalid JSON response', () => {
@@ -266,73 +310,97 @@ describe('AolAdapter', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        ).to.equal(2);
       });
 
       it('should be added to bidmanager as invalid in case of no bid data', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": []
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        ).to.equal(2);
       });
 
       it('should have adId matching the bidId from bid request in case of no bid data', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": []
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1])
-          .to.have.property('adId', DEFAULT_BIDDER_REQUEST.bids[0].bidId);
+        expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property(
+          'adId',
+          DEFAULT_BIDDER_REQUEST.bids[0].bidId,
+        );
       });
 
       it('should be added to bidmanager as invalid in case of empty price', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "0",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
-            }]
-          }]
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: 1,
+                    impid: '245730051428950632',
+                    adm: "<script>logInfo('ad');</script>",
+                    crid: '0',
+                    h: 90,
+                    w: 728,
+                    ext: { sizeid: 225 },
+                  },
+                ],
+              },
+            ],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
+        expect(
+          bidmanager.addBidResponse.firstCall.args[1].getStatusCode(),
+        ).to.equal(2);
       });
 
       it('should be added to bidmanager with attributes from pubapi response', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
-            }]
-          }]
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: 1,
+                    impid: '245730051428950632',
+                    price: 0.09,
+                    adm: "<script>logInfo('ad');</script>",
+                    crid: '12345',
+                    h: 90,
+                    w: 728,
+                    ext: { sizeid: 225 },
+                  },
+                ],
+              },
+            ],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
@@ -346,55 +414,67 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager including pixels from pubapi response', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
-            }]
-          }],
-          "ext": {
-            "pixels": "<script>document.write('<img src=\"pixel.gif\">');</script>"
-          }
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: 1,
+                    impid: '245730051428950632',
+                    price: 0.09,
+                    adm: "<script>logInfo('ad');</script>",
+                    crid: '12345',
+                    h: 90,
+                    w: 728,
+                    ext: { sizeid: 225 },
+                  },
+                ],
+              },
+            ],
+            ext: {
+              pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>',
+            },
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
           "<script>logInfo('ad');</script>" +
-          "<script>document.write('<img src=\"pixel.gif\">');</script>"
+            '<script>document.write(\'<img src="pixel.gif">\');</script>',
         );
       });
 
       it('should be added to bidmanager including dealid from pubapi response', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "dealid": "12345",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {
-                "sizeid": 225
-              }
-            }]
-          }]
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: 1,
+                    impid: '245730051428950632',
+                    dealid: '12345',
+                    price: 0.09,
+                    adm: "<script>logInfo('ad');</script>",
+                    crid: '12345',
+                    h: 90,
+                    w: 728,
+                    ext: {
+                      sizeid: 225,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
@@ -403,26 +483,32 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager including encrypted price from pubapi response', () => {
-        server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "dealid": "12345",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {
-                "sizeid": 225,
-                "encp": "a9334987"
-              }
-            }]
-          }]
-        }));
+        server.respondWith(
+          JSON.stringify({
+            id: '245730051428950632',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: 1,
+                    impid: '245730051428950632',
+                    dealid: '12345',
+                    price: 0.09,
+                    adm: "<script>logInfo('ad');</script>",
+                    crid: '12345',
+                    h: 90,
+                    w: 728,
+                    ext: {
+                      sizeid: 225,
+                      encp: 'a9334987',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        );
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
@@ -453,8 +539,8 @@ describe('AolAdapter', () => {
         server.respondWith(JSON.stringify(DEFAULT_PUBAPI_RESPONSE));
         $$PREBID_GLOBAL$$.bidderSettings = {
           aol: {
-            bidCpmAdjustment: function() {}
-          }
+            bidCpmAdjustment: function() {},
+          },
         };
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();

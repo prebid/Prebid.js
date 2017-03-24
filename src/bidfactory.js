@@ -15,7 +15,8 @@ var utils = require('./utils.js');
  priceKeyString;
  */
 function Bid(statusCode, bidRequest) {
-  var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
+  var _bidId = (bidRequest && bidRequest.bidId) ||
+    utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;
 
   this.bidderCode = '';
@@ -37,18 +38,17 @@ function Bid(statusCode, bidRequest) {
     }
   }
 
-  this.getStatusCode = function () {
+  this.getStatusCode = function() {
     return _statusCode;
   };
 
   //returns the size of the bid creative. Concatenation of width and height by ‘x’.
-  this.getSize = function () {
+  this.getSize = function() {
     return this.width + 'x' + this.height;
   };
-
 }
 
 // Bid factory function.
-exports.createBid = function () {
+exports.createBid = function() {
   return new Bid(...arguments);
 };

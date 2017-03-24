@@ -8,10 +8,9 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = Adapter.createNew('vertamedia'),
-      bidRequest;
+  var baseAdapter = Adapter.createNew('vertamedia'), bidRequest;
 
-  baseAdapter.callBids = function (bidRequests) {
+  baseAdapter.callBids = function(bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
       return;
     }
@@ -25,7 +24,7 @@ function VertamediaAdapter() {
     ajax(ENDPOINT, handleResponse, RTBDataParams, {
       contentType: 'text/plain',
       withCredentials: true,
-      method: 'GET'
+      method: 'GET',
     });
   };
 
@@ -42,7 +41,7 @@ function VertamediaAdapter() {
       aid: bid.params.aid,
       w: parseInt(bid.sizes[0], 10) || undefined,
       h: parseInt(bid.sizes[1], 10) || undefined,
-      domain: document.location.hostname
+      domain: document.location.hostname,
     };
   }
 
@@ -57,12 +56,18 @@ function VertamediaAdapter() {
     }
 
     if (!parsed || parsed.error || !parsed.bids || !parsed.bids.length) {
-      bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.NO_BID));
+      bidmanager.addBidResponse(
+        bidRequest.placementCode,
+        createBid(STATUS.NO_BID),
+      );
 
       return;
     }
 
-    bidmanager.addBidResponse(bidRequest.placementCode, createBid(STATUS.GOOD, parsed.bids[0]));
+    bidmanager.addBidResponse(
+      bidRequest.placementCode,
+      createBid(STATUS.GOOD, parsed.bids[0]),
+    );
   }
 
   function createBid(status, tag) {
@@ -89,12 +94,11 @@ function VertamediaAdapter() {
   return {
     createNew: VertamediaAdapter.createNew,
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
+    setBidderCode: baseAdapter.setBidderCode,
   };
-
 }
 
-VertamediaAdapter.createNew = function () {
+VertamediaAdapter.createNew = function() {
   return new VertamediaAdapter();
 };
 

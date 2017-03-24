@@ -3,7 +3,7 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 var constants = require('../constants.json');
 
-module.exports = function () {
+module.exports = function() {
   function inIframe() {
     try {
       return window.self !== window.top && !window.mantis_link;
@@ -13,18 +13,21 @@ module.exports = function () {
   }
 
   function isDesktop(ignoreTouch) {
-    var scope = function (win) {
-      var width = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-      var supportsTouch = !ignoreTouch && ('ontouchstart' in window || navigator.msMaxTouchPoints);
+    var scope = function(win) {
+      var width = win.innerWidth ||
+        win.document.documentElement.clientWidth ||
+        win.document.body.clientWidth;
+      var supportsTouch = !ignoreTouch &&
+        ('ontouchstart' in window || navigator.msMaxTouchPoints);
 
-      return !supportsTouch && (!width || width >= (window.mantis_breakpoint || 768));
+      return !supportsTouch &&
+        (!width || width >= (window.mantis_breakpoint || 768));
     };
 
     if (inIframe()) {
       try {
         return scope(window.top);
-      } catch (ex) {
-      }
+      } catch (ex) {}
     }
 
     return scope(window);
@@ -51,11 +54,13 @@ module.exports = function () {
   }
 
   function isAmp() {
-    return typeof window.context === "object" && (window.context.tagName === "AMP-AD" || window.context.tagName === "AMP-EMBED");
+    return typeof window.context === 'object' &&
+      (window.context.tagName === 'AMP-AD' ||
+        window.context.tagName === 'AMP-EMBED');
   }
 
   function isSecure() {
-    return document.location.protocol === "https:";
+    return document.location.protocol === 'https:';
   }
 
   function isArray(value) {
@@ -109,13 +114,12 @@ module.exports = function () {
     return parts.join('&');
   }
 
-
   function buildMantisUrl(path, data, domain) {
     var params = {
       referrer: document.referrer,
       tz: new Date().getTimezoneOffset(),
       buster: new Date().getTime(),
-      secure: isSecure()
+      secure: isSecure(),
     };
 
     if (!inIframe() || isAmp()) {
@@ -137,9 +141,7 @@ module.exports = function () {
         params.title = window.top.document.title;
         params.referrer = window.top.document.referrer;
         params.url = window.top.document.location.href;
-      } catch (ex) {
-
-      }
+      } catch (ex) {}
     } else {
       params.iframe = true;
     }
@@ -158,21 +160,26 @@ module.exports = function () {
       }
     }
 
-    Object.keys(data || {}).forEach(function (key) {
+    Object.keys(data || {}).forEach(function(key) {
       params[key] = data[key];
     });
 
     var query = jsonToQuery(params);
 
-    return (window.mantis_domain === undefined ? domain || 'https://mantodea.mantisadnetwork.com' : window.mantis_domain) + path + '?' + query;
+    return (window.mantis_domain === undefined
+      ? domain || 'https://mantodea.mantisadnetwork.com'
+      : window.mantis_domain) +
+      path +
+      '?' +
+      query;
   }
 
-  var Prebid = function (bidfactory, bidmanager, adloader, constants) {
+  var Prebid = function(bidfactory, bidmanager, adloader, constants) {
     return {
-      callBids: function (params) {
+      callBids: function(params) {
         var property = null;
 
-        params.bids.some(function (bid) {
+        params.bids.some(function(bid) {
           if (bid.params.property) {
             property = bid.params.property;
 
@@ -181,8 +188,8 @@ module.exports = function () {
         });
 
         var url = {
-          jsonp: jsonp(function (resp) {
-            params.bids.forEach(function (bid) {
+          jsonp: jsonp(function(resp) {
+            params.bids.forEach(function(bid) {
               var ad = resp.ads[bid.bidId];
 
               var bidObject;
@@ -203,19 +210,19 @@ module.exports = function () {
             });
           }),
           property: property,
-          bids: params.bids.map(function (bid) {
+          bids: params.bids.map(function(bid) {
             return {
               bidId: bid.bidId,
-              sizes: bid.sizes.map(function (size) {
-                return {width: size[0], height: size[1]};
-              })
+              sizes: bid.sizes.map(function(size) {
+                return { width: size[0], height: size[1] };
+              }),
             };
           }),
-          version: 1
+          version: 1,
         };
 
         adloader.loadScript(buildMantisUrl('/website/prebid', url));
-      }
+      },
     };
   };
 

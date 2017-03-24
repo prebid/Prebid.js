@@ -19,9 +19,7 @@ var utils = require('src/utils');
 var STATUS = require('src/constants').STATUS;
 
 var HiroMediaAdapter = function HiroMediaAdapter() {
-
   'use strict';
-
   /**
    * Bidder code
    *
@@ -58,8 +56,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    */
   var DEFAULT_BID_PARAMS = {
     bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get',
-    allowedSize: [300,250],
-    sizeTolerance: 5
+    allowedSize: [300, 250],
+    sizeTolerance: 5,
   };
 
   /**
@@ -88,7 +86,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * set the response will be an empty bid response.
    */
   function addBidResponse(bidInfo, bidResponse) {
-
     var placementCode = bidInfo.bid.placementCode;
     var bidStatus = bidResponse ? STATUS.GOOD : STATUS.NO_BID;
     var bidObject = bidfactory.createBid(bidStatus, bidInfo.bid);
@@ -102,9 +99,13 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
       bidObject.height = bidInfo.selectedSize[1];
     }
 
-    utils.logMessage('hiromedia.callBids, addBidResponse for ' + placementCode + ' status: ' + bidStatus);
+    utils.logMessage(
+      'hiromedia.callBids, addBidResponse for ' +
+        placementCode +
+        ' status: ' +
+        bidStatus,
+    );
     bidmanager.addBidResponse(placementCode, bidObject);
-
   }
 
   /**
@@ -129,21 +130,19 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @param  {object} response [description]
    */
   function handleResponse(response) {
-
-    _bidStorage.filter(function (bidInfo) {
-      return bidInfo.batchKey === response.batchKey;
-    }).forEach(function (bidInfo) {
-
-      // Sample the bid responses according to `response.chance`,
-      // if `response.chance` is not provided, sample at 100%.
-      if (response.chance === undefined || checkChance(response.chance)) {
-        addBidResponse(bidInfo, response);
-      } else {
-        addBidResponse(bidInfo, false);
-      }
-
-    });
-
+    _bidStorage
+      .filter(function(bidInfo) {
+        return bidInfo.batchKey === response.batchKey;
+      })
+      .forEach(function(bidInfo) {
+        // Sample the bid responses according to `response.chance`,
+        // if `response.chance` is not provided, sample at 100%.
+        if (response.chance === undefined || checkChance(response.chance)) {
+          addBidResponse(bidInfo, response);
+        } else {
+          addBidResponse(bidInfo, false);
+        }
+      });
   }
 
   /**
@@ -153,12 +152,10 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    *
    * @param  {object} [response] the response from the server
    */
-  $$PREBID_GLOBAL$$.hiromedia_callback = function (response) {
-
+  $$PREBID_GLOBAL$$.hiromedia_callback = function(response) {
     if (response && response.batchKey) {
       handleResponse(response);
     }
-
   };
 
   /**
@@ -173,31 +170,36 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * or empty strings.
    */
   function getBrowser() {
-
     var ua = navigator.userAgent;
-    var browsers = [{
-      name: 'Mobile',
-      stringSearch: 'Mobi'
-    }, {
-      name: 'Edge'
-    }, {
-      name: 'Chrome'
-    }, {
-      name: 'Firefox'
-    }, {
-      name: 'IE',
-      versionSearch: /MSIE\s(\d+)/
-    }, {
-      name: 'IE',
-      stringSearch: 'Trident',
-      versionSearch: /rv:(\d+)/
-    }];
+    var browsers = [
+      {
+        name: 'Mobile',
+        stringSearch: 'Mobi',
+      },
+      {
+        name: 'Edge',
+      },
+      {
+        name: 'Chrome',
+      },
+      {
+        name: 'Firefox',
+      },
+      {
+        name: 'IE',
+        versionSearch: /MSIE\s(\d+)/,
+      },
+      {
+        name: 'IE',
+        stringSearch: 'Trident',
+        versionSearch: /rv:(\d+)/,
+      },
+    ];
 
     var name = '';
     var version = '';
 
-    browsers.some(function (browser) {
-
+    browsers.some(function(browser) {
       var nameSearch = browser.stringSearch || browser.name;
       var defaultVersionSearch = nameSearch + '\\/(\\d+)';
       var versionSearch = browser.versionSearch || defaultVersionSearch;
@@ -211,14 +213,12 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
         }
         return true;
       }
-
     });
 
     return {
       name: name,
-      version: version
+      version: version,
     };
-
   }
 
   /**
@@ -230,11 +230,9 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @return {string}  domain of top context url.
    */
   function getDomain() {
-
     var a = document.createElement('a');
     a.href = utils.getTopWindowUrl();
     return a.hostname;
-
   }
 
   /**
@@ -265,13 +263,12 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @return {Boolean} `true` if `dimension` is in range, `false` otherwise.
    */
   function isValueInRange(value, allowedValue, tolerance) {
-
     value = parseInt10(value);
     allowedValue = parseInt10(allowedValue);
     tolerance = parseInt10(tolerance);
 
-    return (allowedValue - tolerance) <= value && value <= (allowedValue + tolerance);
-
+    return allowedValue - tolerance <= value &&
+      value <= allowedValue + tolerance;
   }
 
   /**
@@ -291,7 +288,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * dimensions of `allowedSize`, `false` otherwise.
    */
   function isSizeInRange(size, allowedSize, tolerance) {
-    return isValueInRange(allowedSize[0], size[0], tolerance) && isValueInRange(allowedSize[1], size[1], tolerance);
+    return isValueInRange(allowedSize[0], size[0], tolerance) &&
+      isValueInRange(allowedSize[1], size[1], tolerance);
   }
 
   /**
@@ -306,7 +304,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @return {array}  normalized array of sizes.
    */
   function normalizeSizes(sizes) {
-    return utils.parseSizesInput(sizes).map(function (size) {
+    return utils.parseSizesInput(sizes).map(function(size) {
       return size.split('x');
     });
   }
@@ -339,16 +337,14 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @return {string}  batch key for bid
    */
   function getBatchKey(bidInfo) {
-
     var bidParams = bidInfo.bidParams;
     var batchParams = [
       bidParams.bidUrl,
       bidParams.accountId,
-      bidInfo.selectedSize.join('x')
+      bidInfo.selectedSize.join('x'),
     ];
 
     return batchParams.join('-');
-
   }
 
   /**
@@ -366,28 +362,31 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @return {array.<module:HiroMediaAdapter~bidInfo>} wrapped bids
    */
   function processBids(bids) {
-
     var result = [];
 
     if (bids) {
+      utils.logMessage(
+        'hiromedia.processBids, processing ' + bids.length + ' bids',
+      );
 
-      utils.logMessage('hiromedia.processBids, processing ' + bids.length + ' bids');
-
-      bids.forEach(function (bid) {
-
+      bids.forEach(function(bid) {
         var sizes = normalizeSizes(bid.sizes);
         var bidParams = defaultParams(bid.params);
         var allowedSizes = normalizeSizes([bidParams.allowedSize])[0];
-        var selectedSize = sizes.find(function (size) {
+        var selectedSize = sizes.find(function(size) {
           return isSizeInRange(size, allowedSizes, bidParams.sizeTolerance);
         });
-        var hasValidBidRequest = utils.hasValidBidRequest(bidParams, REQUIRED_BID_PARAMS, BIDDER_CODE);
-        var shouldBid = hasValidBidRequest && (selectedSize !== undefined);
+        var hasValidBidRequest = utils.hasValidBidRequest(
+          bidParams,
+          REQUIRED_BID_PARAMS,
+          BIDDER_CODE,
+        );
+        var shouldBid = hasValidBidRequest && selectedSize !== undefined;
         var bidInfo = {
           bid: bid,
           bidParams: bidParams,
           selectedSize: selectedSize,
-          shouldBid: shouldBid
+          shouldBid: shouldBid,
         };
 
         if (shouldBid) {
@@ -395,13 +394,10 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
         }
 
         result.push(bidInfo);
-
       });
-
     }
 
     return result;
-
   }
 
   /**
@@ -415,26 +411,22 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @param  {string} url base url, can already contain query parameters
    * @param  {object} requestParams parameters to add to query
    */
-  function sendBidRequest(url,requestParams) {
-
+  function sendBidRequest(url, requestParams) {
     if (requestParams) {
-
       if (url.indexOf('?') !== -1) {
         url = url + '&';
       } else {
         url = url + '?';
       }
 
-      Object.keys(requestParams).forEach(function (key) {
+      Object.keys(requestParams).forEach(function(key) {
         url = utils.tryAppendQueryString(url, key, requestParams[key]);
       });
-
     }
 
     utils.logMessage('hiromedia.callBids, url:' + url);
 
     adloader.loadScript(url);
-
   }
 
   /**
@@ -445,7 +437,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @param  {object} params placement and bid data from `Prebid.js`
    */
   function _callBids(params) {
-
     var browser = getBrowser();
     var domain = getDomain();
     var bidsRequested = {};
@@ -453,38 +444,35 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     utils.logMessage('hiromedia.callBids');
 
     if (params) {
-
       // Processed bids are stored in the adapter scope
       _bidStorage = processBids(params.bids);
-
     } else {
-
       // Ensure we don't run on stale data
       _bidStorage = [];
-
     }
 
     if (_bidStorage.length) {
-
       // Loop over processed bids and send a request if a request for the bid
       // batchKey has not been sent.
-      _bidStorage.forEach(function (bidInfo) {
-
+      _bidStorage.forEach(function(bidInfo) {
         var bid = bidInfo.bid;
         var batchKey = bidInfo.batchKey;
         var bidParams = bidInfo.bidParams;
 
-        utils.logMessage('hiromedia.callBids, bidInfo ' + bid.placementCode + ' ' + bidInfo.shouldBid);
+        utils.logMessage(
+          'hiromedia.callBids, bidInfo ' +
+            bid.placementCode +
+            ' ' +
+            bidInfo.shouldBid,
+        );
 
         if (bidInfo.shouldBid) {
-
           var url = bidParams.bidUrl;
 
           if (!bidsRequested[batchKey]) {
-
             bidsRequested[batchKey] = true;
 
-            sendBidRequest(url,{
+            sendBidRequest(url, {
               adapterVersion: ADAPTER_VERSION,
               callback: '$$PREBID_GLOBAL$$.hiromedia_callback',
               batchKey: batchKey,
@@ -494,31 +482,21 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
               browserVersion: browser.version,
               domain: domain,
               selectedSize: utils.parseSizesInput([bidInfo.selectedSize]),
-              placementSizes: utils.parseSizesInput(bid.sizes)
+              placementSizes: utils.parseSizesInput(bid.sizes),
             });
-
           }
-
         } else {
-
           // No bid
           addBidResponse(bidInfo, false);
-
         }
-
       });
-
     }
-
   }
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
-
-
   // JSDoc typedefs
-
   /**
    * A size array where the width is the first array item and the height is
    * the second array item.
@@ -526,7 +504,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @typedef {array.<number>} module:HiroMediaAdapter~size
    * @private
    */
-
   /**
    * Parameters for bids to HIRO Media adapter
    *
@@ -537,7 +514,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @property {module:HiroMediaAdapter~size} allowedSize allowed placement size
    * @property {number} sizeTolerance custom tolerance for `allowedSize`
    */
-
   /**
    * Bid object wrapper
    *
@@ -550,7 +526,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @property {module:HiroMediaAdapter~bidParams} bidParams original params passed for bid in #callBids
    * @property {boolean} shouldBid flag to determine if the bid is valid for bidding or not
    */
-
   /**
    * browserInfo
    *
@@ -560,7 +535,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @property {string} name browser name (e.g. `'Chrome'` or `'Firefox'`)
    * @property {string} version browser major version (e.g. `'53'`)
    */
-
 };
 
 module.exports = HiroMediaAdapter;

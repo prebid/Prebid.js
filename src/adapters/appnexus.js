@@ -12,7 +12,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
   var usersync = false;
 
-  baseAdapter.callBids = function (params) {
+  baseAdapter.callBids = function(params) {
     //var bidCode = baseAdapter.getBidderCode();
 
     var anArr = params.bids;
@@ -33,7 +33,6 @@ AppNexusAdapter = function AppNexusAdapter() {
   };
 
   function buildJPTCall(bid, callbackId) {
-
     //determine tag params
     var placementId = utils.getBidIdParameter('placementId', bid.params);
 
@@ -47,9 +46,16 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     //build our base tag, based on if we are http or https
 
-    var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
+    var jptCall = 'http' +
+      (document.location.protocol === 'https:'
+        ? 's://secure.adnxs.com/jpt?'
+        : '://ib.adnxs.com/jpt?');
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
+    jptCall = utils.tryAppendQueryString(
+      jptCall,
+      'callback',
+      '$$PREBID_GLOBAL$$.handleAnCB',
+    );
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -57,7 +63,9 @@ AppNexusAdapter = function AppNexusAdapter() {
       jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
     } else if (memberId) {
       jptCall = utils.tryAppendQueryString(jptCall, 'member', memberId);
-      utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
+      utils.logMessage(
+        'appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead',
+      );
     }
 
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
@@ -75,12 +83,18 @@ AppNexusAdapter = function AppNexusAdapter() {
         //any subsequent values should be "promo_sizes"
         sizeQueryString += '&promo_sizes=';
         for (var j = 1; j < parsedSizesLength; j++) {
-          sizeQueryString += parsedSizes[j] += ',';
+          sizeQueryString += (parsedSizes[j] += ',');
         }
 
         //remove trailing comma
-        if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
-          sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
+        if (
+          sizeQueryString &&
+          sizeQueryString.charAt(sizeQueryString.length - 1) === ','
+        ) {
+          sizeQueryString = sizeQueryString.slice(
+            0,
+            sizeQueryString.length - 1,
+          );
         }
       }
     }
@@ -139,22 +153,18 @@ AppNexusAdapter = function AppNexusAdapter() {
     bid.startTime = new Date().getTime();
 
     return jptCall;
-
   }
 
   //expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
-
+  $$PREBID_GLOBAL$$.handleAnCB = function(jptResponseObj) {
     var bidCode;
 
     if (jptResponseObj && jptResponseObj.callback_uid) {
-
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
       var bidObj = getBidRequest(id);
       if (bidObj) {
-
         bidCode = bidObj.bidder;
 
         placementCode = bidObj.placementCode;
@@ -168,7 +178,11 @@ AppNexusAdapter = function AppNexusAdapter() {
 
       // @endif
       var bid = [];
-      if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
+      if (
+        jptResponseObj.result &&
+        jptResponseObj.result.cpm &&
+        jptResponseObj.result.cpm !== 0
+      ) {
         responseCPM = parseInt(jptResponseObj.result.cpm, 10);
 
         //CPM response from /jpt is dollar/cent multiplied by 10000
@@ -189,11 +203,13 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.dealId = jptResponseObj.result.deal_id;
 
         bidmanager.addBidResponse(placementCode, bid);
-
       } else {
         //no response data
         // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
+        utils.logMessage(
+          'No prebid response from AppNexus for placement code ' +
+            placementCode,
+        );
 
         // @endif
         //indicate that there is no bid for this placement
@@ -212,28 +228,24 @@ AppNexusAdapter = function AppNexusAdapter() {
         }
         usersync = true;
       }
-
-
     } else {
       //no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
 
       // @endif
-
     }
-
   };
 
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     createNew: AppNexusAdapter.createNew,
-    buildJPTCall: buildJPTCall
+    buildJPTCall: buildJPTCall,
   };
 };
 
-AppNexusAdapter.createNew = function () {
+AppNexusAdapter.createNew = function() {
   return new AppNexusAdapter();
 };
 

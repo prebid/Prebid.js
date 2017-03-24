@@ -3,14 +3,14 @@ var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 var ajax = require('../ajax.js').ajax;
 
-const STR_BIDDER_CODE = "sharethrough";
-const STR_VERSION = "1.1.0";
+const STR_BIDDER_CODE = 'sharethrough';
+const STR_VERSION = '1.1.0';
 
 var SharethroughAdapter = function SharethroughAdapter() {
-
   const str = {};
-  str.STR_BTLR_HOST = document.location.protocol + "//btlr.sharethrough.com";
-  str.STR_BEACON_HOST = document.location.protocol + "//b.sharethrough.com/butler?";
+  str.STR_BTLR_HOST = document.location.protocol + '//btlr.sharethrough.com';
+  str.STR_BEACON_HOST = document.location.protocol +
+    '//b.sharethrough.com/butler?';
   str.placementCodeSet = {};
   str.ajax = ajax;
 
@@ -22,7 +22,9 @@ var SharethroughAdapter = function SharethroughAdapter() {
       const bidRequest = bids[i];
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
-      str.ajax(scriptUrl, $$PREBID_GLOBAL$$.strcallback, undefined, {withCredentials: true});
+      str.ajax(scriptUrl, $$PREBID_GLOBAL$$.strcallback, undefined, {
+        withCredentials: true,
+      });
     }
   }
 
@@ -31,7 +33,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
     let host = str.STR_BTLR_HOST;
 
-    let url = host + "/header-bid/v1?";
+    let url = host + '/header-bid/v1?';
     url = utils.tryAppendQueryString(url, 'bidId', bid.bidId);
     url = utils.tryAppendQueryString(url, 'placement_key', pkey);
     url = appendEnvFields(url);
@@ -51,7 +53,9 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bid.width = size[0];
       bid.height = size[1];
       bid.adserverRequestId = bidResponse.adserverRequestId;
-      str.placementCodeSet[bidObj.placementCode].adserverRequestId = bidResponse.adserverRequestId;
+      str.placementCodeSet[
+        bidObj.placementCode
+      ].adserverRequestId = bidResponse.adserverRequestId;
 
       bid.pkey = utils.getBidIdParameter('pkey', bidObj.params);
 
@@ -95,9 +99,8 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   return {
     callBids: _callBids,
-    str : str,
+    str: str,
   };
 };
 
 module.exports = SharethroughAdapter;
-

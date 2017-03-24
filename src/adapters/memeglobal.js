@@ -29,16 +29,25 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   function _requestBid(bidReq) {
     // build bid request object
     var domain = window.location.host;
-    var page = window.location.host + window.location.pathname + location.search + location.hash;
+    var page = window.location.host +
+      window.location.pathname +
+      location.search +
+      location.hash;
 
     var tagId = utils.getBidIdParameter('tagid', bidReq.params);
     var bidFloor = Number(utils.getBidIdParameter('bidfloor', bidReq.params));
     var adW = 0;
     var adH = 0;
 
-    var bidSizes = Array.isArray(bidReq.params.sizes) ? bidReq.params.sizes : bidReq.sizes;
+    var bidSizes = Array.isArray(bidReq.params.sizes)
+      ? bidReq.params.sizes
+      : bidReq.sizes;
     var sizeArrayLength = bidSizes.length;
-    if (sizeArrayLength === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+    if (
+      sizeArrayLength === 2 &&
+      typeof bidSizes[0] === 'number' &&
+      typeof bidSizes[1] === 'number'
+    ) {
       adW = bidSizes[0];
       adH = bidSizes[1];
     } else {
@@ -49,44 +58,57 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     // build bid request with impressions
     var bidRequest = {
       id: utils.getUniqueIdentifierStr(),
-      imp: [{
-        id: bidReq.bidId,
-        banner: {
-          w: adW,
-          h: adH
+      imp: [
+        {
+          id: bidReq.bidId,
+          banner: {
+            w: adW,
+            h: adH,
+          },
+          tagid: bidReq.placementCode,
+          bidfloor: bidFloor,
         },
-        tagid: bidReq.placementCode,
-        bidfloor: bidFloor
-      }],
+      ],
       site: {
         domain: domain,
         page: page,
         publisher: {
-          id: tagId
-        }
-      }
+          id: tagId,
+        },
+      },
     };
 
-    var scriptUrl = '//' + bidder + '?callback=window.$$PREBID_GLOBAL$$.mgres' +
-      '&src=' + CONSTANTS.REPO_AND_VERSION +
-      '&br=' + encodeURIComponent(JSON.stringify(bidRequest));
+    var scriptUrl = '//' +
+      bidder +
+      '?callback=window.$$PREBID_GLOBAL$$.mgres' +
+      '&src=' +
+      CONSTANTS.REPO_AND_VERSION +
+      '&br=' +
+      encodeURIComponent(JSON.stringify(bidRequest));
     adloader.loadScript(scriptUrl);
   }
 
   function getBidSetForBidder() {
-    return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
+    return $$PREBID_GLOBAL$$._bidsRequested.find(
+      bidSet => bidSet.bidderCode === bidderName,
+    );
   }
 
   // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.mgres = function (bidResp) {
-
+  $$PREBID_GLOBAL$$.mgres = function(bidResp) {
     // valid object?
-    if ((!bidResp || !bidResp.id) ||
-      (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
-      return ;
+    if (
+      !bidResp ||
+      !bidResp.id ||
+      (!bidResp.seatbid ||
+        bidResp.seatbid.length === 0 ||
+        !bidResp.seatbid[0].bid ||
+        bidResp.seatbid[0].bid.length === 0)
+    ) {
+      return;
     }
 
-    bidResp.seatbid[0].bid.forEach(function (bidderBid) {
+    bidResp.seatbid[0].bid.forEach(function(bidderBid) {
       var responseCPM;
       var placementCode = '';
 
@@ -106,7 +128,9 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         bidResponse.placementCode = placementCode;
         bidResponse.size = bidRequested.sizes;
         var responseAd = bidderBid.adm;
-        var responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px" style="display: none;">';
+        var responseNurl = '<img src="' +
+          bidderBid.nurl +
+          '" height="0px" width="0px" style="display: none;">';
         bidResponse.creative_id = bidderBid.id;
         bidResponse.bidderCode = bidderName;
         bidResponse.cpm = responseCPM;
@@ -119,7 +143,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   };
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };
 

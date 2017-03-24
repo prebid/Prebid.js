@@ -8,34 +8,31 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 function KomoonaAdapter() {
-
   let baseAdapter = Adapter.createNew('komoona');
   let bidRequests = {};
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const bids = bidRequest.bids || [];
-    const tags = bids
-      .filter(bid => valid(bid))
-      .map(bid => {
-        // map request id to bid object to retrieve adUnit code in callback
-        bidRequests[bid.bidId] = bid;
+    const tags = bids.filter(bid => valid(bid)).map(bid => {
+      // map request id to bid object to retrieve adUnit code in callback
+      bidRequests[bid.bidId] = bid;
 
-        let tag = {};
-        tag.sizes = bid.sizes;
-        tag.uuid = bid.bidId;
-        tag.placementid = bid.params.placementId;
-        tag.hbid = bid.params.hbid;
+      let tag = {};
+      tag.sizes = bid.sizes;
+      tag.uuid = bid.bidId;
+      tag.placementid = bid.params.placementId;
+      tag.hbid = bid.params.hbid;
 
-        return tag;
-      });
+      return tag;
+    });
 
     if (!utils.isEmpty(tags)) {
-      const payload = JSON.stringify({bids: [...tags]});
+      const payload = JSON.stringify({ bids: [...tags] });
 
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true,
       });
     }
   };
@@ -52,7 +49,9 @@ function KomoonaAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) {
+        errorMessage += `: ${parsed.error}`;
+      }
       utils.logError(errorMessage);
 
       // signal this response is complete
@@ -73,7 +72,7 @@ function KomoonaAdapter() {
         status = STATUS.NO_BID;
       }
 
-      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       const placement = bidRequests[bid.adId].placementCode;
 

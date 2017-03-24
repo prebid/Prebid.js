@@ -71,7 +71,7 @@ function _callBids(params) {
     _qs('u', window.location.href),
     _qs('impid', impids.join(',')),
     _qs('calltype', 'pbd'),
-    _qs('callback', callback)
+    _qs('callback', callback),
   ];
   var url = 'https://link.krxd.net/hb?' + qs.join('&');
 
@@ -80,6 +80,6 @@ function _callBids(params) {
 
 module.exports = function KruxAdapter() {
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };

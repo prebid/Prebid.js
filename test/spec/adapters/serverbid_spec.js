@@ -9,70 +9,74 @@ import * as utils from 'src/utils';
 const ENDPOINT = '//e.serverbid.com/api/v2';
 
 const REQUEST = {
-  "bidderCode": "serverbid",
-  "requestId": "a4713c32-3762-4798-b342-4ab810ca770d",
-  "bidderRequestId": "109f2a181342a9",
-  "bids": [{
-    "bidder": "serverbid",
-    "params": {
-      "networkId": 9969,
-      "siteId": 730181
+  bidderCode: 'serverbid',
+  requestId: 'a4713c32-3762-4798-b342-4ab810ca770d',
+  bidderRequestId: '109f2a181342a9',
+  bids: [
+    {
+      bidder: 'serverbid',
+      params: {
+        networkId: 9969,
+        siteId: 730181,
+      },
+      placementCode: 'div-gpt-ad-1487778092495-0',
+      sizes: [[728, 90], [970, 90]],
+      bidId: '2b0f82502298c9',
+      bidderRequestId: '109f2a181342a9',
+      requestId: 'a4713c32-3762-4798-b342-4ab810ca770d',
     },
-    "placementCode": "div-gpt-ad-1487778092495-0",
-    "sizes": [
-      [728, 90],
-      [970, 90]
-    ],
-    "bidId": "2b0f82502298c9",
-    "bidderRequestId": "109f2a181342a9",
-    "requestId": "a4713c32-3762-4798-b342-4ab810ca770d"
-  }],
-  "start": 1487883186070,
-  "auctionStart": 1487883186069,
-  "timeout": 3000
+  ],
+  start: 1487883186070,
+  auctionStart: 1487883186069,
+  timeout: 3000,
 };
 
 const RESPONSE = {
-  "user": { "key": "ue1-2d33e91b71e74929b4aeecc23f4376f1" },
-  "decisions": {
-    "2b0f82502298c9": {
-      "adId": 2364764,
-      "creativeId": 1950991,
-      "flightId": 2788300,
-      "campaignId": 542982,
-      "clickUrl": "http://e.serverbid.com/r",
-      "impressionUrl": "http://e.serverbid.com/i.gif",
-      "contents": [{
-        "type": "html",
-        "body": "<html></html>",
-        "data": {
-          "height": 90,
-          "width": 728,
-          "imageUrl": "http://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif",
-          "fileName": "b0ab77db8a7848c8b78931aed022a5ef.gif"
+  user: { key: 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+  decisions: {
+    '2b0f82502298c9': {
+      adId: 2364764,
+      creativeId: 1950991,
+      flightId: 2788300,
+      campaignId: 542982,
+      clickUrl: 'http://e.serverbid.com/r',
+      impressionUrl: 'http://e.serverbid.com/i.gif',
+      contents: [
+        {
+          type: 'html',
+          body: '<html></html>',
+          data: {
+            height: 90,
+            width: 728,
+            imageUrl: 'http://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            fileName: 'b0ab77db8a7848c8b78931aed022a5ef.gif',
+          },
+          template: 'image',
         },
-        "template": "image"
-      }],
-      "height": 90,
-      "width": 728,
-      "events": [],
-      "pricing":{"price":0.5,"clearPrice":0.5,"revenue":0.0005,"rateType":2,"eCPM":0.5}
+      ],
+      height: 90,
+      width: 728,
+      events: [],
+      pricing: {
+        price: 0.5,
+        clearPrice: 0.5,
+        revenue: 0.0005,
+        rateType: 2,
+        eCPM: 0.5,
+      },
     },
-  }
+  },
 };
 
 describe('serverbidAdapter', () => {
-
   let adapter;
 
   beforeEach(() => adapter = Adapter.createNew());
 
   describe('request function', () => {
-
     let xhr;
     let requests;
     let pbConfig;
-
 
     beforeEach(() => {
       xhr = sinon.useFakeXMLHttpRequest();
@@ -115,13 +119,12 @@ describe('serverbidAdapter', () => {
   });
 
   describe('response handler', () => {
-
     let server;
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
       sinon.stub(bidmanager, 'addBidResponse');
-      sinon.stub(utils, "getBidRequest").returns(REQUEST);
+      sinon.stub(utils, 'getBidRequest').returns(REQUEST);
     });
 
     afterEach(() => {
@@ -144,9 +147,11 @@ describe('serverbidAdapter', () => {
     });
 
     it('handles nobid responses', () => {
-      server.respondWith(JSON.stringify({
-        "decisions": []
-      }));
+      server.respondWith(
+        JSON.stringify({
+          decisions: [],
+        }),
+      );
 
       adapter.callBids(REQUEST);
       server.respond();
@@ -155,7 +160,7 @@ describe('serverbidAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response'
+        'Bid returned empty or error response',
       );
     });
 
@@ -169,10 +174,8 @@ describe('serverbidAdapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
         'statusMessage',
-        'Bid returned empty or error response'
+        'Bid returned empty or error response',
       );
     });
-
   });
-
 });

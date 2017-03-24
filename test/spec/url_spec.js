@@ -1,14 +1,14 @@
-import {format, parse} from '../../src/url';
+import { format, parse } from '../../src/url';
 import { expect } from 'chai';
 
 describe('helpers.url', () => {
-
   describe('parse()', () => {
-
     let parsed;
 
     beforeEach(() => {
-      parsed = parse('http://example.com:3000/pathname/?search=test&foo=bar#hash');
+      parsed = parse(
+        'http://example.com:3000/pathname/?search=test&foo=bar#hash',
+      );
     });
 
     it('extracts the protocol', () => {
@@ -31,7 +31,7 @@ describe('helpers.url', () => {
       expect(parsed).to.have.property('search');
       expect(parsed.search).to.eql({
         foo: 'bar',
-        search: 'test'
+        search: 'test',
       });
     });
 
@@ -42,28 +42,28 @@ describe('helpers.url', () => {
     it('extracts the host', () => {
       expect(parsed).to.have.property('host', 'example.com:3000');
     });
-
   });
 
   describe('format()', () => {
-
     it('formats an object in to a URL', () => {
-      expect(format({
-        protocol: 'http',
-        hostname: 'example.com',
-        port: 3000,
-        pathname: '/pathname/',
-        search: {foo: 'bar', search: 'test'},
-        hash: 'hash'
-      })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test#hash');
+      expect(
+        format({
+          protocol: 'http',
+          hostname: 'example.com',
+          port: 3000,
+          pathname: '/pathname/',
+          search: { foo: 'bar', search: 'test' },
+          hash: 'hash',
+        }),
+      ).to.equal('http://example.com:3000/pathname/?foo=bar&search=test#hash');
     });
 
     it('will use defaults for missing properties', () => {
-      expect(format({
-        hostname: 'example.com'
-      })).to.equal('http://example.com');
+      expect(
+        format({
+          hostname: 'example.com',
+        }),
+      ).to.equal('http://example.com');
     });
-
   });
-
 });

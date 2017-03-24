@@ -4,14 +4,13 @@ const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 
 const AolAdapter = function AolAdapter() {
-
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
     eu: 'adserver-eu.adtech.advertising.com',
-    as: 'adserver-as.adtech.advertising.com'
+    as: 'adserver-as.adtech.advertising.com',
   };
 
   function template(strings, ...keys) {
@@ -47,16 +46,17 @@ const AolAdapter = function AolAdapter() {
     params.region = regionParam;
 
     return pubapiTemplate({
-      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      protocol: document.location.protocol === 'https:' ? 'https' : 'http',
       host: server,
       network: params.network,
       placement: parseInt(params.placement),
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
-      bidfloor: (typeof params.bidFloor !== 'undefined') ?
-        `;bidfloor=${params.bidFloor.toString()}` : '',
-      misc: new Date().getTime() // cache busting
+      bidfloor: typeof params.bidFloor !== 'undefined'
+        ? `;bidfloor=${params.bidFloor.toString()}`
+        : '',
+      misc: new Date().getTime(), // cache busting
     });
   }
 
@@ -117,41 +117,48 @@ const AolAdapter = function AolAdapter() {
     utils._each(params.bids, bid => {
       const pubapiUrl = _buildPubapiUrl(bid);
 
-      ajax(pubapiUrl, response => {
-        // needs to be here in case bidderSettings are defined after requestBids() is called
-        if (showCpmAdjustmentWarning &&
-          $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
-          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
-        ) {
-          utils.logWarn(
-            'bidCpmAdjustment is active for the AOL adapter. ' +
-            'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-          );
-        }
-        showCpmAdjustmentWarning = false; // warning is shown at most once
+      ajax(
+        pubapiUrl,
+        response => {
+          // needs to be here in case bidderSettings are defined after requestBids() is called
+          if (
+            showCpmAdjustmentWarning &&
+            $$PREBID_GLOBAL$$.bidderSettings &&
+            $$PREBID_GLOBAL$$.bidderSettings.aol &&
+            typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment ===
+              'function'
+          ) {
+            utils.logWarn(
+              'bidCpmAdjustment is active for the AOL adapter. ' +
+                'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.',
+            );
+          }
+          showCpmAdjustmentWarning = false; // warning is shown at most once
 
-        if (!response && response.length <= 0) {
-          utils.logError('Empty bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          if (!response && response.length <= 0) {
+            utils.logError('Empty bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        try {
-          response = JSON.parse(response);
-        } catch (e) {
-          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          try {
+            response = JSON.parse(response);
+          } catch (e) {
+            utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        _addBidResponse(bid, response);
-
-      }, null, { withCredentials: true });
+          _addBidResponse(bid, response);
+        },
+        null,
+        { withCredentials: true },
+      );
     });
   }
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };
 

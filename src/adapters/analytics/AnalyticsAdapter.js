@@ -18,7 +18,9 @@ const BUNDLE = 'bundle';
 
 var _timedOutBidders = [];
 
-export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
+export default function AnalyticsAdapter(
+  { url, analyticsType, global, handler },
+) {
   var _queue = [];
   var _eventCount = 0;
   var _enableCheck = true;
@@ -38,7 +40,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     getAdapterType: () => analyticsType,
     getGlobal: () => global,
     getHandler: () => handler,
-    getUrl: () => url
+    getUrl: () => url,
   };
 
   function _track({ eventType, args }) {
@@ -61,7 +63,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     if (global && window[global] && eventType && args) {
       this.track({ eventType, args });
     } else {
-      _queue.push(function () {
+      _queue.push(function() {
         _eventCount++;
         _this.track({ eventType, args });
       });
@@ -89,19 +91,25 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     //Next register event listeners to send data immediately
 
     //bidRequests
-    events.on(BID_REQUESTED, args => this.enqueue({ eventType: BID_REQUESTED, args }));
-    events.on(BID_RESPONSE, args => this.enqueue({ eventType: BID_RESPONSE, args }));
-    events.on(BID_TIMEOUT, args => this.enqueue({ eventType: BID_TIMEOUT, args }));
+    events.on(BID_REQUESTED, args =>
+      this.enqueue({ eventType: BID_REQUESTED, args }));
+    events.on(BID_RESPONSE, args =>
+      this.enqueue({ eventType: BID_RESPONSE, args }));
+    events.on(BID_TIMEOUT, args =>
+      this.enqueue({ eventType: BID_TIMEOUT, args }));
     events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
-    events.on(BID_ADJUSTMENT, args => this.enqueue({ eventType: BID_ADJUSTMENT, args }));
+    events.on(BID_ADJUSTMENT, args =>
+      this.enqueue({ eventType: BID_ADJUSTMENT, args }));
     events.on(AUCTION_INIT, args => {
-      args.config = config.options;  // enableAnaltyics configuration object
+      args.config = config.options; // enableAnaltyics configuration object
       this.enqueue({ eventType: AUCTION_INIT, args });
     });
 
     // finally set this function to return log message, prevents multiple adapter listeners
     this.enableAnalytics = function _enable() {
-      return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
+      return utils.logMessage(
+        `Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`,
+      );
     };
   }
 
@@ -112,7 +120,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       }
 
       //override push to execute the command immediately from now on
-      _queue.push = function (fn) {
+      _queue.push = function(fn) {
         fn();
       };
 

@@ -10,7 +10,6 @@ var defaultPlacementForBadBid = null;
  * Adapter for requesting bids from NginAd
  */
 var NginAdAdapter = function NginAdAdapter() {
-
   var rtbServerDomain = 'placeholder.for.nginad.server.com';
 
   function _callBids(params) {
@@ -40,12 +39,15 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   function getWidthAndHeight(bid) {
-
     var adW = null;
     var adH = null;
 
     var sizeArrayLength = bid.sizes.length;
-    if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
+    if (
+      sizeArrayLength === 2 &&
+      typeof bid.sizes[0] === 'number' &&
+      typeof bid.sizes[1] === 'number'
+    ) {
       adW = bid.sizes[0];
       adH = bid.sizes[1];
     } else {
@@ -66,7 +68,6 @@ var NginAdAdapter = function NginAdAdapter() {
     //assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
 
-
     //build impression array for nginad
     utils._each(bidReqs, function(bid) {
       var tagId = utils.getBidIdParameter('pzoneid', bid.params);
@@ -78,17 +79,16 @@ var NginAdAdapter = function NginAdAdapter() {
         id: bid.bidId,
         banner: {
           w: whArr[0],
-          h: whArr[1]
+          h: whArr[1],
         },
         tagid: tagId,
-        bidfloor: bidFloor
+        bidfloor: bidFloor,
       };
 
       nginadImps.push(imp);
       //bidmanager.pbCallbackMap[imp.id] = bid;
 
       rtbServerDomain = bid.params.nginadDomain;
-
     });
 
     // build bid request with impressions
@@ -97,12 +97,16 @@ var NginAdAdapter = function NginAdAdapter() {
       imp: nginadImps,
       site: {
         domain: domain,
-        page: page
-      }
+        page: page,
+      },
     };
 
-    var scriptUrl = window.location.protocol + '//' + rtbServerDomain + '/bid/rtb?callback=window.$$PREBID_GLOBAL$$.nginadResponse' +
-      '&br=' + encodeURIComponent(JSON.stringify(nginadBidReq));
+    var scriptUrl = window.location.protocol +
+      '//' +
+      rtbServerDomain +
+      '/bid/rtb?callback=window.$$PREBID_GLOBAL$$.nginadResponse' +
+      '&br=' +
+      encodeURIComponent(JSON.stringify(nginadBidReq));
 
     adloader.loadScript(scriptUrl);
   }
@@ -129,12 +133,16 @@ var NginAdAdapter = function NginAdAdapter() {
       return handleErrorResponse(nginadResponseObj, defaultPlacementForBadBid);
     }
 
-    if (!nginadResponseObj.seatbid || nginadResponseObj.seatbid.length === 0 || !nginadResponseObj.seatbid[0].bid || nginadResponseObj.seatbid[0].bid.length === 0) {
+    if (
+      !nginadResponseObj.seatbid ||
+      nginadResponseObj.seatbid.length === 0 ||
+      !nginadResponseObj.seatbid[0].bid ||
+      nginadResponseObj.seatbid[0].bid.length === 0
+    ) {
       return handleErrorResponse(nginadResponseObj, defaultPlacementForBadBid);
     }
 
     for (key in nginadResponseObj.seatbid[0].bid) {
-
       var nginadBid = nginadResponseObj.seatbid[0].bid[key];
 
       var responseCPM;
@@ -143,8 +151,9 @@ var NginAdAdapter = function NginAdAdapter() {
 
       // try to fetch the bid request we sent NginAd
       /*jshint -W083 */
-      var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
-        .find(bid => bid.bidId === id);
+      var bidObj = $$PREBID_GLOBAL$$._bidsRequested
+        .find(bidSet => bidSet.bidderCode === 'nginad')
+        .bids.find(bid => bid.bidId === id);
       if (!bidObj) {
         return handleErrorResponse(nginadBid, defaultPlacementForBadBid);
       }
@@ -178,13 +187,11 @@ var NginAdAdapter = function NginAdAdapter() {
       bid.height = whArr[1];
 
       bidmanager.addBidResponse(placementCode, bid);
-
     }
-
   }; // nginadResponse
 
   return {
-    callBids: _callBids
+    callBids: _callBids,
   };
 };
 
