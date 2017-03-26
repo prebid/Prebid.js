@@ -39,11 +39,6 @@ module.exports = {
         loader: 'adapterLoader'
       },
       {
-        test: /prebid.js/,
-        include: /(src)/,
-        loader: 'rendererLoader'
-      },
-      {
         test: /constants.json$/,
         include: /(src)/,
         loader: StringReplacePlugin.replace({

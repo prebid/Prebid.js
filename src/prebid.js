@@ -334,14 +334,14 @@ function performRenderViaRenderer(doc, adObject) {
     console.log(id);
     console.log(cb);
 
-    $$PREBID_GLOBAL$$.renderOutstream(cb.renderAd, adObject);
+    renderOutstream(cb.renderAd, adObject);
   };
 
   adloader.loadScript('http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js');
 
 }
 
-$$PREBID_GLOBAL$$.renderOutstream = function(renderFn, adObject) {
+const renderOutstream = function(renderFn, adObject) {
   var firstAd = adObject.adResponse.ads[0];
   adObject.adResponse.ad = firstAd;
   var video = adObject.adResponse.ad.rtb.video;
