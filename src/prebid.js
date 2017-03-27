@@ -329,43 +329,26 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
 };
 
-function performRenderViaRenderer(doc, adObject) {
-  //"{"tagId":9870122,"sizes":[[728,90],[970,250],[984,120]],"targetId":"1","member":3535,"utCalled":true,"showTagCalled":true,"displayed":false,"uuid":"355ee0cb-856c-4fd2-b68c-fbfa42f80d7a","tagNumber":0,"curWindow":null,"adResponse":null}"
-  window.apntag = { debug: true };
-  window.apntag.registerRenderer = function(id, cb) {
-    console.log('inside callback');
-    console.log(id);
-    console.log(cb);
+const renderOutstream = function(renderFn, adObject) {
+  adObject.adResponse.ad = adObject.adResponse.ads[0];
+  adObject.adResponse.ad.video = adObject.adResponse.ad.rtb.video;
+  renderFn({
+    tagId: adObject.adResponse.tag_id,
+    sizes: [adObject.getSize().split('x')],
+    targetId: adObject.adUnitCode, // target div id to render video
+    uuid: adObject.adResponse.uuid, // is this the correct UUID
+    adResponse: adObject.adResponse
+  });
+};
 
+function performRenderViaRenderer(doc, adObject) {
+  window.apntag.registerRenderer = function(id, cb) {
     renderOutstream(cb.renderAd, adObject);
   };
 
   adloader.loadScript('http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js');
 
 }
-
-const renderOutstream = function(renderFn, adObject) {
-  var firstAd = adObject.adResponse.ads[0];
-  adObject.adResponse.ad = firstAd;
-  var video = adObject.adResponse.ad.rtb.video;
-  adObject.adResponse.ad.video = video;
-  var currentTag =
-  {
-    tagId: adObject.adResponse.tag_id,
-    sizes: [adObject.getSize().split('x')],
-    targetId: adObject.adUnitCode, // target div id to render video
-    uuid: adObject.adResponse.uuid, // is this the correct UUID
-    adResponse: adObject.adResponse
-  };
-
-  //load the ad
-  //invoke renderer.
-  var callback = function() {
-    console.log('callback');
-  };
-
-  renderFn(currentTag, callback);
-};
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
