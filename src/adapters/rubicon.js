@@ -319,6 +319,12 @@ function RubiconAdapter() {
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       }
 
+      // add server-side targeting
+      bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
+        .reduce((memo, item) => {
+          memo[item.key] = item.values[0];
+          return memo;
+        }, {'rpfl_elemid': bidRequest.placementCode});
 
       try {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);

@@ -291,7 +291,7 @@ describe('the rubicon adapter', () => {
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
 
         });
-        
+
         it('should allow a floor override', () => {
 
           var floorBidderRequest = clone(bidderRequest);
@@ -458,7 +458,7 @@ describe('the rubicon adapter', () => {
                   {
                     'key': 'rpfl_14062',
                     'values': [
-                      '15_tier_all_test'
+                      '43_tier_all_test'
                     ]
                   }
                 ]
@@ -482,6 +482,8 @@ describe('the rubicon adapter', () => {
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
+          expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
+          expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
 
           expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
           expect(bids[1].bidderCode).to.equal('rubicon');
@@ -491,6 +493,8 @@ describe('the rubicon adapter', () => {
           expect(bids[1].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
+          expect(bids[1].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
+          expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
         });
 
         it('should be fine with a CPM of 0', () => {
