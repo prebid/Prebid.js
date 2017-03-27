@@ -27,7 +27,7 @@ function checkOptions() {
 
 function buildBidWon(eventType, args) {
   bidWon.options = initOptions;
-  bidWon.events = {args: args, eventType: eventType};
+  bidWon.events = [{args: args, eventType: eventType}];
 }
 
 function buildEventStack() {
@@ -52,14 +52,16 @@ function flushEvents() {
   eventStack.events = [];
 }
 
-let roxotAdapter = utils.extend(adapter({url, analyticsType}),
+let roxotAdapter = Object.assign(adapter({url, analyticsType}),
   {
     track({eventType, args}) {
       if (!checkOptions()) {
         return;
       }
 
-      args.ad = "";
+      if (args && args.ad) {
+        args.ad = "";
+      }
 
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
@@ -85,7 +87,7 @@ let roxotAdapter = utils.extend(adapter({url, analyticsType}),
 
 roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
-roxotAdapter.enableAnalytics = function(config) {
+roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   utils.logInfo('Roxot Analtyics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);

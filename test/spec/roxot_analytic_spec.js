@@ -1,4 +1,3 @@
-let assert = require('assert');
 let analytic = require('../../src/adapters/analytics/roxot');
 let events = require('../../src/events');
 let adaptermanager = require('../../src/adaptermanager');
