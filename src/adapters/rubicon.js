@@ -14,7 +14,7 @@ function getIntegration() {
 
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//optimized-by-adv.rubiconproject.com/v1/auction/video';
+const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 
 const TIMEOUT_BUFFER = 500;
 
