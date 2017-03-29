@@ -78,17 +78,19 @@ const AolAdapter = function AolAdapter() {
     let pixelsItems = [];
 
     if (pixels) {
-      pixels.match(itemsRegExp).forEach(item => {
-        let tagNameMatches = item.match(tagNameRegExp);
-        let sourcesPathMatches = item.match(srcRegExp);
-
-        if (tagNameMatches && sourcesPathMatches) {
-          pixelsItems.push({
-            tagName: tagNameMatches[0].toUpperCase(),
-            src: sourcesPathMatches[2]
-          });
-        }
-      });
+      let matchedItems = pixels.match(itemsRegExp);
+      if (matchedItems) {
+        matchedItems.forEach(item => {
+          let tagNameMatches = item.match(tagNameRegExp);
+          let sourcesPathMatches = item.match(srcRegExp);
+          if (tagNameMatches && sourcesPathMatches) {
+            pixelsItems.push({
+              tagName: tagNameMatches[0].toUpperCase(),
+              src: sourcesPathMatches[2]
+            });
+          }
+        });
+      }
     }
 
     return pixelsItems;
@@ -232,21 +234,6 @@ const AolAdapter = function AolAdapter() {
         ad += response.ext.pixels;
       }
     }
-
-    events.on(constants.EVENTS.AUCTION_END, () => {
-      if (bidData.nurl) {
-        // Winner of the auction is being determined by the one with the highest cpm, first in the queue.
-        let auction = $$PREBID_GLOBAL$$._bidsReceived.filter(bidReceived => {
-          return bidReceived.adUnitCode === bid.placementCode;
-        });
-        let winner = auction.reduce((winner, currentBid) => {
-          return (winner.cpm < currentBid.cpm) ? currentBid : winner;
-        }, {cpm: 0});
-        if (winner.bidId === bid.bidId) {
-          dropSyncCookies(bidData.nurl);
-        }
-      }
-    });
 
     const bidResponse = bidfactory.createBid(1, bid);
     bidResponse.bidderCode = BIDDER_CODE;
