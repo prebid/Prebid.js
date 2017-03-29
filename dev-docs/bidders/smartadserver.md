@@ -26,4 +26,5 @@ The Smart AdServer bidder adaptor requires setup and approval from the Smart AdS
 | `siteId` | required | The placement site ID | `1234` |
 | `pageId` | required | The placement page ID | `1234` |
 | `formatId` | required | The placement format ID | `1234` |
-| `target` | optional | The keyword targeting | `"sport=tennis"` |
+| `target` | optional | The keyword targeting (not yet supported) | `"sport=tennis"` |
+| `currency` | optional | Override the default currency code (ISO 4217) of the ad request. (Default: `"USD"`) | `"EUR"` |
