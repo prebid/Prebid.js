@@ -4,7 +4,6 @@ import {ajax} from '../ajax';
 import bidManager from 'src/bidmanager';
 import bidFactory from 'src/bidfactory';
 import {STATUS} from 'src/constants';
-import {EVENTS} from 'src/constants';
 import {formatQS} from '../url';
 
 /**
