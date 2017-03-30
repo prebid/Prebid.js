@@ -10,6 +10,8 @@ describe('loaders/getAdapters', () => {
 
   let defaultAdapters;
   let customAdapters;
+  const defaultAdaptersFile = 'adapters.json';
+  const adaptersArg = 'adapters';
 
   beforeEach(() => {
     defaultAdapters = [ 'adapter 1', 'adapter 2', 'adapter 3' ];
@@ -32,7 +34,7 @@ describe('loaders/getAdapters', () => {
         const getAdapters = proxyquire('../../../loaders/getAdapters', {
           yargs: { argv: { adapters: 'custom-adapters.json' } }
         });
-        expect(getAdapters()).to.deep.equal(customAdapters);
+        expect(getAdapters(defaultAdaptersFile, adaptersArg)).to.deep.equal(customAdapters);
       });
 
     });
@@ -51,7 +53,7 @@ describe('loaders/getAdapters', () => {
         const getAdapters = proxyquire('../../../loaders/getAdapters', {
           yargs: { argv: { adapters: 'non-existent-adapters.json' } }
         });
-        expect(getAdapters()).to.deep.equal(defaultAdapters);
+        expect(getAdapters(defaultAdaptersFile, adaptersArg)).to.deep.equal(defaultAdapters);
         expect(log).to.match(/non-existent-adapters.json/);
         console.log = consoleLog;
       });
@@ -69,7 +71,7 @@ describe('loaders/getAdapters', () => {
       const getAdapters = proxyquire('../../../loaders/getAdapters', {
         yargs: { argv: {} }
       });
-      expect(getAdapters()).to.deep.equal(defaultAdapters);
+      expect(getAdapters(defaultAdaptersFile, adaptersArg)).to.deep.equal(defaultAdapters);
     });
 
   });
@@ -83,7 +85,7 @@ describe('loaders/getAdapters', () => {
       const getAdapters = proxyquire('../../../loaders/getAdapters', {
         yargs: { argv: {} }
       });
-      expect(getAdapters()).to.deep.equal([]);
+      expect(getAdapters(defaultAdaptersFile, adaptersArg)).to.deep.equal([]);
     });
 
   });
