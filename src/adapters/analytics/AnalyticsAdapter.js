@@ -24,7 +24,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   var _eventCount = 0;
   var _enableCheck = true;
   var _handlers;
-  var _pipe;
 
   if (analyticsType === LIBRARY) {
     loadScript(url, _emptyQueue);
@@ -62,10 +61,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   function _enqueue({ eventType, args }) {
     const _this = this;
 
-    if (typeof _pipe === 'function') {
-      args = _pipe(eventType, Object.assign({}, args));
-    }
-
     if (global && window[global] && eventType && args) {
       this.track({ eventType, args });
     } else {
@@ -81,11 +76,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
     if (typeof config === 'object' && typeof config.options === 'object') {
       _sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
-
-      if (typeof config.options.pipe === 'function') {
-        _pipe = config.options.pipe;
-      }
-
     } else {
       _sampled = true;
     }

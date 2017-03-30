@@ -137,36 +137,6 @@ FEATURE: Analytics Adapters API
           assert(spyTestGlobal.calledOnce === true);
         });
 
-        it('SHOULD allow us to edit the event as logged using the pipe option', () => {
-          const eventType = BID_RESPONSE;
-          const args = {cpm: .7};
-
-          adapter.enableAnalytics({
-            options: {
-              pipe: function(eventType, bid) {
-                if(eventType === BID_RESPONSE) {
-                  let cpm = bid.cpm;
-                  if (cpm >= 0 && cpm < 0.5) {
-                    bid.cpm = '0-0.5';
-                  } else if (cpm >= 0.5 && cpm < 1) {
-                    bid.cpm = '0.5-1';
-                  } else if (cpm >= 1 && cpm < 1.5) {
-                    bid.cpm = '1-1.5';
-                  } else {
-                    bid.cpm = '>1.5';
-                  }
-                }
-                return bid;
-              }
-            }
-          });
-          events.emit(eventType, args);
-
-          assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[0][2], {cpm: '0.5-1'}, `with expected event data\n`);
-        });
-
-
         describe(`AND sampling is enabled\n`, () => {
           const eventType = BID_WON;
           const args = { more: 'info' };
