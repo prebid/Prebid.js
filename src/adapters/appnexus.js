@@ -98,7 +98,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     }
 
     //append custom attributes:
-    var paramsCopy = utils.extend({}, bid.params);
+    var paramsCopy = Object.assign({}, bid.params);
 
     //delete attributes already used
     delete paramsCopy.placementId;
