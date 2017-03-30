@@ -130,7 +130,7 @@ describe('Utils', function () {
         c:'3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, expectedResult);
     });
 
@@ -140,7 +140,7 @@ describe('Utils', function () {
         c:'3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, source);
     });
 
@@ -151,7 +151,7 @@ describe('Utils', function () {
       };
       var source = {};
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, target);
     });
   });

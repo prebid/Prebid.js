@@ -127,7 +127,7 @@ describe("PulsePoint Adapter Tests", () => {
     pulsepointAdapter.callBids(slotConfigs);
     let libraryLoadCall = adLoader.loadScript.firstCall.args[0];
     let callback = adLoader.loadScript.firstCall.args[1];
-    expect(libraryLoadCall).to.equal('http://tag.contextweb.com/getjs.static.js');
+    expect(libraryLoadCall).to.equal('http://tag-st.contextweb.com/getjs.static.js');
     expect(callback).to.be.a('function');
   });
 

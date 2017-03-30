@@ -201,7 +201,7 @@ describe('the rubicon adapter', () => {
         xhr.restore();
       });
 
-      describe("to fastlane", () => {
+      describe('to fastlane', () => {
 
         it('should make a well-formed request', () => {
 
@@ -277,7 +277,21 @@ describe('the rubicon adapter', () => {
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
 
         });
-        
+
+        it('should not send a request and register an error if no account id is present', () => {
+
+          var noAccountBidderRequest = clone(bidderRequest);
+          delete noAccountBidderRequest.bids[0].params.accountId;
+
+          rubiconAdapter.callBids(noAccountBidderRequest);
+
+          expect(xhr.requests.length).to.equal(0);
+          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+
+        });
+
         it('should allow a floor override', () => {
 
           var floorBidderRequest = clone(bidderRequest);
@@ -298,7 +312,7 @@ describe('the rubicon adapter', () => {
         beforeEach(() => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, "now", () =>
+          sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
         });
@@ -396,55 +410,55 @@ describe('the rubicon adapter', () => {
         it('should handle a success response and sort by cpm', () => {
 
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "account_id": 14062,
-            "site_id": 70608,
-            "zone_id": 530022,
-            "size_id": 15,
-            "alt_size_ids": [
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
               43
             ],
-            "tracking": "",
-            "inventory": {},
-            "ads": [
+            'tracking': '',
+            'inventory': {},
+            'ads': [
               {
-                "status": "ok",
-                "impression_id": "153dc240-8229-4604-b8f5-256933b9374c",
-                "size_id": "15",
-                "ad_id": "6",
-                "advertiser": 7,
-                "network": 8,
-                "creative_id": 9,
-                "type": "script",
-                "script": "alert('foo')",
-                "campaign_id": 10,
-                "cpm": 0.811,
-                "targeting": [
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 9,
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'targeting': [
                   {
-                    "key": "rpfl_14062",
-                    "values": [
-                      "15_tier_all_test"
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
                     ]
                   }
                 ]
               },
               {
-                "status": "ok",
-                "impression_id": "153dc240-8229-4604-b8f5-256933b9374d",
-                "size_id": "43",
-                "ad_id": "7",
-                "advertiser": 7,
-                "network": 8,
-                "creative_id": 9,
-                "type": "script",
-                "script": "alert('foo')",
-                "campaign_id": 10,
-                "cpm": 0.911,
-                "targeting": [
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 9,
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
                   {
-                    "key": "rpfl_14062",
-                    "values": [
-                      "15_tier_all_test"
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
                     ]
                   }
                 ]
@@ -461,40 +475,44 @@ describe('the rubicon adapter', () => {
           expect(bids).to.be.lengthOf(2);
 
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-          expect(bids[0].bidderCode).to.equal("rubicon");
+          expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
+          expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
+          expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
 
           expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-          expect(bids[1].bidderCode).to.equal("rubicon");
+          expect(bids[1].bidderCode).to.equal('rubicon');
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
+          expect(bids[1].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
+          expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
         });
 
         it('should be fine with a CPM of 0', () => {
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "account_id": 14062,
-            "site_id": 70608,
-            "zone_id": 530022,
-            "size_id": 15,
-            "alt_size_ids": [
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
               43
             ],
-            "tracking": "",
-            "inventory": {},
-            "ads": [{
-                "status": "ok",
-                "cpm": 0,
-                "size_id": 15
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+                'status': 'ok',
+                'cpm': 0,
+                'size_id': 15
               }]
           }));
 
@@ -509,17 +527,17 @@ describe('the rubicon adapter', () => {
 
         it('should handle an error with no ads returned', () => {
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "account_id": 14062,
-            "site_id": 70608,
-            "zone_id": 530022,
-            "size_id": 15,
-            "alt_size_ids": [
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
               43
             ],
-            "tracking": "",
-            "inventory": {},
-            "ads": []
+            'tracking': '',
+            'inventory': {},
+            'ads': []
           }));
 
           rubiconAdapter.callBids(bidderRequest);
@@ -533,18 +551,18 @@ describe('the rubicon adapter', () => {
 
         it('should handle an error with bad status', () => {
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "account_id": 14062,
-            "site_id": 70608,
-            "zone_id": 530022,
-            "size_id": 15,
-            "alt_size_ids": [
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
               43
             ],
-            "tracking": "",
-            "inventory": {},
-            "ads": [{
-                "status": "not_ok",
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+                'status': 'not_ok',
               }]
           }));
 
@@ -558,7 +576,19 @@ describe('the rubicon adapter', () => {
         });
 
         it('should handle an error because of malformed json response', () => {
-          server.respondWith("{test{");
+          server.respondWith('{test{');
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          server.respond();
+
+          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+        });
+
+        it('should handle error contacting endpoint', () => {
+          server.respondWith([404, {}, ""]);
 
           rubiconAdapter.callBids(bidderRequest);
 
@@ -572,25 +602,25 @@ describe('the rubicon adapter', () => {
         it('should not register an error bid when a success call to addBidResponse throws an error', () => {
 
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "account_id": 14062,
-            "site_id": 70608,
-            "zone_id": 530022,
-            "size_id": 15,
-            "alt_size_ids": [
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
               43
             ],
-            "tracking": "",
-            "inventory": {},
-            "ads": [{
-                "status": "ok",
-                "cpm": .8,
-                "size_id": 15
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+                'status': 'ok',
+                'cpm': .8,
+                'size_id': 15
               }]
           }));
 
           addBidResponseAction = function() {
-            throw new Error("test error");
+            throw new Error('test error');
           };
 
           rubiconAdapter.callBids(bidderRequest);
@@ -614,29 +644,29 @@ describe('the rubicon adapter', () => {
         it('should register a successful bid', () => {
 
           server.respondWith(JSON.stringify({
-            "status": "ok",
-            "ads": {
-              "/19968336/header-bid-tag-0": [
+            'status': 'ok',
+            'ads': {
+              '/19968336/header-bid-tag-0': [
                 {
-                  "status": "ok",
-                  "cpm": 1,
-                  "tier": "tier0200",
-                  "targeting": {
-                    "rpfl_8000": "201_tier0200",
-                    "rpfl_elemid": "/19968336/header-bid-tag-0"
+                  'status': 'ok',
+                  'cpm': 1,
+                  'tier': 'tier0200',
+                  'targeting': {
+                    'rpfl_8000': '201_tier0200',
+                    'rpfl_elemid': '/19968336/header-bid-tag-0'
                   },
-                  "impression_id": "a40fe16e-d08d-46a9-869d-2e1573599e0c",
-                  "site_id": 88888,
-                  "zone_id": 54321,
-                  "creative_type": "video",
-                  "creative_depot_url": "https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml",
-                  "ad_id": 999999,
-                  "size_id": 201,
-                  "advertiser": 12345
+                  'impression_id': 'a40fe16e-d08d-46a9-869d-2e1573599e0c',
+                  'site_id': 88888,
+                  'zone_id': 54321,
+                  'creative_type': 'video',
+                  'creative_depot_url': 'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
+                  'ad_id': 999999,
+                  'size_id': 201,
+                  'advertiser': 12345
                 }
               ]
             },
-            "account_id": 7780
+            'account_id': 7780
           }));
 
           rubiconAdapter.callBids(bidderRequest);

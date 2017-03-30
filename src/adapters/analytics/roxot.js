@@ -6,7 +6,7 @@ const utils = require('../../utils');
 const url = '//d.rxthdr.com/analytics';
 const analyticsType = 'endpoint';
 
-export default utils.extend(adapter(
+export default Object.assign(adapter(
   {
     url,
     analyticsType
