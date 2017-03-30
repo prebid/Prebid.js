@@ -427,7 +427,6 @@ class InnerActiveAdapter{
       .filter(bid => this._isValidRequest(bid.params))
       .map(bid => this._storeBidRequestDetails(bid))
       .forEach(bid => ajax(this._getEndpointUrl(bid.params), (response, xhr) => this._onResponse(response, xhr, bid.bidId), Url.getUrlParams(bid.params), {method: 'GET'}));
-    this._checkIfBidWon();
   }
 
   _getEndpointUrl(params){
@@ -442,30 +441,6 @@ class InnerActiveAdapter{
       }
     }
     return storedBids;
-  }
-
-  /**
-   * Reports an analytics on bid no win when no ad is received
-   */
-  _checkIfBidWon(){
-    if (typeof $$PREBID_GLOBAL$$ === 'undefined') {
-      return;
-    }
-    const wonAdIds = [];
-    const numOfUnits = $$PREBID_GLOBAL$$.adUnits.length;
-    const _reportNoBidWon = () => this._getStoredBids().forEach(bid => !wonAdIds.includes(bid.adId) && Reporter.reportEvent('HBNoWin', bid.params));
-    let timer = null;
-    $$PREBID_GLOBAL$$.onEvent(EVENTS.AUCTION_END, () => timer = setTimeout(_reportNoBidWon, $$PREBID_GLOBAL$$.bidderTimeout), null);
-    $$PREBID_GLOBAL$$.onEvent(EVENTS.BID_WON, (bid) => {
-      wonAdIds.push(bid.adId);
-      if(numOfUnits === wonAdIds.length){
-        if(timer) {
-          clearTimeout(timer);
-          timer = null;
-        }
-        _reportNoBidWon();
-      }
-    }, null);
   }
 
   /**
