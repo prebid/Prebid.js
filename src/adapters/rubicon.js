@@ -62,9 +62,29 @@ function RubiconAdapter() {
       try {
         // Video endpoint only accepts POST calls
         if (bid.mediaType === 'video') {
-          ajax(VIDEO_ENDPOINT, bidCallback, buildVideoRequestPayload(bid, bidderRequest), {withCredentials: true});
+          ajax(
+            VIDEO_ENDPOINT,
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            buildVideoRequestPayload(bid, bidderRequest),
+            {
+              withCredentials: true
+            }
+          );
         } else {
-          ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+          ajax(
+            buildOptimizedCall(bid),
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            undefined,
+            {
+              withCredentials: true
+            }
+          );
         }
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
@@ -76,13 +96,18 @@ function RubiconAdapter() {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
         } catch (err) {
-          if (typeof err === "string") {
+          if (typeof err === 'string') {
             utils.logWarn(`${err} when processing rubicon response for placement code ${bid.placementCode}`);
           } else {
             utils.logError('Error processing rubicon response for placement code ' + bid.placementCode, null, err);
           }
           addErrorBid();
         }
+      }
+
+      function bidError(err, xhr) {
+        utils.logError('Request for rubicon responded with:', xhr.status, err);
+        addErrorBid();
       }
 
       function addErrorBid() {
@@ -118,7 +143,7 @@ function RubiconAdapter() {
     ) {
       size = bid.sizes[0];
     } else {
-      throw "Invalid Video Bid - No size provided";
+      throw 'Invalid Video Bid - No size provided';
     }
 
     let postData =  {
@@ -149,7 +174,7 @@ function RubiconAdapter() {
     if(params.video.size_id) {
       slotData.size_id = params.video.size_id;
     } else {
-      throw "Invalid Video Bid - Invalid Ad Type!";
+      throw 'Invalid Video Bid - Invalid Ad Type!';
     }
 
     if(params.inventory && typeof params.inventory === 'object') {
@@ -195,7 +220,11 @@ function RubiconAdapter() {
     );
 
     if(parsedSizes.length < 1) {
-      throw "no valid sizes";
+      throw 'no valid sizes';
+    }
+
+    if(!/^\d+$/.test(accountId)) {
+      throw 'invalid accountId provided';
     }
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
@@ -213,7 +242,7 @@ function RubiconAdapter() {
       'tk_user_key', userId
     ];
 
-    if(visitor !== null && typeof visitor === "object") {
+    if(visitor !== null && typeof visitor === 'object') {
       utils._each(visitor, (item, key) => queryString.push(`tg_v.${key}`, item));
     }
 
@@ -290,6 +319,12 @@ function RubiconAdapter() {
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       }
 
+      // add server-side targeting
+      bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
+        .reduce((memo, item) => {
+          memo[item.key] = item.values[0];
+          return memo;
+        }, {'rpfl_elemid': bidRequest.placementCode});
 
       try {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);

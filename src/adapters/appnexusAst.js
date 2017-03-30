@@ -235,6 +235,7 @@ function AppnexusAstAdapter() {
     if (ad && status === STATUS.GOOD) {
       bid.cpm = ad.cpm;
       bid.creative_id = ad.creative_id;
+      bid.dealId = ad.deal_id;
 
       if (ad.rtb.video) {
         bid.width = ad.rtb.video.player_width;

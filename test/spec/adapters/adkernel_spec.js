@@ -238,7 +238,8 @@ describe('Adkernel adapter', () => {
       expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       expect(utils.createTrackPixelHtml.calledOnce);
       let result = pbjs.getBidResponsesForAdUnitCode(bid1_zone1.placementCode);
-      expect(result.bids[0].ad).to.include(bidResponse1.seatbid[0].bid[0].nurl);
+      let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
+      expect(result.bids[0].ad).to.include(expectedNurl);
     });
 
     it('should perform usersync for each unique host/zone combination', () => {

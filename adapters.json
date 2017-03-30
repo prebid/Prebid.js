@@ -7,6 +7,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "bidfluence",
     "vertamedia",
     "aol",
     "appnexus",
@@ -26,11 +27,13 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "pulsepointLite",
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
@@ -67,6 +70,11 @@
     {
       "appnexus": {
         "alias": "defymedia"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "gourmetads"
       }
     },
     {
@@ -113,6 +121,10 @@
       "stickyadstv": {
         "alias": "freewheel-ssp"
       }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]
