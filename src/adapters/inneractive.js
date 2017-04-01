@@ -31,11 +31,11 @@ const CONSTANTS = {
   }
 };
 
-let IaWindow;
+let iaRef;
 try{
-  IaWindow = window.top;
+  iaRef = window.top.document.referrer;
 }catch(e){
-  IaWindow = window;
+  iaRef = window.document.referrer;
 }
 
 /**
@@ -160,7 +160,7 @@ const Reporter = {
  * @type {{defaultsParams: *, serverParamNameBySettingParamName: {referrer: string, keywords: string, appId: string, portal: string, age: string, gender: string, isSecured: (boolean|null)}, toServerParams: (function(*)), unwantedValues: *[], getUrlParams: (function(*=))}}
  */
 const Url = {
-  defaultsParams: Object.assign({}, Helpers.defaultsQsParams, {f: CONSTANTS.DISPLAY_AD,fs: false,ref: IaWindow.document.referrer}),
+  defaultsParams: Object.assign({}, Helpers.defaultsQsParams, {f: CONSTANTS.DISPLAY_AD,fs: false,ref: iaRef}),
   serverParamNameBySettingParamName: {
     referrer: 'ref',
     keywords: 'k',
