@@ -1,5 +1,6 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
+var utils = require('../utils.js');
 var adloader = require('../adloader');
 
 var SpringServeAdapter;
@@ -38,7 +39,7 @@ SpringServeAdapter = function SpringServeAdapter() {
       }
     }
 
-    var domain = window.location.hostname;
+    var domain = utils.getTopWindowUrl();
 
     //override domain when testing
     if (params.hasOwnProperty('test') && params.test === true) {

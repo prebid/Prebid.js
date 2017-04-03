@@ -18,9 +18,9 @@ var SovrnAdapter = function SovrnAdapter() {
 
   function _requestBids(bidReqs) {
     // build bid request object
-    var domain = window.location.host;
-    var page = window.location.pathname + location.search + location.hash;
-
+    var domain = utils.getTopWindowUrl();
+    var pageArray = domain.split('/');
+    var page = pageArray.splice(3, pageArray.length).join('/');
     var sovrnImps = [];
 
     //build impression array for sovrn

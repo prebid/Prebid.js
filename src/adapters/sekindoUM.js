@@ -12,11 +12,7 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     var bids = params.bids;
     var bidsCount = bids.length;
 
-    var pubUrl = null;
-    if (parent !== window)
-      pubUrl = document.referrer;
-    else
-      pubUrl = window.location.href;
+    var pubUrl = utils.getTopWindowUrl();
 
     for (var i = 0; i < bidsCount; i++) {
       var bidReqeust = bids[i];

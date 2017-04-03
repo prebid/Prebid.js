@@ -6,7 +6,7 @@ const bidmanager = require('../bidmanager.js');
 const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
-  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
+  const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;${'kvrefd'}alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
   const SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
@@ -46,13 +46,20 @@ const AolAdapter = function AolAdapter() {
     // Set region param, used by AOL analytics.
     params.region = regionParam;
 
+    // Grab top window href
+    var href = utils.getTopWindowURL();
+
+    console.log('### AOL TOP URL, ' + href);
+
     return pubapiTemplate({
       protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
       host: server,
+      ref: href,
       network: params.network,
       placement: parseInt(params.placement),
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
+      kvrefd: href ? ('kvrefd=' + href + ';') : '',
       alias: params.alias || utils.getUniqueIdentifierStr(),
       bidfloor: (typeof params.bidFloor !== 'undefined') ?
         `;bidfloor=${params.bidFloor.toString()}` : '',
