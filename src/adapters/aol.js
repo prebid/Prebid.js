@@ -175,21 +175,17 @@ const AolAdapter = function AolAdapter() {
   }
 
   function _buildNexageApiUrl(bid) {
-    const params = bid.params;
+    let {dcn, pos} = bid.params;
     let nexageApi = nexageBaseApiTemplate({
       protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-      host: params.host || NEXAGE_SERVER
+      host: bid.params.host || NEXAGE_SERVER
     });
-    if (params.dcn && params.pos) {
+    if (dcn && pos) {
       let ext = '';
-      utils._each(params.ext, (value, key) => {
+      utils._each(bid.params.ext, (value, key) => {
         ext += encodeURI(`&${key}=${value}`);
       });
-      nexageApi += nexageGetApiTemplate({
-        dcn: params.dcn,
-        pos: params.pos,
-        ext : ext
-      });
+      nexageApi += nexageGetApiTemplate({dcn, pos, ext});
     }
     return nexageApi;
   }
