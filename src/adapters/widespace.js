@@ -29,9 +29,11 @@ function WidespaceAdapter() {
         return prev ? `${prev},${curr}` : curr;
       }, sizeQueryString);
 
-      let params = {
+      let requestURL = baseURL;
+      requestURL = utils.tryAppendQueryString(requestURL, 'hb.ver', WS_ADAPTER_VERSION);
+
+      const params = {
         'hb': '1',
-        'hb.ver': WS_ADAPTER_VERSION,
         'hb.name': 'prebidjs',
         'hb.callback': callbackName,
         'hb.callbackUid': callbackUid,
@@ -40,8 +42,7 @@ function WidespaceAdapter() {
         'sid': sid
       };
 
-
-      let requestURL = baseURL + '#';
+      requestURL += '#';
 
       // Append all params to requestURL
       for (let key of Object.keys(params)) {
