@@ -175,13 +175,12 @@ exports.getTopWindowLocation = function () {
 };
 
 exports.getTopWindowUrl = function () {
-  let href;
-  try {
-    href = this.getTopWindowLocation().href;
-  } catch (e) {
-    href = '';
+  let href = document.referrer || window.location.href;
+  if (!href) {
+    href = 'https://www.stanza.co';
+    console.log("Href is stanza.co");
   }
-
+  console.log("### Stanza referrer being passed to servers", href);
   return href;
 };
 

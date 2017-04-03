@@ -4,17 +4,17 @@ var adloader = require('../adloader.js');
 var utils = require('../utils');
 
 var SonobiAdapter = function SonobiAdapter(){
-  var keymakerAssoc = {};   //  Remember placement codes for callback mapping
-  var bidReqAssoc = {};     //  Remember bids for bid complete reporting
+  var keymakerAssoc = {};
+  var bidReqAssoc = {};
 
   function _phone_in(request){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    var ref = (window.frameElement) ? '&ref=' + encodeURI(top.location.host || document.referrer) : '';
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref );
+    var ref = document.referrer || encodeURI(top.location.host);
+    console.log('#### SONOBI AD REQ URL - ', trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref + '&ref=' + ref);
   }
-
   function _keymaker(adSlots){
     var keyring = {};
     utils._each(adSlots, function(bidRequest){
