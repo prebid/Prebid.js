@@ -120,6 +120,11 @@
       }
     },
     {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
       "rhythmone": {
         "supportedMediaTypes": ["video"]
       }
