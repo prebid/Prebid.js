@@ -32,6 +32,27 @@ describe('the rubicon adapter', () => {
     };
   }
 
+  function createVideoBidderRequestNoVideo() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaType = 'video';
+    bid.params.video = '';
+  }
+
+  function createVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaType = 'video';
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
 
@@ -309,6 +330,7 @@ describe('the rubicon adapter', () => {
 
       describe('for video requests', () => {
 
+        /*
         beforeEach(() => {
           createVideoBidderRequest();
 
@@ -316,8 +338,14 @@ describe('the rubicon adapter', () => {
             bidderRequest.auctionStart + 100
           );
         });
+        */
 
         it('should make a well-formed video request', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
 
           rubiconAdapter.callBids(bidderRequest);
 
@@ -373,6 +401,59 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('ucat').that.equals('new');
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
 
+        });
+
+        it('should allow a floor price override', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          // enter an explicit floor price //
+          floorBidderRequest.bids[0].params.floor = 3.25;
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          let request = xhr.requests[0];
+          let post = JSON.parse(request.requestBody);
+
+          let floor = post.slots[0].floor;
+
+          expect(floor).to.equal(3.25);
+
+        });
+
+        it('should trap when no video object is passed in', () => {
+          createVideoBidderRequestNoVideo();
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          expect(xhr.requests.length).to.equal(0);
+        });
+
+        it('should get size from bid.sizes too', () => {
+          createVideoBidderRequestNoPlayer();
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          let request = xhr.requests[0];
+          let post = JSON.parse(request.requestBody);
+
+          expect(post.slots[0].width).to.equal(300);
+          expect(post.slots[0].height).to.equal(250);
         });
 
       });

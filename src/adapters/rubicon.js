@@ -162,7 +162,7 @@ function RubiconAdapter() {
       site_id: params.siteId,
       zone_id: params.zoneId,
       position: params.position || 'btf',
-      floor: 0.01,
+      floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
       element_id: bid.placementCode,
       name: bid.placementCode,
       language: params.video.language,
