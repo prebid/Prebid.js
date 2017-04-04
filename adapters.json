@@ -13,6 +13,7 @@
     "appnexus",
     "appnexusAst",
     "beachfront",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -21,6 +22,7 @@
     "indexExchange",
     "kruxlink",
     "getintent",
+    "inneractive",
     "komoona",
     "lifestreet",
     "mantis",
@@ -57,6 +59,7 @@
     "vertoz",
     "widespace",
     "admixer",
+    "atomx",
     "tapsense",
     {
       "appnexus": {
@@ -122,6 +125,15 @@
       "getintent": {
         "supportedMediaTypes" : ["video"]
       }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]

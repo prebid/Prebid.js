@@ -17,6 +17,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
   function _callBids(params) {
     bids = params.bids;
+    _pm_optimize_adslots = [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
       //bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;

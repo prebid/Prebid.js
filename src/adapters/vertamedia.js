@@ -35,14 +35,33 @@ function VertamediaAdapter() {
     }
 
     bidRequest = bid;
-    bidRequest.width = parseInt(bid.sizes[0], 10) || undefined;
-    bidRequest.height = parseInt(bid.sizes[1], 10) || undefined;
+
+    let size = getSize(bid.sizes);
+
+    bidRequest.width = size.width;
+    bidRequest.height = size.height;
 
     return {
       aid: bid.params.aid,
-      w: parseInt(bid.sizes[0], 10) || undefined,
-      h: parseInt(bid.sizes[1], 10) || undefined,
+      w: size.width,
+      h: size.height,
       domain: document.location.hostname
+    };
+  }
+
+  function getSize(requestSizes) {
+    var parsed = {},
+        size = utils.parseSizesInput(requestSizes)[0];
+
+    if (typeof size !== 'string') {
+      return parsed;
+    }
+
+    let parsedSize = size.toUpperCase().split('X');
+
+    return {
+      width: parseInt(parsedSize[0], 10) || undefined,
+      height: parseInt(parsedSize[1], 10) || undefined
     };
   }
 

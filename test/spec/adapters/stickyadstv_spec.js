@@ -157,7 +157,6 @@ describe('StickyAdsTV Adapter', function () {
             
             expect(result).to.have.property('cpm', '1.2345');
             expect(result).to.have.property('ad', "<div>sample</div>");
-            expect(result).to.have.property('bidderCode', "stickyadstv");
             expect(result).to.have.property('currencyCode', "EUR");
             expect(result).to.have.property('width', 200);
             expect(result).to.have.property('height', 300);
@@ -167,14 +166,12 @@ describe('StickyAdsTV Adapter', function () {
         it('should create a invalid bid object because price is not defined', function () {
             let result = adapter.formatBidObject("", true, null, "<div>sample</div>", 200, 300);
                         
-            expect(result).to.have.property('bidderCode', "stickyadstv");
             expect(result.getStatusCode()).to.equal(2);
         });
 
         it('should create a invalid bid object', function () {
             let result = adapter.formatBidObject("", false, {currency:"EUR",price:"1.2345"}, "<div>sample</div>", 200, 300);
                         
-            expect(result).to.have.property('bidderCode', "stickyadstv");
             expect(result.getStatusCode()).to.equal(2);
         });
     });
