@@ -69,15 +69,6 @@ describe('sharethrough adapter', () => {
 
   });
 
-  describe('strcallback', () => {
-
-    it('should exist and be a function', () => {
-      let shit = sandbox.stub(pbjs, 'strcallback');
-      expect(pbjs.strcallback).to.exist.and.to.be.a('function');
-    });
-
-  });
-
   describe('bid requests', () => {
 
     let firstBid;
@@ -117,8 +108,8 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      pbjs.strcallback(JSON.stringify(bidderReponse1));
-      pbjs.strcallback(JSON.stringify(bidderReponse2));
+      adapter.callback(bidderRequest.bids[0], JSON.stringify(bidderReponse1));
+      adapter.callback(bidderRequest.bids[1], JSON.stringify(bidderReponse2));
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];

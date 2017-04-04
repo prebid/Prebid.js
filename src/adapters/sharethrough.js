@@ -22,7 +22,9 @@ var SharethroughAdapter = function SharethroughAdapter() {
       const bidRequest = bids[i];
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
-      str.ajax(scriptUrl, $$PREBID_GLOBAL$$.strcallback, undefined, {withCredentials: true});
+      str.ajax(scriptUrl, (bidResponse) => {
+        _strcallback(bidRequest, bidResponse);
+      }, undefined, {withCredentials: true});
     }
   }
 
@@ -39,10 +41,9 @@ var SharethroughAdapter = function SharethroughAdapter() {
     return url;
   }
 
-  $$PREBID_GLOBAL$$.strcallback = function(bidResponse) {
+  function _strcallback(bidObj, bidResponse) {
     bidResponse = JSON.parse(bidResponse);
     const bidId = bidResponse.bidId;
-    const bidObj = utils.getBidRequest(bidId);
     try {
       const bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = STR_BIDDER_CODE;
@@ -78,7 +79,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     } catch (e) {
       _handleInvalidBid(bidObj);
     }
-  };
+  }
 
   function _handleInvalidBid(bidObj) {
     const bid = bidfactory.createBid(2, bidObj);
@@ -96,6 +97,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   return {
     callBids: _callBids,
     str : str,
+    callback: _strcallback
   };
 };
 
