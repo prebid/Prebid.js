@@ -465,14 +465,14 @@ describe('wideorbit adapter tests', function () {
 
 		});
 
-        it('should append an script to the head when type is set to javascript', function () {
+        it('should append an script to the head when type is set to js', function () {
 
             var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
                     {
-                        Type: 'javascript',
+                        Type: 'js',
                         Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
                     }
                 ],

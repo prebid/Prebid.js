@@ -29,6 +29,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
+          transactionId : adUnit.transactionId,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,

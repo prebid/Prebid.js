@@ -1,7 +1,7 @@
 import {expect} from 'chai';
+import {cloneJson} from 'src/utils';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
 import LifestreetAdapter from 'src/adapters/lifestreet';
 
 const BIDDER_REQUEST = {
@@ -44,7 +44,7 @@ describe ('LifestreetAdapter', () => {
 
       beforeEach(() => {
         tagRequests = [];
-        request = utils.extend(request, BIDDER_REQUEST);
+        request = cloneJson(BIDDER_REQUEST);
         sinon.stub(adloader, 'loadScript', (url, callback) => {
           tagRequests.push(url);
           callback();
