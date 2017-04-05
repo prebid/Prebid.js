@@ -134,22 +134,14 @@ function PubGearsAdapter() {
     return response;
   }
   function getCreative(resource) {
-    var bookends = '%%';
+    var token = '%%';
     var creative = CREATIVE_TEMPLATE;
     var replacementValues = {
-      PUBLISHER_NAME: publisher,
-      PUB_ZONE: resource[PUB_ZONE],
-      SIZE: resource[SIZE]
+      publisher_name: publisher,
+      pub_zone: resource[PUB_ZONE],
+      size: resource[SIZE]
     };
-
-    Object.keys(replacementValues).forEach(function(token) {
-
-      var find = ['', token, ''].join(bookends);
-      var value = replacementValues[token];
-      creative = creative.replace(find, value);
-    });
-
-    return creative;
+    return utils.replaceTokenInString(creative, replacementValues, token);
   }
   function onComplete(event) {
     var data = event[DETAIL];
