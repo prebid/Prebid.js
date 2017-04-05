@@ -1,3 +1,21 @@
+/* top navbar floats at top of screen when you scroll */
+
+header#top {
+    position: fixed;
+    width: 100%;
+}
+
+/* bump top of left nav below floating top navbar  */
+
+.row {
+    margin-top: 3em;
+}
+
+/* bump top of 'Prebid.js' text on homepage below floating top navbar */
+
+.home-title {
+    margin-top: 1em;
+}
 
 .bs-docs-nav .navbar-brand, .bs-docs-nav .navbar-nav>li>a {
   color: #444;
@@ -335,4 +353,3 @@ table:not(.jsfiddle-line-number) {
 div.pl-doc-entry{
   position: absolute;
 }
-
