@@ -31,6 +31,7 @@ function WidespaceAdapter() {
 
       let requestURL = baseURL;
       requestURL = utils.tryAppendQueryString(requestURL, 'hb.ver', WS_ADAPTER_VERSION);
+      requestURL = utils.tryAppendQueryString(requestURL, 'sid', sid);
 
       const params = {
         'hb': '1',
@@ -38,8 +39,7 @@ function WidespaceAdapter() {
         'hb.callback': callbackName,
         'hb.callbackUid': callbackUid,
         'hb.sizes': sizeQueryString,
-        'hb.currency': currency,
-        'sid': sid
+        'hb.currency': currency
       };
 
       requestURL += '#';
