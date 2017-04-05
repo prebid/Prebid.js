@@ -33,7 +33,8 @@ describe('mantis adapter tests', function () {
 				placementCode: 'foo',
 				sizes: [[728, 90]],
 				params: {
-					property: '1234'
+					property: '1234',
+					zoneId: 'zone1'
 				}
 			},
 			{
@@ -42,7 +43,8 @@ describe('mantis adapter tests', function () {
 				placementCode: 'bar',
 				sizes: [[300, 600], [300, 250]],
 				params: {
-					property: '1234'
+					property: '1234',
+					zoneId: 'zone2'
 				}
 			}
 		]
@@ -103,11 +105,13 @@ describe('mantis adapter tests', function () {
 			expect(serverCall).to.string('bids[0][bidId]=bidId1&');
 			expect(serverCall).to.string('bids[0][sizes][0][width]=728&');
 			expect(serverCall).to.string('bids[0][sizes][0][height]=90&');
+			expect(serverCall).to.string('bids[0][config][zoneId]=zone1&');
 			expect(serverCall).to.string('bids[1][bidId]=bidId2&');
 			expect(serverCall).to.string('bids[1][sizes][0][width]=300&');
 			expect(serverCall).to.string('bids[1][sizes][0][height]=600&');
 			expect(serverCall).to.string('bids[1][sizes][1][width]=300&');
 			expect(serverCall).to.string('bids[1][sizes][1][height]=250&');
+			expect(serverCall).to.string('bids[1][config][zoneId]=zone2&');
 			expect(serverCall).to.string('version=1');
 		});
 

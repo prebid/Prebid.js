@@ -5,70 +5,107 @@ var utils = require('../utils.js');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
-  var getJsStaticUrl = window.location.protocol + '//bid.underdog.media/udm_header_lib.js';
+  const UDM_ADAPTER_VERSION = '1.0.0';
+  var getJsStaticUrl = window.location.protocol + '//udmserve.net/udm/img.fetch?tid=1;dt=9;callback=$$PREBID_GLOBAL$$.handleUnderdogMediaCB;';
+  var bidParams = {};
 
   function _callBids(params) {
-    if (typeof window.udm_header_lib === 'undefined') {
-      adloader.loadScript(getJsStaticUrl, function () { bid(params); });
-    } else {
-      bid(params);
+    bidParams = params;
+    var sizes = [];
+    var siteId = 0;
+
+    for (var bidParam of bidParams.bids) {
+      sizes = utils.flatten(sizes,utils.parseSizesInput(bidParam.sizes));
+      siteId = bidParam.params.siteId;
     }
+    adloader.loadScript(getJsStaticUrl + "sid=" + siteId + ";sizes=" + sizes.join(","), null, false);
   }
 
-  function bid(params) {
-    var bids = params.bids;
-    var mapped_bids = [];
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var callback = bidResponseCallback(bidRequest);
-      mapped_bids.push({
-        sizes: bidRequest.sizes,
-        siteId: bidRequest.params.siteId,
-        bidfloor: bidRequest.params.bidfloor,
-        placementCode: bidRequest.placementCode,
-        divId: bidRequest.params.divId,
-        subId: bidRequest.params.subId,
-        callback: callback
-      });
-    }
-    var udmBidRequest = new window.udm_header_lib.BidRequestArray(mapped_bids);
-    udmBidRequest.send();
-  }
+  function _callback(response) {
 
-  function bidResponseCallback(bid) {
-    return function (bidResponse) {
-      bidResponseAvailable(bid, bidResponse);
-    };
-  }
+    var mids = response.mids;
+    for (var bidParam of bidParams.bids) {
 
-  function bidResponseAvailable(bidRequest, bidResponse) {
-    if(bidResponse.bids.length > 0){
-      for(var i = 0; i < bidResponse.bids.length; i++){
-        var udm_bid = bidResponse.bids[i];
-        var bid = bidfactory.createBid(1);
-        bid.bidderCode = bidRequest.bidder;
-        bid.cpm = udm_bid.cpm;
-        bid.width = udm_bid.width;
-        bid.height = udm_bid.height;
+      var filled = false;
+      for (var mid of mids) {
 
-        if(udm_bid.ad_url !== undefined){
-          bid.adUrl = udm_bid.ad_url;
+        if (mid.useCount > 0) {
+          continue;
         }
-        else if(udm_bid.ad_html !== undefined){
-          bid.ad = udm_bid.ad_html;
-        }else{
-          utils.logMessage('Underdogmedia bid is lacking both ad_url and ad_html, skipping bid');
+        if (!mid.useCount) {
+          mid.useCount = 0;
+        }
+        var size_not_found = true;
+        for (var size of utils.parseSizesInput(bidParam.sizes)) {
+          if (size === mid.width + 'x' + mid.height) {
+            size_not_found = false;
+          }
+        }
+        if (size_not_found) {
           continue;
         }
 
-        bidmanager.addBidResponse(bidRequest.placementCode, bid);
+        var bid = bidfactory.createBid(1, bidParam);
+        bid.bidderCode = bidParam.bidder;
+        bid.width = mid.width;
+        bid.height = mid.height;
+
+        bid.cpm = parseFloat(mid.cpm);
+        if (bid.cpm <= 0) {
+          continue;
+        }
+        mid.useCount++;
+        bid.ad = mid.ad_code_html;
+        bid.ad = _makeNotification(bid, mid, bidParam) + bid.ad;
+        if (!(bid.ad || bid.adUrl)) {
+          continue;
+        }
+        bidmanager.addBidResponse(bidParam.placementCode, bid);
+        filled = true;
+        break;
       }
-    }else{
-      var nobid = bidfactory.createBid(2);
-      nobid.bidderCode = bidRequest.bidder;
-      bidmanager.addBidResponse(bidRequest.placementCode, nobid);
+      if (!filled) {
+        var nobid = bidfactory.createBid(2, bidParam);
+        nobid.bidderCode = bidParam.bidder;
+        bidmanager.addBidResponse(bidParam.placementCode, nobid);
+      }
     }
   }
+
+  $$PREBID_GLOBAL$$.handleUnderdogMediaCB = _callback;
+
+  function _makeNotification(bid, mid, bidParam) {
+
+    var url = mid.notification_url;
+
+    url += UDM_ADAPTER_VERSION;
+    url += ";cb=" + Math.random();
+    url += ";qqq=" + (1 / bid.cpm);
+    url += ";hbt=" + $$PREBID_GLOBAL$$.bidderTimeout;
+    url += ';style=adapter';
+    url += ';vis=' + encodeURIComponent(document.visibilityState);
+
+    url += ';traffic_info=' + encodeURIComponent(JSON.stringify(_getUrlVars()));
+    if (bidParam.params.subId) {
+      url += ';subid=' + encodeURIComponent(bidParam.params.subId);
+    }
+    return "<script async src=\"" + url + "\"></script>";
+  }
+
+  function _getUrlVars() {
+    var vars = {};
+    var hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+      hash = hashes[i].split('=');
+      if (!hash[0].match(/^utm/)) {
+        continue;
+      }
+      vars[hash[0]] = hash[1].substr(0, 150);
+    }
+    return vars;
+  }
+
 
   return {
     callBids: _callBids
