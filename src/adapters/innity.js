@@ -24,27 +24,28 @@ var InnityAdapter = function InnityAdapter() {
       requestParams.callback_uid = bid.bidId;
       // Load Bidder URL
       bidURL = requestURL + utils.parseQueryStringParameters(requestParams);
-      utils.logMessage('Innity.prebid, Pub ID: ' + bid.params.pub + ', Zone ID: ' + bid.params.zone + ', URL: ' + bidURL);
+      utils.logMessage('Innity.prebid, Bid ID: ' + bid.bidId + ', Pub ID: ' + bid.params.pub + ', Zone ID: ' + bid.params.zone + ', URL: ' + bidURL);
       adloader.loadScript(bidURL);
     }
   }
 	
   $$PREBID_GLOBAL$$._doInnityCallback = function(response) {
-    var bidObject = {}, callbackID, libURL = window.location.protocol + "//cdn.innity.net/frame_util.js";
+    var bidObject, bidRequest, callbackID, libURL = window.location.protocol + "//cdn.innity.net/frame_util.js";
     callbackID = response.callback_uid;
+    bidRequest = utils.getBidRequest(callbackID);
     if (response.cpm > 0) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
       bidObject.bidderCode = 'innity';
       bidObject.cpm = parseFloat(response.cpm) / 100;
       bidObject.ad = '<script src="' + libURL + '"></script>' + response.tag;
       bidObject.width = response.width;
       bidObject.height = response.height;
     } else {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
+      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
       bidObject.bidderCode = 'innity';
       utils.logMessage('No Bid response from Innity request: ' + callbackID);
     }
-    bidmanager.addBidResponse(utils.getBidRequest(callbackID).placementCode, bidObject);
+    bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
   };
 
   return {

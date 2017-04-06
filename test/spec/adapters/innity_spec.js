@@ -2,97 +2,85 @@ describe('innity adapter tests', function () {
 
     var expect = require('chai').expect;
     var urlParse = require('url-parse');
-    
+
     // FYI: querystringify will perform encoding/decoding
     var querystringify = require('querystringify');
 
     var adapter = require('src/adapters/innity');
     var adLoader = require('src/adloader');
     var bidmanager = require('src/bidmanager');
-    var utils = require('src/utils');
-	var CONSTANTS = require('src/constants.json');
 
-    window.pbjs = window.pbjs || {};
-    if (typeof(pbjs) === "undefined") {
-        var pbjs = window.pbjs;
-    }
-	
-	var stubLoadScript;
+    var stubLoadScript;
 
-	beforeEach(function () {
-		stubLoadScript = sinon.stub(adLoader, 'loadScript');
-	});
+    beforeEach(function () {
+        stubLoadScript = sinon.stub(adLoader, 'loadScript');
+    });
 
-	afterEach(function () {
-		stubLoadScript.restore();
-	});
-	
-	describe('creation of bid url', function () {
+    afterEach(function () {
+        stubLoadScript.restore();
+    });
 
-        if (typeof(pbjs._bidsReceived) === "undefined") { 
-            pbjs._bidsReceived = [];
+    describe('creation of bid url', function () {
+
+        if (typeof($$PREBID_GLOBAL$$._bidsReceived) === "undefined") { 
+            $$PREBID_GLOBAL$$._bidsReceived = [];
         }
-        if (typeof(pbjs._bidsRequested) === "undefined") {
-            pbjs._bidsRequested = [];
-        }
-        if (typeof(pbjs._adsReceived) === "undefined") {
-            pbjs._adsReceived = [];
+        if (typeof($$PREBID_GLOBAL$$._bidsRequested) === "undefined") {
+            $$PREBID_GLOBAL$$._bidsRequested = [];
         }
 
         it('bid request for single placement', function () {
 
             var params = {
-                bids: [
-                        {
-                          placementCode: '/19968336/header-bid-tag-0',
-                          sizes: [[300,250]],			
-                          bidId: 'b12345',
-                          bidder: 'innity',
-                          params: { pub: '267', zone: '7958' }
-                        }
+                bids: [{
+                        placementCode: '/19968336/header-bid-tag-0',
+                        sizes: [[300,250]],			
+                        bidId: 'b12345',
+                        bidder: 'innity',
+                        params: { pub: '267', zone: '62546' }
+                    }
                 ]
             };
 
             adapter().callBids(params);
-			
-			var bidUrl = stubLoadScript.getCall(0).args[0];
-            
-			sinon.assert.calledOnce(stubLoadScript);
-			
+
+            var bidUrl = stubLoadScript.getCall(0).args[0];
+
+            sinon.assert.calledOnce(stubLoadScript);
+
             var parsedBidUrl = urlParse(bidUrl);
-            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query); 
- 
+            var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
+
             expect(parsedBidUrlQueryString).to.have.property('pub').and.to.equal('267');
-            expect(parsedBidUrlQueryString).to.have.property('zone').and.to.equal('7958');
-			expect(parsedBidUrlQueryString).to.have.property('width').and.to.equal('300');
-			expect(parsedBidUrlQueryString).to.have.property('height').and.to.equal('250');
+            expect(parsedBidUrlQueryString).to.have.property('zone').and.to.equal('62546');
+            expect(parsedBidUrlQueryString).to.have.property('width').and.to.equal('300');
+            expect(parsedBidUrlQueryString).to.have.property('height').and.to.equal('250');
         });
-   });
-   
-   describe('handling bid response', function () {
+    });
+
+    describe('handling bid response', function () {
         it('should return complete bid response', function() {
-			
+
             var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-            
-			var params = {
-                bids: [
-                        {
-                          placementCode: '/19968336/header-bid-tag-0',
-                          sizes: [[300,250]],			
-                          bidId: 'b12345',
-                          bidder: 'innity',
-                          params: { pub: '267', zone: '7958' }
-                        }
+
+            var params = {
+                bids: [{
+                        placementCode: '/19968336/header-bid-tag-0',
+                        sizes: [[300,250]],			
+                        bidId: 'b12345',
+                        bidder: 'innity',
+                        params: { pub: '267', zone: '62546' }
+                    }
                 ]
             };
-			
-			var response = {
-				cpm: 100,
-				width: 300,
-				height: 250,
-				callback_uid: 'b12345',
-				tag: '<script>document.write("this is a campaign banner");<\/script>'
-			};
+
+            var response = {
+                cpm: 100,
+                width: 300,
+                height: 250,
+                callback_uid: 'b12345',
+                tag: '<script>document.write("this is a campaign banner");<\/script>'
+            };
 
             adapter().callBids(params);
 
@@ -103,16 +91,16 @@ describe('innity adapter tests', function () {
             unit.sizes = [[300,250]];
             adUnits.push(unit);
 
-            if (typeof(pbjs._bidsRequested) === "undefined") {
-                pbjs._bidsRequested = [params];
+            if (typeof($$PREBID_GLOBAL$$._bidsRequested) === "undefined") {
+                $$PREBID_GLOBAL$$._bidsRequested = [params];
             } else {
-                pbjs._bidsRequested.push(params);
+                $$PREBID_GLOBAL$$._bidsRequested.push(params);
             }
 
-            pbjs.adUnits = adUnits;
-            
-			pbjs._doInnityCallback(response);
-            
+            $$PREBID_GLOBAL$$.adUnits = adUnits;
+
+            $$PREBID_GLOBAL$$._doInnityCallback(response);
+
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
 
@@ -121,34 +109,33 @@ describe('innity adapter tests', function () {
             expect(bidObject1.cpm).to.equal(1);
             expect(bidObject1.width).to.equal(300);
             expect(bidObject1.height).to.equal(250);
-			expect(bidObject1.ad).to.have.length.above(1);
-			
+            expect(bidObject1.ad).to.have.length.above(1);
+
             stubAddBidResponse.restore();
         });
-		
-		it('should return no bid response', function() {
+
+        it('should return no bid response', function() {
 
             var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-            
-			var params = {
-                bids: [
-                        {
-                          placementCode: '/19968336/header-bid-tag-0',
-                          sizes: [[300,250]],			
-                          bidId: 'b12345',
-                          bidder: 'innity',
-                          params: { pub: '267', zone: '7958' }
-                        }
+
+            var params = {
+                bids: [{
+                        placementCode: '/19968336/header-bid-tag-0',
+                        sizes: [[300,250]],			
+                        bidId: 'b12345',
+                        bidder: 'innity',
+                        params: { pub: '267', zone: '7958' }
+                    }
                 ]
             };
-			
-			var response = {
-				cpm: 0,
-				width: 300,
-				height: 250,
-				callback_uid: 'b12345',
-				tag: '<script>document.write("this is a default banner");<\/script>'
-			};
+
+            var response = {
+                cpm: 0,
+                width: 300,
+                height: 250,
+                callback_uid: 'b12345',
+                tag: '<script>document.write("this is a default banner");<\/script>'
+            };
 
             adapter().callBids(params);
 
@@ -159,15 +146,15 @@ describe('innity adapter tests', function () {
             unit.sizes = [[300,250]];
             adUnits.push(unit);
 
-            if (typeof(pbjs._bidsRequested) === "undefined") {
-                pbjs._bidsRequested = [params];
+            if (typeof($$PREBID_GLOBAL$$._bidsRequested) === "undefined") {
+                $$PREBID_GLOBAL$$._bidsRequested = [params];
             } else {
-                pbjs._bidsRequested.push(params);
+                $$PREBID_GLOBAL$$._bidsRequested.push(params);
             }
 
-            pbjs.adUnits = adUnits;
-			
-			pbjs._doInnityCallback(response);
+            $$PREBID_GLOBAL$$.adUnits = adUnits;
+
+            $$PREBID_GLOBAL$$._doInnityCallback(response);
             
             var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
             var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -177,6 +164,5 @@ describe('innity adapter tests', function () {
 
             stubAddBidResponse.restore();
         });
-   });
+    });
 });
-  
