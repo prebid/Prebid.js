@@ -12,6 +12,7 @@
     "aol",
     "appnexus",
     "appnexusAst",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -21,6 +22,7 @@
     "innity",
     "kruxlink",
     "getintent",
+    "inneractive",
     "komoona",
     "lifestreet",
     "mantis",
@@ -57,6 +59,7 @@
     "vertoz",
     "widespace",
     "admixer",
+    "atomx",
     "tapsense",
     {
       "appnexus": {
@@ -117,6 +120,15 @@
       "getintent": {
         "supportedMediaTypes" : ["video"]
       }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]
