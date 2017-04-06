@@ -68,6 +68,9 @@ export function ajax(url, callback, data, options = {}) {
       if (options.preflight) {
         x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       }
+      utils._each(options.customHeaders, (value, header) => {
+        x.setRequestHeader(header, value);
+      });
       x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
     }
     x.send(method === 'POST' && data);
