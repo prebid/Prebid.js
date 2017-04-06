@@ -183,7 +183,7 @@ const AolAdapter = function AolAdapter() {
     if (dcn && pos) {
       let ext = '';
       utils._each(bid.params.ext, (value, key) => {
-        ext += encodeURI(`&${key}=${value}`);
+        ext += `&${key}=${encodeURIComponent(value)}`;
       });
       nexageApi += nexageGetApiTemplate({dcn, pos, ext});
     }
