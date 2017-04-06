@@ -2,10 +2,7 @@ describe('innity adapter tests', function () {
 
     var expect = require('chai').expect;
     var urlParse = require('url-parse');
-
-    // FYI: querystringify will perform encoding/decoding
     var querystringify = require('querystringify');
-
     var adapter = require('src/adapters/innity');
     var adLoader = require('src/adloader');
     var bidmanager = require('src/bidmanager');
@@ -33,13 +30,12 @@ describe('innity adapter tests', function () {
 
             var params = {
                 bids: [{
-                        placementCode: '/19968336/header-bid-tag-0',
-                        sizes: [[300,250]],			
-                        bidId: 'b12345',
-                        bidder: 'innity',
-                        params: { pub: '267', zone: '62546' }
-                    }
-                ]
+                    placementCode: '/19968336/header-bid-tag-0',
+                    sizes: [[300,250]],			
+                    bidId: 'b12345',
+                    bidder: 'innity',
+                    params: { pub: '267', zone: '62546' }
+                }]
             };
 
             adapter().callBids(params);
@@ -65,13 +61,12 @@ describe('innity adapter tests', function () {
 
             var params = {
                 bids: [{
-                        placementCode: '/19968336/header-bid-tag-0',
-                        sizes: [[300,250]],			
-                        bidId: 'b12345',
-                        bidder: 'innity',
-                        params: { pub: '267', zone: '62546' }
-                    }
-                ]
+                    placementCode: '/19968336/header-bid-tag-0',
+                    sizes: [[300,250]],			
+                    bidId: 'b12345',
+                    bidder: 'innity',
+                    params: { pub: '267', zone: '62546' }
+                }]
             };
 
             var response = {
@@ -120,13 +115,12 @@ describe('innity adapter tests', function () {
 
             var params = {
                 bids: [{
-                        placementCode: '/19968336/header-bid-tag-0',
-                        sizes: [[300,250]],			
-                        bidId: 'b12345',
-                        bidder: 'innity',
-                        params: { pub: '267', zone: '7958' }
-                    }
-                ]
+                    placementCode: '/19968336/header-bid-tag-0',
+                    sizes: [[300,250]],			
+                    bidId: 'b12345',
+                    bidder: 'innity',
+                    params: { pub: '267', zone: '7958' }
+                }]
             };
 
             var response = {
