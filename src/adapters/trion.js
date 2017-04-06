@@ -25,6 +25,8 @@ TrionAdapter = function TrionAdapter() {
     if (!window.TRION_INT) {
       adloader.loadScript(USER_SYNC_URL, function () {
         userTag = window.TRION_INT || {};
+        userTag.pubId = utils.getBidIdParameter('pubId', bids[0].params);
+        userTag.sectionId = utils.getBidIdParameter('sectionId', bids[0].params);
         if(!userTag.to){
           getBids(bids);
         }
