@@ -22,10 +22,14 @@ var SharethroughAdapter = function SharethroughAdapter() {
       const bidRequest = bids[i];
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
-      str.ajax(scriptUrl, (bidResponse) => {
-        _strcallback(bidRequest, bidResponse);
-      }, undefined, {withCredentials: true});
+      str.ajax(scriptUrl, _createCallback(bidRequest), undefined, {withCredentials: true});
     }
+  }
+
+  function _createCallback(bidRequest) {
+    return (bidResponse) => {
+      _strcallback(bidRequest, bidResponse);
+    };
   }
 
   function _buildSharethroughCall(bid) {
