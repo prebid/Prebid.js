@@ -145,7 +145,7 @@ A watch is also in place that will run continuous tests in the terminal as you e
 
 Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
 
-Our PR review process can be found [here Bidders](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
 
 ### Add a Bidder Adapter
 
