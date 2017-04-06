@@ -9,6 +9,7 @@ var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
+let _s2sEnabled = true;
 exports.bidderRegistry = _bidderRegistry;
 
 var _analyticsRegistry = {};
@@ -55,6 +56,42 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     bidderCodes = shuffle(bidderCodes);
   }
 
+  if(_s2sEnabled) {
+    //these are called on the s2s adapter
+    let adaptersServerSide = ['appnexusAst', 'tapsense'];
+    //don't call these client side
+    bidderCodes = bidderCodes.filter((elm) => {
+      return !adaptersServerSide.includes(elm);
+    });
+    let adUnitsCopy = utils.cloneJson(adUnits);
+    adUnitsCopy = adUnitsCopy.filter((adUnit) => {
+      return adUnit.bids.filter((bid) => {
+        return adaptersServerSide.includes(bid.bidder);
+      });
+    });
+    //filter out client side bids
+    adUnitsCopy.forEach((adUnit) => {
+      adUnit.sizes = transformHeightWidth(adUnit);
+      adUnit.bids = adUnit.bids.filter((bid) => {
+        return adaptersServerSide.includes(bid.bidder);
+      });
+    });
+
+    let requestJson = {
+      account_id : '123',
+      tid : utils.generateUUID(),
+      timeout_ms : '1000',
+      prebid_version : '$prebid.version$',
+      user_ids :  [
+       {"bidder": "indexExchange", "id": "12345"},
+       {"bidder": "appnexus", "id": "12345"}
+      ],
+      ad_units : adUnitsCopy
+    };
+    let s2sAdapter = _bidderRegistry['s2s'];
+    s2sAdapter.callBids(requestJson);
+  }
+
   bidderCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
     if (adapter) {
@@ -79,6 +116,28 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     }
   });
 };
+
+
+/*
+"sizes": [{
+      "w": 300,
+      "h": 250
+    }
+ */
+
+function transformHeightWidth(adUnit) {
+  let sizesObj = [];
+  let sizes = utils.parseSizesInput(adUnit.sizes);
+  sizes.forEach(size => {
+    let heightWidth = size.split('x');
+    let sizeObj = {
+      'w' : parseInt(heightWidth[0]),
+      'h' : parseInt(heightWidth[1])
+    };
+    sizesObj.push(sizeObj);
+  });
+  return sizesObj;
+}
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {

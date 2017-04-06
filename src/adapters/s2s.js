@@ -141,8 +141,8 @@ function S2SAdapter() {
 
   return {
     createNew: S2SAdapter.createNew,
-    callBids: S2SAdapter.callBids,
-    setBidderCode: S2SAdapter.setBidderCode,
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
     type : TYPE
   };
 
