@@ -349,9 +349,6 @@ function performRenderViaRenderer(doc, adObject) {
       renderOutstream(cb.renderAd, adObject);
     };
   });
-
-  adloader.loadScript('http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js');
-
 }
 
 /**
