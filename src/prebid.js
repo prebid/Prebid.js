@@ -7,6 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
+import { loadScript } from './adloader';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -342,9 +343,12 @@ const renderOutstream = function(renderFn, adObject) {
 };
 
 function performRenderViaRenderer(doc, adObject) {
-  window.apntag.registerRenderer = function(id, cb) {
-    renderOutstream(cb.renderAd, adObject);
-  };
+  loadScript(adObject.rendererUrl, () => {
+    window.apntag = { debug: true };
+    window.apntag.registerRenderer = function(id, cb) {
+      renderOutstream(cb.renderAd, adObject);
+    };
+  });
 
   adloader.loadScript('http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js');
 
