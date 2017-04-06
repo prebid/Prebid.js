@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js');
 var ajax = require('../ajax.js').ajax;
 
 const STR_BIDDER_CODE = "sharethrough";
-const STR_VERSION = "1.1.0";
+const STR_VERSION = "1.2.0";
 
 var SharethroughAdapter = function SharethroughAdapter() {
 
