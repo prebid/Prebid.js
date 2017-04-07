@@ -24,11 +24,7 @@ This README is for developers who want to contribute to Prebid.js.  For user-fac
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ npm install
-
-If you experience errors after a version update, try a fresh install:
-
-    $ rm -rf ./node_modules && npm cache clean && npm install
+    $ yarn install
 
 <a name="Build"></a>
 
@@ -65,18 +61,18 @@ Building with just these adapters will result in a smaller bundle which should a
 
 **Build standalone prebid.js**
 
-- Clone the repo, run `npm install`
+- Clone the repo, run `yarn install`
 - Duplicate `adapters.json` to e.g. `list-of-adapters.json`
 - Remove the unnecessary adapters from `list-of-adapters.json`
 - Then run the build:
 
         $ gulp build --adapters path/to/your/list-of-adapters.json
 
-**Build prebid.js using NPM for bundling**
+**Build prebid.js using Yarn for bundling**
 
-In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
 
-- Install `prebid.js` as an `npm` dependency of your project
+- Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
 - Duplicate `node_modules/prebid.js/adapters.json` to under your project path, e.g. `path/to/your/list-of-adapters.json`
 - Remove the unnecessary adapters
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
