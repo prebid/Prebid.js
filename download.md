@@ -4,7 +4,6 @@ title: Download Prebid.js
 description: Documentation on how to download Prebid.js for header bidding.
 
 pid: 0
-show_disqus: true
 
 is_top_nav: yeah
 
@@ -600,18 +599,83 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="tapsense" class="bidder-check-box"> TapSense
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="serverbid" class="bidder-check-box"> ServerBid
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="bidfluence" class="bidder-check-box"> Bidfluence
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="pulsepointLite" class="bidder-check-box"> PulsePoint Lite
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="audienceNetwork" class="bidder-check-box"> Facebook Audience Network
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="atomx" class="bidder-check-box"> Atomx
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="inneractive" class="bidder-check-box"> Inneractive
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="gourmetads" class="bidder-check-box"> Gourmet Ads
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="freewheel-ssp" class="bidder-check-box"> Freewheel-ssp
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
 <div class="row">
   <h4>Analytics Adapters</h4>
-<div class="col-md-4">
-  <div class="checkbox">
-    <label>
-      <input type="checkbox" analyticscode="appnexus" class="analytics-check-box"> AppNexus Analytics
-    </label>
-  </div>
-</div>
 
 <div class="col-md-4">
   <div class="checkbox">
@@ -624,7 +688,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <div class="col-md-4">
   <div class="checkbox">
     <label>
-      <input type="checkbox" analyticscode="pulsepoint" class="analytics-check-box"> PulsePoint 
+      <input type="checkbox" analyticscode="pulsepoint" class="analytics-check-box"> PulsePoint
     </label>
   </div>
 </div>
@@ -632,7 +696,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <div class="col-md-4">
   <div class="checkbox">
     <label>
-      <input type="checkbox" analyticscode="sharethrough-analytics" class="analytics-check-box"> Sharethrough 
+      <input type="checkbox" analyticscode="sharethrough-analytics" class="analytics-check-box"> Sharethrough
     </label>
   </div>
 </div>
@@ -640,7 +704,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <div class="col-md-4">
   <div class="checkbox">
     <label>
-      <input type="checkbox" analyticscode="roxot" class="analytics-check-box"> Roxot 
+      <input type="checkbox" analyticscode="roxot" class="analytics-check-box"> Roxot
     </label>
   </div>
 </div>
@@ -648,7 +712,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 <br/>
 <p>
-(Version 0.20.0)
+(Version 0.21.0)
 </p>
 
 <div class="form-group">
