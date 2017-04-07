@@ -17,11 +17,13 @@ const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
 var _timedOutBidders = [];
+var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
   var _queue = [];
   var _eventCount = 0;
   var _enableCheck = true;
+  var _handlers;
 
   if (analyticsType === LIBRARY) {
     loadScript(url, _emptyQueue);
@@ -35,6 +37,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     track: _track,
     enqueue: _enqueue,
     enableAnalytics: _enable,
+    disableAnalytics: _disable,
     getAdapterType: () => analyticsType,
     getGlobal: () => global,
     getHandler: () => handler,
@@ -71,38 +74,61 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   function _enable(config) {
     var _this = this;
 
-    //first send all events fired before enableAnalytics called
-    events.getEvents().forEach(event => {
-      if (!event) {
-        return;
-      }
+    if (typeof config === 'object' && typeof config.options === 'object') {
+      _sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
+    } else {
+      _sampled = true;
+    }
 
-      const { eventType, args } = event;
 
-      if (eventType === BID_TIMEOUT) {
-        _timedOutBidders = args.bidderCode;
-      } else {
-        _enqueue.call(_this, { eventType, args });
-      }
-    });
+    if (_sampled) {
+      //first send all events fired before enableAnalytics called
+      events.getEvents().forEach(event => {
+        if (!event) {
+          return;
+        }
 
-    //Next register event listeners to send data immediately
+        const { eventType, args } = event;
 
-    //bidRequests
-    events.on(BID_REQUESTED, args => this.enqueue({ eventType: BID_REQUESTED, args }));
-    events.on(BID_RESPONSE, args => this.enqueue({ eventType: BID_RESPONSE, args }));
-    events.on(BID_TIMEOUT, args => this.enqueue({ eventType: BID_TIMEOUT, args }));
-    events.on(BID_WON, args => this.enqueue({ eventType: BID_WON, args }));
-    events.on(BID_ADJUSTMENT, args => this.enqueue({ eventType: BID_ADJUSTMENT, args }));
-    events.on(AUCTION_INIT, args => {
-      args.config = config.options;  // enableAnaltyics configuration object
-      this.enqueue({ eventType: AUCTION_INIT, args });
-    });
+        if (eventType === BID_TIMEOUT) {
+          _timedOutBidders = args.bidderCode;
+        } else {
+          _enqueue.call(_this, { eventType, args });
+        }
+      });
+
+      //Next register event listeners to send data immediately
+
+      _handlers = {
+        [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
+        [BID_RESPONSE]:  args => this.enqueue({ eventType: BID_RESPONSE, args }),
+        [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
+        [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
+        [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
+        [AUCTION_INIT]: args => {
+          args.config = config.options;  // enableAnaltyics configuration object
+          this.enqueue({ eventType: AUCTION_INIT, args });
+        }
+      };
+
+      utils._each(_handlers, (handler, event) => {
+        events.on(event, handler);
+      });
+    } else {
+      utils.logMessage(`Analytics adapter for "${global}" disabled by sampling`);
+    }
+
 
     // finally set this function to return log message, prevents multiple adapter listeners
     this.enableAnalytics = function _enable() {
       return utils.logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
+  }
+
+  function _disable() {
+    utils._each(_handlers, (handler, event) => {
+      events.off(event, handler);
+    });
   }
 
   function _emptyQueue() {
