@@ -71,6 +71,7 @@ function submit_download() {
 
 function get_form_data() {
     var bidders = [];
+    var analytics = [];
 
     var bidder_check_boxes = $('.bidder-check-box');
     for (var i = 0; i < bidder_check_boxes.length; i++) {
@@ -80,10 +81,19 @@ function get_form_data() {
         }
     }
 
+    var analytics_check_boxes = $('.analytics-check-box');
+    for (var i = 0; i < analytics_check_boxes.length; i++) {
+        var box = analytics_check_boxes[i];
+        if (box.checked) {
+            analytics.push(box.getAttribute('analyticscode'));
+        }
+    }
+
     var form_data = {};
     form_data['email'] = $('#input-email').val();
     form_data['company'] = $('#input-company').val();
     form_data['bidders'] = bidders;
+    form_data['analytics'] = analytics;
 
     return form_data;
 }
@@ -109,6 +119,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 
 <form>
 <div class="row">
+<h4>Bidder Adapters</h4>
 <div class="col-md-4">
   <div class="checkbox">
     <label>
@@ -592,6 +603,50 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 
 <br>
+<div class="row">
+  <h4>Analytics Adapters</h4>
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="appnexus" class="analytics-check-box"> AppNexus Analytics
+    </label>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="ga" class="analytics-check-box"> Google Analtyics
+    </label>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="pulsepoint" class="analytics-check-box"> PulsePoint 
+    </label>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="sharethrough-analytics" class="analytics-check-box"> Sharethrough 
+    </label>
+  </div>
+</div>
+
+<div class="col-md-4">
+  <div class="checkbox">
+    <label>
+      <input type="checkbox" analyticscode="roxot" class="analytics-check-box"> Roxot 
+    </label>
+  </div>
+</div>
+
+</div>
+<br/>
 <p>
 (Version 0.20.0)
 </p>
