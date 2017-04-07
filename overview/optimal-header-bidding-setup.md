@@ -5,9 +5,6 @@ description: What is the optimal header bidding setup and some common problems.
 
 pid: 10
 
-
-show_disqus: true
-
 top_nav_section: overview
 nav_section: studies
 
