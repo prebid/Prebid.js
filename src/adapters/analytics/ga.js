@@ -49,10 +49,10 @@ exports.enableAnalytics = function ({ provider, options }) {
     var existingEvents = events.getEvents();
 
     utils._each(existingEvents, function (eventObj) {
-      var args = eventObj.args;
-      if (!eventObj) {
+      if (typeof eventObj !== "object") {
         return;
       }
+      var args = eventObj.args;
 
       if (eventObj.eventType === BID_REQUESTED) {
         bid = args;
