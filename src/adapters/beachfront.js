@@ -10,23 +10,13 @@ const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 function BeachfrontAdapter() {
   var baseAdapter = Adapter.createNew('beachfront');
 
-  var totalBids = 0;
-  var attemptedBids = 0;
-
-
   baseAdapter.callBids = function (bidRequests) {
     const bids = bidRequests.bids || [];
-
-    totalBids = bids.length;
 
     bids.forEach(function(bid) {
       var bidRequest = getBidRequest(bid);
       var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
       if (!RTBDataParams) {
-        attemptedBids += 1;
-        if (attemptedBids >= totalBids) {
-          bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID, utils.getUniqueIdentifierStr()));
-        }
         var error = "No bid params";
         utils.logError(error);
       }
@@ -83,13 +73,11 @@ function BeachfrontAdapter() {
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(bidRequest) {
     return function(response) {
-      attemptedBids += 1;
       var parsed;
       if (response) {
         try {
           parsed = JSON.parse(response);
         } catch (error) {
-          console.log("This is the json parse error");
           utils.logError(error);
         }
       } else {
@@ -97,9 +85,6 @@ function BeachfrontAdapter() {
       }
 
       if (!parsed || parsed.error || !parsed.url || !parsed.bidPrice) {
-        if (attemptedBids >= totalBids) {
-          bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID, {bidId : utils.getUniqueIdentifierStr()}));
-        }
         return;
       }
 
@@ -113,7 +98,6 @@ function BeachfrontAdapter() {
   }
 
   function createBid(bidRequest, status, tag) {
-    console.log(tag.bidId);
     var bid = bidfactory.createBid(status, tag);
     bid.code = baseAdapter.getBidderCode();
     bid.bidderCode = bidRequest.bidder;
