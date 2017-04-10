@@ -47,7 +47,9 @@ var CriteoAdapter = function CriteoAdapter() {
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
-            bid.params.zoneId
+            bid.params.zoneId,
+            undefined,
+            bid.transactionId
           )
         );
 
