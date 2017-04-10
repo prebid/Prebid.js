@@ -59,8 +59,10 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
         return;
       }
 
-      if (args && args.ad) {
-        args.ad = "";
+      let info = Object.assign({}, args);
+
+      if (info && info.ad) {
+        info.ad = "";
       }
 
       if (eventType === auctionInitConst) {
@@ -69,7 +71,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       }
 
       if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
-        buildBidWon(eventType, args);
+        buildBidWon(eventType,info);
         send(eventType, bidWon, 'bidWon');
         return;
       }
@@ -80,7 +82,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
         flushEvents();
         auctionStatus = 'not_started';
       } else {
-        pushEvent(eventType, args);
+        pushEvent(eventType, info);
       }
     }
   });
