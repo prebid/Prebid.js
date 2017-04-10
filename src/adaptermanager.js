@@ -58,7 +58,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if(_s2sEnabled) {
     //these are called on the s2s adapter
-    let adaptersServerSide = ['appnexusAst', 'tapsense'];
+    let adaptersServerSide = ['appnexus'];
     //don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
       return !adaptersServerSide.includes(elm);
@@ -78,7 +78,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     });
 
     let requestJson = {
-      account_id : '123',
+      account_id : '1',
       tid : utils.generateUUID(),
       timeout_ms : '1000',
       prebid_version : '$prebid.version$',
