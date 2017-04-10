@@ -1,8 +1,8 @@
 const assert = require('chai').assert;
 const adapter = require('src/adapters/stroeerCore');
 const bidmanager = require("src/bidmanager");
+// const Ajax = require('src/ajax');
 // const sinon = require('sinon');
-
 
 function rndColorFn() {
   return "#8ea7ce"
@@ -10,9 +10,9 @@ function rndColorFn() {
 
 function assertDummyBid(bidObject, bidId, width, height, ref, ssl, inView) {
   const expectedCreative = (width, height) =>
-  `<div style="width:${width-4}px;height:${height-4}px;margin:0;padding:0;border:2px solid #f4fc0a;background-color:#cbc8ed">\n`
+  `<body style="margin:0;padding:0"><div style="width:${width-4}px;height:${height-4}px;margin:0;padding:0;border:2px solid #f4fc0a;background-color:#cbc8ed">\n`
     + `Hello, I'm an advert. in viewport: ${inView}, main page accessible: true, page referer: ${ref}, secure window: ${ssl}` +
-   `\n</div>`;
+   `\n</div>\n</body>`;
 
   assert.propertyVal(bidObject, 'adId', bidId);
   assert.propertyVal(bidObject, 'ad', expectedCreative(width, height));
@@ -80,6 +80,12 @@ const createWindow = (href, params = {}) => {
 };
 
 describe('stroeerssp adapter', function () {
+  //let stubAjax;
+
+  beforeEach(() => {
+    //stubAjax = sinon.stub(Ajax, 'ajax');
+  });
+
   it('should have `callBids` function', () => {
     assert.isFunction(adapter().callBids);
   });
