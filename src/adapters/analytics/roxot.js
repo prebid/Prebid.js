@@ -39,7 +39,7 @@ function send(eventType, data, sendDataType) {
 
   ajax(
     fullUrl,
-    (result) => utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analityc with result' + result),
+    (result) => utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result),
     JSON.stringify(data)
   );
 }
@@ -91,7 +91,7 @@ roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
-  utils.logInfo('Roxot Analtyics enabled with config', initOptions);
+  utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
 };
 
