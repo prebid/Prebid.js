@@ -12,7 +12,6 @@ function BeachfrontAdapter() {
 
   baseAdapter.callBids = function (bidRequests) {
     const bids = bidRequests.bids || [];
-
     bids.forEach(function(bid) {
       var bidRequest = getBidRequest(bid);
       var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
@@ -21,7 +20,6 @@ function BeachfrontAdapter() {
         utils.logError(error);
       }
       var BID_URL = ENDPOINT + RTBDataParams.appId;
-
       ajax(BID_URL, handleResponse(bidRequest), JSON.stringify(RTBDataParams), {
         contentType: 'text/plain',
         withCredentials: true
@@ -85,6 +83,8 @@ function BeachfrontAdapter() {
       }
 
       if (!parsed || parsed.error || !parsed.url || !parsed.bidPrice) {
+        utils.logWarn("No Valid Bid");
+        bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID));
         return;
       }
 
@@ -92,7 +92,6 @@ function BeachfrontAdapter() {
       newBid.price = parsed.bidPrice;
       newBid.url = parsed.url;
       newBid.bidId = utils.getUniqueIdentifierStr();
-
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.GOOD, newBid));
     };
   }

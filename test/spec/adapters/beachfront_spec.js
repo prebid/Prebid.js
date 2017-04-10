@@ -20,11 +20,11 @@ const REQUEST = {
     },
     "bids": [
         {
-            "bidFloor": 2.00,
+            "bidFloor": 0.01,
             "bidder": "beachfront",
             "params": {
                 "appId": "11bc5dd5-7421-4dd8-c926-40fa653bec76",
-                "bidfloor": 2.00,
+                "bidfloor": 0.01,
                 "dev": true
             },
             "placementCode": "video",
@@ -36,11 +36,10 @@ const REQUEST = {
     ],
     "requestId": "979b659e-ecff-46b8-ae03-7251bae4b725",
 };
-
 var RESPONSE = {
- "bidPrice": "5",
+ "bidPrice": 5.00,
  "url": "http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da:0a47f4ce-d91f-48d0-bd1c-64fa2c196f13:2.90&dsp=58bf26882aba5e6ad608beda,0.612&i_type=pre"
-}
+};
 
 describe('BeachfrontAdapter', () => {
 
@@ -98,12 +97,12 @@ describe('BeachfrontAdapter', () => {
 
             const response = bidmanager.addBidResponse.firstCall.args[1];
             expect(response).to.have.property('statusMessage', 'Bid available');
-            expect(response).to.have.property('cpm', "5");
+            expect(response).to.have.property('cpm', 5.00);
         });
 
         it('handles nobid responses', () => {
             server.respondWith(JSON.stringify({
-              "bidPrice": "5"
+              "bidPrice": 5.00
             }));
 
             adapter.callBids(REQUEST);
