@@ -131,7 +131,7 @@ This runs code quality checks, generates all the necessary files and starts a we
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html` 
++ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
 
 To view a test coverage report, go to:
 
@@ -143,13 +143,15 @@ A watch is also in place that will run continuous tests in the terminal as you e
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
 
 ### Add a Bidder Adapter
 
 To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
-Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate. 
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
 
 ### Code Quality
 
@@ -167,13 +169,13 @@ This will run tests and keep the Karma test browser open. If your `prebid.js` fi
 
 + For test results, see the console
 
-+ To set breakpoints in source code, see the developer tools 
++ To set breakpoints in source code, see the developer tools
 
 Detailed code coverage reporting can be generated explicitly with
 
         $ gulp test --coverage
 
-The results will be in 
+The results will be in
 
         ./build/coverage
 
@@ -184,3 +186,6 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 ### Supported Browsers
 
 Prebid.js is supported on IE9+ and modern browsers.
+
+### Governance
+Review our governance model [here Bidders](https://github.com/prebid/Prebid.js/tree/master/governance.md).
