@@ -98,8 +98,6 @@
   },
   "dependencies": {
     "array-includes": "^3.0.2",
-    "array.prototype.find": "^2.0.3",
-    "babel-cli": "^6.24.1",
-    "babel-preset-node6": "^11.0.0"
+    "array.prototype.find": "^2.0.3"
   }
 }
