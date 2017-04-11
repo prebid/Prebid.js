@@ -1,21 +1,16 @@
 const assert = require('chai').assert;
 const adapter = require('src/adapters/stroeerCore');
 const bidmanager = require("src/bidmanager");
-// const Ajax = require('src/ajax');
-// const sinon = require('sinon');
+//const Ajax = require('src/ajax');
+//const sinon = require('sinon');
 
 function rndColorFn() {
   return "#8ea7ce"
 }
 
-function assertDummyBid(bidObject, bidId, width, height, ref, ssl, inView) {
-  const expectedCreative = (width, height) =>
-  `<body style="margin:0;padding:0"><div style="width:${width-4}px;height:${height-4}px;margin:0;padding:0;border:2px solid #f4fc0a;background-color:#cbc8ed">\n`
-    + `Hello, I'm an advert. in viewport: ${inView}, main page accessible: true, page referer: ${ref}, secure window: ${ssl}` +
-   `\n</div>\n</body>`;
-
+function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
-  assert.propertyVal(bidObject, 'ad', expectedCreative(width, height));
+  assert.propertyVal(bidObject, 'ad', ad);
   assert.propertyVal(bidObject, 'width', width);
   assert.propertyVal(bidObject, 'height', height);
   assert.propertyVal(bidObject, 'cpm', 4.0);
@@ -49,10 +44,26 @@ const buildBidderRequest = () => ({
       placementCode: 'div-2',
       sizes: [[728, 90]],
       params: {
-        sid: 'NDA='
+        sid: 'ODA='
       }
     }
   ]
+});
+
+const buildBidderResponse = () => ({
+  "bids": [{
+    "bidId": "bid1",
+    "cpm": 4.0,
+    "width": 300,
+    "height": 600,
+    "ad": "<div>tag1</div>"
+  }, {
+    "bidId": "bid2",
+    "cpm": 3.0,
+    "width": 728,
+    "height": 90,
+    "ad": "<div>tag2</div>"
+  }]
 });
 
 
@@ -80,10 +91,17 @@ const createWindow = (href, params = {}) => {
 };
 
 describe('stroeerssp adapter', function () {
-  //let stubAjax;
+  // let stubAjax;
+  let fakeServer;
 
   beforeEach(() => {
-    //stubAjax = sinon.stub(Ajax, 'ajax');
+    // stubAjax = sinon.stub(Ajax, 'ajax');
+    fakeServer = sinon.fakeServer.create();
+  });
+
+  afterEach(() => {
+    // stubAjax.restore();
+    fakeServer.restore();
   });
 
   it('should have `callBids` function', () => {
@@ -133,6 +151,12 @@ describe('stroeerssp adapter', function () {
 
 
     it('should add bids', function () {
+
+      fakeServer.respondWith(function() {
+        return buildBidderResponse();
+      });
+
+
       adapter(win, rndColorFn).callBids(bidderRequest);
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
@@ -143,12 +167,18 @@ describe('stroeerssp adapter', function () {
       const firstBid = bidmanager.addBidResponse.firstCall.args[1];
       const secondBid = bidmanager.addBidResponse.secondCall.args[1];
 
-      assertDummyBid(firstBid, 'bid1', 300, 600, expectedPageReferer, expectedSecureWindow, true);
-      assertDummyBid(secondBid, 'bid2', 728, 90, expectedPageReferer, expectedSecureWindow, true);
+      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600);
+      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
     });
 
 
     it('should exclude bids without slot id param', () => {
+
+      fakeServer.respondWith(function() {
+        return buildBidderResponse();
+      });
+
+
       delete bidderRequest.bids[1].params.sid;
 
       adapter(win, rndColorFn).callBids(bidderRequest);
@@ -159,7 +189,7 @@ describe('stroeerssp adapter', function () {
 
       assert.isString(bidmanager.addBidResponse.secondCall.args[0], "div-2");
 
-      assertDummyBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1', 300, 600, expectedPageReferer, expectedSecureWindow, true);
+      assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
 
       assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
     });
