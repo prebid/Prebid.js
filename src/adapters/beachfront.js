@@ -18,6 +18,10 @@ function BeachfrontAdapter() {
       if (!RTBDataParams) {
         var error = "No bid params";
         utils.logError(error);
+        if (bid && bid.placementCode) {
+          bidmanager.addBidResponse(bid.placementCode, createBid(bid, STATUS.NO_BID));
+        }
+        return;
       }
       var BID_URL = ENDPOINT + RTBDataParams.appId;
       ajax(BID_URL, handleResponse(bidRequest), JSON.stringify(RTBDataParams), {
@@ -40,7 +44,7 @@ function BeachfrontAdapter() {
   }
 
   function prepareAndSaveRTBRequestParams(bid) {
-    if (!bid || !bid.params || !bid.params.appId) {
+    if (!bid || !bid.params || !bid.params.appId || !bid.params.bidfloor) {
       return;
     }
 
