@@ -306,6 +306,7 @@ function AppnexusAstAdapter() {
           image: native.main_img && native.main_img.url,
           icon: native.icon && native.icon.url,
           click_url: native.link.url,
+          impression_trackers: native.impression_trackers,
         };
       } else {
         bid.width = ad.rtb.banner.width;

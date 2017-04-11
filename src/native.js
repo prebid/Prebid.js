@@ -73,3 +73,54 @@ export function nativeBidIsValid(bid) {
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
 }
+
+/*
+ * Native responses may have impression trackers. This retrieves the
+ * impression tracker urls for the given ad object and fires them.
+ */
+export function fireNativeImpressions(adObject) {
+  const impressionTrackers = adObject.native &&
+    adObject.native.impression_trackers;
+
+  (impressionTrackers || []).forEach(tracker => {
+    const pixel = createImpressionPixel(tracker);
+    attachPixel(pixel);
+  });
+}
+
+/*
+ * Create an invisible pixel
+ */
+function createImpressionPixel(src) {
+  const img = new Image();
+
+  img.src = src;
+  img.height = 0;
+  img.width = 0;
+  img.style.display = 'none';
+  img.onload = () => {
+    try {this.parentNode.removeChild(this);}
+    catch (error) {logError(`error creating pixel with ${src}`);}
+  };
+
+  return img;
+}
+
+/*
+ * Append to head
+ */
+function attachPixel(pixel) {
+  let elements = document.getElementsByTagName('head');
+
+  try {
+    elements = elements.length ? elements : document.getElementsByTagName('body');
+
+    if (elements.length) {
+      const element = elements[0];
+      element.insertBefore(pixel, element.firstChild);
+    }
+  }
+  catch (error) {
+    logError(`error attaching pixel: ${error.message}`);
+  }
+}
