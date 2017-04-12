@@ -301,7 +301,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
-        if (doc === document || adObject.mediaType === 'video') {
+        if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
           if (isSrcdocSupported(doc)) {
