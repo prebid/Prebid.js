@@ -155,6 +155,25 @@ describe('stroeerssp adapter', function () {
     });
 
 
+    it('should add unfilfilled bids', function() {
+
+      var result = buildBidderResponse();
+
+      result.bids[0].bidId = 'bidX';
+
+      fakeServer.respondWith(JSON.stringify(result));
+
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1');
+
+      assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2', '<div>tag2</div>', 728, 90);
+
+    });
+
+
     it('should exclude bids without slot id param', () => {
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 

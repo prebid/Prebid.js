@@ -1,4 +1,3 @@
-//const adloader = require('../adloader');
 const bidmanager = require('../bidmanager');
 const bidfactory = require('../bidfactory');
 const utils = require('../utils');
@@ -87,7 +86,10 @@ module.exports = function (win = window) {
         }
       });
 
-      const unfulfilledBidRequests = Object.keys(validBidRequestById).filter(id => response.bids.find(bid => bid.bidId === id) === undefined);
+      const unfulfilledBidRequests = Object.keys(validBidRequestById)
+        .filter(id => response.bids.find(bid => bid.bidId === id) === undefined)
+        .map(id => validBidRequestById[id]);
+
       unfulfilledBidRequests.forEach(bidRequest => {
         bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
       });
