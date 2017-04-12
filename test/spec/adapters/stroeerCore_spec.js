@@ -1,12 +1,7 @@
 const assert = require('chai').assert;
 const adapter = require('src/adapters/stroeerCore');
 const bidmanager = require("src/bidmanager");
-//const Ajax = require('src/ajax');
-//const sinon = require('sinon');
 
-function rndColorFn() {
-  return "#8ea7ce"
-}
 
 function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
@@ -59,7 +54,7 @@ const buildBidderResponse = () => ({
     "ad": "<div>tag1</div>"
   }, {
     "bidId": "bid2",
-    "cpm": 3.0,
+    "cpm": 4.0,
     "width": 728,
     "height": 90,
     "ad": "<div>tag2</div>"
@@ -91,18 +86,7 @@ const createWindow = (href, params = {}) => {
 };
 
 describe('stroeerssp adapter', function () {
-  // let stubAjax;
-  let fakeServer;
 
-  beforeEach(() => {
-    // stubAjax = sinon.stub(Ajax, 'ajax');
-    fakeServer = sinon.fakeServer.create();
-  });
-
-  afterEach(() => {
-    // stubAjax.restore();
-    fakeServer.restore();
-  });
 
   it('should have `callBids` function', () => {
     assert.isFunction(adapter().callBids);
@@ -135,14 +119,14 @@ describe('stroeerssp adapter', function () {
       }
     }
 
-    const expectedPageReferer = "http://www.google.com/?query=monkey";
-    const expectedSecureWindow = false;
-
+    let fakeServer;
 
     beforeEach(function() {
       bidderRequest = buildBidderRequest();
       sandbox = sinon.sandbox.create();
       sandbox.stub(bidmanager, 'addBidResponse');
+      fakeServer = sandbox.useFakeServer();
+
     });
 
     afterEach(function() {
@@ -152,12 +136,11 @@ describe('stroeerssp adapter', function () {
 
     it('should add bids', function () {
 
-      fakeServer.respondWith(function() {
-        return buildBidderResponse();
-      });
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 
+      adapter(win).callBids(bidderRequest);
 
-      adapter(win, rndColorFn).callBids(bidderRequest);
+      fakeServer.respond();
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
@@ -173,15 +156,13 @@ describe('stroeerssp adapter', function () {
 
 
     it('should exclude bids without slot id param', () => {
-
-      fakeServer.respondWith(function() {
-        return buildBidderResponse();
-      });
-
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 
       delete bidderRequest.bids[1].params.sid;
 
-      adapter(win, rndColorFn).callBids(bidderRequest);
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
@@ -189,9 +170,9 @@ describe('stroeerssp adapter', function () {
 
       assert.isString(bidmanager.addBidResponse.secondCall.args[0], "div-2");
 
-      assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
+      assertBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
 
-      assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
+      assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });
 
   });
