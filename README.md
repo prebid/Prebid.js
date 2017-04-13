@@ -64,6 +64,9 @@ For example, in `path/to/your/list-of-adapters.json`, write:
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
 **Build standalone prebid.js**
+Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+
+For more info about yarn see https://yarnpkg.com
 
 - Clone the repo, run `yarn install`
 - Duplicate `adapters.json` to e.g. `list-of-adapters.json`
