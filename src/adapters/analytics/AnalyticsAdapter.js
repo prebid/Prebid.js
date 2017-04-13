@@ -6,6 +6,7 @@ const events = require('src/events');
 const utils = require('../../utils');
 
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
+const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
@@ -105,6 +106,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
         [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
+        [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AUCTION_INIT]: args => {
           args.config = config.options;  // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
