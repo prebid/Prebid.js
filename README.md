@@ -26,6 +26,10 @@ This README is for developers who want to contribute to Prebid.js.  For user-fac
     $ cd Prebid.js
     $ yarn install
 
+Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+
+For more info about yarn see https://yarnpkg.com
+
 <a name="Build"></a>
 
 ## Build for Dev
