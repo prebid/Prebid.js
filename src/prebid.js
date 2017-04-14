@@ -303,7 +303,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         if (doc === document && !utils.inIframe()) {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (mediaType === 'video' || mediaType === 'video-outstream') {
-          performRenderViaRenderer(doc, adObject);
+          adaptermanager.bidderRegistry[adObject.bidder].getRenderer().render(doc, adObject);
         } else if (ad) {
           doc.write(ad);
           doc.close();
@@ -328,38 +328,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   }
 
 };
-
-const renderOutstream = function(renderFn, adObject) {
-  // collapse DFP div
-  document.getElementById(adObject.adUnitCode).firstChild.style.display = 'none';
-
-  // collapse ad unit div
-  document.getElementById(adObject.adUnitCode).style.display = 'none';
-
-  // call the render function
-  adObject.adResponse.ad = adObject.adResponse.ads[0];
-  adObject.adResponse.ad.video = adObject.adResponse.ad.rtb.video;
-  renderFn({
-    tagId: adObject.adResponse.tag_id,
-    sizes: [adObject.getSize().split('x')],
-    targetId: adObject.adUnitCode, // target div id to render video
-    uuid: adObject.adResponse.uuid, // is this the correct UUID
-    adResponse: adObject.adResponse
-  });
-};
-
-function performRenderViaRenderer(doc, adObject) {
-  window.apntag = { debug: true };
-  window.apntag.registerRenderer = function(id, cb) {
-    renderOutstream(cb.renderAd, adObject);
-  };
-
-  // use renderer defined by creative or default to ANOutstreamVideo.js
-  loadScript(
-    adObject.rendererUrl ||
-    'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js'
-  );
-}
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
