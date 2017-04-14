@@ -137,11 +137,16 @@ img {
 }
 
 .bs-docs-section {
-    /*text-align: justify;*/
     text-indent: auto;
     hyphens: auto;
-    line-height: 1.45;
-    font-size: 16px;
+}
+
+@media (min-width: 1024px) {
+    .bs-docs-section {
+        line-height: 1.6;
+        font-size: large;
+        margin-right: 10em;
+    }
 }
 
 .bs-docs-section h1 {

@@ -9,6 +9,8 @@ top_nav_section: adops
 nav_section: tutorials
 ---
 
+<div class="bs-docs-section" markdown="1">
+
 # Setting up Prebid for AMP in DFP
 {: .no_toc}
 
@@ -89,3 +91,5 @@ Note that you can always get the latest version of the creative code below from 
 
 + [Show Prebid Ads on AMP Pages]({{site.github.url}}/dev-docs/show-prebid-ads-on-amp-pages.html)
 + [How Prebid on AMP Works]({{site.github.url}}/dev-docs/how-prebid-on-amp-works.html)
+
+</div>

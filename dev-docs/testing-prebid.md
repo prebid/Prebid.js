@@ -9,6 +9,8 @@ nav_section: hacking
 hide: false
 ---
 
+<div class="bs-docs-section" markdown="1">
+
 # Testing  Prebid.js
 {: .no_toc}
 
@@ -105,3 +107,5 @@ The Prebid.js testing stack contains some of the following tools. It may be help
 - [Mocha - test framework](http://mochajs.org/)
 - [Chai - BDD/TDD assertion library](http://chaijs.com/)
 - [Sinon - spy, stub, and mock library](http://sinonjs.org/)
+
+</div>

@@ -9,6 +9,8 @@ top_nav_section: adops
 nav_section: tutorials
 ---
 
+<div class="bs-docs-section" markdown="1">
+
 # Setting up Prebid Video in DFP (Beta)
 {: .no_toc}
 
@@ -74,3 +76,5 @@ setups and DFP video ads.
 + [Add Key-Values to a Master Video Ad Tag](https://support.google.com/dfp_premium/answer/1080597)
 
 + [DFP Macros](https://support.google.com/dfp_premium/answer/1242718)
+
+</div>
