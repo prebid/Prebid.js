@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, shuffle } from './utils';
+import { flatten, getBidderCodes, shuffle, getTopWindowUrl } from './utils';
 import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
@@ -9,9 +9,10 @@ var events = require('./events');
 import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
-let _s2sEnabled = true;
 exports.bidderRegistry = _bidderRegistry;
 
+//create s2s settings objectType_function
+let _s2sConfig = {};
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
@@ -56,40 +57,37 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     bidderCodes = shuffle(bidderCodes);
   }
 
-  if(_s2sEnabled) {
+  if(_s2sConfig.enabled) {
     //these are called on the s2s adapter
-    let adaptersServerSide = ['appnexus'];
+    let adaptersServerSide = _s2sConfig.bidders;
+
     //don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
       return !adaptersServerSide.includes(elm);
     });
     let adUnitsCopy = utils.cloneJson(adUnits);
-    adUnitsCopy = adUnitsCopy.filter((adUnit) => {
-      return adUnit.bids.filter((bid) => {
-        return adaptersServerSide.includes(bid.bidder);
-      });
-    });
+
     //filter out client side bids
     adUnitsCopy.forEach((adUnit) => {
       adUnit.sizes = transformHeightWidth(adUnit);
-      adUnit.bids = adUnit.bids.filter((bid) => {
+      adUnit.bidders = adUnit.bids.filter((bid) => {
         return adaptersServerSide.includes(bid.bidder);
       });
+      delete adUnit.bids;
     });
 
     let requestJson = {
       account_id : '1',
       tid : utils.generateUUID(),
-      timeout_ms : '1000',
+      max_bids: _s2sConfig.maxBids,
+      timeout_millis : _s2sConfig.timeout,
+      url: getTopWindowUrl(),
       prebid_version : '$prebid.version$',
-      user_ids :  [
-       {"bidder": "indexExchange", "id": "12345"},
-       {"bidder": "appnexus", "id": "12345"}
-      ],
       ad_units : adUnitsCopy
     };
     let s2sAdapter = _bidderRegistry['s2s'];
-    s2sAdapter.callBids(requestJson);
+    s2sAdapter.callBids(requestJson, _s2sConfig);
+    //TODO: Do we push bids to _bidsRequested ?
   }
 
   bidderCodes.forEach(bidderCode => {
@@ -117,13 +115,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   });
 };
 
-
-/*
-"sizes": [{
-      "w": 300,
-      "h": 250
-    }
- */
 
 function transformHeightWidth(adUnit) {
   let sizesObj = [];
@@ -215,6 +206,10 @@ exports.enableAnalytics = function (config) {
 
 exports.setBidderSequence = function (order) {
   _bidderSequence = order;
+};
+
+exports.setS2SConfig = function (config) {
+  _s2sConfig = config;
 };
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */

@@ -5,7 +5,6 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//prebid.adnxs.com/auction';
 const TYPE = 's2s';
 
 /**
@@ -16,13 +15,12 @@ const TYPE = 's2s';
 function S2SAdapter() {
 
   let baseAdapter = Adapter.createNew('s2s');
-  let bidRequests = {};
-
+  
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest) {
+  baseAdapter.callBids = function(bidRequest, config) {
 
     const payload = JSON.stringify(bidRequest);
-    ajax(ENDPOINT, handleResponse, payload, {
+    ajax(config.endpoint, handleResponse, payload, {
       contentType: 'text/plain',
       withCredentials : true
     });
@@ -30,20 +28,41 @@ function S2SAdapter() {
 
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response) {
-    let parsed;
-
+    let result;
     try {
-      parsed = JSON.parse(response);
+      result = JSON.parse(response);
+      //TODO: Possible statuses, move in constants file
+
+      if(result.status === 'OK') {
+        result.bids.forEach(bidObj => {
+          //TODO: current response does not have type of creative, hence not checking anything
+          bidObj.bidId = bidObj.bid_id;
+          let cpm = bidObj.price.first;
+          let status;
+          if (cpm !== 0) {
+            status = STATUS.GOOD;
+          } else {
+            status = STATUS.NO_BID;
+          }
+
+          let bid = bidfactory.createBid(status, bidObj);
+          bid.creative_id = bidObj.creative_id;
+          bid.bidderCode = bidObj.bidder;
+          bid.cpm = cpm;
+          bid.ad = bidObj.adm;
+          bid.width = bidObj.width;
+          bid.height = bidObj.height;
+
+          bidmanager.addBidResponse(bidObj.code, bid);
+        });
+      }
     } catch (error) {
       utils.logError(error);
     }
 
-    if (!parsed || parsed.status.includes('Error')) {
-      console.log('error parsing resposne');
+    if (!result || result.status.includes('Error')) {
+      utils.logError('error parsing resposne');
     }
-
-
-
   }
 
   /* Check that a bid has required paramters */

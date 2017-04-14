@@ -70,6 +70,7 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 //create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
+
 /**
  * Command queue that functions will execute once prebid.js is loaded
  * @param  {function} cmd Anonymous function to execute
@@ -707,6 +708,23 @@ $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
+
+/**
+ * Set config for server to server header bidding
+ * @param {object} options - config object for s2s
+ */
+$$PREBID_GLOBAL$$.setS2SConfig = function(options) {
+  //TODO: checks for missing config
+
+  var config = Object.assign({
+    enabled : false,
+    endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT,
+    timeout : 1000,
+    maxBids : 1
+  }, options);
+  adaptermanager.setS2SConfig(config);
+};
+
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 processQue();
