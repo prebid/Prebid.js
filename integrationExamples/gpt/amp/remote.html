@@ -71,7 +71,7 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
     }
 
     function getTargeting(slot) {
-        var targeting = window.pbjs.getAdserverTargeting()[slot];
+        var targeting = window.context.master.pbjs.getAdserverTargeting()[slot] || {};
         for (var key in targeting) {
             if (targeting.hasOwnProperty(key)) {
                 targeting[key] = [targeting[key]];
@@ -87,10 +87,10 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
 
   function initAdserver() {
       var i;
-      var adCalls = window.context.prebidAdCalls;
-      var adCallsLength = adCalls.length;
-      for (i = 0; i < adCallsLength; i++) {
-        adCalls.pop()();
+      var prebidAdCalls = window.context.master.prebidAdCalls;
+      var len = prebidAdCalls.length;
+      for (i = 0; i < len; i++) {
+        prebidAdCalls.pop()();
       }
     }
 
@@ -107,7 +107,9 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
         // Do nothing.  No ad found.
       }
       if (data.adId) {
-        var adObject = window.pbjs._bidsReceived.find(function (bid) {
+          // AMP ads a `context` object to `window`s and that is used to find the
+          // `master` iframe where Prebid is loaded
+        var adObject = window.context.master.pbjs._bidsReceived.find(function (bid) {
           return bid.adId === data.adId;
         });
 
@@ -130,16 +132,17 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
         * iframes. For more info see: https://github.com/ampproject/amphtml/blob/e5501a30adf15c8fef049729f5e0e3137dbb18ca/3p/integration.js#L252
         */
     draw3p(function(config, done) {
-      console.log('draw3p config: ', config);
       if (config.prebid) {
-        if (typeof window.context.prebidAdCalls === 'undefined') {
-          window.context.prebidAdCalls = [];
+        if (typeof window.context.master.prebidAdCalls === 'undefined') {
+          window.context.master.prebidAdCalls = [];
         }
-        var prebid = config.prebid;
-        adUnits = prebid.adUnits;
-        requestBidsDuration = prebid.requestBidsDuration;
-        window.context.prebidAdCalls.push(setTargeting.bind(null, config, done));
-        loadPrebidJS();
+        if (window.context && window.context.isMaster) {
+          var prebid = config.prebid;
+          adUnits = prebid.adUnits;
+          requestBidsDuration = prebid.requestBidsDuration;
+          loadPrebidJS();
+        }
+        window.context.master.prebidAdCalls.push(setTargeting.bind(null, config, done));
       } else {
         // if the slot doesn't have prebid config then fire callback
         done(config);
