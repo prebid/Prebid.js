@@ -11,7 +11,7 @@ hide: true
 about:
 - Example showing how to configure ad units to resize dynamically based on screen size
 
-jsfiddle_link: jsfiddle.net/prebid/58udrja1/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/58udrja1/31/embedded/html,result
 
 code_height: 3000
 code_lines: 118

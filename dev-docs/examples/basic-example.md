@@ -13,7 +13,7 @@ about:
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>).
 - Standard price granularity
 
-jsfiddle_link: jsfiddle.net/prebid/bhn3xk2j/4/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/bhn3xk2j/458/embedded/html,result
 
 code_lines: 110
 code_height: 2389

@@ -16,7 +16,7 @@ about:
 - There is no need for per-price-bucket-per-line-item setup, because the post-bid creative is chosen after the ad server has chosen the line item. 
 - This post-bid creative <strong>supports passback</strong>. See more info on passbacks in the below line-by-line explanation.
 
-jsfiddle_link: jsfiddle.net/prebid/akLqdj3d/8/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/akLqdj3d/146/embedded/html,result
 code_height: 1864
 code_lines: 84
 
