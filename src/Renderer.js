@@ -1,22 +1,38 @@
-import { ajax } from './ajax';
+import { loadScript } from 'src/adloader';
 
-export class Renderer {
-  // constructor receives ad object
-  constructor(adObject) {
-    Renderer.renderers = adObject.rendererUrl;
-  }
+const renderers = [];
 
-  static get renderers() {
-    return Renderer.renderers;
-  }
-
-  static set renderers(url) {
-    return Renderer.renderers.push(url);
-  }
-
-  // static method load
-  static load() {
-    // ajax(url, callback, data, options)
-    ajax(...arguments);
-  }
+export function Renderer(options) {
+  const { url, config, callback } = options;
+  this.url = url;
+  this.config = config;
+  this.callback = callback;
+  this.loadRenderer(url);
+  renderers.concat([this]);
 }
+
+Renderer.prototype.getRenderers = function() {
+  return renderers;
+};
+
+Renderer.prototype.loadRenderer = function(url, callback) {
+  loadScript(url, callback);
+};
+
+Renderer.prototype.initializeRenderer = function() {
+  // pass config object
+};
+
+Renderer.prototype.invokeCallback = function() {
+  // if a callback was provided call it now
+  this.callback();
+};
+
+Renderer.prototype.setRender = function(fn) {
+  this.render = fn;
+};
+
+Renderer.prototype.notRendererInstalled = function(url) {
+  return typeof Renderer.prototype.getRenderers()
+    .find(renderer => renderer.url === url) === 'undefined';
+};

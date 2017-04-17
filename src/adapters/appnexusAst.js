@@ -1,4 +1,5 @@
 import Adapter from 'src/adapters/adapter';
+import { Renderer } from 'src/renderer';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -137,19 +138,20 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
-      if (cpm !== 0 && (type === 'banner' || type === 'video')) {
+      if (cpm !== 0 && (type === 'banner' || type === 'video' || type === 'video-outstream')) {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
       }
 
-      if (type && (type !== 'banner' && type !== 'video')) {
+      if (type && (type !== 'banner' && type !== 'video' && type !== 'video-outstream')) {
         utils.logError(`${type} ad type not supported`);
       }
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       if (type === 'video') bid.mediaType = 'video';
+      if (type === 'video-outstream') bid.mediaType = 'video-outstream';
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
@@ -243,8 +245,40 @@ function AppnexusAstAdapter() {
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
         if (ad.renderer_url) {
+          // outstream video
           bid.rendererUrl = ad.renderer_url;
           bid.rendererId = ad.renderer_id;
+          if (Renderer.prototype.notRendererInstalled(ad.renderer_url)) {
+            bid.outstreamRenderer = new Renderer({
+              id: ad.renderer_id,
+              url: ad.renderer_url || '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+              config: {}
+            });
+            console.log(bid.outstreamRenderer.getRenderers());
+          }
+
+          window.apntag = { debug: true };
+          window.apntag.registerRenderer = function(id, cb) {
+            // collapse DFP div
+            document.getElementById(bid.adUnitCode).firstChild.style.display = 'none';
+
+            // collapse ad unit div
+            document.getElementById(bid.adUnitCode).style.display = 'none';
+
+            // call the render function
+            bid.adResponse.ad = bid.adResponse.ads[0];
+            bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+            bid.outstreamRenderer.setRender(() => {
+              cb.renderAd({
+                tagId: bid.adResponse.tag_id,
+                sizes: [bid.getSize().split('x')],
+                targetId: bid.adUnitCode, // target div id to render video
+                uuid: bid.adResponse.uuid, // is this the correct UUID
+                adResponse: bid.adResponse
+              });
+            });
+          };
+
           // store a copy for the renderer
           bid.adResponse = tag;
         }
