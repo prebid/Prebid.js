@@ -40,7 +40,12 @@ var SharethroughAdapter = function SharethroughAdapter() {
   }
 
   $$PREBID_GLOBAL$$.strcallback = function(bidResponse) {
-    bidResponse = JSON.parse(bidResponse);
+    try {
+      bidResponse = JSON.parse(bidResponse);
+    } catch (e) {
+      utils.logError(e);
+    }
+
     const bidId = bidResponse.bidId;
     const bidObj = utils.getBidRequest(bidId);
     try {
@@ -100,4 +105,3 @@ var SharethroughAdapter = function SharethroughAdapter() {
 };
 
 module.exports = SharethroughAdapter;
-
