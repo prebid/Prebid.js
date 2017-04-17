@@ -95,7 +95,7 @@ function BeachfrontAdapter() {
       var newBid = {};
       newBid.price = parsed.bidPrice;
       newBid.url = parsed.url;
-      newBid.bidId = utils.getUniqueIdentifierStr();
+      newBid.bidId = bidRequest.bidId;
       bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.GOOD, newBid));
     };
   }
