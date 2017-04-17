@@ -14,6 +14,7 @@ var utils = require('./utils.js');
  dealId,
  priceKeyString;
  */
+
 function Bid(statusCode, bidRequest) {
   var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;

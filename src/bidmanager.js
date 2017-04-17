@@ -291,7 +291,6 @@ function processCallbacks(callbackQueue, singleAdUnitCode) {
       const bids = [$$PREBID_GLOBAL$$._bidsReceived
                       .filter(adUnitsFilter.bind(this, adUnitCodes))
                       .reduce(groupByPlacement, {})];
-
       callback.apply($$PREBID_GLOBAL$$, bids);
     });
   }
@@ -377,19 +376,7 @@ function getStandardBidderSettings() {
         }, {
           key: 'hb_pb',
           val: function (bidResponse) {
-            if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-              return bidResponse.pbAg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-              return bidResponse.pbDg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-              return bidResponse.pbLg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-              return bidResponse.pbMg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-              return bidResponse.pbHg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-              return bidResponse.pbCg;
-            }
+            return bidResponse.pbHg;
           }
         }, {
           key: 'hb_size',

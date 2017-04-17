@@ -16,7 +16,7 @@ const _mgPriceConfig = {
 const _hgPriceConfig = {
   'buckets': [{
     'min': 0,
-    'max': 20,
+    'max': 100,
     'increment': 0.01
   }]
 };

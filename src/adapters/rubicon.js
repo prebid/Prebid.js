@@ -147,7 +147,7 @@ function RubiconAdapter() {
     }
 
     let postData =  {
-      page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
+      page_url: document.referrer,
       resolution:  _getScreenResolution(),
       account_id: params.accountId,
       integration: getIntegration(),
@@ -196,7 +196,10 @@ function RubiconAdapter() {
 
   function buildOptimizedCall(bid) {
     bid.startTime = new Date().getTime();
-
+    var updatedBid = bid
+    if (updatedBid.params) {
+      updatedBid.params.referrer = document.referrer;
+    }
     var {
       accountId,
       siteId,
@@ -207,8 +210,8 @@ function RubiconAdapter() {
       visitor,
       inventory,
       userId,
-      referrer: pageUrl
-    } = bid.params;
+      referrer,
+    } = updatedBid.params;
 
     // defaults
     floor = (floor = parseFloat(floor)) > 0.01 ? floor : 0.01;
@@ -252,8 +255,15 @@ function RubiconAdapter() {
 
     queryString.push(
       'rand', Math.random(),
-      'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
+      'rf', document.referrer || window.location.href
     );
+
+    var adRequestUrl = queryString.reduce(
+      (memo, curr, index) =>
+        index % 2 === 0 && queryString[index + 1] !== undefined ?
+        memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
+      FASTLANE_ENDPOINT + '?'
+    ).slice(0, -1);
 
     return queryString.reduce(
       (memo, curr, index) =>
@@ -263,15 +273,25 @@ function RubiconAdapter() {
     ).slice(0, -1); // remove trailing &
   }
 
-  let _renderCreative = (script, impId) => `<html>
-<head><script type='text/javascript'>inDapIF=true;</script></head>
-<body style='margin : 0; padding: 0;'>
-<!-- Rubicon Project Ad Tag -->
-<div data-rp-impression-id='${impId}'>
-<script type='text/javascript'>${script}</script>
-</div>
-</body>
-</html>`;
+  let _renderCreative = (script, impId, adId) => {
+
+    console.log('#### STANZA PREBID GLOBALS IN RUBICON ADAPTER');
+    console.log($$STANZA_PREBID_GLOBAL$$);
+    if ($$STANZA_PREBID_GLOBAL$$[adId]) {
+
+    }
+
+    return `<html>
+      <head><script type='text/javascript'>inDapIF=true;</script></head>
+      <body style='margin : 0; padding: 0;'>
+      <!-- Rubicon Project Ad Tag -->
+      <div data-rp-impression-id='${impId}'>
+      <script type='text/javascript'>console.log('### SENDING IMPRESSION REQUEST TO STANZA'); var request = new XMLHttpRequest();request.open('POST', '/api/track/header-bidding/test');request.setRequestHeader('Content-Type', 'application/json');request.send(JSON.stringify({chodemonkey: '${adId}'}));</script>
+      <script type='text/javascript'>${script}</script>
+      </div>
+      </body>
+      </html>`;
+  }
 
   function handleRpCB(responseText, bidRequest) {
     var responseObj = JSON.parse(responseText), // can throw
@@ -303,6 +323,7 @@ function RubiconAdapter() {
 
       //store bid response
       //bid status is good (indicating 1)
+      console.log(ad);
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
       bid.creative_id = ad.ad_id;
       bid.bidderCode = bidRequest.bidder;
@@ -315,7 +336,7 @@ function RubiconAdapter() {
         bid.descriptionUrl = ad.impression_id;
         bid.impression_id = ad.impression_id;
       } else {
-        bid.ad = _renderCreative(ad.script, ad.impression_id);
+        bid.ad = _renderCreative(ad.script, ad.impression_id, ad.ad_id);
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       }
 

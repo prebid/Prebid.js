@@ -18,10 +18,14 @@ var SovrnAdapter = function SovrnAdapter() {
 
   function _requestBids(bidReqs) {
     // build bid request object
-    var domain = utils.getTopWindowUrl();
+    var domain = document.referrer || window.location.href;
     var pageArray = domain.split('/');
     var page = pageArray.splice(3, pageArray.length).join('/');
+    domain = domain.replace(page, '');
     var sovrnImps = [];
+
+    console.log("SOVRN DOMAIN:", domain);
+    console.log("SOVRN PAGE:", page);
 
     //build impression array for sovrn
     utils._each(bidReqs, function (bid) {

@@ -47,8 +47,8 @@ const AolAdapter = function AolAdapter() {
     params.region = regionParam;
 
     // Grab top window href
-    var href = utils.getTopWindowURL();
-
+    const topUrl = document.referrer || window.location.href;
+    var href = topUrl.split('/').slice(2, 3).join('/');
     console.log('### AOL TOP URL, ' + href);
 
     return pubapiTemplate({

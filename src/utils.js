@@ -184,6 +184,16 @@ exports.getTopWindowUrl = function () {
   return href;
 };
 
+exports.getTopWindowURL = function () {
+  let href = document.referrer || window.location.href;
+  if (!href) {
+    href = 'https://www.stanza.co';
+    console.log("Href is stanza.co");
+  }
+  console.log("### Stanza referrer being passed to servers", href);
+  return href;
+};
+
 exports.logWarn = function (msg) {
   if (debugTurnedOn() && console.warn) {
     console.warn('WARNING: ' + msg);
