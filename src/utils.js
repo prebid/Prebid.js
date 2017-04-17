@@ -438,6 +438,32 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+exports.insertPixel = function (url) {
+  let elToAppend = document.getElementsByTagName('head');
+
+  if(elToAppend && url){
+    const img = new Image();
+    img.id = this.getUniqueIdentifierStr();
+    img.src = url;
+    img.height = 0;
+    img.width = 0;
+    img.style.display = 'none';
+    img.onload = function() {
+      try{
+        this.parentNode.removeChild(this);
+      }
+      catch(e){}
+    };
+    try{
+      elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
+      if (elToAppend.length) {
+        elToAppend = elToAppend[0];
+        elToAppend.insertBefore(img, elToAppend.firstChild);
+      }
+    }
+    catch (e) {}
+  }
+};
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
