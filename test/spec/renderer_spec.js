@@ -21,7 +21,7 @@ describe('Renderer: A renderer installed on a bid response', () => {
   });
 
   it('has expected properties ', () => {
-    expect(testRenderer1.url).to.equal('test/url1');
+    expect(testRenderer1.url).to.equal('http://mlane.devnxs.net/ut/http/200');
     expect(testRenderer1.config).to.deep.equal({ test: 'config1' });
     expect(testRenderer1.id).to.equal(1);
   });
