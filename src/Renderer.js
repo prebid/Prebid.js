@@ -1,18 +1,16 @@
 import { loadScript } from 'src/adloader';
 import * as utils from 'src/utils';
 
-const renderers = [];
-
 export function Renderer(options) {
   const { url, config, id, callback } = options;
   this.url = url;
   this.config = config;
   this.callback = callback;
+  this.handlers = {};
   this.id = id;
 
   // we expect to load a renderer url once only so cache the request to load script
   loadScript(url, callback, true);
-  renderers.push(this);
 }
 
 Renderer.install = function({ url, config, id, callback }) {

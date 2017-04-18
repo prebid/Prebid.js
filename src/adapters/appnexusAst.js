@@ -227,6 +227,25 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
+  function onOutstreamRendererLoaded() {
+    const bid = this;
+
+    bid.adResponse.ad = bid.adResponse.ads[0];
+    bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+    bid.renderer.setRender(() => {
+      window.ANOutstreamVideo.renderAd({
+        tagId: bid.adResponse.tag_id,
+        sizes: [bid.getSize().split('x')],
+        targetId: bid.adUnitCode, // target div id to render video
+        uuid: bid.adResponse.uuid, // is this the correct UUID ?
+        adResponse: bid.adResponse,
+        rendererOptions: bid.renderer.getConfig()
+      }, (id, eventName) => {
+        bid.renderer.handleVideoEvent({ id, eventName });
+      });
+    });
+  }
+
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
     const ad = getRtbBid(tag);
@@ -252,33 +271,15 @@ function AppnexusAstAdapter() {
           bid.renderer = Renderer.install({
             id: ad.renderer_id,
             url: ad.renderer_url,
-            config: { adText: `Outstream Video Ad via Prebid.js` },
-            callback: () => {
-              // callback once renderer instance is loaded
-              const _bid = bid;
-
-              bid.adResponse.ad = bid.adResponse.ads[0];
-              bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
-              bid.renderer.setRender(() => {
-                window.ANOutstreamVideo.renderAd({
-                  tagId: _bid.adResponse.tag_id,
-                  sizes: [_bid.getSize().split('x')],
-                  targetId: _bid.adUnitCode, // target div id to render video
-                  uuid: _bid.adResponse.uuid, // is this the correct UUID ?
-                  adResponse: _bid.adResponse,
-                  rendererOptions: _bid.renderer.getConfig()
-                }, (id, eventName) => {
-                  _bid.renderer.handleVideoEvent({ id, eventName });
-                });
-              });
-              bid.renderer.setEventHandlers({
-                impression: () => utils.logMessage('AppNexus outstream video impression event'),
-                loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
-                ended: () => {
-                  utils.logMessage('AppNexus outstream renderer video event');
-                  document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
-                }
-              });
+            config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+            callback: onOutstreamRendererLoaded.bind(bid)
+          });
+          bid.renderer.setEventHandlers({
+            impression: () => utils.logMessage('AppNexus outstream video impression event'),
+            loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+            ended: () => {
+              utils.logMessage('AppNexus outstream renderer video event');
+              document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
             }
           });
         }
