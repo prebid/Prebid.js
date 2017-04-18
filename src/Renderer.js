@@ -16,8 +16,11 @@ export function Renderer(options) {
 }
 
 Renderer.install = function({ url, config, id, callback }) {
-  return renderers.find(renderer => renderer.url === url) ||
-    new Renderer({ url, config, id, callback });
+  return new Renderer({ url, config, id, callback });
+};
+
+Renderer.prototype.getConfig = function() {
+  return this.config;
 };
 
 Renderer.prototype.setRender = function(fn) {
