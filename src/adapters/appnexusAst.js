@@ -1,5 +1,5 @@
 import Adapter from 'src/adapters/adapter';
-import { Renderer } from 'src/renderer';
+import { Renderer } from '../renderer';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
