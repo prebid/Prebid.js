@@ -252,7 +252,7 @@ function AppnexusAstAdapter() {
           bid.renderer = Renderer.install({
             id: ad.renderer_id,
             url: ad.renderer_url,
-            config: { adText: `Prebid Outstream Video Ad ${bid.adId}` },
+            config: { adText: `Outstream Video Ad via Prebid.js` },
             callback: () => {
               // callback once renderer instance is loaded
               const _bid = bid;
