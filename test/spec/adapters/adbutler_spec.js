@@ -83,7 +83,33 @@ describe('adbutler adapter tests', function () {
             var requestURI = stubLoadScript.getCall(0).args[0];
             
             expect(requestURI).to.have.string(';kw=fish;');
-        })
+        });
+
+        it('should use custom domain string',function(){
+            var params = {
+                bidderCode: 'adbutler',
+                bids: [
+                    {
+                        bidId: '3c9408cdbf2f68',
+                        sizes: [[300, 250]],
+                        bidder: 'adbutler',
+                        params: {
+                            accountID: '107878',
+                            zoneID: '86133',
+                            domain: 'servedbyadbutler.com.dan.test'
+                        },
+                        requestId: '10b327aa396609',
+                        placementCode: '/123456/header-bid-tag-1'
+                    }
+                ]
+            };
+
+            adapter().callBids(params);
+
+            var requestURI = stubLoadScript.getCall(0).args[0];
+
+            expect(requestURI).to.have.string('.dan.test');
+        });
     });
     describe('bid responses',function(){
         
