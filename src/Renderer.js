@@ -1,5 +1,5 @@
 import { loadScript } from 'src/adloader';
-const utils = require('src/utils');
+import * as utils from 'src/utils';
 
 const renderers = [];
 
