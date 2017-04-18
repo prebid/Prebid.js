@@ -215,13 +215,8 @@ function hasConsoleLogger() {
 
 exports.hasConsoleLogger = hasConsoleLogger;
 
-var errLogFn = (function (hasLogger) {
-  if (!hasLogger) return '';
-  return window.console.error ? 'error' : 'log';
-}(hasConsoleLogger()));
-
 var debugTurnedOn = function () {
-  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
+  if (!$$PREBID_GLOBAL$$.logging  && _loggingChecked === false) {
     $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
     _loggingChecked = true;
   }
@@ -231,12 +226,17 @@ var debugTurnedOn = function () {
 
 exports.debugTurnedOn = debugTurnedOn;
 
-exports.logError = function (msg, code, exception) {
-  var errCode = code || 'ERROR';
-  if (debugTurnedOn() && hasConsoleLogger()) {
-    console[errLogFn](console, errCode + ': ' + msg, exception || '');
+exports.logError =  (() => {
+  if(!debugTurnedOn()) {
+    return () =>{};
   }
-};
+  if(console.error.bind) {
+    return console.error.bind(window.console);
+  }
+  else {
+    return console.error;
+  }
+})();
 
 exports.createInvisibleIframe = function _createInvisibleIframe() {
   var f = document.createElement('iframe');
@@ -260,7 +260,7 @@ exports.createInvisibleIframe = function _createInvisibleIframe() {
  *   Check if a given parameter name exists in query string
  *   and if it does return the value
  */
-var getParameterByName = function (name) {
+function getParameterByName(name) {
   var regexS = '[\\?&]' + name + '=([^&#]*)';
   var regex = new RegExp(regexS);
   var results = regex.exec(window.location.search);
@@ -269,7 +269,7 @@ var getParameterByName = function (name) {
   }
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
-};
+}
 
 /**
  * This function validates paramaters.

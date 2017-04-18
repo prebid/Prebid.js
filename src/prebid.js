@@ -78,9 +78,10 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 $$PREBID_GLOBAL$$.que.push = function (cmd) {
   if (typeof cmd === objectType_function) {
     try {
+      utils.logError('foobar', 'me', 'this');
       cmd.call();
     } catch (e) {
-      utils.logError('Error processing command :' + e.message);
+      utils.logError('Error processing command :', e.message, e.stack);
     }
   } else {
     utils.logError('Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function');
