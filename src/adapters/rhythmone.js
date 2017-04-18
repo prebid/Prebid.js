@@ -3,15 +3,6 @@ var bidmanager = require('../bidmanager.js'),
   CONSTANTS = require('../constants.json');
 
 import {ajax as ajax} from '../ajax';
-
-function track(debug) {
-  if(debug === true){
-    //console.log('GA: %s %s %s', p1, p2, p3 || '');
-  }
-}
-
-var w = (typeof window !== "undefined" ? window : {});
-w.trackR1Impression = track;
   
 module.exports = function(bidManager, global, loader){
 
@@ -19,7 +10,6 @@ module.exports = function(bidManager, global, loader){
     defaultZone = "1r",
     defaultPath = "mvo",
     debug = false,
-    auctionEnded = false,
     requestCompleted = false,
     placementCodes = {},
   loadStart,
@@ -74,8 +64,7 @@ module.exports = function(bidManager, global, loader){
     return false;
   }
   
-  var bidderCode = "rhythmone",
-    bidLostTimeout = null;
+  var bidderCode = "rhythmone";
   
   function attempt(valueFunction, defaultValue){
     try{
@@ -87,34 +76,6 @@ module.exports = function(bidManager, global, loader){
   function logToConsole(txt){
     if(debug)
       console.log(txt);
-  }
-  
-  function sniffAuctionEnd(){
-  
-    global.$$PREBID_GLOBAL$$.onEvent('bidWon', function (e) {
-    
-      if(e.bidderCode === bidderCode){
-        placementCodes[e.adUnitCode] = true;
-        track(debug, 'hb', "bidWon");
-      }
-      
-      if(auctionEnded){
-        clearTimeout(bidLostTimeout);
-        bidLostTimeout = setTimeout(function(){
-          for(var k in placementCodes)
-            if(placementCodes[k] === false)
-              track(debug, 'hb', "bidLost");
-        }, 50);
-      }
-    });
-  
-    global.$$PREBID_GLOBAL$$.onEvent('auctionEnd', function () {
-    
-      auctionEnded = true;
-
-      if(requestCompleted === false)
-        track(debug, 'hb', 'rmpReplyFail', "prebid timeout post auction");
-    });
   }
   
   function getBidParameters(bids){
@@ -130,7 +91,6 @@ module.exports = function(bidManager, global, loader){
         logToConsole("registering nobid for slot "+params.bids[i].placementCode);
         var bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = bidderCode;
-        track(debug, 'hb', 'bidResponse', 0);
         bidmanager.addBidResponse(params.bids[i].placementCode, bid);
       }
     }
@@ -199,7 +159,6 @@ module.exports = function(bidManager, global, loader){
   
     for(; i<bids.length; i++){
 
-      track(debug, 'hb', 'bidRequest');
       var th = [], tw = [];
       
       if(bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === "number")
@@ -262,10 +221,6 @@ module.exports = function(bidManager, global, loader){
       q.push(encodeURIComponent(k)+"="+encodeURIComponent((typeof data[k] === "object" ? JSON.stringify(data[k]) : data[k])));
 
     q.sort();
-
-    i.addEventListener("load", function(){
-      console.log("beacon sent");
-    });
     i.src = u+q.join("&");
   }
   
@@ -275,18 +230,11 @@ module.exports = function(bidManager, global, loader){
       bidParams = getBidParameters(params.bids);
   
     debug = (bidParams !== null && bidParams.debug === true);
-  
-    track(debug, 'hb', 'callBids');
 
     if(bidParams === null){
       noBids(params);
-      track(debug, 'hb', 'misconfiguration');
       return;
     }
-
-    sniffAuctionEnd();
-
-    track(debug, 'hb', 'rmpRequest');
 
     for(var i = 0; i<params.bids.length; i++)
       slotMap[params.bids[i].placementCode] = params.bids[i];
@@ -297,16 +245,11 @@ module.exports = function(bidManager, global, loader){
       // send quality control beacon here
       sendAuditBeacon(bidParams.placementId);
 
-      if(auctionEnded === true)
-        return;
-
       requestCompleted = true;
 
       logToConsole("response text: "+txt);
 
-      if(code === -1)
-        track(debug, "hb", "rmpReplyFail", msg);
-      else{
+      if(code !== -1){
         try{
           var result = JSON.parse(txt),
             registerBid = function(bid){
@@ -333,27 +276,19 @@ module.exports = function(bidManager, global, loader){
               
               logToConsole("registering bid "+placementCode+" "+JSON.stringify(pbResponse));
               
-              track(debug, "hb", "bidResponse", 1);
               bidManager.addBidResponse(placementCode, pbResponse);
             };
-          
-          track(debug, "hb", "rmpReplySuccess");
           
           for(i=0; result.seatbid && i<result.seatbid.length; i++)
             for(var j=0; result.seatbid[i].bid && j<result.seatbid[i].bid.length; j++){
               registerBid(result.seatbid[i].bid[j]);
             }
         }
-        catch(ex){
-          track(debug, "hb", "rmpReplyFail", "invalid json in rmp response");
-        }
+        catch(ex){}
       }
 
       // if no bids are successful, inform prebid
       noBids(params);
-      
-      // when all bids are complete, log a report
-      track(debug, 'hb', 'bidsComplete');
     });
     
     logToConsole("version: "+version);
