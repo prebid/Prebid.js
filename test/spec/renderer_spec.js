@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/renderer';
+import { Renderer } from 'src/Renderer';
 
 describe('Renderer: A renderer installed on a bid response', () => {
   const testRenderer1 = Renderer.install({
