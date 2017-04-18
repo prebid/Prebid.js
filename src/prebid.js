@@ -297,12 +297,12 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
 
-        const { height, width, ad, mediaType, adUrl: url } = adObject;
+        const { height, width, ad, mediaType, adUrl: url, renderer } = adObject;
 
-        if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
+        if (renderer && renderer.url) {
+          renderer.render(doc, adObject);
+        } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
-        } else if (mediaType === 'video-outstream') {
-          adObject.outstreamRenderer.render(doc, adObject);
         } else if (ad) {
           doc.write(ad);
           doc.close();

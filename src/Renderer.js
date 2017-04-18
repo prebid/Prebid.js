@@ -1,38 +1,37 @@
 import { loadScript } from 'src/adloader';
+const utils = require('src/utils');
 
 const renderers = [];
 
 export function Renderer(options) {
-  const { url, config, callback } = options;
+  const { url, config, id, callback } = options;
   this.url = url;
   this.config = config;
   this.callback = callback;
-  this.loadRenderer(url);
-  renderers.concat([this]);
+  this.id = id;
+
+  // we expect to load a renderer url once only so cache the request to load script
+  loadScript(url, callback, true);
+  renderers.push(this);
 }
 
-Renderer.prototype.getRenderers = function() {
-  return renderers;
-};
-
-Renderer.prototype.loadRenderer = function(url, callback) {
-  loadScript(url, callback);
-};
-
-Renderer.prototype.initializeRenderer = function() {
-  // pass config object
-};
-
-Renderer.prototype.invokeCallback = function() {
-  // if a callback was provided call it now
-  this.callback();
+Renderer.install = function({ url, config, id, callback }) {
+  return renderers.find(renderer => renderer.url === url) ||
+    new Renderer({ url, config, id, callback });
 };
 
 Renderer.prototype.setRender = function(fn) {
   this.render = fn;
 };
 
-Renderer.prototype.notRendererInstalled = function(url) {
-  return typeof Renderer.prototype.getRenderers()
-    .find(renderer => renderer.url === url) === 'undefined';
+Renderer.prototype.setEventHandlers = function(handlers) {
+  this.handlers = handlers;
+};
+
+Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
+  if (typeof this.handlers[eventName] === 'function') {
+    this.handlers[eventName]();
+  }
+
+  utils.logMessage(`Prebid Renderer event for id ${id} type ${eventName}`);
 };

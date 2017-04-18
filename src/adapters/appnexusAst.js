@@ -245,39 +245,40 @@ function AppnexusAstAdapter() {
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
         if (ad.renderer_url) {
+
           // outstream video
-          bid.rendererUrl = ad.renderer_url;
-          bid.rendererId = ad.renderer_id;
-          if (Renderer.prototype.notRendererInstalled(ad.renderer_url)) {
-            bid.outstreamRenderer = new Renderer({
-              id: ad.renderer_id,
-              url: ad.renderer_url || '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
-              config: {}
-            });
-            console.log(bid.outstreamRenderer.getRenderers());
-          }
 
-          window.apntag = { debug: true };
-          window.apntag.registerRenderer = function(id, cb) {
-            // collapse DFP div
-            document.getElementById(bid.adUnitCode).firstChild.style.display = 'none';
-
-            // collapse ad unit div
-            document.getElementById(bid.adUnitCode).style.display = 'none';
-
-            // call the render function
-            bid.adResponse.ad = bid.adResponse.ads[0];
-            bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
-            bid.outstreamRenderer.setRender(() => {
-              cb.renderAd({
-                tagId: bid.adResponse.tag_id,
-                sizes: [bid.getSize().split('x')],
-                targetId: bid.adUnitCode, // target div id to render video
-                uuid: bid.adResponse.uuid, // is this the correct UUID
-                adResponse: bid.adResponse
+          bid.renderer = Renderer.install({
+            id: ad.renderer_id,
+            url: ad.renderer_url,
+            config: {},
+            callback: () => {
+              bid.adResponse.ad = bid.adResponse.ads[0];
+              bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+              bid.renderer.setRender(() => {
+                window.ANOutstreamVideo.renderAd({
+                  tagId: bid.adResponse.tag_id,
+                  sizes: [bid.getSize().split('x')],
+                  targetId: bid.adUnitCode, // target div id to render video
+                  uuid: bid.adResponse.uuid, // is this the correct UUID ?
+                  adResponse: bid.adResponse,
+                  rendererOptions: {
+                    adText: 'Prebid Outstream Video Ad'
+                  }
+                }, (id, eventName) => {
+                  bid.renderer.handleVideoEvent({ id, eventName });
+                });
               });
-            });
-          };
+              bid.renderer.setEventHandlers({
+                impression: () => utils.logMessage('AppNexus outstream video impression event'),
+                loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+                ended: () => {
+                  utils.logMessage('AppNexus outstream renderer video event');
+                  document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
+                }
+              });
+            }
+          });
 
           // store a copy for the renderer
           bid.adResponse = tag;
