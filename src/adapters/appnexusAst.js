@@ -227,8 +227,7 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
-  function onOutstreamRendererLoaded() {
-    const bid = this;
+  function onOutstreamRendererLoaded(bid) {
 
     bid.adResponse.ad = bid.adResponse.ads[0];
     bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
@@ -272,7 +271,7 @@ function AppnexusAstAdapter() {
             id: ad.renderer_id,
             url: ad.renderer_url,
             config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
-            callback: onOutstreamRendererLoaded.bind(bid)
+            callback: () => onOutstreamRendererLoaded.call(null, bid)
           });
           bid.renderer.setEventHandlers({
             impression: () => utils.logMessage('AppNexus outstream video impression event'),
