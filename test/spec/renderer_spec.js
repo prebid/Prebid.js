@@ -3,12 +3,12 @@ import { Renderer } from 'src/renderer';
 
 describe('Renderer: A renderer installed on a bid response', () => {
   const testRenderer1 = Renderer.install({
-    url: 'test/url1',
+    url: 'http://mlane.devnxs.net/ut/http/200',
     config: { test: 'config1' },
     id: 1
   });
   const testRenderer2 = Renderer.install({
-    url: 'test/url2',
+    url: 'http://mlane.devnxs.net/ut/http/200',
     config: { test: 'config2' },
     id: 2
   });
