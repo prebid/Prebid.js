@@ -1,4 +1,6 @@
+import { getGlobal } from './prebidGlobal';
 var CONSTANTS = require('./constants.json');
+var $$PREBID_GLOBAL$$ = getGlobal();
 
 var objectType_object = 'object';
 var objectType_string = 'string';
