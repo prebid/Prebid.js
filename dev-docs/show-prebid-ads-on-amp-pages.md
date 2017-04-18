@@ -236,9 +236,12 @@ The function `loadPrebidJS()` shown below is what's called by the AMP `draw3p` f
 
 #### 6. Implement `draw3p`, the integration point with AMP
 
-In the page's body, implement the `draw3p` function as shown below.  Don't forget to add the arrays showing the ad networks used and the domains allowed to load this file in an iframe.
-
 `draw3p` is the integration point between AMP and content in third-party iframes (which is what this page is).
+
+In the page's body, implement the `draw3p` function as shown below.  This implementation should work even on pages that have multiple AMP ad types.
+
+{: .alert.alert-danger :}
+Don't forget to add the required arrays at the end of the function showing the ad networks used and the domains allowed to load this file in an iFrame.  You **must** add all `amp-ad` types on page to the `draw3p` array, even if they are not being used with Prebid demand.
 
 For an example showing how `draw3p` is used, see [this AMP test](https://dfp-amp-testing-1185.appspot.com/amp_tests/dfp-3p-iframe.html).
 
@@ -252,19 +255,25 @@ For more information about `draw3p`, see:
       /** The draw3p function is the integration point between AMP and content in third party
         * iframes. For more info see: https://github.com/ampproject/amphtml/blob/e5501a30adf15c8fef049729f5e0e3137dbb18ca/3p/integration.js#L252
         */
-    draw3p(function(config, done) {
-      if (typeof window.context.master.adCalls === 'undefined') {
-        window.context.master.adCalls = [];
-      }
-        if (window.context && window.context.isMaster && config.prebid) {
-            var prebid = config.prebid;
-            adUnits = prebid.adUnits;
-            requestBidsDuration = prebid.requestBidsDuration;
-            loadPrebidJS();
+      draw3p(function(config, done) {
+        if(config.prebid) {
+          if (typeof window.context.master.adCalls === 'undefined') {
+            window.context.master.adCalls = [];
+          }
+            if (window.context && window.context.isMaster && config.prebid) {
+                var prebid = config.prebid;
+                adUnits = prebid.adUnits;
+                requestBidsDuration = prebid.requestBidsDuration;
+                loadPrebidJS();
+            }
+            window.context.master.adCalls.push(setTargeting.bind(null, config, done));
         }
-        window.context.master.adCalls.push(setTargeting.bind(null, config, done));
-    }, ['doubleclick'], ['publisher.com']);
-// the first array contains ad networks used, the second domains allows to load this file in an iframe
+        else{
+          done(config);
+        }
+
+      }, ['doubleclick', 'taboola'], ['vip.local', 'preprod.metro.co.uk', 'preprod.metro.co.uk', 'metro.co.uk']);
+// the first array contains ad networks used, the second domains that allow us to load this file in an iframe
 ```
 
 
