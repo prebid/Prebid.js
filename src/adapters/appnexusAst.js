@@ -227,22 +227,26 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
-  function onOutstreamRendererLoaded(bid) {
+  function handleOutstreamRendererEvents(id, eventName) {
+    const bid = this;
+    bid.renderer.handleVideoEvent({ id, eventName });
+  }
 
+  function outstreamRender(bid) {
+    window.ANOutstreamVideo.renderAd({
+      tagId: bid.adResponse.tag_id,
+      sizes: [bid.getSize().split('x')],
+      targetId: bid.adUnitCode, // target div id to render video
+      uuid: bid.adResponse.uuid,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(bid));
+  }
+
+  function onOutstreamRendererLoaded(bid) {
     bid.adResponse.ad = bid.adResponse.ads[0];
     bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
-    bid.renderer.setRender(() => {
-      window.ANOutstreamVideo.renderAd({
-        tagId: bid.adResponse.tag_id,
-        sizes: [bid.getSize().split('x')],
-        targetId: bid.adUnitCode, // target div id to render video
-        uuid: bid.adResponse.uuid, // is this the correct UUID ?
-        adResponse: bid.adResponse,
-        rendererOptions: bid.renderer.getConfig()
-      }, (id, eventName) => {
-        bid.renderer.handleVideoEvent({ id, eventName });
-      });
-    });
+    bid.renderer.setRender(outstreamRender);
   }
 
   /* Create and return a bid object based on status and tag */
