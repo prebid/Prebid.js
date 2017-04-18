@@ -44,6 +44,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bidResponse = JSON.parse(bidResponse);
     } catch (e) {
       utils.logError(e);
+      return;
     }
 
     const bidId = bidResponse.bidId;
