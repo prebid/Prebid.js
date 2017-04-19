@@ -23,11 +23,15 @@ var SonobiAdapter = function SonobiAdapter(){
         var floor = (bidRequest.params.floor) ? bidRequest.params.floor : null;
         //  Mandatory
         var slotIdentifier = (bidRequest.params.ad_unit) ? bidRequest.params.ad_unit : (bidRequest.params.placement_id) ? bidRequest.params.placement_id : null;
-        var sizes = utils.parseSizesInput(bidRequest.sizes).toString() || null;
-        var bidId = bidRequest.bidId;
+        var sizes = (bidRequest.params.sizes) ? bidRequest.params.sizes : bidRequest.sizes || null;
+        sizes = utils.parseSizesInput(sizes).toString();
+        
         if (utils.isEmpty(sizes)){
           utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
         }
+
+        var bidId = bidRequest.bidId;
+
         var args = (sizes) ? ((floor) ? (sizes + '|f=' + floor) : (sizes)) : (floor) ? ('f=' + floor) : '';
         if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)){
           slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
