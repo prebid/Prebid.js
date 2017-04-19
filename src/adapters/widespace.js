@@ -68,7 +68,7 @@ function WidespaceAdapter() {
           placementCode = '',
           validSizes = [];
 
-      bid.sizes = {height: bid.height, width: bid.height};
+      bid.sizes = {height: bid.height, width: bid.width};
 
       var inBid = getBidRequest(bid.callbackUid);
 
