@@ -63,6 +63,7 @@
     "admixer",
     "atomx",
     "tapsense",
+    "trion",
     {
       "appnexus": {
         "alias": "brealtime"
