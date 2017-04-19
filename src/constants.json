@@ -61,6 +61,6 @@
     "hb_deal"
   ],
   "S2S" : {
-    "DEFAULT_ENDPOINT" : "http://prebid.adnxs.com/auction?url_override=www.nytimes.com"
+    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/auction?url_override=www.nytimes.com"
   }
 }

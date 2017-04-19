@@ -7,6 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
+import { syncCookies } from 'src/cookie.js';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -69,6 +70,9 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
 //create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
+
+//delay to request cookie sync to stay out of critical path
+$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 
 /**
@@ -351,6 +355,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
+  syncCookies($$PREBID_GLOBAL$$.cookieSyncDelay);
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
