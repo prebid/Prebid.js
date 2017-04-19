@@ -238,7 +238,7 @@ function AppnexusAstAdapter() {
     }, handleOutstreamRendererEvents.bind(bid));
   }
 
-  function onOutstreamRendererLoaded(bid) {
+  function onOutstreamRendererLoaded() {
     // setup code for renderer, if any
   }
 
