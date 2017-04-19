@@ -14,7 +14,7 @@ function getIntegration() {
 
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//optimized-by-adv.rubiconproject.com/v1/auction/video';
+const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 
 const TIMEOUT_BUFFER = 500;
 
@@ -62,9 +62,29 @@ function RubiconAdapter() {
       try {
         // Video endpoint only accepts POST calls
         if (bid.mediaType === 'video') {
-          ajax(VIDEO_ENDPOINT, bidCallback, buildVideoRequestPayload(bid, bidderRequest), {withCredentials: true});
+          ajax(
+            VIDEO_ENDPOINT,
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            buildVideoRequestPayload(bid, bidderRequest),
+            {
+              withCredentials: true
+            }
+          );
         } else {
-          ajax(buildOptimizedCall(bid), bidCallback, undefined, {withCredentials: true});
+          ajax(
+            buildOptimizedCall(bid),
+            {
+              success: bidCallback,
+              error: bidError
+            },
+            undefined,
+            {
+              withCredentials: true
+            }
+          );
         }
       } catch(err) {
         utils.logError('Error sending rubicon request for placement code ' + bid.placementCode, null, err);
@@ -83,6 +103,11 @@ function RubiconAdapter() {
           }
           addErrorBid();
         }
+      }
+
+      function bidError(err, xhr) {
+        utils.logError('Request for rubicon responded with:', xhr.status, err);
+        addErrorBid();
       }
 
       function addErrorBid() {
@@ -294,6 +319,12 @@ function RubiconAdapter() {
         [bid.width, bid.height] = sizeMap[ad.size_id].split('x').map(num => Number(num));
       }
 
+      // add server-side targeting
+      bid.rubiconTargeting = (Array.isArray(ad.targeting) ? ad.targeting : [])
+        .reduce((memo, item) => {
+          memo[item.key] = item.values[0];
+          return memo;
+        }, {'rpfl_elemid': bidRequest.placementCode});
 
       try {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);

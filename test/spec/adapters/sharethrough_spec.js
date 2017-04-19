@@ -51,20 +51,20 @@ describe('sharethrough adapter', () => {
     let secondBidUrl;
 
     beforeEach(() => {
-       sandbox.spy(adapter.str, 'loadIFrame');
+       sandbox.spy(adapter.str, 'ajax');
     });
 
-    it('should call loadIFrame on the adloader for each bid', () => {
+    it('should call ajax to make a request for each bid', () => {
 
       adapter.callBids(bidderRequest);
 
-      firstBidUrl = adapter.str.loadIFrame.firstCall.args[0];
-      secondBidUrl = adapter.str.loadIFrame.secondCall.args[0];
+      firstBidUrl = adapter.str.ajax.firstCall.args[0];
+      secondBidUrl = adapter.str.ajax.secondCall.args[0];
 
-      sinon.assert.calledTwice(adapter.str.loadIFrame);
+      sinon.assert.calledTwice(adapter.str.ajax);
 
-      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&ijson=pbjs.strcallback&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
-      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&ijson=pbjs.strcallback&hbVersion=%24prebid.version%24&strVersion=0.1.0&hbSource=prebid&');
+      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
+      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
     });
 
   });
@@ -117,8 +117,8 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      pbjs.strcallback(bidderReponse1);
-      pbjs.strcallback(bidderReponse2);
+      pbjs.strcallback(JSON.stringify(bidderReponse1));
+      pbjs.strcallback(JSON.stringify(bidderReponse2));
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];

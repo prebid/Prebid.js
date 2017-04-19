@@ -54,7 +54,7 @@ var CentroAdapter = function CentroAdapter() {
     }
     //make handler name for JSONP request
     var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(placementCode);
-    query.push('callback=' + handlerName);
+    query.push('callback=' + encodeURIComponent('window["' + handlerName + '"]'));
 
     //maybe is needed add some random parameter to disable cache
     //query.push('r='+Math.round(Math.random() * 1e5));

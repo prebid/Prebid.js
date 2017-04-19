@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.21.0-pre",
+  "version": "0.21.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -26,7 +26,7 @@
     "babel-plugin-transform-es3-member-expression-literals": "^6.8.0",
     "babel-plugin-transform-es3-property-literals": "^6.8.0",
     "babel-plugin-transform-object-assign": "^6.8.0",
-    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-es2015": "^6.24.1",
     "block-loader": "^2.1.0",
     "chai": "^3.3.0",
     "coveralls": "^2.11.11",
