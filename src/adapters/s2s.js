@@ -15,7 +15,7 @@ const TYPE = 's2s';
 function S2SAdapter() {
 
   let baseAdapter = Adapter.createNew('s2s');
-  
+
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest, config) {
 
@@ -31,13 +31,11 @@ function S2SAdapter() {
     let result;
     try {
       result = JSON.parse(response);
-      //TODO: Possible statuses, move in constants file
 
       if(result.status === 'OK') {
         result.bids.forEach(bidObj => {
-          //TODO: current response does not have type of creative, hence not checking anything
-          bidObj.bidId = bidObj.bid_id;
-          let cpm = bidObj.price.first;
+          var bidRequest = utils.getBidRequestByTid(result.tid, bidObj.bidder);
+          let cpm = bidObj.price;
           let status;
           if (cpm !== 0) {
             status = STATUS.GOOD;
@@ -45,15 +43,15 @@ function S2SAdapter() {
             status = STATUS.NO_BID;
           }
 
-          let bid = bidfactory.createBid(status, bidObj);
-          bid.creative_id = bidObj.creative_id;
-          bid.bidderCode = bidObj.bidder;
-          bid.cpm = cpm;
-          bid.ad = bidObj.adm;
-          bid.width = bidObj.width;
-          bid.height = bidObj.height;
+          let bidObject = bidfactory.createBid(status, bidRequest[0]);
+          bidObject.creative_id = bidObj.creative_id;
+          bidObject.bidderCode = bidObj.bidder;
+          bidObject.cpm = cpm;
+          bidObject.ad = bidObj.adm;
+          bidObject.width = bidObj.width;
+          bidObject.height = bidObj.height;
 
-          bidmanager.addBidResponse(bidObj.code, bid);
+          bidmanager.addBidResponse(bidObj.code, bidObject);
         });
       }
     } catch (error) {

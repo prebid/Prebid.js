@@ -73,21 +73,38 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       adUnit.bidders = adUnit.bids.filter((bid) => {
         return adaptersServerSide.includes(bid.bidder);
       });
-      delete adUnit.bids;
+      adUnit.bids = adUnit.bidders;
+    });
+
+    let tid = utils.generateUUID();
+    adaptersServerSide.forEach(bidderCode => {
+      const bidderRequestId = utils.getUniqueIdentifierStr();
+      const bidderRequest = {
+        bidderCode,
+        requestId,
+        bidderRequestId,
+        tid,
+        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits' : adUnitsCopy}),
+        start: new Date().getTime(),
+        auctionStart: auctionStart,
+        timeout: _s2sConfig.timeout
+      };
+      //Pushing server side bidder
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     });
 
     let requestJson = {
-      account_id : '1',
-      tid : utils.generateUUID(),
+      account_id : _s2sConfig.accountId,
+      tid,
       max_bids: _s2sConfig.maxBids,
       timeout_millis : _s2sConfig.timeout,
       url: getTopWindowUrl(),
       prebid_version : '$prebid.version$',
       ad_units : adUnitsCopy
     };
-    let s2sAdapter = _bidderRegistry['s2s'];
+    let s2sAdapter = _bidderRegistry['s2s']; //jshint ignore:line
+    utils.logMessage(`CALLING S2S HEADER BIDDER ==== ${adaptersServerSide.join(',')}`);
     s2sAdapter.callBids(requestJson, _s2sConfig);
-    //TODO: Do we push bids to _bidsRequested ?
   }
 
   bidderCodes.forEach(bidderCode => {
