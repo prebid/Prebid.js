@@ -7,6 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
+import { loadScript } from './adloader';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -14,7 +15,6 @@ var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
-var adloader = require('./adloader');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
@@ -293,15 +293,15 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       if (adObject) {
         //save winning bids
         $$PREBID_GLOBAL$$._winningBids.push(adObject);
+
         //emit 'bid won' event here
         events.emit(BID_WON, adObject);
 
-        var height = adObject.height;
-        var width = adObject.width;
-        var url = adObject.adUrl;
-        var ad = adObject.ad;
+        const { height, width, ad, mediaType, adUrl: url, renderer } = adObject;
 
-        if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
+        if (renderer && renderer.url) {
+          renderer.render(adObject);
+        } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
           doc.write(ad);
@@ -587,7 +587,7 @@ $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
  */
 $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
-  adloader.loadScript(tagSrc, callback, useCache);
+  loadScript(tagSrc, callback, useCache);
 };
 
 /**
