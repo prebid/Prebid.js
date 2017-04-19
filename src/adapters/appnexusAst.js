@@ -227,11 +227,6 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
-  function handleOutstreamRendererEvents(id, eventName) {
-    const bid = this;
-    bid.renderer.handleVideoEvent({ id, eventName });
-  }
-
   function outstreamRender(bid) {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
@@ -244,9 +239,12 @@ function AppnexusAstAdapter() {
   }
 
   function onOutstreamRendererLoaded(bid) {
-    // bid.adResponse.ad = bid.adResponse.ads[0];
-    // bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
-    // bid.renderer.setRender(outstreamRender);
+    // setup code for renderer, if any
+  }
+
+  function handleOutstreamRendererEvents(id, eventName) {
+    const bid = this;
+    bid.renderer.handleVideoEvent({ id, eventName });
   }
 
   /* Create and return a bid object based on status and tag */
@@ -277,10 +275,13 @@ function AppnexusAstAdapter() {
             config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
             callback: () => onOutstreamRendererLoaded.call(null, bid)
           });
-          bid.renderer.setRender(outstreamRender);
-          bid.adResponse.ad = bid.adResponse.ads[0];
-          bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
-          // bid.renderer.setRender(outstreamRender);
+
+          try {
+            bid.renderer.setRender(outstreamRender);
+          } catch (err) {
+            utils.logWarning('Prebid Error calling setRender on renderer', err);
+          }
+
           bid.renderer.setEventHandlers({
             impression: () => utils.logMessage('AppNexus outstream video impression event'),
             loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
@@ -289,6 +290,9 @@ function AppnexusAstAdapter() {
               document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
             }
           });
+
+          bid.adResponse.ad = bid.adResponse.ads[0];
+          bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
         }
       } else {
         bid.width = ad.rtb.banner.width;
