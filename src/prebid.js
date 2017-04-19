@@ -43,6 +43,7 @@ $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
+$$PREBID_GLOBAL$$._aolPixelsDropped = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 

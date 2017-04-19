@@ -69,6 +69,7 @@ const AolAdapter = function AolAdapter() {
   function dropSyncCookies(pixels) {
     let pixelElements = parsePixelItems(pixels);
     renderPixelElements(pixelElements);
+    $$PREBID_GLOBAL$$._aolPixelsDropped = true;
   }
 
   function parsePixelItems(pixels) {
@@ -227,7 +228,11 @@ const AolAdapter = function AolAdapter() {
       if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
         dropSyncCookies(response.ext.pixels);
       } else {
-        ad += response.ext.pixels;
+        let formattedPixels = response.ext.pixels.replace(/<\/?script(.+?)?>/g, '');
+
+        ad += '<script>if (!parent.$$PREBID_GLOBAL$$._aolPixelsDropped) {' +
+            'parent.$$PREBID_GLOBAL$$._aolPixelsDropped = true;' + formattedPixels +
+            '}</script>';
       }
     }
 
