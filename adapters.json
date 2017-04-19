@@ -1,23 +1,29 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
     "adkernel",
     "admedia",
+    "bidfluence",
     "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "innity",
     "kruxlink",
     "getintent",
+    "inneractive",
     "komoona",
     "lifestreet",
     "mantis",
@@ -25,11 +31,13 @@
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "pulsepointLite",
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
@@ -52,6 +60,8 @@
     "vertoz",
     "widespace",
     "admixer",
+    "atomx",
+    "tapsense",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -68,11 +78,21 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "gourmetads"
+      }
+    },
+    {
       "appnexusAst": {
         "supportedMediaTypes": ["video"]
       }
     },    {
       "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "beachfront": {
         "supportedMediaTypes": ["video"]
       }
     },
@@ -91,7 +111,7 @@
       "appnexus": {
         "alias": "featureforward"
       }
-    },    
+    },
     {
       "appnexus": {
         "alias": "oftmedia"
@@ -106,6 +126,15 @@
       "getintent": {
         "supportedMediaTypes" : ["video"]
       }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]

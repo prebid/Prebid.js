@@ -1,7 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter} from './utils';
+import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
@@ -72,7 +72,7 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 /**
  * Command queue that functions will execute once prebid.js is loaded
- * @param  {function} cmd Annoymous function to execute
+ * @param  {function} cmd Anonymous function to execute
  * @alias module:$$PREBID_GLOBAL$$.que.push
  */
 $$PREBID_GLOBAL$$.que.push = function (cmd) {
@@ -245,11 +245,11 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   targeting.resetPresetTargeting();
-  
+
   //now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -261,8 +261,8 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   }
 
   targeting.setTargetingForAst();
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -277,8 +277,9 @@ $$PREBID_GLOBAL$$.allBidsAvailable = function () {
 };
 
 /**
- * This function will render the ad (based on params) in the given iframe document passed through. Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchrounsly
- * @param  {object} doc document
+ * This function will render the ad (based on params) in the given iframe document passed through.
+ * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
+ * @param  {HTMLDocument} doc document
  * @param  {string} id bid id to locate the ad
  * @alias module:$$PREBID_GLOBAL$$.renderAd
  */
@@ -300,14 +301,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         var url = adObject.adUrl;
         var ad = adObject.ad;
 
-        if (doc===document || adObject.mediaType === 'video') {
-          utils.logError('Error trying to write ad. Ad render call ad id ' + id + ' was prevented from writing to the main document.');
+        if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
+          utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
         } else if (url) {
-          doc.write('<IFRAME SRC="' + url + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + width + '" HEIGHT="' + height + '"></IFRAME>');
+          doc.write(`<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`);
           doc.close();
           setRenderSize(doc, width, height);
         } else {
@@ -358,7 +359,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param adUnits
  * @param adUnitCodes
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes }) {
+$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -429,9 +430,13 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
-    //append array to existing
+    // generate transactionid for each new adUnits
+    // Append array to existing
+    adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === objectType_object) {
+    // Generate the transaction id for the adunit
+    adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
 };
@@ -483,7 +488,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 /**
  * Add a callback event
  * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
- * @param {Function} func  function to execute. Paramaters passed into the function: (bidResObj), [adUnitCode]);
+ * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:$$PREBID_GLOBAL$$.addCallback
  * @returns {String} id for callback
  */
@@ -586,7 +591,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 };
 
 /**
- * Will enable sendinga prebid.js to data provider specified
+ * Will enable sending a prebid.js to data provider specified
  * @param  {object} config object {provider : 'string', options : {}}
  */
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
@@ -679,7 +684,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
 
 /**
  * Set the order bidders are called in. If not set, the bidders are called in
- * the order they are defined wihin the adUnit.bids array
+ * the order they are defined within the adUnit.bids array
  * @param {string} order - Order to call bidders in. Currently the only possible value
  * is 'random', which randomly shuffles the order
  */

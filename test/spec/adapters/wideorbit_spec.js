@@ -465,14 +465,14 @@ describe('wideorbit adapter tests', function () {
 
 		});
 
-        it('should append an script to the head when type is set to javascript', function () {
+        it('should append an script to the head when type is set to js', function () {
 
             var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
                     {
-                        Type: 'javascript',
+                        Type: 'js',
                         Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
                     }
                 ],
@@ -485,6 +485,25 @@ describe('wideorbit adapter tests', function () {
 
             expect(scriptElement).to.exist;
             expect(scriptElement.src).to.equal('http://www.admeta.com/1.js');
+
+            stubAddBidResponse.restore();
+        });
+
+        it('should do nothing when type is set to unrecognized type', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+            var response = {
+                UserMatchings: [
+                    {
+                        Type: 'unrecognized',
+                        Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+                    }
+                ],
+                Placements: placements
+            };
+
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             stubAddBidResponse.restore();
         });

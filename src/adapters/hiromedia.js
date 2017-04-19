@@ -1,4 +1,4 @@
-/*jslint white:true, browser:true*/
+/*jslint white:true, browser:true, single: true*/
 /*global $$PREBID_GLOBAL$$, require, module*/
 
 /**
@@ -38,7 +38,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @constant {number}
    * @private
    */
-  var ADAPTER_VERSION = 2;
+  var ADAPTER_VERSION = 3;
 
   /**
    * Default bid param values
@@ -57,9 +57,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @private
    */
   var DEFAULT_BID_PARAMS = {
-    bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get',
-    allowedSize: [300,250],
-    sizeTolerance: 5
+    bidUrl: 'https://hb-rtb.ktdpublishers.com/bid/get'
   };
 
   /**
@@ -98,8 +96,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     if (bidResponse) {
       bidObject.cpm = bidResponse.cpm;
       bidObject.ad = bidResponse.ad;
-      bidObject.width = bidInfo.selectedSize[0];
-      bidObject.height = bidInfo.selectedSize[1];
+      bidObject.width = bidResponse.width;
+      bidObject.height = bidResponse.height;
     }
 
     utils.logMessage('hiromedia.callBids, addBidResponse for ' + placementCode + ' status: ' + bidStatus);
@@ -238,80 +236,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   }
 
   /**
-   * Convert a `string` to an integer with radix 10.
-   *
-   * @memberof module:HiroMediaAdapter~
-   * @private
-   *
-   * @param  {string} value string to convert
-   * @return {number}  the converted integer
-   */
-  function parseInt10(value) {
-    return parseInt(value, 10);
-  }
-
-  /**
-   * Return `true` if a given value is in a certain range, `false` otherwise
-   *
-   * Returns `true` if the distance between `allowedValue` and `value`
-   * is smaller than the value of `tolerance`
-   *
-   * @memberof module:HiroMediaAdapter~
-   * @private
-   *
-   * @param  {number} value the value to test
-   * @param  {number} allowedValue the value to test against
-   * @param  {number} tolerance tolerance value
-   * @return {Boolean} `true` if `dimension` is in range, `false` otherwise.
-   */
-  function isValueInRange(value, allowedValue, tolerance) {
-
-    value = parseInt10(value);
-    allowedValue = parseInt10(allowedValue);
-    tolerance = parseInt10(tolerance);
-
-    return (allowedValue - tolerance) <= value && value <= (allowedValue + tolerance);
-
-  }
-
-  /**
-   * Returns `true` if a size array has both dimensions in range an allowed size array,
-   * `false` otherwise
-   *
-   * Each dimension of `size` will be checked against the corresponding dimension
-   * of `allowedSize`
-   *
-   * @memberof module:HiroMediaAdapter~
-   * @private
-   *
-   * @param  {module:HiroMediaAdapter~size} size size array to test
-   * @param  {module:HiroMediaAdapter~size} allowedSize size array to test against
-   * @param  {number} tolerance tolerance value (same for both dimensions)
-   * @return {Boolean} `true` if the dimensions of `size` are in range of the
-   * dimensions of `allowedSize`, `false` otherwise.
-   */
-  function isSizeInRange(size, allowedSize, tolerance) {
-    return isValueInRange(allowedSize[0], size[0], tolerance) && isValueInRange(allowedSize[1], size[1], tolerance);
-  }
-
-  /**
-   * Normalize sizes and return an array with sizes in WIDTHxHEIGHT format
-   *
-   * Simple wrapper around `util.parseSizesInput`
-   *
-   * @memberof module:HiroMediaAdapter~
-   * @private
-   *
-   * @param  {array} sizes array of sizes that are passed to `util.parseSizesInput`
-   * @return {array}  normalized array of sizes.
-   */
-  function normalizeSizes(sizes) {
-    return utils.parseSizesInput(sizes).map(function (size) {
-      return size.split('x');
-    });
-  }
-
-  /**
    * Apply default parameters to an object if the parameters are not set
    *
    * @memberof module:HiroMediaAdapter~
@@ -344,7 +268,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     var batchParams = [
       bidParams.bidUrl,
       bidParams.accountId,
-      bidInfo.selectedSize.join('x')
+      bidInfo.selectedSize,
+      bidInfo.additionalSizes
     ];
 
     return batchParams.join('-');
@@ -354,10 +279,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   /**
    * Build a set of {@linkcode module:HiroMediaAdapter~bidInfo|bidInfo} objects based on the
    * bids sent to {@linkcode module:HiroMediaAdapter#callBids|callBids}
-   *
-   * This routine determines if a bid request should be sent for the placement, it
-   * will set `selectedSize` based on `params.allowedSize` and calculate the batch
-   * key.
    *
    * @memberof module:HiroMediaAdapter~
    * @private
@@ -375,19 +296,16 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
 
       bids.forEach(function (bid) {
 
-        var sizes = normalizeSizes(bid.sizes);
+        var sizes = utils.parseSizesInput(bid.sizes);
         var bidParams = defaultParams(bid.params);
-        var allowedSizes = normalizeSizes([bidParams.allowedSize])[0];
-        var selectedSize = sizes.find(function (size) {
-          return isSizeInRange(size, allowedSizes, bidParams.sizeTolerance);
-        });
         var hasValidBidRequest = utils.hasValidBidRequest(bidParams, REQUIRED_BID_PARAMS, BIDDER_CODE);
-        var shouldBid = hasValidBidRequest && (selectedSize !== undefined);
+        var shouldBid = hasValidBidRequest;
         var bidInfo = {
           bid: bid,
           bidParams: bidParams,
-          selectedSize: selectedSize,
-          shouldBid: shouldBid
+          shouldBid: shouldBid,
+          selectedSize: sizes[0],
+          additionalSizes: sizes.slice(1).join(',')
         };
 
         if (shouldBid) {
@@ -493,8 +411,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
               browser: browser.name,
               browserVersion: browser.version,
               domain: domain,
-              selectedSize: utils.parseSizesInput([bidInfo.selectedSize]),
-              placementSizes: utils.parseSizesInput(bid.sizes)
+              selectedSize: bidInfo.selectedSize,
+              additionalSizes: bidInfo.additionalSizes
             });
 
           }
@@ -520,22 +438,12 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   // JSDoc typedefs
 
   /**
-   * A size array where the width is the first array item and the height is
-   * the second array item.
-   *
-   * @typedef {array.<number>} module:HiroMediaAdapter~size
-   * @private
-   */
-
-  /**
    * Parameters for bids to HIRO Media adapter
    *
    * @typedef {object} module:HiroMediaAdapter~bidParams
    * @private
    *
    * @property {string} bidUrl the bid server endpoint url
-   * @property {module:HiroMediaAdapter~size} allowedSize allowed placement size
-   * @property {number} sizeTolerance custom tolerance for `allowedSize`
    */
 
   /**
@@ -545,7 +453,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @private
    *
    * @property {object} bid original bid passed to #callBids
-   * @property {module:HiroMediaAdapter~size} selectedSize the selected size of the placement
+   * @property {string} selectedSize the first size in the the placement sizes array
+   * @property {string} additionalSizes list of sizes in the placement sizes array besides the first
    * @property {string} batchKey key used for batching requests which have the same basic properties
    * @property {module:HiroMediaAdapter~bidParams} bidParams original params passed for bid in #callBids
    * @property {boolean} shouldBid flag to determine if the bid is valid for bidding or not
