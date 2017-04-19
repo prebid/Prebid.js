@@ -528,7 +528,8 @@ describe('AolAdapter', () => {
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
           "<script>logInfo('ad');</script>" +
-          "<script>document.write('<img src=\"pixel.gif\">');</script>"
+          "</script><script>if(!parent.pbjs._aolPixelsDropped){parent.pbjs._aolPixelsDropped=true;" +
+          "document.write('<img src=\"pixel.gif\">');}</script>"
         );
       });
 

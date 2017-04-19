@@ -228,10 +228,10 @@ const AolAdapter = function AolAdapter() {
       if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
         dropSyncCookies(response.ext.pixels);
       } else {
-        let formattedPixels = response.ext.pixels.replace(/<\/?script(.+?)?>/g, '');
+        let formattedPixels = response.ext.pixels.replace(/<\/?script( text='javascript'|)?>/g, '');
 
-        ad += '<script>if (!parent.$$PREBID_GLOBAL$$._aolPixelsDropped) {' +
-            'parent.$$PREBID_GLOBAL$$._aolPixelsDropped = true;' + formattedPixels +
+        ad += '<script>if(!parent.$$PREBID_GLOBAL$$._aolPixelsDropped){' +
+            'parent.$$PREBID_GLOBAL$$._aolPixelsDropped=true;' + formattedPixels +
             '}</script>';
       }
     }
