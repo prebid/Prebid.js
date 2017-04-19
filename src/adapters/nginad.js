@@ -27,7 +27,7 @@ var NginAdAdapter = function NginAdAdapter() {
     var PubZoneIds = [];
 
     for (key in bids) {
-      map[utils.getBidIdParamater('pzoneid', bids[key].params)] = bids[key];
+      map[utils.getBidIdParameter('pzoneid', bids[key].params)] = bids[key];
     }
 
     for (key in map) {
@@ -69,8 +69,8 @@ var NginAdAdapter = function NginAdAdapter() {
 
     //build impression array for nginad
     utils._each(bidReqs, function(bid) {
-      var tagId = utils.getBidIdParamater('pzoneid', bid.params);
-      var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+      var tagId = utils.getBidIdParameter('pzoneid', bid.params);
+      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
 
       var whArr = getWidthAndHeight(bid);
 

@@ -8,7 +8,7 @@ const fs = require('fs');
 const blockLoader = require('block-loader');
 const getAdapters = require('./getAdapters');
 
-const adapters = getAdapters();
+const adapters = getAdapters('adapters.json', 'adapters');
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.filter(getStandardAdapters).filter(getUniques);
 //adapters loaded from `srcPath`
@@ -48,7 +48,7 @@ function insertAdapters() {
 
   inserts = inserts.map(name => {
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
-    exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
+    exports.registerBidAdapter(new ${adapterName(name)}(), '${name}');\n`;
   })
     .concat(customAdapters.map(adapter => {
       return `let ${adapter.name} = require('${adapter.srcPath}');
@@ -79,15 +79,6 @@ function adapterName(adapter) {
     return result[0].toUpperCase() + result.join('').substr(1) + 'Adapter';
   }
   return '';
-}
-
-/**
- * Some adapters export an object with a `createNew` constructor so accommodate this pattern
- * @param adapter
- * @returns {string}
- */
-function useCreateNew(adapter) {
-  return ['appnexus', 'appnexusAst'].includes(adapter) ? '.createNew' : '';
 }
 
 /**

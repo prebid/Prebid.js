@@ -2,6 +2,8 @@ import Adapter from '../../../src/adapters/getintent';
 import bidManager from '../../../src/bidmanager';
 import {expect} from 'chai';
 
+var assert = require('chai').assert;
+
 describe('getintent media adapter test', () => {
 
   let adapter;
@@ -17,10 +19,16 @@ describe('getintent media adapter test', () => {
            cpm : 2.71,
            size : `${bidRequest.size}`
          }, bidRequest);
-      } else {
+      } else if (pid == "p3") {
         callback({
           no_bid: 1
         }, bidRequest);
+      } else if (pid == "p4") {
+        callback({
+           vast_url : `http://test.com?pid=${pid}&tid=${tid}`,
+           cpm : 2.88,
+           size : `${bidRequest.size}`
+         }, bidRequest);
       }
     }
   };
@@ -58,6 +66,17 @@ describe('getintent media adapter test', () => {
             tid: "t2",
             cur: "USD"
           }
+        },
+        {
+          bidder: "getintent",
+          adUnitCode: "test4",
+          mediaType: 'video',
+          sizes: [[480,352]],
+          params: {
+            pid: "p4",
+            tid: "t3",
+            cur: "USD"
+          }
         }
       ]
     });
@@ -75,6 +94,7 @@ describe('getintent media adapter test', () => {
     let firstBid;
     let secondBid;
     let thirdBid;
+    let videoBid;
 
     beforeEach(() => {
       sinon.stub(bidManager, 'addBidResponse');
@@ -82,14 +102,15 @@ describe('getintent media adapter test', () => {
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
       thirdBid = bidManager.addBidResponse.thirdCall.args[1];
+      videoBid = bidManager.addBidResponse.lastCall.args[1];
     });
 
     afterEach(() => {
       bidManager.addBidResponse.restore();
     });
 
-    it('was called three times', () => {
-      sinon.assert.calledThrice(bidManager.addBidResponse);
+    it('was called four times', () => {
+      assert.strictEqual(bidManager.addBidResponse.callCount, 4);
     });
 
     it('will respond to the first bid', () => {
@@ -115,6 +136,13 @@ describe('getintent media adapter test', () => {
       expect(firstBid).to.have.property('bidderCode', 'getintent');
       expect(secondBid).to.have.property('bidderCode', 'getintent');
       expect(thirdBid).to.have.property('bidderCode', 'getintent');
+    });
+    
+    it('will respond to the video bid', () => {
+      expect(videoBid).to.have.property('vastUrl', 'http://test.com?pid=p4&tid=t3');
+      expect(videoBid).to.have.property('cpm', 2.88);
+      expect(videoBid).to.have.property('width', '480');
+      expect(videoBid).to.have.property('height', '352');
     });
   });
 

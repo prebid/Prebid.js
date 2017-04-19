@@ -17,6 +17,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
   function _callBids(params) {
     bids = params.bids;
+    _pm_optimize_adslots = [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
       //bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
@@ -118,7 +119,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
         adResponse.adSlot = bid.adSlot;
         adResponse.cpm = Number(adUnitInfo.bid);
         adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
-        adResponse.ad += utils.createTrackPixelHtml(decodeURIComponent(adUnit.tracking_url));
+        adResponse.ad += utils.createTrackPixelIframeHtml(decodeURIComponent(adUnit.tracking_url));
         adResponse.width = dimensions[0];
         adResponse.height = dimensions[1];
         adResponse.dealId = adUnitInfo.wdeal;

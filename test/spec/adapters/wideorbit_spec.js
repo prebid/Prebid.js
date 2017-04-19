@@ -65,7 +65,8 @@ describe('wideorbit adapter tests', function () {
                         bidder: 'wideorbit',
                         params: {
                             PBiD: 1,
-                            PID: 101
+                            PID: 101,
+							ReferRer: 'http://www.foo.com?param1=param1&param2=param2'
                         },
                         placementCode: 'div-gpt-ad-12345-1'
                     },
@@ -106,6 +107,7 @@ describe('wideorbit adapter tests', function () {
             expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
             expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
             expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
+            expect(parsedBidUrlQueryString).to.have.property('url').and.to.equal('http://www.foo.com?param1=param1&param2=param2');
 
             expect(parsedBidUrlQueryString).to.have.property('gid0').and.to.equal('div-gpt-ad-12345-1');
             expect(parsedBidUrlQueryString).to.have.property('rpos0').and.to.equal('0');
@@ -184,6 +186,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
+                expect(parsedBidUrlQueryString).to.have.property('url').and.to.be.empty;
 
                 expect(parsedBidUrlQueryString).to.have.property('gid0').and.to.equal('div-gpt-ad-12345-1');
                 expect(parsedBidUrlQueryString).to.have.property('rpos0').and.to.equal('1001');
@@ -260,6 +263,7 @@ describe('wideorbit adapter tests', function () {
                 expect(parsedBidUrlQueryString).to.have.property('mpp').and.to.equal('0');
                 expect(parsedBidUrlQueryString).to.have.property('cb').to.have.length.above(0);
                 expect(parsedBidUrlQueryString).to.have.property('hb').and.to.equal('1');
+                expect(parsedBidUrlQueryString).to.have.property('url').and.to.be.empty;
 
                 expect(parsedBidUrlQueryString).to.have.property('gid0').and.to.equal('div-gpt-ad-12345-1');
                 expect(parsedBidUrlQueryString).to.have.property('rpos0').and.to.equal('1001');
@@ -461,14 +465,14 @@ describe('wideorbit adapter tests', function () {
 
 		});
 
-        it('should append an script to the head when type is set to javascript', function () {
+        it('should append an script to the head when type is set to js', function () {
 
             var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
             var response = {
                 UserMatchings: [
                     {
-                        Type: 'javascript',
+                        Type: 'js',
                         Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
                     }
                 ],
@@ -481,6 +485,25 @@ describe('wideorbit adapter tests', function () {
 
             expect(scriptElement).to.exist;
             expect(scriptElement.src).to.equal('http://www.admeta.com/1.js');
+
+            stubAddBidResponse.restore();
+        });
+
+        it('should do nothing when type is set to unrecognized type', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+            var response = {
+                UserMatchings: [
+                    {
+                        Type: 'unrecognized',
+                        Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+                    }
+                ],
+                Placements: placements
+            };
+
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
 
             stubAddBidResponse.restore();
         });

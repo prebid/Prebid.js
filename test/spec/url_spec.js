@@ -24,7 +24,7 @@ describe('helpers.url', () => {
     });
 
     it('extracts the pathname', () => {
-      expect(['/pathname/', 'pathname/']).to.include(parsed.pathname);
+      expect(parsed).to.have.property('pathname', '/pathname/');
     });
 
     it('extracts the search query', () => {

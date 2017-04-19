@@ -7,7 +7,10 @@ import { STATUS } from 'src/constants';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skipppable', 'playback_method', 'frameworks'];
+  'startdelay', 'skippable', 'playback_method', 'frameworks'];
+const USER_PARAMS = [
+  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
+];
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -18,10 +21,13 @@ function AppnexusAstAdapter() {
 
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
+  let usersync = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const bids = bidRequest.bids || [];
+    var member = 0;
+    let userObj;
     const tags = bids
       .filter(bid => valid(bid))
       .map(bid => {
@@ -32,10 +38,39 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        tag.id = parseInt(bid.params.placementId, 10);
+        if(bid.params.placementId) {
+          tag.id = parseInt(bid.params.placementId, 10);
+        } else {
+          tag.code = bid.params.invCode;
+        }
         tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
         tag.prebid = true;
         tag.disable_psa = true;
+        member = parseInt(bid.params.member, 10);
+        if (bid.params.reserve) {
+          tag.reserve = bid.params.reserve;
+        }
+        if (bid.params.position) {
+          tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+        }
+        if (bid.params.trafficSourceCode) {
+          tag.traffic_source_code = bid.params.trafficSourceCode;
+        }
+        if (bid.params.privateSizes) {
+          tag.private_sizes = getSizes(bid.params.privateSizes);
+        }
+        if (bid.params.supplyType) {
+          tag.supply_type = bid.params.supplyType;
+        }
+        if (bid.params.pubClick) {
+          tag.pubclick = bid.params.pubClick;
+        }
+        if (bid.params.extInvCode) {
+          tag.ext_inv_code = bid.params.extInvCode;
+        }
+        if (bid.params.externalImpId) {
+          tag.external_imp_id = bid.params.externalImpId;
+        }
         if (!utils.isEmpty(bid.params.keywords)) {
           tag.keywords = getKeywords(bid.params.keywords);
         }
@@ -49,11 +84,22 @@ function AppnexusAstAdapter() {
             .forEach(param => tag.video[param] = bid.params.video[param]);
         }
 
+        if (bid.params.user) {
+          userObj = {};
+          Object.keys(bid.params.user)
+            .filter(param => USER_PARAMS.includes(param))
+            .forEach(param => userObj[param] = bid.params.user[param]);
+        }
+
         return tag;
       });
 
     if (!utils.isEmpty(tags)) {
-      const payload = JSON.stringify({tags: [...tags]});
+      const payloadJson = {tags: [...tags], user: userObj};
+      if (member > 0) {
+        payloadJson.member_id = member;
+      }
+      const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
         withCredentials : true
@@ -107,14 +153,25 @@ function AppnexusAstAdapter() {
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
+
+    if (!usersync) {
+      const iframe = utils.createInvisibleIframe();
+      iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+      usersync = true;
+    }
   }
 
   /* Check that a bid has required paramters */
   function valid(bid) {
-    if (bid.params.placementId || bid.params.memberId && bid.params.invCode) {
+    if (bid.params.placementId || bid.params.member && bid.params.invCode) {
       return bid;
     } else {
-      utils.logError('bid requires placementId or (memberId and invCode) params');
+      utils.logError('bid requires placementId or (member and invCode) params');
     }
   }
 
@@ -178,11 +235,13 @@ function AppnexusAstAdapter() {
     if (ad && status === STATUS.GOOD) {
       bid.cpm = ad.cpm;
       bid.creative_id = ad.creative_id;
+      bid.dealId = ad.deal_id;
 
       if (ad.rtb.video) {
         bid.width = ad.rtb.video.player_width;
         bid.height = ad.rtb.video.player_height;
         bid.vastUrl = ad.rtb.video.asset_url;
+        bid.descriptionUrl = ad.rtb.video.asset_url;
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;
@@ -201,11 +260,15 @@ function AppnexusAstAdapter() {
   }
 
   return {
-    createNew: exports.createNew,
+    createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 
 }
 
-exports.createNew = () => new AppnexusAstAdapter();
+AppnexusAstAdapter.createNew = function() {
+  return new AppnexusAstAdapter();
+};
+
+module.exports = AppnexusAstAdapter;
