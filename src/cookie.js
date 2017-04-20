@@ -3,6 +3,7 @@ import { ajax } from 'src/ajax';
 import * as utils from 'utils';
 
 const cookieSyncEndpoint = 'https://prebid.adnxs.com/setuid?bidder=${bidder}&uid=$UID';
+//todo move to seperate file.
 const cookieSyncEndpoints = [
   {
     bidder : 'appnexus',
@@ -12,7 +13,7 @@ const cookieSyncEndpoints = [
   },
   {
     bidder : 'other_bidder',
-    endpoint : 'http://other_endpoint.com/getuidj',
+    endpoint : 'http://other_endpoint.com/getuidj?',
     type : 'json',
     options : {
       varId : 'uid'
@@ -24,7 +25,12 @@ const queue = [];
 
 function fireSyncs() {
   //todo - check type and handle properly
-  queue.forEach(bidder => {
+  queue.forEach(obj => {
+    if(obj.url) {
+      utils.insertPixel(obj.url);
+      return;
+    }
+    const bidder = obj.bidder;
     const config = cookieSyncEndpoints.find(obj => obj.bidder === bidder);
     const endpoint = config.endpoint;
     const cookieSyncEndpointTemp  = cookieSyncEndpoint.replace('${bidder}', bidder);
@@ -41,12 +47,14 @@ function fireSyncs() {
     }
   });
 }
+
 /**
  * Add this bidder to the queue for sync
- * @param  {String} bidder bidder to sync
+ * @param  {String} bidder bidder code
+ * @param  {String} url    optional URL for invoking cookie sync if provided.
  */
-cookie.queueSync = function (bidder) {
-  queue.push(bidder);
+cookie.queueSync = function ({bidder, url}) {
+  queue.push({bidder, url});
 };
 
 /**
