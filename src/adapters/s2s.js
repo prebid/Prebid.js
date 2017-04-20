@@ -16,9 +16,16 @@ const TYPE = 's2s';
 function S2SAdapter() {
 
   let baseAdapter = Adapter.createNew('s2s');
+  let bidRequests = [];
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest, config) {
+    bidRequest.ad_units.forEach(adUnit => {
+      adUnit.bidders.forEach(bidder => {
+        bidRequests[bidder.bid_id] = utils.getBidRequest(bidder.bid_id);
+      });
+    });
+
     const payload = JSON.stringify(bidRequest);
     ajax(config.endpoint, handleResponse, payload, {
       contentType: 'text/plain',
@@ -32,6 +39,7 @@ function S2SAdapter() {
     try {
       result = JSON.parse(response);
 
+      //TODO: addBidResponse for no bid
       if(result.status === 'OK') {
         if(result.bidder_status) {
           result.bidder_status.forEach(bidder => {
