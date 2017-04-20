@@ -2,6 +2,7 @@ const utils = require('../utils.js');
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const ajax = require('../ajax.js');
+const CONSTANTS = require('../constants.json');
 const QUANTCAST_CALLBACK_URL = 'http://global.qc.rtb.quantserve.com:8080/qchb';
 
 var QuantcastAdapter = function QuantcastAdapter() {
@@ -9,15 +10,12 @@ var QuantcastAdapter = function QuantcastAdapter() {
   const BIDDER_CODE = 'quantcast';
 
   const DEFAULT_BID_FLOOR = 0.0000000001;
-  // The following 2 constants are adopted from bidfactory.js codes
-  const BID_STATUS_CODE_AVAILABLE = 1;
-  const BID_STATUS_CODE_EMPTY = 2;
   let bidRequests = {};
 
   let returnEmptyBid = function() {
       var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
       if (bidsRequested.length > 0) {
-        let bid = bidfactory.createBid(BID_STATUS_CODE_EMPTY);
+        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = BIDDER_CODE;
         bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
       }
@@ -44,7 +42,7 @@ var QuantcastAdapter = function QuantcastAdapter() {
       // This line is required since this is the field
       // that bidfactory.createBid looks for
       request.bidId = request.imp[0].placementCode;
-      let responseBid = bidfactory.createBid(BID_STATUS_CODE_AVAILABLE, request);
+      let responseBid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, request);
 
       responseBid.cpm = seatbid.cpm;
       responseBid.ad = seatbid.ad;
