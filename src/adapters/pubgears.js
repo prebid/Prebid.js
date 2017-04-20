@@ -118,7 +118,7 @@ function PubGearsAdapter() {
     var resource = eventData[RESOURCE];
     var dims = resource[SIZE].split('x');
     var price = Number(eventData[GROSS_PRICE]);
-    var status = isNaN(price) || price < 0 ? 2 : 1;
+    var status = isNaN(price) || price <= 0 ? 2 : 1;
 
     var response = bidfactory.createBid(status, bidRequest);
     response[BIDDER_CODE_RESPONSE_KEY] = BIDDER_CODE;

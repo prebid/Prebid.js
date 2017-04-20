@@ -253,5 +253,46 @@ describe('PubGearsAdapter', () => {
 			var bidResponse = args[1]
 			expect(bidResponse.ad).to.contain(bid.params.pubZone)
 		})
+
+		it('should send $0 bid as no-bid response', () => {
+
+			var bid = {
+					bidder: "pubgears",
+					sizes: [ [300,250] ],
+					adUnitCode: "foo123/header-bid-tag",
+					params: {
+						publisherName: "integration",
+						pubZone: "testpub.com/combined"
+					}
+				}
+
+			adapter.callBids({
+				bidderCode: "pubgears",
+				bids: [ bid ]
+			})
+
+			var options = {
+				bubbles: false,
+				cancelable: false,
+				detail: {
+					gross_price: 0,
+					resource: {
+						position: 'atf',
+						pub_zone: 'testpub.com/combined',
+						size: '300x250'
+					}
+				}
+			}
+			var script = document.getElementById('pg-header-tag')
+			var event = new CustomEvent('onBidResponse', options)
+
+			bidmanager.addBidResponse.reset()
+			script.dispatchEvent(event)
+			
+			var args = bidmanager.addBidResponse.getCall(1).args
+			var bidResponse = args[1]
+			expect(bidResponse).to.be.a('object')
+			expect(bidResponse.getStatusCode()).to.equal(2)
+		})
 	})
 })
