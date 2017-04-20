@@ -43,7 +43,6 @@ $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 $$PREBID_GLOBAL$$._sendAllBids = false;
-$$PREBID_GLOBAL$$._aolPixelsDropped = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
@@ -246,11 +245,11 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   targeting.resetPresetTargeting();
-  
+
   //now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -262,8 +261,8 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   }
 
   targeting.setTargetingForAst();
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 

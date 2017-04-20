@@ -3,8 +3,6 @@ import { cloneDeep } from 'lodash';
 import * as utils from 'src/utils';
 import AolAdapter from 'src/adapters/aol';
 import bidmanager from 'src/bidmanager';
-import events from 'src/events';
-import constants from 'src/constants';
 
 const DEFAULT_BIDDER_REQUEST = {
   bidderCode: 'aol',
@@ -528,7 +526,8 @@ describe('AolAdapter', () => {
         var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(bidResponse.ad).to.equal(
           "<script>logInfo('ad');</script>" +
-          "</script><script>if(!parent.pbjs._aolPixelsDropped){parent.pbjs._aolPixelsDropped=true;" +
+          "<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){" +
+          "parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;" +
           "document.write('<img src=\"pixel.gif\">');}</script>"
         );
       });
@@ -669,6 +668,59 @@ describe('AolAdapter', () => {
         assertPixelsItem('iframe[src="pixels1.org"]');
       });
 
+      it('should not render pixels if it was rendered before', () => {
+        $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
+        server.respondWith(JSON.stringify({
+          "id": "245730051428950632",
+          "cur": "USD",
+          "seatbid": [{
+            "bid": [{
+              "id": 1,
+              "impid": "245730051428950632",
+              "price": 0.09,
+              "adm": "<script>console.log('ad');</script>",
+              "crid": "12345",
+              "h": 90,
+              "w": 728,
+              "ext": {"sizeid": 225}
+            }]
+          }],
+          "ext": {
+            "pixels": "<script>document.write('<iframe src=\"test.com\"></iframe>" +
+            "<iframe src=\"test2.org\"></iframe>');</script>"
+          }
+        }));
+        adapter.callBids({
+          bidderCode: 'aol',
+          requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+          bidderRequestId: '7101db09af0db2',
+          start: new Date().getTime(),
+          bids: [{
+            bidder: 'aol',
+            bidId: '84ab500420319d',
+            bidderRequestId: '7101db09af0db2',
+            requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+            placementCode: 'foo',
+            params: {
+              placement: 1234567,
+              network: '9599.1',
+              userSyncOn: 'bidResponse'
+            }
+          }]
+        });
+        server.respond();
+
+        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+
+        let assertPixelsItem = (pixelsItemSelector) => {
+          let pixelsItems = document.body.querySelectorAll(pixelsItemSelector);
+
+          expect(pixelsItems.length).to.equal(0);
+        };
+
+        assertPixelsItem('iframe[src="test.com"]');
+        assertPixelsItem('iframe[src="test2.com"]');
+      });
     });
 
     describe('when bidCpmAdjustment is set', () => {
