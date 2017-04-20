@@ -29,11 +29,11 @@ var QuantcastAdapter = function QuantcastAdapter() {
     }
     let response = null;
     try {
-        response = JSON.parse(responseText);
+      response = JSON.parse(responseText);
     } catch(e) {
-        // Malformed JSON
-        utils.logError("Malformed JSON received from server ");
-        return returnEmptyBid();
+      // Malformed JSON
+      utils.logError("Malformed JSON received from server ");
+      return returnEmptyBid();
     }
 
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
