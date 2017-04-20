@@ -36,7 +36,7 @@ var QuantcastAdapter = function QuantcastAdapter() {
       return returnEmptyBid();
     }
 
-    if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
+    if(response == null || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       return returnEmptyBid();
     }
 
