@@ -44,7 +44,7 @@ function S2SAdapter() {
         if(result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if(bidder.no_cookie) {
-              queueSync(bidder.bidder);
+              queueSync({bidder: bidder.bidder, url : bidder.usersync_url});
             }
           });
         }
