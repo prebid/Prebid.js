@@ -30,8 +30,8 @@ describe('quantcast adapter', () => {
   };
 
   beforeEach(() => {
-    bidsRequestedOriginal = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
 
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
@@ -41,7 +41,7 @@ describe('quantcast adapter', () => {
   afterEach(() => {
     sandbox.restore();
 
-    pbjs._bidsRequested = bidsRequestedOriginal;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
   });
 
   describe('sizes', () => {
@@ -117,39 +117,39 @@ describe('quantcast adapter', () => {
     };
 
     beforeEach(() => {
-      bidsRequestedOriginal = pbjs._bidsRequested;
+      bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
       addBidReponseStub = sandbox.stub(bidManager, 'addBidResponse');
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     });
 
     afterEach(() => {
       sandbox.restore();
-      pbjs._bidsRequested = bidsRequestedOriginal;
+      $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
     });
 
     it('should exist and be a function', () => {
-      expect(pbjs.handleQuantcastCB).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.handleQuantcastCB).to.exist.and.to.be.a('function');
     });
 
     it('should not add bid when empty text response comes', () => {
-      pbjs.handleQuantcastCB();
+      $$PREBID_GLOBAL$$.handleQuantcastCB();
       sinon.assert.notCalled(addBidReponseStub);
     });
 
     it('should not add bid when empty json response comes', () => {
-      pbjs.handleQuantcastCB(JSON.stringify({}));
+      $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify({}));
       sinon.assert.notCalled(addBidReponseStub);
     });
 
     it('should not add bid when malformed json response comes', () => {
-      pbjs.handleQuantcastCB('non json text');
+      $$PREBID_GLOBAL$$.handleQuantcastCB('non json text');
       sinon.assert.notCalled(addBidReponseStub);
     });
 
     it('should add a bid object for each bid', () => {
       // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
       adapter.callBids(bidderRequest);
-      pbjs.handleQuantcastCB(JSON.stringify(bidderReponse));
+      $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify(bidderReponse));
       sinon.assert.calledOnce(addBidReponseStub);
       expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
     });
