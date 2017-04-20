@@ -27,7 +27,15 @@ var QuantcastAdapter = function QuantcastAdapter() {
     if(utils.isEmpty(responseText)) {
       return;
     }
-    let response = JSON.parse(responseText);
+    let response = null;
+    try {
+        response = JSON.parse(responseText);
+    } catch(e) {
+        // Malformed JSON
+        utils.logError("Malformed JSON received from server ");
+        return returnEmptyBid();
+    }
+
     if(typeof(response) === 'undefined' || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       return returnEmptyBid();
     }

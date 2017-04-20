@@ -141,6 +141,11 @@ describe('quantcast adapter', () => {
       sinon.assert.notCalled(addBidReponseStub);
     });
 
+    it('should not add bid when malformed json response comes', () => {
+      pbjs.handleQuantcastCB('non json text');
+      sinon.assert.notCalled(addBidReponseStub);
+    });
+
     it('should add a bid object for each bid', () => {
       // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
       adapter.callBids(bidderRequest);
