@@ -2,8 +2,12 @@ const bidmanager = require('../bidmanager');
 const bidfactory = require('../bidfactory');
 const utils = require('../utils');
 const ajax = require('../ajax').ajax;
+const url = require('../url');
 
 module.exports = function (win = window) {
+  const defaultHost = "localhost";
+  const defaultPath = "/dsh";
+  const defaultPort = "3333";
   const bidderCode = "stroeerCore";
 
   const validBidRequest = bid => bid.params && utils.isStr(bid.params.sid);
@@ -15,10 +19,10 @@ module.exports = function (win = window) {
   const isSecureWindow = () => win.location.protocol === "https:";
 
 
-  function buildUrl() {
+  function buildUrl({host: hostname = defaultHost, port = defaultPort, path: pathname = defaultPath}) {
     const protocol = isSecureWindow() ? 'https' : 'http';
     const cacheBuster = new Date().getTime();
-    return `${protocol}://localhost:3333/?t=${cacheBuster}`;
+    return `${url.format({protocol, hostname, port, pathname, search: {t:cacheBuster}})}`;
   }
 
 
@@ -119,7 +123,12 @@ module.exports = function (win = window) {
         }
       });
 
-      ajax(buildUrl(), ajaxResponseFn(validBidRequestById), JSON.stringify(requestBody), {withCredentials: true, contentType: 'application/json'});
+      if (requestBody.bids.length > 0) {
+        ajax(buildUrl(params.bids[0].params), ajaxResponseFn(validBidRequestById), JSON.stringify(requestBody), {
+          withCredentials: true,
+          contentType: 'application/json'
+        });
+      }
     }
   };
 };
