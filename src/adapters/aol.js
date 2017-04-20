@@ -234,7 +234,7 @@ const AolAdapter = function AolAdapter() {
       if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
         dropSyncCookies(response.ext.pixels);
       } else {
-        let formattedPixels = response.ext.pixels.replace(/<\/?script( text='javascript'|)?>/g, '');
+        let formattedPixels = response.ext.pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
 
         ad += '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
             'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' + formattedPixels +
