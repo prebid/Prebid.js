@@ -1,7 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter, isSrcdocSupported} from './utils';
+import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
@@ -304,12 +304,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         if ((doc === document && !utils.inIframe()) || adObject.mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
-          if (isSrcdocSupported(doc)) {
-            doc.defaultView.frameElement.srcdoc = ad;
-          } else {
-            doc.write(ad);
-            doc.close();
-          }
+          doc.write(ad);
+          doc.close();
           setRenderSize(doc, width, height);
         } else if (url) {
           doc.write(`<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`);

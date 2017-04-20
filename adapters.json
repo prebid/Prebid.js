@@ -12,6 +12,7 @@
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
     "audienceNetwork",
     "conversant",
     "districtmDMX",
@@ -91,6 +92,11 @@
       }
     },
     {
+      "beachfront": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
       "appnexus": {
         "alias": "matomy"
       }
@@ -105,7 +111,7 @@
       "appnexus": {
         "alias": "featureforward"
       }
-    },    
+    },
     {
       "appnexus": {
         "alias": "oftmedia"

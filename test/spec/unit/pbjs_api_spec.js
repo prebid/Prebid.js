@@ -11,6 +11,8 @@ import {
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
+var urlParse = require('url-parse');
+
 var prebid = require('src/prebid');
 var utils = require('src/utils');
 var bidmanager = require('src/bidmanager');
@@ -1433,6 +1435,27 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
       $$PREBID_GLOBAL$$._bidsReceived = [
         {
+          "bidderCode": "appnexusAstDummyName",
+          "width": 0,
+          "height": 0,
+          "statusMessage": "Bid returned empty or error response",
+          "adId": "233bcbee889d46d",
+          "requestId": 123456,
+          "responseTimestamp": 1462919238959,
+          "requestTimestamp": 1462919238910,
+          "cpm": 0,
+          "bidder": "appnexus",
+          "adUnitCode": "/19968336/header-bid-tag-0",
+          "timeToRespond": 49,
+          "pbLg": "0.00",
+          "pbMg": "0.00",
+          "pbHg": "0.00",
+          "pbAg": "0.00",
+          "pbDg": "0.00",
+          "pbCg": "",
+          "adserverTargeting": {}
+        },
+        {
           "bidderCode": "appnexusAst",
           "dealId" : "1234",
           "width": 300,
@@ -1441,7 +1464,8 @@ describe('Unit: Prebid Module', function () {
           "adId": "233bcbee889d46d",
           "creative_id": 29681110,
           "cpm": 10,
-          "adUrl": "http://lax1-ib.adnxs.com/ab?e=wqT_3QL8BKh8AgAAAwDWAAUBCMjAybkFEMLLiJWTu9PsVxjL84KE1tzG-kkgASotCQAAAQII4D8RAQcQAADgPxkJCQjwPyEJCQjgPykRCaAwuvekAji-B0C-B0gCUNbLkw5YweAnYABokUB4190DgAEBigEDVVNEkgUG8FKYAawCoAH6AagBAbABALgBAcABA8gBANABANgBAOABAPABAIoCOnVmKCdhJywgNDk0NDcyLCAxNDYyOTE5MjQwKTt1ZigncicsIDI5NjgxMTEwLDIeAPBskgLZASFmU21rZ0FpNjBJY0VFTmJMa3c0WUFDREI0Q2N3QURnQVFBUkl2Z2RRdXZla0FsZ0FZSk1IYUFCd0EzZ0RnQUVEaUFFRGtBRUJtQUVCb0FFQnFBRURzQUVBdVFFQUFBQUFBQURnUDhFQgkMTEFBNERfSkFRMkxMcEVUMU93XzJRFSggd1AtQUJBUFVCBSxASmdDaW9EVTJnV2dBZ0MxQWcBFgRDOQkIqERBQWdQSUFnUFFBZ1BZQWdQZ0FnRG9BZ0Q0QWdDQUF3RS6aAiUhV1FrbmI63AAcd2VBbklBUW8JXPCVVS7YAugH4ALH0wHqAh9odHRwOi8vcHJlYmlkLm9yZzo5OTk5L2dwdC5odG1sgAMAiAMBkAMAmAMFoAMBqgMAsAMAuAMAwAOsAsgDANgDAOADAOgDAPgDA4AEAJIEBC9qcHSYBACiBAoxMC4xLjEzLjM3qAQAsgQICAAQABgAIAC4BADABADIBADSBAoxMC4wLjg1Ljkx&s=1bf15e8cdc7c0c8c119614c6386ab1496560da39&referrer=http%3A%2F%2Fprebid.org%3A9999%2Fgpt.html",
+          "vastUrl": "http://www.simplevideoad.com/",
+          "descriptionUrl": "http://www.simplevideoad.com/",
           "responseTimestamp": 1462919239340,
           "requestTimestamp": 1462919238919,
           "bidder": "appnexus",
@@ -1487,12 +1511,31 @@ describe('Unit: Prebid Module', function () {
       expect(masterTagUrl).to.equal(adserverTag);
     });
 
+    it('should return original adservertag if there are no bids for the given placement code', () => {
+      var options = {
+        'adserver': 'dfp',
+        'code': 'one-without-bids'
+      };
+      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      expect(masterTagUrl).to.equal(adserverTag);
+    });
+
     it('should log error when google\'s parameters are missing in adserverTag', () => {
       var logErrorSpy = sinon.spy(utils, 'logError');
       var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
       var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
       assert.ok(logErrorSpy.calledOnce, true);
       utils.logError.restore();
+    });
+
+    it('should append parameters to the adserverTag', () => {
+      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      var masterTagUrlParsed = urlParse(masterTagUrl, true);
+      var masterTagQuery = masterTagUrlParsed.query;
+      var expectedTargetingQuery = 'hb_bidder=appnexus&hb_adid=233bcbee889d46d&hb_pb=10.00&hb_size=300x250&foobar=300x250&hb_deal_appnexusAst=1234';
+
+      expect(masterTagQuery).to.have.property('cust_params').and.to.equal(expectedTargetingQuery);
+      expect(masterTagQuery).to.have.property('description_url').and.to.equal('http://www.simplevideoad.com/');
     });
   });
 
