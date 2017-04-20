@@ -13,8 +13,8 @@ var QuantcastAdapter = function QuantcastAdapter() {
   let bidRequests = {};
 
   let returnEmptyBid = function() {
-      var bidsRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === BIDDER_CODE).bids;
-      if (bidsRequested.length > 0) {
+      var bidsRequested = utils.getBidRequest(BIDDER_CODE);
+      if (!utils.isEmpty(bidsRequested) && bidsRequested.length > 0) {
         let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
         bid.bidderCode = BIDDER_CODE;
         bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);

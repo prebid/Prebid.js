@@ -138,8 +138,7 @@ describe('quantcast adapter', () => {
 
     it('should not add bid when empty json response comes', () => {
       pbjs.handleQuantcastCB(JSON.stringify({}));
-      sinon.assert.calledOnce(addBidReponseStub);
-      expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
+      sinon.assert.notCalled(addBidReponseStub);
     });
 
     it('should add a bid object for each bid', () => {
