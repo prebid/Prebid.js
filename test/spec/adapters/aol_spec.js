@@ -22,7 +22,7 @@ let getDefaultBidResponse = () => {
       }]
     }]
   };
-}
+};
 
 let getDefaultBidRequest = () => {
   return {
@@ -430,9 +430,9 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager as invalid in case of no bid data', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid = [];
-        server.respondWith(JSON.stringify(bidResponseStub));
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid = [];
+        server.respondWith(JSON.stringify(bidResponse));
 
         adapter.callBids(getDefaultBidRequest());
         server.respond();
@@ -441,9 +441,9 @@ describe('AolAdapter', () => {
       });
 
       it('should have adId matching the bidId from bid request in case of no bid data', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid = [];
-        server.respondWith(JSON.stringify(bidResponseStub));
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid = [];
+        server.respondWith(JSON.stringify(bidResponse));
 
         adapter.callBids(getDefaultBidRequest());
         server.respond();
@@ -453,10 +453,10 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager as invalid in case of empty price', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid[0].bid[0].price = undefined;
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid[0].bid[0].price = undefined;
 
-        server.respondWith(JSON.stringify(bidResponseStub));
+        server.respondWith(JSON.stringify(bidResponse));
         adapter.callBids(getDefaultBidRequest());
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
@@ -464,34 +464,34 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager with attributes from pubapi response', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid[0].bid[0].crid = '12345';
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid[0].bid[0].crid = '12345';
 
-        server.respondWith(JSON.stringify(bidResponseStub));
+        server.respondWith(JSON.stringify(bidResponse));
         adapter.callBids(getDefaultBidRequest());
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.ad).to.equal("<script>logInfo('ad');</script>");
-        expect(bidResponse.cpm).to.equal(0.09);
-        expect(bidResponse.width).to.equal(728);
-        expect(bidResponse.height).to.equal(90);
-        expect(bidResponse.creativeId).to.equal('12345');
-        expect(bidResponse.pubapiId).to.equal('245730051428950632');
+        var addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(addedBidResponse.ad).to.equal("<script>logInfo('ad');</script>");
+        expect(addedBidResponse.cpm).to.equal(0.09);
+        expect(addedBidResponse.width).to.equal(728);
+        expect(addedBidResponse.height).to.equal(90);
+        expect(addedBidResponse.creativeId).to.equal('12345');
+        expect(addedBidResponse.pubapiId).to.equal('245730051428950632');
       });
 
       it('should be added to bidmanager including pixels from pubapi response', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.ext = {
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.ext = {
           pixels: "<script>document.write('<img src=\"pixel.gif\">');</script>"
         };
 
-        server.respondWith(JSON.stringify(bidResponseStub));
+        server.respondWith(JSON.stringify(bidResponse));
         adapter.callBids(getDefaultBidRequest());
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.ad).to.equal(
+        var addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(addedBidResponse.ad).to.equal(
           "<script>logInfo('ad');</script>" +
           "<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){" +
           "parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;" +
@@ -500,27 +500,27 @@ describe('AolAdapter', () => {
       });
 
       it('should be added to bidmanager including dealid from pubapi response', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid[0].bid[0].dealid = '12345';
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid[0].bid[0].dealid = '12345';
 
-        server.respondWith(JSON.stringify(bidResponseStub));
+        server.respondWith(JSON.stringify(bidResponse));
         adapter.callBids(getDefaultBidRequest());
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.dealId).to.equal('12345');
+        var addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(addedBidResponse.dealId).to.equal('12345');
       });
 
       it('should be added to bidmanager including encrypted price from pubapi response', () => {
-        let bidResponseStub = getDefaultBidResponse();
-        bidResponseStub.seatbid[0].bid[0].ext.encp = 'a9334987';
-        server.respondWith(JSON.stringify(bidResponseStub));
+        let bidResponse = getDefaultBidResponse();
+        bidResponse.seatbid[0].bid[0].ext.encp = 'a9334987';
+        server.respondWith(JSON.stringify(bidResponse));
 
         adapter.callBids(getDefaultBidRequest());
         server.respond();
         expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(bidResponse.cpm).to.equal('a9334987');
+        let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        expect(addedBidResponse.cpm).to.equal('a9334987');
       });
 
       it('should not render pixels on pubapi response when no parameter is set', () => {
