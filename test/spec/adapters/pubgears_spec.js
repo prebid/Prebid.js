@@ -215,7 +215,7 @@ describe('PubGearsAdapter', () => {
 			expect(bidmanager.addBidResponse.calledOnce).to.be.ok
 		})
 
-		it('should not completely fucking fail', () => {
+		it('should send correct bid response object when receiving onBidResponse event', () => {
 			expect(bidmanager.addBidResponse.calledOnce).to.not.be.ok
 			var bid = {
 					bidder: "pubgears",
