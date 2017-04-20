@@ -545,10 +545,6 @@ export function getBidRequest(id) {
   return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
-export function getBidRequestByTid(tid, bidderCode) {
-  return $$PREBID_GLOBAL$$._bidsRequested.filter(bidset => bidset.tid === tid && bidset.bidderCode === bidderCode)[0].bids;
-}
-
 export function getKeys(obj) {
   return Object.keys(obj);
 }

@@ -33,7 +33,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           mediaType: adUnit.mediaType,
           transactionId : adUnit.transactionId,
           sizes: sizes,
-          bidId: utils.getUniqueIdentifierStr(),
+          bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
           bidderRequestId,
           requestId
         });
@@ -72,7 +72,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       adUnit.sizes = transformHeightWidth(adUnit);
       adUnit.bidders = adUnit.bids.filter((bid) => {
         return adaptersServerSide.includes(bid.bidder);
+      }).map((bid) => {
+        bid.bid_id = utils.getUniqueIdentifierStr();
+        return bid;
       });
+      //we need to do this because request payload to server has key bidders and not bids.
       adUnit.bids = adUnit.bidders;
     });
 

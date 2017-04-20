@@ -41,7 +41,7 @@ function S2SAdapter() {
           });
         }
         result.bids.forEach(bidObj => {
-          var bidRequest = utils.getBidRequestByTid(result.tid, bidObj.bidder);
+          var bidRequest = utils.getBidRequest(bidObj.bid_id);
           let cpm = bidObj.price;
           let status;
           if (cpm !== 0) {
@@ -50,7 +50,7 @@ function S2SAdapter() {
             status = STATUS.NO_BID;
           }
 
-          let bidObject = bidfactory.createBid(status, bidRequest[0]);
+          let bidObject = bidfactory.createBid(status, bidRequest);
           bidObject.creative_id = bidObj.creative_id;
           bidObject.bidderCode = bidObj.bidder;
           bidObject.cpm = cpm;
