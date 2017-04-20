@@ -93,6 +93,32 @@ describe('quantcast adapter', () => {
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
       expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
     });
+
+    it('should call server once when size is passed as string', () => {
+      bidderRequest.bids[0].sizes = "728x90";
+      adapter.callBids(bidderRequest);
+      sinon.assert.calledOnce(ajaxStub);
+
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
+      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+    });
+
+    it('should call server twice when sizes are passed as a comma-separated string', () => {
+      bidderRequest.bids[0].sizes = "728x90,360x240";
+      adapter.callBids(bidderRequest);
+      sinon.assert.calledTwice(ajaxStub);
+
+      expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
+      expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+
+      expect(ajaxStub.secondCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
+      expect(ajaxStub.secondCall.args[1]).to.exist.and.to.be.a('function');
+      expect(ajaxStub.secondCall.args[3]).to.eql({method : 'POST'});
+    });
+
+
   });
 
   describe('handleQuantcastCB add bids to the manager', () => {

@@ -76,12 +76,10 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
     publisherId = '' + bids[0].params.publisherId;
     utils._each(bids, function(bid) {
-      // make sure the "sizes" are an array of arrays
-      if (!(bid.sizes[0] instanceof Array)) {
-        bid.sizes = [bid.sizes];
-      }
-      utils._each(bid.sizes, function(size) {
-        let key = bid.placementCode + "-" + size[0] + 'x' + size[1];
+      let bidSizes = utils.parseSizesInput(bid.sizes);
+      utils._each(bidSizes, function(bidSizeStr) {
+        let key = bid.placementCode + "-" + bidSizeStr;
+        let size = bidSizeStr.split('x');
         bidRequests[key] = bidRequests[key] || {
           'publisherId' : publisherId,
           'requestId' : params.requestId,
