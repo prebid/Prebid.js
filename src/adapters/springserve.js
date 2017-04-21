@@ -70,7 +70,7 @@ SpringServeAdapter = function SpringServeAdapter() {
       //var requestObj = bidmanager.getPlacementIdByCBIdentifer(responseBid.impid);
       var requestBids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'springserve');
       if (requestBids && requestBids.bids.length > 0) {
-        requestBids = requestBids.bids.filter(bid => bid.params && bid.params.impId === +responseBid.impid);
+        requestBids = requestBids.bids.filter(bid => bid.params && bid.params.impId === responseBid.impid);
       } else {
         requestBids = [];
       }

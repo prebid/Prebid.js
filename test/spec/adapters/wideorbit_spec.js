@@ -489,6 +489,25 @@ describe('wideorbit adapter tests', function () {
             stubAddBidResponse.restore();
         });
 
+        it('should do nothing when type is set to unrecognized type', function () {
+
+            var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+            var response = {
+                UserMatchings: [
+                    {
+                        Type: 'unrecognized',
+                        Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+                    }
+                ],
+                Placements: placements
+            };
+
+            $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+
+            stubAddBidResponse.restore();
+        });
+
     });
 
 });

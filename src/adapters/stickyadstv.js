@@ -1,9 +1,11 @@
+var Adapter = require('./adapter.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
 
 var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 
+  var STICKYADS_BIDDERCODE = 'stickyadstv';
   var MUSTANG_URL = "//cdn.stickyadstv.com/mustang/mustang.min.js";
   var INTEXTROLL_URL = "//cdn.stickyadstv.com/prime-time/intext-roll.min.js";
   var SCREENROLL_URL = "//cdn.stickyadstv.com/prime-time/screen-roll.min.js";
@@ -225,7 +227,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     if(valid && priceData) {
       // valid bid response
       bidObject = bidfactory.createBid(1, bidRequest);
-      bidObject.bidderCode = 'stickyadstv';
+      bidObject.bidderCode = bidRequest.bidder;
       bidObject.cpm = priceData.price;
       bidObject.currencyCode = priceData.currency;
       bidObject.ad = html;
@@ -236,7 +238,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     else {
       // invalid bid response
       bidObject = bidfactory.createBid(2, bidRequest);
-      bidObject.bidderCode = 'stickyadstv';
+      bidObject.bidderCode = bidRequest.bidder;
     }
     return bidObject;
   }
@@ -277,16 +279,19 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   };
 
 
-  // Export the callBids function, so that prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return {
+  return Object.assign(Adapter.createNew(STICKYADS_BIDDERCODE), {
     callBids: _callBids,
     formatBidObject: formatBidObject,
     formatAdHTML: formatAdHTML,
     getBiggerSize:getBiggerSize,
     getBid:getBid,
-    getTopMostWindow:getTopMostWindow
-  };
+    getTopMostWindow:getTopMostWindow,
+    createNew: StickyAdsTVAdapter.createNew //enable alias feature (to be used for freewheel-ssp alias)
+  });
+};
+
+StickyAdsTVAdapter.createNew = function() {
+  return new StickyAdsTVAdapter();
 };
 
 module.exports = StickyAdsTVAdapter;

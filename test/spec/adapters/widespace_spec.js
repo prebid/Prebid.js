@@ -101,6 +101,8 @@ describe('WidespaceAdapter', () => {
       it('should include required request parameters', () => {
         const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
         endpointRequest.to.include('sid');
+        endpointRequest.to.include('hb');
+        endpointRequest.to.include('hb.ver');
         endpointRequest.to.include('hb.callbackUid');
         endpointRequest.to.include('hb.callback');
         endpointRequest.to.include('hb.sizes');
