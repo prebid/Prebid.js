@@ -21,8 +21,7 @@ module.exports = function (win = window) {
 
   function buildUrl({host: hostname = defaultHost, port = defaultPort, path: pathname = defaultPath}) {
     const protocol = isSecureWindow() ? 'https' : 'http';
-    const cacheBuster = new Date().getTime();
-    return `${url.format({protocol, hostname, port, pathname, search: {t:cacheBuster}})}`;
+    return `${url.format({protocol, hostname, port, pathname})}`;
   }
 
 
