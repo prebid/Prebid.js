@@ -48,7 +48,7 @@ describe("PulsePoint Lite Adapter Tests", () => {
     pulsepointAdapter.callBids(slotConfigs);
     var call = parseURL(ajaxStub.firstCall.args[0]).search;
     //slot 1
-    expect(call.cp).to.equal('p10000');
+    // expect(call.cp).to.equal('p10000');
     expect(call.ct).to.equal('t10000');
     expect(call.cf).to.equal('300x250');
     expect(call.ca).to.equal('BID');
