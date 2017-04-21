@@ -17,8 +17,6 @@ function PulsePointAdapter() {
     bidderRequest.bids.forEach(bidRequest => {
       try {
         var params = Object.assign({}, environment(), bidRequest.params);
-        console.log("### PULSE POINT PARAMS");
-        console.log(params);
         var url = bidUrl + Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
         ajax(url, (bidResponse) => {
           bidResponseAvailable(bidRequest, bidResponse);
