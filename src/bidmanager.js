@@ -99,13 +99,20 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bid) {
-
+    const priceAdjustments = {
+      'rubicon': 0.825
+    };
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+    const cpm = priceAdjustments[bid.bidderCode] ? Math.round((Number(bid.cpm) * priceAdjustments[bid.bidderCode]) * 100) / 100: bid.cpm;
+    if (priceAdjustments[bid.bidderCode]) {
+      console.log(bid.cpm);
+      console.log(cpm);
+    }
     Object.assign(bid, {
       requestId: requestId,
       responseTimestamp: timestamp(),
       requestTimestamp: start,
-      cpm: bid.cpm || 0,
+      cpm: cpm || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
@@ -114,7 +121,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
-
       exports.executeCallback(timedOut);
     }
 
@@ -291,6 +297,7 @@ function processCallbacks(callbackQueue, singleAdUnitCode) {
       const bids = [$$PREBID_GLOBAL$$._bidsReceived
                       .filter(adUnitsFilter.bind(this, adUnitCodes))
                       .reduce(groupByPlacement, {})];
+
       callback.apply($$PREBID_GLOBAL$$, bids);
     });
   }
@@ -376,7 +383,19 @@ function getStandardBidderSettings() {
         }, {
           key: 'hb_pb',
           val: function (bidResponse) {
-            return bidResponse.pbHg;
+            if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+              return bidResponse.pbAg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+              return bidResponse.pbDg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+              return bidResponse.pbLg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+              return bidResponse.pbMg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+              return bidResponse.pbHg;
+            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+              return bidResponse.pbCg;
+            }
           }
         }, {
           key: 'hb_size',
