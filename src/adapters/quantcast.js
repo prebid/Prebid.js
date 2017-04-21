@@ -12,15 +12,16 @@ var QuantcastAdapter = function QuantcastAdapter() {
   const DEFAULT_BID_FLOOR = 0.0000000001;
   let bidRequests = {};
 
-  let returnEmptyBid = function() {
-      var bidsRequested = utils.getBidRequest(BIDDER_CODE);
-      if (!utils.isEmpty(bidsRequested) && bidsRequested.length > 0) {
-        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidsRequested[0]);
+  let returnEmptyBid = function(bidId) {
+      var bidRequested = utils.getBidRequest(bidId);
+      if (!utils.isEmpty(bidRequested)) {
+        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequested);
         bid.bidderCode = BIDDER_CODE;
-        bidmanager.addBidResponse(bidsRequested[0].placementCode, bid);
+        bidmanager.addBidResponse(bidRequested.placementCode, bid);
       }
       return;
     };
+
 
   //expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
@@ -32,20 +33,21 @@ var QuantcastAdapter = function QuantcastAdapter() {
       response = JSON.parse(responseText);
     } catch(e) {
       // Malformed JSON
-      utils.logError("Malformed JSON received from server ");
-      return returnEmptyBid();
+      utils.logError("Malformed JSON received from server - can't do anything here");
+      return;
     }
 
     if(response === null || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
-      return returnEmptyBid();
+      utils.logError("Sub-optimal JSON received from server - can't do anything here");
+      return;
     }
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
       let key = seatbid.placementCode + "-" + seatbid.width + 'x' + seatbid.height;
       var request = bidRequests[key];
-      if(request === null) {
-        return returnEmptyBid();
+      if(request === null || request === undefined) {
+        return returnEmptyBid(seatbid.placementCode);
       }
       // This line is required since this is the field
       // that bidfactory.createBid looks for
@@ -77,29 +79,30 @@ var QuantcastAdapter = function QuantcastAdapter() {
     publisherId = '' + bids[0].params.publisherId;
     utils._each(bids, function(bid) {
       let bidSizes = utils.parseSizesInput(bid.sizes);
-      utils._each(bidSizes, function(bidSizeStr) {
-        let key = bid.placementCode + "-" + bidSizeStr;
-        let size = bidSizeStr.split('x');
-        bidRequests[key] = bidRequests[key] || {
-          'publisherId' : publisherId,
-          'requestId' : params.requestId,
-          'site' : {
-            'page' : loc.href,
-            'referrer' : referrer,
-            'domain' : domain,
-          },
-          'imp' : [{
+      let size = bidSizes[0].split('x');
+      let key = bid.bidId;
 
-            'banner' : {
-              'battr' : bid.params.battr,
-              'width' : size[0],
-              'height' : size[1],
-            },
-            'placementCode' : bid.placementCode,
-            'bidFloor' : bid.params.bidFloor || DEFAULT_BID_FLOOR,
-          }]
-        };
-      });
+      bidRequests[key] = bidRequests[key] || {
+        'publisherId' : publisherId,
+        'requestId' : bid.bidId,
+        'bidId' : bid.bidId,
+        'site' : {
+          'page' : loc.href,
+          'referrer' : referrer,
+          'domain' : domain,
+        },
+        'imp' : [{
+
+          'banner' : {
+            'battr' : bid.params.battr,
+            'width' : size[0],
+            'height' : size[1],
+            'sizes' : bidSizes,
+          },
+          'placementCode' : bid.placementCode,
+          'bidFloor' : bid.params.bidFloor || DEFAULT_BID_FLOOR,
+        }]
+      };
 
       utils._each(bidRequests, function (bidRequest) {
         ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
