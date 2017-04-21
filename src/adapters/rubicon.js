@@ -275,18 +275,11 @@ function RubiconAdapter() {
 
   let _renderCreative = (script, impId, adId) => {
 
-    console.log('#### STANZA PREBID GLOBALS IN RUBICON ADAPTER');
-    console.log($$STANZA_PREBID_GLOBAL$$);
-    if ($$STANZA_PREBID_GLOBAL$$[adId]) {
-
-    }
-
     return `<html>
       <head><script type='text/javascript'>inDapIF=true;</script></head>
       <body style='margin : 0; padding: 0;'>
       <!-- Rubicon Project Ad Tag -->
       <div data-rp-impression-id='${impId}'>
-      <script type='text/javascript'>console.log('### SENDING IMPRESSION REQUEST TO STANZA'); var request = new XMLHttpRequest();request.open('POST', '/api/track/header-bidding/test');request.setRequestHeader('Content-Type', 'application/json');request.send(JSON.stringify({chodemonkey: '${adId}'}));</script>
       <script type='text/javascript'>${script}</script>
       </div>
       </body>
@@ -323,7 +316,6 @@ function RubiconAdapter() {
 
       //store bid response
       //bid status is good (indicating 1)
-      console.log(ad);
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
       bid.creative_id = ad.ad_id;
       bid.bidderCode = bidRequest.bidder;
@@ -402,4 +394,3 @@ RubiconAdapter.createNew = function() {
 };
 
 module.exports = RubiconAdapter;
-
