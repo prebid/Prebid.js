@@ -101,7 +101,7 @@ module.exports = function (win = window) {
 
   return {
     callBids: function (params) {
-      const requestBody = {bids:[]};
+      const requestBody = {bids:[], ref: getPageReferer(), ssl: isSecureWindow(), mpa: isMainPageAccessible()};
       const validBidRequestById = {};
 
       params.bids.forEach(bidRequest => {
@@ -110,9 +110,6 @@ module.exports = function (win = window) {
             bid: bidRequest.bidId,
             sid: bidRequest.params.slotId,
             siz: bidRequest.sizes,
-            ref: getPageReferer(),
-            ssl: isSecureWindow(),
-            mpa: isMainPageAccessible(),
             viz: elementInView(bidRequest.placementCode)
           });
           validBidRequestById[bidRequest.bidId] = bidRequest;
