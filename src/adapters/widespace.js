@@ -5,7 +5,7 @@ const utils = require('../utils.js');
 const adloader = require('../adloader.js');
 const bidmanager = require('../bidmanager.js');
 const bidfactory = require('../bidfactory.js');
-const WS_ADAPTER_VERSION = '1.0.1';
+const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
   let useSSL = 'https:' === document.location.protocol,
