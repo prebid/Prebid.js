@@ -21,8 +21,8 @@ function S2SAdapter() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest, config) {
     bidRequest.ad_units.forEach(adUnit => {
-      adUnit.bidders.forEach(bidder => {
-        bidRequests[bidder.bid_id] = utils.getBidRequest(bidder.bid_id);
+      adUnit.bids.forEach(bidder => {
+        bidRequests[bidder.bidder] = utils.getBidRequest(bidder.bid_id);
       });
     });
 
@@ -39,17 +39,22 @@ function S2SAdapter() {
     try {
       result = JSON.parse(response);
 
-      //TODO: addBidResponse for no bid
       if(result.status === 'OK') {
         if(result.bidder_status) {
           result.bidder_status.forEach(bidder => {
+            if(bidder.no_bid || bidder.no_cookie) {
+              let bidRequest = bidRequests[bidder.bidder];
+              let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
+              bidObject.bidderCode = bidRequest.bidder;
+              bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
+            }
             if(bidder.no_cookie) {
-              queueSync({bidder: bidder.bidder, url : bidder.usersync_url});
+              queueSync({bidder: bidder.bidder, url : bidder.usersync.url, type : bidder.usersync.type});
             }
           });
         }
         result.bids.forEach(bidObj => {
-          var bidRequest = utils.getBidRequest(bidObj.bid_id);
+          let bidRequest = utils.getBidRequest(bidObj.bid_id);
           let cpm = bidObj.price;
           let status;
           if (cpm !== 0) {

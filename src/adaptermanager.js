@@ -70,14 +70,12 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     //filter out client side bids
     adUnitsCopy.forEach((adUnit) => {
       adUnit.sizes = transformHeightWidth(adUnit);
-      adUnit.bidders = adUnit.bids.filter((bid) => {
+      adUnit.bids = adUnit.bids.filter((bid) => {
         return adaptersServerSide.includes(bid.bidder);
       }).map((bid) => {
         bid.bid_id = utils.getUniqueIdentifierStr();
         return bid;
       });
-      //we need to do this because request payload to server has key bidders and not bids.
-      adUnit.bids = adUnit.bidders;
     });
 
     let tid = utils.generateUUID();
@@ -107,7 +105,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       ad_units : adUnitsCopy
     };
     let s2sAdapter = _bidderRegistry['s2s']; //jshint ignore:line
-    utils.logMessage(`CALLING S2S HEADER BIDDER ==== ${adaptersServerSide.join(',')}`);
+    utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
     s2sAdapter.callBids(requestJson, _s2sConfig);
   }
 

@@ -464,6 +464,27 @@ exports.insertPixel = function (url) {
     catch (e) {}
   }
 };
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ */
+exports.insertCookieSyncIframe = function(url) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url);
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe =  div.firstChild;
+
+  try{
+    let elToAppend = document.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(iframe, elToAppend.firstChild);
+    }
+  }
+  catch (e) {}
+};
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested

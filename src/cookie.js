@@ -26,6 +26,7 @@ const queue = [];
 function fireSyncs() {
   //todo - check type and handle properly
   queue.forEach(obj => {
+    //TODO: i think now with new response we will remove this logic
     if(obj.url) {
       utils.insertPixel(obj.url);
       return;
@@ -41,9 +42,12 @@ function fireSyncs() {
         contentType: 'text/plain',
         withCredentials : true
       });
-    }
-    else{
-      utils.insertPixel(requestUrl);
+    } else {
+      if(obj.type === 'iframe') {
+        utils.insertCookieSyncIframe(obj.url);
+      } else {
+        utils.insertPixel(requestUrl);
+      }
     }
   });
 }
@@ -53,8 +57,8 @@ function fireSyncs() {
  * @param  {String} bidder bidder code
  * @param  {String} url    optional URL for invoking cookie sync if provided.
  */
-cookie.queueSync = function ({bidder, url}) {
-  queue.push({bidder, url});
+cookie.queueSync = function ({bidder, url, type}) {
+  queue.push({bidder, url, type});
 };
 
 /**
