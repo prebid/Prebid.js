@@ -42,14 +42,14 @@ If you are only sending the winning bid to the ad server, set up your keys like 
 | Key         | Value (string) |
 |-------------+----------------|
 | `hb_pb`     | `0.1`          |
-| `hb_bidder` | `"appnexus"`   |
+| `hb_bidder` | `"rubicon"`   |
 
-Otherwise, if you are [sending all bids to the ad server]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids), you'll have to create a key for each bidder (e.g., `hb_pb_appnexus`, `hb_pb_partner1`, `hb_pb_partner2`, etc.), and all of the price bucket values for that key.
+Otherwise, if you are [sending all bids to the ad server]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.enableSendAllBids), you'll have to create a key for each bidder (e.g., `hb_pb_rubicon`, `hb_pb_partner1`, `hb_pb_partner2`, etc.), and all of the price bucket values for that key.
 
 {: .table .table-bordered .table-striped }
 | Key              | Value (string) |
 |------------------+----------------|
-| `hb_pb_appnexus` | `0.1`          |
+| `hb_pb_rubicon` | `0.1`          |
 
 Depending on the price granularity you want, you may find one of the following CSV files helpful.  Each file has the buckets for that granularity level predefined.  You can avoid manually setting up key-value targeting by uploading the appropriate CSV file on the [key-values screen](https://wiki.appnexus.com/x/-PQdBQ):
 
@@ -79,7 +79,7 @@ Follow the creative setup instructions in [Add Creatives](https://wiki.appnexus.
 - The creative content should be the HTML and JavaScript shown below.
 
 {: .alert.alert-success :}
-If you are using "send all bids" mode, the macro in the call to `renderAd` below should match the header bidding partner associated with that creative, e.g., `'#{HB_ADID_APPNEXUS}'`, `'#{HB_ADID_PARTNER}'`, etc.
+If you are using "send all bids" mode, the macro in the call to `renderAd` below should match the header bidding partner associated with that creative, e.g., `'#{HB_ADID_RUBICON}'`, `'#{HB_ADID_PARTNER}'`, etc.
 
 {% highlight html %}
 <script>
