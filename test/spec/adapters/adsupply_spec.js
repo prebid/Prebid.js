@@ -25,6 +25,7 @@ describe('adsupply adapter tests', function () {
 				bidId: 'bidId1',
 				params: {
 					zoneId: 111,
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
 				}
@@ -34,6 +35,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId2',
 				params: {
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					zoneId: 222,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
@@ -57,6 +59,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId1',
 				params: {
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					zoneId: '111',
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
@@ -67,6 +70,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId2',
 				params: {
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
 				}
@@ -91,6 +95,7 @@ describe('adsupply adapter tests', function () {
 				params: {
 					zoneId: 111,
 					siteId: '',
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					endpointUrl: 'engine.4dsply.com'
 				}
 			},
@@ -100,6 +105,7 @@ describe('adsupply adapter tests', function () {
 				bidId: 'bidId2',
 				params: {
 					zoneId: 222,
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					endpointUrl: 'engine.4dsply.com'
 				}
 			}]
@@ -121,6 +127,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId1',
 				params: {
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					zoneId: 111,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: ''
@@ -131,8 +138,43 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId2',
 				params: {
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					zoneId: 222,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
+				}
+			}]
+		};
+
+		adsupplyAdapter.callBids(request);
+
+		sinon.assert.notCalled(stubLoadScript);
+
+		adloader.loadScript.restore();
+	});
+
+	it('clientId is empty and not specified', function () {
+		let stubLoadScript = sinon.stub(adloader, 'loadScript');
+
+		let request = {
+			bids: [{
+				placementCode: "pc1",
+				bidder: "adsupply",
+				bidId: 'bidId1',
+				params: {
+					clientId: '',
+					zoneId: 111,
+					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
+					endpointUrl: 'engine.4dsply.com'
+				}
+			},
+			{
+				placementCode: "pc2",
+				bidder: "adsupply",
+				bidId: 'bidId2',
+				params: {
+					zoneId: 222,
+					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
+					endpointUrl: 'engine.4dsply.com'
 				}
 			}]
 		};
@@ -162,7 +204,7 @@ describe('adsupply adapter tests', function () {
 		adloader.loadScript.restore();
 	});
 
-	it('Parameters added to the reuest url', function () {
+	it('Parameters added to the request url', function () {
 		let stubLoadScript = sinon.stub(adloader, 'loadScript');
 
 		let request = {
@@ -172,6 +214,7 @@ describe('adsupply adapter tests', function () {
 				bidId: 'bidId1',
 				params: {
 					zoneId: 111,
+					clientId: 'g32db6906-55f4-42b1-a7d2-7dfaddce96fd',
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
 				}
@@ -185,13 +228,13 @@ describe('adsupply adapter tests', function () {
 		expect(requestUrl).to.contain('0ab16161-a1de-4683-8837-c420bd4387c0');
 		expect(requestUrl).to.contain('engine.4dsply.com');
 		expect(requestUrl).to.contain('&hbt=1');
+		expect(requestUrl).to.contain('g32db6906-55f4-42b1-a7d2-7dfaddce96fd');
 
 		adloader.loadScript.restore();
 	});
 
 	it('Response handler invalid data', function () {
 		let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-		window.b367CB268B1094004A3689751E7AC568F = {};
 
 		// adapter needs to be called, in order for the stub to register.
 		new AdSupplyAdapter();
@@ -202,6 +245,7 @@ describe('adsupply adapter tests', function () {
 		// bidRequest object is not found
 		pbjs.adSupplyResponseHandler('bidId1');
 
+		let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
 		//Zone property is not found
 		let bidderRequest = {
 			bidderCode: 'adsupply',
@@ -210,6 +254,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId1',
 				params: {
+					clientId: clientId,
 					zoneId: 111,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
@@ -220,8 +265,8 @@ describe('adsupply adapter tests', function () {
 		pbjs.adSupplyResponseHandler('bidId1');
 
 		//Media is not found
-		window.b367CB268B1094004A3689751E7AC568F = window.b367CB268B1094004A3689751E7AC568F || {};
-		window.b367CB268B1094004A3689751E7AC568F['b111'] = window.b367CB268B1094004A3689751E7AC568F['b111'] || {};
+		window[clientId] = window[clientId] || {};
+		window[clientId]['b111'] = window[clientId]['b111'] || {};
 		pbjs.adSupplyResponseHandler('bidId1');
 
 		sinon.assert.notCalled(stubAddBidResponse);
@@ -235,6 +280,7 @@ describe('adsupply adapter tests', function () {
 		// adapter needs to be called, in order for the stub to register.
 		new AdSupplyAdapter();
 
+		let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
 		//Zone property is not found
 		let bidderRequest = {
 			bidderCode: 'adsupply',
@@ -243,6 +289,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId1',
 				params: {
+					clientId: clientId,
 					zoneId: 111,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
@@ -252,8 +299,9 @@ describe('adsupply adapter tests', function () {
 
 		pbjs._bidsRequested.push(bidderRequest);
 
-		window.b367CB268B1094004A3689751E7AC568F['b111'] = window.b367CB268B1094004A3689751E7AC568F['b111'] || {};
-		window.b367CB268B1094004A3689751E7AC568F['b111'].Media = { width: 300 };
+		window[clientId] = window[clientId] || {};
+		window[clientId]['b111'] = window[clientId]['b111'] || {};
+		window[clientId]['b111'].Media = { width: 300 };
 		pbjs.adSupplyResponseHandler('bidId1');
 
 		sinon.assert.calledOnce(stubAddBidResponse);
@@ -273,6 +321,7 @@ describe('adsupply adapter tests', function () {
 		// adapter needs to be called, in order for the stub to register.
 		new AdSupplyAdapter();
 
+		let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
 		//Zone property is not found
 		let bidderRequest = {
 			bidderCode: 'adsupply',
@@ -281,6 +330,7 @@ describe('adsupply adapter tests', function () {
 				bidder: "adsupply",
 				bidId: 'bidId1',
 				params: {
+					clientId: clientId,
 					zoneId: 111,
 					siteId: '0ab16161-a1de-4683-8837-c420bd4387c0',
 					endpointUrl: 'engine.4dsply.com'
@@ -290,8 +340,9 @@ describe('adsupply adapter tests', function () {
 
 		pbjs._bidsRequested.push(bidderRequest);
 
-		window.b367CB268B1094004A3689751E7AC568F['b111'] = window.b367CB268B1094004A3689751E7AC568F['b111'] || {};
-		window.b367CB268B1094004A3689751E7AC568F['b111'].Media = { Width: 300, Height: 250, Tag: 'Tag', Ecpm: 0.0012 };
+		window[clientId] = window[clientId] || {};
+		window[clientId]['b111'] = window[clientId]['b111'] || {};
+		window[clientId]['b111'].Media = { Width: 300, Height: 250, Url: '/Redirect.engine', Ecpm: 0.0012 };
 		pbjs.adSupplyResponseHandler('bidId1');
 
 		sinon.assert.calledOnce(stubAddBidResponse);
