@@ -10,14 +10,6 @@ describe('Publisher API', function () {
       assert.isObject($$PREBID_GLOBAL$$);
     });
 
-    it('should have a global variable $$PREBID_GLOBAL$$.que as an array', function () {
-      assert.isArray($$PREBID_GLOBAL$$.que);
-    });
-
-    it('should have $$PREBID_GLOBAL$$.que.push function', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.que.push);
-    });
-
     it('should have a global variable $$PREBID_GLOBAL$$.queue as an array', function () {
       assert.isArray($$PREBID_GLOBAL$$.queue);
     });
