@@ -95,7 +95,6 @@ function WidespaceAdapter() {
       }
     }
 
-
     function verifySize(bid, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
         if (bid.width === validSizes[j][0] &&
