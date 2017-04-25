@@ -73,9 +73,9 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 /**
  * Command queue that functions will execute once prebid.js is loaded
  * @param  {function} cmd Anonymous function to execute
- * @alias module:$$PREBID_GLOBAL$$.que.push
+ * @alias module:$$PREBID_GLOBAL$$.queue.push
  */
-$$PREBID_GLOBAL$$.que.push = function (cmd) {
+$$PREBID_GLOBAL$$.queue.push = function (cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -83,16 +83,16 @@ $$PREBID_GLOBAL$$.que.push = function (cmd) {
       utils.logError('Error processing command :' + e.message);
     }
   } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function');
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
   }
 };
 
-function processQue() {
-  for (var i = 0; i < $$PREBID_GLOBAL$$.que.length; i++) {
-    if (typeof $$PREBID_GLOBAL$$.que[i].called === objectType_undefined) {
+function processQueue() {
+  for (var i = 0; i < $$PREBID_GLOBAL$$.queue.length; i++) {
+    if (typeof $$PREBID_GLOBAL$$.queue[i].called === objectType_undefined) {
       try {
-        $$PREBID_GLOBAL$$.que[i].call();
-        $$PREBID_GLOBAL$$.que[i].called = true;
+        $$PREBID_GLOBAL$$.queue[i].call();
+        $$PREBID_GLOBAL$$.queue[i].called = true;
       }
       catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
@@ -704,5 +704,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
-$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
-processQue();
+$$PREBID_GLOBAL$$.queue.push(() => listenMessagesFromCreative());
+processQueue();
