@@ -52,6 +52,29 @@ Note: we recommend disabling `enableDistribution` if you are using more than 4 b
 
 See [this link](https://developers.google.com/analytics/devguides/collection/protocol/v1/limits-quotas) for details on GA's throttling.
 
+##### Sampling
+
+To track a lower volume of traffic in Google Analytics, you may specify a sample rate in the options. For example, to set up a 5% sample rate:
+
+{% highlight js %}
+pbjs.que.push(function() {
+    pbjs.enableAnalytics({
+        provider: 'ga',
+        options: {
+            global: 'ga'
+            enableDistribution: false,
+            sampling: 0.05
+        }
+    });
+});
+{% endhighlight %}
+
+At the start of each page, Prebid chooses a random number between 0 and 1 
+and logs the analytics only if the number is less than the supplied sample rate, which defaults to 1 (100%).
+Of course a smaller sample rate means that reported numbers will be correspondingly lower, so a scaling factor in reports may be useful, but is outside the scope of Prebid.
+
+It should also be noted that all events on a given page are subject to the same analytics behavior. This means that all requests, responses, and renders on a page are either logged or not logged.
+
 ### How Prebid.js uses GA's Events
 
 Prebid.js sends out GA-compatible [Events](https://support.google.com/analytics/answer/1033068). (For more information, see the GA docs on [Event Tracking](https://developers.google.com/analytics/devguides/collection/analyticsjs/events)).
