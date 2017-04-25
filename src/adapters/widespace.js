@@ -44,10 +44,12 @@ function WidespaceAdapter() {
 
       requestURL += '#';
 
-      // Append all params to requestURL
-      Object.keys(params).forEach(key => {
+      var paramKeys = Object.keys(params);
+
+      for (var k = 0; k < paramKeys.length; k++) {
+        var key = paramKeys[k];
         requestURL += key + '=' + params[key] + '&';
-      });
+      }
 
       // Expose the callback
       $$PREBID_GLOBAL$$.widespaceHandleCB = window[callbackName] = handleCallback;
