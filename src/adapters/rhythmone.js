@@ -194,7 +194,7 @@ module.exports = function(bidManager, global, loader){
       },
       ao = document.location.ancestorOrigins,
       q = [],
-      u = "//te.renetl.com/hbperf?",
+      u = "//hbevents.1rx.io/hbperf?",
       i = new Image();
     
     if(ao && ao.length > 0)
