@@ -98,6 +98,10 @@ describe('S2S Adapter', () => {
 
     let server;
     let config = {
+      accountId : '1',
+      enabled : true,
+      bidders : ['appnexus'],
+      timeout : 1000,
       endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT
     };
 
@@ -114,7 +118,8 @@ describe('S2S Adapter', () => {
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      adapter.callBids(REQUEST, config);
+      adapter.setConfig(config);
+      adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 

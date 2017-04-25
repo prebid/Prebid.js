@@ -725,7 +725,8 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     enabled : false,
     endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT,
     timeout : 1000,
-    maxBids : 1
+    maxBids : 1,
+    adapter : 's2s'
   }, options);
   adaptermanager.setS2SConfig(config);
 };

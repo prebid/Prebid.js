@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, shuffle, getTopWindowUrl } from './utils';
+import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 
 var utils = require('./utils.js');
@@ -95,18 +95,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     });
 
-    let requestJson = {
-      account_id : _s2sConfig.accountId,
-      tid,
-      max_bids: _s2sConfig.maxBids,
-      timeout_millis : _s2sConfig.timeout,
-      url: getTopWindowUrl(),
-      prebid_version : '$prebid.version$',
-      ad_units : adUnitsCopy
-    };
-    let s2sAdapter = _bidderRegistry['s2s']; //jshint ignore:line
+    let s2sBidRequest = {tid, 'ad_units' : adUnitsCopy};
+    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter]; //jshint ignore:line
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-    s2sAdapter.callBids(requestJson, _s2sConfig);
+    s2sAdapter.setConfig(_s2sConfig);
+    s2sAdapter.callBids(s2sBidRequest);
   }
 
   bidderCodes.forEach(bidderCode => {

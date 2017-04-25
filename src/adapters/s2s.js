@@ -5,6 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 import { queueSync } from 'src/cookie.js';
+import { getTopWindowUrl } from 'src/utils';
 
 const TYPE = 's2s';
 
@@ -17,16 +18,32 @@ function S2SAdapter() {
 
   let baseAdapter = Adapter.createNew('s2s');
   let bidRequests = [];
+  let config;
+
+  baseAdapter.setConfig = function(s2sconfig) {
+    config = s2sconfig;
+  };
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest, config) {
+  baseAdapter.callBids = function(bidRequest) {
+
     bidRequest.ad_units.forEach(adUnit => {
       adUnit.bids.forEach(bidder => {
         bidRequests[bidder.bidder] = utils.getBidRequest(bidder.bid_id);
       });
     });
 
-    const payload = JSON.stringify(bidRequest);
+    let requestJson = {
+      account_id : config.accountId,
+      tid : bidRequest.tid,
+      max_bids: config.maxBids,
+      timeout_millis : config.timeout,
+      url: getTopWindowUrl(),
+      prebid_version : '$prebid.version$',
+      ad_units : bidRequest.ad_units
+    };
+
+    const payload = JSON.stringify(requestJson);
     ajax(config.endpoint, handleResponse, payload, {
       contentType: 'text/plain',
       withCredentials : true
@@ -84,6 +101,7 @@ function S2SAdapter() {
   }
 
   return {
+    setConfig : baseAdapter.setConfig,
     createNew: S2SAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,

@@ -438,31 +438,32 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
-exports.insertPixel = function (url) {
-  let elToAppend = document.getElementsByTagName('head');
 
-  if(elToAppend && url){
-    const img = new Image();
-    img.id = this.getUniqueIdentifierStr();
-    img.src = url;
-    img.height = 0;
-    img.width = 0;
-    img.style.display = 'none';
-    img.onload = function() {
-      try{
-        this.parentNode.removeChild(this);
-      }
-      catch(e){}
-    };
-    try{
-      elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
-      if (elToAppend.length) {
-        elToAppend = elToAppend[0];
-        elToAppend.insertBefore(img, elToAppend.firstChild);
-      }
+var insertElement = function(elm) {
+  let elToAppend = document.getElementsByTagName('head');
+  try{
+    elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(elm, elToAppend.firstChild);
     }
-    catch (e) {}
-  }
+  } catch (e) {}
+};
+
+exports.insertPixel = function (url) {
+  const img = new Image();
+  img.id = this.getUniqueIdentifierStr();
+  img.src = url;
+  img.height = 0;
+  img.width = 0;
+  img.style.display = 'none';
+  img.onload = function() {
+    try {
+      this.parentNode.removeChild(this);
+    } catch(e) {
+    }
+  };
+  insertElement(img);
 };
 
 /**
@@ -474,15 +475,7 @@ exports.insertCookieSyncIframe = function(url) {
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe =  div.firstChild;
-
-  try{
-    let elToAppend = document.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      elToAppend.insertBefore(iframe, elToAppend.firstChild);
-    }
-  }
-  catch (e) {}
+  insertElement(iframe);
 };
 
 /**

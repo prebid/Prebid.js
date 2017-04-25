@@ -1,53 +1,16 @@
 const cookie = exports;
-import { ajax } from 'src/ajax';
 import * as utils from 'utils';
-
-const cookieSyncEndpoint = 'https://prebid.adnxs.com/setuid?bidder=${bidder}&uid=$UID';
-//todo move to seperate file.
-const cookieSyncEndpoints = [
-  {
-    bidder : 'appnexus',
-    endpoint : 'https://ib.adnxs.com/getuid?',
-    type : 'redirect',
-    supportCORS : false
-  },
-  {
-    bidder : 'other_bidder',
-    endpoint : 'http://other_endpoint.com/getuidj?',
-    type : 'json',
-    options : {
-      varId : 'uid'
-    }
-  },
-];
 
 const queue = [];
 
 function fireSyncs() {
   //todo - check type and handle properly
   queue.forEach(obj => {
-    //TODO: i think now with new response we will remove this logic
-    if(obj.url) {
-      utils.insertPixel(obj.url);
-      return;
-    }
-    const bidder = obj.bidder;
-    const config = cookieSyncEndpoints.find(obj => obj.bidder === bidder);
-    const endpoint = config.endpoint;
-    const cookieSyncEndpointTemp  = cookieSyncEndpoint.replace('${bidder}', bidder);
-    const requestUrl = `${endpoint}${cookieSyncEndpointTemp}`;
-    utils.logMessage(`Invoking cookie sync for bidder: ${bidder}`);
-    if(config.supportCORS) {
-      ajax(requestUrl, () => {}, null, {
-        contentType: 'text/plain',
-        withCredentials : true
-      });
+    utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
+    if(obj.type === 'iframe') {
+      utils.insertCookieSyncIframe(obj.url);
     } else {
-      if(obj.type === 'iframe') {
-        utils.insertCookieSyncIframe(obj.url);
-      } else {
-        utils.insertPixel(requestUrl);
-      }
+      utils.insertPixel(obj.url);
     }
   });
 }
