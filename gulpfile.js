@@ -1,3 +1,7 @@
+'use strict';
+
+var _ = require('lodash');
+var argv = require('yargs').argv;
 var gulp = require('gulp');
 var argv = require('yargs').argv;
 var gutil = require('gulp-util');
@@ -14,11 +18,14 @@ var del = require('del');
 var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
+var footer = require('gulp-footer');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
-const eslint = require('gulp-eslint');
+var eslint = require('gulp-eslint');
+var gulpif = require('gulp-if');
+var fs = require('fs');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -46,10 +53,47 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
+gulp.task('bundle', function() {
+  var modules = (argv.modules || '').split(',').filter(module => !!module),
+      allModules = helpers.getModuleNames();
+
+  // var configFile = argv.moduleConfig ? argv.moduleConfig : path.join(__dirname, './moduleConfig.json');
+
+  if(modules.length === 0) {
+    modules = allModules;
+  } else {
+    let diff = _.difference(modules, allModules);
+    if(diff.length !== 0) {
+      throw new gutil.PluginError({
+        plugin: 'bundle',
+        message: 'invalid modules: ' + diff.join(', ')
+      });
+    }
+  }
+
+  return gulp.src(
+      [helpers.getBuiltPrebid(argv.dev)].concat(
+        helpers.getBuiltModules(argv.dev, modules)
+      )
+    ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js', {newLine: ''}))
+    .pipe(gulpif(!argv.manualEnable, footer('<%= global %>.enableModules(<%= config %>);', {
+      global: prebid.globalVarName,
+      config: JSON.stringify(_.pick(
+          JSON.parse(
+              fs.readFileSync(argv.config ? argv.config : './moduleConfig.json', 'utf8')
+          ),
+          modules
+      ))
+    })))
+    .pipe(gulp.dest('build/' + (argv.dev ? 'dev' : 'dist')));
+});
+
 gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths();
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules())
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -66,11 +110,13 @@ gulp.task('webpack', ['clean'], function () {
   webpackConfig.devtool = null;
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths();
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules())
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
-    .pipe(header(banner, { prebid: prebid }))
+    .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))
     .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());

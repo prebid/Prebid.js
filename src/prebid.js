@@ -2,6 +2,7 @@
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
+import { module, enableModules } from "./modules";
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
@@ -777,6 +778,12 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
-processQueue($$PREBID_GLOBAL$$.cmd);
-processQueue($$PREBID_GLOBAL$$.que);
+
+// expose public module API
+Object.assign($$PREBID_GLOBAL$$, {
+  module,
+  enableModules
+});
+
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
+

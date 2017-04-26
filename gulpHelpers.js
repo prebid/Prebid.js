@@ -4,6 +4,25 @@ const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
 const exec = require('child_process').exec;
+const through = require('through2');
+const _ = require('lodash');
+
+const MODULE_PATH = './modules';
+const BUILD_PATH = './build/dist';
+const DEV_PATH = './build/dev';
+
+
+// get only subdirectories that contain package.json with 'main' property
+function isModuleDirectory(filePath) {
+  try {
+    const manifestPath = path.join(filePath, MANIFEST);
+    if (fs.statSync(manifestPath).isFile()) {
+      const module = require(manifestPath);
+      return module && module.main;
+    }
+  }
+  catch (error) {}
+}
 
 module.exports = {
   parseBrowserArgs: function (argv) {
@@ -19,6 +38,53 @@ module.exports = {
     return str.replace(/\n/g, '')
         .replace(/<\//g, '<\\/')
         .replace(/\/>/g, '\\/>');
+  },
+
+  getModules: _.memoize(function() {
+    try {
+      return fs.readdirSync(MODULE_PATH)
+        .reduce((memo, file) => {
+          let moduleName = file.split(new RegExp('[.' + path.sep + ']'))[0];
+          let filePath = path.join(MODULE_PATH, file);
+          let modulePath = path.join(__dirname, filePath)
+          if (fs.lstatSync(filePath).isDirectory()) {
+            modulePath = path.join(__dirname, filePath, "index.js")
+          }
+          memo[modulePath] = moduleName;
+          return memo;
+        }, {});
+    } catch(err) {}
+    return {};
+  }),
+
+  getBuiltModules: function(dev, names) {
+    var modules = this.getModuleNames();
+    if(Array.isArray(names)) {
+      modules = _.intersection(modules, names);
+    }
+    return modules.map(name => path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, name + '.js'));
+  },
+
+  getBuiltPrebid: function(dev) {
+    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, 'prebid' + '.js');
+  },
+
+  getModulePaths: function() {
+    let modules = this.getModules();
+    return Object.keys(modules);
+  },
+
+  getModuleNames: function() {
+    return _.values(this.getModules());
+  },
+
+  nameModules: function() {
+    var modules = this.getModules();
+    return through.obj(function(file, enc, done) {
+      file.named = modules[file.path] ? modules[file.path] : 'prebid';
+      this.push(file);
+      done();
+    })
   },
 
   /*
@@ -37,18 +103,6 @@ module.exports = {
         const module = require(path.join(directory, moduleDirectory, MANIFEST));
         return path.join(directory, moduleDirectory, module.main);
       });
-
-    // get only subdirectories that contain package.json with 'main' property
-    function isModuleDirectory(filePath) {
-      try {
-        const manifestPath = path.join(filePath, MANIFEST);
-        if (fs.statSync(manifestPath).isFile()) {
-          const module = require(manifestPath);
-          return module && module.main;
-        }
-      }
-      catch (error) {}
-    }
   },
 
   createEnd2EndTestReport : function(targetDestinationDir) {

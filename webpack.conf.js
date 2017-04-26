@@ -3,9 +3,6 @@ var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 
 module.exports = {
-  output: {
-    filename: 'prebid.js'
-  },
   devtool: 'source-map',
   resolve: {
     modulesDirectories: ['', 'node_modules', 'src']
@@ -17,7 +14,7 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        include: /(src|test)/,
+        include: /(src|modules|test)/,
         exclude: path.resolve(__dirname, 'node_modules'),
         loader: 'babel', // 'babel-loader' is also a legal name to reference
         query: {
@@ -59,7 +56,7 @@ module.exports = {
       },
         {
           test: /\.js$/,
-          include: /(src|test|integrationExamples)/,
+          include: /(src|test|modules|integrationExamples)/,
           loader: StringReplacePlugin.replace({
             replacements: [
               {
