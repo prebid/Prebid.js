@@ -680,7 +680,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <div class="col-md-4">
   <div class="checkbox">
     <label>
-      <input type="checkbox" analyticscode="ga" class="analytics-check-box"> Google Analytics
+      <input type="checkbox" analyticscode="ga" class="analytics-check-box"> Google Analtyics
     </label>
   </div>
 </div>
@@ -712,12 +712,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 <br/>
 <p>
-(Version 0.21.0)
+(<!-- Version 0.21.0 --> upgrade in progress )
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" disabled class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
