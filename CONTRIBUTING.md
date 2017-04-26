@@ -23,7 +23,7 @@ Before your Pull Request will be considered for merge:
 - All new and existing tests must pass
 - Added or modified code must have greater than 80% coverage. The coverage report will be generated in `build/coverage/lcov/lcov-report/index.html`
 
-### Test Standards
+### Test Guidelines
 When you are adding code to Prebid.js, or modifying code that isn't covered by an existing test, test the code according to these guidelines:
 
 - If the module you are working on is already partially tested by a file within the `test/spec` directory, add tests to that file
@@ -44,7 +44,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 - If you need to check `adloader.loadScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadScript` call without affecting external resources
 - When writing tests you may use ES2015 syntax if desired
 
-### Examples
+### Test Examples
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:
 
 - Look in `test/spec` and its subdirectories
