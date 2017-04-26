@@ -14,7 +14,7 @@ function getIntegration() {
 
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-const VIDEO_ENDPOINT = '//optimized-by-adv.rubiconproject.com/v1/auction/video';
+const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 
 const TIMEOUT_BUFFER = 500;
 
@@ -162,7 +162,7 @@ function RubiconAdapter() {
       site_id: params.siteId,
       zone_id: params.zoneId,
       position: params.position || 'btf',
-      floor: 0.01,
+      floor: parseFloat(params.floor) > 0.01 ? params.floor : 0.01,
       element_id: bid.placementCode,
       name: bid.placementCode,
       language: params.video.language,
