@@ -194,7 +194,7 @@ module.exports = function(bidManager, global, loader){
       },
       ao = document.location.ancestorOrigins,
       q = [],
-      u = "//hbevents.1rx.io/hbaudit?",
+      u = "//hbevents.1rx.io/audit?",
       i = new Image();
     
     if(ao && ao.length > 0)
