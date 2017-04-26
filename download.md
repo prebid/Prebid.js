@@ -671,6 +671,38 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="innity" class="bidder-check-box"> Innity
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="beachfront" class="bidder-check-box"> Beachfront Media
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="trion" class="bidder-check-box"> Trion Interactive
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="huddledmasses" class="bidder-check-box"> HuddledMasses
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
@@ -712,12 +744,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 <br/>
 <p>
-(<!-- Version 0.21.0 --> upgrade in progress )
+(Version 0.22.2)
 </p>
 
 <div class="form-group">
 
-  <button type="button" disabled class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
