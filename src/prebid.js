@@ -72,11 +72,13 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 
 function patchedPush(withDeprecationWarnings) {
+  let shouldPrintWarning = withDeprecationWarnings;
   return function(cmd) {
     if (typeof cmd === objectType_function) {
       try {
-        if (withDeprecationWarnings) {
-          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL.queue.push instead.');
+        if (shouldPrintWarning) {
+          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL$$.queue.push instead.');
+          shouldPrintWarning = false;
         }
         cmd.call();
       } catch (e) {
@@ -111,12 +113,12 @@ $$PREBID_GLOBAL$$.queue.push = patchedPush(false);
 $$PREBID_GLOBAL$$.que.push = patchedPush(true);
 
 function processQueue(queue, deprecationWarning) {
+  if (deprecationWarning && queue.length > 0) {
+    utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL$$.queue.push instead.');
+  }
   queue.forEach(function(cmd) {
     if (typeof cmd.called === objectType_undefined) {
       try {
-        if (deprecationWarning) {
-          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL.queue.push instead.');
-        }
         cmd.call();
         cmd.called = true;
       }

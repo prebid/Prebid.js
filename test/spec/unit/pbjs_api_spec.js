@@ -1619,7 +1619,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  function testQueue(description, queue, expectDeprecationWarnings) {
+  function testQueue(description, queue) {
     describe(description, function() {
 
       beforeEach(function initializeSpies() {
@@ -1628,12 +1628,12 @@ describe('Unit: Prebid Module', function () {
       });
 
       afterEach(function resetSpies() {
-      utils.logError.restore();
+        utils.logError.restore();
         utils.logWarn.restore();
       });
 
       it('should run commands which are pushed into it', function() {
-        var cmd = sinon.spy();
+        let cmd = sinon.spy();
         queue.push(cmd);
         assert.isTrue(cmd.called);
       });
@@ -1649,24 +1649,9 @@ describe('Unit: Prebid Module', function () {
         });
         assert.isTrue(utils.logError.calledOnce);
       });
-
-      if (expectDeprecationWarnings) {
-        it('should log a warning when called with a valid function', function() {
-          queue.push(function() { });
-          assert.isTrue(utils.logWarn.calledOnce);
-          assert.isTrue(utils.logError.notCalled);
-        });
-      }
-      else {
-        it('should NOT log a warning when called with a valid function', function() {
-          queue.push(function() { });
-          assert.isTrue(utils.logError.notCalled);
-          assert.isTrue(utils.logWarn.notCalled);
-        });
-      }
     });
   }
 
-  testQueue('The monkey-patched que.push function', $$PREBID_GLOBAL$$.que, true);
-  testQueue('The monkey-patched queue.push function', $$PREBID_GLOBAL$$.queue, false);
+  testQueue('The monkey-patched que.push function', $$PREBID_GLOBAL$$.que);
+  testQueue('The monkey-patched queue.push function', $$PREBID_GLOBAL$$.queue);
 });
