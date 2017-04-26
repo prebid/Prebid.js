@@ -18,9 +18,13 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.queue.push);
     });
 
-    it('should store the same array instance on both que and queue', function() {
-      assert.strictEqual($$PREBID_GLOBAL$$.que, $$PREBID_GLOBAL$$.queue)
-    })
+    it('should have a global variable $$PREBID_GLOBAL$$.que as an array', function () {
+      assert.isArray($$PREBID_GLOBAL$$.que);
+    });
+
+    it('should have $$PREBID_GLOBAL$$.que.push function', function () {
+        assert.isFunction($$PREBID_GLOBAL$$.que.push);
+    });
   });
 
   describe('has function', function () {

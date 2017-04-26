@@ -70,35 +70,61 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 //create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
+
+function patchedPush(withDeprecationWarnings) {
+  return function(cmd) {
+    if (typeof cmd === objectType_function) {
+      try {
+        if (withDeprecationWarnings) {
+          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL.queue.push instead.');
+        }
+        cmd.call();
+      } catch (e) {
+        utils.logError('Error processing command :' + e.message);
+      }
+    } else {
+      utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
+    }
+  };
+}
+
 /**
- * Command queue that functions will execute once prebid.js is loaded
- * @param  {function} cmd Anonymous function to execute
+ * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
+ * before or after their script executes. For example, given the code:
+ *
+ * <script src="url/to/Prebid.js" async></script>
+ * <script>
+ *   var pbjs = pbjs || {};
+ *   pbjs.que = pbjs.queue || [];
+ *   pbjs.que.push(functionToExecuteOncePrebidLoads);
+ * </script>
+ *
+ * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
+ * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
+ * function to execute immediately.
+ *
+ * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                        the Prebid script has been fully loaded.
  * @alias module:$$PREBID_GLOBAL$$.queue.push
  */
-$$PREBID_GLOBAL$$.queue.push = function (cmd) {
-  if (typeof cmd === objectType_function) {
-    try {
-      cmd.call();
-    } catch (e) {
-      utils.logError('Error processing command :' + e.message);
-    }
-  } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
-  }
-};
+$$PREBID_GLOBAL$$.queue.push = patchedPush(false);
+$$PREBID_GLOBAL$$.que.push = patchedPush(true);
 
-function processQueue() {
-  for (var i = 0; i < $$PREBID_GLOBAL$$.queue.length; i++) {
-    if (typeof $$PREBID_GLOBAL$$.queue[i].called === objectType_undefined) {
+function processQueue(queue, deprecationWarning) {
+  queue.forEach(function(cmd) {
+    if (typeof cmd.called === objectType_undefined) {
       try {
-        $$PREBID_GLOBAL$$.queue[i].call();
-        $$PREBID_GLOBAL$$.queue[i].called = true;
+        if (deprecationWarning) {
+          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL.queue.push instead.');
+        }
+        cmd.call();
+        cmd.called = true;
       }
       catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }
-  }
+  });
 }
 
 function checkDefinedPlacement(id) {
@@ -705,4 +731,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 };
 
 $$PREBID_GLOBAL$$.queue.push(() => listenMessagesFromCreative());
-processQueue();
+processQueue($$PREBID_GLOBAL$$.queue, false);
+processQueue($$PREBID_GLOBAL$$.que, true);

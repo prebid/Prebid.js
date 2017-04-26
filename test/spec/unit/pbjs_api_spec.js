@@ -142,6 +142,7 @@ describe('Unit: Prebid Module', function () {
     $$PREBID_GLOBAL$$.adUnits = [];
   })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
+
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.enableSendAllBids();
@@ -1618,4 +1619,54 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  function testQueue(description, queue, expectDeprecationWarnings) {
+    describe(description, function() {
+
+      beforeEach(function initializeSpies() {
+        sinon.spy(utils, 'logError');
+        sinon.spy(utils, 'logWarn');
+      });
+
+      afterEach(function resetSpies() {
+      utils.logError.restore();
+        utils.logWarn.restore();
+      });
+
+      it('should run commands which are pushed into it', function() {
+        var cmd = sinon.spy();
+        queue.push(cmd);
+        assert.isTrue(cmd.called);
+      });
+
+      it('should log an error when given non-functions', function() {
+        queue.push(5);
+        assert.isTrue(utils.logError.calledOnce);
+      });
+
+      it('should log an error if the command passed into it fails', function() {
+        queue.push(function() {
+          throw new Error("Failed function.");
+        });
+        assert.isTrue(utils.logError.calledOnce);
+      });
+
+      if (expectDeprecationWarnings) {
+        it('should log a warning when called with a valid function', function() {
+          queue.push(function() { });
+          assert.isTrue(utils.logWarn.calledOnce);
+          assert.isTrue(utils.logError.notCalled);
+        });
+      }
+      else {
+        it('should NOT log a warning when called with a valid function', function() {
+          queue.push(function() { });
+          assert.isTrue(utils.logError.notCalled);
+          assert.isTrue(utils.logWarn.notCalled);
+        });
+      }
+    });
+  }
+
+  testQueue('The monkey-patched que.push function', $$PREBID_GLOBAL$$.que, true);
+  testQueue('The monkey-patched queue.push function', $$PREBID_GLOBAL$$.queue, false);
 });
