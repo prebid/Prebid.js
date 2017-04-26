@@ -35,6 +35,7 @@
     "rhythmone",
     "rubicon",
     "smartyads",
+    "huddledmasses",
     "smartadserver",
     "sekindoUM",
     "serverbid",
@@ -62,6 +63,7 @@
     "admixer",
     "atomx",
     "tapsense",
+    "trion",
     {
       "appnexus": {
         "alias": "brealtime"

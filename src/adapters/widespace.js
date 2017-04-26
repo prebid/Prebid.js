@@ -44,8 +44,10 @@ function WidespaceAdapter() {
 
       requestURL += '#';
 
-      // Append all params to requestURL
-      for (let key of Object.keys(params)) {
+      var paramKeys = Object.keys(params);
+
+      for (var k = 0; k < paramKeys.length; k++) {
+        var key = paramKeys[k];
         requestURL += key + '=' + params[key] + '&';
       }
 
