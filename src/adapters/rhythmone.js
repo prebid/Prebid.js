@@ -1,13 +1,12 @@
 var bidmanager = require('../bidmanager.js'),
   bidfactory = require('../bidfactory.js'),
-  utils = require('../utils.js'),
   CONSTANTS = require('../constants.json');
 
 import {ajax as ajax} from '../ajax';
 
-function track(debug, p1, p2, p3) {
+function track(debug) {
   if(debug === true){
-    console.log('GA: %s %s %s', p1, p2, p3 || '');
+    //console.log('GA: %s %s %s', p1, p2, p3 || '');
   }
 }
 
@@ -19,8 +18,6 @@ module.exports = function(bidManager, global, loader){
   var version = "0.9.0.0",
     defaultZone = "1r",
     defaultPath = "mvo",
-    bidfloor = 0,
-    currency = "USD",
     debug = false,
     auctionEnded = false,
     requestCompleted = false,
@@ -43,33 +40,45 @@ module.exports = function(bidManager, global, loader){
     });
   }
   
-  function load(bidParams, url, postData, callback){
-    if(bidParams.method === "get"){
-      loader(url, function(responseText, response){
-        if(response.status === 200)
-          callback(200, "success", response.responseText);
-        else
-          callback(-1, "http error "+response.status, response.responseText);
-      }, false, {method:"GET", withCredentials: true});
-    }
-    else{
-      loader(url, function(responseText, response){
-        if(response.status === 200)
-          callback(200, "success", response.responseText);
-        else
-          callback(-1, "http error "+response.status, response.responseText);
-      }, postData, {method:"POST", contentType: "application/json", withCredentials: true});
-    }
+  function load(bidParams, url, callback){
+    loader(url, function(responseText, response){
+      if(response.status === 200)
+        callback(200, "success", response.responseText);
+      else
+        callback(-1, "http error "+response.status, response.responseText);
+    }, false, {method:"GET", withCredentials: true});
   }
 
+  function flashInstalled(){
+    var n = global.navigator,
+      p = n.plugins,
+      m = n.mimeTypes,
+      t = "application/x-shockwave-flash",
+      x = global.ActiveXObject;
+
+    if(p && 
+      p["Shockwave Flash"] &&
+      m &&
+      m[t] &&
+      m[t].enabledPlugin)
+        return true;
+
+    if(x){
+      try{if((new global.ActiveXObject("ShockwaveFlash.ShockwaveFlash"))) return true;}
+      catch(e){}
+    }
+
+    return false;
+  }
+  
   var bidderCode = "rhythmone",
     bidLostTimeout = null;
   
-  function setIfPresent(o, key, value){
+  function attempt(valueFunction, defaultValue){
     try{
-      if(typeof value === "function")
-        o[key] = value();
+      return valueFunction();
     }catch(ex){}
+    return defaultValue;
   }
   
   function logToConsole(txt){
@@ -124,7 +133,7 @@ module.exports = function(bidManager, global, loader){
     }
   }
   
-  function getRMPURL(bidParams, ortbJSON, bids){
+  function getRMPURL(bidParams, bids){
     var endpoint = "//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}",
       query = [];
 
@@ -150,109 +159,69 @@ module.exports = function(bidManager, global, loader){
     });
 
     function p(k,v){
+      if(v instanceof Array)
+        v = v.join(",");
       if(typeof v !== "undefined")
         query.push(encodeURIComponent(k)+"="+encodeURIComponent(v));
     }
-    
-    if(bidParams.method === "get"){
-    
-      p("domain", ortbJSON.site.domain);
-      p("title", ortbJSON.site.name);
-      p("url", ortbJSON.site.page);
-      p("dsh", ortbJSON.device.h);
-      p("dsw", ortbJSON.device.w);
-      p("tz", (new Date()).getTimezoneOffset());
-      p("dtype", ortbJSON.device.devicetype);
-      
-      var placementCodes = [],
-        heights = [],
-        widths = [],
-        floors = [];
-      
-      for(var i = 0; i<bids.length; i++){
 
-        track(debug, 'hb', 'bidRequest');
-        var th = [], tw = [];
-        
-        for(var j = 0; j<bids[i].sizes.length; j++){
-          tw.push(bids[i].sizes[j][0]);
-          th.push(bids[i].sizes[j][1]);
-        }
-        placementCodes.push(bids[i].placementCode);
-        heights.push(th.join("|"));
-        widths.push(tw.join("|"));
-        floors.push(0);
-      }
+    p("domain", attempt(function(){
+        var d = global.document.location.ancestorOrigins;
+        if(d && d.length > 0)
+          return d[d.length-1];
+        return global.top.document.location.hostname;
+      },""));
+    p("title", attempt(function(){return global.top.document.title;},""));
+    p("url", attempt(function(){
+        var l;
+        try{l = global.top.document.location.href.toString();}
+        catch(ex){l = global.document.location.href.toString();}
+        return l;
+      },""));
+    p("dsh", (global.screen ? global.screen.height : ""));
+    p("dsw", (global.screen ? global.screen.width : ""));
+    p("tz", (new Date()).getTimezoneOffset());
+    p("dtype", ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 3 : 2)));
+    p("flash", (flashInstalled() ? 1 : 0));
+    
+    var placementCodes = [],
+      heights = [],
+      widths = [],
+      floors = [],
+      mediaTypes = [],
+      fat = /(^v|(\.0)+$)/gi,
+      i=0;
+
+    p("hbv", global.$$PREBID_GLOBAL$$.version.replace(fat,"")+","+version.replace(fat,""));
+	
+    for(; i<bids.length; i++){
+
+      track(debug, 'hb', 'bidRequest');
+      var th = [], tw = [];
       
-      p("imp", placementCodes.join(","));
-      p("w", widths.join(","));
-      p("h", heights.join(","));
-      p("floor", floors.join(","));
+      if(bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === "number")
+        bids[i].sizes = [bids[i].sizes];
+      
+      for(var j = 0; j<bids[i].sizes.length; j++){
+        tw.push(bids[i].sizes[j][0]);
+        th.push(bids[i].sizes[j][1]);
+      }
+      placementCodes.push(bids[i].placementCode);
+      heights.push(th.join("|"));
+      widths.push(tw.join("|"));
+      mediaTypes.push(((/video/i).test(bids[i].mediaType) ? "v" : "d"));
+      floors.push(0);
     }
+    
+    p("imp", placementCodes);
+    p("w", widths);
+    p("h", heights);
+    p("floor", floors);
+    p("t", mediaTypes);
     
     endpoint += "&"+query.join("&");
     
     return endpoint;
-  }
-  
-  function getORTBJSON(bids, slotMap, bidParams){
-    var o = {
-      "device": {
-        "langauge": global.navigator.language,
-        "dnt": (global.navigator.doNotTrack === 1 ? 1 : 0)
-      },
-      "at": 2,
-      "site": {},
-      "tmax": 3000,
-      "cur": [currency],
-      "id": utils.generateUUID(),
-      "imp":[]
-    };
-    
-    setIfPresent(o.site, "page", function(){
-      var l;
-      try{l = global.top.document.location.href.toString();}
-      catch(ex){l = document.location.href.toString();}
-      return l;
-    });
-    setIfPresent(o.site, "domain", function(){
-      var d = document.location.ancestorOrigins;
-      if(d && d.length > 0)
-        return d[d.length-1];
-      return global.top.document.location.hostname;
-    });
-    setIfPresent(o.site, "name", function(){return global.top.document.title;});
-    
-    o.device.devicetype = ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 3 : 2));
-    
-    setIfPresent(o.device, "h", function(){return global.screen.height;});
-    setIfPresent(o.device, "w", function(){return global.screen.width;});
-    
-    for(var i = 0; i<bids.length; i++){
-      var bidID = utils.generateUUID();
-      slotMap[bidID] = bids[i];
-      slotMap[bids[i].placementCode] = bids[i];
-      
-      if(bidParams.method === "post")
-        track(debug, 'hb', 'bidRequest');
-        
-      for(var j = 0; j<bids[i].sizes.length; j++){
-        o.imp.push({
-          "id": bidID,
-          "tagId": bids[i].placementCode,
-          "bidfloor": bidfloor,
-          "bidfloorcur": currency,
-          "banner": {
-            "id": utils.generateUUID(),
-            "pos": 0,
-            "w": bids[i].sizes[j][0],
-            "h": bids[i].sizes[j][1]
-          }
-        });
-      }
-    }
-    
-    return o;
   }
   
   this.callBids = function(params){
@@ -261,9 +230,6 @@ module.exports = function(bidManager, global, loader){
       bidParams = getBidParameters(params.bids);
   
     debug = (bidParams !== null && bidParams.debug === true);
-
-    auctionEnded = false;
-    requestCompleted = false;
   
     track(debug, 'hb', 'callBids');
 
@@ -273,34 +239,38 @@ module.exports = function(bidManager, global, loader){
       return;
     }
 
-    // default to GET request
-    if(typeof bidParams.method !== "string")
-      bidParams.method = "get";
-    
-    bidParams.method = bidParams.method.toLowerCase();
-    
     sniffAuctionEnd();
 
     track(debug, 'hb', 'rmpRequest');
 
-    var ortbJSON = getORTBJSON(params.bids, slotMap, bidParams);
+    for(var i = 0; i<params.bids.length; i++)
+      slotMap[params.bids[i].placementCode] = params.bids[i];
     
-    load(bidParams, getRMPURL(bidParams, ortbJSON, params.bids), JSON.stringify(ortbJSON), function(code, msg, txt){
+    load(bidParams, getRMPURL(bidParams, params.bids), function(code, msg, txt){
     
       if(auctionEnded === true)
         return;
     
       requestCompleted = true;
     
-      logToConsole(txt);
+      logToConsole("response text: "+txt);
     
       if(code === -1)
-        track(debug, 'hb', 'rmpReplyFail', msg);
+        track(debug, "hb", "rmpReplyFail", msg);
       else{
         try{
           var result = JSON.parse(txt),
             registerBid = function(bid){
             
+              //{"id":"ffe73abd-91b3-56d3-d0ee-015a91b356d4",
+              //	"impid":"123",
+              //    "price":17.13,
+              //    "nurl":"http://1r-qa-ads.rhythmxchange.com/rmp/389633/0/ivh?reqId=6594035297396414163",
+              //    "cid":"366183",
+              //    "crid":"366182",
+              //    "h":480,
+              //    "w":640}
+			
               slotMap[bid.impid].success = 1;
               
               var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
@@ -312,22 +282,30 @@ module.exports = function(bidManager, global, loader){
               pbResponse.cpm = parseFloat(bid.price);
               pbResponse.width = bid.w;
               pbResponse.height = bid.h;
-              pbResponse.ad = bid.adm;
+              
+              if((/video/i).test(slotMap[bid.impid].mediaType)){
+                pbResponse.mediaType = "video";
+                pbResponse.vastUrl = bid.nurl;
+                pbResponse.descriptionUrl = bid.nurl;
+              }
+              else
+                pbResponse.ad = bid.adm;
               
               logToConsole("registering bid "+placementCode+" "+JSON.stringify(pbResponse));
               
-              track(debug, 'hb', 'bidResponse', 1);
+              track(debug, "hb", "bidResponse", 1);
               bidManager.addBidResponse(placementCode, pbResponse);
             };
             
-          track(debug, 'hb', 'rmpReplySuccess');
+          track(debug, "hb", "rmpReplySuccess");
           
-          for(var i=0; result.seatbid && i<result.seatbid.length; i++)
-            for(var j=0; result.seatbid[i].bid && j<result.seatbid[i].bid.length; j++)
+          for(i=0; result.seatbid && i<result.seatbid.length; i++)
+            for(var j=0; result.seatbid[i].bid && j<result.seatbid[i].bid.length; j++){
               registerBid(result.seatbid[i].bid[j]);
+            }
         }
         catch(ex){
-          track(debug, 'hb', 'rmpReplyFail', 'invalid json in rmp response');
+          track(debug, "hb", "rmpReplyFail", "invalid json in rmp response");
         }
       }
 

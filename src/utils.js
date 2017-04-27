@@ -438,46 +438,6 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
-
-var insertElement = function(elm) {
-  let elToAppend = document.getElementsByTagName('head');
-  try{
-    elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
-    if (elToAppend.length) {
-      elToAppend = elToAppend[0];
-      elToAppend.insertBefore(elm, elToAppend.firstChild);
-    }
-  } catch (e) {}
-};
-
-exports.insertPixel = function (url) {
-  const img = new Image();
-  img.id = this.getUniqueIdentifierStr();
-  img.src = url;
-  img.height = 0;
-  img.width = 0;
-  img.style.display = 'none';
-  img.onload = function() {
-    try {
-      this.parentNode.removeChild(this);
-    } catch(e) {
-    }
-  };
-  insertElement(img);
-};
-
-/**
- * Inserts empty iframe with the specified `url` for cookie sync
- * @param  {string} url URL to be requested
- */
-exports.insertCookieSyncIframe = function(url) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url);
-  let div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  let iframe =  div.firstChild;
-  insertElement(iframe);
-};
-
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -623,9 +583,18 @@ export function adUnitsFilter(filter, bid) {
  */
 export function isSrcdocSupported(doc) {
   //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+  return doc.defaultView && doc.defaultView.frameElement &&
+    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
 export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
 }
