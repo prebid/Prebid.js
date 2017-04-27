@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "0.21.0",
+  "version": "0.22.2",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -20,12 +20,11 @@
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "babel-core": "^6.5.2",
-    "babel-loader": "^6.2.3",
-    "babel-plugin-transform-es3-member-expression-literals": "^6.8.0",
-    "babel-plugin-transform-es3-property-literals": "^6.8.0",
-    "babel-plugin-transform-object-assign": "^6.8.0",
-    "babel-preset-es2015": "^6.24.1",
+    "babel-core": "6.22.0",
+    "babel-loader": "6.4.1",
+    "babel-plugin-transform-es3-member-expression-literals": "6.22.0",
+    "babel-plugin-transform-es3-property-literals": "6.22.0",
+    "babel-preset-es2015": "6.22.0",
     "block-loader": "^2.1.0",
     "chai": "^3.3.0",
     "coveralls": "^2.11.11",
@@ -63,7 +62,7 @@
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^0.2.0",
     "karma-coverage": "^0.2.7",
-    "karma-es5-shim": "https://github.com/pokehanai/karma-es5-shim/archive/v2.1.0.tar.gz",
+    "karma-es5-shim": "^0.0.4",
     "karma-expect": "^1.1.0",
     "karma-firefox-launcher": "^0.1.3",
     "karma-html-reporter": "^0.2.7",
@@ -97,7 +96,7 @@
     "yargs": "^1.3.1"
   },
   "dependencies": {
-    "array-includes": "^3.0.2",
-    "array.prototype.find": "^2.0.3"
+    "babel-plugin-transform-object-assign": "^6.22.0",
+    "core-js": "^2.4.1"
   }
 }
