@@ -1,142 +1,30 @@
 [
-    "aardvark",
-    "adblade",
-    "adbund",
-    "adbutler",
-    "adequant",
-    "adform",
-    "adkernel",
-    "admedia",
-    "bidfluence",
-    "vertamedia",
-    "aol",
-    "appnexus",
-    "appnexusAst",
-    "beachfront",
-    "audienceNetwork",
-    "conversant",
-    "districtmDMX",
-    "fidelity",
-    "gumgum",
-    "hiromedia",
-    "indexExchange",
-    "innity",
-    "kruxlink",
-    "getintent",
-    "inneractive",
-    "komoona",
-    "lifestreet",
-    "mantis",
-    "openx",
-    "piximedia",
-    "pubmatic",
-    "pulsepoint",
-    "pulsepointLite",
-    "rhythmone",
-    "rubicon",
-    "smartyads",
-    "huddledmasses",
-    "smartadserver",
-    "sekindoUM",
-    "serverbid",
-    "sonobi",
-    "sovrn",
-    "springserve",
-    "thoughtleadr",
-    "stickyadstv",
-    "triplelift",
-    "twenga",
-    "yieldbot",
-    "nginad",
-    "brightcom",
-    "wideorbit",
-    "jcm",
-    "underdogmedia",
-    "memeglobal",
-    "criteo",
-    "centro",
-    "xhb",
-    "sharethrough",
-    "roxot",
-    "vertoz",
-    "widespace",
-    "admixer",
-    "atomx",
-    "tapsense",
-    "trion",
-    {
-      "appnexus": {
-        "alias": "brealtime"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "pagescience"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "defymedia"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "gourmetads"
-      }
-    },
-    {
-      "appnexusAst": {
-        "supportedMediaTypes": ["video"]
-      }
-    },    {
-      "vertamedia": {
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "beachfront": {
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "matomy"
-      }
-    },
-    {
-      "rubicon": {
-        "alias": "rubiconLite",
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "featureforward"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "oftmedia"
-      }
-    },
-    {
-      "adkernel": {
-        "alias": "headbidding"
-      }
-    },
-    {
-      "getintent": {
-        "supportedMediaTypes" : ["video"]
-      }
-    },
-    {
-      "stickyadstv": {
-        "alias": "freewheel-ssp"
-      }
-    },
-    {
-      "rhythmone": {
-        "supportedMediaTypes": ["video"]
-      }
+  "aol",
+  "appnexus",
+  "appnexusAst",
+  "conversant",
+  "openx",
+  "pubmatic",
+  "pulsepoint",
+  "sovrn",
+  {
+    "appnexus": {
+      "alias": "brealtime"
     }
+  },
+  {
+    "appnexus": {
+      "alias": "pagescience"
+    }
+  },
+  {
+    "appnexus": {
+      "alias": "defymedia"
+    }
+  },
+  {
+    "appnexusAst": {
+      "supportedMediaTypes": ["video"]
+    }
+  }
 ]
