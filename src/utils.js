@@ -589,3 +589,11 @@ export function isSrcdocSupported(doc) {
 export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
+
+export function roundFloat(num, dec) {
+  var d = 1;
+  for (var i = 0; i < dec; i++) {
+    d += "0";
+  }
+  return Math.round(num * d) / d;
+}

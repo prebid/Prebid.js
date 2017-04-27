@@ -77,6 +77,22 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getAllWinningBids);
     });
 
+    it('should have function $$PREBID_GLOBAL$$.setConfig', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.setConfig);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.initCurrencyRates', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.initCurrencyRates);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.shouldWaitForCurrencyRates', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getCurrencyConversion', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getCurrencyConversion);
+    });
+
   });
 
 });
