@@ -12,14 +12,18 @@
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "innity",
     "kruxlink",
     "getintent",
+    "inneractive",
     "komoona",
     "lifestreet",
     "mantis",
@@ -32,6 +36,7 @@
     "rhythmone",
     "rubicon",
     "smartyads",
+    "huddledmasses",
     "smartadserver",
     "sekindoUM",
     "serverbid",
@@ -57,7 +62,9 @@
     "vertoz",
     "widespace",
     "admixer",
+    "atomx",
     "tapsense",
+    "trion",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -84,6 +91,11 @@
       }
     },    {
       "vertamedia": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "beachfront": {
         "supportedMediaTypes": ["video"]
       }
     },
@@ -117,6 +129,15 @@
       "getintent": {
         "supportedMediaTypes" : ["video"]
       }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]
