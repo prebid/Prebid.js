@@ -23,7 +23,7 @@ describe('Publisher API', function () {
     });
 
     it('should have $$PREBID_GLOBAL$$.que.push function', function () {
-        assert.isFunction($$PREBID_GLOBAL$$.que.push);
+      assert.isFunction($$PREBID_GLOBAL$$.que.push);
     });
   });
 

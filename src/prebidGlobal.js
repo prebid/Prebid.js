@@ -4,7 +4,6 @@ window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
 window.$$PREBID_GLOBAL$$.queue = window.$$PREBID_GLOBAL$$.queue || [];
 window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];
 
-
 export function getGlobal() {
   return window.$$PREBID_GLOBAL$$;
 }

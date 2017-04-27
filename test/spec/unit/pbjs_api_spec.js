@@ -142,7 +142,6 @@ describe('Unit: Prebid Module', function () {
     $$PREBID_GLOBAL$$.adUnits = [];
   })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
-
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.enableSendAllBids();
