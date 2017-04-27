@@ -12,6 +12,7 @@
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
     "audienceNetwork",
     "conversant",
     "districtmDMX",
@@ -19,6 +20,7 @@
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "innity",
     "kruxlink",
     "getintent",
     "inneractive",
@@ -33,6 +35,7 @@
     "rhythmone",
     "rubicon",
     "smartyads",
+    "huddledmasses",
     "smartadserver",
     "sekindoUM",
     "serverbid",
@@ -60,6 +63,7 @@
     "admixer",
     "atomx",
     "tapsense",
+    "trion",
     "adsupply",
     {
       "appnexus": {
@@ -91,6 +95,11 @@
       }
     },
     {
+      "beachfront": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
       "appnexus": {
         "alias": "matomy"
       }
@@ -105,7 +114,7 @@
       "appnexus": {
         "alias": "featureforward"
       }
-    },    
+    },
     {
       "appnexus": {
         "alias": "oftmedia"
