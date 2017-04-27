@@ -64,6 +64,7 @@
     "atomx",
     "tapsense",
     "trion",
+    "eplanning",
     {
       "appnexus": {
         "alias": "brealtime"
