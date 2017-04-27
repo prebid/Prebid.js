@@ -736,7 +736,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <div class="col-md-4">
   <div class="checkbox">
     <label>
-      <input type="checkbox" analyticscode="roxot" class="analytics-check-box"> Roxot
+      <input type="checkbox" analyticscode="roxot" class="analytics-check-box"> Prebid Analytics by Roxot
     </label>
   </div>
 </div>
