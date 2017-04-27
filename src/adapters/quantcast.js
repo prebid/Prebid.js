@@ -78,9 +78,14 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
     publisherId = '' + bids[0].params.publisherId;
     utils._each(bids, function(bid) {
-      let bidSizes = utils.parseSizesInput(bid.sizes);
-      let size = bidSizes[0].split('x');
       let key = bid.bidId;
+      var bidSizes = [];
+      utils._each(bid.sizes, function (size) {
+        bidSizes.push({
+          'width' : size[0],
+          'height' : size[1]
+        });
+      });
 
       bidRequests[key] = bidRequests[key] || {
         'publisherId' : publisherId,
@@ -95,8 +100,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
           'banner' : {
             'battr' : bid.params.battr,
-            'width' : size[0],
-            'height' : size[1],
             'sizes' : bidSizes,
           },
           'placementCode' : bid.placementCode,
