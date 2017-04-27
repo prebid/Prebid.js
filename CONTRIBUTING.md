@@ -1,7 +1,10 @@
 # Contributing to Prebid.js
-Contributions are always welcome. To contribute, [fork](https://help.github.com/articles/fork-a-repo/) Prebid.js, commit your changes, and [open a pull request](https://help.github.com/articles/using-pull-requests/) against the master branch.
+Contributions are always welcome. To contribute, [fork](https://help.github.com/articles/fork-a-repo/) Prebid.js,
+commit your changes, and [open a pull request](https://help.github.com/articles/using-pull-requests/) against the
+master branch.
 
-Details about the Pull Request process can be found [here](./pr_review.md).
+Pull requests must have 80% code coverage before beign considered for merge.
+Additional details about the process can be found [here](./pr_review.md).
 
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.
@@ -12,16 +15,21 @@ If you don't find an answer there, [open a new issue](https://github.com/prebid/
 If you have a documentation issue or pull request, please open a ticket or PR in the [documentation repository](https://github.com/prebid/prebid.github.io).
 
 ## Writing Tests
+
+Prebid uses [Mocha](http://mochajs.org/) and [Chai](http://chaijs.com/) for unit tests. [Sinon](http://sinonjs.org/)
+provides mocks, stubs, and spies. [Karma](https://karma-runner.github.io/1.0/index.html) runs the tests and generates
+code coverage reports at `build/coverage/lcov/lcov-report/index.html`.
+
 Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are located in [test/spec/adapters](test/spec/adapters).
 They can be run with the following commands:
 
 - `gulp test` - run the test suite once (`npm test` is aliased to call `gulp test`)
 - `gulp serve` - run the test suite once, but re-run it whenever a file in the `src` or `test` directory is modified
 
-Before your Pull Request will be considered for merge:
+Before a Pull Request will be considered for merge:
 
 - All new and existing tests must pass
-- Added or modified code must have greater than 80% coverage. The coverage report will be generated in `build/coverage/lcov/lcov-report/index.html`
+- Added or modified code must have greater than 80% coverage
 
 ### Test Guidelines
 When you are adding code to Prebid.js, or modifying code that isn't covered by an existing test, test the code according to these guidelines:
@@ -67,11 +75,3 @@ describe('<Adapter>', () => {
   // Add other `describe` or `it` blocks as necessary
 });
 ```
-
-### Resources
-The Prebid.js testing stack contains some of the following tools. It may be helpful to consult their documentation during the testing process.
-
-- [Mocha - test framework](http://mochajs.org/)
-- [Karma - test runner](https://karma-runner.github.io/1.0/index.html)
-- [Chai - BDD/TDD assertion library](http://chaijs.com/)
-- [Sinon - spy, stub, and mock library](http://sinonjs.org/)

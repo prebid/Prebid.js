@@ -9,7 +9,9 @@
 
 > A free and open source library for publishers to quickly implement header bidding.
 
-This README is for developers who want to contribute to Prebid.js.  For user-facing documentation, see [Prebid.org](http://prebid.org).
+This README is for developers who want to contribute to Prebid.js.
+Additional documentation can be found at [the Prebid homepage](http://prebid.org).
+Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
 **Table of Contents**
 
@@ -194,7 +196,3 @@ Prebid.js is supported on IE9+ and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
-
-### Additional Resources
-
- - [Prebid Examples](http://prebid.org/dev-docs/getting-started.html)
