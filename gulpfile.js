@@ -56,7 +56,7 @@ gulp.task('devpack', function () {
     .pipe(connect.reload());
 });
 
-gulp.task('webpack', function () {
+gulp.task('webpack', ['clean'], function () {
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
@@ -86,7 +86,7 @@ gulp.task('zip', ['clean', 'webpack'], function () {
 // Karma Continuous Testing
 // Pass your browsers by using --browsers=chrome,firefox,ie9
 // Run CI by passing --watch
-gulp.task('test', function () {
+gulp.task('test', ['clean'], function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
@@ -134,7 +134,16 @@ gulp.task('test', function () {
     }));
 });
 
-gulp.task('mocha', ['webpack'], function() {
+//
+// Making this task depend on lint is a bit of a hack. The `run-tests` command is the entrypoint for the CI process,
+// and it needs to run all these tasks together. However, the "lint" and "mocha" tasks explode when used in parallel,
+// resulting in some mysterious "ShellJS: internal error TypeError: Cannot read property 'isFile' of undefined"
+// errors.
+//
+// Gulp doesn't support serial dependencies (until gulp 4.0... which is most likely never coming out)... so we have
+// to trick it by declaring 'lint' as a dependency here. See https://github.com/gulpjs/gulp/blob/master/docs/recipes/running-tasks-in-series.md
+//
+gulp.task('mocha', ['webpack', 'lint'], function() {
     return gulp.src(['test/spec/loaders/**/*.js'], { read: false })
         .pipe(mocha({
           reporter: 'spec',

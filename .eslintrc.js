@@ -20,7 +20,7 @@ module.exports = {
     //
     // See Issue #1111.
     "import/first": "off",
-    "no-multiple-empty-lines": "off",
+    // "no-multiple-empty-lines": "off",
     "valid-typeof": "off",
     "one-var": "off",
     "camelcase": "off",
