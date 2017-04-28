@@ -5,7 +5,7 @@ const adloader = require('../adloader');
 
 var BidfluenceAdapter = function BidfluenceAdapter() {
 
-  const scriptUrl = "//bidfluence.azureedge.net/forge.js";
+  const scriptUrl = "//cdn.bidfluence.com/forge.js";
 
   $$PREBID_GLOBAL$$.bfPbjsCB = function (bfr) {
     var bidRequest = utils.getBidRequest(bfr.cbID);
