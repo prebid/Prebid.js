@@ -42,7 +42,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       if (!(zone in _dispatch[host])) {
         _dispatch[host][zone] = [];
       }
-      let imp = {'id': bidId, 'banner': {'w': size[0], 'h': size[1]}};
+      let imp = {'id': bidId, 'tagid' : bid.placementCode, 'banner': {'w': size[0], 'h': size[1]}};
       if (utils.getTopWindowLocation().protocol === 'https:') {
         imp.secure = 1;
       }
@@ -216,7 +216,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function createSite() {
     var location = utils.getTopWindowLocation();
     return {
-      'domain': location.hostname
+      'domain': location.hostname,
+      'page' : location.href.split('?')[0]
     };
   }
 
