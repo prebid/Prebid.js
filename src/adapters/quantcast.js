@@ -109,7 +109,8 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
       utils._each(bidRequests, function (bidRequest) {
         ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
-          method : 'POST'
+          method : 'POST',
+          withCredentials: true
         });
       });
     });

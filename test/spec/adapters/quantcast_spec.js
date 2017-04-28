@@ -77,7 +77,7 @@ describe('quantcast adapter', () => {
       expect(ajaxStub.firstCall.args[2]).to.include('div-gpt-ad-1438287399331-0');
       expect(ajaxStub.firstCall.args[2]).to.include('test-publisher');
       expect(ajaxStub.firstCall.args[2]).to.include('2f7b179d443f14');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
     });
 
     it('should call server once when one size is passed', () => {
@@ -87,7 +87,7 @@ describe('quantcast adapter', () => {
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
     });
 
     it('should call server once when size is passed as string', () => {
@@ -97,7 +97,7 @@ describe('quantcast adapter', () => {
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
     });
 
     it('should call server once when sizes are passed as a comma-separated string', () => {
@@ -107,7 +107,7 @@ describe('quantcast adapter', () => {
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST'});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
     });
 
 
