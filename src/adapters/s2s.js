@@ -5,7 +5,6 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 import { queueSync } from 'src/cookie.js';
-import { getTopWindowUrl } from 'src/utils';
 
 const TYPE = 's2s';
 
@@ -38,7 +37,7 @@ function S2SAdapter() {
       tid : bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis : config.timeout,
-      url: getTopWindowUrl(),
+      url: utils.getTopWindowUrl(),
       prebid_version : '$prebid.version$',
       ad_units : bidRequest.ad_units
     };
