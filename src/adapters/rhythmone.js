@@ -231,7 +231,7 @@ module.exports = function(bidManager, global, loader) {
           var result = JSON.parse(txt),
             registerBid = function(bid) {
               // {"id":"ffe73abd-91b3-56d3-d0ee-015a91b356d4",
-              //	"impid":"123",
+              //    "impid":"123",
               //    "price":17.13,
               //    "nurl":"http://1r-qa-ads.rhythmxchange.com/rmp/389633/0/ivh?reqId=6594035297396414163",
               //    "cid":"366183",
