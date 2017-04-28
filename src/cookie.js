@@ -4,7 +4,6 @@ import * as utils from 'utils';
 const queue = [];
 
 function fireSyncs() {
-  //todo - check type and handle properly
   queue.forEach(obj => {
     utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
     if(obj.type === 'iframe') {

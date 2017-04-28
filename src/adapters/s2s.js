@@ -69,26 +69,28 @@ function S2SAdapter() {
             }
           });
         }
-        result.bids.forEach(bidObj => {
-          let bidRequest = utils.getBidRequest(bidObj.bid_id);
-          let cpm = bidObj.price;
-          let status;
-          if (cpm !== 0) {
-            status = STATUS.GOOD;
-          } else {
-            status = STATUS.NO_BID;
-          }
+        if(result.bids) {
+          result.bids.forEach(bidObj => {
+            let bidRequest = utils.getBidRequest(bidObj.bid_id);
+            let cpm = bidObj.price;
+            let status;
+            if (cpm !== 0) {
+              status = STATUS.GOOD;
+            } else {
+              status = STATUS.NO_BID;
+            }
 
-          let bidObject = bidfactory.createBid(status, bidRequest);
-          bidObject.creative_id = bidObj.creative_id;
-          bidObject.bidderCode = bidObj.bidder;
-          bidObject.cpm = cpm;
-          bidObject.ad = bidObj.adm;
-          bidObject.width = bidObj.width;
-          bidObject.height = bidObj.height;
+            let bidObject = bidfactory.createBid(status, bidRequest);
+            bidObject.creative_id = bidObj.creative_id;
+            bidObject.bidderCode = bidObj.bidder;
+            bidObject.cpm = cpm;
+            bidObject.ad = bidObj.adm;
+            bidObject.width = bidObj.width;
+            bidObject.height = bidObj.height;
 
-          bidmanager.addBidResponse(bidObj.code, bidObject);
-        });
+            bidmanager.addBidResponse(bidObj.code, bidObject);
+          });
+        }
       }
     } catch (error) {
       utils.logError(error);

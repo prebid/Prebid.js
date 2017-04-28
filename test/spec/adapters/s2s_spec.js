@@ -23,18 +23,10 @@ const REQUEST = {
           "h": 600
         }
       ],
+      "transactionId": "4ef956ad-fd83-406d-bd35-e4bb786ab86c",
       "bids": [
         {
           "bid_id" : "123",
-          "bidder": "appnexus",
-          "params": {
-            "placementId": "10433394"
-          }
-        }
-      ],
-      "transactionId": "4ef956ad-fd83-406d-bd35-e4bb786ab86c",
-      "bidders": [
-        {
           "bidder": "appnexus",
           "params": {
             "placementId": "10433394"
@@ -111,7 +103,7 @@ describe('S2S Adapter', () => {
     });
 
     afterEach(() => {
-      server.restore()
+      server.restore();
       bidmanager.addBidResponse.restore();
     });
 
@@ -124,25 +116,9 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
-      console.log(response);
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
     });
-
-
-    // it('handles JSON.parse errors', () => {
-    //   server.respondWith('');
-    //
-    //   adapter.callBids(REQUEST);
-    //   server.respond();
-    //   sinon.assert.calledOnce(bidmanager.addBidResponse);
-    //
-    //   const response = bidmanager.addBidResponse.firstCall.args[1];
-    //   expect(response).to.have.property(
-    //     'statusMessage',
-    //     'Bid returned empty or error response'
-    //   );
-    // });
 
   });
 
