@@ -263,7 +263,6 @@ function AppnexusAstAdapter() {
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
         if (ad.renderer_url) {
-
           // outstream video
 
           bid.adResponse = tag;

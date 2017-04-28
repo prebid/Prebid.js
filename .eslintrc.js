@@ -35,6 +35,8 @@ module.exports = {
     "standard/no-callback-literal": "off",
     "no-redeclare": "off",
     "no-use-before-define": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "no-useless-call": "off",
+    "standard/object-curly-even-spacing": "off"
   },
 };
