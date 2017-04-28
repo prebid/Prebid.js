@@ -44,7 +44,7 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
     for(let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
-      let key = seatbid.placementCode + "-" + seatbid.width + 'x' + seatbid.height;
+      let key = seatbid.placementCode;
       var request = bidRequests[key];
       if(request === null || request === undefined) {
         return returnEmptyBid(seatbid.placementCode);
@@ -78,7 +78,7 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
     publisherId = '' + bids[0].params.publisherId;
     utils._each(bids, function(bid) {
-      let key = bid.bidId;
+      let key = bid.placementCode;
       var bidSizes = [];
       utils._each(bid.sizes, function (size) {
         bidSizes.push({
