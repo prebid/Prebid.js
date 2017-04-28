@@ -4,7 +4,6 @@ const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 
 const AolAdapter = function AolAdapter() {
-
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const BIDDER_CODE = 'aol';
@@ -54,8 +53,8 @@ const AolAdapter = function AolAdapter() {
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
-      bidfloor: (typeof params.bidFloor !== 'undefined') ?
-        `;bidfloor=${params.bidFloor.toString()}` : '',
+      bidfloor: (typeof params.bidFloor !== 'undefined')
+        ? `;bidfloor=${params.bidFloor.toString()}` : '',
       misc: new Date().getTime() // cache busting
     });
   }
@@ -145,7 +144,6 @@ const AolAdapter = function AolAdapter() {
         }
 
         _addBidResponse(bid, response);
-
       }, null, { withCredentials: true });
     });
   }

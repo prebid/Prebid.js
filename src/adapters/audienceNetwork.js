@@ -31,8 +31,8 @@ const validateBidRequest = bid =>
  */
 const validateBidRequestSizes = bid => {
   bid.sizes = bid.sizes.map(flattenSize);
-  return bid.sizes.every( size =>
-    ['native', 'fullwidth', '300x250', '320x50'].includes(size) );
+  return bid.sizes.every(size =>
+    ['native', 'fullwidth', '300x250', '320x50'].includes(size));
 };
 
 /**
@@ -146,7 +146,7 @@ const callBids = bidRequest => {
   bidRequest.bids
     .filter(validateBidRequest)
     .filter(validateBidRequestSizes)
-    .forEach( bid => bid.sizes.forEach( size => {
+    .forEach(bid => bid.sizes.forEach(size => {
       adUnitCodes.push(bid.placementCode);
       placementids.push(bid.params.placementId);
       adformats.push(size);
@@ -172,17 +172,17 @@ const callBids = bidRequest => {
       const data = parseJson(res);
       if (data.errors && data.errors.length) {
         const noBid = createFailureBidResponse();
-        adUnitCodes.forEach( adUnitCode => addBidResponse(adUnitCode, noBid) );
+        adUnitCodes.forEach(adUnitCode => addBidResponse(adUnitCode, noBid));
         data.errors.forEach(logError);
       } else {
         // For each placementId in bids Object
         Object.keys(data.bids)
           // extract Array of bid responses
-          .map( placementId => data.bids[placementId] )
+          .map(placementId => data.bids[placementId])
           // flatten
-          .reduce( (a, b) => a.concat(b), [] )
+          .reduce((a, b) => a.concat(b), [])
           // call addBidResponse
-          .forEach( (bid, i) =>
+          .forEach((bid, i) =>
             addBidResponse(adUnitCodes[i], createSuccessBidResponse(
               bid.placement_id, adformats[i], bid.bid_id, bid.bid_price_cents
             ))

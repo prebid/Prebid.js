@@ -8,7 +8,6 @@ import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;
 
-
 export function listenMessagesFromCreative() {
   addEventListener('message', receiveMessage, false);
 }

@@ -28,7 +28,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
     const site = createSite();
     const syncedHostZones = {};
 
-    //translate adunit info into rtb impression dispatched by host/zone
+    // translate adunit info into rtb impression dispatched by host/zone
     this.addImp = function (bid) {
       let host = bid.params.host;
       let zone = bid.params.zoneId;
@@ -46,11 +46,11 @@ const AdKernelAdapter = function AdKernelAdapter() {
       if (utils.getTopWindowLocation().protocol === 'https:') {
         imp.secure = 1;
       }
-      //save rtb impression for specified ad-network host and zone
+      // save rtb impression for specified ad-network host and zone
       _dispatch[host][zone].push(imp);
       originalBids[bidId] = bid;
-      //perform user-sync
-      if (!(host in syncedHostZones)){
+      // perform user-sync
+      if (!(host in syncedHostZones)) {
         syncedHostZones[host] = [];
       }
       if (syncedHostZones[host].indexOf(zone) === -1) {
@@ -151,7 +151,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
    */
   function processBids(bids) {
     const dispatcher = new RtbRequestDispatcher();
-    //process individual bids
+    // process individual bids
     utils._each(bids, (bid) => {
       if (!validateBidParams(bid.params)) {
         utils.logError(`Incorrect configuration for adkernel bidder: ${bid.params}`);
@@ -160,7 +160,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
         dispatcher.addImp(bid);
       }
     });
-    //process bids grouped into bidrequests
+    // process bids grouped into bidrequests
     dispatcher.dispatch((bid, imp, bidResp) => {
       let adUnitId = bid.placementCode;
       if (bidResp) {
@@ -223,8 +223,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode : baseAdapter.getBidderCode,
-    createNew : AdKernelAdapter.createNew
+    getBidderCode: baseAdapter.getBidderCode,
+    createNew: AdKernelAdapter.createNew
   };
 };
 

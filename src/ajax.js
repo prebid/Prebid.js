@@ -20,7 +20,7 @@ export function ajax(url, callback, data, options = {}) {
     let useXDomainRequest = false;
     let method = options.method || (data ? 'POST' : 'GET');
 
-    let callbacks = typeof callback === "object" ? callback : {
+    let callbacks = typeof callback === 'object' ? callback : {
       success: function() {
         utils.logMessage('xhr success');
       },
@@ -29,13 +29,13 @@ export function ajax(url, callback, data, options = {}) {
       }
     };
 
-    if(typeof callback === "function") {
+    if (typeof callback === 'function') {
       callbacks.success = callback;
     }
 
     if (!window.XMLHttpRequest) {
       useXDomainRequest = true;
-    } else{
+    } else {
       x = new window.XMLHttpRequest();
       if (x.responseType === undefined) {
         useXDomainRequest = true;
@@ -50,10 +50,10 @@ export function ajax(url, callback, data, options = {}) {
 
       // http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
       x.onerror = function () {
-        callbacks.error("error", x);
+        callbacks.error('error', x);
       };
       x.ontimeout = function () {
-        callbacks.error("timeout", x);
+        callbacks.error('timeout', x);
       };
       x.onprogress = function() {
         utils.logMessage('xhr onprogress');
@@ -62,7 +62,7 @@ export function ajax(url, callback, data, options = {}) {
       x.onreadystatechange = function () {
         if (x.readyState === XHR_DONE) {
           let status = x.status;
-          if(status >= 200 && status < 300 || status === 304) {
+          if (status >= 200 && status < 300 || status === 304) {
             callbacks.success(x.responseText, x);
           } else {
             callbacks.error(x.statusText, x);

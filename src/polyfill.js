@@ -1,7 +1,7 @@
 /** @module polyfill
 Misc polyfills
 */
-/*jshint -W121 */
+/* jshint -W121 */
 import shimArrayFind from 'array.prototype.find/shim';
 import shimArrayIncludes from 'array-includes/shim';
 

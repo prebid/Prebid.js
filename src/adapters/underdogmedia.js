@@ -4,7 +4,6 @@ var adloader = require('../adloader.js');
 var utils = require('../utils.js');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
-
   const UDM_ADAPTER_VERSION = '1.0.0';
   var getJsStaticUrl = window.location.protocol + '//udmserve.net/udm/img.fetch?tid=1;dt=9;callback=$$PREBID_GLOBAL$$.handleUnderdogMediaCB;';
   var bidParams = {};
@@ -15,20 +14,17 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
     var siteId = 0;
 
     for (var bidParam of bidParams.bids) {
-      sizes = utils.flatten(sizes,utils.parseSizesInput(bidParam.sizes));
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
       siteId = bidParam.params.siteId;
     }
-    adloader.loadScript(getJsStaticUrl + "sid=" + siteId + ";sizes=" + sizes.join(","), null, false);
+    adloader.loadScript(getJsStaticUrl + 'sid=' + siteId + ';sizes=' + sizes.join(','), null, false);
   }
 
   function _callback(response) {
-
     var mids = response.mids;
     for (var bidParam of bidParams.bids) {
-
       var filled = false;
       for (var mid of mids) {
-
         if (mid.useCount > 0) {
           continue;
         }
@@ -75,13 +71,12 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   $$PREBID_GLOBAL$$.handleUnderdogMediaCB = _callback;
 
   function _makeNotification(bid, mid, bidParam) {
-
     var url = mid.notification_url;
 
     url += UDM_ADAPTER_VERSION;
-    url += ";cb=" + Math.random();
-    url += ";qqq=" + (1 / bid.cpm);
-    url += ";hbt=" + $$PREBID_GLOBAL$$.bidderTimeout;
+    url += ';cb=' + Math.random();
+    url += ';qqq=' + (1 / bid.cpm);
+    url += ';hbt=' + $$PREBID_GLOBAL$$.bidderTimeout;
     url += ';style=adapter';
     url += ';vis=' + encodeURIComponent(document.visibilityState);
 
@@ -89,7 +84,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
     if (bidParam.params.subId) {
       url += ';subid=' + encodeURIComponent(bidParam.params.subId);
     }
-    return "<script async src=\"" + url + "\"></script>";
+    return '<script async src="' + url + '"></script>';
   }
 
   function _getUrlVars() {
@@ -106,11 +101,9 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
     return vars;
   }
 
-
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = UnderdogMediaAdapter;

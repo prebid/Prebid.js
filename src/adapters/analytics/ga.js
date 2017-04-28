@@ -27,7 +27,6 @@ var _trackerSend = null;
  * @return {[type]}    [description]
  */
 exports.enableAnalytics = function ({ provider, options }) {
-
   _gaGlobal = provider || 'ga';
   _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
 
@@ -40,7 +39,7 @@ exports.enableAnalytics = function ({ provider, options }) {
 
   var bid = null;
 
-  //first send all events fired before enableAnalytics called
+  // first send all events fired before enableAnalytics called
 
   var existingEvents = events.getEvents();
   utils._each(existingEvents, function (eventObj) {
@@ -53,10 +52,9 @@ exports.enableAnalytics = function ({ provider, options }) {
       bid = args;
       sendBidRequestToGa(bid);
     } else if (eventObj.eventType === BID_RESPONSE) {
-      //bid is 2nd args
+      // bid is 2nd args
       bid = args;
       sendBidResponseToGa(bid);
-
     } else if (eventObj.eventType === BID_TIMEOUT) {
       const bidderArray = args;
       sendBidTimeouts(bidderArray);
@@ -66,24 +64,24 @@ exports.enableAnalytics = function ({ provider, options }) {
     }
   });
 
-  //Next register event listeners to send data immediately
+  // Next register event listeners to send data immediately
 
-  //bidRequests
+  // bidRequests
   events.on(BID_REQUESTED, function (bidRequestObj) {
     sendBidRequestToGa(bidRequestObj);
   });
 
-  //bidResponses
+  // bidResponses
   events.on(BID_RESPONSE, function (bid) {
     sendBidResponseToGa(bid);
   });
 
-  //bidTimeouts
+  // bidTimeouts
   events.on(BID_TIMEOUT, function (bidderArray) {
     sendBidTimeouts(bidderArray);
   });
 
-  //wins
+  // wins
   events.on(BID_WON, function (bid) {
     sendBidWonToGa(bid);
   });
@@ -103,17 +101,16 @@ exports.getTrackerSend = function getTrackerSend() {
  */
 function checkAnalytics() {
   if (_enableCheck && typeof window[_gaGlobal] === 'function') {
-
     for (var i = 0; i < _analyticsQueue.length; i++) {
       _analyticsQueue[i].call();
     }
 
-    //override push to execute the command immediately from now on
+    // override push to execute the command immediately from now on
     _analyticsQueue.push = function (fn) {
       fn.call();
     };
 
-    //turn check into NOOP
+    // turn check into NOOP
     _enableCheck = false;
   }
 
@@ -192,12 +189,11 @@ function sendBidRequestToGa(bid) {
     });
   }
 
-  //check the queue
+  // check the queue
   checkAnalytics();
 }
 
 function sendBidResponseToGa(bid) {
-
   if (bid && bid.bidderCode) {
     _analyticsQueue.push(function () {
       var cpmCents = convertToCents(bid.cpm);
@@ -222,12 +218,11 @@ function sendBidResponseToGa(bid) {
     });
   }
 
-  //check the queue
+  // check the queue
   checkAnalytics();
 }
 
 function sendBidTimeouts(timedOutBidders) {
-
   _analyticsQueue.push(function () {
     utils._each(timedOutBidders, function (bidderCode) {
       _eventCount++;

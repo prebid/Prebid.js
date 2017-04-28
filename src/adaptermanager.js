@@ -29,7 +29,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
-          transactionId : adUnit.transactionId,
+          transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
@@ -82,14 +82,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
-
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
       _bidderRegistry[bidderCode] = bidAdaptor;
-
     } else {
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }
-
   } else {
     utils.logError('bidAdaptor or bidderCode not specified');
   }
@@ -107,7 +104,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       try {
         let newAdapter = null;
         if (bidAdaptor instanceof BaseAdapter) {
-          //newAdapter = new bidAdaptor.constructor(alias);
+          // newAdapter = new bidAdaptor.constructor(alias);
           utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
         } else {
           newAdapter = bidAdaptor.createNew();
@@ -125,7 +122,6 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
 exports.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
-
     if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
       adapter.code = code;
       _analyticsRegistry[code] = adapter;

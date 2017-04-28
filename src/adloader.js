@@ -1,11 +1,11 @@
 var utils = require('./utils');
 let _requestCache = {};
 
-//add a script tag to the page, used to add /jpt call to page
+// add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function (tagSrc, callback, cacheRequest) {
-  //var noop = () => {};
+  // var noop = () => {};
   //
-  //callback = callback || noop;
+  // callback = callback || noop;
   if (!tagSrc) {
     utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
     return;
@@ -15,10 +15,10 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
     if (_requestCache[tagSrc]) {
       if (callback && typeof callback === 'function') {
         if (_requestCache[tagSrc].loaded) {
-          //invokeCallbacks immediately
+          // invokeCallbacks immediately
           callback();
         } else {
-          //queue the callback
+          // queue the callback
           _requestCache[tagSrc].callbacks.push(callback);
         }
       }
@@ -37,19 +37,17 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
           for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {
             _requestCache[tagSrc].callbacks[i]();
           }
-        }
-        catch (e) {
+        } catch (e) {
           utils.logError('Error executing callback', 'adloader.js:loadScript', e);
         }
       });
     }
   }
 
-  //trigger one time request
+  // trigger one time request
   else {
     requestResource(tagSrc, callback);
   }
-
 };
 
 function requestResource(tagSrc, callback) {
@@ -75,7 +73,7 @@ function requestResource(tagSrc, callback) {
 
   jptScript.src = tagSrc;
 
-  //add the new script tag to the page
+  // add the new script tag to the page
   var elToAppend = document.getElementsByTagName('head');
   elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
   if (elToAppend.length) {
@@ -84,9 +82,9 @@ function requestResource(tagSrc, callback) {
   }
 }
 
-//track a impbus tracking pixel
-//TODO: Decide if tracking via AJAX is sufficent, or do we need to
-//run impression trackers via page pixels?
+// track a impbus tracking pixel
+// TODO: Decide if tracking via AJAX is sufficent, or do we need to
+// run impression trackers via page pixels?
 exports.trackPixel = function (pixelUrl) {
   let delimiter;
   let trackingPixel;
@@ -98,7 +96,7 @@ exports.trackPixel = function (pixelUrl) {
 
   delimiter = pixelUrl.indexOf('?') > 0 ? '&' : '?';
 
-  //add a cachebuster so we don't end up dropping any impressions
+  // add a cachebuster so we don't end up dropping any impressions
   trackingPixel = pixelUrl + delimiter + 'rnd=' + Math.floor(Math.random() * 1E7);
   (new Image()).src = trackingPixel;
   return trackingPixel;
