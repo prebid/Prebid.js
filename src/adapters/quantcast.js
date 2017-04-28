@@ -59,6 +59,8 @@ var QuantcastAdapter = function QuantcastAdapter() {
       responseBid.height = seatbid.height;
       responseBid.width = seatbid.width;
       responseBid.bidderCode = response.bidderCode;
+      responseBid.requestId = request.requestId;
+      responseBid.bidderCode = BIDDER_CODE;
 
       bidmanager.addBidResponse(request.bidId, responseBid);
     }
