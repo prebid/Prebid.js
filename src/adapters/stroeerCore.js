@@ -101,7 +101,14 @@ module.exports = function (win = window) {
 
   return {
     callBids: function (params) {
-      const requestBody = {bids:[], ref: getPageReferer(), ssl: isSecureWindow(), mpa: isMainPageAccessible()};
+      const requestBody = {
+        bids:[],
+        ref: getPageReferer(),
+        ssl: isSecureWindow(),
+        mpa: isMainPageAccessible(),
+        timeout: params.timeout - (Date.now() - params.auctionStart)
+      };
+
       const validBidRequestById = {};
 
       params.bids.forEach(bidRequest => {

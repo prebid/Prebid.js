@@ -157,7 +157,7 @@ describe('stroeerssp adapter', function () {
 
     it('should add unfilfilled bids', function() {
 
-      var result = buildBidderResponse();
+      const result = buildBidderResponse();
 
       result.bids[0].bidId = 'bidX';
 
