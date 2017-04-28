@@ -716,9 +716,18 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @param {object} options - config object for s2s
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
-  //TODO: checks for missing config
 
-  var config = Object.assign({
+  if (!utils.contains(Object.keys(options), 'accountId')) {
+    utils.logError('accountId missing in Server to Server config');
+    return;
+  }
+
+  if (!utils.contains(Object.keys(options), 'bidders')) {
+    utils.logError('bidders missing in Server to Server config');
+    return;
+  }
+
+  const config = Object.assign({
     enabled : false,
     endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT,
     timeout : 1000,
