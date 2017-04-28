@@ -197,11 +197,12 @@ module.exports = function(bidManager, global, loader){
       u = "//hbevents.1rx.io/audit?",
       i = new Image();
     
-    if(ao && ao.length > 0)
+    if(ao && ao.length > 0){
       data.ancestor_origins = ao[ao.length-1];
+	}
     
-    data.popped = (window.opener!==null?1:0);
-    data.framed = (window.top===window?0:1);
+    data.popped = window.opener!==null?1:0;
+    data.framed = window.top===window?0:1;
     
     try{
       data.url = window.top.document.location.href.toString();
@@ -215,10 +216,11 @@ module.exports = function(bidManager, global, loader){
     data.response_ms = (new Date()).getTime() - loadStart;
     data.placement_codes = configuredPlacements.join(",");
     data.bidder_version = version;
-    data.prebid_timeout = (prebid_instance.cbTimeout || prebid_instance.bidderTimeout);
+    data.prebid_timeout = prebid_instance.cbTimeout || prebid_instance.bidderTimeout;
     
-    for(var k in data)
+    for(var k in data){
       q.push(encodeURIComponent(k)+"="+encodeURIComponent((typeof data[k] === "object" ? JSON.stringify(data[k]) : data[k])));
+	}
 
     q.sort();
     i.src = u+q.join("&");
