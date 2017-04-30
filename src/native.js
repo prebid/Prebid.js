@@ -11,6 +11,10 @@ export const NATIVE_KEYS = {
   click_url: 'hb_native_linkurl',
 };
 
+export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
+  key => NATIVE_KEYS[key]
+);
+
 const IMAGE = {
   image: {required: true},
   title: {required: true},

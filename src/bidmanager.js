@@ -181,7 +181,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     Object.keys(custBidObj.native).forEach(asset => {
       const key = NATIVE_KEYS[asset];
       const value = custBidObj.native[asset];
-      keyValues[key] = value;
+      if (key) {keyValues[key] = value;}
     });
   }
 
