@@ -53,9 +53,9 @@ function linkOverride(url) {
 
 function displayFooter(msgHtml) {
   // https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie#Example_3_Do_something_only_once
-  if (document.cookie.replace(/(?:(?:^|.*;\s*)anCookiejackFooter\s*\=\s*([^;]*).*$)|^.*$/, '$1') !== 'true') {
+  if (document.cookie.replace(/(?:(?:^|.*;\s*)pbsCookiePersistFooter\s*\=\s*([^;]*).*$)|^.*$/, '$1') !== 'true') {
     document.body.appendChild(createFooter(msgHtml));
-    document.cookie = 'anCookiejackFooter=true; expires=Fri, 31 Dec 9999 23:59:59 GMT';
+    document.cookie = 'pbsCookiePersistFooter=true; expires=Fri, 31 Dec 9999 23:59:59 GMT';
   }
 }
 
