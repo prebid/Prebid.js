@@ -1634,8 +1634,8 @@ describe('Unit: Prebid Module', function () {
         enabled : true,
         bidders : ['appnexus'],
         timeout : 1000,
-        adapter : 's2s',
-        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction?url_override=http%3A%2F%2Fwww.nytimes.com'
+        adapter : 'prebidServer',
+        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction'
       };
 
       $$PREBID_GLOBAL$$.setS2SConfig(options);
@@ -1648,7 +1648,7 @@ describe('Unit: Prebid Module', function () {
         enabled : true,
         timeout : 1000,
         adapter : 's2s',
-        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction?url_override=http%3A%2F%2Fwww.nytimes.com'
+        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction'
       };
 
       $$PREBID_GLOBAL$$.setS2SConfig(options);

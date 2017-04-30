@@ -732,7 +732,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT,
     timeout : 1000,
     maxBids : 1,
-    adapter : 's2s'
+    adapter : 'prebidServer'
   }, options);
   adaptermanager.setS2SConfig(config);
 };

@@ -1,7 +1,5 @@
 [
-
     "aardvark",
-    "s2s",
     "adblade",
     "adbund",
     "adbutler",
@@ -66,6 +64,7 @@
     "atomx",
     "tapsense",
     "trion",
+    "prebidServer",
     {
       "appnexus": {
         "alias": "brealtime"

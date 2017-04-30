@@ -7,14 +7,14 @@ import { STATUS } from 'src/constants';
 import { queueSync, persist } from 'src/cookie.js';
 
 const TYPE = 's2s';
-const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow our partner AppNexus to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
+const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
 const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 /**
  * Bidder adapter for Prebid Server
  */
-function S2SAdapter() {
+function PrebidServer() {
 
-  let baseAdapter = Adapter.createNew('s2s');
+  let baseAdapter = Adapter.createNew('prebidServer');
   let bidRequests = [];
   let config;
 
@@ -106,7 +106,7 @@ function S2SAdapter() {
 
   return {
     setConfig : baseAdapter.setConfig,
-    createNew: S2SAdapter.createNew,
+    createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type : TYPE
@@ -114,8 +114,8 @@ function S2SAdapter() {
 
 }
 
-S2SAdapter.createNew = function() {
-  return new S2SAdapter();
+PrebidServer.createNew = function() {
+  return new PrebidServer();
 };
 
-module.exports = S2SAdapter;
+module.exports = PrebidServer;
