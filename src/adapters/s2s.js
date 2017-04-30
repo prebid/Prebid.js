@@ -4,14 +4,13 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-import { queueSync } from 'src/cookie.js';
+import { queueSync, persist } from 'src/cookie.js';
 
 const TYPE = 's2s';
-
+const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow our partner AppNexus to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
+const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 /**
- * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
- * sends out a bid request. When a bid response is back, registers the bid
- * to Prebid.js. This adapter supports alias bidding.
+ * Bidder adapter for Prebid Server
  */
 function S2SAdapter() {
 
@@ -91,6 +90,10 @@ function S2SAdapter() {
             bidmanager.addBidResponse(bidObj.code, bidObject);
           });
         }
+      }
+      else if (result.status === 'no_cookie') {
+        //cookie sync
+        persist(cookiePersistUrl, cookiePersistMessage);
       }
     } catch (error) {
       utils.logError(error);

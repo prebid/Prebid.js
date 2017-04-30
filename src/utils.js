@@ -638,3 +638,7 @@ export function inIframe() {
     return true;
   }
 }
+
+export function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
