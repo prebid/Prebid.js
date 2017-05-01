@@ -21,7 +21,8 @@ function assertNoFillBid(bidObject, bidId) {
 
 const buildBidderRequest = () => ({
   bidderCode: 'stroeerCore',
-  timeout: 1298,
+  timeout: 5000,
+  auctionStart: 10000,
   bids: [
     {
       bidId: 'bid1',
@@ -86,54 +87,131 @@ const createWindow = (href, params = {}) => {
 };
 
 describe('stroeerssp adapter', function () {
+  let sandbox;
+  let fakeServer;
+  let bidderRequest;
+  let clock;
+
+  beforeEach(function() {
+    bidderRequest = buildBidderRequest();
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(bidmanager, 'addBidResponse');
+    fakeServer = sandbox.useFakeServer();
+    clock = sandbox.useFakeTimers();
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+
+  const topWin = createWindow("http://www.abc.org/", {referrer:"http://www.google.com/?query=monkey"});
+  topWin.innerHeight = 800;
+
+  const midWin = createWindow("http://www.abc.org/", {parent: topWin, top: topWin, frameElement: createElement()});
+  midWin.innerHeight = 400;
+
+
+  const win = createWindow("http://www.xyz.com/", {parent: midWin, top: topWin, frameElement: createElement(304),
+    placementElements: [createElement(17, "div-1"), createElement(54, "div-2")]});
+  win.innerHeight = 200;
+
+  function createElement(offsetTop = 0, id) {
+    return {
+      id,
+      getBoundingClientRect: function() {
+        return {
+          top: offsetTop,
+          height: 1
+        }
+      }
+    }
+  }
 
 
   it('should have `callBids` function', () => {
     assert.isFunction(adapter().callBids);
   });
 
-  describe("interaction with bid manager", () => {
-    let sandbox;
-    let bidderRequest;
 
-    const topWin = createWindow("http://www.abc.org/", {referrer:"http://www.google.com/?query=monkey"});
-    topWin.innerHeight = 800;
+  describe('bid request', () => {
+    it('send bids as a POST request to default endpoint', function () {
+      fakeServer.respondWith("");
+      adapter(win).callBids(bidderRequest);
+      fakeServer.respond();
 
-    const midWin = createWindow("http://www.abc.org/", {parent: topWin, top: topWin, frameElement: createElement()});
-    midWin.innerHeight = 400;
+      assert.equal(fakeServer.requests.length, 1);
+      const request = fakeServer.requests[0];
+
+      assert.equal(request.method, 'POST');
+      assert.equal(request.url, 'http://localhost:3333/dsh');
+    });
 
 
-    const win = createWindow("http://www.xyz.com/", {parent: midWin, top: topWin, frameElement: createElement(304),
-      placementElements: [createElement(17, "div-1"), createElement(54, "div-2")]});
-    win.innerHeight = 200;
+    it('send bids as a POST request to custom endpoint', function () {
+      const firstBidParams = bidderRequest.bids[0].params;
+      firstBidParams.host = "other.com";
+      firstBidParams.port = 234;
+      firstBidParams.path = "/xyz";
 
-    function createElement(offsetTop = 0, id) {
-      return {
-        id,
-        getBoundingClientRect: function() {
-          return {
-            top: offsetTop,
-            height: 1
+      fakeServer.respondWith("");
+      adapter(win).callBids(bidderRequest);
+      fakeServer.respond();
+
+
+      assert.equal(fakeServer.requests.length, 1);
+      const request = fakeServer.requests[0];
+
+      assert.equal(request.method, 'POST');
+      assert.equal(request.url, 'http://other.com:234/xyz');
+    });
+
+
+    it('sends bids in the expected JSON structure', function () {
+      clock.tick(13500);
+
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+      adapter(win).callBids(bidderRequest);
+      fakeServer.respond();
+
+      assert.equal(fakeServer.requests.length, 1);
+
+      const request = fakeServer.requests[0];
+
+      const bidRequest = JSON.parse(request.requestBody);
+
+      const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
+
+      assert.equal(expectedTimeout, 1500);
+
+      const expectedJson = {
+        "timeout": expectedTimeout,
+        "ref": "http://www.google.com/?query=monkey",
+        "mpa": true,
+        "ssl": false,
+        "bids": [
+          {
+            "bid": "bid1",
+            "siz": [[300,600],[160,60]],
+            "viz": true
+          },
+          {
+            "bid": "bid2",
+            "siz": [[728,90]],
+            "viz": true
           }
-        }
-      }
-    }
+        ]
+      };
 
-    let fakeServer;
+      console.log("actual: " + JSON.stringify(bidRequest));
+      console.log("expected: " + JSON.stringify(expectedJson));
 
-    beforeEach(function() {
-      bidderRequest = buildBidderRequest();
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(bidmanager, 'addBidResponse');
-      fakeServer = sandbox.useFakeServer();
-
+      assert.deepEqual(bidRequest, expectedJson);
     });
-
-    afterEach(function() {
-      sandbox.restore();
-    });
+  });
 
 
+  describe("bid response", () => {
     it('should add bids', function () {
 
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
@@ -155,7 +233,7 @@ describe('stroeerssp adapter', function () {
     });
 
 
-    it('should add unfilfilled bids', function() {
+    it('should add unfulfilled bids', function() {
 
       const result = buildBidderResponse();
 
