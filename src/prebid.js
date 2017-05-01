@@ -80,7 +80,7 @@ $$PREBID_GLOBAL$$.que.push = function (cmd) {
     try {
       cmd.call();
     } catch (e) {
-      utils.logError('Error processing command :' + e.message);
+      utils.logError('Error processing command :', e.message, e.stack);
     }
   } else {
     utils.logError('Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function');
