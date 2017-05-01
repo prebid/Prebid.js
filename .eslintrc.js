@@ -19,24 +19,24 @@ module.exports = {
     // Violations of these styles should be fixed, and the exceptions removed over time.
     //
     // See Issue #1111.
-    "import/first": "off",
-    // "no-multiple-empty-lines": "off",
-    "valid-typeof": "off",
-    "one-var": "off",
-    "camelcase": "off",
-    "no-mixed-operators": "off",
-    "no-throw-literal": "off",
-    "no-useless-escape": "off",
     "brace-style": "off",
-    "no-return-assign": "off",
-    "no-undef": "off",
+    "camelcase": "off",
     "eqeqeq": "off",
+    "import/first": "off",
     "no-control-regex": "off",
-    "standard/no-callback-literal": "off",
+    "no-mixed-operators": "off",
+    "no-multiple-empty-lines": "off",
     "no-redeclare": "off",
-    "no-use-before-define": "off",
+    "no-return-assign": "off",
+    "no-throw-literal": "off",
+    "no-undef": "off",
     "no-unused-vars": "off",
+    "no-use-before-define": "off",
     "no-useless-call": "off",
-    "standard/object-curly-even-spacing": "off"
+    "no-useless-escape": "off",
+    "one-var": "off",
+    "standard/no-callback-literal": "off",
+    "standard/object-curly-even-spacing": "off",
+    "valid-typeof": "off"
   },
 };
