@@ -295,18 +295,21 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   if (doc && id) {
     try {
       //lookup ad by ad Id
-      var adObject = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
-      if (adObject) {
+      const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
+      if (bid) {
+        //replace macros according to openRTB with price paid = bid.cpm
+        bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+        bid.url = utils.replaceAuctionPrice(bid.url, bid.cpm);
         //save winning bids
-        $$PREBID_GLOBAL$$._winningBids.push(adObject);
+        $$PREBID_GLOBAL$$._winningBids.push(bid);
 
         //emit 'bid won' event here
-        events.emit(BID_WON, adObject);
+        events.emit(BID_WON, bid);
 
-        const { height, width, ad, mediaType, adUrl: url, renderer } = adObject;
+        const { height, width, ad, mediaType, adUrl: url, renderer } = bid;
 
         if (renderer && renderer.url) {
-          renderer.render(adObject);
+          renderer.render(bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {

@@ -99,8 +99,8 @@ function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || result.status.includes('Error')) {
-      utils.logError('error parsing resposne');
+    if (!result || result.status && result.status.includes('Error')) {
+      utils.logError('error parsing response: ', result.status);
     }
   }
 

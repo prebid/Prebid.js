@@ -642,3 +642,8 @@ export function inIframe() {
 export function isSafariBrowser() {
   return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
+
+export function replaceAuctionPrice(str, cpm) {
+  if(!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+}
