@@ -1,36 +1,51 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
     "adkernel",
     "admedia",
+    "bidfluence",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "innity",
     "kruxlink",
+    "getintent",
+    "inneractive",
     "komoona",
+    "lifestreet",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
     "pulsepoint",
+    "pulsepointLite",
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "huddledmasses",
+    "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
+    "thoughtleadr",
+    "stickyadstv",
     "triplelift",
+    "twenga",
     "yieldbot",
     "nginad",
     "brightcom",
@@ -45,6 +60,10 @@
     "roxot",
     "vertoz",
     "widespace",
+    "admixer",
+    "atomx",
+    "tapsense",
+    "trion",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -61,13 +80,33 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "gourmetads"
+      }
+    },
+    {
       "appnexusAst": {
+        "supportedMediaTypes": ["video"]
+      }
+    },    {
+      "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
     },
     {
+      "beachfront": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
       "rubicon": {
-        "alias": "rubiconLite"
+        "alias": "rubiconLite",
+        "supportedMediaTypes": ["video"]
       }
     },
     {
@@ -76,9 +115,28 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "oftmedia"
+      }
+    },
+    {
       "adkernel": {
         "alias": "headbidding"
       }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
+      }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]

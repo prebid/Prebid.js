@@ -26,9 +26,10 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           }
           sizes = sizeMapping;
         }
-        return Object.assign(bid, {
+        return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
+          transactionId : adUnit.transactionId,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,

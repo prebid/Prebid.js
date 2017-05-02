@@ -53,10 +53,10 @@ module.exports = {
 
   createEnd2EndTestReport : function(targetDestinationDir) {
     var browsers = require('./browsers.json');
-    var env = ['default'];
+    var env = [];
     var input = 'bs';
     for(var key in browsers) {
-      if(key.substring(0, input.length) === input) {
+      if(key.substring(0, input.length) === input && browsers[key].browser !== 'iphone') {
         env.push(key);
       }
     }

@@ -1,5 +1,7 @@
 /*jshint loopfunc: true */
 
+import { STATUS } from 'src/constants';
+
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
@@ -33,25 +35,34 @@ var GetIntentAdapter = function GetIntentAdapter() {
         pid: bidRequest.params.pid, // required
         tid: bidRequest.params.tid, // required
         known: bidRequest.params.known || 1,
+        is_video: bidRequest.mediaType === 'video',
+        video: bidRequest.params.video || {},
         size: bidRequest.sizes[0].join("x"),
       };
       addOptional(bidRequest.params, request, ['cur', 'floor']);
-      window.gi_hb.makeBid(request, function(bidResponse) {
-        if (bidResponse.no_bid === 1) {
-          var nobid = bidfactory.createBid(2);
-          nobid.bidderCode = bidRequest.bidder;
-          bidmanager.addBidResponse(bidRequest.placementCode, nobid);
-        } else {
-          var size = bidResponse.size.split('x');
-          var bid = bidfactory.createBid(1);
-          bid.bidderCode = bidRequest.bidder;
-          bid.cpm = bidResponse.cpm;
-          bid.ad = bidResponse.ad;
-          bid.width = size[0];
-          bid.height = size[1];
-          bidmanager.addBidResponse(bidRequest.placementCode, bid);
-        }
-      });
+      (function (r, br) {
+        window.gi_hb.makeBid(r, function(bidResponse) {
+          if (bidResponse.no_bid === 1) {
+            var nobid = bidfactory.createBid(STATUS.NO_BID);
+            nobid.bidderCode = br.bidder;
+            bidmanager.addBidResponse(br.placementCode, nobid);
+          } else {
+            var bid = bidfactory.createBid(STATUS.GOOD);
+            var size = bidResponse.size.split('x');
+            bid.bidderCode = br.bidder;
+            bid.cpm = bidResponse.cpm;
+            bid.width = size[0];
+            bid.height = size[1];
+            if (br.mediaType === 'video') {
+              bid.vastUrl = bidResponse.vast_url;
+              bid.descriptionUrl = bidResponse.vast_url;
+            } else {
+              bid.ad = bidResponse.ad;
+            }
+            bidmanager.addBidResponse(br.placementCode, bid);
+          }
+        });
+      })(request, bidRequest);
     }
   }
 
