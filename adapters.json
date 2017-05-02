@@ -64,6 +64,7 @@
     "atomx",
     "tapsense",
     "trion",
+    "adsupply",
     {
       "appnexus": {
         "alias": "brealtime"
