@@ -24,6 +24,9 @@ const validateBidRequest = bid =>
   bid.params.placementId.length > 0 &&
   Array.isArray(bid.sizes) && bid.sizes.length > 0;
 
+const isValidSize = size =>
+  ['native', 'fullwidth', '300x250', '320x50'].includes(flattenSize(size));
+
 /**
  * Does this bid request contain valid sizes?
  * @param {Object} bid
@@ -31,8 +34,7 @@ const validateBidRequest = bid =>
  */
 const validateBidRequestSizes = bid => {
   bid.sizes = bid.sizes.map(flattenSize);
-  return bid.sizes.every( size =>
-    ['native', 'fullwidth', '300x250', '320x50'].includes(size) );
+  return bid.sizes.some( isValidSize );
 };
 
 /**
@@ -146,7 +148,7 @@ const callBids = bidRequest => {
   bidRequest.bids
     .filter(validateBidRequest)
     .filter(validateBidRequestSizes)
-    .forEach( bid => bid.sizes.forEach( size => {
+    .forEach( bid => bid.sizes.filter(isValidSize).forEach( size => {
       adUnitCodes.push(bid.placementCode);
       placementids.push(bid.params.placementId);
       adformats.push(size);
