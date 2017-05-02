@@ -40,7 +40,7 @@ gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2ete
 
 gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test', 'mocha']);
 
-gulp.task('build', ['webpack']);
+gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -74,7 +74,6 @@ gulp.task('webpack', function () {
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
-    .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
