@@ -105,7 +105,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       requestId: requestId,
       responseTimestamp: timestamp(),
       requestTimestamp: start,
-      cpm: bid.cpm || 0,
+      cpm: parseFloat(bid.cpm) || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
