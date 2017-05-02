@@ -115,7 +115,7 @@ module.exports = function (win = window) {
         if (validBidRequest(bidRequest)) {
           requestBody.bids.push({
             bid: bidRequest.bidId,
-            sid: bidRequest.params.slotId,
+            sid: bidRequest.params.sid,
             siz: bidRequest.sizes,
             viz: elementInView(bidRequest.placementCode)
           });

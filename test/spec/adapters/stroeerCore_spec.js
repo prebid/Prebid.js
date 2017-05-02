@@ -191,20 +191,19 @@ describe('stroeerssp adapter', function () {
         "ssl": false,
         "bids": [
           {
+            "sid": "NDA=",
             "bid": "bid1",
             "siz": [[300,600],[160,60]],
             "viz": true
           },
           {
+            "sid": "ODA=",
             "bid": "bid2",
             "siz": [[728,90]],
             "viz": true
           }
         ]
       };
-
-      console.log("actual: " + JSON.stringify(bidRequest));
-      console.log("expected: " + JSON.stringify(expectedJson));
 
       assert.deepEqual(bidRequest, expectedJson);
     });
