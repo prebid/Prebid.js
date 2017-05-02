@@ -10,7 +10,7 @@ var AdSupplyAdapter = function AdSupplyAdapter() {
       return false;
     }
 
-    if (typeof params.zoneId !== "number" || params.zoneId <= 0) {
+    if (typeof params.zoneId !== 'number' || params.zoneId <= 0) {
       return false;
     }
 
@@ -40,7 +40,7 @@ var AdSupplyAdapter = function AdSupplyAdapter() {
 
     if (!media) return;
 
-    if (!media.Url || !media.Ecpm || typeof media.Ecpm !== "number" || media.Ecpm <= 0) {
+    if (!media.Url || !media.Ecpm || typeof media.Ecpm !== 'number' || media.Ecpm <= 0) {
       var noFillbject = bidfactory.createBid(2, bidRequest);
       noFillbject.bidderCode = ADSUPPLY_CODE;
       bidmanager.addBidResponse(bidRequest.placementCode, noFillbject);

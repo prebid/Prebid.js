@@ -1,7 +1,7 @@
 describe('adsupply adapter tests', function () {
 
 	const expect = require('chai').expect;
-	const assert = require('chai').assert;
+	
 	const AdSupplyAdapter = require('../../../src/adapters/adsupply');
 	const adloader = require('../../../src/adloader');
 	const bidmanager = require('../../../src/bidmanager');
