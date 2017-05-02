@@ -63,8 +63,8 @@
     "admixer",
     "atomx",
     "tapsense",
-    "trion",
     "prebidServer",
+    "adsupply",
     {
       "appnexus": {
         "alias": "brealtime"
