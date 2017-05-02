@@ -28,61 +28,8 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
     // The Prebid global must match Prebid.js setting
     var $$PREBID_GLOBAL$$ = pbjs;
     var prebidSrc = 'https://publisher.com:9999/build/dev/prebid.js';
-    var rightSlotSizes = [[300, 250], [300, 600], [300, 250], [100, 100]];
-    var adUnits = [
-        {
-            code: '/19968336/header-bid-tag-1',
-            sizes: rightSlotSizes,
-            bids: [
-                {
-                    bidder: 'appnexusAst',
-                    params: {
-                        placementId: '4799418',
-                        dealId: 'some deal!'
-                    }
-                },
-                {
-                    bidder: 'aol',
-                    params: {
-                        network: '10077.1',
-                        placement: 3671670
-                    }
-                },
-                {
-                    bidder: 'sovrn',
-                    params: {
-                        tagid: "315045"
-                    }
-                }
-            ]
-        },
-        {
-            code: '/19968336/header-bid-tag-2',
-            sizes: rightSlotSizes,
-            bids: [
-                {
-                    bidder: 'appnexusAst',
-                    params: {
-                        placementId: '4799418',
-                        dealId: 'some deal!'
-                    }
-                },
-                {
-                    bidder: 'aol',
-                    params: {
-                        network: '10077.1',
-                        placement: 3671670
-                    }
-                },
-                {
-                    bidder: 'sovrn',
-                    params: {
-                        tagid: "315045"
-                    }
-                }
-                ]
-        }
-    ];
+    var adUnits;
+    var requestBidsDuration;
 
     // load Prebid.js
     (function () {
@@ -95,7 +42,6 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
 
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
-    var PREBID_TIMEOUT = 3000;
 
     var date = new Date().getTime();
 
@@ -114,7 +60,7 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
                     initAdserver();
                     console.log('bidsBackHandler responses: ', bidResponses);
                 },
-                timeout: 3000
+                timeout: requestBidsDuration
             });
         });
     }
@@ -185,7 +131,10 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
       if (typeof window.context.master.adCalls === 'undefined') {
         window.context.master.adCalls = [];
       }
-        if (window.context && window.context.isMaster) {
+        if (window.context && window.context.isMaster && config.prebid) {
+            var prebid = config.prebid;
+            adUnits = prebid.adUnits;
+            requestBidsDuration = prebid.requestBidsDuration;
             loadPrebidJS();
         }
         window.context.master.adCalls.push(setTargeting.bind(null, config, done));

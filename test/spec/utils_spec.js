@@ -36,13 +36,13 @@ describe('Utils', function () {
     });
   });
 
-  describe('getBidIdParamater', function () {
+  describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('a', obj);
+      var output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
     });
 
@@ -51,7 +51,7 @@ describe('Utils', function () {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('c', obj);
+      var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
     });
   });
@@ -130,7 +130,7 @@ describe('Utils', function () {
         c:'3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, expectedResult);
     });
 
@@ -140,7 +140,7 @@ describe('Utils', function () {
         c:'3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, source);
     });
 
@@ -151,7 +151,7 @@ describe('Utils', function () {
       };
       var source = {};
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, target);
     });
   });

@@ -5,7 +5,7 @@ const allAdapters = require('../../fixtures/allAdapters');
 const expect = require('chai').expect;
 require('../../../loaders/adapterLoader');
 
-const defaultAdapters = ["aardvark","adblade","adbutler","adequant","adform","admedia","aol","appnexus","appnexusAst","getintent","hiromedia","indexExchange","kruxlink","komoona","openx","piximedia","pubmatic","pulsepoint","rubicon","sonobi","sovrn","springserve","triplelift","yieldbot","nginad","brightcom","wideorbit","jcm","underdogmedia","memeglobal","centro","roxot",{"appnexus":{"alias":"brealtime"}},{"appnexus":{"alias":"pagescience"}},{"appnexus":{"alias":"defymedia"}},{"appnexusAst":{"supportedMediaTypes":["video"]}}];
+const defaultAdapters = ["aardvark","adblade","adbutler","adequant","adform","admedia","aol","appnexus","appnexusAst","getintent","hiromedia","indexExchange","kruxlink","komoona","openx","piximedia","pubmatic","pulsepoint","rubicon","sonobi","sovrn","springserve","thoughtleadr","triplelift","twenga","yieldbot","nginad","brightcom","wideorbit","jcm","underdogmedia","memeglobal","centro","roxot",{"appnexus":{"alias":"brealtime"}},{"appnexus":{"alias":"pagescience"}},{"appnexus":{"alias":"defymedia"}},{"appnexusAst":{"supportedMediaTypes":["video"]}}];
 
 const input = `/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
   /** END INSERT ADAPTERS */`;
@@ -33,7 +33,7 @@ describe('adapterLoader.js', () => {
     const getAdapterStub = () => customAdapter;
     const loader = proxyquire('../../../loaders/adapterLoader', {'fs': {existsSync : ()=> false }, './getAdapters' : getAdapterStub});
     let output = loader(input);
-    const expected = 'var AppnexusAdapter = require(\'./adapters/appnexus.js\');\n    exports.registerBidAdapter(new AppnexusAdapter.createNew(), \'appnexus\');\nexports.videoAdapters = [];';
+    const expected = 'var AppnexusAdapter = require(\'./adapters/appnexus.js\');\n    exports.registerBidAdapter(new AppnexusAdapter(), \'appnexus\');\nexports.videoAdapters = [];';
     expect(output).to.equal(expected);
   });
 

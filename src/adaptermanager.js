@@ -26,9 +26,10 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           }
           sizes = sizeMapping;
         }
-        return Object.assign(bid, {
+        return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
+          transactionId : adUnit.transactionId,
           sizes: sizes,
           bidId: utils.getUniqueIdentifierStr(),
           bidderRequestId,
@@ -69,6 +70,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
         utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+        utils.logMessage(`CALLING BIDDER BIDS ======= ${bidderRequest}`);
         $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
         adapter.callBids(bidderRequest);

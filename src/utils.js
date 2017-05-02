@@ -69,7 +69,7 @@ exports.generateUUID = function generateUUID(placeholder) {
     ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
-exports.getBidIdParamater = function (key, paramsObj) {
+exports.getBidIdParameter = function (key, paramsObj) {
   if (paramsObj && paramsObj[key]) {
     return paramsObj[key];
   }
@@ -107,22 +107,6 @@ exports.transformAdServerTargetingObj = function (targeting) {
   } else {
     return '';
   }
-};
-
-//Copy all of the properties in the source objects over to the target object
-//return the target object.
-exports.extend = function (target, source) {
-  target = target || {};
-
-  this._each(source, function (value, prop) {
-    if (typeof source[prop] === objectType_object) {
-      target[prop] = this.extend(target[prop], source[prop]);
-    } else {
-      target[prop] = source[prop];
-    }
-  });
-
-  return target;
 };
 
 /**
@@ -180,15 +164,25 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 };
 
 exports.getTopWindowLocation = function () {
+  let location;
   try {
-    return window.top.location;
+    location = window.top.location;
   } catch (e) {
-    return window.location;
+    location = window.location;
   }
+
+  return location;
 };
 
 exports.getTopWindowUrl = function () {
-  return this.getTopWindowLocation().href;
+  let href;
+  try {
+    href = this.getTopWindowLocation().href;
+  } catch (e) {
+    href = '';
+  }
+
+  return href;
 };
 
 exports.logWarn = function (msg) {
@@ -461,6 +455,19 @@ exports.createTrackPixelHtml = function (url) {
 };
 
 /**
+ * Creates a snippet of Iframe HTML that retrieves the specified `url`
+ * @param  {string} url plain URL to be requested
+ * @return {string}     HTML snippet that contains the iframe src = set to `url`
+ */
+exports.createTrackPixelIframeHtml = function (url) {
+  if (!url) {
+    return '';
+  }
+
+  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${encodeURI(url)}"></iframe>`;
+};
+
+/**
  * Returns iframe document in a browser agnostic way
  * @param  {object} iframe reference
  * @return {object}        iframe `document` reference
@@ -536,6 +543,7 @@ export function getHighestCpm(previous, current) {
   if (previous.cpm === current.cpm) {
     return previous.timeToRespond > current.timeToRespond ? current : previous;
   }
+
   return previous.cpm < current.cpm ? current : previous;
 }
 
@@ -563,4 +571,30 @@ export function shuffle(array) {
   }
 
   return array;
+}
+
+export function adUnitsFilter(filter, bid) {
+  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+}
+
+/**
+ * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
+ * @param {HTMLDocument} doc document to check support of 'srcdoc'
+ */
+export function isSrcdocSupported(doc) {
+  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
+  return doc.defaultView && doc.defaultView.frameElement &&
+    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+}
+
+export function cloneJson(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
 }
