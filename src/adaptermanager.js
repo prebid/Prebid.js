@@ -70,6 +70,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
         utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+        utils.logMessage(`CALLING BIDDER BIDS ======= ${bidderRequest}`);
         $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
         adapter.callBids(bidderRequest);
