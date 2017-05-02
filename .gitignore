@@ -4,9 +4,21 @@ build
 
 # Test Files
 test/app
+gpt.html
+gpt-each-bidder3.html
+
+# Selenium files
+bin
+selenium*.log
 
 # Dev File
 integrationExamples/gpt/gpt.html
+integrationExamples/gpt/*-test.html
+integrationExamples/implementations/
+src/adapters/analytics/libraries
+
+# Coverage reports
+build/coverage/
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion
 
@@ -59,3 +71,9 @@ crashlytics-build.properties
 
 #zip files (for releases)
 *.zip
+
+# TypeScript typings
+typings/
+
+# MacOS system files
+.DS_Store

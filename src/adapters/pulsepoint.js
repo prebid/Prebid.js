@@ -1,65 +1,83 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
+var utils = require('../utils.js');
 
 var PulsePointAdapter = function PulsePointAdapter() {
 
-    var getJsStaticUrl = 'http://tag.contextweb.com/getjs.static.js';
-    var bidUrl = 'http://tag.contextweb.com/bid';
-    
-    function _callBids(params) {
-        if(typeof window.pp === 'undefined') {
-            adloader.loadScript(getJsStaticUrl, function() { bid(params); });
-        } else {
-            bid(params);
-        }
-    }
-    
-    function bid(params) {
-        var bids = params.bids;
-        for (var i = 0; i < bids.length; i++) {
-            var bidRequest = bids[i];
-            var callback = bidResponseCallback(bidRequest);
-            var ppBidRequest = new window.pp.Ad({
-                cf : bidRequest.params.cf,
-                cp : bidRequest.params.cp,
-                ct : bidRequest.params.ct,
-                cn : 1,
-                ca : window.pp.requestActions.BID,
-                cu : bidUrl,
-                adUnitId: bidRequest.placementCode,
-                callback: callback
-            });
-            ppBidRequest.display();
-        }
-    }
+  var getJsStaticUrl = window.location.protocol + '//tag-st.contextweb.com/getjs.static.js';
+  var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag';
 
-    function bidResponseCallback(bid) {
-        return function(bidResponse) { 
-                    bidResponseAvailable(bid, bidResponse); 
-                };
+  function _callBids(params) {
+    if (typeof window.pp === 'undefined') {
+      adloader.loadScript(getJsStaticUrl, function () { bid(params); }, true);
+    } else {
+      bid(params);
     }
+  }
 
-    function bidResponseAvailable(bidRequest, bidResponse) {
-        if(bidResponse) {
-            var adSize = bidRequest.params.cf.toUpperCase().split('X');
-            var bid = bidfactory.createBid(1);
-            bid.bidderCode = bidRequest.bidder;
-            bid.cpm = bidResponse.bidCpm;
-            bid.ad = bidResponse.html;
-            bid.width = adSize[0];
-            bid.height = adSize[1];
-            bidmanager.addBidResponse(bidRequest.placementCode, bid);
-        } else {
-            var passback = bidfactory.createBid(2);
-            passback.bidderCode = bidRequest.bidder;
-            bidmanager.addBidResponse(bidRequest.placementCode, passback);
-        }
+  function bid(params) {
+    var bids = params.bids;
+    for (var i = 0; i < bids.length; i++) {
+      var bidRequest = bids[i];
+      requestBid(bidRequest);
     }
+  }
 
-    return {
-        callBids: _callBids
+  function requestBid(bidRequest) {
+    try {
+      var ppBidRequest = new window.pp.Ad(bidRequestOptions(bidRequest));
+      ppBidRequest.display();
+    } catch(e) {
+      //register passback on any exceptions while attempting to fetch response.
+      utils.logError('pulsepoint.requestBid', 'ERROR', e);
+      bidResponseAvailable(bidRequest);
+    }
+  }
+
+  function bidRequestOptions(bidRequest) {
+    var callback = bidResponseCallback(bidRequest);
+    var options = {
+      cn: 1,
+      ca: window.pp.requestActions.BID,
+      cu: bidUrl,
+      adUnitId: bidRequest.placementCode,
+      callback: callback
     };
+    for(var param in bidRequest.params) {
+      if(bidRequest.params.hasOwnProperty(param)) {
+        options[param] = bidRequest.params[param];
+      }
+    }
+    return options;
+  }
+
+  function bidResponseCallback(bid) {
+    return function (bidResponse) {
+      bidResponseAvailable(bid, bidResponse);
+    };
+  }
+
+  function bidResponseAvailable(bidRequest, bidResponse) {
+    if (bidResponse) {
+      var adSize = bidRequest.params.cf.toUpperCase().split('X');
+      var bid = bidfactory.createBid(1, bidRequest);
+      bid.bidderCode = bidRequest.bidder;
+      bid.cpm = bidResponse.bidCpm;
+      bid.ad = bidResponse.html;
+      bid.width = adSize[0];
+      bid.height = adSize[1];
+      bidmanager.addBidResponse(bidRequest.placementCode, bid);
+    } else {
+      var passback = bidfactory.createBid(2, bidRequest);
+      passback.bidderCode = bidRequest.bidder;
+      bidmanager.addBidResponse(bidRequest.placementCode, passback);
+    }
+  }
+
+  return {
+    callBids: _callBids
+  };
 
 };
 

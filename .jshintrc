@@ -1,10 +1,9 @@
 {
-  "bitwise": true,
+  "bitwise": false,
   "browser": true,
   "curly": false,
   "devel": true,
   "eqeqeq": true,
-  "es3": true,
   "freeze": true,
   "immed": true,
   "maxdepth": 5,
@@ -12,13 +11,19 @@
   "noarg": true,
   "node": true,
   "notypeof": true,
+  "esnext": true,
   "trailing": true,
   "undef": true,
   "unused": true,
+  "strict": false,
   "scripturl": true,
   "globals": {
+    "before": true,
+    "after": true,
+    "exports": true,
+    "$$PREBID_GLOBAL$$": true,
+    "pbjsTestOnly": true,
     "assert": false,
-    "mediation": false,
     "expect": false,
     "dump": false,
     "describe": false,
@@ -28,6 +33,7 @@
     "sinon": false,
     "beforeEach": false,
     "afterEach": false,
-    "APN": false
+    "JSON": true,
+    "Criteo": true
   }
 }

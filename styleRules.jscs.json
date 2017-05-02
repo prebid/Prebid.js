@@ -1,5 +1,0 @@
-{
-	"excludeFiles": [""],
-	"validateQuoteMarks": "'",
-	"disallowNewlineBeforeBlockStatements": true
-}
