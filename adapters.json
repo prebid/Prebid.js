@@ -65,6 +65,7 @@
     "atomx",
     "tapsense",
     "trion",
+    "prebidServer",
     "adsupply",
     {
       "appnexus": {
