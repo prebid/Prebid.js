@@ -109,22 +109,6 @@ exports.transformAdServerTargetingObj = function (targeting) {
   }
 };
 
-//Copy all of the properties in the source objects over to the target object
-//return the target object.
-exports.extend = function (target, source) {
-  target = target || {};
-
-  this._each(source, function (value, prop) {
-    if (typeof source[prop] === objectType_object) {
-      target[prop] = this.extend(target[prop], source[prop]);
-    } else {
-      target[prop] = source[prop];
-    }
-  });
-
-  return target;
-};
-
 /**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
@@ -454,6 +438,46 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+
+var insertElement = function(elm) {
+  let elToAppend = document.getElementsByTagName('head');
+  try{
+    elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(elm, elToAppend.firstChild);
+    }
+  } catch (e) {}
+};
+
+exports.insertPixel = function (url) {
+  const img = new Image();
+  img.id = this.getUniqueIdentifierStr();
+  img.src = url;
+  img.height = 0;
+  img.width = 0;
+  img.style.display = 'none';
+  img.onload = function() {
+    try {
+      this.parentNode.removeChild(this);
+    } catch(e) {
+    }
+  };
+  insertElement(img);
+};
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ */
+exports.insertCookieSyncIframe = function(url) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url);
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe =  div.firstChild;
+  insertElement(iframe);
+};
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -591,4 +615,35 @@ export function shuffle(array) {
 
 export function adUnitsFilter(filter, bid) {
   return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+}
+
+/**
+ * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
+ * @param {HTMLDocument} doc document to check support of 'srcdoc'
+ */
+export function isSrcdocSupported(doc) {
+  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
+  return doc.defaultView && doc.defaultView.frameElement &&
+    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+}
+
+export function cloneJson(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
+export function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  if(!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }

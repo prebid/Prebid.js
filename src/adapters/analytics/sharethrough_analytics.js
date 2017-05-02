@@ -6,7 +6,7 @@ const analyticsType = 'endpoint';
 const STR_BIDDER_CODE = "sharethrough";
 const STR_VERSION = "0.1.0";
 
-export default utils.extend(adapter(
+export default Object.assign(adapter(
   {
     emptyUrl,
     analyticsType

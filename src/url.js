@@ -31,7 +31,7 @@ export function parse(url) {
     protocol: (parsed.protocol || '').replace(/:$/, ''),
     hostname: parsed.hostname,
     port: +parsed.port,
-    pathname: parsed.pathname,
+    pathname: parsed.pathname.replace(/^(?!\/)/,'/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
     host: parsed.host

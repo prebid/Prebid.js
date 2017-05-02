@@ -105,7 +105,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       requestId: requestId,
       responseTimestamp: timestamp(),
       requestTimestamp: start,
-      cpm: bid.cpm || 0,
+      cpm: parseFloat(bid.cpm) || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
@@ -135,7 +135,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     //if there is any key value pairs to map do here
     var keyValues = {};
-    if (bid.bidderCode && bid.cpm > 0) {
+    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId ) ) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
     }
 
@@ -342,7 +342,7 @@ function adjustBids(bid) {
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
     if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
       try {
-        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, utils.extend({}, bid));
+        bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       }
       catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);

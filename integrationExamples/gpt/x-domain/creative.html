@@ -5,7 +5,7 @@
 var urlParser = document.createElement('a');
 urlParser.href = '%%PATTERN:url%%';
 var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
-var adServerDomain = 'https://tpc.googlesyndication.com';
+var adServerDomain = urlParser.protocol + '//tpc.googlesyndication.com';
 
 function renderAd(ev) {
     var key = ev.message ? 'message' : 'data';

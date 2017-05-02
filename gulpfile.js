@@ -21,6 +21,7 @@ var header = require('gulp-header');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
+var optimizejs = require('gulp-optimize-js');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -73,6 +74,7 @@ gulp.task('webpack', function () {
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
+    .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
@@ -219,45 +221,46 @@ gulp.task('docs', ['clean-docs'], function () {
 });
 
 gulp.task('e2etest', function() {
-  var cmd = '--env default';
+  var cmdQueue = [];
   if(argv.browserstack) {
     var browsers = require('./browsers.json');
-    var env = [];
-    var input = 'bs';
-    for(var key in browsers) {
-      if(key.substring(0, input.length) === input) {
-        env.push(key);
-      }
+    delete browsers['bs_ie_9_windows_7'];
+
+    var cmdStr = ' --config nightwatch.conf.js';
+    if (argv.group) {
+      cmdStr = cmdStr + ' --group ' + argv.group;
     }
-    cmd = '--env default,' + env.join(',');
+    cmdStr = cmdStr + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
+
+    var startWith = 'bs';
+
+    Object.keys(browsers).filter(function(v){
+      return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
+    }).map(function(v,i,arr) {
+      var newArr = (i%2 === 0) ? arr.slice(i,i+2) : null;
+      if(newArr) {
+        var cmd = 'nightwatch --env ' + newArr.join(',') + cmdStr;
+        cmdQueue.push(cmd);
+      }
+    });
   }
 
-  if(argv.browserstack) {
-    cmd = cmd + ' --config nightwatch.conf.js';
-  } else {
-    cmd = cmd + ' --config nightwatch.json';
-  }
-
-  if (argv.group) {
-    cmd = cmd + ' --group ' + argv.group;
-  }
-
-  cmd = cmd + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
   return gulp.src('')
-    .pipe(shell('nightwatch ' + cmd));
+    .pipe(shell(cmdQueue.join(';')));
 });
 
 gulp.task('e2etest-report', function() {
+  var reportPort = 9010;
   var targetDestinationDir = './e2etest-report';
   helpers.createEnd2EndTestReport(targetDestinationDir);
   connect.server({
-    port: port,
+    port: reportPort,
     root: './',
     livereload: true
   });
 
   setTimeout(function() {
-    opens('http://localhost:' + port + '/' + targetDestinationDir.slice(2) + '/results.html');
+    opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
 
 });

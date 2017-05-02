@@ -123,7 +123,8 @@ describe('Adkernel adapter', () => {
           protocol: 'https:',
           hostname: 'example.com',
           host: 'example.com',
-          pathname: '/index.html'
+          pathname: '/index.html',
+          href : 'http://example.com/index.html'
         };
       });
 
@@ -149,8 +150,14 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.imp[0]).to.have.property('secure', 1);
     });
 
+    it('should have tagid', () => {
+      // console.warn(bidRequest.imp[0]);
+      expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
+    });
+
     it('should create proper site block', () => {
       expect(bidRequest.site).to.have.property('domain', 'example.com');
+      expect(bidRequest.site).to.have.property('page', 'http://example.com/index.html');
     });
 
     it('should fill device with caller macro', ()=> {
@@ -238,7 +245,8 @@ describe('Adkernel adapter', () => {
       expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       expect(utils.createTrackPixelHtml.calledOnce);
       let result = pbjs.getBidResponsesForAdUnitCode(bid1_zone1.placementCode);
-      expect(result.bids[0].ad).to.include(bidResponse1.seatbid[0].bid[0].nurl);
+      let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
+      expect(result.bids[0].ad).to.include(expectedNurl);
     });
 
     it('should perform usersync for each unique host/zone combination', () => {

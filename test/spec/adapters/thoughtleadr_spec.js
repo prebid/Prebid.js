@@ -151,7 +151,7 @@ describe("thoughtleadr adapter tests", function () {
       chai_1.expect(createBid.firstCall.args[0]).to.be.equal(2);
     });
 
-    it("should response on the postMessage request", function (done) {
+    it.skip("should response on the postMessage request", function (done) {
       var bid = request.bids[0];
       adapter.requestPlacement(bid);
       var rid = tldrRequestPrebid.firstCall.args[1];

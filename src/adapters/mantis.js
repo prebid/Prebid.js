@@ -206,6 +206,7 @@ module.exports = function () {
           bids: params.bids.map(function (bid) {
             return {
               bidId: bid.bidId,
+              config: bid.params,
               sizes: bid.sizes.map(function (size) {
                 return {width: size[0], height: size[1]};
               })

@@ -201,14 +201,14 @@
                     {
                         bidder: 'memeglobal',
                         params: {
-                            tagid: 007,  	// REQUIRED int. To get one, contact http://www.memeglobal.com
+                            tagid: 007,     // REQUIRED int. To get one, contact http://www.memeglobal.com
                         }
                     },
                     {
                         bidder: 'adblade',
                         params: {
                             partnerId: 42980,
-                            bidfloor: 0.01		// OPTIONAL float bid floor in $ CPM
+                            bidfloor: 0.01      // OPTIONAL float bid floor in $ CPM
                         }
                     },
                     {
@@ -232,6 +232,13 @@
                         }
                     },
                     {
+                        bidder: 'adbund',
+                        params: {
+                            sid: '110238', // REQUIRED int. To get one, sign up http://www.adbund.com
+                            bidfloor: 0.036 // OPTIONAL float bid floor in $ CPM
+                        }
+                    },
+                    {
                         bidder: 'smartyads',
                         params: {
                             banner_id: 0
@@ -241,6 +248,25 @@
                         bidder: 'admixer',
                         params: {
                             zone: '2eb6bd58-865c-47ce-af7f-a918108c3fd2' // REQUIRED zone oid
+                        }
+                    },
+                    {
+                        bidder: 'quantcast',
+                        params: {
+                            publisherId: 'test-publisher', // REQUIRED Publisher Id provided by Quantcast
+                            battr : [1,2] // OPTIONAL - Array of Blocked creative attributes as per OpenRTB Spec List 5.3
+                        }
+                    },
+                    {
+                        bidder: 'atomx',
+                        params: {
+                            id: 7395
+                        }
+                    },
+                    {
+                      bidder: 'huddledmasses',
+                        params: {
+                            placement_id: 0
                         }
                     }
                 ]
@@ -326,6 +352,18 @@
                         }
                     },
                     {
+                        bidder: 'memeglobal',
+                        params: {
+                            tagid: 007,     // REQUIRED int. To get one, contact http://www.memeglobal.com
+                        }
+                    },
+                    {
+                        bidder: 'gumgum',
+                        params: {
+                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
+                        }
+                    },
+                    {
                         bidder: 'wideorbit',
                         params: {
                             pbId: 123, // REQUIRED Publisher Id,
@@ -333,15 +371,16 @@
                         }
                     },
                     {
-                        bidder: 'memeglobal',
+                        bidder: 'quantcast',
                         params: {
-                            tagid: 007,  	// REQUIRED int. To get one, contact http://www.memeglobal.com
+                            publisherId: 'test-publisher', // REQUIRED Publisher Id provided by Quantcast
+                            battr : [1,2] // OPTIONAL - Array of Blocked creative attributes as per OpenRTB Spec List 5.3
                         }
                     },
                     {
-                        bidder: 'gumgum',
+                        bidder: 'huddledmasses',
                         params: {
-                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
+                            placement_id: 0
                         }
                     }
                 ]
@@ -352,7 +391,7 @@
         $$PREBID_GLOBAL$$.addAdUnits(adUnits);
 
         //register a callback handler
-				$$PREBID_GLOBAL$$.addCallback('adUnitBidsBack', function (adUnitCode) {
+                $$PREBID_GLOBAL$$.addCallback('adUnitBidsBack', function (adUnitCode) {
             console.debug('ad unit bids back for:', adUnitCode);
         });
 

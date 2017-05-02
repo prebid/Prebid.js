@@ -18,12 +18,31 @@ describe("smartadserver adapter tests", function () {
               siteId: "1234",
               pageId: "5678",
               formatId: "90",
-              target: "test=prebid"
+              target: "test=prebid",
+              currency: "EUR"
             },
             requestId: "efgh5678",
             placementCode: "sas_42"
         }
       ]
+  };
+
+  var DEFAULT_PARAMS_WO_OPTIONAL = {
+    bidderCode: "smartadserver",
+    bids: [{
+      bidId: "abcd1234",
+        sizes: [[300, 250], [300, 200]],
+          bidder: "smartadserver",
+          params: {
+            domain: "http://www.smartadserver.com",
+            siteId: "1234",
+            pageId: "5678",
+            formatId: "90"
+          },
+          requestId: "efgh5678",
+          placementCode: "sas_42"
+      }
+    ]
   };
 
   var BID_RESPONSE = {
@@ -58,9 +77,25 @@ describe("smartadserver adapter tests", function () {
     expect(parsedBidUrlQueryString).to.have.property("pgid").and.to.equal("5678");
     expect(parsedBidUrlQueryString).to.have.property("fmtid").and.to.equal("90");
     expect(parsedBidUrlQueryString).to.have.property("tgt").and.to.equal("test=prebid");
+    expect(parsedBidUrlQueryString).to.have.property("ccy").and.to.equal("EUR");
     expect(parsedBidUrlQueryString).to.have.property("tag").and.to.equal("sas_42");
     expect(parsedBidUrlQueryString).to.have.property("sizes").and.to.equal("300x250,300x200");
     expect(parsedBidUrlQueryString).to.have.property("async").and.to.equal("1");
+
+    stubLoadScript.restore();
+  });
+
+  it("test optional parameters default value", function () {
+    var stubLoadScript = sinon.stub(adLoader, "loadScript");
+
+    adapter().callBids(DEFAULT_PARAMS_WO_OPTIONAL);
+
+    var bidUrl = stubLoadScript.getCall(0).args[0];
+    var parsedBidUrl = urlParse(bidUrl);
+    var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
+
+    expect(parsedBidUrlQueryString).to.have.property("tgt").and.to.equal("");
+    expect(parsedBidUrlQueryString).to.have.property("ccy").and.to.equal("USD");
 
     stubLoadScript.restore();
   });
