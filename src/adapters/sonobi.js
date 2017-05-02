@@ -12,7 +12,7 @@ var SonobiAdapter = function SonobiAdapter(){
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
     var ref = (window.frameElement) ? '&ref=' + encodeURI(top.location.host || document.referrer) : '';
-    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref );
+    adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
   }
 
   function _keymaker(adSlots){
@@ -23,11 +23,15 @@ var SonobiAdapter = function SonobiAdapter(){
         var floor = (bidRequest.params.floor) ? bidRequest.params.floor : null;
         //  Mandatory
         var slotIdentifier = (bidRequest.params.ad_unit) ? bidRequest.params.ad_unit : (bidRequest.params.placement_id) ? bidRequest.params.placement_id : null;
-        var sizes = utils.parseSizesInput(bidRequest.sizes).toString() || null;
-        var bidId = bidRequest.bidId;
+        var sizes = (bidRequest.params.sizes) ? bidRequest.params.sizes : bidRequest.sizes || null;
+        sizes = utils.parseSizesInput(sizes).toString();
+        
         if (utils.isEmpty(sizes)){
           utils.logError('Sonobi adapter expects sizes for ' + bidRequest.placementCode);
         }
+
+        var bidId = bidRequest.bidId;
+
         var args = (sizes) ? ((floor) ? (sizes + '|f=' + floor) : (sizes)) : (floor) ? ('f=' + floor) : '';
         if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)){
           slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
@@ -100,11 +104,11 @@ var SonobiAdapter = function SonobiAdapter(){
   }
 
   return {
-    callBids:    _phone_in,
-    formRequest: _keymaker,
+    callBids:       _phone_in,
+    formRequest:    _keymaker,
     parseResponse:  _trinity,
-    success: _success,
-    failure: _failure
+    success:        _success,
+    failure:        _failure
   };
 };
 
