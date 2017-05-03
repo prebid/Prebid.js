@@ -5,7 +5,8 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
-  getAdUnits
+  getAdUnits,
+  getCurrencyRates
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -1575,69 +1576,5 @@ describe('Unit: Prebid Module', function () {
       expect($$PREBID_GLOBAL$$.pageConfig.adServerCurrency).to.equal('JPY');
     });
   });
-
-  describe('initCurrencyRates', () => {
-    it('results in currencyRates being loaded', () => {
-      var clock = sinon.useFakeTimers();
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      clock.tick(2);
-      expect($$PREBID_GLOBAL$$.currencyRates).to.not.equal({});
-      expect($$PREBID_GLOBAL$$.currencySupportEnabled).to.equal(true);
-    });
-  });
-
-  describe('shouldWaitForCurrencyRates', () => {
-    it('shouldWaitForCurrencyRates immediately after calling initCurrencyRates', () => {
-      var clock = sinon.useFakeTimers();
-      expect($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()).to.equal(false);
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      clock.tick(2);
-      expect($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()).to.equal(false);
-    });
-  });
-
-  describe('getCurrencyConversion', () => {
-
-    it('should return 1 when currency support is not enabled', () => {
-      expect($$PREBID_GLOBAL$$.getCurrencyConversion('GBP')).to.equal(1);
-    });
-
-    it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', () => {
-      var clock = sinon.useFakeTimers();
-      $$PREBID_GLOBAL$$.logging = true;
-      $$PREBID_GLOBAL$$.setConfig({ 'adServerCurrency': 'JPY' });
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      while ($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()) { clock.tick(1); }
-      expect($$PREBID_GLOBAL$$.getCurrencyConversion('JPY')).to.equal(1);
-    });
-
-    it.only('should return direct conversion rate when fromCurrency is one of the configured bases', () => {
-      var clock = sinon.useFakeTimers();
-      $$PREBID_GLOBAL$$.logging = true;
-      $$PREBID_GLOBAL$$.setConfig({ 'adServerCurrency': 'GBP' });
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      while ($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()) { clock.tick(1); }
-      expect($$PREBID_GLOBAL$$.getCurrencyConversion('USD')).to.not.equal(1);
-    });
-
-    it('should return reciprocal conversion rate when adServerCurrency is one of the configured bases, but fromCurrency is not', () => {
-      var clock = sinon.useFakeTimers();
-      $$PREBID_GLOBAL$$.logging = true;
-      $$PREBID_GLOBAL$$.setConfig({ 'adServerCurrency': 'GBP' });
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      while ($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()) { clock.tick(1); }
-      expect($$PREBID_GLOBAL$$.getCurrencyConversion('JPY')).to.not.equal(1);
-    });
-
-    it('should return intermediate conversion rate when neither fromCurrency nor adServerCurrency is one of the configured bases', () => {
-      var clock = sinon.useFakeTimers();
-      $$PREBID_GLOBAL$$.logging = true;
-      $$PREBID_GLOBAL$$.setConfig({ 'adServerCurrency': 'CNY' });
-      $$PREBID_GLOBAL$$.initCurrencyRates('https://don7oq205h0l7.cloudfront.net/latest.json');
-      while ($$PREBID_GLOBAL$$.shouldWaitForCurrencyRates()) { clock.tick(1); }
-      expect($$PREBID_GLOBAL$$.getCurrencyConversion('JPY')).to.not.equal(1);
-    });
-
-  });
-
+  
 });

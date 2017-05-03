@@ -18,7 +18,8 @@ var adloader = require('./adloader');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
-var ajax = require('./ajax.js').ajax;
+
+$$PREBID_GLOBAL$$.currency = require('./currency.js');
 
 /* private variables */
 
@@ -27,6 +28,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var DEFAULT_CURRENCY_RATE_URL = CONSTANTS.DEFAULT_CURRENCY_RATE_URL;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -70,66 +72,6 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
 //create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
-
-$$PREBID_GLOBAL$$.pageConfig = $$PREBID_GLOBAL$$.pageConfig || { 'adServerCurrency': 'USD' };
-
-// currency conversion support
-
-$$PREBID_GLOBAL$$.currencySupportEnabled = false;
-$$PREBID_GLOBAL$$.currencyRatesLoaded = false;
-$$PREBID_GLOBAL$$.currencyRates = {};
-
-$$PREBID_GLOBAL$$.shouldWaitForCurrencyRates = function() {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.shouldWaitForCurrencyRates', arguments);
-
-  var ret;
-  if ($$PREBID_GLOBAL$$.currencySupportEnabled === false) {
-    ret = false;
-  } else {
-    ret = (!($$PREBID_GLOBAL$$.currencyRatesLoaded));
-  }
-  return ret;
-}
-
-$$PREBID_GLOBAL$$.getCurrencyConversion = function(fromCurrency) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getCurrencyConversion', arguments);
-
-  var conversionRate = null;
-
-  if ($$PREBID_GLOBAL$$.currencySupportEnabled === false) {
-    conversionRate = 1;
-
-  } else if (fromCurrency === $$PREBID_GLOBAL$$.pageConfig.adServerCurrency) {
-    conversionRate = 1;
-
-  } else {
-
-    if (fromCurrency in $$PREBID_GLOBAL$$.currencyRates.conversions) {
-      // using direct conversion rate from fromCurrency to adServerCurrency
-      var rates = $$PREBID_GLOBAL$$.currencyRates.conversions[fromCurrency];
-      conversionRate = rates[$$PREBID_GLOBAL$$.pageConfig.adServerCurrency] || 1;
-      utils.logInfo('$$PREBID_GLOBAL$$.getCurrencyConversion using direct ' + fromCurrency + ' to ' + $$PREBID_GLOBAL$$.pageConfig.adServerCurrency
-          + ' conversionRate ' + conversionRate);
-
-    } else if ($$PREBID_GLOBAL$$.pageConfig.adServerCurrency in $$PREBID_GLOBAL$$.currencyRates.conversions) {
-        // using reciprocal of conversion rate from adServerCurrency to fromCurrency
-        var rates = $$PREBID_GLOBAL$$.currencyRates.conversions[$$PREBID_GLOBAL$$.pageConfig.adServerCurrency];
-        conversionRate = utils.roundFloat(1 / rates[$$PREBID_GLOBAL$$.pageConfig.adServerCurrency]) || 1;
-        utils.logInfo('$$PREBID_GLOBAL$$.getCurrencyConversion using reciprocal ' + fromCurrency + ' to ' + $$PREBID_GLOBAL$$.pageConfig.adServerCurrency
-            + ' conversionRate ' + conversionRate);
-
-    } else {
-        // first defined currency base used as intermediary
-        var anyBase = Object.keys($$PREBID_GLOBAL$$.currencyRates.conversions)[0];
-        var toIntermediateConversionRate = 1 / $$PREBID_GLOBAL$$.currencyRates.conversions[anyBase][fromCurrency];
-        var fromIntermediateConversionRate = $$PREBID_GLOBAL$$.currencyRates.conversions[anyBase][$$PREBID_GLOBAL$$.pageConfig.adServerCurrency];
-        conversionRate = utils.roundFloat(toIntermediateConversionRate * fromIntermediateConversionRate);
-        utils.logInfo('$$PREBID_GLOBAL$$.getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBase + ' to '
-            + $$PREBID_GLOBAL$$.pageConfig.adServerCurrency + ' conversionRate ' + conversionRate);
-    }
-  }
-  return conversionRate;
-}
 
 /**
  * Command queue that functions will execute once prebid.js is loaded
@@ -194,6 +136,27 @@ function setRenderSize(doc, width, height) {
   }
 }
 
+function configureCurrencySupport(pageConfig) {
+  if ('currency' in pageConfig && 'adServerCurrency' in pageConfig.currency) {
+    utils.logInfo('$$PREBID_GLOBAL$$.setConfig is enabling currency support', arguments);
+    var url = DEFAULT_CURRENCY_RATE_URL;
+    if ('conversionRateFile' in pageConfig.currency) {
+      utils.logInfo('$$PREBID_GLOBAL$$.setConfig will use override conversionRateFile', pageConfig.currency.conversionRateFile);
+      url = pageConfig.currency.conversionRateFile;
+    }
+    $$PREBID_GLOBAL$$.currency.initCurrencyRates(url);
+  } else {
+    // currency support is disabled, setting defaults
+    utils.logInfo('$$PREBID_GLOBAL$$.setConfig currency support is disabled');
+    Object.assign(pageConfig, {
+      'currency': {
+        'adServerCurrency': 'USD'
+      }
+    });
+    $$PREBID_GLOBAL$$.currency.resetCurrencyRates();
+  }
+}
+
 //////////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -208,23 +171,9 @@ $$PREBID_GLOBAL$$.setConfig = function(pageConfig) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
 
   $$PREBID_GLOBAL$$.pageConfig = pageConfig;
+
+  configureCurrencySupport($$PREBID_GLOBAL$$.pageConfig);
 };
-
-/**
- * 
- * @param {string} [url] uri of the currency rates json file, default is set to global
- */
-pbjs.initCurrencyRates = function(url = 'https://don7oq205h0l7.cloudfront.net/latest.json') { // hostname is temporary stopgap
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.initCurrencyRates', arguments);
-
-  $$PREBID_GLOBAL$$.currencySupportEnabled = true;
-
-  ajax(url, function(response) {
-    $$PREBID_GLOBAL$$.currencyRates = JSON.parse(response);
-    $$PREBID_GLOBAL$$.currencyRatesLoaded = true;
-    utils.logInfo('pbjs.currencyRates set to ' + JSON.stringify($$PREBID_GLOBAL$$.currencyRates));
-  });
-}
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -468,7 +417,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   // for video-enabled adUnits, only request bids if all bidders support video
   const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
   invalidVideoAdUnits.forEach(adUnit => {
-    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
+    utils.logError('adUnit ${adUnit.code} has \'mediaType\' set to \'video\' but contains a bidder that doesn\'t support video. No Prebid demand requests will be triggered for this adUnit.');
     for (let i = 0; i < adUnits.length; i++) {
       if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
     }

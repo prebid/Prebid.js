@@ -5,6 +5,7 @@ var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
+var currency = require('./currency.js');
 
 var objectType_function = 'function';
 
@@ -90,9 +91,10 @@ function getBidderRequest(bidder, adUnitCode) {
 }
 
 /*
- *   This function should be called to by the bidder adapter to register a bid response
+ * This function should be called to by the bidder adapter to register a bid response
+ * (Currency support added via decorator)
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse = currency.addBidResponseDecorator(function(adUnitCode, bid) {
   if (!adUnitCode) {
     utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
     return;
@@ -114,6 +116,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
+      bid.timedOut = true;
 
       exports.executeCallback(timedOut);
     }
@@ -150,7 +153,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bidsBackAll()) {
     exports.executeCallback();
   }
-};
+});
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
