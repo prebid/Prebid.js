@@ -1,9 +1,9 @@
 ---
 layout: home
-title: Prebid.js - Header Bidding Made Easy
-head_title: Prebid.js - Header Bidding Made Easy
+title: Prebid - Header Bidding Made Easy
+head_title: Prebid - Header Bidding Made Easy
 isHome: true
-description: A free and open source library for publishers to quickly implement header bidding
+description: Free and open source solutions for publishers to quickly implement header bidding.
 ---
 
 <a name="pb-home-live-demo"></a>
@@ -60,7 +60,7 @@ description: A free and open source library for publishers to quickly implement 
     <hr class="full-rule">
 
 
-    <h2 class="bs-docs-featurette-title">Tags That Work in Prebid.js</h2>
+    <h2 class="bs-docs-featurette-title">Partners that work with Prebid</h2>
 
     <div class="row bs-docs-featured-sites bidder-logos text-center">
 
@@ -127,7 +127,7 @@ description: A free and open source library for publishers to quickly implement 
 
     <h2 class="bs-docs-featurette-title">Open Source Project</h2>
 
-    <p class="lead">Prebid.js is open source and community driven. The project is hosted, developed, and maintained on GitHub.</p>
+    <p class="lead">Prebid.js and the other projects from the Prebid organization are open source and community driven. The Prebid project is hosted, developed, and maintained <a href="https://github.com/prebid">on GitHub</a>.</p>
 
     <a href="/overview/intro.html" class="btn btn-outline btn-lg">Next: Overview of Prebid.js</a>
 

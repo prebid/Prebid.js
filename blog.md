@@ -1,8 +1,8 @@
 ---
 layout: blog
 title: Blog
-head_title: Prebid.js Blog for Header Bidding
-description: A collection of helpful tips for implementing header bidding with prebid.js.
+head_title: Prebid.org - Blog for Header Bidding
+description: A collection of helpful tips for implementing header bidding.
 pid: 6
 hide: true
 

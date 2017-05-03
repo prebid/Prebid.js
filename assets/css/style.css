@@ -1,3 +1,9 @@
+/* Use Open Sans webfont */
+
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+body { font-family: 'Open Sans'; sans-serif; }
+
 /* top navbar floats at top of screen when you scroll */
 
 header#top {
@@ -15,6 +21,48 @@ header#top {
 
 .home-title {
     margin-top: 1em;
+}
+
+/* Dropdown submenus, as described at
+   https://php.quicoto.com/bootstrap-3-second-level-menu-nav/ */
+
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu > .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+}
+.dropdown-submenu:hover > .dropdown-menu {
+  display: block;
+}
+.dropdown-submenu:hover > a:after {
+  border-left-color: #fff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left > .dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+}
+
+/* End dropdown submenu */
+
+/* External links should have an icon denoting them */
+
+a[href^="http://"]:after,
+a[href^="https://"]:after {
+  content: url(/assets/images/Icon_External_Link.png);
+  margin: 0 0 0 5px;
+}
+
+a[href^="http://prebid.org/"]:after,
+a[href^="https://prebid.org/"]:after {
+  content: '';
+  margin: 0;
 }
 
 .bs-docs-nav .navbar-brand, .bs-docs-nav .navbar-nav>li>a {

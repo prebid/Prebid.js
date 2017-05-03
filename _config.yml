@@ -1,9 +1,7 @@
 # name of the software
-name: Prebid.js
+name: Prebid
 # current version of the software
 version: 1.0.0
-# url of the download button
-downloadUrl: https://github.com/prebid/Prebid.js/releases
 # licence of the software
 license: Apache License
 licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
@@ -11,17 +9,17 @@ licenseUrl: http://www.apache.org/licenses/LICENSE-2.0
 # list of additional links on the right of the top menu
 headerLinks:
   - title: GitHub
-    url: https://github.com/prebid/Prebid.js
+    url: https://github.com/prebid
 
 
 # list if additional links on the footer
 footerLinks:
   - title: GitHub
-    url: https://github.com/prebid/Prebid.js
-  - title: Issues
-    url: https://github.com/prebid/Prebid.js/issues?state=open
- # - title: About Us
- #   url: /about.html
+    url: https://github.com/prebid/
+# - title: Issues
+#   url: https://github.com/prebid/Prebid.js/issues?state=open
+# - title: About Us
+#   url: /about.html
 
 
 # header
@@ -70,10 +68,13 @@ nav_sections:
 
   - top_nav: dev_docs
     code: quick-start
-    name: QUICK START
+    name: DEVELOPER QUICK START
   - top_nav: dev_docs
     code: prebid-video
     name: PREBID VIDEO (BETA)
+  - top_nav: dev_docs
+    code: prebid-server
+    name: PREBID SERVER
   - top_nav: dev_docs
     code: prebid-amp
     name: PREBID FOR AMP (ALPHA)
@@ -108,18 +109,25 @@ nav_sections:
 
   - top_nav: adops
     code: tutorials
-    name: TUTORIALS
+    name: AD OPS TUTORIALS
+  - top_nav: adops
+    code: reference
+    name: REFERENCE
 
   - top_nav: support
     code: support
     name: SUPPORT
+
+  - top_nav: principles
+    code: principles
+    name: PRINCIPLES
 
   - top_nav: download
     code: download
     name: DOWNLOAD
 
 
-port: 80
+port: 8080
 
 exclude: ['README.md', 'LICENSE', 'bower.json', 'Gemfile.lock', 'Gemfile']
 
