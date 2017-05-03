@@ -1,9 +1,3 @@
-/* Use Open Sans webfont */
-
-@import url('https://fonts.googleapis.com/css?family=Open+Sans');
-
-body { font-family: 'Open Sans'; sans-serif; }
-
 /* top navbar floats at top of screen when you scroll */
 
 header#top {
@@ -354,7 +348,7 @@ img {
 }
 
 .bs-docs-nav {
-  border-bottom: dotted 1px #3b88c3;
+    border-bottom: solid 1px #AAA;
 }
 
 .bg-info {
