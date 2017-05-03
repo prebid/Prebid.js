@@ -61,6 +61,19 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   };
 
   /**
+   * Returns true if the given value is `undefined`
+   *
+   * @memberof module:HiroMediaAdapter~
+   * @private
+   *
+   * @param  {*} value value to check
+   * @return {boolean} true if the given value is `undefined`, false otherwise
+   */
+  function isUndefined(value) {
+    return typeof value === 'undefined';
+  }
+
+  /**
    * Call bidmanager.addBidResponse
    *
    * Simple wrapper that will create a bid object with the correct status
@@ -120,7 +133,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
 
     // Sample the bid responses according to `response.chance`,
     // if `response.chance` is not provided, sample at 100%.
-    if (response.chance === undefined || checkChance(response.chance)) {
+    if (isUndefined(response.chance) || checkChance(response.chance)) {
       addBidResponse(bid, response);
     } else {
       addBidResponse(bid, false);
@@ -313,7 +326,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
           });
 
           Object.keys(requestParams).forEach(function (key){
-            if (requestParams[key] === '' || requestParams[key] === undefined) {
+            if (requestParams[key] === '' || isUndefined(requestParams[key])) {
               delete requestParams[key];
             }
           });
