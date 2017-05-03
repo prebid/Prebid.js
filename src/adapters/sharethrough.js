@@ -101,7 +101,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
   return {
     callBids: _callBids,
     str : str,
-    callback: _strcallback
   };
 };
 
