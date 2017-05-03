@@ -60,17 +60,27 @@ function displayFooter(msgHtml) {
 }
 
 function createFooter(msgHtml) {
-  var footer = document.createElement('div');
-  footer.style.background = '#ccc';
-  footer.style.color = '#333';
+  const footer = document.createElement('div');
+  footer.style.background = '#D3D3D3';
+  footer.style.color = '#555';
   footer.style.boxShadow = '0 -1px 2px rgba(0, 0, 0, 0.2)';
+
   footer.style.fontFamily = 'sans-serif';
-  footer.style.fontWeight = '300';
+  footer.style.lineHeight = '1.5';
+
   footer.style.position = 'fixed';
-  footer.style.bottom = '0px';
+  footer.style.bottom = '0';
+  footer.style.left = '0';
+  footer.style.right = '0';
   footer.style.width = '100%';
-  footer.style.padding = '1em';
+
+  footer.style.padding = '1em 0';
   footer.style.zindex = '1000';
-  footer.innerHTML = msgHtml;
+
+  const footerText = document.createElement('p');
+  footerText.style.margin = '0 2em';
+  footerText.innerHTML = msgHtml;
+  footer.appendChild(footerText);
+
   return footer;
 }
