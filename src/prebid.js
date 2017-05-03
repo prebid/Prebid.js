@@ -9,6 +9,7 @@ import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
+import { setAjaxTimeout } from './ajax'
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -421,6 +422,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
+  setAjaxTimeout(cbTimeout);
   if (typeof bidsBackHandler === objectType_function) {
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
