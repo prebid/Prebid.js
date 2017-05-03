@@ -3,12 +3,12 @@ import { Renderer } from 'src/Renderer';
 
 describe('Renderer: A renderer installed on a bid response', () => {
   const testRenderer1 = Renderer.install({
-    url: 'https://httpbin.org',
+    url: 'https://httpbin.org/post',
     config: { test: 'config1' },
     id: 1
   });
   const testRenderer2 = Renderer.install({
-    url: 'https://httpbin.org',
+    url: 'https://httpbin.org/post',
     config: { test: 'config2' },
     id: 2
   });
@@ -21,7 +21,7 @@ describe('Renderer: A renderer installed on a bid response', () => {
   });
 
   it('has expected properties ', () => {
-    expect(testRenderer1.url).to.equal('https://httpbin.org');
+    expect(testRenderer1.url).to.equal('https://httpbin.org/post');
     expect(testRenderer1.config).to.deep.equal({ test: 'config1' });
     expect(testRenderer1.id).to.equal(1);
   });

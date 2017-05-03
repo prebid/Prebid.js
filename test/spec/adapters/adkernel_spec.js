@@ -151,7 +151,7 @@ describe('Adkernel adapter', () => {
     });
 
     it('should have tagid', () => {
-      console.warn(bidRequest.imp[0]);
+      // console.warn(bidRequest.imp[0]);
       expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
 
