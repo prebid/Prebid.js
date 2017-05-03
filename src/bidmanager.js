@@ -1,4 +1,4 @@
-import {uniques, flatten, adUnitsFilter} from './utils';
+import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 
 var CONSTANTS = require('./constants.json');
@@ -81,13 +81,6 @@ function bidsBackAll() {
 exports.bidsBackAll = function () {
   return bidsBackAll();
 };
-
-function getBidderRequest(bidder, adUnitCode) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
-    return request.bids
-        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
-  }) || { start: null, requestId: null };
-}
 
 /*
  *   This function should be called to by the bidder adapter to register a bid response

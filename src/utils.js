@@ -647,3 +647,10 @@ export function replaceAuctionPrice(str, cpm) {
   if(!str) return;
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
+
+export function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
+}
