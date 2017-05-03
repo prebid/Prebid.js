@@ -9,9 +9,7 @@ import { format } from '../url';
 import { logError } from '../utils';
 import { createNew } from './adapter';
 
-const baseAdapter = createNew('audienceNetwork');
-const setBidderCode = baseAdapter.setBidderCode;
-const getBidderCode = baseAdapter.getBidderCode;
+const { setBidderCode, getBidderCode } = createNew('audienceNetwork');
 
 /**
  * Does this bid request contain valid parameters?
@@ -25,14 +23,15 @@ const validateBidRequest = bid =>
   Array.isArray(bid.sizes) && bid.sizes.length > 0;
 
 /**
- * Does this bid request contain valid sizes?
+ * Return a copy of a bid with slot sizes flattened and filtered
  * @param {Object} bid
- * @returns {Boolean}
+ * @returns {Object} copy of bid
  */
-const validateBidRequestSizes = bid => {
-  bid.sizes = bid.sizes.map(flattenSize);
-  return bid.sizes.every( size =>
-    ['native', 'fullwidth', '300x250', '320x50'].includes(size) );
+const flattenBidRequestSizes = bid => {
+  const sizes = Array.isArray(bid.sizes) && bid.sizes
+    .map(flattenSize)
+    .filter(isValidSize);
+  return Object.assign({}, bid, { sizes });
 };
 
 /**
@@ -43,6 +42,13 @@ const validateBidRequestSizes = bid => {
  */
 const flattenSize = size =>
   (Array.isArray(size) && size.length === 2) ? `${size[0]}x${size[1]}` : size;
+
+/**
+ * Is this a valid slot size?
+ * @param {String} size
+ * @returns  {Boolean}
+ */
+const isValidSize = size => ['native', 'fullwidth', '300x250', '320x50'].includes(size);
 
 /**
  * Does the search part of the URL contain "anhb_testmode"
@@ -144,8 +150,8 @@ const callBids = bidRequest => {
   const placementids = [];
   const adformats = [];
   bidRequest.bids
+    .map(flattenBidRequestSizes)
     .filter(validateBidRequest)
-    .filter(validateBidRequestSizes)
     .forEach( bid => bid.sizes.forEach( size => {
       adUnitCodes.push(bid.placementCode);
       placementids.push(bid.params.placementId);
@@ -202,7 +208,6 @@ const callBids = bidRequest => {
  * @property {Function} setBidderCode - used for bidder aliasing
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
-const AudienceNetwork = () => {
-  return { callBids, setBidderCode, getBidderCode };
-};
+const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
+
 module.exports = AudienceNetwork;

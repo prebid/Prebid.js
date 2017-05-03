@@ -10,8 +10,8 @@ describe('Bidfluence Adapter', () => {
         bids: [{
             bidder: 'bidfluence',
             params: {
-                pubId: "747efe9c-5f8a-4b6e-872b-8e9939816298",
-                adunitId: "c4bbd807-7d22-485f-80f1-ba008ef1c619"
+                pubId: "test",
+                adunitId: "test"
             }
         }]
     };
