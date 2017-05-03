@@ -583,9 +583,18 @@ export function adUnitsFilter(filter, bid) {
  */
 export function isSrcdocSupported(doc) {
   //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return !!doc.defaultView && 'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
+  return doc.defaultView && doc.defaultView.frameElement &&
+    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
 
 export function cloneJson(obj) {
   return JSON.parse(JSON.stringify(obj));
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
 }
