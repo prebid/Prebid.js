@@ -102,6 +102,7 @@ module.exports = function (win = window) {
   return {
     callBids: function (params) {
       const requestBody = {
+        id: params.bidderRequestId,
         bids:[],
         ref: getPageReferer(),
         ssl: isSecureWindow(),

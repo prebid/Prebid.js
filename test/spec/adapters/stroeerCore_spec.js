@@ -1,6 +1,6 @@
 const assert = require('chai').assert;
 const adapter = require('src/adapters/stroeerCore');
-const bidmanager = require("src/bidmanager");
+const bidmanager = require('src/bidmanager');
 
 
 function assertBid(bidObject, bidId, ad, width, height) {
@@ -9,17 +9,18 @@ function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'width', width);
   assert.propertyVal(bidObject, 'height', height);
   assert.propertyVal(bidObject, 'cpm', 4.0);
-  assert.propertyVal(bidObject, 'bidderCode', "stroeerCore");
+  assert.propertyVal(bidObject, 'bidderCode', 'stroeerCore');
 }
 
 function assertNoFillBid(bidObject, bidId) {
   assert.propertyVal(bidObject, 'adId', bidId);
-  assert.propertyVal(bidObject, 'bidderCode', "stroeerCore");
+  assert.propertyVal(bidObject, 'bidderCode', 'stroeerCore');
   assert.notProperty(bidObject, 'ad');
   assert.notProperty(bidObject, 'cpm');
 }
 
 const buildBidderRequest = () => ({
+  bidderRequestId: 'bidder-request-id-123',
   bidderCode: 'stroeerCore',
   timeout: 5000,
   auctionStart: 10000,
@@ -29,7 +30,7 @@ const buildBidderRequest = () => ({
       bidder: 'stroeerCore',
       placementCode: 'div-1',
       sizes: [[300, 600], [160, 60]],
-      mediaType: "",
+      mediaType: '',
       params: {
         sid: 'NDA='
       }
@@ -65,7 +66,7 @@ const buildBidderResponse = () => ({
 
 const createWindow = (href, params = {}) => {
   let {parent, referrer, top, frameElement, placementElements=[]} = params;
-  const protocol = href.startsWith('https') ? "https:" : "http:";
+  const protocol = href.startsWith('https') ? 'https:' : 'http:';
   const win = {
     frameElement,
     parent,
@@ -105,15 +106,15 @@ describe('stroeerssp adapter', function () {
   });
 
 
-  const topWin = createWindow("http://www.abc.org/", {referrer:"http://www.google.com/?query=monkey"});
+  const topWin = createWindow('http://www.abc.org/', {referrer:'http://www.google.com/?query=monkey'});
   topWin.innerHeight = 800;
 
-  const midWin = createWindow("http://www.abc.org/", {parent: topWin, top: topWin, frameElement: createElement()});
+  const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
   midWin.innerHeight = 400;
 
 
-  const win = createWindow("http://www.xyz.com/", {parent: midWin, top: topWin, frameElement: createElement(304),
-    placementElements: [createElement(17, "div-1"), createElement(54, "div-2")]});
+  const win = createWindow('http://www.xyz.com/', {parent: midWin, top: topWin, frameElement: createElement(304),
+    placementElements: [createElement(17, 'div-1'), createElement(54, 'div-2')]});
   win.innerHeight = 200;
 
   function createElement(offsetTop = 0, id) {
@@ -185,6 +186,7 @@ describe('stroeerssp adapter', function () {
       assert.equal(expectedTimeout, 1500);
 
       const expectedJson = {
+        "id": "bidder-request-id-123",
         "timeout": expectedTimeout,
         "ref": "http://www.google.com/?query=monkey",
         "mpa": true,
@@ -210,7 +212,7 @@ describe('stroeerssp adapter', function () {
   });
 
 
-  describe("bid response", () => {
+  describe('bid response', () => {
     it('should add bids', function () {
 
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
@@ -221,8 +223,8 @@ describe('stroeerssp adapter', function () {
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
-      assert.isString(bidmanager.addBidResponse.firstCall.args[0], "div-1");
-      assert.isString(bidmanager.addBidResponse.secondCall.args[0], "div-2");
+      assert.isString(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
+      assert.isString(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
 
       const firstBid = bidmanager.addBidResponse.firstCall.args[1];
       const secondBid = bidmanager.addBidResponse.secondCall.args[1];
@@ -262,9 +264,9 @@ describe('stroeerssp adapter', function () {
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
-      assert.isString(bidmanager.addBidResponse.firstCall.args[0], "div-1");
+      assert.isString(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
 
-      assert.isString(bidmanager.addBidResponse.secondCall.args[0], "div-2");
+      assert.isString(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
 
       assertBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
 
