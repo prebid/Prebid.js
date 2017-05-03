@@ -9,7 +9,7 @@ import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
-import { setAjaxTimeout } from './ajax'
+import { setAjaxTimeout } from './ajax';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
