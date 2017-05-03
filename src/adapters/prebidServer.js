@@ -52,10 +52,13 @@ function PrebidServer() {
           result.bidder_status.forEach(bidder => {
             if(bidder.no_bid) {
               // store a "No Bid" bid response
-              let bidRequest = utils.getBidderRequest(bidder.bidder, bidder.ad_unit);
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
-              bidObject.bidderCode = bidRequest.bidder;
-              bidmanager.addBidResponse(bidRequest && bidRequest.placementCode, bidObject);
+
+              let bidObject = bidfactory.createBid(STATUS.NO_BID, {
+                bidId: bidder.bid_id
+              });
+              bidObject.adUnitCode = bidder.ad_unit;
+              bidObject.bidderCode = bidder.bidder;
+              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             }
             if(bidder.no_cookie) {
               // if no cookie is present then no bids were made, we don't store a bid response
