@@ -1,13 +1,13 @@
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
-webpackConfig.module.postLoaders = [
-  {
-    test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-    loader: 'istanbul-instrumenter'
-  }
-];
+// webpackConfig.module.postLoaders = [
+//   {
+//     test: /\.js$/,
+//     exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
+//     loader: 'istanbul-instrumenter'
+//   }
+// ];
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 

@@ -8,7 +8,8 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { loadScript } from 'src/adloader';
 import { ajax } from 'src/ajax';
-import * as CONSTANTS from 'src/constants';
+import * as constants from 'src/constants';
+import * as adaptermanager from 'src/adaptermanager';
 
 var loaded = false,
     registry = {};
@@ -20,30 +21,17 @@ var loaded = false,
  * @param factory
  */
 export function module(name, dependencies, factory) {
-  if (typeof dependencies === 'function') {
-    factory = dependencies;
-    dependencies = [];
+  if (registry[name]) {
+    utils.logWarn(`redefining module '${name}'`);
   }
 
-  if (typeof name !== "string") {
-    utils.logError('module missing name');
-  } else if (Array.isArray(dependencies) && typeof factory === 'function') {
-    if (registry[name]) {
-      utils.logWarn(`module ${name} redefined`);
-    }
+  let module = createModule(name, dependencies, factory);
 
-    registry[name] = {
-      name,
-      dependencies,
-      factory
-    };
-
-    return factory;
-  } else {
-    utils.logError(`bad module definition for '${name}'`);
+  if(module) {
+    registry[name] = module;
   }
 
-  return false;
+  return module;
 }
 
 /**
@@ -84,29 +72,59 @@ export function enableModules(config = {}) {
   loadOrder.forEach(name => {
     let module = registry[name];
     try {
-      results[name] = module.factory.apply(
-        module,
-        module.dependencies.map(
-          dependency => results[dependency]
-        ).concat(
-          [{
-            pbjs: $$PREBID_GLOBAL$$,
-            createNewAdapter,
-            AnalyticsAdapter,
-            bidfactory,
-            bidmanager,
-            utils,
-            loadScript,
-            ajax,
-            CONSTANTS,
-            config: config[name]
-          }]
-        )
-      );
+      results[name] = bootstrap(module, {config: config[name]}, results);
     } catch(e) {
       utils.logWarn(`error executing module: ${name}`);
     }
   });
 
   loaded = true;
+}
+
+export function createModule(name, dependencies, factory) {
+  if (typeof dependencies === 'function') {
+    factory = dependencies;
+    dependencies = [];
+  }
+
+  if (typeof name !== "string") {
+    utils.logError('module missing name');
+  } else if (Array.isArray(dependencies) && typeof factory === 'function') {
+    return {
+      name,
+      dependencies,
+      factory
+    };
+  } else {
+    utils.logError(`bad module definition for '${name}'`);
+  }
+
+  return false;
+}
+
+export function bootstrap(module, overrides = {}, results = {}) {
+  return module.factory.apply(
+    module,
+    module.dependencies.map(
+      dependency => results[dependency]
+    ).concat(
+      [
+        Object.assign(
+          {
+            pbjs: $$PREBID_GLOBAL$$,
+            createNewAdapter,
+            AnalyticsAdapter,
+            bidfactory,
+            bidmanager,
+            adaptermanager,
+            utils,
+            loadScript,
+            ajax,
+            constants
+          },
+          overrides
+        )
+      ]
+    )
+  );
 }
