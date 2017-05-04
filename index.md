@@ -79,6 +79,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>SpringServe</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Adform</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>bRealTime</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Beachfront</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>NginAd</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Brightcom</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Adequant</h3></div>
