@@ -78,6 +78,7 @@
     "karma-sinon-ie": "^2.0.0-rc10",
     "karma-webpack": "^1.5.1",
     "localtunnel": "^1.3.0",
+    "lodash": "^4.17.4",
     "mkpath": "^1.0.0",
     "mocha": "^1.21.4",
     "mock-fs": "^3.11.0",
