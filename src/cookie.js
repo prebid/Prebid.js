@@ -7,7 +7,7 @@ function fireSyncs() {
   queue.forEach(obj => {
     utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
     if(obj.type === 'iframe') {
-      utils.insertCookieSyncIframe(obj.url);
+      utils.insertCookieSyncIframe(obj.url, false);
     } else {
       utils.insertPixel(obj.url);
     }
