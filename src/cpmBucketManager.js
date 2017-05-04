@@ -55,7 +55,8 @@ const _autoPriceConfig = {
     }]
 };
 
-function getPriceBucketString(cpm, customConfig) {
+function getPriceBucketString(cpm, customConfig, currencyMultiplier) {
+  currencyMultiplier = currencyMultiplier || 1;
   let cpmFloat = 0;
   cpmFloat = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
@@ -63,18 +64,18 @@ function getPriceBucketString(cpm, customConfig) {
   }
 
   return {
-    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig),
-    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig),
-    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig),
-    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig),
-    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
+    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig, currencyMultiplier),
+    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig, currencyMultiplier),
+    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig, currencyMultiplier),
+    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig, currencyMultiplier),
+    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig, currencyMultiplier),
+    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig, currencyMultiplier)
   };
 }
 
-function getCpmStringValue(cpm, config) {
+function getCpmStringValue(cpm, config, currencyMultiplier) {
   let cpmStr = '';
-  if (!isValidePriceConfig(config)) {
+  if (!isValidPriceConfig(config)) {
     return cpmStr;
   }
   const cap = config.buckets.reduce((prev,curr) => {
@@ -86,20 +87,20 @@ function getCpmStringValue(cpm, config) {
     'max': 0,
   });
   let bucket = config.buckets.find(bucket => {
-    if (cpm > cap.max) {
+    if (cpm > cap.max * currencyMultiplier) {
       const precision = bucket.precision || _defaultPrecision;
-      cpmStr = bucket.max.toFixed(precision);
-    } else if (cpm <= bucket.max && cpm >= bucket.min) {
+      cpmStr = (bucket.max * currencyMultiplier).toFixed(precision);
+    } else if (cpm <= bucket.max * currencyMultiplier && cpm >= bucket.min * currencyMultiplier) {
       return bucket;
     }
   });
   if (bucket) {
-    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
+    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision, currencyMultiplier);
   }
   return cpmStr;
 }
 
-function isValidePriceConfig(config) {
+function isValidPriceConfig(config) {
   if (!config || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
@@ -112,12 +113,12 @@ function isValidePriceConfig(config) {
   return isValid;
 }
 
-function getCpmTarget(cpm, increment, precision) {
+function getCpmTarget(cpm, increment, precision, currencyMultiplier) {
   if (!precision) {
     precision = _defaultPrecision;
   }
-  let bucketSize = 1 / increment;
+  let bucketSize = 1 / increment * currencyMultiplier;
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
-export { getPriceBucketString, isValidePriceConfig };
+export { getPriceBucketString, isValidPriceConfig };

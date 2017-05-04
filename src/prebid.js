@@ -5,7 +5,7 @@ import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
-import {isValidePriceConfig} from './cpmBucketManager';
+import {isValidPriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
@@ -423,7 +423,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   // for video-enabled adUnits, only request bids if all bidders support video
   const invalidVideoAdUnits = adUnits.filter(videoAdUnit).filter(hasNonVideoBidder);
   invalidVideoAdUnits.forEach(adUnit => {
-    utils.logError('adUnit ${adUnit.code} has \'mediaType\' set to \'video\' but contains a bidder that doesn\'t support video. No Prebid demand requests will be triggered for this adUnit.');
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
     for (let i = 0; i < adUnits.length; i++) {
       if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
     }
@@ -661,6 +661,9 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 /**
  * Sets a default price granularity scheme.
  * @param {String|Object} granularity - the granularity scheme.
+ * @param {Float} currencyMultiplier - the exchange rate from USD to the ad server currency at the time of line item
+ * generation.
+ *
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
  * "high": $0.01 increments, capped at $20 CPM
@@ -671,22 +674,22 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
-$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplier) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
     return;
   }
   if(typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
+    bidmanager.setPriceGranularity(granularity, currencyMultiplier);
   }
   else if(typeof granularity === 'object') {
-    if(!isValidePriceConfig(granularity)){
+    if(!isValidPriceConfig(granularity)){
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
     bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM, currencyMultiplier);
     utils.logMessage('Using custom price granularity');
   }
 };
