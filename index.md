@@ -120,6 +120,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>ThoughtLeadr</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>TapSense</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Atomx</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Trion</h3></div>
 
     <!-- END BIDDERS -->
     </div>
