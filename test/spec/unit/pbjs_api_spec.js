@@ -1658,9 +1658,9 @@ describe('Unit: Prebid Module', function () {
 
   describe('setConfig', () => {
     it('results in pageConfig being set', () => {
-      $$PREBID_GLOBAL$$.setConfig({ 'adServerCurrency': 'JPY' });
+      $$PREBID_GLOBAL$$.setConfig({ 'currency': { 'adServerCurrency': 'JPY' } });
       expect($$PREBID_GLOBAL$$.pageConfig).to.not.equal({});
-      expect($$PREBID_GLOBAL$$.pageConfig.adServerCurrency).to.equal('JPY');
+      expect($$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency).to.equal('JPY');
     });
   });
 
