@@ -11,6 +11,8 @@ import { BaseAdapter } from './adapters/baseAdapter';
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
+//create s2s settings objectType_function
+let _s2sConfig = {};
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
@@ -31,7 +33,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           mediaType: adUnit.mediaType,
           transactionId : adUnit.transactionId,
           sizes: sizes,
-          bidId: utils.getUniqueIdentifierStr(),
+          bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
           bidderRequestId,
           requestId
         });
@@ -53,6 +55,51 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   let bidderCodes = getBidderCodes(adUnits);
   if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
     bidderCodes = shuffle(bidderCodes);
+  }
+
+  if(_s2sConfig.enabled) {
+    //these are called on the s2s adapter
+    let adaptersServerSide = _s2sConfig.bidders;
+
+    //don't call these client side
+    bidderCodes = bidderCodes.filter((elm) => {
+      return !adaptersServerSide.includes(elm);
+    });
+    let adUnitsCopy = utils.cloneJson(adUnits);
+
+    //filter out client side bids
+    adUnitsCopy.forEach((adUnit) => {
+      adUnit.sizes = transformHeightWidth(adUnit);
+      adUnit.bids = adUnit.bids.filter((bid) => {
+        return adaptersServerSide.includes(bid.bidder);
+      }).map((bid) => {
+        bid.bid_id = utils.getUniqueIdentifierStr();
+        return bid;
+      });
+    });
+
+    let tid = utils.generateUUID();
+    adaptersServerSide.forEach(bidderCode => {
+      const bidderRequestId = utils.getUniqueIdentifierStr();
+      const bidderRequest = {
+        bidderCode,
+        requestId,
+        bidderRequestId,
+        tid,
+        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits' : adUnitsCopy}),
+        start: new Date().getTime(),
+        auctionStart: auctionStart,
+        timeout: _s2sConfig.timeout
+      };
+      //Pushing server side bidder
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+    });
+
+    let s2sBidRequest = {tid, 'ad_units' : adUnitsCopy};
+    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter]; //jshint ignore:line
+    utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
+    s2sAdapter.setConfig(_s2sConfig);
+    s2sAdapter.callBids(s2sBidRequest);
   }
 
   bidderCodes.forEach(bidderCode => {
@@ -79,6 +126,21 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     }
   });
 };
+
+
+function transformHeightWidth(adUnit) {
+  let sizesObj = [];
+  let sizes = utils.parseSizesInput(adUnit.sizes);
+  sizes.forEach(size => {
+    let heightWidth = size.split('x');
+    let sizeObj = {
+      'w' : parseInt(heightWidth[0]),
+      'h' : parseInt(heightWidth[1])
+    };
+    sizesObj.push(sizeObj);
+  });
+  return sizesObj;
+}
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
   if (bidAdaptor && bidderCode) {
@@ -156,6 +218,10 @@ exports.enableAnalytics = function (config) {
 
 exports.setBidderSequence = function (order) {
   _bidderSequence = order;
+};
+
+exports.setS2SConfig = function (config) {
+  _s2sConfig = config;
 };
 
 /** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */

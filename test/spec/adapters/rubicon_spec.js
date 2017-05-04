@@ -32,6 +32,27 @@ describe('the rubicon adapter', () => {
     };
   }
 
+  function createVideoBidderRequestNoVideo() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaType = 'video';
+    bid.params.video = '';
+  }
+
+  function createVideoBidderRequestNoPlayer() {
+    let bid = bidderRequest.bids[0];
+    bid.mediaType = 'video';
+    bid.params.video = {
+      'language': 'en',
+      'p_aso.video.ext.skip': true,
+      'p_aso.video.ext.skipdelay': 15,
+      'size_id': 201,
+      'aeParams': {
+        'p_aso.video.ext.skip': '1',
+        'p_aso.video.ext.skipdelay': '15'
+      }
+    };
+  }
+
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
 
@@ -309,6 +330,7 @@ describe('the rubicon adapter', () => {
 
       describe('for video requests', () => {
 
+        /*
         beforeEach(() => {
           createVideoBidderRequest();
 
@@ -316,8 +338,14 @@ describe('the rubicon adapter', () => {
             bidderRequest.auctionStart + 100
           );
         });
+        */
 
         it('should make a well-formed video request', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
 
           rubiconAdapter.callBids(bidderRequest);
 
@@ -326,7 +354,7 @@ describe('the rubicon adapter', () => {
           let url = request.url;
           let post = JSON.parse(request.requestBody);
 
-          expect(url).to.equal('//optimized-by-adv.rubiconproject.com/v1/auction/video');
+          expect(url).to.equal('//fastlane-adv.rubiconproject.com/v1/auction/video');
 
           expect(post).to.have.property('page_url').that.is.a('string');
           expect(post.resolution).to.match(/\d+x\d+/);
@@ -373,6 +401,59 @@ describe('the rubicon adapter', () => {
           expect(slot.visitor).to.have.property('ucat').that.equals('new');
           expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
 
+        });
+
+        it('should allow a floor price override', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          // enter an explicit floor price //
+          floorBidderRequest.bids[0].params.floor = 3.25;
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          let request = xhr.requests[0];
+          let post = JSON.parse(request.requestBody);
+
+          let floor = post.slots[0].floor;
+
+          expect(floor).to.equal(3.25);
+
+        });
+
+        it('should trap when no video object is passed in', () => {
+          createVideoBidderRequestNoVideo();
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          expect(xhr.requests.length).to.equal(0);
+        });
+
+        it('should get size from bid.sizes too', () => {
+          createVideoBidderRequestNoPlayer();
+          sandbox.stub(Date, 'now', () =>
+            bidderRequest.auctionStart + 100
+          );
+
+          var floorBidderRequest = clone(bidderRequest);
+
+          rubiconAdapter.callBids(floorBidderRequest);
+
+          let request = xhr.requests[0];
+          let post = JSON.parse(request.requestBody);
+
+          expect(post.slots[0].width).to.equal(300);
+          expect(post.slots[0].height).to.equal(250);
         });
 
       });
@@ -659,7 +740,7 @@ describe('the rubicon adapter', () => {
                   'site_id': 88888,
                   'zone_id': 54321,
                   'creative_type': 'video',
-                  'creative_depot_url': 'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
+                  'creative_depot_url': 'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
                   'ad_id': 999999,
                   'size_id': 201,
                   'advertiser': 12345
@@ -684,7 +765,7 @@ describe('the rubicon adapter', () => {
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
-              'https://optimized-by-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
+              'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml'
           );
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
 

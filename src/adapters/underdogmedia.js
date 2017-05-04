@@ -14,35 +14,35 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
     var sizes = [];
     var siteId = 0;
 
-    for (var bidParam of bidParams.bids) {
-      sizes = utils.flatten(sizes,utils.parseSizesInput(bidParam.sizes));
+    bidParams.bids.forEach(bidParam => {
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
       siteId = bidParam.params.siteId;
-    }
+    });
     adloader.loadScript(getJsStaticUrl + "sid=" + siteId + ";sizes=" + sizes.join(","), null, false);
   }
 
   function _callback(response) {
 
     var mids = response.mids;
-    for (var bidParam of bidParams.bids) {
+    bidParams.bids.forEach(bidParam => {
 
       var filled = false;
-      for (var mid of mids) {
+      mids.forEach(mid => {
 
         if (mid.useCount > 0) {
-          continue;
+          return;
         }
         if (!mid.useCount) {
           mid.useCount = 0;
         }
         var size_not_found = true;
-        for (var size of utils.parseSizesInput(bidParam.sizes)) {
+        utils.parseSizesInput(bidParam.sizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
             size_not_found = false;
           }
-        }
+        });
         if (size_not_found) {
-          continue;
+          return;
         }
 
         var bid = bidfactory.createBid(1, bidParam);
@@ -52,24 +52,23 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
         bid.cpm = parseFloat(mid.cpm);
         if (bid.cpm <= 0) {
-          continue;
+          return;
         }
         mid.useCount++;
         bid.ad = mid.ad_code_html;
         bid.ad = _makeNotification(bid, mid, bidParam) + bid.ad;
         if (!(bid.ad || bid.adUrl)) {
-          continue;
+          return;
         }
         bidmanager.addBidResponse(bidParam.placementCode, bid);
         filled = true;
-        break;
-      }
+      });
       if (!filled) {
         var nobid = bidfactory.createBid(2, bidParam);
         nobid.bidderCode = bidParam.bidder;
         bidmanager.addBidResponse(bidParam.placementCode, nobid);
       }
-    }
+    });
   }
 
   $$PREBID_GLOBAL$$.handleUnderdogMediaCB = _callback;
