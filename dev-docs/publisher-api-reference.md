@@ -392,7 +392,7 @@ Accepted values:
 
 <div class="alert alert-danger" role="alert">
   <p>
-  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
+  If you define 'adserverTargeting' in your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
   </p>
 </div>
 
@@ -571,12 +571,6 @@ Some sample scenarios where publishers may wish to alter the default settings:
 * passing additional information to the ad server
 * adjusting the bid CPM sent to the ad server
 
-<div class="alert alert-danger" role="alert">
-  <p>
-  If you define your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
-  </p>
-</div>
-
 #### 2. Bidder Setting Attributes
 
 {: .table .table-bordered .table-striped }
@@ -587,6 +581,12 @@ Some sample scenarios where publishers may wish to alter the default settings:
 | bidCpmAdjustment | standard or adapter-specific | all | n/a | Could, for example, adjust a bidder's gross-price bid to net price. |
 | sendStandardTargeting | adapter-specific | 0.13.0 | true | If adapter-specific targeting is specified, can be used to suppress the standard targeting for that adapter. |
 | suppressEmptyKeys | standard or adapter-specific | 0.13.0 | false | If custom adserverTargeting functions are specified that may generate empty keys, this can be used to suppress them. |
+
+<div class="alert alert-danger" role="alert">
+  <p>
+  If you define 'adserverTargeting' in your own <code>bidderSettings</code> object, the <code>setPriceGranularity</code> method won't have any effect, since it assumes you are setting your own custom values.
+  </p>
+</div>
 
 ##### 2.1. alwaysUseBid
 
