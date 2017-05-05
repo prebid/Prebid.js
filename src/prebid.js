@@ -70,26 +70,6 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 //create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-
-function patchedPush(withDeprecationWarnings) {
-  let shouldPrintWarning = withDeprecationWarnings;
-  return function(cmd) {
-    if (typeof cmd === objectType_function) {
-      try {
-        if (shouldPrintWarning) {
-          utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL$$.queue.push instead.');
-          shouldPrintWarning = false;
-        }
-        cmd.call();
-      } catch (e) {
-        utils.logError('Error processing command :' + e.message);
-      }
-    } else {
-      utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
-    }
-  };
-}
-
 /**
  * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
  * before or after their script executes. For example, given the code:
@@ -109,13 +89,21 @@ function patchedPush(withDeprecationWarnings) {
  *                        the Prebid script has been fully loaded.
  * @alias module:$$PREBID_GLOBAL$$.queue.push
  */
-$$PREBID_GLOBAL$$.queue.push = patchedPush(false);
-$$PREBID_GLOBAL$$.que.push = patchedPush(true);
-
-function processQueue(queue, deprecationWarning) {
-  if (deprecationWarning && queue.length > 0) {
-    utils.logWarn('$$PREBID_GLOBAL$$.que.push is deprecated, to be removed in v1.0.0. Use $$PREBID_GLOBAL$$.queue.push instead.');
+$$PREBID_GLOBAL$$.queue.push = function(cmd) {
+  if (typeof cmd === objectType_function) {
+    try {
+      cmd.call();
+    } catch (e) {
+      utils.logError('Error processing command :' + e.message);
+    }
+  } else {
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
   }
+};
+
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.queue.push;
+
+function processQueue(queue) {
   queue.forEach(function(cmd) {
     if (typeof cmd.called === objectType_undefined) {
       try {
@@ -733,5 +721,5 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 };
 
 $$PREBID_GLOBAL$$.queue.push(() => listenMessagesFromCreative());
-processQueue($$PREBID_GLOBAL$$.queue, false);
-processQueue($$PREBID_GLOBAL$$.que, true);
+processQueue($$PREBID_GLOBAL$$.queue);
+processQueue($$PREBID_GLOBAL$$.que);

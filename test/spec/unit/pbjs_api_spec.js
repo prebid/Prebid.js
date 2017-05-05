@@ -1618,39 +1618,37 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  function testQueue(description, queue) {
-    describe(description, function() {
-
-      beforeEach(function initializeSpies() {
-        sinon.spy(utils, 'logError');
-        sinon.spy(utils, 'logWarn');
-      });
-
-      afterEach(function resetSpies() {
-        utils.logError.restore();
-        utils.logWarn.restore();
-      });
-
-      it('should run commands which are pushed into it', function() {
-        let cmd = sinon.spy();
-        queue.push(cmd);
-        assert.isTrue(cmd.called);
-      });
-
-      it('should log an error when given non-functions', function() {
-        queue.push(5);
-        assert.isTrue(utils.logError.calledOnce);
-      });
-
-      it('should log an error if the command passed into it fails', function() {
-        queue.push(function() {
-          throw new Error("Failed function.");
-        });
-        assert.isTrue(utils.logError.calledOnce);
-      });
+  describe('The monkey-patched queue.push function', function() {
+    beforeEach(function initializeSpies() {
+      sinon.spy(utils, 'logError');
     });
-  }
 
-  testQueue('The monkey-patched que.push function', $$PREBID_GLOBAL$$.que);
-  testQueue('The monkey-patched queue.push function', $$PREBID_GLOBAL$$.queue);
+    afterEach(function resetSpies() {
+      utils.logError.restore();
+    });
+
+    it('should run commands which are pushed into it', function() {
+      let cmd = sinon.spy();
+      $$PREBID_GLOBAL$$.queue.push(cmd);
+      assert.isTrue(cmd.called);
+    });
+
+    it('should log an error when given non-functions', function() {
+      $$PREBID_GLOBAL$$.queue.push(5);
+      assert.isTrue(utils.logError.calledOnce);
+    });
+
+    it('should log an error if the command passed into it fails', function() {
+      $$PREBID_GLOBAL$$.queue.push(function() {
+        throw new Error("Failed function.");
+      });
+      assert.isTrue(utils.logError.calledOnce);
+    });
+  });
+
+  describe('The monkey-patched que.push function', function() {
+    it('should be the same as the queue.push function', function() {
+      assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.queue.push);
+    });
+  });
 });
