@@ -59,5 +59,8 @@
     "hb_pb",
     "hb_size",
     "hb_deal"
-  ]
+  ],
+  "S2S" : {
+    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction"
+  }
 }

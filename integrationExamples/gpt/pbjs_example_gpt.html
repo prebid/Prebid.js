@@ -251,6 +251,13 @@
                         }
                     },
                     {
+                        bidder: 'quantcast',
+                        params: {
+                            publisherId: 'test-publisher', // REQUIRED Publisher Id provided by Quantcast
+                            battr : [1,2] // OPTIONAL - Array of Blocked creative attributes as per OpenRTB Spec List 5.3
+                        }
+                    },
+                    {
                         bidder: 'atomx',
                         params: {
                             id: 7395
@@ -361,6 +368,13 @@
                         params: {
                             pbId: 123, // REQUIRED Publisher Id,
                             pId: 123456 // REQUIRED Placement Id
+                        }
+                    },
+                    {
+                        bidder: 'quantcast',
+                        params: {
+                            publisherId: 'test-publisher', // REQUIRED Publisher Id provided by Quantcast
+                            battr : [1,2] // OPTIONAL - Array of Blocked creative attributes as per OpenRTB Spec List 5.3
                         }
                     },
                     {

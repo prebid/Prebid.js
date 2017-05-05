@@ -1651,4 +1651,42 @@ describe('Unit: Prebid Module', function () {
       assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.queue.push);
     });
   });
+
+  describe('setS2SConfig', () => {
+    let logErrorSpy;
+
+    beforeEach(() => {
+      logErrorSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(() => {
+      utils.logError.restore();
+    });
+
+    it('should log error when accountId is missing', () => {
+      const options = {
+        enabled : true,
+        bidders : ['appnexus'],
+        timeout : 1000,
+        adapter : 'prebidServer',
+        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction'
+      };
+
+      $$PREBID_GLOBAL$$.setS2SConfig(options);
+      assert.ok(logErrorSpy.calledOnce, true);
+    });
+
+    it('should log error when bidders is missing', () => {
+      const options = {
+        accountId : '1',
+        enabled : true,
+        timeout : 1000,
+        adapter : 's2s',
+        endpoint : 'https://prebid.adnxs.com/pbs/v1/auction'
+      };
+
+      $$PREBID_GLOBAL$$.setS2SConfig(options);
+      assert.ok(logErrorSpy.calledOnce, true);
+    });
+  });
 });
