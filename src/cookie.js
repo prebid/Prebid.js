@@ -12,6 +12,8 @@ function fireSyncs() {
       utils.insertPixel(obj.url);
     }
   });
+  //empty queue.
+  queue.length = 0;
 }
 
 /**
@@ -64,16 +66,13 @@ function createFooter(msgHtml) {
   footer.style.background = '#D3D3D3';
   footer.style.color = '#555';
   footer.style.boxShadow = '0 -1px 2px rgba(0, 0, 0, 0.2)';
-
   footer.style.fontFamily = 'sans-serif';
   footer.style.lineHeight = '1.5';
-
   footer.style.position = 'fixed';
   footer.style.bottom = '0';
   footer.style.left = '0';
   footer.style.right = '0';
   footer.style.width = '100%';
-
   footer.style.padding = '1em 0';
   footer.style.zindex = '1000';
 
