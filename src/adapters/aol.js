@@ -2,17 +2,107 @@ const utils = require('../utils.js');
 const ajax = require('../ajax.js').ajax;
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
+const constants = require('../constants.json');
 
 const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
+  const nexageBaseApiTemplate = template`${'protocol'}://${'host'}/bidRequest?`;
+  const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'ext'}`;
   const BIDDER_CODE = 'aol';
-  const SERVER_MAP = {
+  const MP_SERVER_MAP = {
     us: 'adserver-us.adtech.advertising.com',
     eu: 'adserver-eu.adtech.advertising.com',
     as: 'adserver-as.adtech.advertising.com'
   };
+  const NEXAGE_SERVER = 'hb.nexage.com';
+  const SYNC_TYPES = {
+    iframe: 'IFRAME',
+    img: 'IMG'
+  };
+
+  let domReady = (() => {
+    let readyEventFired = false;
+    return fn => {
+      let idempotentFn = () => {
+        if (readyEventFired) {
+          return;
+        }
+        readyEventFired = true;
+        return fn();
+      };
+
+      if (document.readyState === "complete") {
+        return idempotentFn();
+      }
+
+      document.addEventListener("DOMContentLoaded", idempotentFn, false);
+      window.addEventListener("load", idempotentFn, false);
+    };
+  })();
+
+  function dropSyncCookies(pixels) {
+    let pixelElements = parsePixelItems(pixels);
+    renderPixelElements(pixelElements);
+  }
+
+  function parsePixelItems(pixels) {
+    let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+    let tagNameRegExp = /\w*(?=\s)/;
+    let srcRegExp = /src=("|')(.*?)\1/;
+    let pixelsItems = [];
+
+    if (pixels) {
+      let matchedItems = pixels.match(itemsRegExp);
+      if (matchedItems) {
+        matchedItems.forEach(item => {
+          let tagNameMatches = item.match(tagNameRegExp);
+          let sourcesPathMatches = item.match(srcRegExp);
+          if (tagNameMatches && sourcesPathMatches) {
+            pixelsItems.push({
+              tagName: tagNameMatches[0].toUpperCase(),
+              src: sourcesPathMatches[2]
+            });
+          }
+        });
+      }
+    }
+
+    return pixelsItems;
+  }
+
+  function renderPixelElements(pixelsElements) {
+    pixelsElements.forEach((element) => {
+      switch (element.tagName) {
+        case SYNC_TYPES.img:
+          return renderPixelImage(element);
+        case SYNC_TYPES.iframe:
+          return renderPixelIframe(element);
+      }
+    });
+  }
+
+  function renderPixelImage(pixelsItem) {
+    let image = new Image();
+    image.src = pixelsItem.src;
+  }
+
+  function renderPixelIframe(pixelsItem) {
+    let iframe = document.createElement('iframe');
+    iframe.width = 1;
+    iframe.height = 1;
+    iframe.style.display = 'none';
+    iframe.src = pixelsItem.src;
+    if (document.readyState === 'interactive' ||
+      document.readyState === 'complete') {
+      document.body.appendChild(iframe);
+    } else {
+      domReady(() => {
+        document.body.appendChild(iframe);
+      });
+    }
+  }
 
   function template(strings, ...keys) {
     return function(...values) {
@@ -26,13 +116,13 @@ const AolAdapter = function AolAdapter() {
     };
   }
 
-  function _buildPubapiUrl(bid) {
+  function _buildMarketplaceUrl(bid) {
     const params = bid.params;
     const serverParam = params.server;
     let regionParam = params.region || 'us';
     let server;
 
-    if (!SERVER_MAP.hasOwnProperty(regionParam)) {
+    if (!MP_SERVER_MAP.hasOwnProperty(regionParam)) {
       utils.logWarn(`Unknown region '${regionParam}' for AOL bidder.`);
       regionParam = 'us'; // Default region.
     }
@@ -40,7 +130,7 @@ const AolAdapter = function AolAdapter() {
     if (serverParam) {
       server = serverParam;
     } else {
-      server = SERVER_MAP[regionParam];
+      server = MP_SERVER_MAP[regionParam];
     }
 
     // Set region param, used by AOL analytics.
@@ -58,6 +148,22 @@ const AolAdapter = function AolAdapter() {
         `;bidfloor=${params.bidFloor.toString()}` : '',
       misc: new Date().getTime() // cache busting
     });
+  }
+
+  function _buildNexageApiUrl(bid) {
+    let {dcn, pos} = bid.params;
+    let nexageApi = nexageBaseApiTemplate({
+      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      host: bid.params.host || NEXAGE_SERVER
+    });
+    if (dcn && pos) {
+      let ext = '';
+      utils._each(bid.params.ext, (value, key) => {
+        ext += `&${key}=${encodeURIComponent(value)}`;
+      });
+      nexageApi += nexageGetApiTemplate({dcn, pos, ext});
+    }
+    return nexageApi;
   }
 
   function _addErrorBidResponse(bid, response = {}) {
@@ -94,7 +200,11 @@ const AolAdapter = function AolAdapter() {
 
     let ad = bidData.adm;
     if (response.ext && response.ext.pixels) {
-      ad += response.ext.pixels;
+      if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
+        dropSyncCookies(response.ext.pixels);
+      } else {
+        ad += response.ext.pixels;
+      }
     }
 
     const bidResponse = bidfactory.createBid(1, bid);
@@ -113,40 +223,68 @@ const AolAdapter = function AolAdapter() {
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
 
+  function _isNexageRequestPost(bid) {
+    if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
+      let imp = bid.params.imp[0];
+      return imp.id && imp.tagid &&
+          ((imp.banner && imp.banner.w && imp.banner.h) ||
+          (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+    }
+  }
+
   function _callBids(params) {
     utils._each(params.bids, bid => {
-      const pubapiUrl = _buildPubapiUrl(bid);
-
-      ajax(pubapiUrl, response => {
-        // needs to be here in case bidderSettings are defined after requestBids() is called
-        if (showCpmAdjustmentWarning &&
-          $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
-          typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
-        ) {
-          utils.logWarn(
-            'bidCpmAdjustment is active for the AOL adapter. ' +
-            'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-          );
+      let apiUrl;
+      let data = null;
+      let options = {
+        withCredentials: true
+      };
+      let isNexageRequestPost = _isNexageRequestPost(bid);
+      if (bid.params.placement && bid.params.network) {
+        apiUrl = _buildMarketplaceUrl(bid);
+      } else if(bid.params.dcn && bid.params.pos || isNexageRequestPost) {
+        apiUrl = _buildNexageApiUrl(bid);
+        if (isNexageRequestPost) {
+          data = bid.params;
+          options.customHeaders = {
+            'x-openrtb-version': '2.2'
+          };
+          options.method = 'POST';
+          options.contentType = 'application/json';
         }
-        showCpmAdjustmentWarning = false; // warning is shown at most once
+      }
+      if (apiUrl) {
+        ajax(apiUrl, response => {
+          // Needs to be here in case bidderSettings are defined after requestBids() is called
+          if (showCpmAdjustmentWarning &&
+            $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings.aol &&
+            typeof $$PREBID_GLOBAL$$.bidderSettings.aol.bidCpmAdjustment === 'function'
+          ) {
+            utils.logWarn(
+              'bidCpmAdjustment is active for the AOL adapter. ' +
+              'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
+            );
+          }
+          showCpmAdjustmentWarning = false; // warning is shown at most once
 
-        if (!response && response.length <= 0) {
-          utils.logError('Empty bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          if (!response && response.length <= 0) {
+            utils.logError('Empty bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        try {
-          response = JSON.parse(response);
-        } catch (e) {
-          utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
-          _addErrorBidResponse(bid, response);
-          return;
-        }
+          try {
+            response = JSON.parse(response);
+          } catch (e) {
+            utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response);
+            return;
+          }
 
-        _addBidResponse(bid, response);
+          _addBidResponse(bid, response);
 
-      }, null, { withCredentials: true });
+        }, data, options);
+      }
     });
   }
 
