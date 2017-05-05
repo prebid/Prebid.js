@@ -62,7 +62,7 @@ gulp.task('bundle', function() {
   if(modules.length === 0) {
     modules = allModules;
   } else {
-    let diff = _.difference(modules, allModules);
+    var diff = _.difference(modules, allModules);
     if(diff.length !== 0) {
       throw new gutil.PluginError({
         plugin: 'bundle',

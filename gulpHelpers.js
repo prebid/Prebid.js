@@ -44,9 +44,9 @@ module.exports = {
     try {
       return fs.readdirSync(MODULE_PATH)
         .reduce((memo, file) => {
-          let moduleName = file.split(new RegExp('[.' + path.sep + ']'))[0];
-          let filePath = path.join(MODULE_PATH, file);
-          let modulePath = path.join(__dirname, filePath)
+          var moduleName = file.split(new RegExp('[.' + path.sep + ']'))[0];
+          var filePath = path.join(MODULE_PATH, file);
+          var modulePath = path.join(__dirname, filePath)
           if (fs.lstatSync(filePath).isDirectory()) {
             modulePath = path.join(__dirname, filePath, "index.js")
           }
@@ -70,7 +70,7 @@ module.exports = {
   },
 
   getModulePaths: function() {
-    let modules = this.getModules();
+    var modules = this.getModules();
     return Object.keys(modules);
   },
 
