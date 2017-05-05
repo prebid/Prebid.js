@@ -10,8 +10,17 @@ const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt',
-  'language'];
+const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const NATIVE_MAPPING = {
+  body: 'description',
+  image: {
+    serverName: 'main_image',
+    serverParams: {
+      required: true,
+      sizes: [{}]
+    }
+  }
+};
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -76,8 +85,21 @@ function AppnexusAstAdapter() {
         }
 
         if (bid.mediaType === 'native') {
-          tag.native = {};
-          tag.native.layouts = [bid.nativeParams];
+          tag.ad_types = ["native"];
+
+          if (bid.nativeParams) {
+            tag.native = {};
+            const nativeRequest = {};
+
+            // map standard native asset identifier to what /ut expects
+            Object.keys(bid.nativeParams).forEach(key => {
+              let requestKey = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName || NATIVE_MAPPING[key] || key;
+              let params = Object.assign({}, bid.nativeParams[key], NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams);
+              nativeRequest[requestKey] = params;
+            });
+
+            tag.native = {layouts: [nativeRequest]};
+          }
         }
 
         if (bid.mediaType === 'video') { tag.require_asset_url = true; }
@@ -301,8 +323,8 @@ function AppnexusAstAdapter() {
         const native = ad.rtb.native;
         bid.native = {
           title: native.title,
-          body: native.description,
-          sponsored_by: native.sponsored_by,
+          body: native.desc,
+          sponsored_by: native.sponsored,
           image: native.main_img && native.main_img.url,
           icon: native.icon && native.icon.url,
           click_url: native.link.url,

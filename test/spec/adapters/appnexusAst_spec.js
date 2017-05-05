@@ -244,8 +244,8 @@ describe('AppNexusAdapter', () => {
       RESPONSE.tags[0].ads[0].ad_type = 'native';
       RESPONSE.tags[0].ads[0].rtb.native = {
         "title": "Native Creative",
-        "description": "Cool description great stuff",
-        "sponsored_by": "AppNexus",
+        "desc": "Cool description great stuff",
+        "sponsored": "AppNexus",
         "icon": {
           "width": 0,
           "height": 0,

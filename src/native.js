@@ -68,11 +68,14 @@ export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).
  */
 export function nativeBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest || !bidRequest.nativeParams) {return false;}
+  if (!bidRequest) {return false;}
 
   const requestedAssets = bidRequest.nativeParams;
-  const requiredAssets = Object.keys(requestedAssets)
-    .filter(key => requestedAssets[key].required);
+  if (!requestedAssets) {return true;}
+
+  const requiredAssets = Object.keys(requestedAssets).filter(
+    key => requestedAssets[key].required
+  );
   const returnedAssets = Object.keys(bid.native);
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
