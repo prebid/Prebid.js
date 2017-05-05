@@ -13,6 +13,8 @@ If you have a documentation issue or pull request, please open a ticket or PR in
 ## Testing Prebid.js
 Pull requests to the Prebid.js library will need to include tests with greater than 80% code coverage for any changed/added code before they can be merged into master.
 
+New adapter submissions and updates to existing adapters must be tested against the [Hello World](integrationExamples/gpt/hello_world.html) example page.
+
 This section describes how to test code in the Prebid.js repository to help prepare your pull request.
 
 ### Writing tests
