@@ -12,6 +12,8 @@ function fireSyncs() {
       utils.insertPixel(obj.url);
     }
   });
+  //empty queue.
+  queue.length = 0;
 }
 
 /**
