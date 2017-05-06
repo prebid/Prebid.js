@@ -5,6 +5,10 @@ const bidmanager = require('../bidmanager.js');
 const constants = require('../constants.json');
 const events = require('src/events');
 
+$$PREBID_GLOBAL$$.aolGlobals = {
+  pixelsDropped: false
+};
+
 const AolAdapter = function AolAdapter() {
 
   let showCpmAdjustmentWarning = true;
@@ -67,8 +71,11 @@ const AolAdapter = function AolAdapter() {
   })();
 
   function dropSyncCookies(pixels) {
-    let pixelElements = parsePixelItems(pixels);
-    renderPixelElements(pixelElements);
+    if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped) {
+      let pixelElements = parsePixelItems(pixels);
+      renderPixelElements(pixelElements);
+      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
+    }
   }
 
   function parsePixelItems(pixels) {
@@ -227,7 +234,11 @@ const AolAdapter = function AolAdapter() {
       if (bid.params.userSyncOn === constants.EVENTS.BID_RESPONSE) {
         dropSyncCookies(response.ext.pixels);
       } else {
-        ad += response.ext.pixels;
+        let formattedPixels = response.ext.pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
+
+        ad += '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
+            'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' + formattedPixels +
+            '}</script>';
       }
     }
 

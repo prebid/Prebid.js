@@ -245,11 +245,11 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
 
   //first reset any old targeting
   targeting.resetPresetTargeting();
-  
+
   //now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 
@@ -261,8 +261,8 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   }
 
   targeting.setTargetingForAst();
-  
-  //emit event 
+
+  //emit event
   events.emit(SET_TARGETING);
 };
 

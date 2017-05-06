@@ -1,3 +1,14 @@
+AOL Prebid 1.17.0
+----------------
+Added functionality for rendering pixels once.
+
+
+AOL Prebid 1.16.0
+----------------
+Added Audience Network adapter.
+Added creative key field in bid response for Sharethrough adapter.
+
+
 AOL Prebid 1.15.0
 ----------------
 Nexage API implemented.
