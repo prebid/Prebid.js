@@ -7,6 +7,7 @@ var ajax = require('./ajax.js').ajax;
 var currency = exports;
 
 var bidResponseQueue = [];
+var conversionCache = {};
 
 currency.currencySupportEnabled = false;
 currency.currencyRatesLoaded = false;
@@ -15,6 +16,7 @@ currency.currencyRates = {};
 currency.initCurrencyRates = function(url) {
   utils.logInfo('Invoking currency.initCurrencyRates', arguments);
 
+  conversionCache = {};
   currency.currencySupportEnabled = true;
 
   ajax(url, function(response) {
@@ -27,6 +29,7 @@ currency.initCurrencyRates = function(url) {
 }
 
 currency.resetCurrencyRates = function() {
+  conversionCache = {};
   currency.currencySupportEnabled = false;
   currency.currencyRatesLoaded = false;
   currency.currencyRates = {};
@@ -59,14 +62,11 @@ function wrapFunction(fn, context, params) {
       var fromCurrency = bid.currency;
       try {
         var conversion = getCurrencyConversion(fromCurrency);
+        bid.originalCpm = bid.cpm;
+        bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
-          bid.originalCpm = bid.cpm;
-          bid.originalCurrency = bid.currency;
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency;
-        } else {
-          bid.originalCpm = bid.cpm;
-          bid.originalCurrency = bid.currency;
         }
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
@@ -81,16 +81,19 @@ function getCurrencyConversion(fromCurrency) {
   utils.logInfo('Invoking getCurrencyConversion', arguments);
 
   var conversionRate = null;
- 
-  if (currency.currencySupportEnabled === false) {
+
+  if (fromCurrency in conversionCache) {
+    conversionRate = conversionCache[fromCurrency];
+    utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
+
+  } else if (currency.currencySupportEnabled === false) {
   	if (fromCurrency === 'USD') {
       conversionRate = 1;
   	} else {
       throw new Error('Prebid currency support has not been enabled with initCurrencyRates and fromCurrency is not USD');
-    } 
-  }
+    }
 
-  if (fromCurrency === $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency) {
+  } else  if (fromCurrency === $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency) {
     conversionRate = 1;
 
   } else {
@@ -125,7 +128,7 @@ function getCurrencyConversion(fromCurrency) {
       var anyBaseCurrency = Object.keys(currency.currencyRates.conversions)[0];
 
       if (!(fromCurrency in currency.currencyRates.conversions[anyBaseCurrency])) {
-      	// bid should fail, currency is not supported 
+      	// bid should fail, currency is not supported
       	throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
       }
       var toIntermediateConversionRate = 1 / currency.currencyRates.conversions[anyBaseCurrency][fromCurrency];
@@ -139,6 +142,10 @@ function getCurrencyConversion(fromCurrency) {
       conversionRate = utils.roundFloat(toIntermediateConversionRate * fromIntermediateConversionRate, CONSTANTS.CURRENCY_RATE_PRECISION);
       utils.logInfo('currency.getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBaseCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     }
+  }
+  if (!(fromCurrency in conversionCache)) {
+    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
+    conversionCache[fromCurrency] = conversionRate;
   }
   return conversionRate;
 }
