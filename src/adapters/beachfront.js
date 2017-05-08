@@ -14,7 +14,7 @@ function BeachfrontAdapter() {
     const bids = bidRequests.bids || [];
     bids.forEach(function(bid) {
       var bidRequest = getBidRequest(bid);
-      var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
+      var RTBDataParams = prepareAndSaveRTBRequestParams(bidRequest);
       if (!RTBDataParams) {
         var error = "No bid params";
         utils.logError(error);
@@ -52,12 +52,15 @@ function BeachfrontAdapter() {
       return ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 1 : 2));
     }
 
-    var bidRequestObject =  {
+    var bidRequestObject = {
       isPrebid: true,
       appId: bid.params.appId,
       domain: document.location.hostname,
       imp:[{
-        video:{},
+        video: {
+	        w: bid.width,
+	        h: bid.height
+        },
         bidfloor: bid.params.bidfloor
       }],
       site:{
