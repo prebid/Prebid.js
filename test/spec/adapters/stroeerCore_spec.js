@@ -145,26 +145,37 @@ describe('stroeerssp adapter', function () {
       const request = fakeServer.requests[0];
 
       assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'http://localhost:3333/dsh');
+      assert.equal(request.url, 'http://dsh.adscale.de/dsh');
     });
 
 
-    it('send bids as a POST request to custom endpoint', function () {
-      const firstBidParams = bidderRequest.bids[0].params;
-      firstBidParams.host = "other.com";
-      firstBidParams.port = 234;
-      firstBidParams.path = "/xyz";
+    describe('send bids as a POST request to custom endpoint', function () {
 
-      fakeServer.respondWith("");
-      adapter(win).callBids(bidderRequest);
-      fakeServer.respond();
+      const tests = [
+        {protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'http://other.com:234/xyz'},
+        {protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'},
+        {protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'}, expected: 'https://other.com:871/xyz'},
+        {protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'http://dsh.adscale.de:234/xyz'},
+      ];
+
+      tests.forEach(test => {
+        it(`using params ${JSON.stringify(test.params)} when protocol is ${test.protocol}`, function () {
+          win.location.protocol = test.protocol;
+          bidderRequest.bids[0].params = test.params;
+
+          fakeServer.respondWith("");
+          adapter(win).callBids(bidderRequest);
+          fakeServer.respond();
 
 
-      assert.equal(fakeServer.requests.length, 1);
-      const request = fakeServer.requests[0];
+          assert.equal(fakeServer.requests.length, 1);
+          const request = fakeServer.requests[0];
 
-      assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'http://other.com:234/xyz');
+          assert.equal(request.method, 'POST');
+          assert.equal(request.url, test.expected);
+        });
+      });
+
     });
 
 

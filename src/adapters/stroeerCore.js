@@ -5,9 +5,9 @@ const ajax = require('../ajax').ajax;
 const url = require('../url');
 
 module.exports = function (win = window) {
-  const defaultHost = "localhost";
+  const defaultHost = "dsh.adscale.de";
   const defaultPath = "/dsh";
-  const defaultPort = "3333";
+  const defaultPort = "";
   const bidderCode = "stroeerCore";
 
   const validBidRequest = bid => bid.params && utils.isStr(bid.params.sid);
@@ -19,9 +19,14 @@ module.exports = function (win = window) {
   const isSecureWindow = () => win.location.protocol === "https:";
 
 
-  function buildUrl({host: hostname = defaultHost, port = defaultPort, path: pathname = defaultPath}) {
-    const protocol = isSecureWindow() ? 'https' : 'http';
-    return `${url.format({protocol, hostname, port, pathname})}`;
+  function buildUrl({host: hostname = defaultHost, port = defaultPort, securePort, path: pathname = defaultPath}) {
+    const secure = isSecureWindow();
+
+    if (securePort && secure) {
+      port = securePort;
+    }
+
+    return `${url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname})}`;
   }
 
 
