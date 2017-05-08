@@ -53,33 +53,51 @@ Update your site's hosted copy of Prebid.js to use the new build you just genera
 
 ## Step 4. Configure S2S bidder adapters
 
-Include the following code in your Prebid.js configuration:
+The Prebid Server settings (defined by the `pbjs.setS2SConfig` method) go in the same anonmymous function where you define your ad units.  This method must be called before `pbjs.requestBids`.
+
+The code in your Prebid configuration block should look something like the sample below.
 
 {% highlight js %}
+    var pbjs = pbjs || {};
 
-pbjs.setS2SConfig({
+    // Usual Prebid configuration code goes here, followed by:
 
-  // String (required): The account ID obtained in step 1.
-  accountId: '1',
+    pbjs.que.push(function () {
 
-  // Boolean (required): Enables S2S - defaults to `false`.
-  enabled: true,
+      pbjs.logging = true;
 
-  // Array[String] (required): List of bidder codes to enable for S2S.
-  // Note that these must have been included in the Prebid.js build
-  // from Step 2.
-  bidders: ['appnexus', 'pubmatic'],
+      pbjs.setS2SConfig({
 
-  // Number (optional): Timeout for bidders called via the S2S
-  // endpoint, in milliseconds. Default value is 1000.
-  timeout: 1000,
+        // String (required): The account ID obtained in step 1.
+        accountId: '1',
 
-  // String (optional): Adapter code for S2S. Defaults to 'prebidServer'.
-  adapter: 'prebidServer',
+        // Boolean (required): Enables S2S - defaults to `false`.
+        enabled: true,
 
-  // String (optional): Will override the default endpoint for Prebid Server.
-  endpoint: 'http://prebid.adnxs.com'
-});
+        // Array[String] (required): List of bidder codes to enable for S2S.
+        // Note that these must have been included in the Prebid.js build
+        // from Step 2.
+        bidders: ['appnexus', 'pubmatic'],
+
+        // Number (optional): Timeout for bidders called via the S2S
+        // endpoint, in milliseconds. Default value is 1000.
+        timeout: 1000,
+
+        // String (optional): Adapter code for S2S. Defaults to 'prebidServer'.
+        adapter: 'prebidServer',
+
+        // String (optional): Will override the default endpoint for Prebid Server.
+        endpoint: 'http://prebid.adnxs.com'
+      });
+
+      var adUnits = [
+                   {
+                       code: '/19968336/header-bid-tag-1',
+                       sizes: sizes,
+                       bids: [
+                           {
+
+      // Etc.
 
 {% endhighlight %}
 
