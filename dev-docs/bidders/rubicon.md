@@ -19,6 +19,8 @@ biddercode_longer_than_12: false
 ### Note:
 The Rubicon Fastlane adapter requires setup and approval from the Rubicon Project team, even for existing Rubicon Project publishers. Please reach out to your account team or globalsupport@rubiconproject.com for more information and to enable using this adapter.
 
+For multiple zoneIds support for one given adunit, is necessary duplicate bidder configurations per adUnit.
+
 ### bid params
 
 {: .table .table-bordered .table-striped }
