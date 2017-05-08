@@ -38,7 +38,7 @@ var EPlanningAdapter = function EPlanningAdapter() {
   function _callBids(params) {
     var scriptURL = "http://" + ((params && params.bids && params.bids.length && params.bids[0].params && params.bids[0].params.isv) ? params.bids[0].params.isv : ISV_DEFAULT) + "/layers/hbpb.js";
     adloader.loadScript(scriptURL, function() {
-      if (window.hpbp) {
+      if (window.hbpb) {
         window.hbpb.call(params);
       }
     }, true);
