@@ -37,12 +37,6 @@ Prebid Server is an open source project.  [The source code is hosted under the P
 
 ## Step 2. Download Prebid.js with Prebid Server enabled
 
-{: .alert.alert-warning :}
-**Building from source is required (for now)**  
-We're in the process of updating the downloads page here on Prebid.org.  Until then, to get a build of Prebid.js with Prebid Server support, you must build it from source using [these instructions](https://github.com/prebid/Prebid.js/blob/master/README.md).
-
-<strike>
-
 - Go to [the Prebid.org download page]({{site.github.url}}/download.html), select all the demand adapters you want to work with, and include "Prebid Server".
 
 - For example, if you want to use AppNexus, Index Exchange, and Rubicon with Prebid Server, select:
@@ -52,8 +46,6 @@ We're in the process of updating the downloads page here on Prebid.org.  Until t
   - *Prebid Server*
 
 - Then, click **Get Custom Prebid.js** and follow the instructions.
-
-</strike>
 
 ## Step 3. Update your site with the new build of Prebid.js
 
