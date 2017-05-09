@@ -435,10 +435,17 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-var insertElement = function(elm) {
-  let elToAppend = document.getElementsByTagName('head');
-  try {
-    elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
+exports.insertElement = function(elm, doc, target) {
+  doc = doc || document;
+  let elToAppend;
+  if(target) {
+    elToAppend =doc.getElementsByTagName(target);
+  }
+  else {
+    elToAppend  = doc.getElementsByTagName('head');
+  }
+  try{
+    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
     if (elToAppend.length) {
       elToAppend = elToAppend[0];
       elToAppend.insertBefore(elm, elToAppend.firstChild);
@@ -459,7 +466,7 @@ exports.insertPixel = function (url) {
     } catch (e) {
     }
   };
-  insertElement(img);
+  this.insertElement(img);
 };
 
 /**
@@ -471,8 +478,8 @@ exports.insertCookieSyncIframe = function(url, encodeUri) {
   let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
-  let iframe = div.firstChild;
-  insertElement(iframe);
+  let iframe =  div.firstChild;
+  this.insertElement(iframe);
 };
 
 /**
