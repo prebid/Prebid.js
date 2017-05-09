@@ -768,12 +768,12 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 <br/>
 <p>
-(Version 0.23.0)
+(<!-- Version 0.23.0 --> upgrade in progress)
 </p>
 
 <div class="form-group">
 
-  <button type="button" class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
+  <button type="button" disabled class="btn btn-lg btn-primary" data-toggle="modal" data-target="#myModal">Get Custom Prebid.js</button>
 
 </div>
 
