@@ -25,8 +25,8 @@ There should be no changes required on the ad ops side, since the outstream unit
 
 ## Prerequisites
 
-+ Demand from a bidder adapter that supports the `"video-outstream"` media type
-+ The bidder adapter will have to implement an outstream video renderer that is returned on the bid response.  For more technical information about custom renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082).
++ Demand from a bidder adapter that supports the `"video-outstream"` media type, and returns a renderer for outstream video in its bid response
++ For more technical information about renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082)
 
 ## 1. Set up outstream video slot sizes
 
@@ -46,9 +46,9 @@ var rightSlotSizes = [[ 300, 250 ], [ 300, 600 ], [ 300, 250 ], [ 100, 100 ]];
 
 ## 2. Set up your ad units with the outstream video media type
 
-Still in the header, set up your ad units with the `video-outstream` media type.  Note that you must be integrated with bidder adaptors that can respond with outstream video ads.
+Still in the header, set up your ad units with the `video-outstream` media type.
 
-As far as what fields are supported in the `video` object, that will depend on the rendering options supported by your preferred bidder adaptor(s).
+As far as what fields are supported in the `video` object, that will depend on the rendering options supported by your preferred bidder adaptor(s).  For more information, see [Bidders' Params]({{site.github.url}}/dev-docs/bidders.html).
 
 {% highlight js %}
 
