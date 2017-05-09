@@ -37,7 +37,8 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
           for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {
             _requestCache[tagSrc].callbacks[i]();
           }
-        } catch (e) {
+        }
+        catch (e) {
           utils.logError('Error executing callback', 'adloader.js:loadScript', e);
         }
       });
@@ -81,23 +82,3 @@ function requestResource(tagSrc, callback) {
     elToAppend.insertBefore(jptScript, elToAppend.firstChild);
   }
 }
-
-// track a impbus tracking pixel
-// TODO: Decide if tracking via AJAX is sufficent, or do we need to
-// run impression trackers via page pixels?
-exports.trackPixel = function (pixelUrl) {
-  let delimiter;
-  let trackingPixel;
-
-  if (!pixelUrl || typeof (pixelUrl) !== 'string') {
-    utils.logMessage('Missing or invalid pixelUrl.');
-    return;
-  }
-
-  delimiter = pixelUrl.indexOf('?') > 0 ? '&' : '?';
-
-  // add a cachebuster so we don't end up dropping any impressions
-  trackingPixel = pixelUrl + delimiter + 'rnd=' + Math.floor(Math.random() * 1E7);
-  (new Image()).src = trackingPixel;
-  return trackingPixel;
-};

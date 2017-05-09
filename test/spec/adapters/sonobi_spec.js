@@ -60,6 +60,19 @@ describe('Sonobi adapter tests', () => {
       }
     }]
   };
+
+  const adUnit_as = {
+    code: 'sbi_s',
+    sizes: [[120, 600], [300, 600], [160, 600]],
+    bids: [{
+      bidder: 'sonobi',
+      params: {
+        ad_unit: '/7780971/sparks_prebid_LB',
+        sizes: [[300, 250], [300, 600]]
+      }
+    }]
+  };
+
   const adUnit_ad = {
     bidderCode: 'sonobi',
     bids: [{
@@ -227,6 +240,7 @@ describe('Sonobi adapter tests', () => {
     'adUnit_pd' : adUnit_pd,
     'adUnit_pdf' : adUnit_pdf,
     'adUnit_a' : adUnit_a,
+    'adUnit_as' : adUnit_as,
     'adUnit_ad' : adUnit_ad,
     'adUnit_af' : adUnit_af,
     'adUnit_adf' : adUnit_adf,

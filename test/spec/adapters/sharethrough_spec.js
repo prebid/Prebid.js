@@ -63,17 +63,8 @@ describe('sharethrough adapter', () => {
 
       sinon.assert.calledTwice(adapter.str.ajax);
 
-      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
-      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.1.0&hbSource=prebid&');
-    });
-
-  });
-
-  describe('strcallback', () => {
-
-    it('should exist and be a function', () => {
-      let shit = sandbox.stub(pbjs, 'strcallback');
-      expect(pbjs.strcallback).to.exist.and.to.be.a('function');
+      expect(firstBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId1&placement_key=aaaa1111&hbVersion=%24prebid.version%24&strVersion=1.2.0&hbSource=prebid&');
+      expect(secondBidUrl).to.contain(adapter.str.STR_BTLR_HOST + '/header-bid/v1?bidId=bidId2&placement_key=bbbb2222&hbVersion=%24prebid.version%24&strVersion=1.2.0&hbSource=prebid&');
     });
 
   });
@@ -82,16 +73,18 @@ describe('sharethrough adapter', () => {
 
     let firstBid;
     let secondBid;
+    let server;
 
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
+      server = sinon.fakeServer.create();
 
       pbjs._bidsRequested.push(bidderRequest);
       adapter.str.placementCodeSet['foo'] = {};
       adapter.str.placementCodeSet['bar'] = {};
       // respond
 
-      let bidderReponse1 = {
+      let bidderResponse1 = {
                               "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
                               "bidId": "bidId1",
                               "creatives": [
@@ -104,7 +97,7 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      let bidderReponse2 = {
+      let bidderResponse2 = {
                               "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
                               "bidId": "bidId2",
                               "creatives": [
@@ -117,11 +110,18 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      pbjs.strcallback(JSON.stringify(bidderReponse1));
-      pbjs.strcallback(JSON.stringify(bidderReponse2));
+      server.respondWith(/aaaa1111/,JSON.stringify(bidderResponse1));
+      server.respondWith(/bbbb2222/,JSON.stringify(bidderResponse2));
+      adapter.callBids(bidderRequest);
+
+      server.respond();
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
+    });
+
+    afterEach(() => {
+      server.restore();
     });
 
     it('should add a bid object for each bid', () => {

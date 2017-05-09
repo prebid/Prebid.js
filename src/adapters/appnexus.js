@@ -60,6 +60,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     }
 
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
+    jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', (utils.getBidIdParameter('trafficSourceCode', bid.params)));
 
     // sizes takes a bit more logic
     var sizeQueryString = '';
