@@ -703,6 +703,30 @@ To improve the speed and load time of your site, build Prebid.js for only the he
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="pubgears" class="bidder-check-box"> Pubgears
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="adsupply" class="bidder-check-box"> AdSupply
+      </label>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" bidderCode="quantcast" class="bidder-check-box"> Quantcast
+      </label>
+    </div>
+  </div>
+
 </div>
 
 <br>
@@ -744,7 +768,7 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 </div>
 <br/>
 <p>
-(Version 0.22.2)
+(Version 0.23.0)
 </p>
 
 <div class="form-group">
