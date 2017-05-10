@@ -3,7 +3,6 @@
 <script type="text/javascript">
     //Postbid Configuration start
     var targetId = "unique-prebid-wrapper"; //Id of iframe defined above.
-    var conf = {};
     var adUnitSizes = [[300,250]];
     var adUnitCode = 'doNotChange';
 
@@ -51,6 +50,7 @@
 
     window.addEventListener('message', resizeListener);
 
+    var conf = {};
     conf = {
       'adUnitCode' : adUnitCode,
       'adUnitSizes': adUnitSizes,
