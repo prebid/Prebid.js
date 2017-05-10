@@ -1,0 +1,66 @@
+<!-- this iframe is wrapper for postbid creative, its id has to be unique -->
+<iframe id="unique-prebid-wrapper" src="" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="100%" height="100%"></iframe>
+<script type="text/javascript">
+    //Postbid Configuration start
+    var targetId = "unique-prebid-wrapper"; //Id of iframe defined above.
+    var conf = {};
+    var adUnitSizes = [[300,250]];
+    var adUnitCode = 'doNotChange';
+
+    // Add your post-bid tag IDs here:
+    var adUnitBids = [
+      {
+        bidder: 'appnexus',
+        params: {
+          placementId: '10433394'
+        }
+      },
+      {
+        bidder: 'TO ADD',
+        params: {
+          publisherId: 'TO ADD',
+          adSlot: 'TO ADD'
+        }
+      }
+    ];
+
+    var passbackTagHtml = 'TO ADD';
+    //Postbid Configuration End
+
+    // Do no change below this line //
+    var cdn = 'http://acdn.adnxs.com';
+    var host = window.location.protocol + "//" + window.location.host;
+
+    function resizeListener(evt) {
+      if (evt.origin !== cdn) {
+        return;
+      }
+      var data;
+      try {
+        data = JSON.parse(evt.data);
+      } catch (e) {
+        return;
+      }
+
+      if (data.name === 'resizeAd') {
+        var targetIframe = document.getElementById(data.targetId);
+        targetIframe.height = data.height + 'px';
+        targetIframe.width = data.width + 'px';
+      }
+    }
+
+    window.addEventListener('message', resizeListener);
+
+    conf = {
+      'adUnitCode' : adUnitCode,
+      'adUnitSizes': adUnitSizes,
+      'adUnitBids': adUnitBids,
+      'passbackTagHtml': passbackTagHtml,
+      'host' : host,
+      'targetId' : targetId
+    };
+
+    conf = JSON.stringify(conf);
+    var iframe = document.getElementById(targetId);
+    iframe.src = 'http://acdn.adnxs.com/ast/test/oas/prebid.html?conf='+encodeURIComponent(conf);
+</script>
