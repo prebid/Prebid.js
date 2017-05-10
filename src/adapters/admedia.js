@@ -11,9 +11,29 @@ var CONSTANTS = require('../constants.json');
  */
 var AdmediaAdapter = function AdmediaAdapter() {
 
+  var ext_url = (window.location.protocol) + "//b.admedia.com/banner/prebid/bidder/ext/?";
+
   function _callBids(params){
-    var bids, bidderUrl = (window.location.protocol) + "//b.admedia.com/banner/prebid/bidder/?";
-    bids = params.bids || [];
+    if(typeof window.AdmediaPBJS === 'undefined'){
+      var aid = params.bids[0].params.aid;
+      var request_obj = {};
+      request_obj.aid = aid;
+      request_obj.siteDomain = window.location.host;
+      request_obj.sitePage = window.location.href;
+      request_obj.siteRef = document.referrer;
+      request_obj.topUrl = utils.getTopWindowUrl();
+
+      var endpoint = ext_url+utils.parseQueryStringParameters(request_obj);
+
+      adloader.loadScript(endpoint, function(){ _processBids(params); });
+    }
+    else{
+      _processBids(params);
+    }
+  }
+
+  function _processBids(params){
+    var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
       var bid = bids[i];
@@ -41,6 +61,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       if (parsedSizesLength > 0) {
         //first value should be "size"
         request_obj.size = parsedSizes[0];
+
         if (parsedSizesLength > 1) {
           //any subsequent values should be "promo_sizes"
           var promo_sizes = [];
@@ -48,10 +69,13 @@ var AdmediaAdapter = function AdmediaAdapter() {
             promo_sizes.push(parsedSizes[j]);
           }
 
-          request_obj.promo_sizes = promo_sizes.join(",");
+          var psizes = promo_sizes.join(",");
+
+          request_obj.promo_sizes = psizes;
 
         }
       }
+
 
       //detect urls
       request_obj.siteDomain = window.location.host;
@@ -61,36 +85,46 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       request_obj.callbackId = bid.bidId;
 
-      var endpoint = bidderUrl+utils.parseQueryStringParameters(request_obj);
-
-      //utils.logMessage('Admedia request built: ' + endpoint);
-
-      adloader.loadScript(endpoint);
+      var callback = responseCallback(bid);
+      var admedia_pbjs = new window.AdmediaPBJS (request_obj, callback);
+      admedia_pbjs.callBids();
     }
   }
 
+  function responseCallback(bid) {
+    return function(response) {
+      $$PREBID_GLOBAL$$.admediaHandler(response, bid);
+    };
+  }
+
   //expose the callback to global object
-  $$PREBID_GLOBAL$$.admediaHandler = function(response){
-    var bidObject = {};
-    var callback_id = response.callback_id;
-    var placementCode = '';
-    var bidObj = getBidRequest(callback_id);
+  $$PREBID_GLOBAL$$.admediaHandler = function(response,bidRequest){
+    var bidObject = {}, bidObj, placementCode = '';
+    if(bidRequest){
+      bidObj = bidRequest;
+    }
+    else{
+      bidObj = getBidRequest(response.callback_id);
+    }
+
     if (bidObj) {
       placementCode = bidObj.placementCode;
     }
 
-    if(bidObj && response.cpm>0 && !!response.ad){
+    if(bidObj && response.cpm>0 && (!!response.ad || !!response.adUrl)){
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
       bidObject.bidderCode = bidObj.bidder;
       bidObject.cpm = parseFloat(response.cpm);
-      bidObject.ad = response.ad;
+      if(response.adUrl)
+        bidObject.adUrl = response.adUrl;
+      else
+        bidObject.ad = response.ad;
       bidObject.width = response.width;
       bidObject.height = response.height;
     }
     else{
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
       bidObject.bidderCode = bidObj.bidder;
-      utils.logMessage('No prebid response from Admedia for placement code ' + placementCode);
     }
 
     bidmanager.addBidResponse(placementCode, bidObject);
