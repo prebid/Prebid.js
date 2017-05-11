@@ -33,7 +33,7 @@ There is an analysis from the Prebid team here which may be useful:
 
 [How many bidders should I work with?]({{site.github.url}}/blog/how-many-bidders-for-header-bidding)
 
-## Some of my Demand Partners send Gross Bids while others send Net Bids; how can I account for this difference?
+## Some of my demand partners send gross bids while others send net bids; how can I account for this difference?
 
 You will want to adjust the gross bids so that they compete fairly with the rest of your demand, so that you are seeing the most revenue possible. 
 
