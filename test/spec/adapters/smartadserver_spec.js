@@ -19,7 +19,8 @@ describe("smartadserver adapter tests", function () {
               pageId: "5678",
               formatId: "90",
               target: "test=prebid",
-              currency: "EUR"
+              currency: "EUR",
+              bidfloor: 0.420
             },
             requestId: "efgh5678",
             placementCode: "sas_42"
@@ -78,6 +79,7 @@ describe("smartadserver adapter tests", function () {
     expect(parsedBidUrlQueryString).to.have.property("fmtid").and.to.equal("90");
     expect(parsedBidUrlQueryString).to.have.property("tgt").and.to.equal("test=prebid");
     expect(parsedBidUrlQueryString).to.have.property("ccy").and.to.equal("EUR");
+    expect(parsedBidUrlQueryString).to.have.property("bidfloor").and.to.equal("0.42");
     expect(parsedBidUrlQueryString).to.have.property("tag").and.to.equal("sas_42");
     expect(parsedBidUrlQueryString).to.have.property("sizes").and.to.equal("300x250,300x200");
     expect(parsedBidUrlQueryString).to.have.property("async").and.to.equal("1");
