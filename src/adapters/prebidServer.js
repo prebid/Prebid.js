@@ -50,7 +50,7 @@ function PrebidServer() {
       adUnit.bids.forEach(bid => {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
-          if(typeof bid.params[key] !== types[key]) {
+          if(bid.params[key] && typeof bid.params[key] !== types[key]) {
             //mismatch type. Try to fix
             utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
             bid.params[key] = tryConvertType(types[key], bid.params[key]);
