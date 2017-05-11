@@ -14,7 +14,7 @@ function mapSizes(adUnit) {
     const mapping = adUnit.sizeMapping.reduce((prev, curr) => {
       return prev.minWidth < curr.minWidth ? curr : prev;
     });
-    if(mapping.sizes) {
+    if(mapping.sizes && mapping.sizes.length) {
       return mapping.sizes;
     }
     return adUnit.sizes;
@@ -23,7 +23,7 @@ function mapSizes(adUnit) {
   const mapping = adUnit.sizeMapping.find(sizeMapping =>{
     return width > sizeMapping.minWidth;
   });
-  if(mapping && mapping.sizes){
+  if(mapping && mapping.sizes && mapping.sizes.length){
     sizes = mapping.sizes;
     utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
   }

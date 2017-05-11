@@ -261,6 +261,51 @@ describe('AudienceNetwork adapter', () => {
       expect(logError.called).to.equal(false, 'logError called');
     });
 
+    it('filters invalid slot sizes', () => {
+      // Valid response
+      server.respondWith(JSON.stringify({
+        errors: [],
+        bids: {
+          [placementId]: [{
+            placement_id: placementId,
+            bid_id: 'test-bid-id',
+            bid_price_cents: 123,
+            bid_price_currency: 'usd',
+            bid_price_model: 'cpm'
+          }]
+        }
+      }));
+      // Request bids
+      AudienceNetwork().callBids({
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          placementCode,
+          params: { placementId },
+          sizes: ['350x200']
+        }, {
+          bidder: bidderCode,
+          placementCode,
+          params: { placementId },
+          sizes: ['300x250']
+        }]
+      });
+      server.respond();
+      // Verify attempt to call addBidResponse
+      expect(addBidResponse.calledOnce).to.equal(true);
+      expect(addBidResponse.args[0]).to.have.lengthOf(2);
+      expect(addBidResponse.args[0][0]).to.equal(placementCode);
+      // Verify bidResponse Object
+      const bidResponse = addBidResponse.args[0][1];
+      expect(bidResponse.getStatusCode()).to.equal(STATUS.GOOD);
+      expect(bidResponse.cpm).to.equal(1.23);
+      expect(bidResponse.bidderCode).to.equal(bidderCode);
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false, 'logError called');
+    });
+
     it('valid multiple bids in response', () => {
       const placementIdNative = 'test-placement-id-native';
       const placementIdIab = 'test-placement-id-iab';

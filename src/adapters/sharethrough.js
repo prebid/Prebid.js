@@ -4,7 +4,7 @@ var bidfactory = require('../bidfactory.js');
 var ajax = require('../ajax.js').ajax;
 
 const STR_BIDDER_CODE = "sharethrough";
-const STR_VERSION = "1.1.0";
+const STR_VERSION = "1.2.0";
 
 var SharethroughAdapter = function SharethroughAdapter() {
 
@@ -22,8 +22,14 @@ var SharethroughAdapter = function SharethroughAdapter() {
       const bidRequest = bids[i];
       str.placementCodeSet[bidRequest.placementCode] = bidRequest;
       const scriptUrl = _buildSharethroughCall(bidRequest);
-      str.ajax(scriptUrl, $$PREBID_GLOBAL$$.strcallback, undefined, {withCredentials: true});
+      str.ajax(scriptUrl, _createCallback(bidRequest), undefined, {withCredentials: true});
     }
+  }
+
+  function _createCallback(bidRequest) {
+    return (bidResponse) => {
+      _strcallback(bidRequest, bidResponse);
+    };
   }
 
   function _buildSharethroughCall(bid) {
@@ -39,11 +45,10 @@ var SharethroughAdapter = function SharethroughAdapter() {
     return url;
   }
 
-  $$PREBID_GLOBAL$$.strcallback = function(bidResponse) {
-    bidResponse = JSON.parse(bidResponse);
-    const bidId = bidResponse.bidId;
-    const bidObj = utils.getBidRequest(bidId);
+  function _strcallback(bidObj, bidResponse) {
     try {
+      bidResponse = JSON.parse(bidResponse);
+      const bidId = bidResponse.bidId;
       const bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = STR_BIDDER_CODE;
       bid.cpm = bidResponse.creatives[0].cpm;
@@ -78,7 +83,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     } catch (e) {
       _handleInvalidBid(bidObj);
     }
-  };
+  }
 
   function _handleInvalidBid(bidObj) {
     const bid = bidfactory.createBid(2, bidObj);
@@ -100,4 +105,3 @@ var SharethroughAdapter = function SharethroughAdapter() {
 };
 
 module.exports = SharethroughAdapter;
-

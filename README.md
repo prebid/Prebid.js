@@ -24,11 +24,11 @@ This README is for developers who want to contribute to Prebid.js.  For user-fac
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
-    $ npm install
+    $ yarn install
 
-If you experience errors after a version update, try a fresh install:
+Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
 
-    $ rm -rf ./node_modules && npm cache clean && npm install
+For more info about yarn see https://yarnpkg.com
 
 <a name="Build"></a>
 
@@ -64,19 +64,22 @@ For example, in `path/to/your/list-of-adapters.json`, write:
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
 **Build standalone prebid.js**
+Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
 
-- Clone the repo, run `npm install`
+For more info about yarn see https://yarnpkg.com
+
+- Clone the repo, run `yarn install`
 - Duplicate `adapters.json` to e.g. `list-of-adapters.json`
 - Remove the unnecessary adapters from `list-of-adapters.json`
 - Then run the build:
 
         $ gulp build --adapters path/to/your/list-of-adapters.json
 
-**Build prebid.js using NPM for bundling**
+**Build prebid.js using Yarn for bundling**
 
-In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `npm` dependency.
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
 
-- Install `prebid.js` as an `npm` dependency of your project
+- Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
 - Duplicate `node_modules/prebid.js/adapters.json` to under your project path, e.g. `path/to/your/list-of-adapters.json`
 - Remove the unnecessary adapters
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
@@ -131,7 +134,7 @@ This runs code quality checks, generates all the necessary files and starts a we
 
 To run the example file, go to:
 
-+ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html` 
++ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
 
 To view a test coverage report, go to:
 
@@ -143,13 +146,15 @@ A watch is also in place that will run continuous tests in the terminal as you e
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [20+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
 
 ### Add a Bidder Adapter
 
 To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
-Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate. 
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
 
 ### Code Quality
 
@@ -167,13 +172,13 @@ This will run tests and keep the Karma test browser open. If your `prebid.js` fi
 
 + For test results, see the console
 
-+ To set breakpoints in source code, see the developer tools 
++ To set breakpoints in source code, see the developer tools
 
 Detailed code coverage reporting can be generated explicitly with
 
         $ gulp test --coverage
 
-The results will be in 
+The results will be in
 
         ./build/coverage
 
@@ -184,3 +189,6 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 ### Supported Browsers
 
 Prebid.js is supported on IE9+ and modern browsers.
+
+### Governance
+Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
