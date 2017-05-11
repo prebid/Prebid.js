@@ -56,8 +56,6 @@ pbjs.que = pbjs.que || [];
     pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 })();
 
-//var doNotChange = 'doNotChange';
-
 pbjs.que.push(function() {
     var adUnits = [{
         code: conf.adUnitCode,
@@ -68,7 +66,7 @@ pbjs.que.push(function() {
     pbjs.addAdUnits(adUnits);
 
     pbjs.requestBids({
-        timeout: 800,
+        timeout: conf.timout,
         bidsBackHandler: function() {
             var iframe = document.getElementById('postbid_if_3');
 
@@ -85,8 +83,8 @@ pbjs.que.push(function() {
                 // If no bidder return any creatives,
                 // Passback 3rd party tag in Javascript
 
-                iframe.width = adUnitSizes[0][0];
-                iframe.height = adUnitSizes[0][1];
+                iframe.width = conf.adUnitSizes[0];
+                iframe.height = conf.adUnitSizes[1];
 
                 iframeDoc.write(passbackTagHtml);
             }
@@ -94,8 +92,8 @@ pbjs.que.push(function() {
             var obj = {
               name : 'resizeAd',
               targetId : conf.targetId,
-              height : (bid.height) ? bid.height : adUnitSizes[0][1],
-              width : (bid.width) ? bid.width : adUnitSizes[0][0]
+              height : (bid.height) ? bid.height : conf.adUnitSizes[1],
+              width : (bid.width) ? bid.width : conf.adUnitSizes[0]
             };
             window.parent.postMessage(JSON.stringify(obj), conf.host);
         }

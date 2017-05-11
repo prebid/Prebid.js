@@ -1,10 +1,10 @@
 <!-- this iframe is wrapper for postbid creative, its id has to be unique -->
-<iframe id="unique-prebid-wrapper" src="" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="100%" height="100%"></iframe>
+<iframe id="unique-prebid-wrapper-%%POS%%" src="" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="100%" height="100%"></iframe>
 <script type="text/javascript">
     //Postbid Configuration start
-    var targetId = "unique-prebid-wrapper"; //Id of iframe defined above.
-    var adUnitSizes = [[300,250]];
+    var adUnitSizes = [300,250];
     var adUnitCode = 'doNotChange';
+    var timeout = 800;
 
     // Add your post-bid tag IDs here:
     var adUnitBids = [
@@ -27,7 +27,9 @@
     //Postbid Configuration End
 
     // Do no change below this line //
-    var cdn = 'http://acdn.adnxs.com';
+    var targetId = "unique-prebid-wrapper-%%POS%%"; //Id of iframe defined above.
+    var isHttps = 'https:' === document.location.protocol;
+    var cdn = (isHttps ? "https" : "http") + '://acdn.adnxs.com';
     var host = window.location.protocol + "//" + window.location.host;
 
     function resizeListener(evt) {
@@ -57,10 +59,11 @@
       'adUnitBids': adUnitBids,
       'passbackTagHtml': passbackTagHtml,
       'host' : host,
-      'targetId' : targetId
+      'targetId' : targetId,
+      'timeout' : timeout
     };
 
     conf = JSON.stringify(conf);
     var iframe = document.getElementById(targetId);
-    iframe.src = 'http://acdn.adnxs.com/ast/test/oas/prebid.html?conf='+encodeURIComponent(conf);
+    iframe.src = (isHttps ? "https" : "http") + '://acdn.adnxs.com/ast/test/oas/prebid.html?conf='+encodeURIComponent(conf);
 </script>
