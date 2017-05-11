@@ -522,11 +522,14 @@ Define ad units and their corresponding header bidding bidders' tag IDs.  For us
 **adUnit**
 
 {: .table .table-bordered .table-striped }
-| Name    | Scope     | Type     | Description                                                                                                                                                                                                   |
-| :----   | :-------- | :------- | :-----------                                                                                                                                                                                                  |
-| `code`  | required  | string   | A unique identifier that you create and assign to this ad unit.  This identifier will be used to set query string targeting on the ad. If you're using GPT, we recommend setting this to the slot element ID. |
-| `sizes` | required  | array    | All the sizes that this ad unit can accept.                                                                                                                                                                   |
-| `bids`  | required  | array    | An array of bid objects. Find the [complete reference here](bidders.html).                                                                                                                                    |
+| Name          | Scope     | Type     | Description                                                                                                                                                                                                    |
+| :----         | :-------- | :------- | :-----------                                                                                                                                                                                                   |
+| `code`        | required  | string   | A unique identifier that you create and assign to this ad unit.  This identifier will be used to set query string targeting on the ad. If you're using GPT, we recommend setting this to the slot element ID.  |
+| `sizes`       | required  | array    | All the sizes that this ad unit can accept.                                                                                                                                                                    |
+| `bids`        | required  | array    | An array of bid objects. Find the [complete reference here](bidders.html).                                                                                                                                     |
+| `sizeMapping` | optional  | array    | Declaratively specifies ad sizes to be shown when device's screen is greater than or equal to a given size.  For more information, see [the example]({{site.github.url}}/dev-docs/examples/size-mapping.html). |
+
+{% include sizemapping-and-screen-widths.md %}
 
 **bid**
 

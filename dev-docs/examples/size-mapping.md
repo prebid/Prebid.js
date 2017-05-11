@@ -27,6 +27,6 @@ You can use the ad unit's new `sizeMapping` property to declaratively specify th
 
 For example, as shown in the first ad unit, if `minWidth` is set to `1024`, then Prebid.js will attempt to show a 300x250 ad (the first size in the array).  If no ad that size is available, it will try to show a 300x600 ad.  Otherwise, it will use the largest ad size in `sizes`.
 
-If Prebid.js can't determine the screen width, it falls back to use the largest ad size in `sizes`.
+{% include sizemapping-and-screen-widths.md %}
 
 </div>
