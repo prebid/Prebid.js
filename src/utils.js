@@ -469,9 +469,10 @@ exports.insertPixel = function (url) {
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertCookieSyncIframe = function(url) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url);
+exports.insertCookieSyncIframe = function(url, encodeUri) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe =  div.firstChild;
@@ -497,14 +498,18 @@ exports.createTrackPixelHtml = function (url) {
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
   if (!url) {
     return '';
   }
+  if(encodeUri) {
+    url = encodeURI(url);
+  }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${encodeURI(url)}"></iframe>`;
+  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${url}"></iframe>`;
 };
 
 /**

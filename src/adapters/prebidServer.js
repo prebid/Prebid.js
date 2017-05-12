@@ -31,7 +31,7 @@ function PrebidServer() {
       timeout_millis : config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version : '$prebid.version$',
-      ad_units : bidRequest.ad_units
+      ad_units : bidRequest.ad_units.filter(hasSizes)
     };
 
     const payload = JSON.stringify(requestJson);
@@ -40,6 +40,11 @@ function PrebidServer() {
       withCredentials : true
     });
   };
+
+  // at this point ad units should have a size array either directly or mapped so filter for that
+  function hasSizes(unit) {
+    return unit.sizes && unit.sizes.length;
+  }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response) {
