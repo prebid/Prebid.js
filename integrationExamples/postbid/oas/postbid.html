@@ -77,7 +77,9 @@ pbjs.que.push(function() {
             // If any bidders return any creatives
             var bid;
             if(params && params['hb_adid']){
-                bid = pbjs._bidsReceived.find(bid => bid.adId === params['hb_adid']);
+                bid = pbjs._bidsReceived.find(function(bid) {
+                  return bid.adId === params['hb_adid'];
+                });
                 pbjs.renderAd(iframeDoc, params['hb_adid']);
               } else {
                 // If no bidder return any creatives,
