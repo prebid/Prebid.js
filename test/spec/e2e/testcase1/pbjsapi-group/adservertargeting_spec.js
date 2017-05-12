@@ -6,7 +6,7 @@ module.exports = {
     browser
       .url('http://localhost:9999/test/spec/e2e/gpt-examples/gpt_default.html')
       .waitForElementVisible('body', 3000)
-      .pause(5000)
+      .pause(3000)
       .execute(function(){
 
         if(typeof window.pbjs.bidderSettings == "undefined") {
