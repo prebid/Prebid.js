@@ -18,7 +18,6 @@ const customAdapters = adapters.map(getCustomAdapters).filter(adapter => {
 });
 const aliases = adapters.filter(getAliases);
 const videoAdapters = adapters.filter(getVideoAdapters).map(getNames);
-const nativeAdapters = adapters.filter(getNativeAdapters).map(getNames);
 
 var options = {
   start: '/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */',
@@ -59,8 +58,7 @@ function insertAdapters() {
       const name = getNameStr(adapter);
       return `exports.aliasBidAdapter('${name}','${adapter[name].alias}');\n`;
     }))
-    .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};\n`)
-    .concat(`exports.nativeAdapters = ${JSON.stringify(nativeAdapters)};`)
+    .concat(`exports.videoAdapters = ${JSON.stringify(videoAdapters)};`)
     .join('');
 
   if (!inserts.length) {
@@ -123,15 +121,6 @@ function getVideoAdapters(adapter) {
   const name = getNameStr(adapter);
   return adapter && name && adapter[name].supportedMediaTypes &&
     adapter[name].supportedMediaTypes.includes('video');
-}
-
-/**
- * Returns adapter objects that support native
- */
-function getNativeAdapters(adapter) {
-  const name = getNameStr(adapter);
-  return adapter && name && adapter[name].supportedMediaTypes &&
-    adapter[name].supportedMediaTypes.includes('native');
 }
 
 function getNameStr(adapter) {

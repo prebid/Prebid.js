@@ -1,6 +1,8 @@
 import { getBidRequest, logError } from './utils';
-// import { nativeAdapters } from './adaptermanager';
-const nativeAdapters = ['appnexusAst'];
+
+/** INSERT NATIVE ADAPTERS - DO NOT EDIT OR REMOVE */
+const nativeAdapters = [];
+/** END INSERT NATIVE ADAPTERS */
 
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
