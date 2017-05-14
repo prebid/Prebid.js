@@ -16,11 +16,11 @@ const CarambolaAdapter = function CarambolaAdapter() {
     const bidResponse = bidfactory.createBid(2, bid);
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.reason = errorMsg;
-    //todo change the tagId to pvid\token or anything else
     bidmanager.addBidResponse(_getCustomAdUnitCode(bid), bidResponse);
   }
+  //looking at the utils.js at getBidderRequest method. this is what is requested.
   function _getCustomAdUnitCode(bid) {
-    return `${bid.params.wid}_${bid.params.hb_token}`;
+    return bid.placementCode; //`${bid.params.wid}_${bid.requestId}`;
   }
 
   function _addBidResponse(bid, response) {
@@ -69,20 +69,21 @@ const CarambolaAdapter = function CarambolaAdapter() {
   }
 
   //sends a request for each bid
-  function _buildRequest(bids, params, server) {
+  function _buildRequest(bids, params) {
+
     if (!utils.isArray(bids)) {
       return;
     }
 
-    const cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
     //iterate on every bid and return the  response to the hb manager
     utils._each(bids, bid => {
       var tempParams = params || {};
+      tempParams.cbolaMode = bid.params.cbolaMode || 0;
       tempParams.wid = bid.params.wid || 0;
       tempParams.pixel = bid.params.pixel || '';
       tempParams.bidFloor = bid.params.bidFloor || 0;
       tempParams.pageViewId = _getPageViewId();
-      tempParams.hb_token = utils.generateUUID();//todo check this
+      tempParams.hb_token = utils.generateUUID();
       tempParams.sizes = utils.parseSizesInput(bid.sizes).toString() || '';
       tempParams.bidsCount = bids.length;
 
@@ -91,6 +92,9 @@ const CarambolaAdapter = function CarambolaAdapter() {
           tempParams["c." + customParam] = bid.params.customParams[customParam];
         }
       }
+
+      let server = bid.params.server || 'route.carambo.la';
+      var cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
       //the responses of the bid requests
       ajax(cbolaHbApiUrl + _jsonToQueryString(tempParams), response => {
@@ -130,18 +134,17 @@ const CarambolaAdapter = function CarambolaAdapter() {
       return;
     }
 
-    let server = bids[0].params.server || 'route.carambo.la';
 
-    _buildRequest(bids, { 
+
+    _buildRequest(bids, {
       //todo add if this is the first call from this page
-      cbolaMode: bids[0].params.cbolaMode,
       pageUrl: currentURL,
       did: bids[0].params.did || 0,
       pid: bids[0].params.pid || '',
       res: _getScreenSize(screen),
       ifr: isIfr,
       viewPortDim: _getViewportDimensions(isIfr)
-    },server);
+    });
   }
 
   function _getScreenSize(screen) {
@@ -152,11 +155,11 @@ const CarambolaAdapter = function CarambolaAdapter() {
 
   function _getViewportDimensions(isIfr) {
     let width,
-        height,
-        tWin = window,
-        tDoc = document,
-        docEl = tDoc.documentElement,
-        body;
+      height,
+      tWin = window,
+      tDoc = document,
+      docEl = tDoc.documentElement,
+      body;
 
     if (isIfr) {
       try {
