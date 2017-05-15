@@ -87,7 +87,7 @@ The code in your Prebid configuration block should look something like the sampl
         adapter: 'prebidServer',
 
         // String (optional): Will override the default endpoint for Prebid Server.
-        endpoint: 'http://prebid.adnxs.com'
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
       });
 
       var adUnits = [
