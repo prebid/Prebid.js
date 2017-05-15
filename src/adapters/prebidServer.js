@@ -55,7 +55,7 @@ function PrebidServer() {
             utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
             bid.params[key] = tryConvertType(types[key], bid.params[key]);
             //don't send invalid values
-            if(!bid.params[key]) {
+            if(isNaN(bid.params[key])) {
               delete bid.params.key;
             }
           }
