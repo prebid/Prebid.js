@@ -39,12 +39,10 @@ var CentroAdapter = function CentroAdapter() {
       utils.logError(LOG_ERROR_MESS.noUnit, bidderCode);
       return;
     }
-    var query = ['s=' + bid.unit];//,'url=www.abc15.com','sz=320x50'];
+    var query = ['s=' + bid.unit, 'adapter=prebid'];//,'url=www.abc15.com','sz=320x50'];
     var isDev = bid.unit.toString() === '28136';
 
-    if (bid.page_url) {
-      query.push('url=' + encodeURIComponent(bid.page_url));
-    }
+    query.push('url=' + encodeURIComponent(bid.page_url || location.href));
     //check size format
     if (
       size instanceof Array &&
@@ -55,7 +53,7 @@ var CentroAdapter = function CentroAdapter() {
       query.push('sz=' + size.join('x'));
     }
     //make handler name for JSONP request
-    var handlerName = handlerPrefix + bid.unit + size.join('x');
+    var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(placementCode);
     query.push('callback=' + handlerName);
 
     //maybe is needed add some random parameter to disable cache
@@ -77,7 +75,7 @@ var CentroAdapter = function CentroAdapter() {
     var bidObject;
     var bid = resp && resp.bid || resp;
 
-    if (bid && bid.adTag && bid.sectionID === unit) {
+    if (bid && bid.adTag && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
       bidObject = bidfactory.createBid(1);
       bidObject.cpm = bid.value;
       bidObject.ad = bid.adTag;
