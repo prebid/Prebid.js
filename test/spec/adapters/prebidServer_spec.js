@@ -37,7 +37,8 @@ const REQUEST = {
           "bid_id" : "123",
           "bidder": "appnexus",
           "params": {
-            "placementId": "10433394"
+            "placementId": "10433394",
+            "member" : 123
           }
         }
       ]
@@ -95,10 +96,10 @@ describe('S2S Adapter', () => {
     it('exists converts types', () => {
       adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
-      console.log(JSON.stringify(requests[0]));
-      expect(requests[0].requestBody.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('string');
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
+      expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
-
   });
 
   describe('response handler', () => {

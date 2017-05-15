@@ -66,7 +66,7 @@ function PrebidServer() {
 
   function tryConvertType(typeToConvert, value) {
     if(typeToConvert === 'string') {
-      return Number.toString(value);
+      return value && value.toString();
     }
     if(typeToConvert === 'number') {
       return Number(value);
