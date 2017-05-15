@@ -7,7 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
-import { syncCookies } from 'src/cookie.js';
+import { syncUsers } from 'src/user-sync.js';
 import { loadScript } from './adloader';
 
 
@@ -355,7 +355,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncCookies($$PREBID_GLOBAL$$.cookieSyncDelay);
+  syncUsers($$PREBID_GLOBAL$$.cookieSyncDelay);
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();

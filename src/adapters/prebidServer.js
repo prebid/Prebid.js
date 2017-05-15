@@ -4,7 +4,8 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-import { queueSync, persist } from 'src/cookie.js';
+import { registerSync } from 'src/userSync.js';
+import { persist } from 'src/cookie.js';
 
 const TYPE = 's2s';
 const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
@@ -63,8 +64,8 @@ function PrebidServer() {
               bidObject.bidderCode = bidRequest.bidder;
               bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
             }
-            if(bidder.no_cookie) {
-              queueSync({bidder: bidder.bidder, url : bidder.usersync.url, type : bidder.usersync.type});
+            if (bidder.no_cookie) {
+              registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
             }
           });
         }
