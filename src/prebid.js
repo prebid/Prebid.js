@@ -7,7 +7,7 @@ import 'polyfill';
 import {parse as parseURL, format as formatURL} from './url';
 import {isValidePriceConfig} from './cpmBucketManager';
 import {listenMessagesFromCreative} from './secure-creatives';
-import { syncUsers } from 'src/user-sync.js';
+import { syncUsers } from 'src/userSync.js';
 import { loadScript } from './adloader';
 
 
