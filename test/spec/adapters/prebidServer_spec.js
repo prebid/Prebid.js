@@ -3,6 +3,14 @@ import Adapter from 'src/adapters/prebidServer';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 
+let CONFIG = {
+  accountId : '1',
+  enabled : true,
+  bidders : ['appnexus'],
+  timeout : 1000,
+  endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT
+};
+
 const REQUEST = {
   "account_id": "1",
   "tid": "437fbbf5-33f5-487a-8e16-a7112903cfe5",
@@ -29,7 +37,8 @@ const REQUEST = {
           "bid_id" : "123",
           "bidder": "appnexus",
           "params": {
-            "placementId": "10433394"
+            "placementId": "10433394",
+            "member" : 123
           }
         }
       ]
@@ -84,18 +93,18 @@ describe('S2S Adapter', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
+    it('exists converts types', () => {
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.ad_units[0].bids[0].params.placementId).to.exist.and.to.be.a('number');
+      expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
+    });
   });
 
   describe('response handler', () => {
 
     let server;
-    let config = {
-      accountId : '1',
-      enabled : true,
-      bidders : ['appnexus'],
-      timeout : 1000,
-      endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT
-    };
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
@@ -110,7 +119,7 @@ describe('S2S Adapter', () => {
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
-      adapter.setConfig(config);
+      adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
