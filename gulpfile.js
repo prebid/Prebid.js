@@ -196,7 +196,7 @@ gulp.task('watch', function () {
 });
 
 gulp.task('lint', () => {
-  return gulp.src('src/**/*.js')
+  return gulp.src(['src/**/*.js', 'test/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError());
