@@ -9,6 +9,30 @@ import { queueSync, persist } from 'src/cookie.js';
 const TYPE = 's2s';
 const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
 const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
+
+const paramTypes = {
+  "appnexus" : {
+    "member" : "string",
+    "invCode" : "string",
+    "placementId" : "number"
+  },
+  "rubicon" : {
+    "accountId" : "number",
+    "siteId" : "number",
+    "zoneId" : "number"
+  },
+  "indexExchange" : {
+    "siteID" : "number"
+  },
+  "audienceNetwork" : {
+    "placementId" : "string"
+  },
+  "pubmatic" : {
+    "publisherId" : "string",
+    "adSlot" : "string"
+  }
+};
+
 /**
  * Bidder adapter for Prebid Server
  */
@@ -21,9 +45,38 @@ function PrebidServer() {
     config = s2sconfig;
   };
 
+  function convertTypes(adUnits) {
+    adUnits.forEach(adUnit => {
+      adUnit.bids.forEach(bid => {
+        const types = paramTypes[bid.bidder] || [];
+        Object.keys(types).forEach(key => {
+          if(bid.params[key] && typeof bid.params[key] !== types[key]) {
+            //mismatch type. Try to fix
+            utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
+            bid.params[key] = tryConvertType(types[key], bid.params[key]);
+            //don't send invalid values
+            if(isNaN(bid.params[key])) {
+              delete bid.params.key;
+            }
+          }
+        });
+      });
+    });
+  }
+
+  function tryConvertType(typeToConvert, value) {
+    if(typeToConvert === 'string') {
+      return value && value.toString();
+    }
+    if(typeToConvert === 'number') {
+      return Number(value);
+    }
+  }
+
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-
+    const isDebug = !!$$PREBID_GLOBAL$$.logging;
+    convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id : config.accountId,
       tid : bidRequest.tid,
@@ -31,7 +84,8 @@ function PrebidServer() {
       timeout_millis : config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version : '$prebid.version$',
-      ad_units : bidRequest.ad_units.filter(hasSizes)
+      ad_units : bidRequest.ad_units.filter(hasSizes),
+      is_debug : isDebug
     };
 
     const payload = JSON.stringify(requestJson);
