@@ -199,7 +199,7 @@ module.exports = function(bidManager, global, loader){
     
     if(ao && ao.length > 0){
       data.ancestor_origins = ao[ao.length-1];
-	}
+    }
     
     data.popped = window.opener!==null?1:0;
     data.framed = window.top===window?0:1;
@@ -220,7 +220,7 @@ module.exports = function(bidManager, global, loader){
     
     for(var k in data){
       q.push(encodeURIComponent(k)+"="+encodeURIComponent((typeof data[k] === "object" ? JSON.stringify(data[k]) : data[k])));
-	}
+    }
 
     q.sort();
     i.src = u+q.join("&");

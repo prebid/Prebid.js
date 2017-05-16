@@ -1,12 +1,12 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import 'polyfill';
-import {parse as parseURL, format as formatURL} from './url';
-import {isValidePriceConfig} from './cpmBucketManager';
-import {listenMessagesFromCreative} from './secure-creatives';
+import { parse as parseURL, format as formatURL } from './url';
+import { isValidePriceConfig } from './cpmBucketManager';
+import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 
