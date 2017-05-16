@@ -43,3 +43,4 @@ let pubwiseAnalytics = Object.assign(adapter(
     }
   });
 export default pubwiseAnalytics;
+
