@@ -78,7 +78,7 @@ describe('centro adapter tests', function () {
 
             var parsedBidUrl = urlParse(bidUrl1);
             var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-            var generatedCallback = 'adCentroHandler_28136300x250div-gpt-ad-12345-1';
+            var generatedCallback = 'window["adCentroHandler_28136300x250div-gpt-ad-12345-1"]';
 
             expect(parsedBidUrl.hostname).to.equal('staging.brand-server.com');
             expect(parsedBidUrl.pathname).to.equal('/hb');
@@ -92,7 +92,7 @@ describe('centro adapter tests', function () {
 
             parsedBidUrl = urlParse(bidUrl2);
             parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-            generatedCallback = 'adCentroHandler_28137728x90div-gpt-ad-12345-2';
+            generatedCallback = 'window["adCentroHandler_28137728x90div-gpt-ad-12345-2"]';
 
             expect(parsedBidUrl.hostname).to.equal('t.brand-server.com');
             expect(parsedBidUrl.pathname).to.equal('/hb');

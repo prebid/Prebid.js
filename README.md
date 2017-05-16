@@ -36,6 +36,7 @@ This URL is designed specifically for the Container Tag library and it supports 
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
+[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
 
 # Prebid.js
 
@@ -180,6 +181,8 @@ Many SSPs, bidders, and publishers have contributed to this project. [20+ Bidder
 ### Add a Bidder Adapter
 
 To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate. 
 
 ### Code Quality
 

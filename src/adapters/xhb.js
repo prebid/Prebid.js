@@ -69,7 +69,7 @@ const XhbAdapter = function XhbAdapter() {
     }
 
     //append custom attributes:
-    let paramsCopy = utils.extend({}, bid.params);
+    let paramsCopy = Object.assign({}, bid.params);
 
     //delete attributes already used
     delete paramsCopy.placementId;
