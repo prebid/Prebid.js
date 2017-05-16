@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/prebidServer';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 const REQUEST = {
   "account_id": "1",
@@ -61,6 +62,28 @@ const RESPONSE = {
   ]
 };
 
+const RESPONSE_NO_BID_NO_UNIT = {
+  "tid": "437fbbf5-33f5-487a-8e16-a7112903cfe5",
+  "status": "OK",
+  "bidder_status": [{
+    "bidder": "appnexus",
+    "response_time_ms": 132,
+    "no_bid": true
+  }]
+};
+
+const RESPONSE_NO_BID_UNIT_SET = {
+  "tid": "437fbbf5-33f5-487a-8e16-a7112903cfe5",
+  "status": "OK",
+  "bidder_status": [{
+    "bidder": "appnexus",
+    "ad_unit": "div-gpt-ad-1460505748561-0",
+    "response_time_ms": 91,
+    "no_bid": true
+  }]
+};
+
+
 describe('S2S Adapter', () => {
 
   let adapter;
@@ -100,11 +123,15 @@ describe('S2S Adapter', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create();
       sinon.stub(bidmanager, 'addBidResponse');
+      sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
+        bids: [{placementCode : "div-gpt-ad-1460505748561-0"}]
+      });
     });
 
     afterEach(() => {
       server.restore();
       bidmanager.addBidResponse.restore();
+      utils.getBidderRequestAllAdUnits.restore();
     });
 
     it('registers bids', () => {
@@ -118,6 +145,39 @@ describe('S2S Adapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
+    });
+
+    it('registers no bid response when ad unit not set', () => {
+
+
+      server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
+
+      adapter.setConfig(config);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+    });
+
+
+    it('registers no bid response when no ad unit set', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
+
+      adapter.setConfig(config);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
 
   });

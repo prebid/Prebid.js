@@ -59,7 +59,7 @@ function PrebidServer() {
               // store a "No Bid" bid response
 
               if (!bidder.ad_unit) {
-                $$PREBID_GLOBAL$$._bidsRequested.find(request => request.bidderCode === bidder.bidder).bids.forEach(bid => {
+                utils.getBidderRequestAllAdUnits(bidder.bidder).bids.forEach(bid => {
                   let bidObject = bidfactory.createBid(STATUS.NO_BID);
                   bidObject.adUnitCode = bid.placementCode;
                   bidObject.bidder = bidder.bidder;
