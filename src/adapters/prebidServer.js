@@ -58,12 +58,25 @@ function PrebidServer() {
             if(bidder.no_bid) {
               // store a "No Bid" bid response
 
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, {
-                bidId: bidder.bid_id
-              });
-              bidObject.adUnitCode = bidder.ad_unit;
-              bidObject.bidderCode = bidder.bidder;
-              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              if (!bidder.ad_unit) {
+                $$PREBID_GLOBAL$$._bidsRequested.find(request => request.bidderCode === bidder.bidder).bids.forEach(bid => {
+                  let bidObject = bidfactory.createBid(STATUS.NO_BID);
+                  bidObject.adUnitCode = bid.placementCode;
+                  bidObject.bidder = bidder.bidder;
+
+                  bidmanager.addBidResponse(bid.placementCode, bidObject);
+                });
+
+              } else {
+                let bidObject = bidfactory.createBid(STATUS.NO_BID, {
+                  bidId: bidder.bid_id
+                });
+
+                bidObject.adUnitCode = bidder.ad_unit;
+                bidObject.bidderCode = bidder.bidder;
+
+                bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              }
             }
             if(bidder.no_cookie) {
               // if no cookie is present then no bids were made, we don't store a bid response
