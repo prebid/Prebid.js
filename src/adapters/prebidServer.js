@@ -15,7 +15,6 @@ const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 function PrebidServer() {
 
   let baseAdapter = Adapter.createNew('prebidServer');
-  let bidRequests = [];
   let config;
 
   baseAdapter.setConfig = function(s2sconfig) {
@@ -25,12 +24,6 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
 
-    bidRequest.ad_units.forEach(adUnit => {
-      adUnit.bids.forEach(bidder => {
-        bidRequests[bidder.bidder] = utils.getBidRequest(bidder.bid_id);
-      });
-    });
-
     let requestJson = {
       account_id : config.accountId,
       tid : bidRequest.tid,
@@ -38,7 +31,7 @@ function PrebidServer() {
       timeout_millis : config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version : '$prebid.version$',
-      ad_units : bidRequest.ad_units
+      ad_units : bidRequest.ad_units.filter(hasSizes)
     };
 
     const payload = JSON.stringify(requestJson);
@@ -47,6 +40,11 @@ function PrebidServer() {
       withCredentials : true
     });
   };
+
+  // at this point ad units should have a size array either directly or mapped so filter for that
+  function hasSizes(unit) {
+    return unit.sizes && unit.sizes.length;
+  }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response) {
@@ -57,13 +55,18 @@ function PrebidServer() {
       if(result.status === 'OK') {
         if(result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if(bidder.no_bid || bidder.no_cookie) {
-              let bidRequest = bidRequests[bidder.bidder];
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
-              bidObject.bidderCode = bidRequest.bidder;
-              bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
+            if(bidder.no_bid) {
+              // store a "No Bid" bid response
+
+              let bidObject = bidfactory.createBid(STATUS.NO_BID, {
+                bidId: bidder.bid_id
+              });
+              bidObject.adUnitCode = bidder.ad_unit;
+              bidObject.bidderCode = bidder.bidder;
+              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             }
             if(bidder.no_cookie) {
+              // if no cookie is present then no bids were made, we don't store a bid response
               queueSync({bidder: bidder.bidder, url : bidder.usersync.url, type : bidder.usersync.type});
             }
           });

@@ -69,6 +69,10 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
     //filter out client side bids
     adUnitsCopy.forEach((adUnit) => {
+      if (adUnit.sizeMapping) {
+        adUnit.sizes = mapSizes(adUnit);
+        delete adUnit.sizeMapping;
+      }
       adUnit.sizes = transformHeightWidth(adUnit);
       adUnit.bids = adUnit.bids.filter((bid) => {
         return adaptersServerSide.includes(bid.bidder);
