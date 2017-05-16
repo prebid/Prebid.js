@@ -29,6 +29,10 @@ function receiveMessage(ev) {
 
     if (data.message === 'Prebid Request') {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
+
+      //save winning bids
+      $$PREBID_GLOBAL$$._winningBids.push(adObject);
+
       events.emit(BID_WON, adObject);
     }
   }
