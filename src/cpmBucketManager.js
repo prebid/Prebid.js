@@ -74,6 +74,7 @@ function getPriceBucketString(cpm, customConfig, currencyMultiplier) {
 }
 
 function getCpmStringValue(cpm, config, currencyMultiplier) {
+  currencyMultiplier = currencyMultiplier || 1;
   let cpmStr = '';
   if (!isValidPriceConfig(config)) {
     return cpmStr;
@@ -114,6 +115,7 @@ function isValidPriceConfig(config) {
 }
 
 function getCpmTarget(cpm, increment, precision, currencyMultiplier) {
+  currencyMultiplier = currencyMultiplier || 1;
   if (!precision) {
     precision = _defaultPrecision;
   }

@@ -20,10 +20,13 @@ currency.initCurrencyRates = function(url) {
   currency.currencySupportEnabled = true;
 
   ajax(url, function(response) {
-    currency.currencyRates = JSON.parse(response);
+    try {
+      currency.currencyRates = JSON.parse(response);
+      utils.logInfo('currencyRates set to ' + JSON.stringify(currency.currencyRates));
+    } catch(e) {
+      utils.logError('failed to parse currencyRates response: ' + response);
+    }
     currency.currencyRatesLoaded = true;
-    utils.logInfo('currencyRates set to ' + JSON.stringify(currency.currencyRates));
-
     currency.processBidResponseQueue();
   });
 }
@@ -40,7 +43,7 @@ currency.addBidResponseDecorator = function(fn) {
     utils.logInfo('Invoking addBidResponseDecorator function', arguments);
 
     bidResponseQueue.push(wrapFunction(fn, this, arguments));
-    if (!currency.currencySupportEnabled || (currency.currencySupportEnabled && currency.currencyRatesLoaded)) {
+    if (!currency.currencySupportEnabled || currency.currencyRatesLoaded) {
       currency.processBidResponseQueue();
     }
   }
@@ -49,7 +52,7 @@ currency.addBidResponseDecorator = function(fn) {
 currency.processBidResponseQueue = function() {
   utils.logInfo('Invoking processBidResponseQueue', arguments);
 
-  while (bidResponseQueue.length >0) {
+  while (bidResponseQueue.length > 0) {
   	(bidResponseQueue.shift())();
   }
 }
