@@ -33,7 +33,7 @@ let auctionSchemaTemplate = template`;pubadid=${'pubadid'};hbauctionid=${'hbauct
 let winSchemaTemplate = template`;hbauctioneventts=${'hbauctioneventts'};pubadid=${'pubadid'};hbauctionid=${'hbauctionid'};hbwinner=${'hbwinner'};pubcpm=${'pubcpm'}${'hbdealid'};hbbidid=${'hbbidid'}`;
 let bidderSchemaTemplate = template`;hbbidder=${'hbbidder'};hbbid=${'hbbid'};hbstatus=${'hbstatus'};hbtime=${'hbtime'}${'hbdealid'};hbbidid=${'hbbidid'}`;
 
-export default utils.extend(adapter({
+export default Object.assign(adapter({
   url: '',
   analyticsType
 }), {
