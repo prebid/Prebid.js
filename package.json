@@ -17,7 +17,6 @@
     "prebid"
   ],
   "globalVarName": "pbjs",
-  "analytics": ["aol"],
   "author": "the prebid.js contributors",
   "contributors": [{
     "name": "AOL Platforms",
