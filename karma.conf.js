@@ -1,13 +1,13 @@
 // Karma configuration
 // Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
 var webpackConfig = require('./webpack.conf');
-webpackConfig.module.postLoaders = [
-  {
-    test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-    loader: 'istanbul-instrumenter'
-  }
-];
+// webpackConfig.module.postLoaders = [
+//   {
+//     test: /\.js$/,
+//     exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
+//     loader: 'istanbul-instrumenter'
+//   }
+// ];
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 
@@ -102,7 +102,7 @@ module.exports = function (config) {
     // start these browsers
     // NOTE: these get defined again in gulpfile.js for the gulp tasks
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox'],
+    browsers: ['Chrome'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

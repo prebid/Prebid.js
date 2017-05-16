@@ -75,9 +75,8 @@ function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-
+    const isDebug = !!$$PREBID_GLOBAL$$.logging;
     convertTypes(bidRequest.ad_units);
-
     let requestJson = {
       account_id : config.accountId,
       tid : bidRequest.tid,
@@ -85,7 +84,8 @@ function PrebidServer() {
       timeout_millis : config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version : '$prebid.version$',
-      ad_units : bidRequest.ad_units.filter(hasSizes)
+      ad_units : bidRequest.ad_units.filter(hasSizes),
+      is_debug : isDebug
     };
 
     const payload = JSON.stringify(requestJson);
