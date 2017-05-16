@@ -12,6 +12,10 @@ function getIntegration() {
   return 'pbjs_lite_' + $$PREBID_GLOBAL$$.version;
 }
 
+function isSecure() {
+  return location.protocol === 'https:';
+}
+
 // use protocol relative urls for http or https
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
@@ -246,6 +250,7 @@ function RubiconAdapter() {
       'alt_size_ids', parsedSizes.slice(1).join(',') || undefined,
       'p_pos', position,
       'rp_floor', floor,
+      'rp_secure', isSecure() ? '1' : '0',
       'tk_flint', getIntegration(),
       'p_screen_res', _getScreenResolution(),
       'kw', keywords,
