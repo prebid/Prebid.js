@@ -245,6 +245,7 @@ describe('the rubicon adapter', () => {
             'alt_size_ids': '43',
             'p_pos': 'atf',
             'rp_floor': '0.01',
+            'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
@@ -283,7 +284,7 @@ describe('the rubicon adapter', () => {
           expect(query['alt_size_ids']).to.equal('57,59');
 
         });
-       
+
         it('should not send a request and register an error bid if no valid sizes', () => {
 
           var sizesBidderRequest = clone(bidderRequest);
