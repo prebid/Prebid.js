@@ -1,4 +1,4 @@
-import { getBidRequest, logError, createImpressionPixel, attachPixel} from './utils';
+import { getBidRequest, logError, insertPixel } from './utils';
 
 /** INSERT NATIVE ADAPTERS - DO NOT EDIT OR REMOVE */
 const nativeAdapters = [];
@@ -92,7 +92,6 @@ export function fireNativeImpressions(adObject) {
     adObject.native.impression_trackers;
 
   (impressionTrackers || []).forEach(tracker => {
-    const pixel = createImpressionPixel(tracker);
-    attachPixel(pixel);
+    insertPixel(tracker);
   });
 }
