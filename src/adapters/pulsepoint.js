@@ -30,13 +30,17 @@ function PulsePointAdapter() {
   }
 
   function environment() {
+    var topUrl = document.referrer || window.location.href
+    if (topUrl.indexOf('overwolf') > -1) {
+      topUrl = 'https://www.overwolf.com';
+    }
     return {
       cn: 1,
       ca: 'BID',
       tl: 1,
       'if': 0,
-      cwu: document.referrer || window.location.href,
-      cwr: document.referrer || window.location.href,
+      cwu: topUrl,
+      cwr: topUrl,
       dw: document.documentElement.clientWidth,
       cxy: document.documentElement.clientWidth + ',' + document.documentElement.clientHeight,
       tz: new Date().getTimezoneOffset(),
