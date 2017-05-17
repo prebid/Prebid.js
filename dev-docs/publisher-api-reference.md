@@ -34,10 +34,12 @@ This page has documentation for the public API methods of Prebid.js.
   * [.requestBids(requestObj)](#module_pbjs.requestBids)
   * [.addAdUnits(Array)](#module_pbjs.addAdUnits)
   * [.bidderSettings](#module_pbjs.bidderSettings)
-  * [.addCallback(event, func)](#module_pbjs.addCallback) ⇒ `String`
-  * [.removeCallback(cbId)](#module_pbjs.removeCallback) ⇒ `String`
+  * [.addCallback(event, func)](#module_pbjs.addCallback)
+  * [.removeCallback(cbId)](#module_pbjs.removeCallback)
   * [.buildMasterVideoTagFromAdserverTag(adserverTag, options)](#module_pbjs.buildMasterVideoTagFromAdserverTag) ⇒ `String`
   * [.setBidderSequence(order)](#module_pbjs.setBidderSequence)
+  * [.onEvent(event, handler, id)](#module_pbjs.onEvent)
+  * [.offEvent(event, handler, id)](#module_pbjs.onEvent)
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -762,6 +764,10 @@ If a custom adServerTargeting function can return an empty value, this boolean f
 <a name="module_pbjs.addCallback"></a>
 
 ### pbjs.addCallback(event, func) ⇒ `String`
+
+{: .alert.alert-danger :}
+This method is deprecated.  Please use [`onEvent`](#module_pbjs.onEvent) or [`offEvent`](#module_pbjs.onEvent) instead.
+
 Add a callback event
 
 **Kind**: static method of [pbjs](#module_pbjs)
@@ -779,6 +785,10 @@ Add a callback event
 <a name="module_pbjs.removeCallback"></a>
 
 ### pbjs.removeCallback(cbId) ⇒ `String`
+
+{: .alert.alert-danger :}
+This method is deprecated.  Please use [`onEvent`](#module_pbjs.onEvent) or [`offEvent`](#module_pbjs.onEvent) instead.
+
 Remove a callback event
 
 **Kind**: static method of [pbjs](#module_pbjs)
@@ -842,5 +852,90 @@ Example use:
 ```javascript
 pbjs.setBidderSequence('random');
 ```
+
+<a name="module_pbjs.onEvent"></a>
+
+<p>
+</p>
+
+### pbjs.onEvent(event, handler, id)
+
+**pbjs.offEvent(event, handler, id)**
+
+The methods `onEvent` and `offEvent` are provided for you to register
+a callback to handle a Prebid.js event.
+
+They replace the following deprecated methods:
+
+- [.addCallback(event, func)](#module_pbjs.addCallback)
+- [.removeCallback(cbId)](#module_pbjs.removeCallback)
+
+The optional `id` parameter provides more finely-grained event
+callback registration.  This makes it possible to register callback
+events for a specific item in the event context.
+
+For example, `bidWon` events will accept an `id` for ad unit code.
+`bidWon` callbacks registered with an ad unit code id will be called
+when a bid for that ad unit code wins the auction. Without an `id`
+this method registers the callback for every `bidWon` event.
+
+{: .alert.alert-info :}
+Currently, `bidWon` is the only event that accepts the `id` parameter.
+
+The available events are:
+
+{: .table .table-bordered .table-striped }
+| Event         | Description                            |
+|---------------+----------------------------------------|
+| auctionInit   | The auction has started                |
+| auctionEnd    | The auction has ended                  |
+| bidAdjustment | A bid was adjusted                     |
+| bidTimeout    | A bid timed out                        |
+| bidRequested  | A bid was requested                    |
+| bidResponse   | A bid response has arrived             |
+| bidWon        | A bid has won                          |
+| setTargeting  | Targeting has been set                 |
+| requestBids   | Bids have been requested from adapters |
+
+The example below shows how to use these methods:
+
+{% highlight js %}
+
+        /* Define your event handler callbacks */
+        var allSlotsBidWon = function allSlotsBidWon() {
+            console.log('allSlotsBidWon called');
+        };
+
+        /* In this event handler callback we use the `pbjs.offEvent`
+           method to remove the handler once it has been called */
+        var rightSlotBidWon = function rightSlotBidWon() {
+            console.log('rightSlotBidWon: ', arguments);
+            pbjs.offEvent('bidWon', rightSlotBidWon, rightSlotCode);
+        };
+
+        googletag.cmd.push(function () {
+
+            /* Ad slots need to be defined before trying to register
+               callbacks on their events */
+
+            var rightSlot =
+              googletag.defineSlot(rightSlotCode, rightSlotSizes, rightSlotElementId).addService(googletag.pubads());
+
+            var topSlot =
+              googletag.defineSlot(topSlotCode, topSlotSizes, topSlotElementId).setTargeting().addService(googletag.pubads());
+
+            pbjs.que.push(function () {
+
+                /* Register a callback for every `bidWon` event */
+                pbjs.onEvent('bidWon', allSlotsBidWon);
+
+                /* Register a callback for just the rightSlot `bidWon`
+                   event */
+                pbjs.onEvent('bidWon', rightSlotBidWon, rightSlotCode);
+
+                pbjs.setTargetingForGPTAsync();
+                ...
+
+{% endhighlight %}
 
 </div>
