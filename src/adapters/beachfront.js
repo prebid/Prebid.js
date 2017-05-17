@@ -16,7 +16,7 @@ function BeachfrontAdapter() {
       var bidRequest = getBidRequest(bid);
       var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
       if (!RTBDataParams) {
-        var error = "No bid params";
+        var error = 'No bid params';
         utils.logError(error);
         if (bid && bid.placementCode) {
           bidmanager.addBidResponse(bid.placementCode, createBid(bid, STATUS.NO_BID));
@@ -29,7 +29,6 @@ function BeachfrontAdapter() {
         withCredentials: true
       });
     });
-
   };
 
   function getBidRequest(bid) {
@@ -52,22 +51,22 @@ function BeachfrontAdapter() {
       return ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 1 : 2));
     }
 
-    var bidRequestObject =  {
+    var bidRequestObject = {
       isPrebid: true,
       appId: bid.params.appId,
       domain: document.location.hostname,
-      imp:[{
-        video:{},
+      imp: [{
+        video: {},
         bidfloor: bid.params.bidfloor
       }],
-      site:{
+      site: {
         page: utils.getTopWindowLocation().host
       },
-      device:{
+      device: {
         ua: navigator.userAgent,
         devicetype: fetchDeviceType()
       },
-      cur:["USD"]
+      cur: ['USD']
     };
     return bidRequestObject;
   }
@@ -83,11 +82,11 @@ function BeachfrontAdapter() {
           utils.logError(error);
         }
       } else {
-        utils.logWarn("No bid response");
+        utils.logWarn('No bid response');
       }
 
       if (!parsed || parsed.error || !parsed.url || !parsed.bidPrice) {
-        utils.logWarn("No Valid Bid");
+        utils.logWarn('No Valid Bid');
         bidmanager.addBidResponse(bidRequest.placementCode, createBid(bidRequest, STATUS.NO_BID));
         return;
       }

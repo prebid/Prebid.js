@@ -9,7 +9,6 @@ var bidmanager = require('../bidmanager.js');
  * @constructor
  */
 var PubmaticAdapter = function PubmaticAdapter() {
-
   var bids;
   var _pm_pub_id;
   var _pm_optimize_adslots = [];
@@ -20,7 +19,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     _pm_optimize_adslots = [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
-      //bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
+      // bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
       _pm_pub_id = _pm_pub_id || bid.params.publisherId;
       _pm_optimize_adslots.push(bid.params.adSlot);
     }
@@ -30,14 +29,12 @@ var PubmaticAdapter = function PubmaticAdapter() {
   }
 
   function _getBids() {
-
-
-    //create the iframe
+    // create the iframe
     iframe = utils.createInvisibleIframe();
 
     var elToAppend = document.getElementsByTagName('head')[0];
 
-    //insert the iframe into document
+    // insert the iframe into document
     elToAppend.insertBefore(iframe, elToAppend.firstChild);
 
     var iframeDoc = utils.getIframeDocument(iframe);
@@ -78,8 +75,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     try {
       bidDetailsMap = iframe.contentWindow.bidDetailsMap;
       progKeyValueMap = iframe.contentWindow.progKeyValueMap;
-    }
-    catch(e) {
+    } catch (e) {
       utils.logError(e, 'Error parsing Pubmatic response');
     }
 
@@ -137,7 +133,6 @@ var PubmaticAdapter = function PubmaticAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = PubmaticAdapter;

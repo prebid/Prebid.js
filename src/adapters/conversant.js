@@ -1,11 +1,11 @@
 'use strict';
 var VERSION = '2.0.1',
-    CONSTANTS = require('../constants.json'),
-    utils = require('../utils.js'),
-    bidfactory = require('../bidfactory.js'),
-    bidmanager = require('../bidmanager.js'),
-    adloader = require('../adloader'),
-    ajax = require('../ajax').ajax;
+  CONSTANTS = require('../constants.json'),
+  utils = require('../utils.js'),
+  bidfactory = require('../bidfactory.js'),
+  bidmanager = require('../bidmanager.js'),
+  adloader = require('../adloader'),
+  ajax = require('../ajax').ajax;
 
 /**
  * Adapter for requesting bids from Conversant
@@ -61,7 +61,7 @@ var ConversantAdapter = function () {
       conversantBidReqs,
       secure = 0;
 
-    //build impression array for conversant
+    // build impression array for conversant
     utils._each(bidReqs, function (bid) {
       var bidfloor = utils.getBidIdParameter('bidfloor', bid.params),
         adW = 0,
@@ -89,7 +89,7 @@ var ConversantAdapter = function () {
           h: adH
         },
         secure: secure,
-        bidfloor: bidfloor ? bidfloor : 0,
+        bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
         displaymanagerver: VERSION
       };
@@ -113,14 +113,14 @@ var ConversantAdapter = function () {
 
     var url = secure ? 'https:' + conversantUrl : location.protocol + conversantUrl;
     ajax(url, appendScript, JSON.stringify(conversantBidReqs), {
-      withCredentials : true
+      withCredentials: true
     });
   };
 
   var addEmptyBidResponses = function (placementsWithBidsBack) {
     var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant');
 
-    if (allConversantBidRequests && allConversantBidRequests.bids){
+    if (allConversantBidRequests && allConversantBidRequests.bids) {
       utils._each(allConversantBidRequests.bids, function (conversantBid) {
         if (!utils.contains(placementsWithBidsBack, conversantBid.placementCode)) {
           // Add a no-bid response for this placement.
@@ -191,19 +191,19 @@ var ConversantAdapter = function () {
       if (conversantResponseObj.seatbid && conversantResponseObj.seatbid.length > 0 && conversantResponseObj.seatbid[0].bid && conversantResponseObj.seatbid[0].bid.length > 0) {
         utils._each(conversantResponseObj.seatbid, parseSeatbid);
       } else {
-        //no response data for any placements
+        // no response data for any placements
         addEmptyBidResponses([]);
       }
     } else {
-      //no response data for any placements
+      // no response data for any placements
       addEmptyBidResponses([]);
     }
     // for debugging purposes
-    if (path){
+    if (path) {
       adloader.loadScript(path, function () {
         var allConversantBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant');
 
-        if ($$PREBID_GLOBAL$$.conversantDebugResponse){
+        if ($$PREBID_GLOBAL$$.conversantDebugResponse) {
           $$PREBID_GLOBAL$$.conversantDebugResponse(allConversantBidRequests);
         }
       });

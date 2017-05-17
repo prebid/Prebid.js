@@ -51,7 +51,7 @@ function createYieldbotMockLib() {
     go: () => { window.yieldbot._initialized = true; },
     nextPageview: (slots, callback) => {},
     getSlotCriteria: (slotName) => {
-      return YB_BID_FIXTURE[slotName] || {ybot_ad: "n"};
+      return YB_BID_FIXTURE[slotName] || {ybot_ad: 'n'};
     }
   };
   // jshint unused:true
@@ -78,10 +78,8 @@ before(function() {
 });
 
 describe('Yieldbot adapter tests', function() {
-
   describe('callBids', function() {
     beforeEach(function () {
-
       sandbox = sinon.sandbox.create();
 
       createYieldbotMockLib();

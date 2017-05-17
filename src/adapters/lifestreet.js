@@ -52,7 +52,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
 
   function _callJSTag(bid, jstagUrl, timeout) {
     adloader.loadScript(jstagUrl, () => {
-      /*global LSM_Slot */
+      /* global LSM_Slot */
       if (LSM_Slot && typeof LSM_Slot === 'function') {
         let slotTagParams = {
           _preload: 'wait',
@@ -82,7 +82,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
             slotTagParams[property] = bid.params[property];
           }
         }
-        /*jshint newcap: false */
+        /* jshint newcap: false */
         LSM_Slot(slotTagParams);
         window.addEventListener('message', (ev) => {
           let key = ev.message ? 'message' : 'data';
@@ -149,7 +149,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
               window.addEventListener('message', receivedLSMMessage, false);
               window.parent.postMessage(JSON.stringify({
                 message: '` + PREBID_REQUEST_MESSAGE + `',
-                slotName: '` + slotName +`'
+                slotName: '` + slotName + `'
               }), '*');
             </script>`;
     }

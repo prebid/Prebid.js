@@ -3,7 +3,6 @@ import { expect } from 'chai';
 var utils = require('../../src/utils');
 
 describe('cookie.queueSync', () => {
-
   let insertCookieSyncIframeStub = sinon.stub(utils, 'insertCookieSyncIframe');
   let insertPixelStub = sinon.stub(utils, 'insertPixel');
 
@@ -13,7 +12,7 @@ describe('cookie.queueSync', () => {
   });
 
   it('queues and fires a pixel URL', () => {
-    cookie.queueSync({'bidder' : 'testBidder', 'url': 'http://url.com'});
+    cookie.queueSync({'bidder': 'testBidder', 'url': 'http://url.com'});
     cookie.syncCookies();
     expect(insertPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://url.com');
   });
@@ -29,5 +28,4 @@ describe('cookie.queueSync', () => {
     expect(insertCookieSyncIframeStub.callCount).to.equal(0);
     expect(insertPixelStub.callCount).to.equal(0);
   });
-
 });

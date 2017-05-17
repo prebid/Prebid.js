@@ -83,7 +83,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
 
     if (_sampled) {
-      //first send all events fired before enableAnalytics called
+      // first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
         if (!event) {
           return;
@@ -98,11 +98,11 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         }
       });
 
-      //Next register event listeners to send data immediately
+      // Next register event listeners to send data immediately
 
       _handlers = {
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
-        [BID_RESPONSE]:  args => this.enqueue({ eventType: BID_RESPONSE, args }),
+        [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
         [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
@@ -139,7 +139,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         _queue[i]();
       }
 
-      //override push to execute the command immediately from now on
+      // override push to execute the command immediately from now on
       _queue.push = function (fn) {
         fn();
       };

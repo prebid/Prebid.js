@@ -20,7 +20,6 @@ TwengaAdapter = function TwengaAdapter() {
   };
 
   function buildBidCall(bid, callbackId) {
-
     var bidUrl = '//rtb.t.c4tw.net/Bid?';
     bidUrl = utils.tryAppendQueryString(bidUrl, 's', 'h');
     bidUrl = utils.tryAppendQueryString(bidUrl, 'callback', '$$PREBID_GLOBAL$$.handleTwCB');
@@ -30,12 +29,12 @@ TwengaAdapter = function TwengaAdapter() {
       for (var key in bid.params) {
         var value = bid.params[key];
         switch (key) {
-        case 'placementId': key = 'id'; break;
-        case 'siteId': key = 'sid'; break;
-        case 'publisherId': key = 'pid'; break;
-        case 'currency': key = 'cur'; break;
-        case 'bidFloor': key = 'min'; break;
-        case 'country': key = 'gz'; break;
+          case 'placementId': key = 'id'; break;
+          case 'siteId': key = 'sid'; break;
+          case 'publisherId': key = 'pid'; break;
+          case 'currency': key = 'cur'; break;
+          case 'bidFloor': key = 'min'; break;
+          case 'country': key = 'gz'; break;
         }
         bidUrl = utils.tryAppendQueryString(bidUrl, key, value);
       }
@@ -53,25 +52,22 @@ TwengaAdapter = function TwengaAdapter() {
 
     // @endif
 
-    //append a timer here to track latency
+    // append a timer here to track latency
     bid.startTime = new Date().getTime();
 
     return bidUrl;
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleTwCB = function (bidResponseObj) {
-
     var bidCode;
 
     if (bidResponseObj && bidResponseObj.callback_uid) {
-
       var responseCPM;
       var id = bidResponseObj.callback_uid;
       var placementCode = '';
       var bidObj = getBidRequest(id);
       if (bidObj) {
-
         bidCode = bidObj.bidder;
 
         placementCode = bidObj.placementCode;
@@ -88,47 +84,41 @@ TwengaAdapter = function TwengaAdapter() {
           bidResponseObj.result.cpm &&
           bidResponseObj.result.cpm !== 0 &&
           bidResponseObj.result.ad) {
-
         var result = bidResponseObj.result;
 
         responseCPM = parseInt(result.cpm, 10);
 
-        //CPM response from /Bid is dollar/cent multiplied by 10000
-        //in order to avoid using floats
-        //switch CPM to "dollar/cent"
+        // CPM response from /Bid is dollar/cent multiplied by 10000
+        // in order to avoid using floats
+        // switch CPM to "dollar/cent"
         responseCPM = responseCPM / 10000;
 
         var ad = result.ad.replace('%%WP%%', result.cpm);
 
-        //store bid response
-        //bid status is good (indicating 1)
+        // store bid response
+        // bid status is good (indicating 1)
         bid = bidfactory.createBid(1, bidObj);
         bid.creative_id = result.creative_id;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
-        if (ad && (ad.lastIndexOf('http', 0) === 0 || ad.lastIndexOf('//', 0) === 0))
-          bid.adUrl = ad;
-        else
-          bid.ad = ad;
+        if (ad && (ad.lastIndexOf('http', 0) === 0 || ad.lastIndexOf('//', 0) === 0)) { bid.adUrl = ad; } else { bid.ad = ad; }
         bid.width = result.width;
         bid.height = result.height;
 
         bidmanager.addBidResponse(placementCode, bid);
-
       } else {
-        //no response data
+        // no response data
         // @if NODE_ENV='debug'
         utils.logMessage('No prebid response from Twenga for placement code ' + placementCode);
 
         // @endif
-        //indicate that there is no bid for this placement
+        // indicate that there is no bid for this placement
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }
-
     } else {
-      //no response data
+      // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
 

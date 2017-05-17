@@ -8,7 +8,6 @@ import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;
 
-
 export function listenMessagesFromCreative() {
   addEventListener('message', receiveMessage, false);
 }
@@ -30,7 +29,7 @@ function receiveMessage(ev) {
     if (data.message === 'Prebid Request') {
       sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
-      //save winning bids
+      // save winning bids
       $$PREBID_GLOBAL$$._winningBids.push(adObject);
 
       events.emit(BID_WON, adObject);

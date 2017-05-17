@@ -1,11 +1,10 @@
 import {createBid} from 'src/bidfactory';
 import {addBidResponse} from 'src/bidmanager';
-import {logError,getTopWindowLocation} from 'src/utils';
+import {logError, getTopWindowLocation} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 
 function PulsePointLiteAdapter() {
-
   const bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
   const ajaxOptions = {
     method: 'GET',
@@ -21,8 +20,8 @@ function PulsePointLiteAdapter() {
         ajax(url, (bidResponse) => {
           bidResponseAvailable(bidRequest, bidResponse);
         }, null, ajaxOptions);
-      } catch(e) {
-        //register passback on any exceptions while attempting to fetch response.
+      } catch (e) {
+        // register passback on any exceptions while attempting to fetch response.
         logError('pulsepoint.requestBid', 'ERROR', e);
         bidResponseAvailable(bidRequest);
       }
@@ -55,7 +54,7 @@ function PulsePointLiteAdapter() {
   function bidResponseAvailable(bidRequest, rawResponse) {
     if (rawResponse) {
       var bidResponse = parse(rawResponse);
-      if(bidResponse) {
+      if (bidResponse) {
         var adSize = bidRequest.params.cf.toUpperCase().split('X');
         var bid = createBid(STATUS.GOOD, bidRequest);
         bid.bidderCode = bidRequest.bidder;
@@ -84,7 +83,6 @@ function PulsePointLiteAdapter() {
   return {
     callBids: _callBids
   };
-
 }
 
 module.exports = PulsePointLiteAdapter;

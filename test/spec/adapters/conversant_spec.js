@@ -3,7 +3,6 @@ var Adapter = require('src/adapters/conversant');
 var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function () {
-
   var addBidResponseSpy;
   var adapter;
 
@@ -43,7 +42,6 @@ describe('Conversant adapter tests', function () {
     ]
   };
 
-
   it('The Conversant response should exist and be a function', function () {
     expect($$PREBID_GLOBAL$$.conversantResponse).to.exist.and.to.be.a('function');
   });
@@ -67,14 +65,14 @@ describe('Conversant adapter tests', function () {
             id: 1111111,
             impid: 'bidId1',
             price: 0
-          },{
+          }, {
             id: 2345,
             impid: 'bidId2',
             price: 0.22,
             nurl: '',
             adm: 'adm2',
-            h:300,
-            w:600
+            h: 300,
+            w: 600
           }]
         }]
       };
@@ -139,29 +137,29 @@ describe('Conversant adapter tests', function () {
             id: 1111111,
             impid: 'bidId1',
             price: 0.11,
-            nurl : '',
+            nurl: '',
             adm: 'adm',
             h: 250,
             w: 300,
-            ext : {}
-          },{
+            ext: {}
+          }, {
             id: 2345,
             impid: 'bidId2',
             price: 0.22,
             nurl: '',
             adm: 'adm2',
-            h:300,
-            w:600
+            h: 300,
+            w: 600
           },
-            {
-              id: 33333,
-              impid: 'bidId3',
-              price: 0.33,
-              nurl: '',
-              adm: 'adm3',
-              h: 160,
-              w: 600
-            }]
+          {
+            id: 33333,
+            impid: 'bidId3',
+            price: 0.33,
+            nurl: '',
+            adm: 'adm3',
+            h: 160,
+            w: 600
+          }]
         }]
       };
 
@@ -177,7 +175,7 @@ describe('Conversant adapter tests', function () {
       expect(firstBid.getStatusCode()).to.equal(1);
       expect(firstBid.bidderCode).to.equal('conversant');
       expect(firstBid.cpm).to.equal(0.11);
-      expect(firstBid.ad).to.equal('adm'+ '<img src="" />');
+      expect(firstBid.ad).to.equal('adm' + '<img src="" />');
       expect(placementCode1).to.equal('div1');
 
       expect(secondBid.getStatusCode()).to.equal(1);
@@ -196,10 +194,9 @@ describe('Conversant adapter tests', function () {
     });
   });
 
-
   describe('Should submit the correct headers in the xhr', function () {
     var server,
-        adapter;
+      adapter;
 
     var bidResponse = {
       id: 123,
@@ -208,29 +205,29 @@ describe('Conversant adapter tests', function () {
           id: 1111,
           impid: 'bidId1',
           price: 0.11,
-          nurl : '',
+          nurl: '',
           adm: 'adm',
           h: 250,
           w: 300,
-          ext : {}
-        },{
+          ext: {}
+        }, {
           id: 2222,
           impid: 'bidId2',
           price: 0.22,
           nurl: '',
           adm: 'adm2',
-          h:300,
-          w:600
+          h: 300,
+          w: 600
         },
-          {
-            id: 3333,
-            impid: 'bidId3',
-            price: 0.33,
-            nurl: '',
-            adm: 'adm3',
-            h: 160,
-            w: 600
-          }]
+        {
+          id: 3333,
+          impid: 'bidId3',
+          price: 0.33,
+          nurl: '',
+          adm: 'adm3',
+          h: 160,
+          w: 600
+        }]
       }]
     };
 
