@@ -1,6 +1,6 @@
-import {ajax} from "src/ajax";
-import adapter from "AnalyticsAdapter";
-import CONSTANTS from "src/constants.json";
+import {ajax} from 'src/ajax';
+import adapter from 'AnalyticsAdapter';
+import CONSTANTS from 'src/constants.json';
 
 const utils = require('../../utils');
 
@@ -62,7 +62,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       let info = Object.assign({}, args);
 
       if (info && info.ad) {
-        info.ad = "";
+        info.ad = '';
       }
 
       if (eventType === auctionInitConst) {
@@ -71,7 +71,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       }
 
       if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
-        buildBidWon(eventType,info);
+        buildBidWon(eventType, info);
         send(eventType, bidWon, 'bidWon');
         return;
       }

@@ -18,9 +18,9 @@ export function parseQS(query) {
 export function formatQS(query) {
   return Object
     .keys(query)
-    .map(k => Array.isArray(query[k]) ?
-      query[k].map(v => `${k}[]=${v}`).join('&') :
-      `${k}=${query[k]}`)
+    .map(k => Array.isArray(query[k])
+      ? query[k].map(v => `${k}[]=${v}`).join('&')
+      : `${k}=${query[k]}`)
     .join('&');
 }
 
@@ -31,7 +31,7 @@ export function parse(url) {
     protocol: (parsed.protocol || '').replace(/:$/, ''),
     hostname: parsed.hostname,
     port: +parsed.port,
-    pathname: parsed.pathname.replace(/^(?!\/)/,'/'),
+    pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
     host: parsed.host
