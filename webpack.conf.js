@@ -1,6 +1,7 @@
 var prebid = require('./package.json');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
+var webpack = require('webpack');
 
 module.exports = {
   devtool: 'source-map',
@@ -9,6 +10,9 @@ module.exports = {
   },
   resolveLoader: {
     modulesDirectories: ['loaders', 'node_modules']
+  },
+  output: {
+    jsonpFunction: 'pbjsSeg'
   },
   module: {
     loaders: [
@@ -71,6 +75,7 @@ module.exports = {
     ]
   },
   plugins: [
-    new StringReplacePlugin()
+    new StringReplacePlugin(),
+    new webpack.optimize.CommonsChunkPlugin('prebid.js')
   ]
 };

@@ -2,16 +2,12 @@ import { expect } from 'chai';
 import adloader from 'src/adloader';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
+import RubiconAdapter from 'src/adapters/rubicon';
 import {parse as parseQuery} from 'querystring';
-import { getModule } from '../../helpers/testModule';
 
 var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
-
-var RubiconAdapter = getModule(function() {
-  require('../../../modules/rubiconAdapter');
-})();
 
 describe('the rubicon adapter', () => {
 
