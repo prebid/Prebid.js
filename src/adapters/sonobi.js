@@ -11,7 +11,11 @@ var SonobiAdapter = function SonobiAdapter(){
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
     var adSlots = request.bids || [];
     var bidderRequestId = request.bidderRequestId;
-    var ref = '&ref=' + encodeURI(document.referrer || window.location.href);
+    var topUrl = document.referrer || window.location.href
+    if (topUrl.indexOf('overwolf') > -1) {
+      topUrl = 'https://content.overwolf.com';
+    }
+    var ref = '&ref=' + encodeURI(topUrl);
     console.log("### SONOBI REF ", ref);
     adloader.loadScript(trinity + JSON.stringify(_keymaker(adSlots)) + '&cv=' + _operator(bidderRequestId) + ref);
   }

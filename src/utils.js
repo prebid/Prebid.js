@@ -180,7 +180,7 @@ exports.getTopWindowUrl = function () {
     href = 'https://www.stanza.co';
     console.log("Href is stanza.co");
   } else if (href.indexOf('overwolf') > -1) {
-    href = 'https://www.overwolf.com';
+    href = 'https://content.overwolf.com';
   }
   console.log("### Stanza referrer being passed to servers", href);
   return href;
