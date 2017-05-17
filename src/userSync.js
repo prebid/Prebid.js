@@ -84,6 +84,8 @@ function fireSyncs() {
       // insertAdjacentHTML expects HTML string - convert DOM object to string
       bodyElem.insertAdjacentHTML("beforeend", buildImg(sync[1]).outerHTML);
     });
+    // Reset the image pixel queue
+    queue.image = [];
   }
   catch(e) {
     utils.logError('Error firing user syncs', e);

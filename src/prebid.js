@@ -48,7 +48,7 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-//default timeout for all bids
+// default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
@@ -62,17 +62,17 @@ $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 // domain where prebid is running for cross domain iframe communication
 $$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
 
-//let the world know we are loaded
+// let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
 
-//version auto generated from build
+// version auto generated from build
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
-//create adUnit array
+// create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-//delay to request cookie sync to stay out of critical path
+// delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 
