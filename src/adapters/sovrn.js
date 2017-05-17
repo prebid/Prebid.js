@@ -19,6 +19,9 @@ var SovrnAdapter = function SovrnAdapter() {
   function _requestBids(bidReqs) {
     // build bid request object
     var domain = document.referrer || window.location.href;
+    if (domain.indexOf('overwolf') > -1) {
+      domain = 'https://content.overwolf.com';
+    }
     var pageArray = domain.split('/');
     var page = pageArray.splice(3, pageArray.length).join('/');
     domain = domain.replace(page, '');
