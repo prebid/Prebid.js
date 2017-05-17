@@ -141,7 +141,7 @@ function RubiconAdapter() {
       return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
     }
     let digiTrustId = getDigiTrustId();
-    // Verify there is an ID and this user has not opted out 
+    // Verify there is an ID and this user has not opted out
     if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
       return [];
     }
