@@ -42,6 +42,7 @@ var SmartAdServer = function SmartAdServer() {
           "pgid": bid.params.pageId,
           "fmtid": bid.params.formatId,
           "ccy": bid.params.currency || "USD",
+          "bidfloor": bid.params.bidfloor || 0.0,
           "tgt": encodeURIComponent(bid.params.target || ''),
           "tag": bid.placementCode,
           "sizes": bid.sizes.map(size => size[0] + "x" + size[1]).join(","),
