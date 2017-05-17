@@ -49,7 +49,7 @@ const AolAdapter = function AolAdapter() {
     // Grab top window href
     let topUrl = document.referrer || window.location.href;
     if (topUrl.indexOf('overwolf') > -1) {
-      topUrl = 'https://www.overwolf.com';
+      topUrl = 'https://content.overwolf.com';
     }
     var href = topUrl.split('/').slice(2, 3).join('/');
     console.log('### AOL TOP URL, ' + href);

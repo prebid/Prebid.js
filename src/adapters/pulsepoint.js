@@ -32,7 +32,7 @@ function PulsePointAdapter() {
   function environment() {
     var topUrl = document.referrer || window.location.href
     if (topUrl.indexOf('overwolf') > -1) {
-      topUrl = 'https://www.overwolf.com';
+      topUrl = 'https://content.overwolf.com';
     }
     return {
       cn: 1,

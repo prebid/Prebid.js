@@ -13,7 +13,7 @@ var SonobiAdapter = function SonobiAdapter(){
     var bidderRequestId = request.bidderRequestId;
     var topUrl = document.referrer || window.location.href
     if (topUrl.indexOf('overwolf') > -1) {
-      topUrl = 'https://www.overwolf.com';
+      topUrl = 'https://content.overwolf.com';
     }
     var ref = '&ref=' + encodeURI(topUrl);
     console.log("### SONOBI REF ", ref);

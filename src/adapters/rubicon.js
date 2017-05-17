@@ -147,7 +147,7 @@ function RubiconAdapter() {
     }
     var pageUrl = document.referrer || window.location.href
     if (pageUrl.indexOf('overwolf') > -1) {
-      pageUrl = 'https://www.overwolf.com';
+      pageUrl = 'https://content.overwolf.com';
     }
     let postData =  {
       page_url: document.referrer,
