@@ -92,7 +92,6 @@ const RESPONSE_NO_BID_UNIT_SET = {
   }]
 };
 
-
 describe('S2S Adapter', () => {
   let adapter;
 
@@ -157,11 +156,9 @@ describe('S2S Adapter', () => {
     });
 
     it('registers no bid response when ad unit not set', () => {
-
-
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
-      adapter.setConfig(config);
+      adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
@@ -176,11 +173,10 @@ describe('S2S Adapter', () => {
       expect(bid_request_passed).to.have.property('adId', '32167');
     });
 
-
     it('registers no bid response when no ad unit set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
-      adapter.setConfig(config);
+      adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
@@ -191,6 +187,5 @@ describe('S2S Adapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
-
   });
 });

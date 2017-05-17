@@ -119,7 +119,6 @@ function PrebidServer() {
 
                   bidmanager.addBidResponse(bid.placementCode, bidObject);
                 });
-
               } else {
                 let bidObject = bidfactory.createBid(STATUS.NO_BID, {
                   bidId: bidder.bid_id
