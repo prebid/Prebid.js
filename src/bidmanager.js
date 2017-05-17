@@ -93,7 +93,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   if (bid) {
-
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
       utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
       return;
@@ -181,7 +180,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     Object.keys(custBidObj.native).forEach(asset => {
       const key = NATIVE_KEYS[asset];
       const value = custBidObj.native[asset];
-      if (key) {keyValues[key] = value;}
+      if (key) { keyValues[key] = value; }
     });
   }
 

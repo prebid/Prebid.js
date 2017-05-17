@@ -397,7 +397,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   invalidNativeAdUnits.forEach(adUnit => {
     utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'native' but contains a bidder that doesn't support native. No Prebid demand requests will be triggered for this adUnit.`);
     for (let i = 0; i < adUnits.length; i++) {
-      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+      if (adUnits[i].code === adUnit.code) { adUnits.splice(i, 1); }
     }
   });
 

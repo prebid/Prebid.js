@@ -243,25 +243,25 @@ describe('AppNexusAdapter', () => {
     it('handles native responses', () => {
       RESPONSE.tags[0].ads[0].ad_type = 'native';
       RESPONSE.tags[0].ads[0].rtb.native = {
-        "title": "Native Creative",
-        "desc": "Cool description great stuff",
-        "sponsored": "AppNexus",
-        "icon": {
-          "width": 0,
-          "height": 0,
-          "url": "http://cdn.adnxs.com/icon.png"
+        'title': 'Native Creative',
+        'desc': 'Cool description great stuff',
+        'sponsored': 'AppNexus',
+        'icon': {
+          'width': 0,
+          'height': 0,
+          'url': 'http://cdn.adnxs.com/icon.png'
         },
-        "main_img": {
-          "width": 2352,
-          "height": 1516,
-          "url": "http://cdn.adnxs.com/img.png"
+        'main_img': {
+          'width': 2352,
+          'height': 1516,
+          'url': 'http://cdn.adnxs.com/img.png'
         },
-        "link": {
-          "url": "https://www.appnexus.com",
-          "fallback_url": "",
-          "click_trackers": ["http://nym1-ib.adnxs.com/click"]
+        'link': {
+          'url': 'https://www.appnexus.com',
+          'fallback_url': '',
+          'click_trackers': ['http://nym1-ib.adnxs.com/click']
         },
-        "impression_trackers": ["http://example.com"],
+        'impression_trackers': ['http://example.com'],
       };
 
       adapter.callBids(REQUEST);

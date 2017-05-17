@@ -70,10 +70,10 @@ export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).
  */
 export function nativeBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) {return false;}
+  if (!bidRequest) { return false; }
 
   const requestedAssets = bidRequest.nativeParams;
-  if (!requestedAssets) {return true;}
+  if (!requestedAssets) { return true; }
 
   const requiredAssets = Object.keys(requestedAssets).filter(
     key => requestedAssets[key].required
@@ -108,8 +108,8 @@ function createImpressionPixel(src) {
   img.width = 0;
   img.style.display = 'none';
   img.onload = () => {
-    try {this.parentNode.removeChild(this);}
-    catch (error) {logError(`error creating pixel with ${src}`);}
+    try { this.parentNode.removeChild(this); }
+    catch (error) { logError(`error creating pixel with ${src}`); }
   };
 
   return img;

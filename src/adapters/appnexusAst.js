@@ -85,7 +85,7 @@ function AppnexusAstAdapter() {
         }
 
         if (bid.mediaType === 'native') {
-          tag.ad_types = ["native"];
+          tag.ad_types = ['native'];
 
           if (bid.nativeParams) {
             tag.native = {};
