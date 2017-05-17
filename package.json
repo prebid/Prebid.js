@@ -5,7 +5,7 @@
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test && gulp mocha",
-    "lint": "gulp jscs && gulp hint"
+    "lint": "gulp lint"
   },
   "repository": {
     "type": "git",
