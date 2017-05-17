@@ -10,7 +10,6 @@ var defaultPlacementForBadBid = null;
  * Adapter for requesting bids from NginAd
  */
 var NginAdAdapter = function NginAdAdapter() {
-
   var rtbServerDomain = 'placeholder.for.nginad.server.com';
 
   function _callBids(params) {
@@ -40,7 +39,6 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   function getWidthAndHeight(bid) {
-
     var adW = null;
     var adH = null;
 
@@ -63,11 +61,10 @@ var NginAdAdapter = function NginAdAdapter() {
 
     var nginadImps = [];
 
-    //assign the first adUnit (placement) for bad bids;
+    // assign the first adUnit (placement) for bad bids;
     defaultPlacementForBadBid = bidReqs[0].placementCode;
 
-
-    //build impression array for nginad
+    // build impression array for nginad
     utils._each(bidReqs, function(bid) {
       var tagId = utils.getBidIdParameter('pzoneid', bid.params);
       var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
@@ -85,10 +82,9 @@ var NginAdAdapter = function NginAdAdapter() {
       };
 
       nginadImps.push(imp);
-      //bidmanager.pbCallbackMap[imp.id] = bid;
+      // bidmanager.pbCallbackMap[imp.id] = bid;
 
       rtbServerDomain = bid.params.nginadDomain;
-
     });
 
     // build bid request with impressions
@@ -108,7 +104,7 @@ var NginAdAdapter = function NginAdAdapter() {
   }
 
   function handleErrorResponse(bidReqs, defaultPlacementForBadBid) {
-    //no response data
+    // no response data
     if (defaultPlacementForBadBid === null) {
       // no id with which to create an dummy bid
       return;
@@ -119,7 +115,7 @@ var NginAdAdapter = function NginAdAdapter() {
     bidmanager.addBidResponse(defaultPlacementForBadBid, bid);
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.nginadResponse = function(nginadResponseObj) {
     var bid = {};
     var key;
@@ -134,7 +130,6 @@ var NginAdAdapter = function NginAdAdapter() {
     }
 
     for (key in nginadResponseObj.seatbid[0].bid) {
-
       var nginadBid = nginadResponseObj.seatbid[0].bid[key];
 
       var responseCPM;
@@ -142,7 +137,7 @@ var NginAdAdapter = function NginAdAdapter() {
       var id = nginadBid.impid;
 
       // try to fetch the bid request we sent NginAd
-      /*jshint -W083 */
+      /* jshint -W083 */
       var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'nginad').bids
         .find(bid => bid.bidId === id);
       if (!bidObj) {
@@ -152,7 +147,7 @@ var NginAdAdapter = function NginAdAdapter() {
       placementCode = bidObj.placementCode;
       bidObj.status = CONSTANTS.STATUS.GOOD;
 
-      //place ad response on bidmanager._adResponsesByBidderId
+      // place ad response on bidmanager._adResponsesByBidderId
       responseCPM = parseFloat(nginadBid.price);
 
       if (responseCPM === 0) {
@@ -163,14 +158,14 @@ var NginAdAdapter = function NginAdAdapter() {
       nginadBid.size = bidObj.sizes;
       var responseAd = nginadBid.adm;
 
-      //store bid response
-      //bid status is good (indicating 1)
+      // store bid response
+      // bid status is good (indicating 1)
       bid = bidfactory.createBid(1);
       bid.creative_id = nginadBid.Id;
       bid.bidderCode = 'nginad';
       bid.cpm = responseCPM;
 
-      //The bid is a mock bid, the true bidding process happens after the publisher tag is called
+      // The bid is a mock bid, the true bidding process happens after the publisher tag is called
       bid.ad = decodeURIComponent(responseAd);
 
       var whArr = getWidthAndHeight(bidObj);
@@ -178,9 +173,7 @@ var NginAdAdapter = function NginAdAdapter() {
       bid.height = whArr[1];
 
       bidmanager.addBidResponse(placementCode, bid);
-
     }
-
   }; // nginadResponse
 
   return {

@@ -9,7 +9,7 @@ const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
   var baseAdapter = Adapter.createNew('vertamedia'),
-      bidRequest;
+    bidRequest;
 
   baseAdapter.callBids = function (bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
@@ -51,7 +51,7 @@ function VertamediaAdapter() {
 
   function getSize(requestSizes) {
     var parsed = {},
-        size = utils.parseSizesInput(requestSizes)[0];
+      size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -110,7 +110,6 @@ function VertamediaAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
   };
-
 }
 
 VertamediaAdapter.createNew = function () {

@@ -4,10 +4,7 @@ let adaptermanager = require('../../../../src/adaptermanager');
 let constants = require('../../../../src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
-
   describe('enableAnalytics', function () {
-
-
     it('should catch all events', function () {
       sinon.spy(roxotAnalytic, 'track');
 

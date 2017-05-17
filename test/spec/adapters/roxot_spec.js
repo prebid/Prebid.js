@@ -1,10 +1,9 @@
-describe('Roxot adapter tests', function(){
+describe('Roxot adapter tests', function() {
   const expect = require('chai').expect;
   const adapter = require('src/adapters/roxot');
   const bidmanager = require('src/bidmanager');
 
   describe('roxotResponseHandler', function () {
-
     it('should exist and be a function', function () {
       expect(pbjs.roxotResponseHandler).to.exist.and.to.be.a('function');
     });
@@ -30,11 +29,10 @@ describe('Roxot adapter tests', function(){
         ]
       };
 
-
       // no bids returned in the response.
       var response = {
-        "id": "123",
-        "bids": []
+        'id': '123',
+        'bids': []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -61,7 +59,6 @@ describe('Roxot adapter tests', function(){
     });
 
     it('should add a bid response for bids returned and empty bid responses for the rest', () => {
-
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
       var bidderRequest = {
@@ -84,15 +81,15 @@ describe('Roxot adapter tests', function(){
 
       // Returning a single bid in the response.
       var response = {
-        "id": "12345",
-        "bids": [
+        'id': '12345',
+        'bids': [
           {
-            "bidId" : "id1",
-            "cpm" : 0.09,
-            "nurl" : "http://roxot.example.com",
-            "adm" : "<<creative>>",
-            "h" : 320,
-            "w" : 50
+            'bidId': 'id1',
+            'cpm': 0.09,
+            'nurl': 'http://roxot.example.com',
+            'adm': '<<creative>>',
+            'h': 320,
+            'w': 50
           }
         ]};
 
