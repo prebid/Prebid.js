@@ -362,7 +362,69 @@ describe('the rubicon adapter', () => {
           delete window.DigiTrust;
         });
 
-        it('should not send digitrust params', () => {
+        it('should not send digitrust params when DigiTrust not loaded', () => {
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+          // Test that none of the DigiTrust keys are part of the query
+          undefinedKeys.forEach(key => {
+            expect(typeof query[key]).to.equal('undefined');
+          });
+        });
+
+        it('should send not digitrust params due to optout', () => {
+          window.DigiTrust = {
+            getUser: function() {}
+          };
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
+            ({
+              success: true,
+              identity: {
+                privacy: {optout: true},
+                id: 'testId',
+                keyv: 'testKeyV'
+              }
+            })
+          );
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+          // Test that none of the DigiTrust keys are part of the query
+          undefinedKeys.forEach(key => {
+            expect(typeof query[key]).to.equal('undefined');
+          });
+
+          delete window.DigiTrust;
+        });
+
+        it('should send not digitrust params due to failure', () => {
+          window.DigiTrust = {
+            getUser: function() {}
+          };
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
+            ({
+              success: false,
+              identity: {
+                privacy: {optout: false},
+                id: 'testId',
+                keyv: 'testKeyV'
+              }
+            })
+          );
+
           rubiconAdapter.callBids(bidderRequest);
 
           let request = xhr.requests[0];
