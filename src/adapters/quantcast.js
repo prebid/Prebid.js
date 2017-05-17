@@ -6,47 +6,45 @@ const CONSTANTS = require('../constants.json');
 const QUANTCAST_CALLBACK_URL = 'http://global.qc.rtb.quantserve.com:8080/qchb';
 
 var QuantcastAdapter = function QuantcastAdapter() {
-
   const BIDDER_CODE = 'quantcast';
 
   const DEFAULT_BID_FLOOR = 0.0000000001;
   let bidRequests = {};
 
   let returnEmptyBid = function(bidId) {
-      var bidRequested = utils.getBidRequest(bidId);
-      if (!utils.isEmpty(bidRequested)) {
-        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequested);
-        bid.bidderCode = BIDDER_CODE;
-        bidmanager.addBidResponse(bidRequested.placementCode, bid);
-      }
-      return;
-    };
+    var bidRequested = utils.getBidRequest(bidId);
+    if (!utils.isEmpty(bidRequested)) {
+      let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequested);
+      bid.bidderCode = BIDDER_CODE;
+      bidmanager.addBidResponse(bidRequested.placementCode, bid);
+    }
+  };
 
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
-    if(utils.isEmpty(responseText)) {
+    if (utils.isEmpty(responseText)) {
       return;
     }
     let response = null;
     try {
       response = JSON.parse(responseText);
-    } catch(e) {
+    } catch (e) {
       // Malformed JSON
       utils.logError("Malformed JSON received from server - can't do anything here");
       return;
     }
 
-    if(response === null || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
+    if (response === null || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
       utils.logError("Sub-optimal JSON received from server - can't do anything here");
       return;
     }
 
-    for(let i = 0; i < response.bids.length; i++) {
+    for (let i = 0; i < response.bids.length; i++) {
       let seatbid = response.bids[i];
       let key = seatbid.placementCode;
       var request = bidRequests[key];
-      if(request === null || request === undefined) {
+      if (request === null || request === undefined) {
         return returnEmptyBid(seatbid.placementCode);
       }
       // This line is required since this is the field
@@ -64,7 +62,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
 
       bidmanager.addBidResponse(request.bidId, responseBid);
     }
-
   };
 
   function callBids(params) {
@@ -84,34 +81,34 @@ var QuantcastAdapter = function QuantcastAdapter() {
       var bidSizes = [];
       utils._each(bid.sizes, function (size) {
         bidSizes.push({
-          'width' : size[0],
-          'height' : size[1]
+          'width': size[0],
+          'height': size[1]
         });
       });
 
       bidRequests[key] = bidRequests[key] || {
-        'publisherId' : publisherId,
-        'requestId' : bid.bidId,
-        'bidId' : bid.bidId,
-        'site' : {
-          'page' : loc.href,
-          'referrer' : referrer,
-          'domain' : domain,
+        'publisherId': publisherId,
+        'requestId': bid.bidId,
+        'bidId': bid.bidId,
+        'site': {
+          'page': loc.href,
+          'referrer': referrer,
+          'domain': domain,
         },
-        'imp' : [{
+        'imp': [{
 
-          'banner' : {
-            'battr' : bid.params.battr,
-            'sizes' : bidSizes,
+          'banner': {
+            'battr': bid.params.battr,
+            'sizes': bidSizes,
           },
-          'placementCode' : bid.placementCode,
-          'bidFloor' : bid.params.bidFloor || DEFAULT_BID_FLOOR,
+          'placementCode': bid.placementCode,
+          'bidFloor': bid.params.bidFloor || DEFAULT_BID_FLOOR,
         }]
       };
 
       utils._each(bidRequests, function (bidRequest) {
         ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
-          method : 'POST',
+          method: 'POST',
           withCredentials: true
         });
       });

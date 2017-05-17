@@ -43,20 +43,19 @@ function PubGearsAdapter() {
 
   function callBids(params) {
     var bids = params[consts.JSON_MAPPING.PL_BIDS];
-    var slots = bids.map(getSlotFromBidParam) ;
-    if(slots.length <= 0)
-      return;
+    var slots = bids.map(getSlotFromBidParam);
+    if (slots.length <= 0)
+      { return; }
     publisher = bids[0][PARAMS][PUBLISHER_PARAM];
 
     bids.forEach(function(bid) {
-
       var name = getSlotFromBidParam(bid);
       pendingSlots[ name ] = bid;
     });
 
     proxy = proxy || getScript(SCRIPT_ID) || makeScript(slots, publisher, SCRIPT_ID, TAG_URL);
-    if(!initialized)
-        registerEventListeners(proxy);
+    if (!initialized)
+      { registerEventListeners(proxy); }
     initialized = true;
   }
   function loadScript(script) {
@@ -74,7 +73,7 @@ function PubGearsAdapter() {
   }
   function getSlotFromResource(resource) {
     var size = resource[SIZE];
-    var key = [ resource[PUB_ZONE],  size ].join('@');
+    var key = [ resource[PUB_ZONE], size ].join('@');
     return key;
   }
   function getSize(bid) {
@@ -85,7 +84,7 @@ function PubGearsAdapter() {
   function makeScript(slots, publisher, id, url) {
     var script = d.createElement(SCRIPT);
     script.src = url;
-    script.id = id ;
+    script.id = id;
     script.setAttribute(ATTRIBUTE_PREFIX + SLOT_LIST_ATTRIBUTE, slots.join(' '));
     script.setAttribute(ATTRIBUTE_PREFIX + FLAG_ATTRIBUTE, 'true');
     script.setAttribute(ATTRIBUTE_PREFIX + PUBLISHER_ATTRIBUTE, publisher);
@@ -106,11 +105,11 @@ function PubGearsAdapter() {
     var adUnitCode = bidRequest[PLACEMENT_CODE];
     var bid = null;
 
-    if(bidRequest) {
+    if (bidRequest) {
       bid = buildResponse(data, bidRequest);
       bidmanager.addBidResponse(adUnitCode, bid);
       utils.logMessage('adding bid respoonse to "' + adUnitCode + '" for bid request "' + bidRequest[BID_ID] + '"');
-    }else {
+    } else {
       utils.logError('Cannot get placement id for slot "' + slotKey + '"');
     }
   }
@@ -123,12 +122,12 @@ function PubGearsAdapter() {
     var response = bidfactory.createBid(status, bidRequest);
     response[BIDDER_CODE_RESPONSE_KEY] = BIDDER_CODE;
 
-    if(status !== 1)
-      return response;
+    if (status !== 1)
+      { return response; }
 
     response[AD] = getCreative(resource);
 
-    response[CPM] = price / 1e3 ;
+    response[CPM] = price / 1e3;
     response[WIDTH] = dims[0];
     response[HEIGHT] = dims[1];
     return response;

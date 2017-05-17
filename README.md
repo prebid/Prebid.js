@@ -158,9 +158,9 @@ Please **do NOT load Prebid.js inside your adapter**. If you do this, we will re
 
 ### Code Quality
 
-Code quality is defined by `.jscs` and `.jshint` files and errors are reported in the terminal.
+Code quality is defined by `.eslintrc` and errors are reported in the terminal.
 
-If you are contributing code, you should configure your editor with the provided `.jscs` and `.jshint` settings.
+If you are contributing code, you should [configure your editor](http://eslint.org/docs/user-guide/integrations#editors) with the provided `.eslintrc` settings.
 
 ### Unit Testing with Karma
 

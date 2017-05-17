@@ -1,9 +1,9 @@
-"use strict";
-var bidfactory = require("../bidfactory");
-var bidmanager = require("../bidmanager");
+'use strict';
+var bidfactory = require('../bidfactory');
+var bidmanager = require('../bidmanager');
 var utils = require('../utils');
-var adloader_1 = require("../adloader");
-var ROOT_URL = "//cdn.thoughtleadr.com/v4/";
+var adloader_1 = require('../adloader');
+var ROOT_URL = '//cdn.thoughtleadr.com/v4/';
 var BID_AVAILABLE = 1;
 
 var ThoughtleadrAdapter = (function () {
@@ -16,9 +16,8 @@ var ThoughtleadrAdapter = (function () {
       if (window.tldr && window.tldr.config && window.tldr.config.root_url) {
         rootUrl = window.tldr.config.root_url;
       }
-      adloader_1.loadScript(rootUrl + "page.js", this.handleBids.bind(this, params), true);
-    }
-    else {
+      adloader_1.loadScript(rootUrl + 'page.js', this.handleBids.bind(this, params), true);
+    } else {
       this.handleBids(params);
     }
   };
@@ -41,7 +40,7 @@ var ThoughtleadrAdapter = (function () {
 
     window.tldr.requestPrebid(bid.params.placementId, rid).then(function (params) {
       if (!params || !params.bid) {
-        utils.logError("invalid response from tldr.requestPrebid", undefined, undefined);
+        utils.logError('invalid response from tldr.requestPrebid', undefined, undefined);
         return;
       }
 
@@ -52,7 +51,7 @@ var ThoughtleadrAdapter = (function () {
         }
         _this.stopListen();
       };
-      window.addEventListener("message", _this.receiver, false);
+      window.addEventListener('message', _this.receiver, false);
       setTimeout(function () {
         return _this.stopListen();
       }, 5000);
@@ -65,8 +64,7 @@ var ThoughtleadrAdapter = (function () {
         bidObject.ad = params.bid.ad;
         bidObject.width = size.width;
         bidObject.height = size.height;
-      }
-      else {
+      } else {
         bidObject = bidfactory.createBid(params.bid.code);
         bidObject.bidderCode = 'thoughtleadr';
       }
@@ -76,13 +74,13 @@ var ThoughtleadrAdapter = (function () {
 
   ThoughtleadrAdapter.prototype.stopListen = function () {
     if (this.receiver) {
-      window.removeEventListener("message", this.receiver);
+      window.removeEventListener('message', this.receiver);
       this.receiver = undefined;
     }
   };
 
   ThoughtleadrAdapter.valid = function (bid) {
-    return !!(bid && bid.params && typeof bid.params.placementId === "string");
+    return !!(bid && bid.params && typeof bid.params.placementId === 'string');
   };
 
   ThoughtleadrAdapter.getSizes = function (sizes) {

@@ -1,11 +1,10 @@
 import {expect} from 'chai';
 import PulsePointAdapter from 'src/adapters/pulsepointLite';
 import bidManager from 'src/bidmanager';
-import * as ajax from "src/ajax";
+import * as ajax from 'src/ajax';
 import {parse as parseURL} from 'src/url';
 
-describe("PulsePoint Lite Adapter Tests", () => {
-
+describe('PulsePoint Lite Adapter Tests', () => {
   let pulsepointAdapter = new PulsePointAdapter();
   let slotConfigs;
   let ajaxStub;
@@ -17,22 +16,22 @@ describe("PulsePoint Lite Adapter Tests", () => {
     slotConfigs = {
       bids: [
         {
-          placementCode: "/DfpAccount1/slot1",
-          bidder: "pulsepoint",
+          placementCode: '/DfpAccount1/slot1',
+          bidder: 'pulsepoint',
           bidId: 'bid12345',
           params: {
-            cp: "p10000",
-            ct: "t10000",
-            cf: "300x250"
+            cp: 'p10000',
+            ct: 't10000',
+            cf: '300x250'
           }
-        },{
-          placementCode: "/DfpAccount2/slot2",
-          bidder: "pulsepoint",
+        }, {
+          placementCode: '/DfpAccount2/slot2',
+          bidder: 'pulsepoint',
           bidId: 'bid23456',
           params: {
-            cp: "p20000",
-            ct: "t20000",
-            cf: "728x90"
+            cp: 'p20000',
+            ct: 't20000',
+            cf: '728x90'
           }
         }
       ]
@@ -47,13 +46,13 @@ describe("PulsePoint Lite Adapter Tests", () => {
   it('Verify requests sent to PulsePoint', () => {
     pulsepointAdapter.callBids(slotConfigs);
     var call = parseURL(ajaxStub.firstCall.args[0]).search;
-    //slot 1
+    // slot 1
     // expect(call.cp).to.equal('p10000');
     // expect(call.ct).to.equal('t10000');
     // expect(call.cf).to.equal('300x250');
     expect(call.ca).to.equal('BID');
     expect(call.cn).to.equal('1');
-    //slot 2
+    // slot 2
     call = parseURL(ajaxStub.secondCall.args[0]).search;
     // expect(call.cp).to.equal('p20000');
     // expect(call.ct).to.equal('t20000');
@@ -64,7 +63,7 @@ describe("PulsePoint Lite Adapter Tests", () => {
 
   it('Verify bid', () => {
     pulsepointAdapter.callBids(slotConfigs);
-    //trigger a mock ajax callback with bid.
+    // trigger a mock ajax callback with bid.
     ajaxStub.firstCall.args[1](JSON.stringify({
       html: 'This is an Ad',
       bidCpm: 1.25
@@ -82,7 +81,7 @@ describe("PulsePoint Lite Adapter Tests", () => {
 
   it('Verify passback', () => {
     pulsepointAdapter.callBids(slotConfigs);
-    //trigger a mock ajax callback with no bid.
+    // trigger a mock ajax callback with no bid.
     ajaxStub.firstCall.args[1](null);
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
@@ -104,5 +103,4 @@ describe("PulsePoint Lite Adapter Tests", () => {
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
   });
-
 });

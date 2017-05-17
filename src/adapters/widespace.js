@@ -8,20 +8,20 @@ const bidfactory = require('../bidfactory.js');
 const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
-  let useSSL = 'https:' === document.location.protocol,
-      baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-      callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+  let useSSL = document.location.protocol === 'https:',
+    baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
+    callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
     let bids = params && params.bids || [];
 
     for (var i = 0; i < bids.length; i++) {
       const bid = bids[i],
-            callbackUid = bid.bidId,
-            sid = bid.params.sid,
-            currency =  bid.params.cur || bid.params.currency;
+        callbackUid = bid.bidId,
+        sid = bid.params.sid,
+        currency = bid.params.cur || bid.params.currency;
 
-      //Handle Sizes string
+      // Handle Sizes string
       let sizeQueryString = '';
       let parsedSizes = utils.parseSizesInput(bid.sizes);
 
@@ -58,17 +58,17 @@ function WidespaceAdapter() {
     }
   }
 
-  //Handle our callback
+  // Handle our callback
   var handleCallback = function handleCallback(bidsArray) {
     if (!bidsArray) { return; }
 
     var bidObject,
-        bidCode = 'widespace';
+      bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
       var bid = bidsArray[i],
-          placementCode = '',
-          validSizes = [];
+        placementCode = '',
+        validSizes = [];
 
       bid.sizes = {height: bid.height, width: bid.width};
 
@@ -80,7 +80,7 @@ function WidespaceAdapter() {
         validSizes = inBid.sizes;
       }
 
-      if (bid && bid.callbackUid && bid.status !=='noad' && verifySize(bid.sizes, validSizes)) {
+      if (bid && bid.callbackUid && bid.status !== 'noad' && verifySize(bid.sizes, validSizes)) {
         bidObject = bidfactory.createBid(1);
         bidObject.bidderCode = bidCode;
         bidObject.cpm = bid.cpm;

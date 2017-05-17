@@ -1,16 +1,16 @@
 var bidfactory = require('../bidfactory.js'),
-    bidmanager = require('../bidmanager.js'),
-    utils = require('../utils.js'),
-    adloader = require('../adloader');
+  bidmanager = require('../bidmanager.js'),
+  utils = require('../utils.js'),
+  adloader = require('../adloader');
 
 var WideOrbitAdapter = function WideOrbitAdapter() {
   var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
-      pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
-      pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
-      pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
-      base = (window.location.protocol) + '//p{pbId}.atemda.com/',
-      bids,
-      adapterName = 'wideorbit';
+    pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
+    pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
+    pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
+    base = (window.location.protocol) + '//p{pbId}.atemda.com/',
+    bids,
+    adapterName = 'wideorbit';
 
   function _fixParamNames(param) {
     if (!param) {
@@ -18,7 +18,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
     }
 
     var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'],
-        prop;
+      prop;
 
     utils._each(properties, function (correctName) {
       for (prop in param) {
@@ -130,7 +130,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
 
   function _processUserMatchings(userMatchings) {
     var headElem = document.getElementsByTagName('head')[0],
-        createdElem;
+      createdElem;
 
     utils._each(userMatchings, function (userMatching) {
       createdElem = undefined;
@@ -165,7 +165,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   }
 
   function _isUrl(scr) {
-    return scr.slice(0, 6) === "http:/" || scr.slice(0, 7) === "https:/" || scr.slice(0, 2) === "//";
+    return scr.slice(0, 6) === 'http:/' || scr.slice(0, 7) === 'https:/' || scr.slice(0, 2) === '//';
   }
 
   function _buildAdCode(placement) {

@@ -5,7 +5,6 @@ describe('Publisher API', function () {
   // var assert = chai.assert;
 
   describe('api of command queue', function () {
-
     it('should have a global variable $$PREBID_GLOBAL$$', function () {
       assert.isObject($$PREBID_GLOBAL$$);
     });
@@ -20,7 +19,6 @@ describe('Publisher API', function () {
   });
 
   describe('has function', function () {
-
     it('should have function $$PREBID_GLOBAL$$.getAdserverTargeting', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getAdserverTargeting);
     });
@@ -82,5 +80,4 @@ describe('Publisher API', function () {
     });
 
   });
-
 });

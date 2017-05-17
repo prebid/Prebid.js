@@ -22,37 +22,37 @@ const _hgPriceConfig = {
 };
 const _densePriceConfig = {
   'buckets': [{
-      'min': 0,
-      'max': 3,
-      'increment': 0.01
-    },
-    {
-      'min': 3,
-      'max': 8,
-      'increment': 0.05
-    },
-    {
-      'min': 8,
-      'max': 20,
-      'increment': 0.5
-    }]
+    'min': 0,
+    'max': 3,
+    'increment': 0.01
+  },
+  {
+    'min': 3,
+    'max': 8,
+    'increment': 0.05
+  },
+  {
+    'min': 8,
+    'max': 20,
+    'increment': 0.5
+  }]
 };
 const _autoPriceConfig = {
   'buckets': [{
-      'min': 0,
-      'max': 5,
-      'increment': 0.05
-    },
-    {
-      'min': 5,
-      'max': 10,
-      'increment': 0.1
-    },
-    {
-      'min': 10,
-      'max': 20,
-      'increment': 0.5
-    }]
+    'min': 0,
+    'max': 5,
+    'increment': 0.05
+  },
+  {
+    'min': 5,
+    'max': 10,
+    'increment': 0.1
+  },
+  {
+    'min': 10,
+    'max': 20,
+    'increment': 0.5
+  }]
 };
 
 function getPriceBucketString(cpm, customConfig, currencyMultiplier) {
@@ -79,7 +79,7 @@ function getCpmStringValue(cpm, config, currencyMultiplier) {
   if (!isValidPriceConfig(config)) {
     return cpmStr;
   }
-  const cap = config.buckets.reduce((prev,curr) => {
+  const cap = config.buckets.reduce((prev, curr) => {
     if (prev.max > curr.max) {
       return prev;
     }
@@ -107,7 +107,7 @@ function isValidPriceConfig(config) {
   }
   let isValid = true;
   config.buckets.forEach(bucket => {
-    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
+    if (typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
       isValid = false;
     }
   });
