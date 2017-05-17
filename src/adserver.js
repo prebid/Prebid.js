@@ -1,7 +1,7 @@
 import {formatQS} from './url';
 import {getWinningBids} from './targeting';
 
-//Adserver parent class
+// Adserver parent class
 const AdServer = function(attr) {
   this.name = attr.adserver;
   this.code = attr.code;
@@ -10,16 +10,16 @@ const AdServer = function(attr) {
   };
 };
 
-//DFP ad server
+// DFP ad server
 exports.dfpAdserver = function (options, urlComponents) {
   var adserver = new AdServer(options);
   adserver.urlComponents = urlComponents;
 
   var dfpReqParams = {
-    'env' : 'vp',
-    'gdfp_req' : '1',
-    'impl' : 's',
-    'unviewed_position_start' : '1'
+    'env': 'vp',
+    'gdfp_req': '1',
+    'impl': 's',
+    'unviewed_position_start': '1'
   };
 
   var dfpParamsWithVariableValue = ['output', 'iu', 'sz', 'url', 'correlator', 'description_url', 'hl'];
@@ -38,13 +38,13 @@ exports.dfpAdserver = function (options, urlComponents) {
   };
 
   adserver.verifyAdserverTag = function() {
-    for(var key in dfpReqParams) {
-      if(!this.urlComponents.search.hasOwnProperty(key) || this.urlComponents.search[key] !== dfpReqParams[key]) {
+    for (var key in dfpReqParams) {
+      if (!this.urlComponents.search.hasOwnProperty(key) || this.urlComponents.search[key] !== dfpReqParams[key]) {
         return false;
       }
     }
-    for(var i in dfpParamsWithVariableValue) {
-      if(!this.urlComponents.search.hasOwnProperty(dfpParamsWithVariableValue[i])) {
+    for (var i in dfpParamsWithVariableValue) {
+      if (!this.urlComponents.search.hasOwnProperty(dfpParamsWithVariableValue[i])) {
         return false;
       }
     }
