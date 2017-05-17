@@ -61,8 +61,9 @@ function typeIsSupported(type) {
  * adunit validation helper functions
  */
 export const nativeAdUnit = adUnit => adUnit.mediaType === 'native';
-const nonNativeBidder = bid => !nativeAdapters.includes(bid.bidder);
-export const hasNonNativeBidder = adUnit => adUnit.bids.filter(nonNativeBidder).length;
+export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
+export const hasNonNativeBidder = adUnit =>
+  adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
 /*
  * Validate that the native assets on this bid contain all assets that were

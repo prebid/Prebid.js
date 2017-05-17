@@ -738,9 +738,9 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.videoAdapters = videoAdaptersBackup;
     });
 
-    it('should not callBids if a native adUnit has non-native bidders', () => {
+    it('should only request native bidders on native adunits', () => {
       sinon.spy(adaptermanager, 'callBids');
-      // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+      // appnexusAst is a native bidder, appnexus is not
       const adUnits = [{
         code: 'adUnit-code',
         mediaType: 'native',
@@ -751,7 +751,11 @@ describe('Unit: Prebid Module', function () {
       }];
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      sinon.assert.notCalled(adaptermanager.callBids);
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
 
       adaptermanager.callBids.restore();
     });
