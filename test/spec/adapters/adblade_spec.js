@@ -84,7 +84,6 @@ describe('adblade adapter', () => {
   });
 
   describe('callBids', () => {
-
     beforeEach(() => {
       sandbox.stub(adLoader, 'loadScript');
       adapter.callBids(bidderRequest);
@@ -96,18 +95,15 @@ describe('adblade adapter', () => {
       expect(adLoader.loadScript.firstCall.args[0]).to.include('adblade.com');
       expect(adLoader.loadScript.firstCall.args[0]).to.include('prebidjs');
     });
-
   });
 
   describe('adbladeResponse', () => {
-
     it('should exist and be a function', () => {
       expect(pbjs.adbladeResponse).to.exist.and.to.be.a('function');
     });
   });
 
   describe('add bids to the manager', () => {
-
     let firstBid;
 
     beforeEach(() => {
@@ -117,25 +113,25 @@ describe('adblade adapter', () => {
 
       // respond
       let bidderReponse = {
-        "cur": "USD",
-        "id": "03a9404f-7b39-4d04-b50b-6459b9aa3ffa",
-        "seatbid": [
+        'cur': 'USD',
+        'id': '03a9404f-7b39-4d04-b50b-6459b9aa3ffa',
+        'seatbid': [
           {
-            "seat": "1",
-            "bid": [
+            'seat': '1',
+            'bid': [
               {
-                "nurl": "http://example.com",
-                "crid": "20063",
-                "adomain": [
-                  "www.adblade.com"
+                'nurl': 'http://example.com',
+                'crid': '20063',
+                'adomain': [
+                  'www.adblade.com'
                 ],
-                "price": 3,
-                "w": 728,
-                "h": 90,
-                "id": "1",
-                "adm": "<div></div>",
-                "impid": "bidId1",
-                "cid": "99"
+                'price': 3,
+                'w': 728,
+                'h': 90,
+                'id': '1',
+                'adm': '<div></div>',
+                'impid': 'bidId1',
+                'cid': '99'
               }
             ]
           }
@@ -175,7 +171,6 @@ describe('adblade adapter', () => {
   });
 
   describe('add empty bids if no bid returned', () => {
-
     let firstBid;
 
     beforeEach(() => {
@@ -207,6 +202,5 @@ describe('adblade adapter', () => {
     it('should add the bidder code to the bid object', () => {
       expect(firstBid).to.have.property('bidderCode', 'adblade');
     });
-
   });
 });

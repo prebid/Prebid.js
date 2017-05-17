@@ -48,7 +48,7 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-//default timeout for all bids
+// default timeout for all bids
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
@@ -62,17 +62,17 @@ $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
 // domain where prebid is running for cross domain iframe communication
 $$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
 
-//let the world know we are loaded
+// let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
 
-//version auto generated from build
+// version auto generated from build
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
-//create adUnit array
+// create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-//delay to request cookie sync to stay out of critical path
+// delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 
@@ -139,11 +139,11 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-//////////////////////////////////
+/// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
 //                              //
-//////////////////////////////////
+/// ///////////////////////////////
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -249,26 +249,26 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
     return;
   }
 
-  //first reset any old targeting
+  // first reset any old targeting
   targeting.resetPresetTargeting();
 
-  //now set new targeting keys
+  // now set new targeting keys
   targeting.setTargeting(targeting.getAllTargeting());
 
-  //emit event
+  // emit event
   events.emit(SET_TARGETING);
 };
 
 $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
-  if(!targeting.isApntagDefined()) {
+  if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
   targeting.setTargetingForAst();
 
-  //emit event
+  // emit event
   events.emit(SET_TARGETING);
 };
 
@@ -294,16 +294,16 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logMessage('Calling renderAd with adId :' + id);
   if (doc && id) {
     try {
-      //lookup ad by ad Id
+      // lookup ad by ad Id
       const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
       if (bid) {
-        //replace macros according to openRTB with price paid = bid.cpm
+        // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.url = utils.replaceAuctionPrice(bid.url, bid.cpm);
-        //save winning bids
+        // save winning bids
         $$PREBID_GLOBAL$$._winningBids.push(bid);
 
-        //emit 'bid won' event here
+        // emit 'bid won' event here
         events.emit(BID_WON, bid);
 
         const { height, width, ad, mediaType, adUrl: url, renderer } = bid;
@@ -323,18 +323,15 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
         }
-
       } else {
         utils.logError('Error trying to write ad. Cannot find ad by given id : ' + id);
       }
-
     } catch (e) {
       utils.logError('Error trying to write ad Id :' + id + ' to the page:' + e.message);
     }
   } else {
     utils.logError('Error trying to write ad Id :' + id + ' to the page. Missing document or adId');
   }
-
 };
 
 /**
@@ -389,7 +386,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   invalidVideoAdUnits.forEach(adUnit => {
     utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'video' but contains a bidder that doesn't support video. No Prebid demand requests will be triggered for this adUnit.`);
     for (let i = 0; i < adUnits.length; i++) {
-      if (adUnits[i].code === adUnit.code) {adUnits.splice(i, 1);}
+      if (adUnits[i].code === adUnit.code) { adUnits.splice(i, 1); }
     }
   });
 
@@ -417,7 +414,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  //set timeout for all bids
+  // set timeout for all bids
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
@@ -426,7 +423,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
-  if($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
+  if ($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
     bidmanager.executeCallback();
   }
 };
@@ -522,7 +519,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * @returns {String} id for callback
  */
 $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
-  //todo
+  // todo
   return null;
 };
 
@@ -641,11 +638,11 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
     return;
   }
-  if(typeof granularity === 'string') {
+  if (typeof granularity === 'string') {
     bidmanager.setPriceGranularity(granularity);
   }
-  else if(typeof granularity === 'object') {
-    if(!isValidePriceConfig(granularity)){
+  else if (typeof granularity === 'object') {
+    if (!isValidePriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
@@ -672,15 +669,15 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
   var urlComponents = parseURL(adserverTag);
 
-  //return original adserverTag if no bids received
-  if($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
+  // return original adserverTag if no bids received
+  if ($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
     return adserverTag;
   }
 
   var masterTag = '';
-  if(options.adserver.toLowerCase() === 'dfp') {
+  if (options.adserver.toLowerCase() === 'dfp') {
     var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
-    if(!dfpAdserverObj.verifyAdserverTag()) {
+    if (!dfpAdserverObj.verifyAdserverTag()) {
       utils.logError('Invalid adserverTag, required google params are missing in query string');
     }
     dfpAdserverObj.appendQueryParams();
@@ -719,7 +716,6 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @param {object} options - config object for s2s
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
-
   if (!utils.contains(Object.keys(options), 'accountId')) {
     utils.logError('accountId missing in Server to Server config');
     return;
@@ -731,11 +727,11 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }
 
   const config = Object.assign({
-    enabled : false,
-    endpoint : CONSTANTS.S2S.DEFAULT_ENDPOINT,
-    timeout : 1000,
-    maxBids : 1,
-    adapter : 'prebidServer'
+    enabled: false,
+    endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+    timeout: 1000,
+    maxBids: 1,
+    adapter: 'prebidServer'
   }, options);
   adaptermanager.setS2SConfig(config);
 };
