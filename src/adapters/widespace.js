@@ -5,23 +5,23 @@ const utils = require('../utils.js');
 const adloader = require('../adloader.js');
 const bidmanager = require('../bidmanager.js');
 const bidfactory = require('../bidfactory.js');
-const WS_ADAPTER_VERSION = '1.0.1';
+const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
-  let useSSL = 'https:' === document.location.protocol,
-      baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-      callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+  let useSSL = document.location.protocol === 'https:',
+    baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
+    callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
     let bids = params && params.bids || [];
 
     for (var i = 0; i < bids.length; i++) {
       const bid = bids[i],
-            callbackUid = bid.bidId,
-            sid = bid.params.sid,
-            currency =  bid.params.cur || bid.params.currency;
+        callbackUid = bid.bidId,
+        sid = bid.params.sid,
+        currency = bid.params.cur || bid.params.currency;
 
-      //Handle Sizes string
+      // Handle Sizes string
       let sizeQueryString = '';
       let parsedSizes = utils.parseSizesInput(bid.sizes);
 
@@ -44,8 +44,10 @@ function WidespaceAdapter() {
 
       requestURL += '#';
 
-      // Append all params to requestURL
-      for (let key of Object.keys(params)) {
+      var paramKeys = Object.keys(params);
+
+      for (var k = 0; k < paramKeys.length; k++) {
+        var key = paramKeys[k];
         requestURL += key + '=' + params[key] + '&';
       }
 
@@ -56,19 +58,19 @@ function WidespaceAdapter() {
     }
   }
 
-  //Handle our callback
+  // Handle our callback
   var handleCallback = function handleCallback(bidsArray) {
     if (!bidsArray) { return; }
 
     var bidObject,
-        bidCode = 'widespace';
+      bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
       var bid = bidsArray[i],
-          placementCode = '',
-          validSizes = [];
+        placementCode = '',
+        validSizes = [];
 
-      bid.sizes = {height: bid.height, width: bid.height};
+      bid.sizes = {height: bid.height, width: bid.width};
 
       var inBid = getBidRequest(bid.callbackUid);
 
@@ -78,7 +80,7 @@ function WidespaceAdapter() {
         validSizes = inBid.sizes;
       }
 
-      if (bid && bid.callbackUid && bid.status !=='noad' && verifySize(bid.sizes, validSizes)) {
+      if (bid && bid.callbackUid && bid.status !== 'noad' && verifySize(bid.sizes, validSizes)) {
         bidObject = bidfactory.createBid(1);
         bidObject.bidderCode = bidCode;
         bidObject.cpm = bid.cpm;
@@ -94,7 +96,6 @@ function WidespaceAdapter() {
         bidmanager.addBidResponse(placementCode, bidObject);
       }
     }
-
 
     function verifySize(bid, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {

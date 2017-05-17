@@ -30,11 +30,14 @@
     "openx",
     "piximedia",
     "pubmatic",
+    "pubgears",
     "pulsepoint",
     "pulsepointLite",
+    "quantcast",
     "rhythmone",
     "rubicon",
     "smartyads",
+    "huddledmasses",
     "smartadserver",
     "sekindoUM",
     "serverbid",
@@ -62,6 +65,9 @@
     "admixer",
     "atomx",
     "tapsense",
+    "trion",
+    "prebidServer",
+    "adsupply",
     {
       "appnexus": {
         "alias": "brealtime"

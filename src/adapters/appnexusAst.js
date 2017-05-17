@@ -1,4 +1,5 @@
 import Adapter from 'src/adapters/adapter';
+import { Renderer } from 'src/Renderer';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -18,7 +19,6 @@ const USER_PARAMS = [
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
   let usersync = false;
@@ -38,7 +38,7 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        if(bid.params.placementId) {
+        if (bid.params.placementId) {
           tag.id = parseInt(bid.params.placementId, 10);
         } else {
           tag.code = bid.params.invCode;
@@ -75,7 +75,7 @@ function AppnexusAstAdapter() {
           tag.keywords = getKeywords(bid.params.keywords);
         }
 
-        if (bid.mediaType === 'video') {tag.require_asset_url = true;}
+        if (bid.mediaType === 'video') { tag.require_asset_url = true; }
         if (bid.params.video) {
           tag.video = {};
           // place any valid video params on the tag
@@ -102,7 +102,7 @@ function AppnexusAstAdapter() {
       const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true
       });
     }
   };
@@ -119,7 +119,7 @@ function AppnexusAstAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
       utils.logError(errorMessage);
 
       // signal this response is complete
@@ -137,19 +137,20 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
-      if (cpm !== 0 && (type === 'banner' || type === 'video')) {
+      if (cpm !== 0 && (type === 'banner' || type === 'video' || type === 'video-outstream')) {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
       }
 
-      if (type && (type !== 'banner' && type !== 'video')) {
+      if (type && (type !== 'banner' && type !== 'video' && type !== 'video-outstream')) {
         utils.logError(`${type} ad type not supported`);
       }
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       if (type === 'video') bid.mediaType = 'video';
+      if (type === 'video-outstream') bid.mediaType = 'video-outstream';
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
@@ -184,13 +185,12 @@ function AppnexusAstAdapter() {
         let values = [];
         utils._each(v, (val) => {
           val = utils.getValueString('keywords.' + k, val);
-          if (val) {values.push(val);}
+          if (val) { values.push(val); }
         });
         v = values;
       } else {
         v = utils.getValueString('keywords.' + k, v);
-        if (utils.isStr(v)) {v = [v];}
-        else {return;} // unsuported types - don't send a key
+        if (utils.isStr(v)) { v = [v]; } else { return; } // unsuported types - don't send a key
       }
       arrs.push({key: k, value: v});
     });
@@ -225,6 +225,26 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
+  function outstreamRender(bid) {
+    window.ANOutstreamVideo.renderAd({
+      tagId: bid.adResponse.tag_id,
+      sizes: [bid.getSize().split('x')],
+      targetId: bid.adUnitCode, // target div id to render video
+      uuid: bid.adResponse.uuid,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(bid));
+  }
+
+  function onOutstreamRendererLoaded() {
+    // setup code for renderer, if any
+  }
+
+  function handleOutstreamRendererEvents(id, eventName) {
+    const bid = this;
+    bid.renderer.handleVideoEvent({ id, eventName });
+  }
+
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
     const ad = getRtbBid(tag);
@@ -242,6 +262,35 @@ function AppnexusAstAdapter() {
         bid.height = ad.rtb.video.player_height;
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
+        if (ad.renderer_url) {
+          // outstream video
+
+          bid.adResponse = tag;
+          bid.renderer = Renderer.install({
+            id: ad.renderer_id,
+            url: ad.renderer_url,
+            config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+            callback: () => onOutstreamRendererLoaded.call(null, bid)
+          });
+
+          try {
+            bid.renderer.setRender(outstreamRender);
+          } catch (err) {
+            utils.logWarning('Prebid Error calling setRender on renderer', err);
+          }
+
+          bid.renderer.setEventHandlers({
+            impression: () => utils.logMessage('AppNexus outstream video impression event'),
+            loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+            ended: () => {
+              utils.logMessage('AppNexus outstream renderer video event');
+              document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
+            }
+          });
+
+          bid.adResponse.ad = bid.adResponse.ads[0];
+          bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        }
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;
@@ -264,7 +313,6 @@ function AppnexusAstAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
-
 }
 
 AppnexusAstAdapter.createNew = function() {
