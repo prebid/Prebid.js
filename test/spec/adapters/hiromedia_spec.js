@@ -1,5 +1,5 @@
-/*jslint white: true, es6: true, single: true*/
-/*jshint esversion:6*/
+/* jslint white: true, es6: true, single: true */
+/* jshint esversion:6 */
 
 import { expect } from 'chai';
 import querystringify from 'querystringify';
@@ -12,7 +12,6 @@ import { STATUS } from 'src/constants';
 import * as utils from 'src/utils';
 
 describe('hiromedia adapter', function () {
-
   const BIDDER_CODE = 'hiromedia';
   const DEFAULT_CALLBACK_NAME = 'hiromedia_callback';
   const DEFAULT_ENDPOINT = 'https://hb-rtb.ktdpublishers.com/bid/get';
@@ -27,7 +26,6 @@ describe('hiromedia adapter', function () {
   window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
 
   beforeEach(() => {
-
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
 
@@ -41,7 +39,6 @@ describe('hiromedia adapter', function () {
     hasValidBidRequestSpy = sandbox.spy(utils, 'hasValidBidRequest');
 
     placementId = 0;
-
   });
 
   afterEach(() => {
@@ -51,15 +48,12 @@ describe('hiromedia adapter', function () {
   // Helper function that asserts that no bidding activity (requests nor responses)
   // was made during a test.
   const assertNoBids = () => {
-
     sinon.assert.notCalled(loadScriptStub);
     sinon.assert.notCalled(addBidResponseStub);
-
   };
 
   // Helper function to generate a 'mock' bid object
   const makePlacement = (size) => {
-
     placementId += 1;
 
     return {
@@ -70,7 +64,6 @@ describe('hiromedia adapter', function () {
       },
       placementCode: 'div-gpt-ad-12345-' + placementId
     };
-
   };
 
   // 300x250 are in the allowed size by default
@@ -80,7 +73,6 @@ describe('hiromedia adapter', function () {
   const leaderPlacement = () => makePlacement([728, 90]);
 
   describe('callbids', () => {
-
     it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
@@ -101,13 +93,12 @@ describe('hiromedia adapter', function () {
     });
 
     it('invokes a bid request per placement', () => {
-
       const expectedRequests = [{
-        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
+        batchKey: [DEFAULT_ENDPOINT, '1337', '300x250', ''].join('-'),
         placementCode: 'div-gpt-ad-12345-1',
         selectedSize: '300x250'
       }, {
-        batchKey: [DEFAULT_ENDPOINT,'1337','728x90',''].join('-'),
+        batchKey: [DEFAULT_ENDPOINT, '1337', '728x90', ''].join('-'),
         placementCode: 'div-gpt-ad-12345-2',
         selectedSize: '728x90'
       }];
@@ -122,7 +113,6 @@ describe('hiromedia adapter', function () {
       sinon.assert.calledTwice(hasValidBidRequestSpy);
 
       expectedRequests.forEach(function(request, index) {
-
         expect(hasValidBidRequestSpy.returnValues[index]).to.be.equal(true);
 
         // validate request
@@ -142,14 +132,11 @@ describe('hiromedia adapter', function () {
         expect(query).to.have.property('selectedSize').and.to.equal(request.selectedSize);
         expect(query).to.not.have.property('additionalSizes');
         expect(query).to.have.property('domain').and.to.equal(window.top.location.hostname);
-
       });
-
     });
 
     // Test additionalSizes parameter
     it('attaches multiple sizes to additionalSizes', () => {
-
       const placement = tilePlacement();
 
       // Append additional
@@ -169,12 +156,10 @@ describe('hiromedia adapter', function () {
 
       expect(query).to.have.property('selectedSize').and.to.equal('300x250');
       expect(query).to.have.property('additionalSizes').and.to.equal('300x600,300x900');
-
     });
 
     // Test `params.accountId` validation
     it('invalidates bids with no id', () => {
-
       const placement = tilePlacement();
       delete placement.params;
 
@@ -186,12 +171,10 @@ describe('hiromedia adapter', function () {
       sinon.assert.notCalled(loadScriptStub);
       sinon.assert.calledOnce(hasValidBidRequestSpy);
       expect(hasValidBidRequestSpy.returnValues[0]).to.be.equal(false);
-
     });
 
     // Test `params.bidUrl`
     it('accepts a custom bid endpoint url', () => {
-
       const placement = tilePlacement();
       placement.params.bidUrl = DEFAULT_ENDPOINT + '?someparam=value';
 
@@ -211,24 +194,19 @@ describe('hiromedia adapter', function () {
       expect(bidUrl.pathname).to.equal(defaultBidUrl.pathname);
 
       expect(query).to.have.property('someparam').and.to.equal('value');
-
     });
 
     it('batches similar bid requests for similar sized placements', () => {
-
       const params = {
         bids: [tilePlacement(), tilePlacement()]
       };
 
       adapter.callBids(params);
       sinon.assert.calledOnce(loadScriptStub); // and only once!
-
     });
-
   });
 
   describe('global response handler', () => {
-
     const getPbjs = () => window.$$PREBID_GLOBAL$$;
     const getResponseHandler = () => window.$$PREBID_GLOBAL$$[DEFAULT_CALLBACK_NAME];
 
@@ -251,21 +229,19 @@ describe('hiromedia adapter', function () {
     // To do this, we have to have the internal state of
     // the adapter set up correctly.
     it('adds a bid reponse for each pending bid', () => {
-
       const expectedResponses = [{
-        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
+        batchKey: [DEFAULT_ENDPOINT, '1337', '300x250', ''].join('-'),
         width: '300',
         height: '250',
         cpm: 0.4,
         ad: '<script src="ad.js"></script>'
       }, {
-        batchKey: [DEFAULT_ENDPOINT,'1337','728x90',''].join('-'),
+        batchKey: [DEFAULT_ENDPOINT, '1337', '728x90', ''].join('-'),
         width: '728',
         height: '90',
         cpm: 0.4,
         ad: '<script src="ad.js"></script>'
       }];
-
 
       // Instead of the dead stub defined in the top scope, we'll use
       // one that mocks a response.
@@ -287,7 +263,6 @@ describe('hiromedia adapter', function () {
       sinon.assert.calledTwice(addBidResponseStub);
 
       expectedResponses.forEach((expectedResponse, i) => {
-
         const placementCode = addBidResponseStub.getCall(i).args[0];
         const bidObject = addBidResponseStub.getCall(i).args[1];
 
@@ -298,9 +273,7 @@ describe('hiromedia adapter', function () {
         expect(bidObject).to.have.property('ad').and.to.equal(expectedResponse.ad);
         expect(bidObject).to.have.property('width').and.to.equal(expectedResponse.width);
         expect(bidObject).to.have.property('height').and.to.equal(expectedResponse.height);
-
       });
-
     });
 
     // We want to check that responses are added according to a sampling value,
@@ -308,9 +281,8 @@ describe('hiromedia adapter', function () {
     // limited to the area we check, we create a self destructing stub which
     // restores itself once called.
     it('adds responses according to the sampling defined in the response', () => {
-
       const response = {
-        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
+        batchKey: [DEFAULT_ENDPOINT, '1337', '300x250', ''].join('-'),
         cpm: 0.4,
         chance: 0.25,
         ad: '<script src="ad.js"></script>'
@@ -326,20 +298,17 @@ describe('hiromedia adapter', function () {
         const handler = getResponseHandler();
 
         const mathRandomStub = sandbox.stub(Math, 'random', function () {
-
           const randomValue = randomValues[randomIndex];
 
           randomIndex += 1;
           mathRandomStub.restore(); // self destruct on call
 
           return randomValue;
-
         });
 
         handler(response);
 
         mathRandomStub.restore();
-
       });
 
       const params = {
@@ -356,9 +325,6 @@ describe('hiromedia adapter', function () {
 
       expect(firstBidObject.getStatusCode()).to.be.equal(STATUS.GOOD);
       expect(secondBidObject.getStatusCode()).to.be.equal(STATUS.NO_BID);
-
     });
-
   });
-
 });

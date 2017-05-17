@@ -1,12 +1,12 @@
-var utils = require("../utils.js");
-var bidfactory = require("../bidfactory.js");
-var bidmanager = require("../bidmanager.js");
-var adloader = require("src/adloader.js");
-var url = require("url");
+var utils = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader = require('src/adloader.js');
+var url = require('url');
 
 var SmartAdServer = function SmartAdServer() {
   var generateCallback = function(bid) {
-    var callbackId = "sas_" + utils.getUniqueIdentifierStr();
+    var callbackId = 'sas_' + utils.getUniqueIdentifierStr();
     $$PREBID_GLOBAL$$[callbackId] = function(adUnit) {
       var bidObject;
       if (adUnit) {
@@ -35,18 +35,18 @@ var SmartAdServer = function SmartAdServer() {
       for (var i = 0; i < params.bids.length; i++) {
         var bid = params.bids[i];
         var adCall = url.parse(bid.params.domain);
-        adCall.pathname = "/prebid";
+        adCall.pathname = '/prebid';
         adCall.search = {
-          "pbjscbk": "pbjs." + generateCallback(bid),
-          "siteid": bid.params.siteId,
-          "pgid": bid.params.pageId,
-          "fmtid": bid.params.formatId,
-          "ccy": bid.params.currency || "USD",
-          "bidfloor": bid.params.bidfloor || 0.0,
-          "tgt": encodeURIComponent(bid.params.target || ''),
-          "tag": bid.placementCode,
-          "sizes": bid.sizes.map(size => size[0] + "x" + size[1]).join(","),
-          "async": 1
+          'pbjscbk': 'pbjs.' + generateCallback(bid),
+          'siteid': bid.params.siteId,
+          'pgid': bid.params.pageId,
+          'fmtid': bid.params.formatId,
+          'ccy': bid.params.currency || 'USD',
+          'bidfloor': bid.params.bidfloor || 0.0,
+          'tgt': encodeURIComponent(bid.params.target || ''),
+          'tag': bid.placementCode,
+          'sizes': bid.sizes.map(size => size[0] + 'x' + size[1]).join(','),
+          'async': 1
         };
         adloader.loadScript(url.format(adCall));
       }

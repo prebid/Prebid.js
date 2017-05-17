@@ -4,7 +4,6 @@ import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 describe('AppNexus Adapter', () => {
-
   let adapter;
 
   const REQUEST = {
@@ -16,7 +15,7 @@ describe('AppNexus Adapter', () => {
         'bidder': 'appnexus',
         'params': {
           'placementId': '4799418',
-          'trafficSourceCode' : 'source'
+          'trafficSourceCode': 'source'
         },
         'placementCode': '/19968336/header-bid-tag1',
         'sizes': [
@@ -39,5 +38,4 @@ describe('AppNexus Adapter', () => {
     adapter.callBids(REQUEST);
     expect(adLoaderStub.getCall(0).args[0]).to.contain('traffic_source_code=source');
   });
-
 });

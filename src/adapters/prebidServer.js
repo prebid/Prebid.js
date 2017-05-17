@@ -11,25 +11,25 @@ const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By
 const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 
 const paramTypes = {
-  "appnexus" : {
-    "member" : "string",
-    "invCode" : "string",
-    "placementId" : "number"
+  'appnexus': {
+    'member': 'string',
+    'invCode': 'string',
+    'placementId': 'number'
   },
-  "rubicon" : {
-    "accountId" : "number",
-    "siteId" : "number",
-    "zoneId" : "number"
+  'rubicon': {
+    'accountId': 'number',
+    'siteId': 'number',
+    'zoneId': 'number'
   },
-  "indexExchange" : {
-    "siteID" : "number"
+  'indexExchange': {
+    'siteID': 'number'
   },
-  "audienceNetwork" : {
-    "placementId" : "string"
+  'audienceNetwork': {
+    'placementId': 'string'
   },
-  "pubmatic" : {
-    "publisherId" : "string",
-    "adSlot" : "string"
+  'pubmatic': {
+    'publisherId': 'string',
+    'adSlot': 'string'
   }
 };
 
@@ -37,7 +37,6 @@ const paramTypes = {
  * Bidder adapter for Prebid Server
  */
 function PrebidServer() {
-
   let baseAdapter = Adapter.createNew('prebidServer');
   let config;
 
@@ -50,12 +49,12 @@ function PrebidServer() {
       adUnit.bids.forEach(bid => {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
-          if(bid.params[key] && typeof bid.params[key] !== types[key]) {
-            //mismatch type. Try to fix
+          if (bid.params[key] && typeof bid.params[key] !== types[key]) {
+            // mismatch type. Try to fix
             utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
             bid.params[key] = tryConvertType(types[key], bid.params[key]);
-            //don't send invalid values
-            if(isNaN(bid.params[key])) {
+            // don't send invalid values
+            if (isNaN(bid.params[key])) {
               delete bid.params.key;
             }
           }
@@ -65,10 +64,10 @@ function PrebidServer() {
   }
 
   function tryConvertType(typeToConvert, value) {
-    if(typeToConvert === 'string') {
+    if (typeToConvert === 'string') {
       return value && value.toString();
     }
-    if(typeToConvert === 'number') {
+    if (typeToConvert === 'number') {
       return Number(value);
     }
   }
@@ -78,20 +77,20 @@ function PrebidServer() {
     const isDebug = !!$$PREBID_GLOBAL$$.logging;
     convertTypes(bidRequest.ad_units);
     let requestJson = {
-      account_id : config.accountId,
-      tid : bidRequest.tid,
+      account_id: config.accountId,
+      tid: bidRequest.tid,
       max_bids: config.maxBids,
-      timeout_millis : config.timeout,
+      timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
-      prebid_version : '$prebid.version$',
-      ad_units : bidRequest.ad_units.filter(hasSizes),
-      is_debug : isDebug
+      prebid_version: '$prebid.version$',
+      ad_units: bidRequest.ad_units.filter(hasSizes),
+      is_debug: isDebug
     };
 
     const payload = JSON.stringify(requestJson);
     ajax(config.endpoint, handleResponse, payload, {
       contentType: 'text/plain',
-      withCredentials : true
+      withCredentials: true
     });
   };
 
@@ -106,10 +105,10 @@ function PrebidServer() {
     try {
       result = JSON.parse(response);
 
-      if(result.status === 'OK') {
-        if(result.bidder_status) {
+      if (result.status === 'OK') {
+        if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if(bidder.no_bid) {
+            if (bidder.no_bid) {
               // store a "No Bid" bid response
 
               let bidObject = bidfactory.createBid(STATUS.NO_BID, {
@@ -119,13 +118,13 @@ function PrebidServer() {
               bidObject.bidderCode = bidder.bidder;
               bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             }
-            if(bidder.no_cookie) {
+            if (bidder.no_cookie) {
               // if no cookie is present then no bids were made, we don't store a bid response
-              queueSync({bidder: bidder.bidder, url : bidder.usersync.url, type : bidder.usersync.type});
+              queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
             }
           });
         }
-        if(result.bids) {
+        if (result.bids) {
           result.bids.forEach(bidObj => {
             let bidRequest = utils.getBidRequest(bidObj.bid_id);
             let cpm = bidObj.price;
@@ -149,7 +148,7 @@ function PrebidServer() {
         }
       }
       else if (result.status === 'no_cookie') {
-        //cookie sync
+        // cookie sync
         persist(cookiePersistUrl, cookiePersistMessage);
       }
     } catch (error) {
@@ -162,13 +161,12 @@ function PrebidServer() {
   }
 
   return {
-    setConfig : baseAdapter.setConfig,
+    setConfig: baseAdapter.setConfig,
     createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    type : TYPE
+    type: TYPE
   };
-
 }
 
 PrebidServer.createNew = function() {

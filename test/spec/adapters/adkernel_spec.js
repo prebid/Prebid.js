@@ -6,63 +6,62 @@ import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 
 describe('Adkernel adapter', () => {
-
   const bid1_zone1 = {
-    bidder: 'adkernel',
-    bidId: 'Bid_01',
-    params: {zoneId: 1, host: 'rtb.adkernel.com'},
-    placementCode: 'ad-unit-1',
-    sizes: [[300, 250]]
-  }, bid2_zone2 = {
-    bidder: 'adkernel',
-    bidId: 'Bid_02',
-    params: {zoneId: 2, host: 'rtb.adkernel.com'},
-    placementCode: 'ad-unit-2',
-    sizes: [[728, 90]]
-  }, bid3_host2 = {
-    bidder: 'adkernel',
-    bidId: 'Bid_02',
-    params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
-    placementCode: 'ad-unit-2',
-    sizes: [[728, 90]]
-  }, bid_without_zone = {
-    bidder: 'adkernel',
-    bidId: 'Bid_W',
-    params: {host: 'rtb-private.adkernel.com'},
-    placementCode: 'ad-unit-1',
-    sizes: [[728, 90]]
-  }, bid_without_host = {
-    bidder: 'adkernel',
-    bidId: 'Bid_W',
-    params: {zoneId: 1},
-    placementCode: 'ad-unit-1',
-    sizes: [[728, 90]]
-  };
+      bidder: 'adkernel',
+      bidId: 'Bid_01',
+      params: {zoneId: 1, host: 'rtb.adkernel.com'},
+      placementCode: 'ad-unit-1',
+      sizes: [[300, 250]]
+    }, bid2_zone2 = {
+      bidder: 'adkernel',
+      bidId: 'Bid_02',
+      params: {zoneId: 2, host: 'rtb.adkernel.com'},
+      placementCode: 'ad-unit-2',
+      sizes: [[728, 90]]
+    }, bid3_host2 = {
+      bidder: 'adkernel',
+      bidId: 'Bid_02',
+      params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
+      placementCode: 'ad-unit-2',
+      sizes: [[728, 90]]
+    }, bid_without_zone = {
+      bidder: 'adkernel',
+      bidId: 'Bid_W',
+      params: {host: 'rtb-private.adkernel.com'},
+      placementCode: 'ad-unit-1',
+      sizes: [[728, 90]]
+    }, bid_without_host = {
+      bidder: 'adkernel',
+      bidId: 'Bid_W',
+      params: {zoneId: 1},
+      placementCode: 'ad-unit-1',
+      sizes: [[728, 90]]
+    };
 
   const bidResponse1 = {
-    'id': 'bid1',
-    'seatbid': [{
-      'bid': [{
-        'id': '1',
-        'impid': 'Bid_01',
-        'price': 3.01,
-        'nurl': 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-        'adm': '<!-- admarkup here -->'
-      }]
-    }],
-    'cur': 'USD'
-  }, bidResponse2 = {
-    'id': 'bid2',
-    'seatbid': [{
-      'bid': [{
-        'id': '2',
-        'impid': 'Bid_02',
-        'price': 1.31,
-        'adm': '<!-- admarkup here -->'
-      }]
-    }],
-    'cur': 'USD'
-  };
+      'id': 'bid1',
+      'seatbid': [{
+        'bid': [{
+          'id': '1',
+          'impid': 'Bid_01',
+          'price': 3.01,
+          'nurl': 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
+          'adm': '<!-- admarkup here -->'
+        }]
+      }],
+      'cur': 'USD'
+    }, bidResponse2 = {
+      'id': 'bid2',
+      'seatbid': [{
+        'bid': [{
+          'id': '2',
+          'impid': 'Bid_02',
+          'price': 1.31,
+          'adm': '<!-- admarkup here -->'
+        }]
+      }],
+      'cur': 'USD'
+    };
 
   let adapter,
     sandbox,
@@ -85,7 +84,7 @@ describe('Adkernel adapter', () => {
     });
   }
 
-  describe('input parameters validation', ()=> {
+  describe('input parameters validation', () => {
     let spy;
 
     beforeEach(() => {
@@ -124,7 +123,7 @@ describe('Adkernel adapter', () => {
           hostname: 'example.com',
           host: 'example.com',
           pathname: '/index.html',
-          href : 'http://example.com/index.html'
+          href: 'http://example.com/index.html'
         };
       });
 
@@ -160,16 +159,14 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.site).to.have.property('page', 'http://example.com/index.html');
     });
 
-    it('should fill device with caller macro', ()=> {
+    it('should fill device with caller macro', () => {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
     })
-
   });
 
   describe('requests routing', () => {
-
     it('should issue a request for each network', () => {
       ajaxStub.onFirstCall().callsArgWith(1, '')
         .onSecondCall().callsArgWith(1, '');
@@ -196,7 +193,6 @@ describe('Adkernel adapter', () => {
   });
 
   describe('responses processing', () => {
-
     beforeEach(() => {
       sandbox.stub(bidmanager, 'addBidResponse');
     });
@@ -256,10 +252,9 @@ describe('Adkernel adapter', () => {
       sandbox.spy(utils, 'createInvisibleIframe');
       doRequest([bid1_zone1, bid2_zone2, bid2_zone2, bid3_host2]);
       expect(utils.createInvisibleIframe.calledThrice);
-      let userSyncUrls = utils.createInvisibleIframe.returnValues.map( val => val.src);
+      let userSyncUrls = utils.createInvisibleIframe.returnValues.map(val => val.src);
       expect(userSyncUrls).to.be.eql(expectedSyncUrls);
     });
-
   });
 
   describe('adapter aliasing', () => {
