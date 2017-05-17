@@ -1,4 +1,4 @@
-import { getBidRequest, logError } from './utils';
+import { getBidRequest, logError, createImpressionPixel, attachPixel} from './utils';
 
 /** INSERT NATIVE ADAPTERS - DO NOT EDIT OR REMOVE */
 const nativeAdapters = [];
@@ -95,41 +95,4 @@ export function fireNativeImpressions(adObject) {
     const pixel = createImpressionPixel(tracker);
     attachPixel(pixel);
   });
-}
-
-/*
- * Create an invisible pixel
- */
-function createImpressionPixel(src) {
-  const img = new Image();
-
-  img.src = src;
-  img.height = 0;
-  img.width = 0;
-  img.style.display = 'none';
-  img.onload = () => {
-    try { this.parentNode.removeChild(this); }
-    catch (error) { logError(`error creating pixel with ${src}`); }
-  };
-
-  return img;
-}
-
-/*
- * Append to head
- */
-function attachPixel(pixel) {
-  let elements = document.getElementsByTagName('head');
-
-  try {
-    elements = elements.length ? elements : document.getElementsByTagName('body');
-
-    if (elements.length) {
-      const element = elements[0];
-      element.insertBefore(pixel, element.firstChild);
-    }
-  }
-  catch (error) {
-    logError(`error attaching pixel: ${error.message}`);
-  }
 }
