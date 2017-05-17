@@ -124,7 +124,10 @@ describe('S2S Adapter', () => {
       server = sinon.fakeServer.create();
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
-        bids: [{placementCode : "div-gpt-ad-1460505748561-0"}]
+        bids: [{
+          bidId: '32167',
+          placementCode: 'div-gpt-ad-1460505748561-0'
+        }]
       });
     });
 
@@ -162,6 +165,9 @@ describe('S2S Adapter', () => {
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '32167');
     });
 
 

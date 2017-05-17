@@ -60,7 +60,7 @@ function PrebidServer() {
 
               if (!bidder.ad_unit) {
                 utils.getBidderRequestAllAdUnits(bidder.bidder).bids.forEach(bid => {
-                  let bidObject = bidfactory.createBid(STATUS.NO_BID);
+                  let bidObject = bidfactory.createBid(STATUS.NO_BID, bid);
                   bidObject.adUnitCode = bid.placementCode;
                   bidObject.bidder = bidder.bidder;
 
