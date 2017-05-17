@@ -135,6 +135,22 @@ function RubiconAdapter() {
     return [window.screen.width, window.screen.height].join('x');
   }
 
+  function _getDigiTrustQueryParams() {
+    function getDigiTrustId() {
+      let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
+      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+    }
+    let digiTrustId = getDigiTrustId();
+    // Verify there is an ID and this user has not opted out
+    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+      return [];
+    }
+    return [
+      'dt.id', digiTrustId.id,
+      'dt.keyv', digiTrustId.keyv
+    ];
+  }
+
   function buildVideoRequestPayload(bid, bidderRequest) {
     bid.startTime = new Date().getTime();
 
@@ -268,6 +284,8 @@ function RubiconAdapter() {
       'rand', Math.random(),
       'rf', !pageUrl ? utils.getTopWindowUrl() : pageUrl
     );
+
+    queryString = queryString.concat(_getDigiTrustQueryParams());
 
     return queryString.reduce(
       (memo, curr, index) =>

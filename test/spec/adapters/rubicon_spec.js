@@ -157,7 +157,7 @@ describe('the rubicon adapter', () => {
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
         .with.property('params')
-        .that.deep.equals(adUnit.bids[0].params)
+        .that.deep.equals(adUnit.bids[0].params);
     });
   });
 
@@ -304,6 +304,122 @@ describe('the rubicon adapter', () => {
           let query = parseQuery(xhr.requests[0].url.split('?')[1]);
 
           expect(query['rp_floor']).to.equal('2');
+        });
+
+        it('should send digitrust params', () => {
+          window.DigiTrust = {
+            getUser: function() {}
+          };
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
+            ({
+              success: true,
+              identity: {
+                privacy: {optout: false},
+                id: 'testId',
+                keyv: 'testKeyV'
+              }
+            })
+          );
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let expectedQuery = {
+            'dt.id': 'testId',
+            'dt.keyv': 'testKeyV'
+          };
+
+          // test that all values above are both present and correct
+          Object.keys(expectedQuery).forEach(key => {
+            let value = expectedQuery[key];
+            expect(query[key]).to.equal(value);
+          });
+
+          delete window.DigiTrust;
+        });
+
+        it('should not send digitrust params when DigiTrust not loaded', () => {
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+          // Test that none of the DigiTrust keys are part of the query
+          undefinedKeys.forEach(key => {
+            expect(typeof query[key]).to.equal('undefined');
+          });
+        });
+
+        it('should send not digitrust params due to optout', () => {
+          window.DigiTrust = {
+            getUser: function() {}
+          };
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
+            ({
+              success: true,
+              identity: {
+                privacy: {optout: true},
+                id: 'testId',
+                keyv: 'testKeyV'
+              }
+            })
+          );
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+          // Test that none of the DigiTrust keys are part of the query
+          undefinedKeys.forEach(key => {
+            expect(typeof query[key]).to.equal('undefined');
+          });
+
+          delete window.DigiTrust;
+        });
+
+        it('should send not digitrust params due to failure', () => {
+          window.DigiTrust = {
+            getUser: function() {}
+          };
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
+            ({
+              success: false,
+              identity: {
+                privacy: {optout: false},
+                id: 'testId',
+                keyv: 'testKeyV'
+              }
+            })
+          );
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          let request = xhr.requests[0];
+
+          let query = request.url.split('?')[1];
+          query = parseQuery(query);
+
+          let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+          // Test that none of the DigiTrust keys are part of the query
+          undefinedKeys.forEach(key => {
+            expect(typeof query[key]).to.equal('undefined');
+          });
+
+          delete window.DigiTrust;
         });
       });
 
