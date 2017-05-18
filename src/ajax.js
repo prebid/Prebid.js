@@ -3,6 +3,7 @@ import {parse as parseURL, format as formatURL} from './url';
 var utils = require('./utils');
 
 const XHR_DONE = 4;
+let _timeout = 3000;
 
 /**
  * Simple IE9+ and cross-browser ajax request function
@@ -13,6 +14,9 @@ const XHR_DONE = 4;
  * @param data mixed data
  * @param options object
  */
+export function setAjaxTimeout(timeout) {
+  _timeout = timeout;
+}
 
 export function ajax(url, callback, data, options = {}) {
   try {
@@ -42,6 +46,7 @@ export function ajax(url, callback, data, options = {}) {
       }
     }
 
+    x.timeout = _timeout;
     if (useXDomainRequest) {
       x = new window.XDomainRequest();
       x.onload = function () {
