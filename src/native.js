@@ -7,10 +7,10 @@ const nativeAdapters = [];
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
   body: 'hb_native_body',
-  sponsored_by: 'hb_native_brand',
+  sponsoredBy: 'hb_native_brand',
   image: 'hb_native_image',
   icon: 'hb_native_icon',
-  click_url: 'hb_native_linkurl',
+  clickUrl: 'hb_native_linkurl',
 };
 
 export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
@@ -20,8 +20,8 @@ export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
 const IMAGE = {
   image: {required: true},
   title: {required: true},
-  sponsored_by: {required: true},
-  click_url: {required: true},
+  sponsoredBy: {required: true},
+  clickUrl: {required: true},
   body: {required: false},
   icon: {required: false},
 };
@@ -90,7 +90,7 @@ export function nativeBidIsValid(bid) {
  */
 export function fireNativeImpressions(adObject) {
   const impressionTrackers = adObject.native &&
-    adObject.native.impression_trackers;
+    adObject.native.impressionTrackers;
 
   (impressionTrackers || []).forEach(tracker => {
     insertPixel(tracker);

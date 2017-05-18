@@ -794,8 +794,8 @@ describe('Unit: Prebid Module', function () {
       expect(nativeRequest).to.deep.equal({
         image: {required: true},
         title: {required: true},
-        sponsored_by: {required: true},
-        click_url: {required: true},
+        sponsoredBy: {required: true},
+        clickUrl: {required: true},
         body: {required: false},
         icon: {required: false},
       });
