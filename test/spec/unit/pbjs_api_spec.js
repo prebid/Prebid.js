@@ -1610,18 +1610,18 @@ describe('Unit: Prebid Module', function () {
 
     it('should run commands which are pushed into it', function() {
       let cmd = sinon.spy();
-      $$PREBID_GLOBAL$$.queue.push(cmd);
+      $$PREBID_GLOBAL$$.cmd.push(cmd);
       assert.isTrue(cmd.called);
     });
 
     it('should log an error when given non-functions', function() {
-      $$PREBID_GLOBAL$$.queue.push(5);
+      $$PREBID_GLOBAL$$.cmd.push(5);
       assert.isTrue(utils.logError.calledOnce);
     });
 
     it('should log an error if the command passed into it fails', function() {
-      $$PREBID_GLOBAL$$.queue.push(function() {
-        throw new Error("Failed function.");
+      $$PREBID_GLOBAL$$.cmd.push(function() {
+        throw new Error('Failed function.');
       });
       assert.isTrue(utils.logError.calledOnce);
     });
@@ -1629,7 +1629,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('The monkey-patched que.push function', function() {
     it('should be the same as the queue.push function', function() {
-      assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.queue.push);
+      assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
     });
   });
 

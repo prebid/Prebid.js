@@ -93,9 +93,9 @@ $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
  *
  * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                        the Prebid script has been fully loaded.
- * @alias module:$$PREBID_GLOBAL$$.queue.push
+ * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-$$PREBID_GLOBAL$$.queue.push = function(cmd) {
+$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -103,11 +103,11 @@ $$PREBID_GLOBAL$$.queue.push = function(cmd) {
       utils.logError('Error processing command :' + e.message);
     }
   } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.queue.push must wrapped in a function');
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
   }
 };
 
-$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.queue.push;
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
   queue.forEach(function(cmd) {
@@ -752,6 +752,6 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-$$PREBID_GLOBAL$$.queue.push(() => listenMessagesFromCreative());
-processQueue($$PREBID_GLOBAL$$.queue);
+$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
+processQueue($$PREBID_GLOBAL$$.cmd);
 processQueue($$PREBID_GLOBAL$$.que);
