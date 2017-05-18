@@ -46,13 +46,6 @@ function insertAdapters() {
     }
   });
 
-
-  if (!inserts.length) {
-    console.log('Prebid Warning: no matching adapters found for config, no adapters will be' +
-      ' loaded.');
-    return '';
-  }
-
   return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
 
     return `var ${adapterName(name)} = require('./adapters/${name}.js');
