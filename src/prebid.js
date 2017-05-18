@@ -1,14 +1,17 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
-import {flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
+import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import 'polyfill';
-import {parse as parseURL, format as formatURL} from './url';
-import {isValidPriceConfig} from './cpmBucketManager';
-import {listenMessagesFromCreative} from './secure-creatives';
+
+import { parse as parseURL, format as formatURL} from './url';
+import { isValidPriceConfig} from './cpmBucketManager';
+import { listenMessagesFromCreative} from './secure-creatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
+import { setAjaxTimeout } from './ajax';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -80,11 +83,25 @@ $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 
 /**
- * Command queue that functions will execute once prebid.js is loaded
- * @param  {function} cmd Anonymous function to execute
- * @alias module:$$PREBID_GLOBAL$$.que.push
+ * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
+ * before or after their script executes. For example, given the code:
+ *
+ * <script src="url/to/Prebid.js" async></script>
+ * <script>
+ *   var pbjs = pbjs || {};
+ *   pbjs.cmd = pbjs.cmd || [];
+ *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
+ * </script>
+ *
+ * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
+ * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
+ * function to execute immediately.
+ *
+ * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                        the Prebid script has been fully loaded.
+ * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-$$PREBID_GLOBAL$$.que.push = function (cmd) {
+$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -92,22 +109,24 @@ $$PREBID_GLOBAL$$.que.push = function (cmd) {
       utils.logError('Error processing command :' + e.message);
     }
   } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function');
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
   }
 };
 
-function processQue() {
-  for (var i = 0; i < $$PREBID_GLOBAL$$.que.length; i++) {
-    if (typeof $$PREBID_GLOBAL$$.que[i].called === objectType_undefined) {
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
+
+function processQueue(queue) {
+  queue.forEach(function(cmd) {
+    if (typeof cmd.called === objectType_undefined) {
       try {
-        $$PREBID_GLOBAL$$.que[i].call();
-        $$PREBID_GLOBAL$$.que[i].called = true;
+        cmd.call();
+        cmd.called = true;
       }
       catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }
-  }
+  });
 }
 
 function checkDefinedPlacement(id) {
@@ -278,18 +297,22 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
  * Set query string targeting on all GPT ad units.
  * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function () {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnits) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
 
+  // get our ad unit codes
+  var adUnitCodes = targeting.getAllTargeting(adUnits);
+
   // first reset any old targeting
-  targeting.resetPresetTargeting();
+  targeting.resetPresetTargeting(adUnitCodes);
 
   // now set new targeting keys
-  targeting.setTargeting(targeting.getAllTargeting());
+  targeting.setTargeting(adUnitCodes);
+
 
   // emit event
   events.emit(SET_TARGETING);
@@ -353,8 +376,13 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.close();
           setRenderSize(doc, width, height);
         } else if (url) {
-          doc.write(`<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`);
-          doc.close();
+          const iframe = utils.createInvisibleIframe();
+          iframe.height = height;
+          iframe.width = width;
+          iframe.style.display = 'inline';
+          iframe.src = url;
+
+          utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
@@ -426,6 +454,17 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     }
   });
 
+  // for native-enabled adUnits, only request bids for bidders that support native
+  adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
+    const nonNativeBidders = adUnit.bids
+      .filter(bid => !nativeBidder(bid))
+      .map(bid => bid.bidder)
+      .join(', ');
+
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'native' but contains non-native bidder(s) ${nonNativeBidders}. No Prebid demand requests will be triggered for those bidders.`);
+    adUnit.bids = adUnit.bids.filter(nativeBidder);
+  });
+
   if (auctionRunning) {
     bidRequestQueue.push(() => {
       $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes });
@@ -454,6 +493,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timedOut = true;
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
+  setAjaxTimeout(cbTimeout);
   if (typeof bidsBackHandler === objectType_function) {
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
@@ -775,6 +815,6 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-
-$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
-processQue();
+$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
+processQueue($$PREBID_GLOBAL$$.cmd);
+processQueue($$PREBID_GLOBAL$$.que);

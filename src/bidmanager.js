@@ -1,5 +1,6 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
+import {NATIVE_KEYS, nativeBidIsValid} from './native';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -95,6 +96,11 @@ exports.addBidResponse = currency.addBidResponseDecorator(function(adUnitCode, b
   }
 
   if (bid) {
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
+      return;
+    }
+
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
       requestId: requestId,
@@ -170,6 +176,15 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
     custBidObj.sendStandardTargeting = defaultBidderSettingsMap[bidderCode].sendStandardTargeting;
+  }
+
+  // set native key value targeting
+  if (custBidObj.native) {
+    Object.keys(custBidObj.native).forEach(asset => {
+      const key = NATIVE_KEYS[asset];
+      const value = custBidObj.native[asset];
+      if (key) { keyValues[key] = value; }
+    });
   }
 
   return keyValues;

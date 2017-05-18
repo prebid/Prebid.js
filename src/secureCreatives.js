@@ -4,6 +4,7 @@
  */
 
 import events from './events';
+import fireNativeImpressions from './native';
 import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;
@@ -32,6 +33,17 @@ function receiveMessage(ev) {
       // save winning bids
       $$PREBID_GLOBAL$$._winningBids.push(adObject);
 
+      events.emit(BID_WON, adObject);
+    }
+
+    // handle this script from native template in an ad server
+    // window.parent.postMessage(JSON.stringify({
+    //   message: 'Prebid Native',
+    //   adId: '%%PATTERN:hb_adid%%'
+    // }), '*');
+    if (data.message === 'Prebid Native') {
+      fireNativeImpressions(adObject);
+      $$PREBID_GLOBAL$$._winningBids.push(adObject);
       events.emit(BID_WON, adObject);
     }
   }

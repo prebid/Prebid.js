@@ -370,7 +370,7 @@ describe('Unit: Prebid Module', function () {
     it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var targeting = [];
       slots[1].getTargeting().map(function (value) {
@@ -387,7 +387,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitElementIDs);
       expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus']]);
     });
 
@@ -427,7 +427,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = [
         [
@@ -483,7 +483,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       sinon.assert.calledOnce(callback);
-    })
+    });
   });
 
   describe('allBidsAvailable', function () {
@@ -499,6 +499,7 @@ describe('Unit: Prebid Module', function () {
   describe('renderAd', function () {
     var bidId = 1;
     var doc = {};
+    var elStub = {};
     var adResponse = {};
     var spyLogError = null;
     var spyLogMessage = null;
@@ -513,8 +514,14 @@ describe('Unit: Prebid Module', function () {
             width: 0,
             height: 0
           }
-        }
+        },
+        getElementsByTagName: sinon.stub()
       };
+
+      elStub = {
+        insertBefore: sinon.stub()
+      };
+      doc.getElementsByTagName.returns([elStub]);
 
       adResponse = {
         adId: bidId,
@@ -560,8 +567,7 @@ describe('Unit: Prebid Module', function () {
     it('should place the url inside an iframe on the doc', function () {
       adResponse.adUrl = 'http://server.example.com/ad/ad.js';
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      var iframe = '<IFRAME SRC="' + adResponse.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + adResponse.width + '" HEIGHT="' + adResponse.height + '"></IFRAME>';
-      assert.ok(doc.write.calledWith(iframe), 'url was written to iframe in doc');
+      assert.ok(elStub.insertBefore.called, 'url was written to iframe in doc');
     });
 
     it('should log an error when no ad or url', function () {
@@ -736,6 +742,71 @@ describe('Unit: Prebid Module', function () {
 
       adaptermanager.callBids.restore();
       adaptermanager.videoAdapters = videoAdaptersBackup;
+    });
+
+    it('should only request native bidders on native adunits', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // appnexusAst is a native bidder, appnexus is not
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
+
+      adaptermanager.callBids.restore();
+    });
+
+    it('should callBids if a native adUnit has all native bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+    });
+
+    it('splits native type to individual native assets', () => {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        nativeParams: {type: 'image'},
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+
+      const nativeRequest = $$PREBID_GLOBAL$$._bidsRequested[0].bids[0].nativeParams;
+      expect(nativeRequest).to.deep.equal({
+        image: {required: true},
+        title: {required: true},
+        sponsoredBy: {required: true},
+        clickUrl: {required: true},
+        body: {required: false},
+        icon: {required: false},
+      });
+
+      resetAuction();
     });
 
     it('should queue bid requests when a previous bid request is in process', () => {
@@ -1596,6 +1667,40 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForAst();
       const keywords = Object.keys(window.apntag.tags[adUnitCode].keywords).filter(keyword => (keyword.substring(0, 'hb_adid'.length) === 'hb_adid'));
       expect(keywords.length).to.equal(0);
+    });
+  });
+
+  describe('The monkey-patched queue.push function', function() {
+    beforeEach(function initializeSpies() {
+      sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function resetSpies() {
+      utils.logError.restore();
+    });
+
+    it('should run commands which are pushed into it', function() {
+      let cmd = sinon.spy();
+      $$PREBID_GLOBAL$$.cmd.push(cmd);
+      assert.isTrue(cmd.called);
+    });
+
+    it('should log an error when given non-functions', function() {
+      $$PREBID_GLOBAL$$.cmd.push(5);
+      assert.isTrue(utils.logError.calledOnce);
+    });
+
+    it('should log an error if the command passed into it fails', function() {
+      $$PREBID_GLOBAL$$.cmd.push(function() {
+        throw new Error('Failed function.');
+      });
+      assert.isTrue(utils.logError.calledOnce);
+    });
+  });
+
+  describe('The monkey-patched que.push function', function() {
+    it('should be the same as the cmd.push function', function() {
+      assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
     });
   });
 
