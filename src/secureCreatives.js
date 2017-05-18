@@ -43,6 +43,7 @@ function receiveMessage(ev) {
     // }), '*');
     if (data.message === 'Prebid Native') {
       fireNativeImpressions(adObject);
+      $$PREBID_GLOBAL$$._winningBids.push(adObject);
       events.emit(BID_WON, adObject);
     }
   }
