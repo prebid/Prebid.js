@@ -1628,7 +1628,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('The monkey-patched que.push function', function() {
-    it('should be the same as the queue.push function', function() {
+    it('should be the same as the cmd.push function', function() {
       assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
     });
   });

@@ -83,8 +83,8 @@ $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
  * <script src="url/to/Prebid.js" async></script>
  * <script>
  *   var pbjs = pbjs || {};
- *   pbjs.que = pbjs.queue || [];
- *   pbjs.que.push(functionToExecuteOncePrebidLoads);
+ *   pbjs.cmd = pbjs.cmd || [];
+ *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
  * </script>
  *
  * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
