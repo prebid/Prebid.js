@@ -129,6 +129,25 @@ describe('AppNexusAdapter', () => {
       delete REQUEST.bids[0].params.user;
     });
 
+    it('attaches native params to the request', () => {
+      REQUEST.bids[0].mediaType = 'native';
+      REQUEST.bids[0].nativeParams = {
+        title: {required: true},
+        body: {required: true}
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody);
+      expect(request.tags[0].native.layouts[0]).to.deep.equal({
+        title: {required: true},
+        description: {required: true}
+      });
+
+      delete REQUEST.bids[0].mediaType;
+      delete REQUEST.bids[0].params.nativeParams;
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);
