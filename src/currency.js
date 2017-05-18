@@ -23,7 +23,7 @@ currency.initCurrencyRates = function(url) {
     try {
       currency.currencyRates = JSON.parse(response);
       utils.logInfo('currencyRates set to ' + JSON.stringify(currency.currencyRates));
-    } catch(e) {
+    } catch (e) {
       utils.logError('failed to parse currencyRates response: ' + response);
     }
     currency.currencyRatesLoaded = true;
@@ -53,7 +53,7 @@ currency.processBidResponseQueue = function() {
   utils.logInfo('Invoking processBidResponseQueue', arguments);
 
   while (bidResponseQueue.length > 0) {
-  	(bidResponseQueue.shift())();
+    (bidResponseQueue.shift())();
   }
 }
 
@@ -88,57 +88,48 @@ function getCurrencyConversion(fromCurrency) {
   if (fromCurrency in conversionCache) {
     conversionRate = conversionCache[fromCurrency];
     utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
-
   } else if (currency.currencySupportEnabled === false) {
-  	if (fromCurrency === 'USD') {
+    if (fromCurrency === 'USD') {
       conversionRate = 1;
-  	} else {
+    } else {
       throw new Error('Prebid currency support has not been enabled with initCurrencyRates and fromCurrency is not USD');
     }
-
-  } else  if (fromCurrency === $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency) {
+  } else if (fromCurrency === $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency) {
     conversionRate = 1;
-
   } else {
-
     var toCurrency = $$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency;
 
     if (fromCurrency in currency.currencyRates.conversions) {
-
       // using direct conversion rate from fromCurrency to toCurrency
       var rates = currency.currencyRates.conversions[fromCurrency];
       if (!(toCurrency in rates)) {
-      	// bid should fail, currency is not supported
-      	throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
+        // bid should fail, currency is not supported
+        throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
       }
       conversionRate = rates[toCurrency];
       utils.logInfo('currency.getCurrencyConversion using direct ' + fromCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
-
     } else if (toCurrency in currency.currencyRates.conversions) {
-
       // using reciprocal of conversion rate from toCurrency to fromCurrency
       var rates = currency.currencyRates.conversions[toCurrency];
       if (!(fromCurrency in rates)) {
-      	// bid should fail, currency is not supported
-      	throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
+        // bid should fail, currency is not supported
+        throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
       }
       conversionRate = utils.roundFloat(1 / rates[fromCurrency], CONSTANTS.CURRENCY_RATE_PRECISION);
       utils.logInfo('currency.getCurrencyConversion using reciprocal ' + fromCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
-
     } else {
-
       // first defined currency base used as intermediary
       var anyBaseCurrency = Object.keys(currency.currencyRates.conversions)[0];
 
       if (!(fromCurrency in currency.currencyRates.conversions[anyBaseCurrency])) {
-      	// bid should fail, currency is not supported
-      	throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
+        // bid should fail, currency is not supported
+        throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
       }
       var toIntermediateConversionRate = 1 / currency.currencyRates.conversions[anyBaseCurrency][fromCurrency];
 
       if (!(toCurrency in currency.currencyRates.conversions[anyBaseCurrency])) {
-      	// bid should fail, currency is not supported
-      	throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
+        // bid should fail, currency is not supported
+        throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
       }
       var fromIntermediateConversionRate = currency.currencyRates.conversions[anyBaseCurrency][toCurrency];
 

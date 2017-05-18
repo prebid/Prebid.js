@@ -38,19 +38,19 @@ describe('cpmBucketManager', () => {
   it('gets the correct custom bucket strings in non-USD currency', () => {
     let cpm = 16.50908 * 110.49;
     let customConfig = {
-      "buckets" : [{
-        "precision" : 4,
-        "min" : 0,
-        "max" : 3,
-        "increment" : 0.01,
+      'buckets': [{
+        'precision': 4,
+        'min': 0,
+        'max': 3,
+        'increment': 0.01,
       },
-        {
-          "precision" : 4,
-          "min" : 3,
-          "max" : 18,
-          "increment" : 0.05,
-          "cap" : true
-        }
+      {
+        'precision': 4,
+        'min': 3,
+        'max': 18,
+        'increment': 0.05,
+        'cap': true
+      }
       ]
     };
     let expected = '{"low":"552.45","med":"1824.09","high":"1824.09","auto":"1824.09","dense":"1824.09","custom":"1824.0882"}';

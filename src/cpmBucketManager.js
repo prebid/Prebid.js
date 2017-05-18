@@ -69,7 +69,7 @@ function getPriceBucketString(cpm, customConfig, currencyMultiplier) {
     high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig, currencyMultiplier),
     auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig, currencyMultiplier),
     dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig, currencyMultiplier),
-    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig, currencyMultiplier)
+    custom: (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig, currencyMultiplier)
   };
 }
 

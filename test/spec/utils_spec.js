@@ -533,5 +533,4 @@ describe('Utils', function () {
       assert.equal(utils.roundFloat(12.34567, 4), 12.3457);
     });
   });
-
 });

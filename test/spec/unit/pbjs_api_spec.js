@@ -1644,5 +1644,4 @@ describe('Unit: Prebid Module', function () {
       expect($$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency).to.equal('JPY');
     });
   });
-
 });

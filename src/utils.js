@@ -652,7 +652,7 @@ export function replaceAuctionPrice(str, cpm) {
 export function roundFloat(num, dec) {
   var d = 1;
   for (var i = 0; i < dec; i++) {
-    d += "0";
+    d += '0';
   }
   return Math.round(num * d) / d;
 }
