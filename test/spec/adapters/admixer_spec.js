@@ -42,7 +42,7 @@ describe('Admixer adapter', function () {
   var validVideoData_1 = {
     bids: [
       {
-        mediaType: "video",
+        mediaType: 'video',
         bidder: 'admixer',
         bidId: 'bid_id',
         params: {zone: 'zone_id'},
@@ -54,7 +54,7 @@ describe('Admixer adapter', function () {
   var validVideoData_2 = {
     bids: [
       {
-        mediaType: "video",
+        mediaType: 'video',
         bidder: 'admixer',
         bidId: 'bid_id',
         params: {zone: 'zone_id'},
@@ -66,7 +66,7 @@ describe('Admixer adapter', function () {
   var validVideoData_3 = {
     bids: [
       {
-        mediaType: "video",
+        mediaType: 'video',
         bidder: 'admixer',
         bidId: 'bid_id',
         params: {zone: 'zone_id', video: {skippable: true}},
@@ -78,7 +78,7 @@ describe('Admixer adapter', function () {
   var invalidVideoData = {
     bids: [
       {
-        mediaType: "video",
+        mediaType: 'video',
         bidder: 'admixer',
         bidId: 'bid_id',
         params: {},
@@ -125,7 +125,7 @@ describe('Admixer adapter', function () {
   });
   var responseEmpty = '';
   var invUrl = '//inv-nets.admixer.net/prebid.aspx';
-  var invVastUrl = "//inv-nets.admixer.net/videoprebid.aspx";
+  var invVastUrl = '//inv-nets.admixer.net/videoprebid.aspx';
   var validJsonParams = {
     zone: 'zone_id',
     callback_uid: 'ad-unit-1',
@@ -170,7 +170,7 @@ describe('Admixer adapter', function () {
     it('video: ajax params should be matched', function () {
       Adapter.callBids(validVideoData_3);
       sinon.assert.calledWith(stubAjax, sinon.match(invVastUrl, function () {
-      }, validJsonVideoParams, {method: "GET"}));
+      }, validJsonVideoParams, {method: 'GET'}));
     });
   });
   describe('bid request with invalid data', function () {
