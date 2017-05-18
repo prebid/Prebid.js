@@ -238,21 +238,27 @@ describe('Adkernel adapter', () => {
       sandbox.spy(utils, 'createTrackPixelHtml');
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
       doRequest([bid1_zone1]);
-      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       expect(utils.createTrackPixelHtml.calledOnce);
-      let result = pbjs.getBidResponsesForAdUnitCode(bid1_zone1.placementCode);
+      expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
-      expect(result.bids[0].ad).to.include(expectedNurl);
+      expect(bidmanager.addBidResponse.firstCall.args[1].ad).to.include(expectedNurl);
     });
 
     it('should perform usersync for each unique host/zone combination', () => {
       ajaxStub.callsArgWith(1, '');
-      const expectedSyncUrls = ['http://rtb.adkernel.com/user-sync?zone=1', 'http://rtb.adkernel.com/user-sync?zone=2',
-        'http://rtb-private.adkernel.com/user-sync?zone=1'];
-      sandbox.spy(utils, 'createInvisibleIframe');
+      const expectedSyncUrls = ['//sync.adkernel.com/user-sync?zone=1&r=%2F%2Frtb-private.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D',
+        '//sync.adkernel.com/user-sync?zone=2&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D',
+        '//sync.adkernel.com/user-sync?zone=1&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D'];
+      let userSyncUrls = [];
+      sandbox.stub(utils, 'createInvisibleIframe', () => {
+        return {};
+      });
+      sandbox.stub(utils, 'addEventHandler', (el, ev, cb) => {
+        userSyncUrls.push(el.src);
+        cb(); // instant callback
+      });
       doRequest([bid1_zone1, bid2_zone2, bid2_zone2, bid3_host2]);
       expect(utils.createInvisibleIframe.calledThrice);
-      let userSyncUrls = utils.createInvisibleIframe.returnValues.map(val => val.src);
       expect(userSyncUrls).to.be.eql(expectedSyncUrls);
     });
   });
