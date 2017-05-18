@@ -4,7 +4,8 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "test": "gulp test && gulp mocha"
+    "test": "gulp run-tests",
+    "lint": "gulp lint"
   },
   "repository": {
     "type": "git",
