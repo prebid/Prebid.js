@@ -6,12 +6,13 @@ var CONSTANTS = require('./constants.json');
 var targeting = exports;
 var pbTargetingKeys = [];
 
-targeting.resetPresetTargeting = function() {
+targeting.resetPresetTargeting = function(adUnitCode) {
   if (isGptPubadsDefined()) {
+    const adUnitCodes = adUnitCode && adUnitCode.length ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
-        $$PREBID_GLOBAL$$.adUnits.find(function(unit) {
+        adUnitCodes.find(function(unit) {
           if (unit.code === slot.getAdUnitPath() ||
               unit.code === slot.getSlotElementId()) {
             slot.setTargeting(key, null);

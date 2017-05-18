@@ -370,7 +370,7 @@ describe('Unit: Prebid Module', function () {
     it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var targeting = [];
       slots[1].getTargeting().map(function (value) {
@@ -387,7 +387,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitElementIDs);
       expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus']]);
     });
 
@@ -427,7 +427,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = [
         [
