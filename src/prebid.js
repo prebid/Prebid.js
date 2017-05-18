@@ -249,13 +249,13 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnits) {
     return;
   }
 
-  //get our ad unit codes
+  // get our ad unit codes
   var adUnitCodes = targeting.getAllTargeting(adUnits);
 
-  //first reset any old targeting
+  // first reset any old targeting
   targeting.resetPresetTargeting(adUnitCodes);
 
-  //now set new targeting keys
+  // now set new targeting keys
   targeting.setTargeting(adUnitCodes);
 
 
