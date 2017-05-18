@@ -1605,6 +1605,40 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('The monkey-patched queue.push function', function() {
+    beforeEach(function initializeSpies() {
+      sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function resetSpies() {
+      utils.logError.restore();
+    });
+
+    it('should run commands which are pushed into it', function() {
+      let cmd = sinon.spy();
+      $$PREBID_GLOBAL$$.cmd.push(cmd);
+      assert.isTrue(cmd.called);
+    });
+
+    it('should log an error when given non-functions', function() {
+      $$PREBID_GLOBAL$$.cmd.push(5);
+      assert.isTrue(utils.logError.calledOnce);
+    });
+
+    it('should log an error if the command passed into it fails', function() {
+      $$PREBID_GLOBAL$$.cmd.push(function() {
+        throw new Error('Failed function.');
+      });
+      assert.isTrue(utils.logError.calledOnce);
+    });
+  });
+
+  describe('The monkey-patched que.push function', function() {
+    it('should be the same as the cmd.push function', function() {
+      assert.equal($$PREBID_GLOBAL$$.que.push, $$PREBID_GLOBAL$$.cmd.push);
+    });
+  });
+
   describe('setS2SConfig', () => {
     let logErrorSpy;
 

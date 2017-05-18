@@ -77,11 +77,25 @@ $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 
 /**
- * Command queue that functions will execute once prebid.js is loaded
- * @param  {function} cmd Anonymous function to execute
- * @alias module:$$PREBID_GLOBAL$$.que.push
+ * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
+ * before or after their script executes. For example, given the code:
+ *
+ * <script src="url/to/Prebid.js" async></script>
+ * <script>
+ *   var pbjs = pbjs || {};
+ *   pbjs.cmd = pbjs.cmd || [];
+ *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
+ * </script>
+ *
+ * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
+ * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
+ * function to execute immediately.
+ *
+ * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                        the Prebid script has been fully loaded.
+ * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-$$PREBID_GLOBAL$$.que.push = function (cmd) {
+$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -89,22 +103,24 @@ $$PREBID_GLOBAL$$.que.push = function (cmd) {
       utils.logError('Error processing command :' + e.message);
     }
   } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.que.push must wrapped in a function');
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
   }
 };
 
-function processQue() {
-  for (var i = 0; i < $$PREBID_GLOBAL$$.que.length; i++) {
-    if (typeof $$PREBID_GLOBAL$$.que[i].called === objectType_undefined) {
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
+
+function processQueue(queue) {
+  queue.forEach(function(cmd) {
+    if (typeof cmd.called === objectType_undefined) {
       try {
-        $$PREBID_GLOBAL$$.que[i].call();
-        $$PREBID_GLOBAL$$.que[i].called = true;
+        cmd.call();
+        cmd.called = true;
       }
       catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }
-  }
+  });
 }
 
 function checkDefinedPlacement(id) {
@@ -745,6 +761,6 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-
-$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
-processQue();
+$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
+processQueue($$PREBID_GLOBAL$$.cmd);
+processQueue($$PREBID_GLOBAL$$.que);
