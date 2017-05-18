@@ -92,6 +92,19 @@ const RESPONSE_NO_BID_UNIT_SET = {
   }]
 };
 
+const RESPONSE_NO_COOKIE = {
+  'tid': 'd6eca075-4a59-4346-bdb3-86531830ef2c',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': 'pubmatic',
+    'no_cookie': true,
+    'usersync': {
+      'url': '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=http://localhost:8000/setuid?bidder=pubmatic&uid=',
+      'type': 'iframe'
+    }
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter;
 
@@ -173,7 +186,25 @@ describe('S2S Adapter', () => {
       expect(bid_request_passed).to.have.property('adId', '32167');
     });
 
-    it('registers no bid response when no ad unit set', () => {
+    it('registers no bid response when server requests cookie sync', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '32167');
+    });
+
+    it('registers no bid response when ad unit is set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
       adapter.setConfig(CONFIG);
