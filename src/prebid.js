@@ -681,7 +681,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplie
     bidmanager.setPriceGranularity(granularity, currencyMultiplier);
   }
   else if (typeof granularity === 'object') {
-    if (!isValidePriceConfig(granularity)) {
+    if (!isValidPriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
