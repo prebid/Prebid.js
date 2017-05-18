@@ -12,7 +12,7 @@ import {formatQS} from '../url';
 const CONSTANTS = {
   ADAPTER_NAME: 'inneractive',
   V: 'IA-JS-HB-PBJS-1.0',
-  RECTANGLE_SIZE:{W: 300, H: 250},
+  RECTANGLE_SIZE: {W: 300, H: 250},
 
   SPOT_TYPES: {
     INTERSTITIAL: 'interstitial',
@@ -32,9 +32,9 @@ const CONSTANTS = {
 };
 
 let iaRef;
-try{
+try {
   iaRef = window.top.document.referrer;
-}catch(e){
+} catch (e) {
   iaRef = window.document.referrer;
 }
 
@@ -43,23 +43,23 @@ try{
  * @type {{defaultsQsParams: {v: (string|string), page: string, mw: boolean, hb: string}, stringToCamel: (function(*)), objectToCamel: (function(*=))}}
  */
 const Helpers = {
-  defaultsQsParams: {v: CONSTANTS.V,page: encodeURIComponent(utils.getTopWindowUrl()),mw: true, hb: 'prebidjs'},
+  defaultsQsParams: {v: CONSTANTS.V, page: encodeURIComponent(utils.getTopWindowUrl()), mw: true, hb: 'prebidjs'},
   /**
    * Change string format from underscore to camelcase (e.g., APP_ID to appId)
    * @param str: string
    * @returns string
    */
-  stringToCamel(str){
-    if(str.indexOf('_') === -1){
+  stringToCamel(str) {
+    if (str.indexOf('_') === -1) {
       const first = str.charAt(0);
-      if(first !== first.toLowerCase()){
+      if (first !== first.toLowerCase()) {
         str = str.toLowerCase();
       }
       return str;
     }
 
     str = str.toLowerCase();
-    return str.replace(/(\_[a-z])/g, $1 => $1.toUpperCase().replace('_',''));
+    return str.replace(/(\_[a-z])/g, $1 => $1.toUpperCase().replace('_', ''));
   },
 
   /**
@@ -67,10 +67,10 @@ const Helpers = {
    * @param params: object
    * @returns object
    */
-  objectToCamel(params){
+  objectToCamel(params) {
     Object.keys(params).forEach(key => {
       const keyCamelCase = this.stringToCamel(key);
-      if(keyCamelCase !== key){
+      if (keyCamelCase !== key) {
         params[keyCamelCase] = params[key];
         delete params[key];
       }
@@ -88,8 +88,8 @@ const Tracker = {
    * Creates a tracking pixel
    * @param urls: Array<String>
    */
-  fire(urls){
-    urls.forEach(url => url && ((new Image(1,1)).src = encodeURI(url)));
+  fire(urls) {
+    urls.forEach(url => url && ((new Image(1, 1)).src = encodeURI(url)));
   }
 };
 
@@ -109,14 +109,14 @@ const Reporter = {
    * The returned string is either <code>http://</code> or <code>https://</code>
    * @returns {string}
    */
-  getPageProtocol(){
-    if(!this.pageProtocol){
-      this.pageProtocol = ('http:' === utils.getTopWindowLocation().protocol ? 'http:' : 'https:');
+  getPageProtocol() {
+    if (!this.pageProtocol) {
+      this.pageProtocol = (utils.getTopWindowLocation().protocol === 'http:' ? 'http:' : 'https:');
     }
     return this.pageProtocol;
   },
 
-  getEventUrl(evtName, extraDetails){
+  getEventUrl(evtName, extraDetails) {
     let eventsEndpoint = CONSTANTS.EVENTS_ENDPOINT_URL + '?table=' + ((evtName === this.errorEventName) ? 'mbwError' : 'mbwEvent');
     let queryStringParams = this.eventQueryStringParams(extraDetails);
     const appId = extraDetails && extraDetails.appId;
@@ -160,7 +160,7 @@ const Reporter = {
  * @type {{defaultsParams: *, serverParamNameBySettingParamName: {referrer: string, keywords: string, appId: string, portal: string, age: string, gender: string, isSecured: (boolean|null)}, toServerParams: (function(*)), unwantedValues: *[], getUrlParams: (function(*=))}}
  */
 const Url = {
-  defaultsParams: Object.assign({}, Helpers.defaultsQsParams, {f: CONSTANTS.DISPLAY_AD,fs: false,ref: iaRef}),
+  defaultsParams: Object.assign({}, Helpers.defaultsQsParams, {f: CONSTANTS.DISPLAY_AD, fs: false, ref: iaRef}),
   serverParamNameBySettingParamName: {
     referrer: 'ref',
     keywords: 'k',
@@ -176,12 +176,12 @@ const Url = {
    * @param params: object {k:v}
    * @returns object {k:v}
    */
-  toServerParams(params){
+  toServerParams(params) {
     const serverParams = {};
-    for(const paramName in params){
-      if(params.hasOwnProperty(paramName) && this.serverParamNameBySettingParamName.hasOwnProperty(paramName)){
+    for (const paramName in params) {
+      if (params.hasOwnProperty(paramName) && this.serverParamNameBySettingParamName.hasOwnProperty(paramName)) {
         serverParams[this.serverParamNameBySettingParamName[paramName]] = params[paramName];
-      }else{
+      } else {
         serverParams[paramName] = params[paramName];
       }
     }
@@ -195,17 +195,17 @@ const Url = {
    * @param params: object {k:v}
    * @returns : object {k:v}
    */
-  getUrlParams(params){
+  getUrlParams(params) {
     const serverParams = this.toServerParams(params);
     const toQueryString = Object.assign({}, this.defaultsParams, serverParams);
-    for(const paramName in toQueryString){
-      if(toQueryString.hasOwnProperty(paramName) && this.unwantedValues.indexOf(toQueryString[paramName]) !== -1){
+    for (const paramName in toQueryString) {
+      if (toQueryString.hasOwnProperty(paramName) && this.unwantedValues.indexOf(toQueryString[paramName]) !== -1) {
         delete toQueryString[paramName];
       }
     }
     toQueryString.fs = params.spotType === CONSTANTS.SPOT_TYPES.INTERSTITIAL;
 
-    if(params.spotType === CONSTANTS.SPOT_TYPES.RECTANGLE){
+    if (params.spotType === CONSTANTS.SPOT_TYPES.RECTANGLE) {
       toQueryString.rw = CONSTANTS.RECTANGLE_SIZE.W;
       toQueryString.rh = CONSTANTS.RECTANGLE_SIZE.H;
     }
@@ -236,20 +236,19 @@ const Http = {
    * @param xhr: XMLHttpRequest
    * @returns {}
    */
-  getBidHeaders(xhr){
+  getBidHeaders(xhr) {
     const headersData = {};
     this.headers.forEach(headerName => headersData[headerName] = xhr.getResponseHeader(headerName));
     return headersData;
   }
 };
 
-
 /**
  * InnerActiveAdapter for requesting bids
  * @class
  */
-class InnerActiveAdapter{
-  constructor(){
+class InnerActiveAdapter {
+  constructor() {
     this.iaAdapter = Adapter.createNew(CONSTANTS.ADAPTER_NAME);
     this.bidByBidId = {};
   }
@@ -260,8 +259,8 @@ class InnerActiveAdapter{
    * @returns {boolean}
    * @private
    */
-  _isValidRequest(adSettings){
-    if(adSettings && adSettings.appId && adSettings.spotType){
+  _isValidRequest(adSettings) {
+    if (adSettings && adSettings.appId && adSettings.spotType) {
       return true;
     }
     utils.logError('bid requires appId');
@@ -274,7 +273,7 @@ class InnerActiveAdapter{
    * @returns bid object
    * @private
    */
-  _storeBidRequestDetails(bid){
+  _storeBidRequestDetails(bid) {
     this.bidByBidId[bid.bidId] = bid;
     return bid;
   }
@@ -285,7 +284,7 @@ class InnerActiveAdapter{
    * @returns {type[]}
    * @private
    */
-  _getBidDetails(bidStatus, bidResponse, bidId){
+  _getBidDetails(bidStatus, bidResponse, bidId) {
     let bid = bidFactory.createBid(bidStatus, bidResponse);
     bid.code = CONSTANTS.ADAPTER_NAME;
     bid.bidderCode = bid.code;
@@ -296,9 +295,9 @@ class InnerActiveAdapter{
     return bid;
   }
 
-  _setBidCpm(bid, bidId){
+  _setBidCpm(bid, bidId) {
     const storedBid = this.bidByBidId[bidId];
-    if(storedBid){
+    if (storedBid) {
       bid.cpm = storedBid.params && storedBid.params.qa && storedBid.params.qa.cpm || bid.cpm;
       bid.cpm = (bid.cpm !== null && !isNaN(bid.cpm)) ? parseFloat(bid.cpm) : 0.0;
     }
@@ -311,7 +310,7 @@ class InnerActiveAdapter{
    * @returns {boolean}
    * @private
    */
-  _isValidBidResponse(responseAsJson, headersData){
+  _isValidBidResponse(responseAsJson, headersData) {
     return (responseAsJson && responseAsJson.ad && responseAsJson.ad.html && headersData && headersData[CONSTANTS.RESPONSE_HEADERS_NAME.PRICING_VALUE] > 0);
   }
 
@@ -322,7 +321,7 @@ class InnerActiveAdapter{
    * @param bidId: string
    * @private
    */
-  _onResponse(response, xhr, bidId){
+  _onResponse(response, xhr, bidId) {
     const bid = this.bidByBidId[bidId];
     const [w, h] = bid.sizes[0];
     const size = {w, h};
@@ -338,14 +337,14 @@ class InnerActiveAdapter{
       let errorMessage = `response failed for ${CONSTANTS.ADAPTER_NAME} adapter`;
       utils.logError(errorMessage);
       const passback = responseAsJson && responseAsJson.config && responseAsJson.config.passback;
-      if(passback) {
+      if (passback) {
         Tracker.fire([passback]);
       }
       Reporter.reportEvent('HBPreBidNoAd', bid.params);
       return bidManager.addBidResponse(bid.placementCode, this._getBidDetails(STATUS.NO_BID));
     }
     const bidResponse = {
-      cpm: headersData[CONSTANTS.RESPONSE_HEADERS_NAME.PRICING_VALUE]*1000,
+      cpm: headersData[CONSTANTS.RESPONSE_HEADERS_NAME.PRICING_VALUE] * 1000,
       width: parseFloat(headersData[CONSTANTS.RESPONSE_HEADERS_NAME.AD_W]) || size.w,
       ad: this._getAd(responseAsJson.ad.html, responseAsJson.config.tracking, bid.params),
       height: parseFloat(headersData[CONSTANTS.RESPONSE_HEADERS_NAME.AD_H]) || size.h
@@ -364,17 +363,16 @@ class InnerActiveAdapter{
    * @returns {string}: create template
    * @private
    */
-  _getAd(adHtml, tracking, bidParams){
-
+  _getAd(adHtml, tracking, bidParams) {
     let impressionsHtml = '';
-    if(tracking && Array.isArray(tracking.impressions)){
+    if (tracking && Array.isArray(tracking.impressions)) {
       let impressions = tracking.impressions;
       impressions.push(Reporter.getEventUrl('HBPreBidImpression', bidParams, false));
       impressions.forEach(impression => impression && (impressionsHtml += utils.createTrackPixelHtml(impression)));
     }
     adHtml = impressionsHtml + adHtml.replace(/<a /g, '<a target="_blank" ');
     let clicks = tracking && Array.isArray(tracking.clicks) && tracking.clicks;
-    if(clicks && Array.isArray(clicks)){
+    if (clicks && Array.isArray(clicks)) {
       clicks.push(Reporter.getEventUrl('HBPreBidClick', bidParams, false));
     }
     const adTemplate = `
@@ -409,17 +407,17 @@ class InnerActiveAdapter{
    * @param bid: object
    * @private
    */
-  _toIaBidParams(bid){
+  _toIaBidParams(bid) {
     const bidParamsWithCustomParams = Object.assign({}, bid.params, bid.params.customParams);
     delete bidParamsWithCustomParams.customParams;
     bid.params = Helpers.objectToCamel(bidParamsWithCustomParams);
   }
-  
+
   /**
    * Prebid executes for stating an auction
    * @param bidRequest: object
    */
-  callBids(bidRequest){
+  callBids(bidRequest) {
     const bids = bidRequest.bids || [];
     bids.forEach(bid => this._toIaBidParams(bid));
     bids
@@ -428,14 +426,14 @@ class InnerActiveAdapter{
       .forEach(bid => ajax(this._getEndpointUrl(bid.params), (response, xhr) => this._onResponse(response, xhr, bid.bidId), Url.getUrlParams(bid.params), {method: 'GET'}));
   }
 
-  _getEndpointUrl(params){
+  _getEndpointUrl(params) {
     return params && params.qa && params.qa.url || Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL;
   }
 
-  _getStoredBids(){
+  _getStoredBids() {
     const storedBids = [];
-    for(const bidId in this.bidByBidId){
-      if(this.bidByBidId.hasOwnProperty(bidId)) {
+    for (const bidId in this.bidByBidId) {
+      if (this.bidByBidId.hasOwnProperty(bidId)) {
         storedBids.push(this.bidByBidId[bidId]);
       }
     }
@@ -447,7 +445,7 @@ class InnerActiveAdapter{
    * @returns {{Reporter: {errorEventName: string, pageProtocol: string, getPageProtocol: (function(): string), getEventUrl: (function(*, *=)), reportEvent: (function(string, Object)), defaults: {v: (string|string), page: string, mw: boolean, hb: string}, eventQueryStringParams: (function(Object): string), createTrackingPixel: (function(string))}}}
    * @private
    */
-  static _getUtils(){
+  static _getUtils() {
     return {Reporter};
   }
 
@@ -455,7 +453,7 @@ class InnerActiveAdapter{
    * Creates new instance of InnerActiveAdapter for prebid auction
    * @returns {InnerActiveAdapter}
    */
-  static createNew(){
+  static createNew() {
     return new InnerActiveAdapter();
   }
 }

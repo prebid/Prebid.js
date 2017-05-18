@@ -28,7 +28,7 @@ const BIDDER_REQUEST = {
   timeout: 3000
 };
 
-describe ('LifestreetAdapter', () => {
+describe('LifestreetAdapter', () => {
   let adapter;
   beforeEach(() => adapter = new LifestreetAdapter());
 
@@ -100,7 +100,7 @@ describe ('LifestreetAdapter', () => {
         expect(tagRequests).to.be.empty;
       });
 
-      it ('adkey is not provided', () => {
+      it('adkey is not provided', () => {
         request.bids[0].params.adkey = '';
         adapter.callBids(request);
         expect(tagRequests).to.be.empty;

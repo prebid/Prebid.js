@@ -44,9 +44,7 @@ var sizeMap = {
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function SmartyadsAdapter() {
-
   function _callBids(bidderRequest) {
-
     var bids = bidderRequest.bids || [];
 
     bids.forEach((bid) => {
@@ -57,18 +55,17 @@ function SmartyadsAdapter() {
       }
 
       function bidCallback(responseText) {
-
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
         } catch (err) {
-          if (typeof err === "string") {
+          if (typeof err === 'string') {
             utils.logWarn(`${err} when processing smartyads response for placement code ${bid.placementCode}`);
           } else {
             utils.logError('Error processing smartyads response for placement code ' + bid.placementCode, null, err);
           }
 
-          //indicate that there is no bid for this placement
+          // indicate that there is no bid for this placement
           let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
           badBid.bidderCode = bid.bidder;
           badBid.error = err;
@@ -79,7 +76,6 @@ function SmartyadsAdapter() {
   }
 
   function buildOptimizedCall(bid) {
-
     bid.startTime = new Date().getTime();
 
     // use smartyads sizes if provided, otherwise adUnit.sizes
@@ -88,7 +84,7 @@ function SmartyadsAdapter() {
     );
 
     if (parsedSizes.length < 1) {
-      throw "no valid sizes";
+      throw 'no valid sizes';
     }
 
     var secure;
@@ -109,27 +105,25 @@ function SmartyadsAdapter() {
       'size_ad', parsedSizes[0],
       'alt_size_ad', parsedSizes.slice(1).join(',') || undefined,
       'host', host,
-      "page", page,
-      "language", language,
-      "deviceWidth", deviceWidth,
-      "deviceHeight", deviceHeight,
-      "secure", secure,
-      "bidId", bid.bidId,
-      "checkOn", 'rf'
+      'page', page,
+      'language', language,
+      'deviceWidth', deviceWidth,
+      'deviceHeight', deviceHeight,
+      'secure', secure,
+      'bidId', bid.bidId,
+      'checkOn', 'rf'
     ];
 
     return queryString.reduce(
       (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined ?
-        memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+        index % 2 === 0 && queryString[index + 1] !== undefined
+        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
           : memo,
       '//ssp-nj.webtradehub.com/?'
     ).slice(0, -1);
-
   }
 
   function handleRpCB(responseText, bidRequest) {
-
     let ad = JSON.parse(responseText); // can throw
 
     var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
@@ -151,7 +145,6 @@ function SmartyadsAdapter() {
 }
 
 SmartyadsAdapter.masSizeOrdering = function (sizes) {
-
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
   return utils.parseSizesInput(sizes)

@@ -9,7 +9,7 @@ var pbTargetingKeys = [];
 targeting.resetPresetTargeting = function() {
   if (isGptPubadsDefined()) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      pbTargetingKeys.forEach(function(key){
+      pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
         $$PREBID_GLOBAL$$.adUnits.find(function(unit) {
           if (unit.code === slot.getAdUnitPath() ||
@@ -31,7 +31,7 @@ targeting.getAllTargeting = function(adUnitCode) {
       .concat(getAlwaysUseBidTargeting(adUnitCodes))
       .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
 
-  //store a reference of the targeting keys
+  // store a reference of the targeting keys
   targeting.map(adUnitCode => {
     Object.keys(adUnitCode).map(key => {
       adUnitCode[key].map(targetKey => {
@@ -74,12 +74,12 @@ targeting.getWinningBids = function(adUnitCode) {
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
       .reduce(getHighestCpm,
-        {
-          adUnitCode: adUnitCode,
-          cpm: 0,
-          adserverTargeting: {},
-          timeToRespond: 0
-        }));
+      {
+        adUnitCode: adUnitCode,
+        cpm: 0,
+        adserverTargeting: {},
+        timeToRespond: 0
+      }));
 };
 
 targeting.setTargetingForAst = function() {
@@ -87,13 +87,13 @@ targeting.setTargetingForAst = function() {
   Object.keys(targeting).forEach(targetId =>
     Object.keys(targeting[targetId]).forEach(key => {
       utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`);
-      //setKeywords supports string and array as value
-      if(utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
+      // setKeywords supports string and array as value
+      if (utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
         let keywordsObj = {};
         let input = 'hb_adid';
         let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
         keywordsObj[nKey] = targeting[targetId][key];
-        window.apntag.setKeywords(targetId,keywordsObj);
+        window.apntag.setKeywords(targetId, keywordsObj);
       }
     })
   );
@@ -107,7 +107,7 @@ function getWinningBidTargeting() {
     return {
       [winner.adUnitCode]: Object.keys(winner.adserverTargeting)
         .filter(key =>
-          typeof winner.sendStandardTargeting === "undefined" ||
+          typeof winner.sendStandardTargeting === 'undefined' ||
           winner.sendStandardTargeting ||
           standardKeys.indexOf(key) === -1)
         .map(key => ({ [key.substring(0, 20)]: [winner.adserverTargeting[key]] }))
@@ -141,7 +141,6 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
             }
 
             return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
-
           }).filter(key => key) // remove empty elements
         };
       }

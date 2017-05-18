@@ -79,11 +79,10 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.mgres = function (bidResp) {
-
     // valid object?
     if ((!bidResp || !bidResp.id) ||
       (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
-      return ;
+      return;
     }
 
     bidResp.seatbid[0].bid.forEach(function (bidderBid) {
