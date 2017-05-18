@@ -4,7 +4,6 @@ import {expect} from 'chai';
 import {default as InneractiveAdapter} from 'src/adapters/inneractive';
 import bidmanager from 'src/bidmanager';
 
-
 // Using plain-old-style functions, why? see: http://mochajs.org/#arrow-functions
 describe('InneractiveAdapter', function () {
   let adapter,
@@ -13,60 +12,60 @@ describe('InneractiveAdapter', function () {
   beforeEach(function () {
     adapter = InneractiveAdapter.createNew();
     bidRequest = {
-      bidderCode: "inneractive",
+      bidderCode: 'inneractive',
       bids: [
         {
-          bidder: "inneractive",
+          bidder: 'inneractive',
           params: {
-            appId: "",
+            appId: '',
           },
-          placementCode: "div-gpt-ad-1460505748561-0",
+          placementCode: 'div-gpt-ad-1460505748561-0',
           sizes: [[300, 250], [300, 600]],
-          bidId: "507e8db167d219",
-          bidderRequestId: "49acc957f92917",
-          requestId: "51381cd0-c29c-405b-9145-20f60abb1e76"
+          bidId: '507e8db167d219',
+          bidderRequestId: '49acc957f92917',
+          requestId: '51381cd0-c29c-405b-9145-20f60abb1e76'
         },
         {
-          bidder: "inneractive",
+          bidder: 'inneractive',
           params: {
-            noappId: "...",
+            noappId: '...',
           },
-          placementCode: "div-gpt-ad-1460505661639-0",
+          placementCode: 'div-gpt-ad-1460505661639-0',
           sizes: [[728, 90], [970, 90]],
-          bidId: "507e8db167d220",
-          bidderRequestId: "49acc957f92917",
-          requestId: "51381cd0-c29c-405b-9145-20f60abb1e76"
+          bidId: '507e8db167d220',
+          bidderRequestId: '49acc957f92917',
+          requestId: '51381cd0-c29c-405b-9145-20f60abb1e76'
         },
         {
-          bidder: "inneractive",
+          bidder: 'inneractive',
           params: {
-            APP_ID: "Inneractive_AndroidHelloWorld_Android",
-            spotType: "rectangle",
+            APP_ID: 'Inneractive_AndroidHelloWorld_Android',
+            spotType: 'rectangle',
             customParams: {
               Portal: 7002,
             }
           },
-          placementCode: "div-gpt-ad-1460505748561-0",
+          placementCode: 'div-gpt-ad-1460505748561-0',
           sizes: [[320, 50], [300, 600]],
-          bidId: "507e8db167d221",
-          bidderRequestId: "49acc957f92917",
-          requestId: "51381cd0-c29c-405b-9145-20f60abb1e76"
+          bidId: '507e8db167d221',
+          bidderRequestId: '49acc957f92917',
+          requestId: '51381cd0-c29c-405b-9145-20f60abb1e76'
         },
         {
-          bidder: "inneractive",
+          bidder: 'inneractive',
           params: {
-            appId: "Inneractive_IosHelloWorld_iPhone",
-            spotType: "banner", // Just for coverage considerations, no real impact in production
+            appId: 'Inneractive_IosHelloWorld_iPhone',
+            spotType: 'banner', // Just for coverage considerations, no real impact in production
             customParams: {
               portal: 7001,
               gender: ''
             }
           },
-          placementCode: "div-gpt-ad-1460505661639-0",
+          placementCode: 'div-gpt-ad-1460505661639-0',
           sizes: [[728, 90], [970, 90]],
-          bidId: "507e8db167d222",
-          bidderRequestId: "49acc957f92917",
-          requestId: "51381cd0-c29c-405b-9145-20f60abb1e76"
+          bidId: '507e8db167d222',
+          bidderRequestId: '49acc957f92917',
+          requestId: '51381cd0-c29c-405b-9145-20f60abb1e76'
         }]
     };
   });
@@ -76,9 +75,9 @@ describe('InneractiveAdapter', function () {
       it('should contain "mbwError" the inside event report url', function () {
         const Reporter = InneractiveAdapter._getUtils().Reporter;
         const extraDetailsParam = {
-          "appId": "CrunchMind_DailyDisclosure_other",
-          "spotType": "rectangle",
-          "portal": 7002
+          'appId': 'CrunchMind_DailyDisclosure_other',
+          'spotType': 'rectangle',
+          'portal': 7002
         };
         let eventReportUrl = Reporter.getEventUrl('HBPreBidError', extraDetailsParam);
         expect(eventReportUrl).to.include('mbwError');
@@ -115,9 +114,9 @@ describe('InneractiveAdapter', function () {
       it('should not issue a request', function () {
         const Reporter = InneractiveAdapter._getUtils().Reporter;
         Reporter.getEventUrl('HBPreBidError', {
-          "appId": "CrunchMind_DailyDisclosure_other",
-          "spotType": "rectangle",
-          "portal": 7002
+          'appId': 'CrunchMind_DailyDisclosure_other',
+          'spotType': 'rectangle',
+          'portal': 7002
         });
 
         delete bidRequest.bids;
@@ -132,7 +131,6 @@ describe('InneractiveAdapter', function () {
         const INVALID_BIDS_COUNT = 2;
         sinon.spy(adapter, '_isValidRequest');
         adapter.callBids(bidRequest);
-
 
         for (let id = 0; id < INVALID_BIDS_COUNT; id++) {
           expect(adapter._isValidRequest.getCall(id).returned(false)).to.be.true; // jshint ignore:line
@@ -175,30 +173,30 @@ describe('InneractiveAdapter', function () {
       beforeEach(function () {
         adServerResponse = {
           headers: {
-            "X-IA-Ad-Height": 250,
-            "X-IA-Ad-Width": 300,
-            "X-IA-Error": "OK",
-            "X-IA-Pricing": "CPM",
-            "X-IA-Pricing-Currency": "USD",
-            "X-IA-Pricing-Value": 0.0005
+            'X-IA-Ad-Height': 250,
+            'X-IA-Ad-Width': 300,
+            'X-IA-Error': 'OK',
+            'X-IA-Pricing': 'CPM',
+            'X-IA-Pricing-Currency': 'USD',
+            'X-IA-Pricing-Value': 0.0005
           },
           body: {
             ad: {
-              html: "<a href=\"http://www.inner-active.com\"><img src=\"https://s3-eu-west-1.amazonaws.com/inneractive-assets/CS_Test_Ads/CS_Test_300x250.png\"></a>"
+              html: '<a href="http://www.inner-active.com"><img src="https://s3-eu-west-1.amazonaws.com/inneractive-assets/CS_Test_Ads/CS_Test_300x250.png"></a>'
             },
             config: {
               tracking: {
                 impressions: [
-                  "http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=impress…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false"
+                  'http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=impress…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false'
                 ],
                 clicks: [
-                  "http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=richMed…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false",
-                  ""
+                  'http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=richMed…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false',
+                  ''
                 ],
-                passback: "http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=passbac…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false"
+                passback: 'http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=passbac…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false'
               },
               moat: {
-                countryCode: "IL"
+                countryCode: 'IL'
               }
             }
           }
@@ -238,20 +236,20 @@ describe('InneractiveAdapter', function () {
       beforeEach(function () {
         passbackAdServerResponse = {
           headers: {
-            "X-IA-Error": "House Ad",
-            "X-IA-Content": 600145,
-            "X-IA-Cid": 99999,
-            "X-IA-Publisher": 206536,
-            "Content-Type": "application/json; charset=UTF-8",
-            "X-IA-Session": 6512147119979250840,
-            "X-IA-AdNetwork": "inneractive360"
+            'X-IA-Error': 'House Ad',
+            'X-IA-Content': 600145,
+            'X-IA-Cid': 99999,
+            'X-IA-Publisher': 206536,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'X-IA-Session': 6512147119979250840,
+            'X-IA-AdNetwork': 'inneractive360'
           },
           body: {
-            "ad": {
-              "html": "<a href=\"http://www.inner-active.com\"><img src=\"https://s3-eu-west-1.amazonaws.com/inneractive-assets/CS_Test_Ads/CS_Test_300x250.png\"></a>"
+            'ad': {
+              'html': '<a href="http://www.inner-active.com"><img src="https://s3-eu-west-1.amazonaws.com/inneractive-assets/CS_Test_Ads/CS_Test_300x250.png"></a>'
             },
-            "config": {
-              "passback": "http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=passbac…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false"
+            'config': {
+              'passback': 'http://event.inner-active.mobi/simpleM2M/reportEvent?eventArchetype=passbac…pe=3&network=Inneractive_CS&acp=&pcp=&secure=false&rtb=false&houseAd=false'
             }
           }
         };
@@ -271,7 +269,7 @@ describe('InneractiveAdapter', function () {
 
       it('should handle responses from our server in case we had no ad to offer', function () {
         const n = bidRequest.bids.length;
-        bidRequest.bids[n - 1].params.appId = "Komoona_InquisitrRectangle2_other";
+        bidRequest.bids[n - 1].params.appId = 'Komoona_InquisitrRectangle2_other';
         server.respondWith([200, headers, body]);
         adapter.callBids(bidRequest);
         server.respond();

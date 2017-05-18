@@ -165,7 +165,7 @@ describe('Admixer adapter', function () {
     it('display: ajax params should be matched', function () {
       Adapter.callBids(validData_1);
       sinon.assert.calledWith(stubAjax, sinon.match(invUrl, function () {
-      }, validJsonParams, {method: "GET"}));
+      }, validJsonParams, {method: 'GET'}));
     });
     it('video: ajax params should be matched', function () {
       Adapter.callBids(validVideoData_3);

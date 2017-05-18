@@ -32,8 +32,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
         } else {
           _requestBid(invUrl, params);
         }
-      }
-      else {
+      } else {
         var bidObject = bidfactory.createBid(2);
         bidObject.bidderCode = 'admixer';
         bidmanager.addBidResponse(params.callback_uid, bidObject);

@@ -6,13 +6,13 @@ const queue = [];
 function fireSyncs() {
   queue.forEach(obj => {
     utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
-    if(obj.type === 'iframe') {
+    if (obj.type === 'iframe') {
       utils.insertCookieSyncIframe(obj.url, false);
     } else {
       utils.insertPixel(obj.url);
     }
   });
-  //empty queue.
+  // empty queue.
   queue.length = 0;
 }
 
@@ -30,7 +30,7 @@ cookie.queueSync = function ({bidder, url, type}) {
  * @param  {number} timeout time in ms to delay in sending
  */
 cookie.syncCookies = function(timeout) {
-  if(timeout) {
+  if (timeout) {
     setTimeout(fireSyncs, timeout);
   }
   else {
@@ -39,7 +39,7 @@ cookie.syncCookies = function(timeout) {
 };
 
 cookie.persist = function(url, msgHtml) {
-  if(!utils.isSafariBrowser()){
+  if (!utils.isSafariBrowser()) {
     return;
   }
   linkOverride(url);
@@ -47,11 +47,11 @@ cookie.persist = function(url, msgHtml) {
 };
 
 function linkOverride(url) {
-   for (var i = 0; i < document.links.length; i++){
-     var link = document.links[i];
-     link.href = url + encodeURIComponent(link.href);
-   }
- }
+  for (var i = 0; i < document.links.length; i++) {
+    var link = document.links[i];
+    link.href = url + encodeURIComponent(link.href);
+  }
+}
 
 function displayFooter(msgHtml) {
   // https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie#Example_3_Do_something_only_once

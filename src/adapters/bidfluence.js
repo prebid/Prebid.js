@@ -4,8 +4,7 @@ const utils = require('../utils.js');
 const adloader = require('../adloader');
 
 var BidfluenceAdapter = function BidfluenceAdapter() {
-
-  const scriptUrl = "//cdn.bidfluence.com/forge.js";
+  const scriptUrl = '//cdn.bidfluence.com/forge.js';
 
   $$PREBID_GLOBAL$$.bfPbjsCB = function (bfr) {
     var bidRequest = utils.getBidRequest(bfr.cbID);
@@ -33,14 +32,13 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
     }
   }
   function call(bid) {
-
     var adunitId = utils.getBidIdParameter('adunitId', bid.params);
     var publisherId = utils.getBidIdParameter('pubId', bid.params);
     var reservePrice = utils.getBidIdParameter('reservePrice', bid.params);
     var pbjsBfobj = {
       placementCode: bid.placementCode,
       cbID: bid.bidId
-    }; 
+    };
 
     var cb = function () {
       /* globals FORGE */

@@ -14,7 +14,7 @@ describe('Atomx adapter', function () {
         bidId: 'bid_id',
         params: {id: 1234},
         placementCode: 'ad-unit-1',
-        sizes: [[300, 250],[800, 600]]
+        sizes: [[300, 250], [800, 600]]
       }
     ]
   };
@@ -54,7 +54,7 @@ describe('Atomx adapter', function () {
     'url': 'http://p.ato.mx/placement?id=1234',
     'width': 300,
     'height': 250,
-		'code': 'ad-unit-1'
+    'code': 'ad-unit-1'
   });
 
   var responseEmpty = '';
@@ -65,7 +65,7 @@ describe('Atomx adapter', function () {
   };
 
   describe('loads the tag code', function() {
-    var stubLoadScript = sinon.stub(adLoader, "loadScript");
+    var stubLoadScript = sinon.stub(adLoader, 'loadScript');
     Adapter.callBids(validData_1);
     sinon.assert.calledOnce(stubLoadScript);
     let url = stubLoadScript.firstCall.args[0];
@@ -95,7 +95,7 @@ describe('Atomx adapter', function () {
     it('ajax params should be matched', function () {
       Adapter.callBids(validData_1);
       sinon.assert.calledWith(stubAjax, sinon.match('/placement', function () {
-      }, validJsonParams, {method: "GET"}));
+      }, validJsonParams, {method: 'GET'}));
     });
   });
   describe('bid request with invalid data', function () {

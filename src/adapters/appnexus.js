@@ -13,31 +13,30 @@ AppNexusAdapter = function AppNexusAdapter() {
   var usersync = false;
 
   baseAdapter.callBids = function (params) {
-    //var bidCode = baseAdapter.getBidderCode();
+    // var bidCode = baseAdapter.getBidderCode();
 
     var anArr = params.bids;
 
-    //var bidsCount = anArr.length;
+    // var bidsCount = anArr.length;
 
-    //set expected bids count for callback execution
-    //bidmanager.setExpectedBidsCount(bidCode, bidsCount);
+    // set expected bids count for callback execution
+    // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
 
     for (var i = 0; i < anArr.length; i++) {
       var bidRequest = anArr[i];
       var callbackId = bidRequest.bidId;
       adloader.loadScript(buildJPTCall(bidRequest, callbackId));
 
-      //store a reference to the bidRequest from the callback id
-      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
+      // store a reference to the bidRequest from the callback id
+      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
   };
 
   function buildJPTCall(bid, callbackId) {
-
-    //determine tag params
+    // determine tag params
     var placementId = utils.getBidIdParameter('placementId', bid.params);
 
-    //memberId will be deprecated, use member instead
+    // memberId will be deprecated, use member instead
     var memberId = utils.getBidIdParameter('memberId', bid.params);
     var member = utils.getBidIdParameter('member', bid.params);
     var inventoryCode = utils.getBidIdParameter('invCode', bid.params);
@@ -45,7 +44,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var referrer = utils.getBidIdParameter('referrer', bid.params);
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
 
-    //build our base tag, based on if we are http or https
+    // build our base tag, based on if we are http or https
 
     var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
 
@@ -63,23 +62,23 @@ AppNexusAdapter = function AppNexusAdapter() {
     jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
     jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', (utils.getBidIdParameter('trafficSourceCode', bid.params)));
 
-    //sizes takes a bit more logic
+    // sizes takes a bit more logic
     var sizeQueryString = '';
     var parsedSizes = utils.parseSizesInput(bid.sizes);
 
-    //combine string into proper querystring for impbus
+    // combine string into proper querystring for impbus
     var parsedSizesLength = parsedSizes.length;
     if (parsedSizesLength > 0) {
-      //first value should be "size"
+      // first value should be "size"
       sizeQueryString = 'size=' + parsedSizes[0];
       if (parsedSizesLength > 1) {
-        //any subsequent values should be "promo_sizes"
+        // any subsequent values should be "promo_sizes"
         sizeQueryString += '&promo_sizes=';
         for (var j = 1; j < parsedSizesLength; j++) {
           sizeQueryString += parsedSizes[j] += ',';
         }
 
-        //remove trailing comma
+        // remove trailing comma
         if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
           sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
         }
@@ -90,18 +89,18 @@ AppNexusAdapter = function AppNexusAdapter() {
       jptCall += sizeQueryString + '&';
     }
 
-    //this will be deprecated soon
+    // this will be deprecated soon
     var targetingParams = utils.parseQueryStringParameters(query);
 
     if (targetingParams) {
-      //don't append a & here, we have already done it in parseQueryStringParameters
+      // don't append a & here, we have already done it in parseQueryStringParameters
       jptCall += targetingParams;
     }
 
-    //append custom attributes:
+    // append custom attributes:
     var paramsCopy = Object.assign({}, bid.params);
 
-    //delete attributes already used
+    // delete attributes already used
     delete paramsCopy.placementId;
     delete paramsCopy.memberId;
     delete paramsCopy.invCode;
@@ -110,15 +109,15 @@ AppNexusAdapter = function AppNexusAdapter() {
     delete paramsCopy.alt_referrer;
     delete paramsCopy.member;
 
-    //get the reminder
+    // get the reminder
     var queryParams = utils.parseQueryStringParameters(paramsCopy);
 
-    //append
+    // append
     if (queryParams) {
       jptCall += queryParams;
     }
 
-    //append referrer
+    // append referrer
     if (referrer === '') {
       referrer = utils.getTopWindowUrl();
     }
@@ -126,7 +125,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
     jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
 
-    //remove the trailing "&"
+    // remove the trailing "&"
     if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
       jptCall = jptCall.substring(0, jptCall.length - 1);
     }
@@ -136,31 +135,27 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     // @endif
 
-    //append a timer here to track latency
+    // append a timer here to track latency
     bid.startTime = new Date().getTime();
 
     return jptCall;
-
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
-
     var bidCode;
 
     if (jptResponseObj && jptResponseObj.callback_uid) {
-
       var responseCPM;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
       var bidObj = getBidRequest(id);
       if (bidObj) {
-
         bidCode = bidObj.bidder;
 
         placementCode = bidObj.placementCode;
 
-        //set the status
+        // set the status
         bidObj.status = CONSTANTS.STATUS.GOOD;
       }
 
@@ -172,13 +167,13 @@ AppNexusAdapter = function AppNexusAdapter() {
       if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
         responseCPM = parseInt(jptResponseObj.result.cpm, 10);
 
-        //CPM response from /jpt is dollar/cent multiplied by 10000
-        //in order to avoid using floats
-        //switch CPM to "dollar/cent"
+        // CPM response from /jpt is dollar/cent multiplied by 10000
+        // in order to avoid using floats
+        // switch CPM to "dollar/cent"
         responseCPM = responseCPM / 10000;
 
-        //store bid response
-        //bid status is good (indicating 1)
+        // store bid response
+        // bid status is good (indicating 1)
         var adId = jptResponseObj.result.creative_id;
         bid = bidfactory.createBid(1, bidObj);
         bid.creative_id = adId;
@@ -190,14 +185,13 @@ AppNexusAdapter = function AppNexusAdapter() {
         bid.dealId = jptResponseObj.result.deal_id;
 
         bidmanager.addBidResponse(placementCode, bid);
-
       } else {
-        //no response data
+        // no response data
         // @if NODE_ENV='debug'
         utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
 
         // @endif
-        //indicate that there is no bid for this placement
+        // indicate that there is no bid for this placement
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
@@ -213,17 +207,13 @@ AppNexusAdapter = function AppNexusAdapter() {
         }
         usersync = true;
       }
-
-
     } else {
-      //no response data
+      // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
 
       // @endif
-
     }
-
   };
 
   return {
