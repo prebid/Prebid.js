@@ -744,6 +744,71 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.videoAdapters = videoAdaptersBackup;
     });
 
+    it('should only request native bidders on native adunits', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // appnexusAst is a native bidder, appnexus is not
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      const spyArgs = adaptermanager.callBids.getCall(0);
+      const biddersCalled = spyArgs.args[0].adUnits[0].bids;
+      expect(biddersCalled.length).to.equal(1);
+
+      adaptermanager.callBids.restore();
+    });
+
+    it('should callBids if a native adUnit has all native bidders', () => {
+      sinon.spy(adaptermanager, 'callBids');
+      // TODO: appnexusAst is currently hardcoded in native.js, update this text when fixed
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaType: 'native',
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+      sinon.assert.calledOnce(adaptermanager.callBids);
+
+      adaptermanager.callBids.restore();
+    });
+
+    it('splits native type to individual native assets', () => {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        nativeParams: {type: 'image'},
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+
+      const nativeRequest = $$PREBID_GLOBAL$$._bidsRequested[0].bids[0].nativeParams;
+      expect(nativeRequest).to.deep.equal({
+        image: {required: true},
+        title: {required: true},
+        sponsoredBy: {required: true},
+        clickUrl: {required: true},
+        body: {required: false},
+        icon: {required: false},
+      });
+
+      resetAuction();
+    });
+
     it('should queue bid requests when a previous bid request is in process', () => {
       var spyCallBids = sinon.spy(adaptermanager, 'callBids');
       var clock = sinon.useFakeTimers();

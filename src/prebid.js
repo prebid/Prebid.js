@@ -3,6 +3,7 @@
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
+import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import 'polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
@@ -413,6 +414,17 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     for (let i = 0; i < adUnits.length; i++) {
       if (adUnits[i].code === adUnit.code) { adUnits.splice(i, 1); }
     }
+  });
+
+  // for native-enabled adUnits, only request bids for bidders that support native
+  adUnits.filter(nativeAdUnit).filter(hasNonNativeBidder).forEach(adUnit => {
+    const nonNativeBidders = adUnit.bids
+      .filter(bid => !nativeBidder(bid))
+      .map(bid => bid.bidder)
+      .join(', ');
+
+    utils.logError(`adUnit ${adUnit.code} has 'mediaType' set to 'native' but contains non-native bidder(s) ${nonNativeBidders}. No Prebid demand requests will be triggered for those bidders.`);
+    adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
   if (auctionRunning) {

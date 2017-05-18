@@ -483,5 +483,52 @@ describe('bidmanager.js', function () {
       const addedBid1 = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid1.adId, bid1.adId);
     });
+
+    it('should not add native bids that do not have required assets', () => {
+      const adUnit = {
+        code: 'adUnit-code',
+        mediaType: 'native',
+        nativeParams: {
+          title: {required: true},
+        },
+        bids: [
+          {bidder: 'appnexusAst', params: {placementId: 'id'}}
+        ]
+      };
+
+      const bid = Object.assign({},
+        bidfactory.createBid(1),
+        {mediaType: 'native'}
+      );
+
+      const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
+      bidmanager.addBidResponse(adUnit.code, bid);
+      assert.equal(bidsRecCount, $$PREBID_GLOBAL$$._bidsReceived.length);
+    });
+
+    it('should add native bids that do have required assets', () => {
+      sinon.stub(utils, 'getBidRequest', () => ({
+        bidder: 'appnexusAst',
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }));
+
+      const bid = Object.assign({},
+        bidfactory.createBid(1),
+        {
+          bidderCode: 'appnexusAst',
+          mediaType: 'native',
+          native: {title: 'foo'}
+        }
+      );
+
+      const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
+      bidmanager.addBidResponse('adUnit-code', bid);
+      assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
+
+      utils.getBidRequest.restore();
+    });
   });
 });

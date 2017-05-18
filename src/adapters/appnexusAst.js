@@ -6,12 +6,21 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
+const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = [
-  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
-];
+const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const NATIVE_MAPPING = {
+  body: 'description',
+  image: {
+    serverName: 'main_image',
+    serverParams: {
+      required: true,
+      sizes: [{}]
+    }
+  }
+};
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -73,6 +82,38 @@ function AppnexusAstAdapter() {
         }
         if (!utils.isEmpty(bid.params.keywords)) {
           tag.keywords = getKeywords(bid.params.keywords);
+        }
+
+        if (bid.mediaType === 'native') {
+          tag.ad_types = ['native'];
+
+          if (bid.nativeParams) {
+            const nativeRequest = {};
+
+            // map standard prebid native asset identifier to /ut parameters
+            // e.g., tag specifies `body` but /ut only knows `description`
+            // mapping may be in form {tag: '<server name>'} or
+            // {tag: {serverName: '<server name>', serverParams: {...}}}
+            Object.keys(bid.nativeParams).forEach(key => {
+              // check if one of the <server name> forms is used, otherwise
+              // a mapping wasn't specified so pass the key straight through
+              const requestKey =
+                (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+                NATIVE_MAPPING[key] ||
+                key;
+
+              // if the mapping for this identifier specifies required server
+              // params via the `serverParams` object, merge that in
+              const params = Object.assign({},
+                bid.nativeParams[key],
+                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+              );
+
+              nativeRequest[requestKey] = params;
+            });
+
+            tag.native = {layouts: [nativeRequest]};
+          }
         }
 
         if (bid.mediaType === 'video') { tag.require_asset_url = true; }
@@ -137,18 +178,19 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
-      if (cpm !== 0 && (type === 'banner' || type === 'video' || type === 'video-outstream')) {
+      if (cpm !== 0 && (SUPPORTED_AD_TYPES.includes(type))) {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
       }
 
-      if (type && (type !== 'banner' && type !== 'video' && type !== 'video-outstream')) {
+      if (type && (!SUPPORTED_AD_TYPES.includes(type))) {
         utils.logError(`${type} ad type not supported`);
       }
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
+      if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
       if (type === 'video-outstream') bid.mediaType = 'video-outstream';
       const placement = bidRequests[bid.adId].placementCode;
@@ -291,6 +333,17 @@ function AppnexusAstAdapter() {
           bid.adResponse.ad = bid.adResponse.ads[0];
           bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
         }
+      } else if (ad.rtb.native) {
+        const native = ad.rtb.native;
+        bid.native = {
+          title: native.title,
+          body: native.desc,
+          sponsoredBy: native.sponsored,
+          image: native.main_img && native.main_img.url,
+          icon: native.icon && native.icon.url,
+          clickUrl: native.link.url,
+          impressionTrackers: native.impression_trackers,
+        };
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;

@@ -1,4 +1,5 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
+import { NATIVE_TARGETING_KEYS } from './native';
 const bidmanager = require('./bidmanager.js');
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -150,7 +151,7 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 }
 
 function getBidLandscapeTargeting(adUnitCodes) {
-  const standardKeys = CONSTANTS.TARGETING_KEYS;
+  const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, adUnitCodes))
