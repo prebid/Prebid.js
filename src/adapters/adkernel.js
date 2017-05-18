@@ -42,7 +42,11 @@ const AdKernelAdapter = function AdKernelAdapter() {
       if (!(zone in _dispatch[host])) {
         _dispatch[host][zone] = [];
       }
-      let imp = {'id': bidId, 'tagid': bid.placementCode, 'banner': {'w': size[0], 'h': size[1]}};
+      let imp = {
+        'id': bidId,
+        'tagid': bid.placementCode,
+        'banner': {'w': size[0], 'h': size[1]}
+      };
       if (utils.getTopWindowLocation().protocol === 'https:') {
         imp.secure = 1;
       }
@@ -55,20 +59,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
       }
       if (syncedHostZones[host].indexOf(zone) === -1) {
         syncedHostZones[host].push(zone);
-        insertUserSync(host, zone);
       }
     };
-
-    function insertUserSync(host, zone) {
-      var iframe = utils.createInvisibleIframe();
-      iframe.src = `//${host}/user-sync?zone=${zone}`;
-      try {
-        document.body.appendChild(iframe);
-      } catch (error) {
-        /* istanbul ignore next */
-        utils.logError(error);
-      }
-    }
 
     /**
      *  Main function to get bid requests
@@ -81,6 +73,16 @@ const AdKernelAdapter = function AdKernelAdapter() {
           dispatchRtbRequest(host, zone, impressions, callback);
         });
       });
+    };
+    /**
+     *  Build flat user-sync queue from host->zones mapping
+     */
+    this.buildUserSyncQueue = function() {
+      return Object.keys(syncedHostZones)
+        .reduce((m, k) => {
+          syncedHostZones[k].forEach((v) => m.push([k, v]));
+          return m;
+        }, []);
     };
 
     function dispatchRtbRequest(host, zone, impressions, callback) {
@@ -160,7 +162,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
         dispatcher.addImp(bid);
       }
     });
-    // process bids grouped into bidrequests
+    // start async usersync
+    processUserSyncQueue(dispatcher.buildUserSyncQueue());
+
+    // process bids grouped into bid requests
     dispatcher.dispatch((bid, imp, bidResp) => {
       let adUnitId = bid.placementCode;
       if (bidResp) {
@@ -219,6 +224,32 @@ const AdKernelAdapter = function AdKernelAdapter() {
       'domain': location.hostname,
       'page': location.href.split('?')[0]
     };
+  }
+
+  /**
+   *  Recursively process user-sync queue
+   */
+  function processUserSyncQueue(queue) {
+    if (queue.length === 0) {
+      return;
+    }
+    let entry = queue.pop();
+    insertUserSync(entry[0], entry[1], () => processUserSyncQueue(queue));
+  }
+
+  /**
+   *  Insert single iframe user-sync
+   */
+  function insertUserSync(host, zone, callback) {
+    var iframe = utils.createInvisibleIframe();
+    iframe.src = `//sync.adkernel.com/user-sync?zone=${zone}&r=%2F%2F${host}%2Fuser-synced%3Fuid%3D%7BUID%7D`;
+    utils.addEventHandler(iframe, 'load', callback);
+    try {
+      document.body.appendChild(iframe);
+    } catch (error) {
+      /* istanbul ignore next */
+      utils.logError(error);
+    }
   }
 
   return {
