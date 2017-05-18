@@ -483,7 +483,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       sinon.assert.calledOnce(callback);
-    })
+    });
   });
 
   describe('allBidsAvailable', function () {
@@ -515,7 +515,7 @@ describe('Unit: Prebid Module', function () {
             height: 0
           }
         },
-        getElementsByTagName : sinon.stub()
+        getElementsByTagName: sinon.stub()
       };
 
       elStub = {
@@ -567,9 +567,7 @@ describe('Unit: Prebid Module', function () {
     it('should place the url inside an iframe on the doc', function () {
       adResponse.adUrl = 'http://server.example.com/ad/ad.js';
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      //var iframe = '<IFRAME SRC="' + adResponse.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + adResponse.width + '" HEIGHT="' + adResponse.height + '"></IFRAME>';
       assert.ok(elStub.insertBefore.called, 'url was written to iframe in doc');
-
     });
 
     it('should log an error when no ad or url', function () {

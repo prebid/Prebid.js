@@ -438,13 +438,13 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
 exports.insertElement = function(elm, doc, target) {
   doc = doc || document;
   let elToAppend;
-  if(target) {
-    elToAppend =doc.getElementsByTagName(target);
+  if (target) {
+    elToAppend = doc.getElementsByTagName(target);
   }
   else {
-    elToAppend  = doc.getElementsByTagName('head');
+    elToAppend = doc.getElementsByTagName('head');
   }
-  try{
+  try {
     elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
     if (elToAppend.length) {
       elToAppend = elToAppend[0];
@@ -478,7 +478,7 @@ exports.insertCookieSyncIframe = function(url, encodeUri) {
   let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
-  let iframe =  div.firstChild;
+  let iframe = div.firstChild;
   this.insertElement(iframe);
 };
 
