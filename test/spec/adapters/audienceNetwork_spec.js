@@ -24,9 +24,7 @@ const expectToContain = (haystack, needle, n = 1) =>
   expect(haystack.split(needle)).to.have.lengthOf(n + 1,
     `expected ${n} occurrence(s) of '${needle}' in '${haystack}'`);
 
-
 describe('AudienceNetwork adapter', () => {
-
   describe('Public API', () => {
     const adapter = AudienceNetwork();
     it('getBidderCode', () => {
@@ -42,7 +40,6 @@ describe('AudienceNetwork adapter', () => {
   });
 
   describe('callBids parameter parsing', () => {
-
     let xhr;
     let requests;
     let addBidResponse;
@@ -123,22 +120,20 @@ describe('AudienceNetwork adapter', () => {
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
-
   });
 
   describe('callBids response handling', () => {
-
     let server;
     let addBidResponse;
     let logError;
 
-    beforeEach( () => {
+    beforeEach(() => {
       server = sinon.fakeServer.create();
       addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       logError = sinon.stub(utils, 'logError');
     });
 
-    afterEach( () => {
+    afterEach(() => {
       server.restore();
       bidmanager.addBidResponse.restore();
       utils.logError.restore();
@@ -372,7 +367,5 @@ describe('AudienceNetwork adapter', () => {
       // Verify no attempt to log error
       expect(logError.called).to.equal(false, 'logError called');
     });
-
   });
-
 });

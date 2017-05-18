@@ -1,11 +1,11 @@
 var utils = require('./utils');
 let _requestCache = {};
 
-//add a script tag to the page, used to add /jpt call to page
+// add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function (tagSrc, callback, cacheRequest) {
-  //var noop = () => {};
+  // var noop = () => {};
   //
-  //callback = callback || noop;
+  // callback = callback || noop;
   if (!tagSrc) {
     utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
     return;
@@ -15,10 +15,10 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
     if (_requestCache[tagSrc]) {
       if (callback && typeof callback === 'function') {
         if (_requestCache[tagSrc].loaded) {
-          //invokeCallbacks immediately
+          // invokeCallbacks immediately
           callback();
         } else {
-          //queue the callback
+          // queue the callback
           _requestCache[tagSrc].callbacks.push(callback);
         }
       }
@@ -45,11 +45,10 @@ exports.loadScript = function (tagSrc, callback, cacheRequest) {
     }
   }
 
-  //trigger one time request
+  // trigger one time request
   else {
     requestResource(tagSrc, callback);
   }
-
 };
 
 function requestResource(tagSrc, callback) {
@@ -75,7 +74,7 @@ function requestResource(tagSrc, callback) {
 
   jptScript.src = tagSrc;
 
-  //add the new script tag to the page
+  // add the new script tag to the page
   var elToAppend = document.getElementsByTagName('head');
   elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
   if (elToAppend.length) {

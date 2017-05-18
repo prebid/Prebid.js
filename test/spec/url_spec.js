@@ -2,9 +2,7 @@ import {format, parse} from '../../src/url';
 import { expect } from 'chai';
 
 describe('helpers.url', () => {
-
   describe('parse()', () => {
-
     let parsed;
 
     beforeEach(() => {
@@ -42,11 +40,9 @@ describe('helpers.url', () => {
     it('extracts the host', () => {
       expect(parsed).to.have.property('host', 'example.com:3000');
     });
-
   });
 
   describe('format()', () => {
-
     it('formats an object in to a URL', () => {
       expect(format({
         protocol: 'http',
@@ -63,7 +59,5 @@ describe('helpers.url', () => {
         hostname: 'example.com'
       })).to.equal('http://example.com');
     });
-
   });
-
 });

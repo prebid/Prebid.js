@@ -51,11 +51,11 @@ module.exports = function () {
   }
 
   function isAmp() {
-    return typeof window.context === "object" && (window.context.tagName === "AMP-AD" || window.context.tagName === "AMP-EMBED");
+    return typeof window.context === 'object' && (window.context.tagName === 'AMP-AD' || window.context.tagName === 'AMP-EMBED');
   }
 
   function isSecure() {
-    return document.location.protocol === "https:";
+    return document.location.protocol === 'https:';
   }
 
   function isArray(value) {
@@ -108,7 +108,6 @@ module.exports = function () {
 
     return parts.join('&');
   }
-
 
   function buildMantisUrl(path, data, domain) {
     var params = {
