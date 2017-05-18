@@ -88,13 +88,27 @@ function AppnexusAstAdapter() {
           tag.ad_types = ['native'];
 
           if (bid.nativeParams) {
-            tag.native = {};
             const nativeRequest = {};
 
-            // map standard native asset identifier to what /ut expects
+            // map standard prebid native asset identifier to /ut parameters
+            // e.g., tag specifies `body` but /ut only knows `description`
+            // mapping may be in form {tag: '<server name>'} or
+            // {tag: {serverName: '<server name>', serverParams: {...}}}
             Object.keys(bid.nativeParams).forEach(key => {
-              let requestKey = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName || NATIVE_MAPPING[key] || key;
-              let params = Object.assign({}, bid.nativeParams[key], NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams);
+              // check if one of the <server name> forms is used, otherwise
+              // a mapping wasn't specified so pass the key straight through
+              const requestKey =
+                (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+                NATIVE_MAPPING[key] ||
+                key;
+
+              // if the mapping for this identifier specifies required server
+              // params via the `serverParams` object, merge that in
+              const params = Object.assign({},
+                bid.nativeParams[key],
+                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+              );
+
               nativeRequest[requestKey] = params;
             });
 
