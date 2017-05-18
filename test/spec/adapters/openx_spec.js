@@ -1,5 +1,4 @@
 describe('openx adapter tests', function () {
-
   const expect = require('chai').expect;
   const assert = require('chai').assert;
   const adapter = require('src/adapters/openx');
@@ -11,7 +10,6 @@ describe('openx adapter tests', function () {
   after(() => document.body.appendChild.restore());
 
   describe('test openx callback responce', function () {
-
     it('should exist and be a function', function () {
       expect(pbjs.oxARJResponse).to.exist.and.to.be.a('function');
     });
@@ -37,12 +35,12 @@ describe('openx adapter tests', function () {
 
       // empty ads in bidresponse
       let response = {
-        "ads":
+        'ads':
         {
-          "version": 1,
-          "count": 1,
-          "pixels": "http://testpixels.net",
-          "ad": []
+          'version': 1,
+          'count': 1,
+          'pixels': 'http://testpixels.net',
+          'ad': []
         }
       };
 
@@ -82,35 +80,35 @@ describe('openx adapter tests', function () {
 
     // empty ads in bidresponse
     let response = {
-      "ads":
+      'ads':
       {
-        "version": 1,
-        "count": 1,
-        "pixels": "http://testpixels.net",
-        "ad": [
+        'version': 1,
+        'count': 1,
+        'pixels': 'http://testpixels.net',
+        'ad': [
           {
-            "adunitid": 1234,
-            "adid": 5678,
-            "type": "html",
-            "html": "test_html",
-            "framed": 1,
-            "is_fallback": 0,
-            "ts": "ts",
-            "cpipc": 1000,
-            "pub_rev": "1000",
-            "adv_id": "adv_id",
-            "brand_id": "",
-            "creative": [
+            'adunitid': 1234,
+            'adid': 5678,
+            'type': 'html',
+            'html': 'test_html',
+            'framed': 1,
+            'is_fallback': 0,
+            'ts': 'ts',
+            'cpipc': 1000,
+            'pub_rev': '1000',
+            'adv_id': 'adv_id',
+            'brand_id': '',
+            'creative': [
               {
-                "width": "300",
-                "height": "250",
-                "target": "_blank",
-                "mime": "text/html",
-                "media": "test_media",
-                "tracking": {
-                  "impression": "test_impression",
-                  "inview": "test_inview",
-                  "click": "test_click"
+                'width': '300',
+                'height': '250',
+                'target': '_blank',
+                'mime': 'text/html',
+                'media': 'test_media',
+                'tracking': {
+                  'impression': 'test_impression',
+                  'inview': 'test_inview',
+                  'click': 'test_click'
                 }
               }
             ]
@@ -159,35 +157,35 @@ describe('openx adapter tests', function () {
 
     // Empty pub rev in bid response
     let response = {
-      "ads":
+      'ads':
       {
-        "version": 1,
-        "count": 1,
-        "pixels": "http://testpixels.net",
-        "ad": [
+        'version': 1,
+        'count': 1,
+        'pixels': 'http://testpixels.net',
+        'ad': [
           {
-            "adunitid": 1234,
-            "adid": 5678,
-            "type": "html",
-            "html": "test_html",
-            "framed": 1,
-            "is_fallback": 1,
-            "ts": "ts",
-            "cpipc": 1000,
-            "pub_rev": "",
-            "adv_id": "adv_id",
-            "brand_id": "",
-            "creative": [
+            'adunitid': 1234,
+            'adid': 5678,
+            'type': 'html',
+            'html': 'test_html',
+            'framed': 1,
+            'is_fallback': 1,
+            'ts': 'ts',
+            'cpipc': 1000,
+            'pub_rev': '',
+            'adv_id': 'adv_id',
+            'brand_id': '',
+            'creative': [
               {
-                "width": "300",
-                "height": "250",
-                "target": "_blank",
-                "mime": "text/html",
-                "media": "test_media",
-                "tracking": {
-                  "impression": "test_impression",
-                  "inview": "test_inview",
-                  "click": "test_click"
+                'width': '300',
+                'height': '250',
+                'target': '_blank',
+                'mime': 'text/html',
+                'media': 'test_media',
+                'tracking': {
+                  'impression': 'test_impression',
+                  'inview': 'test_inview',
+                  'click': 'test_click'
                 }
               }
             ]
@@ -265,5 +263,4 @@ describe('openx adapter tests', function () {
     expect(bidUrl).to.include('c.test1=testval1');
     spyLoadScript.restore();
   });
-
 });

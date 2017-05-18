@@ -24,24 +24,23 @@ const DEFAULT_BIDDER_REQUEST = {
   }]
 };
 const DEFAULT_PUBAPI_RESPONSE = {
-  "id": "245730051428950632",
-  "cur": "USD",
-  "seatbid": [{
-    "bid": [{
-      "id": 1,
-      "impid": "245730051428950632",
-      "price": 0.09,
-      "adm": "<script>logInfo('ad');</script>",
-      "crid": "0",
-      "h": 90,
-      "w": 728,
-      "ext": {"sizeid": 225}
+  'id': '245730051428950632',
+  'cur': 'USD',
+  'seatbid': [{
+    'bid': [{
+      'id': 1,
+      'impid': '245730051428950632',
+      'price': 0.09,
+      'adm': "<script>logInfo('ad');</script>",
+      'crid': '0',
+      'h': 90,
+      'w': 728,
+      'ext': {'sizeid': 225}
     }]
   }]
 };
 
 describe('AolAdapter', () => {
-
   let adapter;
 
   beforeEach(() => adapter = new AolAdapter());
@@ -63,9 +62,7 @@ describe('AolAdapter', () => {
     });
 
     describe('bid request', () => {
-
       describe('Marketplace api', () => {
-
         let xhr;
         let requests;
 
@@ -218,11 +215,9 @@ describe('AolAdapter', () => {
           }));
           expect(requests[0].url).to.contain('bidfloor=0.8');
         });
-
       });
 
       describe('Nexage api', () => {
-
         let xhr;
         let requests;
 
@@ -337,11 +332,9 @@ describe('AolAdapter', () => {
         })
         ;
       });
-
     });
 
     describe('bid response', () => {
-
       let server;
 
       beforeEach(() => {
@@ -428,9 +421,9 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager as invalid in case of no bid data', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": []
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': []
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -440,9 +433,9 @@ describe('AolAdapter', () => {
 
       it('should have adId matching the bidId from bid request in case of no bid data', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": []
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': []
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
         server.respond();
@@ -453,17 +446,17 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager as invalid in case of empty price', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "0",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'adm': "<script>logInfo('ad');</script>",
+              'crid': '0',
+              'h': 90,
+              'w': 728,
+              'ext': {'sizeid': 225}
             }]
           }]
         }));
@@ -475,18 +468,18 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager with attributes from pubapi response', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'price': 0.09,
+              'adm': "<script>logInfo('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {'sizeid': 225}
             }]
           }]
         }));
@@ -504,22 +497,22 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager including pixels from pubapi response', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'price': 0.09,
+              'adm': "<script>logInfo('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {'sizeid': 225}
             }]
           }],
-          "ext": {
-            "pixels": "<script>document.write('<img src=\"pixel.gif\">');</script>"
+          'ext': {
+            'pixels': "<script>document.write('<img src=\"pixel.gif\">');</script>"
           }
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
@@ -534,20 +527,20 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager including dealid from pubapi response', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "dealid": "12345",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {
-                "sizeid": 225
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'dealid': '12345',
+              'price': 0.09,
+              'adm': "<script>logInfo('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {
+                'sizeid': 225
               }
             }]
           }]
@@ -561,21 +554,21 @@ describe('AolAdapter', () => {
 
       it('should be added to bidmanager including encrypted price from pubapi response', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "dealid": "12345",
-              "price": 0.09,
-              "adm": "<script>logInfo('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {
-                "sizeid": 225,
-                "encp": "a9334987"
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'dealid': '12345',
+              'price': 0.09,
+              'adm': "<script>logInfo('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {
+                'sizeid': 225,
+                'encp': 'a9334987'
               }
             }]
           }]
@@ -589,22 +582,22 @@ describe('AolAdapter', () => {
 
       it('should not render pixels on pubapi response when no parameter is set', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'price': 0.09,
+              'adm': "<script>console.log('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {'sizeid': 225}
             }]
           }],
-          "ext": {
-            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>');</script>"
+          'ext': {
+            'pixels': "<script>document.write('<iframe src=\"pixels.org\"></iframe>');</script>"
           }
         }));
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
@@ -615,22 +608,22 @@ describe('AolAdapter', () => {
 
       it('should render pixels from pubapi response when param userSyncOn is set with \'bidResponse\'', () => {
         server.respondWith(JSON.stringify({
-          "id": "245730051428950632",
-          "cur": "USD",
-          "seatbid": [{
-            "bid": [{
-              "id": 1,
-              "impid": "245730051428950632",
-              "price": 0.09,
-              "adm": "<script>console.log('ad');</script>",
-              "crid": "12345",
-              "h": 90,
-              "w": 728,
-              "ext": {"sizeid": 225}
+          'id': '245730051428950632',
+          'cur': 'USD',
+          'seatbid': [{
+            'bid': [{
+              'id': 1,
+              'impid': '245730051428950632',
+              'price': 0.09,
+              'adm': "<script>console.log('ad');</script>",
+              'crid': '12345',
+              'h': 90,
+              'w': 728,
+              'ext': {'sizeid': 225}
             }]
           }],
-          "ext": {
-            "pixels": "<script>document.write('<iframe src=\"pixels.org\"></iframe>" +
+          'ext': {
+            'pixels': "<script>document.write('<iframe src=\"pixels.org\"></iframe>" +
             "<iframe src=\"pixels1.org\"></iframe>');</script>"
           }
         }));
@@ -667,7 +660,6 @@ describe('AolAdapter', () => {
         assertPixelsItem('iframe[src="pixels.org"]');
         assertPixelsItem('iframe[src="pixels1.org"]');
       });
-
     });
 
     describe('when bidCpmAdjustment is set', () => {

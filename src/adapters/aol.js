@@ -5,7 +5,6 @@ const bidmanager = require('../bidmanager.js');
 const constants = require('../constants.json');
 
 const AolAdapter = function AolAdapter() {
-
   let showCpmAdjustmentWarning = true;
   const pubapiTemplate = template`${'protocol'}://${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'}${'bidfloor'};misc=${'misc'}`;
   const nexageBaseApiTemplate = template`${'protocol'}://${'host'}/bidRequest?`;
@@ -33,12 +32,12 @@ const AolAdapter = function AolAdapter() {
         return fn();
       };
 
-      if (document.readyState === "complete") {
+      if (document.readyState === 'complete') {
         return idempotentFn();
       }
 
-      document.addEventListener("DOMContentLoaded", idempotentFn, false);
-      window.addEventListener("load", idempotentFn, false);
+      document.addEventListener('DOMContentLoaded', idempotentFn, false);
+      window.addEventListener('load', idempotentFn, false);
     };
   })();
 
@@ -144,8 +143,8 @@ const AolAdapter = function AolAdapter() {
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
-      bidfloor: (typeof params.bidFloor !== 'undefined') ?
-        `;bidfloor=${params.bidFloor.toString()}` : '',
+      bidfloor: (typeof params.bidFloor !== 'undefined')
+        ? `;bidfloor=${params.bidFloor.toString()}` : '',
       misc: new Date().getTime() // cache busting
     });
   }
@@ -242,7 +241,7 @@ const AolAdapter = function AolAdapter() {
       let isNexageRequestPost = _isNexageRequestPost(bid);
       if (bid.params.placement && bid.params.network) {
         apiUrl = _buildMarketplaceUrl(bid);
-      } else if(bid.params.dcn && bid.params.pos || isNexageRequestPost) {
+      } else if (bid.params.dcn && bid.params.pos || isNexageRequestPost) {
         apiUrl = _buildNexageApiUrl(bid);
         if (isNexageRequestPost) {
           data = bid.params;
@@ -282,7 +281,6 @@ const AolAdapter = function AolAdapter() {
           }
 
           _addBidResponse(bid, response);
-
         }, data, options);
       }
     });

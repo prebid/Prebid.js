@@ -19,7 +19,6 @@ const USER_PARAMS = [
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
   let usersync = false;
@@ -39,7 +38,7 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        if(bid.params.placementId) {
+        if (bid.params.placementId) {
           tag.id = parseInt(bid.params.placementId, 10);
         } else {
           tag.code = bid.params.invCode;
@@ -76,7 +75,7 @@ function AppnexusAstAdapter() {
           tag.keywords = getKeywords(bid.params.keywords);
         }
 
-        if (bid.mediaType === 'video') {tag.require_asset_url = true;}
+        if (bid.mediaType === 'video') { tag.require_asset_url = true; }
         if (bid.params.video) {
           tag.video = {};
           // place any valid video params on the tag
@@ -103,7 +102,7 @@ function AppnexusAstAdapter() {
       const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true
       });
     }
   };
@@ -120,7 +119,7 @@ function AppnexusAstAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
       utils.logError(errorMessage);
 
       // signal this response is complete
@@ -186,13 +185,12 @@ function AppnexusAstAdapter() {
         let values = [];
         utils._each(v, (val) => {
           val = utils.getValueString('keywords.' + k, val);
-          if (val) {values.push(val);}
+          if (val) { values.push(val); }
         });
         v = values;
       } else {
         v = utils.getValueString('keywords.' + k, v);
-        if (utils.isStr(v)) {v = [v];}
-        else {return;} // unsuported types - don't send a key
+        if (utils.isStr(v)) { v = [v]; } else { return; } // unsuported types - don't send a key
       }
       arrs.push({key: k, value: v});
     });
@@ -265,7 +263,6 @@ function AppnexusAstAdapter() {
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
         if (ad.renderer_url) {
-
           // outstream video
 
           bid.adResponse = tag;
@@ -316,7 +313,6 @@ function AppnexusAstAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
-
 }
 
 AppnexusAstAdapter.createNew = function() {
