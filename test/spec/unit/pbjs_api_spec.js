@@ -483,7 +483,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitCodes);
 
       sinon.assert.calledOnce(callback);
-    })
+    });
   });
 
   describe('allBidsAvailable', function () {
@@ -499,6 +499,7 @@ describe('Unit: Prebid Module', function () {
   describe('renderAd', function () {
     var bidId = 1;
     var doc = {};
+    var elStub = {};
     var adResponse = {};
     var spyLogError = null;
     var spyLogMessage = null;
@@ -513,8 +514,14 @@ describe('Unit: Prebid Module', function () {
             width: 0,
             height: 0
           }
-        }
+        },
+        getElementsByTagName: sinon.stub()
       };
+
+      elStub = {
+        insertBefore: sinon.stub()
+      };
+      doc.getElementsByTagName.returns([elStub]);
 
       adResponse = {
         adId: bidId,
@@ -560,8 +567,7 @@ describe('Unit: Prebid Module', function () {
     it('should place the url inside an iframe on the doc', function () {
       adResponse.adUrl = 'http://server.example.com/ad/ad.js';
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      var iframe = '<IFRAME SRC="' + adResponse.adUrl + '" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="' + adResponse.width + '" HEIGHT="' + adResponse.height + '"></IFRAME>';
-      assert.ok(doc.write.calledWith(iframe), 'url was written to iframe in doc');
+      assert.ok(elStub.insertBefore.called, 'url was written to iframe in doc');
     });
 
     it('should log an error when no ad or url', function () {

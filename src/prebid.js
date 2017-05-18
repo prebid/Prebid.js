@@ -321,8 +321,13 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           doc.close();
           setRenderSize(doc, width, height);
         } else if (url) {
-          doc.write(`<IFRAME SRC="${url}" FRAMEBORDER="0" SCROLLING="no" MARGINHEIGHT="0" MARGINWIDTH="0" TOPMARGIN="0" LEFTMARGIN="0" ALLOWTRANSPARENCY="true" WIDTH="${width}" HEIGHT="${height}"></IFRAME>`);
-          doc.close();
+          const iframe = utils.createInvisibleIframe();
+          iframe.height = height;
+          iframe.width = width;
+          iframe.style.display = 'inline';
+          iframe.src = url;
+
+          utils.insertElement(iframe, doc, 'body');
           setRenderSize(doc, width, height);
         } else {
           utils.logError('Error trying to write ad. No ad for bid response id: ' + id);
