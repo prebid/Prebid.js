@@ -2,10 +2,8 @@
 layout: example
 title: Custom Price Bucket using `setPriceGranularity`
 description: Custom Price Bucket using the `setPriceGranularity` method 
-
 top_nav_section: dev_docs
 nav_section: quick-start
-
 hide: true
 
 about:
@@ -14,7 +12,7 @@ about:
 - Integration with DFP's GPT single request asynchronous mode.
 - One set of line items for all bidders.
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/86/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/bp9magow/95/embedded/html,result
 code_height: 3166
 code_lines: 146
 pid: 101
