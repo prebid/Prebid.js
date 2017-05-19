@@ -4,7 +4,7 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-import { queueSync, persist } from 'src/cookie.js';
+import { queueSync, persist } from 'src/cookie';
 
 const TYPE = 's2s';
 const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
@@ -108,15 +108,27 @@ function PrebidServer() {
       if (result.status === 'OK') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_bid) {
+            if (bidder.no_bid || bidder.no_cookie) {
               // store a "No Bid" bid response
 
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, {
-                bidId: bidder.bid_id
-              });
-              bidObject.adUnitCode = bidder.ad_unit;
-              bidObject.bidderCode = bidder.bidder;
-              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              if (!bidder.ad_unit) {
+                utils.getBidderRequestAllAdUnits(bidder.bidder).bids.forEach(bid => {
+                  let bidObject = bidfactory.createBid(STATUS.NO_BID, bid);
+                  bidObject.adUnitCode = bid.placementCode;
+                  bidObject.bidderCode = bidder.bidder;
+
+                  bidmanager.addBidResponse(bid.placementCode, bidObject);
+                });
+              } else {
+                let bidObject = bidfactory.createBid(STATUS.NO_BID, {
+                  bidId: bidder.bid_id
+                });
+
+                bidObject.adUnitCode = bidder.ad_unit;
+                bidObject.bidderCode = bidder.bidder;
+
+                bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              }
             }
             if (bidder.no_cookie) {
               // if no cookie is present then no bids were made, we don't store a bid response
