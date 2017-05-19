@@ -8,7 +8,7 @@ import 'polyfill';
 
 import { parse as parseURL, format as formatURL} from './url';
 import { isValidPriceConfig} from './cpmBucketManager';
-import { listenMessagesFromCreative} from './secure-creatives';
+import { listenMessagesFromCreative} from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
