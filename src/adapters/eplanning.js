@@ -1,13 +1,9 @@
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
 
 var EPlanningAdapter = function EPlanningAdapter() {
-
-  var ISV_DEFAULT = "aklc.img.e-planning.net";
-
   (function() {
-    var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { "sv": "ads.us.e-planning.net", "t": 0 }, rnd, FILE = "file", CALLBACK_FUNCTION = "hbpb.rH", NULL_SIZE = "1x1", _csRequested = [], PROTO = "", ISV = "aklc.img.e-planning.net";
+    var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = '', ISV = 'aklc.img.e-planning.net';
     function Hbpb() {
       var slots = (function() {
         var _data = [];
@@ -22,24 +18,24 @@ var EPlanningAdapter = function EPlanningAdapter() {
           function getSizesString() {
             var s = [], i, sizes = getSizes();
             if (sizes && sizes.length) {
-              if (typeof(sizes[0]) === "object") {
+              if (typeof sizes[0] === 'object') {
                 for (i = 0; i < sizes.length; i++) {
-                  s.push(sizes[i][0] + "x" + sizes[i][1]);
+                  s.push(sizes[i][0] + 'x' + sizes[i][1]);
                 }
               } else {
-                s.push(sizes[0] + "x" + sizes[1]);
+                s.push(sizes[0] + 'x' + sizes[1]);
               }
             } else {
               return NULL_SIZE;
             }
-            return s.join(",");
+            return s.join(',');
           }
           return {
             getPlacementCode: function() {
               return data.placementCode;
             },
             getString: function() {
-              return this.getPlacementCode() + ":" + getSizesString();
+              return this.getPlacementCode() + ':' + getSizesString();
             },
             addAd: function(ad) {
               _data[slotId].ads.push(ad);
@@ -49,16 +45,16 @@ var EPlanningAdapter = function EPlanningAdapter() {
               if (hasAds()) {
                 ad = data.ads[0];
                 return {
-                  "placementCode": that.getPlacementCode(),
-                  "ad": {
-                    "ad": ad.adm,
-                    "cpm": ad.pr,
-                    "width": ad.size.w,
-                    "height": ad.size.h
+                  'placementCode': that.getPlacementCode(),
+                  'ad': {
+                    'ad': ad.adm,
+                    'cpm': ad.pr,
+                    'width': ad.size.w,
+                    'height': ad.size.h
                   }
                 };
               } else {
-                return { "placementCode": that.getPlacementCode() };
+                return { 'placementCode': that.getPlacementCode() };
               }
             }
           };
@@ -84,7 +80,7 @@ var EPlanningAdapter = function EPlanningAdapter() {
               slot = this.get(i);
               _slots.push(slot.getString());
             }
-            return _slots.join("+");
+            return _slots.join('+');
           },
           findByPlacementCode: function(placementCode) {
             var i, _slots = findAll();
@@ -100,7 +96,7 @@ var EPlanningAdapter = function EPlanningAdapter() {
               r.push(_slots[i].getFormatedResponse());
             }
             return {
-              "bids": r
+              'bids': r
             };
           }
         };
@@ -113,9 +109,9 @@ var EPlanningAdapter = function EPlanningAdapter() {
             placementCode: bids[i].placementCode,
             sizes: bids[i].sizes
           });
-          setGlobalParam("sv", bids[i]);
-          setGlobalParam("ci", bids[i]);
-          setGlobalParam("t", bids[i]);
+          setGlobalParam('sv', bids[i]);
+          setGlobalParam('ci', bids[i]);
+          setGlobalParam('t', bids[i]);
         }
         doRequest();
       }
@@ -145,56 +141,56 @@ var EPlanningAdapter = function EPlanningAdapter() {
         return CALLBACK_FUNCTION;
       }
       function doRequest() {
-        var clienteId = getGlobalParam("ci"), url, dfpClienteId = "1", sec = "ROS", params = [], t = getGlobalParam("t");
+        var clienteId = getGlobalParam('ci'), url, dfpClienteId = '1', sec = 'ROS', params = [], t = getGlobalParam('t');
         if (clienteId && !t) {
-          url = PROTO + "//" + getGlobalParam("sv") + "/hb/1/" + clienteId + "/" + dfpClienteId + "/" + (win.location.hostname || FILE) + "/" + sec + "?";
-          params.push("rnd=" + getRandom());
-          params.push("e=" + slots.getString());
+          url = PROTO + '//' + getGlobalParam('sv') + '/hb/1/' + clienteId + '/' + dfpClienteId + '/' + (win.location.hostname || FILE) + '/' + sec + '?';
+          params.push('rnd=' + getRandom());
+          params.push('e=' + slots.getString());
           if (getDocURL()) {
-            params.push("ur=" + getDocURL());
+            params.push('ur=' + getDocURL());
           }
           if (getReferrerURL()) {
-            params.push("fr=" + getReferrerURL());
+            params.push('fr=' + getReferrerURL());
           }
-          params.push("cb=" + getCallbackFunction());
-          params.push("r=pbjs");
-          url += params.join("&");
+          params.push('cb=' + getCallbackFunction());
+          params.push('r=pbjs');
+          url += params.join('&');
           load(url);
         } else if (t) {
-          url = PROTO + "//" + ISV + "/layers/t_pbjs_" + t + ".js";
+          url = PROTO + '//' + ISV + '/layers/t_pbjs_' + t + '.js';
           load(url);
         }
       }
       function load(url) {
-        var script = doc.createElement("script");
+        var script = doc.createElement('script');
         script.src = url;
         doc.body.appendChild(script);
       }
       function callback(response) {
-        if (pbjs && pbjs.processEPlanningResponse && typeof(pbjs.processEPlanningResponse) === "function") {
+        if (pbjs && pbjs.processEPlanningResponse && typeof pbjs.processEPlanningResponse === 'function') {
           pbjs.processEPlanningResponse(response);
         }
       }
       function syncUsers(cs) {
         var i, e, d;
         for (i = 0; i < cs.length; i++) {
-          if (typeof(cs[i]) === "string" && _csRequested.indexOf(cs[i]) === -1) {
+          if (typeof cs[i] === 'string' && _csRequested.indexOf(cs[i]) === -1) {
             (new Image()).src = cs[i];
             _csRequested.push(cs[i]);
-          } else if (typeof(cs[i]) === "object" && _csRequested.indexOf(cs[i].u) === -1) {
+          } else if (typeof cs[i] === 'object' && _csRequested.indexOf(cs[i].u) === -1) {
             if (cs[i].j) {
-              e = doc.createElement("script");
+              e = doc.createElement('script');
               e.src = cs[i].u;
             } else if (cs[i].ifr) {
-              e = doc.createElement("iframe");
+              e = doc.createElement('iframe');
               e.src = cs[i].u;
-              e.style.width = e.style.height = "1px";
-              e.display = "none";
+              e.style.width = e.style.height = '1px';
+              e.display = 'none';
             }
             if (cs[i].data) {
               for (d in cs[i].data) {
                 if (cs[i].data.hasOwnProperty(d)) {
-                  e.setAttribute("data-" + d, cs[i].data[d]);
+                  e.setAttribute('data-' + d, cs[i].data[d]);
                 }
               }
             }
@@ -212,11 +208,11 @@ var EPlanningAdapter = function EPlanningAdapter() {
               if (slot) {
                 for (o = 0; o < response.sp[i].a.length; o++) {
                   slot.addAd({
-                    "adm": response.sp[i].a[o].adm,
-                    "pr": response.sp[i].a[o].pr,
-                    "size": {
-                      "w": response.sp[i].a[o].w,
-                      "h": response.sp[i].a[o].h
+                    'adm': response.sp[i].a[o].adm,
+                    'pr': response.sp[i].a[o].pr,
+                    'size': {
+                      'w': response.sp[i].a[o].w,
+                      'h': response.sp[i].a[o].h
                     }
                   });
                 }
@@ -279,7 +275,6 @@ var EPlanningAdapter = function EPlanningAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = EPlanningAdapter;
