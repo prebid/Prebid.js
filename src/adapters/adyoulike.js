@@ -10,11 +10,11 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   const _VERSION = "0.1";
 
   const baseAdapter = Adapter.createNew('adyoulike');
-  const bidRequests = {};
-  
+
   baseAdapter.callBids = function (bidRequest) {
+      const bidRequests = {};
       const bids = bidRequest.bids || [];
-      
+
       const validBids = bids.filter(valid);
       validBids.forEach(bid => { bidRequests[bid.params.placement] = bid; });
 
@@ -22,7 +22,9 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
       if (!utils.isEmpty(placements)) {
         const body = createBody(placements);
         const endpoint = createEndpoint();
-        ajax(endpoint, handleResponse, body, {
+        ajax(endpoint, (response) => {
+          handleResponse(bidRequests, response);
+        }, body, {
           contentType: 'text/json',
           withCredentials: true
         });
@@ -71,7 +73,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   }
 
   /* Response handler */
-  function handleResponse(response) {
+  function handleResponse(bidRequests, response) {
     let responses = [];
     try {
       responses = JSON.parse(response);
