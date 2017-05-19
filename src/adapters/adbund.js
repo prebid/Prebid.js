@@ -10,7 +10,7 @@ var adBundAdapter = function adBundAdapter() {
     'http://us-east-engine.adbund.xyz/prebid/ad/get',
     'http://us-west-engine.adbund.xyz/prebid/ad/get'
   ];
-  //Based on the time zone to select the interface to the server
+  // Based on the time zone to select the interface to the server
   var bidAPI = bidAPIs[timezone < 0 ? 0 : 1];
 
   function _stringify(param) {

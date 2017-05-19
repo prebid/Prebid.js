@@ -84,7 +84,7 @@ describe('Admixer adapter', function () {
     it('ajax params should be matched', function () {
       Adapter.callBids(validData_1);
       sinon.assert.calledWith(stubAjax, sinon.match(invUrl, function () {
-      }, validJsonParams, {method: "GET"}));
+      }, validJsonParams, {method: 'GET'}));
     });
   });
   describe('bid request with invalid data', function () {

@@ -10,9 +10,8 @@ var CONSTANTS = require('../constants.json');
  *
  */
 var AdmediaAdapter = function AdmediaAdapter() {
-
-  function _callBids(params){
-    var bids, bidderUrl = (window.location.protocol) + "//b.admedia.com/banner/prebid/bidder/?";
+  function _callBids(params) {
+    var bids, bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
@@ -20,18 +19,17 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       if (bid.params.aid) {
         request_obj.aid = bid.params.aid;
-      }
-      else{
-        utils.logError('required param aid is missing', "admedia");
+      } else {
+        utils.logError('required param aid is missing', 'admedia');
         continue;
       }
 
-      //optional page_url macro
+      // optional page_url macro
       if (bid.params.page_url) {
         request_obj.page_url = bid.params.page_url;
       }
 
-      //if set, return a test ad for all aids
+      // if set, return a test ad for all aids
       if (bid.params.test_ad === 1) {
         request_obj.test_ad = 1;
       }
@@ -39,21 +37,20 @@ var AdmediaAdapter = function AdmediaAdapter() {
       var parsedSizes = utils.parseSizesInput(bid.sizes);
       var parsedSizesLength = parsedSizes.length;
       if (parsedSizesLength > 0) {
-        //first value should be "size"
+        // first value should be "size"
         request_obj.size = parsedSizes[0];
         if (parsedSizesLength > 1) {
-          //any subsequent values should be "promo_sizes"
+          // any subsequent values should be "promo_sizes"
           var promo_sizes = [];
           for (var j = 1; j < parsedSizesLength; j++) {
             promo_sizes.push(parsedSizes[j]);
           }
 
-          request_obj.promo_sizes = promo_sizes.join(",");
-
+          request_obj.promo_sizes = promo_sizes.join(',');
         }
       }
 
-      //detect urls
+      // detect urls
       request_obj.siteDomain = window.location.host;
       request_obj.sitePage = window.location.href;
       request_obj.siteRef = document.referrer;
@@ -61,16 +58,16 @@ var AdmediaAdapter = function AdmediaAdapter() {
 
       request_obj.callbackId = bid.bidId;
 
-      var endpoint = bidderUrl+utils.parseQueryStringParameters(request_obj);
+      var endpoint = bidderUrl + utils.parseQueryStringParameters(request_obj);
 
-      //utils.logMessage('Admedia request built: ' + endpoint);
+      // utils.logMessage('Admedia request built: ' + endpoint);
 
       adloader.loadScript(endpoint);
     }
   }
 
-  //expose the callback to global object
-  $$PREBID_GLOBAL$$.admediaHandler = function(response){
+  // expose the callback to global object
+  $$PREBID_GLOBAL$$.admediaHandler = function(response) {
     var bidObject = {};
     var callback_id = response.callback_id;
     var placementCode = '';
@@ -79,24 +76,21 @@ var AdmediaAdapter = function AdmediaAdapter() {
       placementCode = bidObj.placementCode;
     }
 
-    if(bidObj && response.cpm>0 && !!response.ad){
+    if (bidObj && response.cpm > 0 && !!response.ad) {
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
       bidObject.bidderCode = bidObj.bidder;
       bidObject.cpm = parseFloat(response.cpm);
       bidObject.ad = response.ad;
       bidObject.width = response.width;
       bidObject.height = response.height;
-    }
-    else{
+    } else {
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
       bidObject.bidderCode = bidObj.bidder;
       utils.logMessage('No prebid response from Admedia for placement code ' + placementCode);
     }
 
     bidmanager.addBidResponse(placementCode, bidObject);
-
   };
-
 
   // Export the callBids function, so that prebid.js can execute this function
   // when the page asks to send out bid requests.

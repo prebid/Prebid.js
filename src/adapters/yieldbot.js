@@ -14,7 +14,6 @@ var utils = require('../utils');
  * @class
  */
 var YieldbotAdapter = function YieldbotAdapter() {
-
   window.ybotq = window.ybotq || [];
 
   var ybotlib = {
@@ -47,7 +46,6 @@ var YieldbotAdapter = function YieldbotAdapter() {
       var bid = {};
 
       if (slotCriteria && slotCriteria.ybot_ad && slotCriteria.ybot_ad !== 'n') {
-
         bid = bidfactory.createBid(ybotlib.BID_STATUS.AVAILABLE);
 
         bid.cpm = parseInt(slotCriteria.ybot_cpm) / 100.0 || 0; // Yieldbot CPM bids are in cents
@@ -65,7 +63,6 @@ var YieldbotAdapter = function YieldbotAdapter() {
         for (var k in slotCriteria) {
           bid[k] = slotCriteria[k];
         }
-
       } else {
         bid = bidfactory.createBid(ybotlib.BID_STATUS.EMPTY);
       }
@@ -79,7 +76,6 @@ var YieldbotAdapter = function YieldbotAdapter() {
      * @private
      */
     callBids: function (params) {
-
       var bids = params.bids || [];
       var ybotq = window.ybotq || [];
 
