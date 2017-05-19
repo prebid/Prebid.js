@@ -14,7 +14,7 @@ function BeachfrontAdapter() {
     const bids = bidRequests.bids || [];
     bids.forEach(function(bid) {
       var bidRequest = getBidRequest(bid);
-      var RTBDataParams = prepareAndSaveRTBRequestParams(bidRequest);
+      var RTBDataParams = prepareAndSaveRTBRequestParams(bid);
       if (!RTBDataParams) {
         var error = 'No bid params';
         utils.logError(error);
