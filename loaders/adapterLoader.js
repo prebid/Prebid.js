@@ -8,7 +8,7 @@ const fs = require('fs');
 const blockLoader = require('block-loader');
 const getAdapters = require('./getAdapters');
 
-const adapters = getAdapters();
+const adapters = getAdapters('adapters.json', 'adapters');
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.filter(getStandardAdapters).filter(getUniques);
 //adapters loaded from `srcPath`
@@ -45,13 +45,6 @@ function insertAdapters() {
       console.log(`Prebid Warning: no adapter found for ${name}, continuing.`);
     }
   });
-
-
-  if (!inserts.length) {
-    console.log('Prebid Warning: no matching adapters found for config, no adapters will be' +
-      ' loaded.');
-    return '';
-  }
 
   return '/*!ADAPTER REGISTER DELIMITER*/' + inserts.map(name => {
 

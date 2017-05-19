@@ -65,6 +65,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
       try {
         document.body.appendChild(iframe);
       } catch (error) {
+        /* istanbul ignore next */
         utils.logError(error);
       }
     }
@@ -176,7 +177,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
    *  Create bid object for the bid manager
    */
   function createBidObject(resp, bid, width, height) {
-    return utils.extend(bidfactory.createBid(1, bid), {
+    return Object.assign(bidfactory.createBid(1, bid), {
       bidderCode: bid.bidder,
       ad: formatAdMarkup(resp),
       width: width,
@@ -189,7 +190,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
    * Create empty bid object for the bid manager
    */
   function createEmptyBidObject(bid) {
-    return utils.extend(bidfactory.createBid(2, bid), {
+    return Object.assign(bidfactory.createBid(2, bid), {
       bidderCode: bid.bidder
     });
   }
@@ -200,7 +201,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function formatAdMarkup(bid) {
     var adm = bid.adm;
     if ('nurl' in bid) {
-      adm += utils.createTrackPixelHtml(bid.nurl);
+      adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
     }
     return adm;
   }
