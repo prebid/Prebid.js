@@ -48,8 +48,8 @@ var ThoughtleadrAdapter = (function () {
         if (ev.origin === location.origin &&
           ev.data && ev.data.TLDR_REQUEST && ev.data.TLDR_REQUEST.rid === rid) {
           ev.source.postMessage({TLDR_RESPONSE: {config: params.config, rid: rid}}, location.origin);
+          _this.stopListen();
         }
-        _this.stopListen();
       };
       window.addEventListener('message', _this.receiver, false);
       setTimeout(function () {
