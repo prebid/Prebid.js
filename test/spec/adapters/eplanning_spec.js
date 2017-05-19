@@ -53,7 +53,6 @@ describe('eplanning adapter tests', function () {
   var stubAddBidResponse;
 
   describe('eplanning tests', function() {
-
     beforeEach(function() {
       stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
     });
