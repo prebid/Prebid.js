@@ -11,6 +11,9 @@ var bidmanager = require('../bidmanager.js');
 var PubmaticAdapter = function PubmaticAdapter() {
   var bids;
   var _pm_pub_id;
+  var _pm_pub_age;
+  var _pm_pub_gender;
+  var _pm_pub_kvs;
   var _pm_optimize_adslots = [];
   let iframe;
 
@@ -21,9 +24,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
       var bid = bids[i];
       // bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
       _pm_pub_id = _pm_pub_id || bid.params.publisherId;
-      _pm_pub_age = _pm_pub_age || (bid.params.age || "");
-      _pm_pub_gender = _pm_pub_gender || (bid.params.gender || "");
-      _pm_pub_kvs = _pm_pub_kvs || (bid.params.kvs || "");
+      _pm_pub_age = _pm_pub_age || (bid.params.age || '');
+      _pm_pub_gender = _pm_pub_gender || (bid.params.gender || '');
+      _pm_pub_kvs = _pm_pub_kvs || (bid.params.kvs || '');
       _pm_optimize_adslots.push(bid.params.adSlot);
     }
 
