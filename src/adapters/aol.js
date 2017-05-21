@@ -3,7 +3,6 @@ const ajax = require('../ajax.js').ajax;
 const bidfactory = require('../bidfactory.js');
 const bidmanager = require('../bidmanager.js');
 const constants = require('../constants.json');
-const events = require('src/events');
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -27,7 +26,7 @@ const AolAdapter = function AolAdapter() {
     img: 'IMG'
   };
 
-  let DOMReady = (() => {
+  let domReady = (() => {
     let readyEventFired = false;
     return fn => {
       let idempotentFn = () => {
@@ -129,7 +128,7 @@ const AolAdapter = function AolAdapter() {
         document.readyState === 'complete') {
       document.body.appendChild(iframe);
     } else {
-      DOMReady(() => {
+      domReady(() => {
         document.body.appendChild(iframe);
       });
     }
@@ -261,9 +260,9 @@ const AolAdapter = function AolAdapter() {
   function _isNexageRequestPost(bid) {
     if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
       let imp = bid.params.imp[0];
-      return imp.id && imp.tagid
-          && ((imp.banner && imp.banner.w && imp.banner.h)
-          || (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+      return imp.id && imp.tagid &&
+          ((imp.banner && imp.banner.w && imp.banner.h) ||
+          (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
     }
   }
 
