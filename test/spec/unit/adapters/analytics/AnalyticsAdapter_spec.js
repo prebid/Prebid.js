@@ -29,7 +29,6 @@ FEATURE: Analytics Adapters API
         const adapter = new AnalyticsAdapter(config);
         var spyTestGlobal = sinon.spy(window, config.global);
 
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
         adapter.track({ eventType, args });
 
         it(`THEN should call \`window.${config.global}\` function\n`, () => {
@@ -45,7 +44,6 @@ FEATURE: Analytics Adapters API
         const adapter = new AnalyticsAdapter(config);
 
         window[config.global] = null;
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
         events.emit(BID_RESPONSE, args);
 
         describe(`AND the adapter is then enabled\n`, () => {
@@ -59,92 +57,124 @@ FEATURE: Analytics Adapters API
             assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
             assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
           });
+
+          adapter.disableAnalytics();
           window[config.global].restore();
         });
       });
 
-    describe(`WHEN an event occurs after enable analytics\n`, () => {
-        const eventType = BID_WON;
-        const args = { more: 'info' };
-        const adapter = new AnalyticsAdapter(config);
-        var spyTestGlobal = sinon.spy(window, config.global);
+      describe(`WHEN an event occurs after enable analytics\n`, () => {
 
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
-        adapter.enableAnalytics();
-        events.emit(eventType, args);
+        var spyTestGlobal,
+            adapter;
 
-        it(`THEN should call \`window.${config.global}\` function\n`, () => {
-          assert.ok(spyTestGlobal.args[2][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[2][2], args, `with expected event data\n`);
+        beforeEach(() => {
+          adapter = new AnalyticsAdapter(config);
+          spyTestGlobal = sinon.spy(window, config.global);
+
+          sinon.stub(events, "getEvents", () => []); // these tests shouldn't be affected by previous tests
         });
-        window[config.global].restore();
+
+        afterEach(() => {
+          adapter.disableAnalytics();
+          window[config.global].restore();
+
+          events.getEvents.restore();
+        });
+
+        it('SHOULD call global when a bidWon event occurs', () => {
+          const eventType = BID_WON;
+          const args = { more: 'info' };
+
+          adapter.enableAnalytics();
+          events.emit(eventType, args);
+
+          assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
+          assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+        });
+
+        it('SHOULD call global when a bidRequest event occurs', () => {
+          const eventType = BID_REQUESTED;
+          const args = { call: 'request' };
+
+          adapter.enableAnalytics();
+          events.emit(eventType, args);
+
+          assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
+          assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+        });
+
+        it('SHOULD call global when a bidResponse event occurs', () => {
+          const eventType = BID_RESPONSE;
+          const args = { call: 'response' };
+
+          adapter.enableAnalytics();
+          events.emit(eventType, args);
+
+          assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
+          assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+        });
+
+        it('SHOULD call global when a bidTimeout event occurs', () => {
+          const eventType = BID_TIMEOUT;
+          const args = { call: 'timeout' };
+
+          adapter.enableAnalytics();
+          events.emit(eventType, args);
+
+          assert.ok(spyTestGlobal.args[0][1] === eventType, `with expected event type\n`);
+          assert.deepEqual(spyTestGlobal.args[0][2], args, `with expected event data\n`);
+        });
+
+        it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', () => {
+          const eventType = BID_TIMEOUT;
+          const args = { call: 'timeout' };
+
+          events.emit(eventType, args);
+          adapter.enableAnalytics();
+          events.emit(eventType, args);
+
+          assert(spyTestGlobal.calledOnce === true);
+        });
+
+        describe(`AND sampling is enabled\n`, () => {
+          const eventType = BID_WON;
+          const args = { more: 'info' };
+
+          beforeEach(() => {
+            sinon.stub(Math, "random", () => .5);
+          });
+
+          afterEach(() => {
+            Math.random.restore();
+          });
+
+          it(`THEN should enable analytics when random number is in sample range`, () => {
+            adapter.enableAnalytics({
+              options: {
+                sampling: .75
+              }
+            });
+            events.emit(eventType, args);
+
+            assert(spyTestGlobal.called === true);
+          });
+
+          it(`THEN should disable analytics when random number is outside sample range`, () => {
+            adapter.enableAnalytics({
+              options: {
+                sampling: .25
+              }
+            });
+            events.emit(eventType, args);
+
+            assert(spyTestGlobal.called === false);
+          });
+
+        });
+
+
       });
 
-      describe(`WHEN a bidRequest event occurs\n`, () => {
-        const eventType = BID_REQUESTED;
-        const args = { call: 'request' };
-        const adapter = new AnalyticsAdapter(config);
-        var spyTestGlobal = sinon.spy(window, config.global);
 
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
-        adapter.enableAnalytics();
-        events.emit(eventType, args);
-
-        it(`THEN should call \`window.${config.global}\` function\n`, () => {
-          assert.ok(spyTestGlobal.args[3][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[3][2], args, `with expected event data\n`);
-        });
-        window[config.global].restore();
-      });
-
-      describe(`WHEN a bidResponse event occurs\n`, () => {
-        const eventType = BID_RESPONSE;
-        const args = { call: 'response' };
-        const adapter = new AnalyticsAdapter(config);
-        var spyTestGlobal = sinon.spy(window, config.global);
-
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
-        adapter.enableAnalytics();
-        events.emit(eventType, args);
-
-        it(`THEN should call \`window.${config.global}\` function\n`, () => {
-          assert.ok(spyTestGlobal.args[4][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[4][2], args, `with expected event data\n`);
-        });
-        window[config.global].restore();
-      });
-
-      describe(`WHEN a bidTimeout event occurs\n`, () => {
-        const eventType = BID_TIMEOUT;
-        const args = { call: 'timeout' };
-        const adapter = new AnalyticsAdapter(config);
-        var spyTestGlobal = sinon.spy(window, config.global);
-
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
-        adapter.enableAnalytics();
-        events.emit(eventType, args);
-
-        it(`THEN should call \`window.${config.global}\` function\n`, () => {
-          assert.ok(spyTestGlobal.args[5][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[5][2], args, `with expected event data\n`);
-        });
-        window[config.global].restore();
-      });
-
-      describe(`WHEN adapter.enableAnalytics is called twice\n`, () => {
-        const eventType = BID_TIMEOUT;
-        const args = { call: 'timeout' };
-        const adapter = new AnalyticsAdapter(config);
-        var spyTestGlobal = sinon.spy(window, config.global);
-
-        adaptermanager.registerAnalyticsAdapter(adapter, 'adapter');
-        adapter.enableAnalytics();
-        events.emit(eventType, args);
-
-        it(`THEN should call \`window.${config.global}\` function\n`, () => {
-          assert.ok(spyTestGlobal.args[5][1] === eventType, `with expected event type\n`);
-          assert.deepEqual(spyTestGlobal.args[5][2], args, `with expected event data\n`);
-        });
-        window[config.global].restore();
-      });
     });
