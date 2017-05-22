@@ -133,7 +133,8 @@ describe('AppNexusAdapter', () => {
       REQUEST.bids[0].mediaType = 'native';
       REQUEST.bids[0].nativeParams = {
         title: {required: true},
-        body: {required: true}
+        body: {required: true},
+        sponsoredBy: {required: true}
       };
 
       adapter.callBids(REQUEST);
@@ -141,7 +142,8 @@ describe('AppNexusAdapter', () => {
       const request = JSON.parse(requests[0].requestBody);
       expect(request.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
-        description: {required: true}
+        description: {required: true},
+        sponsored_by: {required: true}
       });
 
       delete REQUEST.bids[0].mediaType;
