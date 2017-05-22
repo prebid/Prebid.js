@@ -8,7 +8,6 @@ import { STATUS } from 'src/constants';
 const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 function KomoonaAdapter() {
-
   let baseAdapter = Adapter.createNew('komoona');
   let bidRequests = {};
 
@@ -35,7 +34,7 @@ function KomoonaAdapter() {
 
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true
       });
     }
   };
@@ -52,7 +51,7 @@ function KomoonaAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
       utils.logError(errorMessage);
 
       // signal this response is complete

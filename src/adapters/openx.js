@@ -29,7 +29,7 @@ const OpenxAdapter = function OpenxAdapter() {
       // find the adunit in the response
       for (let j = 0; j < adUnits.length; j++) {
         adUnit = adUnits[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit,bid) && !adUnit.used) {
+        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !adUnit.used) {
           auid = adUnit.adunitid;
           break;
         }
@@ -38,7 +38,7 @@ const OpenxAdapter = function OpenxAdapter() {
       let beaconParams = {
         bd: +(new Date()) - startTime,
         br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout , // For the timeout per bid request
+        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout, // For the timeout per bid request
         bs: window.location.hostname
       };
 
@@ -69,8 +69,7 @@ const OpenxAdapter = function OpenxAdapter() {
       try {
         tWin = window.top;
         tDoc = window.top.document;
-      }
-      catch (e) {
+      } catch (e) {
         return;
       }
       docEl = tDoc.documentElement;
@@ -90,8 +89,8 @@ const OpenxAdapter = function OpenxAdapter() {
   function makePDCall(pixelsUrl) {
     let pdFrame = utils.createInvisibleIframe();
     let name = 'openx-pd';
-    pdFrame.setAttribute("id", name);
-    pdFrame.setAttribute("name", name);
+    pdFrame.setAttribute('id', name);
+    pdFrame.setAttribute('name', name);
     let rootNode = document.body;
 
     if (!rootNode) {
@@ -182,7 +181,7 @@ const OpenxAdapter = function OpenxAdapter() {
     bids.forEach(function (bid) {
       for (let customParam in bid.params.customParams) {
         if (bid.params.customParams.hasOwnProperty(customParam)) {
-          params["c." + customParam] = bid.params.customParams[customParam];
+          params['c.' + customParam] = bid.params.customParams[customParam];
         }
       }
     });
@@ -200,8 +199,7 @@ const OpenxAdapter = function OpenxAdapter() {
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
-    }
-    catch (e) {
+    } catch (e) {
       isIfr = false;
     }
     if (bids.length === 0) {

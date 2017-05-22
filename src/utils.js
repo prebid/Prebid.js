@@ -53,7 +53,7 @@ function _getUniqueIdentifierStr() {
   return getIncrementalInteger() + Math.random().toString(16).substr(2);
 }
 
-//generate a random string (to be used as a dynamic JSONP callback)
+// generate a random string (to be used as a dynamic JSONP callback)
 exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
 
 /**
@@ -63,10 +63,9 @@ exports.getUniqueIdentifierStr = _getUniqueIdentifierStr;
  * https://gist.github.com/jed/982883 via node-uuid
  */
 exports.generateUUID = function generateUUID(placeholder) {
-  return placeholder ?
-    (placeholder ^ Math.random() * 16 >> placeholder/4).toString(16)
-    :
-    ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
+  return placeholder
+    ? (placeholder ^ Math.random() * 16 >> placeholder / 4).toString(16)
+    : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
 };
 
 exports.getBidIdParameter = function (key, paramsObj) {
@@ -85,23 +84,22 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
   return existingUrl;
 };
 
-//parse a query string object passed in bid params
-//bid params should be an object such as {key: "value", key1 : "value1"}
+// parse a query string object passed in bid params
+// bid params should be an object such as {key: "value", key1 : "value1"}
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k))
-      result += k + '=' + encodeURIComponent(queryObj[k]) + '&';
+      { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
 };
 
-//transform an AdServer targeting bids into a query string to send to the adserver
+// transform an AdServer targeting bids into a query string to send to the adserver
 exports.transformAdServerTargetingObj = function (targeting) {
   // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
-
     return getKeys(targeting)
       .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
   } else {
@@ -117,13 +115,13 @@ exports.transformAdServerTargetingObj = function (targeting) {
 exports.parseSizesInput = function (sizeObj) {
   var parsedSizes = [];
 
-  //if a string for now we can assume it is a single size, like "300x250"
+  // if a string for now we can assume it is a single size, like "300x250"
   if (typeof sizeObj === objectType_string) {
-    //multiple sizes will be comma-separated
+    // multiple sizes will be comma-separated
     var sizes = sizeObj.split(',');
 
-    //regular expression to match strigns like 300x250
-    //start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
+    // regular expression to match strigns like 300x250
+    // start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
     var sizeRegex = /^(\d)+x(\d)+$/i;
     if (sizes) {
       for (var curSizePos in sizes) {
@@ -135,29 +133,27 @@ exports.parseSizesInput = function (sizeObj) {
   } else if (typeof sizeObj === objectType_object) {
     var sizeArrayLength = sizeObj.length;
 
-    //don't process empty array
+    // don't process empty array
     if (sizeArrayLength > 0) {
-      //if we are a 2 item array of 2 numbers, we must be a SingleSize array
+      // if we are a 2 item array of 2 numbers, we must be a SingleSize array
       if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
         parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
       } else {
-        //otherwise, we must be a MultiSize array
+        // otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
           parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
         }
-
       }
     }
   }
 
   return parsedSizes;
-
 };
 
-//parse a GPT style sigle size array, (i.e [300,250])
-//into an AppNexus style string, (i.e. 300x250)
+// parse a GPT style sigle size array, (i.e [300,250])
+// into an AppNexus style string, (i.e. 300x250)
 exports.parseGPTSingleSizeArray = function (singleSize) {
-  //if we aren't exactly 2 items in this array, it is invalid
+  // if we aren't exactly 2 items in this array, it is invalid
   if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
@@ -360,7 +356,7 @@ exports.isEmpty = function (object) {
  * @returns {boolean} if string is empty
  */
 exports.isEmptyStr = function(str) {
-  return this.isStr(str) && (!str || 0 === str.length);
+  return this.isStr(str) && (!str || str.length === 0);
 };
 
 /**
@@ -410,7 +406,7 @@ exports.indexOf = (function () {
   }
 
   // ie8 no longer supported
-  //return polyfills.indexOf;
+  // return polyfills.indexOf;
 }());
 
 /**
@@ -438,6 +434,54 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+
+exports.insertElement = function(elm, doc, target) {
+  doc = doc || document;
+  let elToAppend;
+  if (target) {
+    elToAppend = doc.getElementsByTagName(target);
+  }
+  else {
+    elToAppend = doc.getElementsByTagName('head');
+  }
+  try {
+    elToAppend = elToAppend.length ? elToAppend : doc.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(elm, elToAppend.firstChild);
+    }
+  } catch (e) {}
+};
+
+exports.insertPixel = function (url) {
+  const img = new Image();
+  img.id = this.getUniqueIdentifierStr();
+  img.src = url;
+  img.height = 0;
+  img.width = 0;
+  img.style.display = 'none';
+  img.onload = function() {
+    try {
+      this.parentNode.removeChild(this);
+    } catch (e) {
+    }
+  };
+  this.insertElement(img);
+};
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ */
+exports.insertCookieSyncIframe = function(url, encodeUri) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe = div.firstChild;
+  this.insertElement(iframe);
+};
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -457,14 +501,18 @@ exports.createTrackPixelHtml = function (url) {
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
   if (!url) {
     return '';
   }
+  if (encodeUri) {
+    url = encodeURI(url);
+  }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${encodeURI(url)}"></iframe>`;
+  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${url}"></iframe>`;
 };
 
 /**
@@ -498,7 +546,7 @@ exports.getValueString = function(param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
-  if (this.isStr(val) ) {
+  if (this.isStr(val)) {
     return val;
   }
   if (this.isNumber(val)) {
@@ -582,7 +630,7 @@ export function adUnitsFilter(filter, bid) {
  * @param {HTMLDocument} doc document to check support of 'srcdoc'
  */
 export function isSrcdocSupported(doc) {
-  //Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
+  // Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
   return doc.defaultView && doc.defaultView.frameElement &&
     'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
 }
@@ -597,4 +645,24 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+export function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  if (!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+}
+
+export function getBidderRequestAllAdUnits(bidder) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => request.bidderCode === bidder);
+}
+
+export function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }

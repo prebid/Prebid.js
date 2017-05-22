@@ -4,21 +4,19 @@ var assert = require('assert');
 var utils = require('../../src/utils');
 
 describe('Utils', function () {
-
   var obj_string = 's',
-      obj_number = 1,
-      obj_object = {},
-      obj_array = [],
-      obj_function = function () {};
+    obj_number = 1,
+    obj_object = {},
+    obj_array = [],
+    obj_function = function () {};
 
   var type_string = 'String',
-  type_number = 'Number',
-  type_object = 'Object',
-  type_array = 'Array',
-  type_function = 'Function';
+    type_number = 'Number',
+    type_object = 'Object',
+    type_array = 'Array',
+    type_function = 'Function';
 
   describe('replaceTokenInString', function () {
-
     it('should replace all given tokens in a String', function () {
       var tokensToReplace = {
         foo: 'bar',
@@ -81,8 +79,8 @@ describe('Utils', function () {
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
       var obj = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
 
       var output = utils.parseQueryStringParameters(obj);
@@ -116,18 +114,18 @@ describe('Utils', function () {
   describe('extend', function () {
     it('should merge two input object', function () {
       var target = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
 
       var source = {
-        c:'3'
+        c: '3'
       };
 
       var expectedResult = {
-        a:'1',
-        b:'2',
-        c:'3'
+        a: '1',
+        b: '2',
+        c: '3'
       };
 
       var output = Object.assign(target, source);
@@ -137,7 +135,7 @@ describe('Utils', function () {
     it('should merge two input object even though target object is empty', function () {
       var target = {};
       var source = {
-        c:'3'
+        c: '3'
       };
 
       var output = Object.assign(target, source);
@@ -146,8 +144,8 @@ describe('Utils', function () {
 
     it('just return target object, if the source object is empty', function () {
       var target = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
       var source = {};
 
@@ -157,7 +155,6 @@ describe('Utils', function () {
   });
 
   describe('parseSizesInput', function () {
-
     it('should return query string using multi size array', function () {
       var sizes = [[728, 90], [970, 90]];
       var output = utils.parseSizesInput(sizes);
@@ -184,7 +181,6 @@ describe('Utils', function () {
   });
 
   describe('parseGPTSingleSizeArray', function () {
-
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArray(size);
@@ -333,7 +329,6 @@ describe('Utils', function () {
       var output = utils.isStr(obj_function);
       assert.deepEqual(output, false);
     });
-
   });
 
   describe('isArray', function () {
@@ -361,7 +356,6 @@ describe('Utils', function () {
       var output = utils.isArray(obj_function);
       assert.deepEqual(output, false);
     });
-
   });
 
   describe('isEmpty', function () {
@@ -371,7 +365,7 @@ describe('Utils', function () {
     });
 
     it('should return false with non-empty object', function () {
-      var obj = { a:'b' };
+      var obj = { a: 'b' };
       var output = utils.isEmpty(obj);
       assert.deepEqual(output, false);
     });
@@ -410,24 +404,24 @@ describe('Utils', function () {
     	});
 
     	it('return value array with vaild input object', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v) {return v;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
     	});
 
     	it('return value array with vaild input object_callback func changed 1', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v, k) {return v + k;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
     	});
 
     	it('return value array with vaild input object_callback func changed 2', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v, k, o) {return o;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
@@ -522,13 +516,12 @@ describe('Utils', function () {
 
   describe('polyfill test', function () {
     it('should not add polyfill to array', function() {
-      var arr = ['hello','world'];
+      var arr = ['hello', 'world'];
       var count = 0;
-      for(var key in arr) {
+      for (var key in arr) {
         count++;
       }
-      assert.equal(arr.length, count, "Polyfill test fails")
+      assert.equal(arr.length, count, 'Polyfill test fails')
     });
   });
-
 });

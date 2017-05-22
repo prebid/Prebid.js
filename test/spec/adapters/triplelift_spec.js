@@ -5,7 +5,6 @@ import adLoader from '../../../src/adloader';
 import {parse as parseURL} from '../../../src/url';
 
 describe('triplelift adapter', () => {
-
   let bidsRequestedOriginal;
   let adapter;
   let sandbox;
@@ -50,7 +49,6 @@ describe('triplelift adapter', () => {
   });
 
   describe('callBids', () => {
-
     let firstBidScriptURL;
     let secondBidScriptURL;
 
@@ -70,33 +68,29 @@ describe('triplelift adapter', () => {
       expect(secondBidScriptURL).to.contain(route);
 
       let firstScriptParams = parseURL(firstBidScriptURL).search;
-      expect(firstScriptParams).to.have.property('callback','pbjs.TLCB');
-      expect(firstScriptParams).to.have.property('callback_id','bidId1');
-      expect(firstScriptParams).to.have.property('inv_code','codeA');
-      expect(firstScriptParams).to.have.property('size','728x90');
+      expect(firstScriptParams).to.have.property('callback', 'pbjs.TLCB');
+      expect(firstScriptParams).to.have.property('callback_id', 'bidId1');
+      expect(firstScriptParams).to.have.property('inv_code', 'codeA');
+      expect(firstScriptParams).to.have.property('size', '728x90');
       expect(firstScriptParams).to.have.property('referrer');
 
       let secondScriptParams = parseURL(secondBidScriptURL).search;
-      expect(secondScriptParams).to.have.property('callback','pbjs.TLCB');
-      expect(secondScriptParams).to.have.property('callback_id','bidId2');
-      expect(secondScriptParams).to.have.property('inv_code','codeB');
-      expect(secondScriptParams).to.have.property('size','300x600');
-      expect(secondScriptParams).to.have.property('floor','1');
+      expect(secondScriptParams).to.have.property('callback', 'pbjs.TLCB');
+      expect(secondScriptParams).to.have.property('callback_id', 'bidId2');
+      expect(secondScriptParams).to.have.property('inv_code', 'codeB');
+      expect(secondScriptParams).to.have.property('size', '300x600');
+      expect(secondScriptParams).to.have.property('floor', '1');
       expect(secondScriptParams).to.have.property('referrer');
     });
-
   });
 
   describe('TLCB', () => {
-
     it('should exist and be a function', () => {
       expect(pbjs.TLCB).to.exist.and.to.be.a('function');
     });
-
   });
 
   describe('add bids to the manager', () => {
-
     let firstBid;
     let secondBid;
 
@@ -107,22 +101,22 @@ describe('triplelift adapter', () => {
 
       // respond
       let bidderReponse1 = {
-        "ad": "<script></script>",
-        "callback_id": "bidId1",
-        "cpm": 0.20,
-        "height": 90,
-        "iurl": "",
-        "width": 728
+        'ad': '<script></script>',
+        'callback_id': 'bidId1',
+        'cpm': 0.20,
+        'height': 90,
+        'iurl': '',
+        'width': 728
       };
 
       let bidderReponse2 = {
-        "ad": "<script></script>",
-        "callback_id": "bidId2",
-        "cpm": 0.30,
-        "height": 600,
-        "iurl": "",
-        "width": 300,
-        "deal_id": "dealA"
+        'ad': '<script></script>',
+        'callback_id': 'bidId2',
+        'cpm': 0.30,
+        'height': 600,
+        'iurl': '',
+        'width': 300,
+        'deal_id': 'dealA'
       };
 
       pbjs.TLCB(bidderReponse1);
@@ -183,7 +177,6 @@ describe('triplelift adapter', () => {
   });
 
   describe('add empty bids if no bid returned', () => {
-
     let firstBid;
     let secondBid;
 
@@ -193,8 +186,8 @@ describe('triplelift adapter', () => {
       pbjs._bidsRequested.push(bidderRequest);
 
       // respond
-      let bidderReponse1 = {"status":"no_bid","callback_id":"bidId1"};
-      let bidderReponse2 = {"status":"no_bid","callback_id":"bidId2"};
+      let bidderReponse1 = {'status': 'no_bid', 'callback_id': 'bidId1'};
+      let bidderReponse2 = {'status': 'no_bid', 'callback_id': 'bidId2'};
 
       pbjs.TLCB(bidderReponse1);
       pbjs.TLCB(bidderReponse2);
@@ -229,6 +222,5 @@ describe('triplelift adapter', () => {
       expect(firstBid).to.have.property('bidderCode', 'triplelift');
       expect(secondBid).to.have.property('bidderCode', 'triplelift');
     });
-
   });
 });
