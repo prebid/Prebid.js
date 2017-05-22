@@ -89,7 +89,7 @@ const CarambolaAdapter = function CarambolaAdapter() {
 
       for (let customParam in bid.params.customParams) {
         if (bid.params.customParams.hasOwnProperty(customParam)) {
-          tempParams["c." + customParam] = bid.params.customParams[customParam];
+          tempParams["c_" + customParam] = bid.params.customParams[customParam];
         }
       }
 
@@ -134,10 +134,7 @@ const CarambolaAdapter = function CarambolaAdapter() {
       return;
     }
 
-
-
     _buildRequest(bids, {
-      //todo add if this is the first call from this page
       pageUrl: currentURL,
       did: bids[0].params.did || 0,
       pid: bids[0].params.pid || '',
