@@ -105,11 +105,16 @@ var AdButlerAdapter = function AdButlerAdapter() {
   }
   
   function buildRequest(bid,adIndex,pageID){
-    var accountID = utils.getBidIdParameter('accountID', bid.params);
-    var zoneID = utils.getBidIdParameter('zoneID', bid.params);
-    var keyword = utils.getBidIdParameter('keyword', bid.params);
-    
-    var requestURI = location.protocol + '//servedbyadbutler.com/adserve/;type=hbr;';
+    var accountID = utils.getBidIdParameter('accountID', bid.params),
+        zoneID = utils.getBidIdParameter('zoneID', bid.params),
+        keyword = utils.getBidIdParameter('keyword', bid.params),
+        domain = utils.getBidIdParameter('domain', bid.params);
+
+    if(typeof domain === 'undefined' || domain.length === 0){
+      domain = 'servedbyadbutler.com';
+    }
+
+    var requestURI = location.protocol + '//' + domain + '/adserve/;type=hbr;';
     requestURI += 'ID='+encodeURIComponent(accountID)+';';
     requestURI += 'setID='+encodeURIComponent(zoneID)+';';
     requestURI += 'pid='+encodeURIComponent(pageID)+';';

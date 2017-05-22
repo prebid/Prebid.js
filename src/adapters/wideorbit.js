@@ -133,6 +133,7 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
         createdElem;
 
     utils._each(userMatchings, function (userMatching) {
+      createdElem = undefined;
       switch (userMatching.Type) {
         case 'redirect':
           createdElem = document.createElement('img');
@@ -146,8 +147,10 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
           createdElem.async = true;
           break;
       }
-      createdElem.src = decodeURIComponent(userMatching.Url);
-      headElem.insertBefore(createdElem, headElem.firstChild);
+      if (createdElem) {
+        createdElem.src = decodeURIComponent(userMatching.Url);
+        headElem.insertBefore(createdElem, headElem.firstChild);
+      }
     });
   }
 

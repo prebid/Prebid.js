@@ -1,3 +1,4 @@
+/*jslint white: true, es6: true, single: true*/
 /*jshint esversion:6*/
 
 import { expect } from 'chai';
@@ -57,7 +58,7 @@ describe('hiromedia adapter', function () {
   };
 
   // Helper function to generate a 'mock' bid object
-  const placement = (size) => {
+  const makePlacement = (size) => {
 
     placementId += 1;
 
@@ -73,10 +74,10 @@ describe('hiromedia adapter', function () {
   };
 
   // 300x250 are in the allowed size by default
-  const allowedPlacement = () => placement([300, 250]);
+  const tilePlacement = () => makePlacement([300, 250]);
 
   // anything else should have no bid by default
-  const unallowedPlacement = () => placement([728, 90]);
+  const leaderPlacement = () => makePlacement([728, 90]);
 
   describe('callbids', () => {
 
@@ -99,181 +100,82 @@ describe('hiromedia adapter', function () {
       assertNoBids();
     });
 
-    it('responds with status `NO_BID` for placements that are not in the allowed size', () => {
+    it('invokes a bid request per placement', () => {
+
+      const expectedRequests = [{
+        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
+        placementCode: 'div-gpt-ad-12345-1',
+        selectedSize: '300x250'
+      }, {
+        batchKey: [DEFAULT_ENDPOINT,'1337','728x90',''].join('-'),
+        placementCode: 'div-gpt-ad-12345-2',
+        selectedSize: '728x90'
+      }];
 
       const params = {
-        bids: [unallowedPlacement()]
+        bids: [tilePlacement(), leaderPlacement()]
       };
 
       adapter.callBids(params);
-      sinon.assert.notCalled(loadScriptStub);
-      sinon.assert.calledOnce(addBidResponseStub);
-
-      const placementCode = addBidResponseStub.getCall(0).args[0];
-      const bidObject = addBidResponseStub.getCall(0).args[1];
-      expect(placementCode).to.be.equal('div-gpt-ad-12345-1');
-      expect(bidObject.getStatusCode()).to.be.equal(STATUS.NO_BID);
-
-    });
-
-    it('invokes a single bid request for a single valid placement', () => {
-
-      const params = {
-        bids: [allowedPlacement()]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.calledOnce(loadScriptStub);
+      sinon.assert.calledTwice(loadScriptStub);
       sinon.assert.notCalled(addBidResponseStub);
-      sinon.assert.calledOnce(hasValidBidRequestSpy);
+      sinon.assert.calledTwice(hasValidBidRequestSpy);
 
-      expect(hasValidBidRequestSpy.returnValues[0]).to.be.equal(true);
+      expectedRequests.forEach(function(request, index) {
 
-      // validate request
+        expect(hasValidBidRequestSpy.returnValues[index]).to.be.equal(true);
+
+        // validate request
+        const bidRequest = loadScriptStub.getCall(index).args[0];
+        const defaultBidUrl = urlParse(DEFAULT_ENDPOINT);
+        const bidUrl = urlParse(bidRequest);
+        const query = querystringify.parse(bidUrl.query);
+
+        expect(bidUrl.hostname).to.equal(defaultBidUrl.hostname);
+        expect(bidUrl.pathname).to.equal(defaultBidUrl.pathname);
+
+        expect(query).to.have.property('adapterVersion').and.to.equal('3');
+        expect(query).to.have.property('callback').and.to.equal('$$PREBID_GLOBAL$$.' + DEFAULT_CALLBACK_NAME);
+        expect(query).to.have.property('batchKey').and.to.equal(request.batchKey);
+        expect(query).to.have.property('placementCode').and.to.equal(request.placementCode);
+        expect(query).to.have.property('accountId').and.to.equal('1337');
+        expect(query).to.have.property('selectedSize').and.to.equal(request.selectedSize);
+        expect(query).to.not.have.property('additionalSizes');
+        expect(query).to.have.property('domain').and.to.equal(window.top.location.hostname);
+
+      });
+
+    });
+
+    // Test additionalSizes parameter
+    it('attaches multiple sizes to additionalSizes', () => {
+
+      const placement = tilePlacement();
+
+      // Append additional
+      placement.sizes.push([300, 600]);
+      placement.sizes.push([300, 900]);
+
+      const params = {
+        bids: [placement]
+      };
+
+      adapter.callBids(params);
+      sinon.assert.calledOnce(loadScriptStub);
+
       const bidRequest = loadScriptStub.getCall(0).args[0];
-      const defaultBidUrl = urlParse(DEFAULT_ENDPOINT);
       const bidUrl = urlParse(bidRequest);
       const query = querystringify.parse(bidUrl.query);
 
-      expect(bidUrl.hostname).to.equal(defaultBidUrl.hostname);
-      expect(bidUrl.pathname).to.equal(defaultBidUrl.pathname);
-
-      // adapter version
-      expect(query).to.have.property('adapterVersion');
-
-      // callback
-      expect(query).to.have.property('callback').and.to.equal('$$PREBID_GLOBAL$$.' + DEFAULT_CALLBACK_NAME);
-
-      // batch key
-      expect(query).to.have.property('batchKey').and.to.equal([DEFAULT_ENDPOINT,'1337','300x250'].join('-'));
-
-      // placementCode
-      expect(query).to.have.property('placementCode').and.to.equal('div-gpt-ad-12345-1');
-
-      // account id
-      expect(query).to.have.property('accountId').and.to.equal('1337');
-
-      // selectedSize
       expect(query).to.have.property('selectedSize').and.to.equal('300x250');
-
-      // bid request size list
-      expect(query).to.have.property('placementSizes').and.to.equal('300x250');
-
-      // page url domain (hostname)
-      expect(query).to.have.property('domain').and.to.equal(window.top.location.hostname);
-
-    });
-
-    // Test `params.allowedSize` default
-    it('finds an allowed size in a placement with multiple sizes', () => {
-
-      const placement = allowedPlacement();
-
-      // add an non-allowed size, should be skipped
-      placement.sizes.unshift([300, 600]);
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.calledOnce(loadScriptStub);
-
-      const bidRequest = loadScriptStub.getCall(0).args[0];
-      const bidUrl = urlParse(bidRequest);
-      const query = querystringify.parse(bidUrl.query);
-
-      expect(query).to.have.property('placementSizes').and.to.equal('300x600,300x250');
-
-    });
-
-    // Test `params.sizeTolerance` default
-    it('tolerates sizes in default size tolerance range', () => {
-
-      const placement = unallowedPlacement();
-      placement.sizes.unshift([305, 245]);
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.calledOnce(loadScriptStub);
-
-      const bidRequest = loadScriptStub.getCall(0).args[0];
-      const bidUrl = urlParse(bidRequest);
-      const query = querystringify.parse(bidUrl.query);
-
-      expect(query).to.have.property('selectedSize').and.to.equal('305x245');
-
-    });
-
-    // Test `params.allowedSize` negative match
-    it('accepts a custom allowed size per placement which makes no bid if no match is found', () => {
-
-      const placement = allowedPlacement();
-      placement.params.allowedSize = [728, 90];
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.notCalled(loadScriptStub);
-
-    });
-
-    // Test `params.allowedSize` match
-    it('accepts a custom allowed size per placement which bids if a match is found', () => {
-
-      const placement = unallowedPlacement();
-      placement.params.allowedSize = [728, 90];
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.calledOnce(loadScriptStub);
-
-    });
-
-    // Test `params.sizeTolerance` negative match
-    it('accepts a custom size tolerance which makes no bid if no match is found', () => {
-
-      const placement = unallowedPlacement();
-      placement.sizes.unshift([280, 270]);
-      placement.params.sizeTolerance = 10;
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.notCalled(loadScriptStub);
-
-    });
-
-    // Test `params.sizeTolerance` match
-    it('accepts a custom size tolerance which makes a bid if a match is found', () => {
-
-      const placement = unallowedPlacement();
-      placement.sizes.unshift([280, 270]);
-      placement.params.sizeTolerance = 20;
-
-      const params = {
-        bids: [placement]
-      };
-
-      adapter.callBids(params);
-      sinon.assert.calledOnce(loadScriptStub);
+      expect(query).to.have.property('additionalSizes').and.to.equal('300x600,300x900');
 
     });
 
     // Test `params.accountId` validation
     it('invalidates bids with no id', () => {
 
-      const placement = allowedPlacement();
+      const placement = tilePlacement();
       delete placement.params;
 
       const params = {
@@ -290,7 +192,7 @@ describe('hiromedia adapter', function () {
     // Test `params.bidUrl`
     it('accepts a custom bid endpoint url', () => {
 
-      const placement = allowedPlacement();
+      const placement = tilePlacement();
       placement.params.bidUrl = DEFAULT_ENDPOINT + '?someparam=value';
 
       const params = {
@@ -315,7 +217,7 @@ describe('hiromedia adapter', function () {
     it('batches similar bid requests for similar sized placements', () => {
 
       const params = {
-        bids: [allowedPlacement(), allowedPlacement()]
+        bids: [tilePlacement(), tilePlacement()]
       };
 
       adapter.callBids(params);
@@ -350,50 +252,54 @@ describe('hiromedia adapter', function () {
     // the adapter set up correctly.
     it('adds a bid reponse for each pending bid', () => {
 
-      const response = {
-        batchKey: [DEFAULT_ENDPOINT,'1337','300x250'].join('-'),
+      const expectedResponses = [{
+        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
+        width: '300',
+        height: '250',
         cpm: 0.4,
         ad: '<script src="ad.js"></script>'
-      };
+      }, {
+        batchKey: [DEFAULT_ENDPOINT,'1337','728x90',''].join('-'),
+        width: '728',
+        height: '90',
+        cpm: 0.4,
+        ad: '<script src="ad.js"></script>'
+      }];
+
 
       // Instead of the dead stub defined in the top scope, we'll use
       // one that mocks a response.
       loadScriptStub.restore();
+      let id = 0;
       const activeLoadScriptStub = sandbox.stub(adloader, 'loadScript', (url) => {
         const handler = getResponseHandler();
-        handler(response);
+        handler(expectedResponses[id]);
+        id += 1;
       });
 
       const params = {
-        bids: [allowedPlacement(), allowedPlacement()]
+        bids: [tilePlacement(), leaderPlacement()]
       };
 
       adapter.callBids(params);
 
-      // single request but two responses
-      sinon.assert.calledOnce(activeLoadScriptStub);
+      sinon.assert.calledTwice(activeLoadScriptStub);
       sinon.assert.calledTwice(addBidResponseStub);
 
-      const placementCode = addBidResponseStub.getCall(0).args[0];
-      const secondPlacementCode = addBidResponseStub.getCall(1).args[0];
+      expectedResponses.forEach((expectedResponse, i) => {
 
-      const bidObject = addBidResponseStub.getCall(0).args[1];
-      const secondBidObject = addBidResponseStub.getCall(1).args[1];
+        const placementCode = addBidResponseStub.getCall(i).args[0];
+        const bidObject = addBidResponseStub.getCall(i).args[1];
 
-      expect(placementCode).to.be.equal('div-gpt-ad-12345-1');
-      expect(secondPlacementCode).to.be.equal('div-gpt-ad-12345-2');
+        expect(placementCode).to.be.equal('div-gpt-ad-12345-' + (i + 1));
 
-      expect(bidObject.getStatusCode()).to.be.equal(STATUS.GOOD);
-      expect(bidObject).to.have.property('cpm').and.to.equal(0.4);
-      expect(bidObject).to.have.property('ad').and.to.equal('<script src="ad.js"></script>');
-      expect(bidObject).to.have.property('width').and.to.equal('300');
-      expect(bidObject).to.have.property('height').and.to.equal('250');
+        expect(bidObject.getStatusCode()).to.be.equal(STATUS.GOOD);
+        expect(bidObject).to.have.property('cpm').and.to.equal(expectedResponse.cpm);
+        expect(bidObject).to.have.property('ad').and.to.equal(expectedResponse.ad);
+        expect(bidObject).to.have.property('width').and.to.equal(expectedResponse.width);
+        expect(bidObject).to.have.property('height').and.to.equal(expectedResponse.height);
 
-      expect(secondBidObject.getStatusCode()).to.be.equal(STATUS.GOOD);
-      expect(secondBidObject).to.have.property('cpm').and.to.equal(0.4);
-      expect(secondBidObject).to.have.property('ad').and.to.equal('<script src="ad.js"></script>');
-      expect(secondBidObject).to.have.property('width').and.to.equal('300');
-      expect(secondBidObject).to.have.property('height').and.to.equal('250');
+      });
 
     });
 
@@ -404,7 +310,7 @@ describe('hiromedia adapter', function () {
     it('adds responses according to the sampling defined in the response', () => {
 
       const response = {
-        batchKey: [DEFAULT_ENDPOINT,'1337','300x250'].join('-'),
+        batchKey: [DEFAULT_ENDPOINT,'1337','300x250',''].join('-'),
         cpm: 0.4,
         chance: 0.25,
         ad: '<script src="ad.js"></script>'
@@ -437,7 +343,7 @@ describe('hiromedia adapter', function () {
       });
 
       const params = {
-        bids: [allowedPlacement()]
+        bids: [tilePlacement()]
       };
 
       adapter.callBids(params);
