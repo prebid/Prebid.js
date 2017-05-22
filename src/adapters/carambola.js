@@ -45,27 +45,26 @@ const CarambolaAdapter = function CarambolaAdapter() {
   }
 
   function _createPageViewId(){
-    var min = 10000;
-    var max = 90000;
+    
+    function _pad(number) {
+      return number > 9 ? number : '0'+number
+    }
+
+    const MIN = 10000;
+    const MAX = 90000;
     let now = new Date();
 
     var pvid  =
-      _padDigits(now.getDate()) +
-      _padDigits(now.getMonth() + 1) +
-      _padDigits(now.getFullYear() % 100) +
-      _padDigits(now.getHours()) +
-      _padDigits(now.getMinutes()) +
-      _padDigits(now.getSeconds()) +
-      _padDigits(now.getMilliseconds() % 100) +
-      Math.floor((Math.random() * max) + min);
+      _pad(now.getDate()) +
+      _pad(now.getMonth() + 1) +
+      _pad(now.getFullYear() % 100) +
+      _pad(now.getHours()) +
+      _pad(now.getMinutes()) +
+      _pad(now.getSeconds()) +
+      _pad(now.getMilliseconds() % 100) +
+      Math.floor((Math.random() * MAX) + MIN);
 
     return pvid;
-  }
-
-  function _padDigits(number, digits) {
-    if (!digits)
-      digits=2;
-    return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
   }
 
   //sends a request for each bid
@@ -77,14 +76,14 @@ const CarambolaAdapter = function CarambolaAdapter() {
 
     //iterate on every bid and return the  response to the hb manager
     utils._each(bids, bid => {
-      var tempParams = params || {};
+      let tempParams = params || {};
       tempParams.cbolaMode = bid.params.cbolaMode || 0;
       tempParams.wid = bid.params.wid || 0;
       tempParams.pixel = bid.params.pixel || '';
       tempParams.bidFloor = bid.params.bidFloor || 0;
       tempParams.pageViewId = _getPageViewId();
       tempParams.hb_token = utils.generateUUID();
-      tempParams.sizes = utils.parseSizesInput(bid.sizes).toString() || '';
+      tempParams.sizes = utils.parseSizesInput(bid.sizes)+'';
       tempParams.bidsCount = bids.length;
 
       for (let customParam in bid.params.customParams) {
@@ -94,7 +93,7 @@ const CarambolaAdapter = function CarambolaAdapter() {
       }
 
       let server = bid.params.server || 'route.carambo.la';
-      var cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
+      let cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
       //the responses of the bid requests
       ajax(cbolaHbApiUrl + _jsonToQueryString(tempParams), response => {
@@ -134,8 +133,6 @@ const CarambolaAdapter = function CarambolaAdapter() {
       return;
     }
 
-
-
     _buildRequest(bids, {
       //todo add if this is the first call from this page
       pageUrl: currentURL,
@@ -148,9 +145,7 @@ const CarambolaAdapter = function CarambolaAdapter() {
   }
 
   function _getScreenSize(screen) {
-    if (screen)
-      return `${screen.width}x${screen.height}x${screen.colorDepth}`;
-    return '0';
+    return screen ? `${screen.width}x${screen.height}x${screen.colorDepth}` : '0';
   }
 
   function _getViewportDimensions(isIfr) {
