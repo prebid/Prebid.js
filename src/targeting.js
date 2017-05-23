@@ -13,7 +13,7 @@ targeting.resetPresetTargeting = function(adUnitCode) {
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
-        adUnits.find(function(unit) {
+        adUnits.forEach(function(unit) {
           if (unit.code === slot.getAdUnitPath() ||
               unit.code === slot.getSlotElementId()) {
             slot.setTargeting(key, null);
@@ -27,7 +27,7 @@ targeting.resetPresetTargeting = function(adUnitCode) {
 targeting.getAllTargeting = function(adUnitCode) {
   let adUnitCodes = $$PREBID_GLOBAL$$._adUnitCodes;
   if (typeof adUnitCodes === 'string') {
-    adUnitCode = [adUnitCode];
+    adUnitCodes = [adUnitCode];
   }
   else if (utils.isArray(adUnitCode)) {
     adUnitCodes = adUnitCode;
