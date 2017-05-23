@@ -25,7 +25,7 @@ targeting.resetPresetTargeting = function(adUnitCode) {
 };
 
 targeting.getAllTargeting = function(adUnitCode) {
-  let adUnitCodes =  $$PREBID_GLOBAL$$._adUnitCodes;
+  let adUnitCodes = $$PREBID_GLOBAL$$._adUnitCodes;
   if (typeof adUnitCodes === 'string') {
     adUnitCode = [adUnitCode];
   }
