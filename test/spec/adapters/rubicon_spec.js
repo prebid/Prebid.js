@@ -3,7 +3,7 @@ import adloader from 'src/adloader';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import RubiconAdapter from 'src/adapters/rubicon';
-import {parse as parseQuery} from 'querystring';
+import { parse as parseQuery } from 'querystring';
 
 var CONSTANTS = require('src/constants.json');
 

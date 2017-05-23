@@ -7,6 +7,34 @@ const queue = {
 };
 
 /**
+ * @function fireSyncs
+ * @summary Trigger all user syncs in the queue
+ * @private
+ */
+function fireSyncs() {
+  let bodyElem = document.getElementsByTagName('body')[0];
+  try {
+    // Fire image pixels
+    queue.image.forEach((sync) => {
+      let bidderName = sync[0];
+      let trackingPixelUrl = sync[1];
+      let removeOnLoad = true;
+      utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
+      // insertAdjacentHTML expects HTML string - convert DOM object to string
+      let img = userSync.createImgObject(trackingPixelUrl, removeOnLoad);
+      if (img) {
+        bodyElem.insertAdjacentHTML('beforeend', img.outerHTML);
+      }
+    });
+    // Reset the image pixel queue
+    queue.image = [];
+  }
+  catch (e) {
+    utils.logError('Error firing user syncs', e);
+  }
+}
+
+/**
  * @function hideNode
  * @summary Modifies a DOM element to be hidden from user sight
  * @private
@@ -35,62 +63,44 @@ function setIdToNode(elementNode) {
 }
 
 /**
- * @function composeElem
+ * @function hideAndIdElem
  * @summary Functionally compose a DOM element to be hidden and add an ID
  * @private
  * @params {object} elementNode A valid DOM element
  * @returns {object} A valid DOM element
  */
-function composeElem(elementNode) {
+function hideAndIdElem(elementNode) {
   return hideNode(setIdToNode(elementNode));
 }
 
 /**
- * @function buildImg
- * @summary Create an img DOM element for sending a pixel
- * @private
+ * @function createImgObject
+ * @summary Create an img DOM element for sending a pixel. Made public for test purposes
+ * @public
  * @params {string} url The URL for the image pixel
+ * @params {boolean} removeOnLoad Remove this img element once the endpoint is reached
  * @returns {object} A valid DOM element
  */
-function buildImg(url) {
+userSync.createImgObject = function(url, removeOnLoad) {
   if (!url) {
     return;
   }
-  const img = composeElem(new Image());
+  const img = hideAndIdElem(new Image());
   img.src = encodeURI(url);
-  img.onload = function() {
-    try{
-      let thisImg = document.getElementById(this.id);
-      thisImg.parentNode.removeChild(thisImg);
-    }
-    catch(e){
-      utils.logWarn('Could not remove image pixel element', e);
-    }
-  };
+  if (removeOnLoad) {
+    img.onload = function() {
+      // Once the sync is done remove the element
+      try {
+        let thisImg = document.getElementById(this.id);
+        thisImg.parentNode.removeChild(thisImg);
+      }
+      catch (e) {
+        utils.logWarn('Could not remove image pixel element', e);
+      }
+    };
+  }
   return img;
-}
-
-/**
- * @function fireSyncs
- * @summary Trigger all user syncs in the queue
- * @private
- */
-function fireSyncs() {
-  let bodyElem = document.getElementsByTagName('body')[0];
-  try {
-    // Fire image pixels
-    queue.image.forEach((sync) => {
-      utils.logMessage(`Invoking image pixel user sync for bidder: ${sync[0]}`);
-      // insertAdjacentHTML expects HTML string - convert DOM object to string
-      bodyElem.insertAdjacentHTML("beforeend", buildImg(sync[1]).outerHTML);
-    });
-    // Reset the image pixel queue
-    queue.image = [];
-  }
-  catch(e) {
-    utils.logError('Error firing user syncs', e);
-  }
-}
+};
 
 /**
  * @function registerSync
@@ -105,11 +115,10 @@ function fireSyncs() {
  * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
  */
 userSync.registerSync = function(type, bidder, ...data) {
-    if (!queue[type]) {
-      utils.logWarn(`User sync type "{$type}" not supported`);
-      return;
-    }
-    queue[type].push([bidder, data]);
+  if (!queue[type]) {
+    return utils.logWarn(`User sync type "{$type}" not supported`);
+  }
+  queue[type].push([bidder, ...data]);
 };
 
 /**

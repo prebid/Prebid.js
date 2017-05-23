@@ -435,8 +435,6 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
   }
 };
 
-<<<<<<< HEAD
-=======
 var insertElement = function(elm) {
   let elToAppend = document.getElementsByTagName('head');
   try {
@@ -477,7 +475,6 @@ exports.insertCookieSyncIframe = function(url, encodeUri) {
   insertElement(iframe);
 };
 
->>>>>>> master
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
