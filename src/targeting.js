@@ -9,7 +9,8 @@ var pbTargetingKeys = [];
 
 targeting.resetPresetTargeting = function(adUnitCode) {
   if (isGptPubadsDefined()) {
-    const adUnits = adUnitCode && adUnitCode.length ? $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCode.includes(adUnit.code)) : $$PREBID_GLOBAL$$.adUnits;
+    const adUnitCodes = getAdUnitCodes(adUnitCode);
+    const adUnits = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
