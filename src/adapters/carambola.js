@@ -8,9 +8,8 @@ const utils = require('../utils.js');
 const ajax = require('../ajax.js').ajax;
 
 const CarambolaAdapter = function CarambolaAdapter() {
-
   const BIDDER_CODE = 'carambola';
-  const REQUEST_PATH= 'hb/inimage/getHbBIdProcessedResponse';
+  const REQUEST_PATH = 'hb/inimage/getHbBIdProcessedResponse';
 
   function _addErrorBidResponse(bid, response = {}, errorMsg = '') {
     const bidResponse = bidfactory.createBid(2, bid);
@@ -18,9 +17,9 @@ const CarambolaAdapter = function CarambolaAdapter() {
     bidResponse.reason = errorMsg;
     bidmanager.addBidResponse(_getCustomAdUnitCode(bid), bidResponse);
   }
-  //looking at the utils.js at getBidderRequest method. this is what is requested.
+  //  looking at the utils.js at getBidderRequest method. this is what is requested.
   function _getCustomAdUnitCode(bid) {
-    return bid.placementCode; //`${bid.params.wid}_${bid.requestId}`;
+    return bid.placementCode;
   }
 
   function _addBidResponse(bid, response) {
@@ -38,23 +37,22 @@ const CarambolaAdapter = function CarambolaAdapter() {
   }
 
   function _getPageViewId() {
-    window.Cbola=  window.Cbola || {};
+    window.Cbola = window.Cbola || {};
     window.Cbola.HB = window.Cbola.HB || {};
     window.Cbola.HB.pvid = window.Cbola.HB.pvid || _createPageViewId();
     return window.Cbola.HB.pvid;
   }
 
-  function _createPageViewId(){
-    
+  function _createPageViewId() {
     function _pad(number) {
-      return number > 9 ? number : '0'+number
+      return number > 9 ? number : '0' + number
     }
 
     const MIN = 10000;
     const MAX = 90000;
     let now = new Date();
 
-    var pvid  =
+    var pvid =
       _pad(now.getDate()) +
       _pad(now.getMonth() + 1) +
       _pad(now.getFullYear() % 100) +
@@ -67,14 +65,12 @@ const CarambolaAdapter = function CarambolaAdapter() {
     return pvid;
   }
 
-  //sends a request for each bid
+  //  sends a request for each bid
   function _buildRequest(bids, params) {
-
     if (!utils.isArray(bids)) {
       return;
     }
-
-    //iterate on every bid and return the  response to the hb manager
+    //  iterate on every bid and return the  response to the hb manager
     utils._each(bids, bid => {
       let tempParams = params || {};
       tempParams.cbolaMode = bid.params.cbolaMode || 0;
@@ -83,21 +79,21 @@ const CarambolaAdapter = function CarambolaAdapter() {
       tempParams.bidFloor = bid.params.bidFloor || 0;
       tempParams.pageViewId = _getPageViewId();
       tempParams.hb_token = utils.generateUUID();
-      tempParams.sizes = utils.parseSizesInput(bid.sizes)+'';
+      tempParams.sizes = utils.parseSizesInput(bid.sizes) + '';
       tempParams.bidsCount = bids.length;
 
       for (let customParam in bid.params.customParams) {
         if (bid.params.customParams.hasOwnProperty(customParam)) {
-          tempParams["c_" + customParam] = bid.params.customParams[customParam];
+          tempParams['c_' + customParam] = bid.params.customParams[customParam];
         }
       }
 
       let server = bid.params.server || 'route.carambo.la';
       let cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
-      //the responses of the bid requests
+      //  the responses of the bid requests
       ajax(cbolaHbApiUrl + _jsonToQueryString(tempParams), response => {
-        //no response
+        //  no response
         if (!response || response.cpm <= 0) {
           utils.logError('Empty bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response, 'Empty bid response');
@@ -110,14 +106,12 @@ const CarambolaAdapter = function CarambolaAdapter() {
           _addErrorBidResponse(bid, response, 'Invalid JSON in bid response');
           return;
         }
-
         _addBidResponse(bid, response);
-
       }, null, {method: 'GET'});
     });
   }
 
-  //build the genral request to the server
+  //  build the genral request to the server
   function _callBids(params) {
     let isIfr,
       bids = params.bids || [],
