@@ -1,24 +1,34 @@
-//const adloader = require('../adloader');
 const bidmanager = require('../bidmanager');
 const bidfactory = require('../bidfactory');
-const utils = require('../utils.js');
-
+const utils = require('../utils');
+const ajax = require('../ajax').ajax;
+const url = require('../url');
 
 module.exports = function (win = window) {
+  const defaultHost = "dsh.adscale.de";
+  const defaultPath = "/dsh";
+  const defaultPort = "";
+  const bidderCode = "stroeerCore";
 
-  const colourFn = function (count) {
-    const colours = ["#cbc8ed", "#fbc9e3", "#cae5d7", "#cfdcf1", "#fdfd96", "#ff7e87"];
-    return colours[count % colours.length];
-  };
+  const validBidRequest = bid => bid.params && utils.isStr(bid.params.sid);
 
-  const createDummyAdTag = (width, height, divBody, color) =>
-  `<body style="margin:0;padding:0">`+
-  `<div style="width:${width-4}px;height:${height-4}px;margin:0;padding:0;border:2px solid #f4fc0a;background-color:${color}">\n` +
-  divBody +
-  `\n</div>` +
-  `\n</body>`;
+  const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
 
-  const validBid = bid => bid.params && utils.isStr(bid.params.sid);
+  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || "none";
+
+  const isSecureWindow = () => win.location.protocol === "https:";
+
+
+  function buildUrl({host: hostname = defaultHost, port = defaultPort, securePort, path: pathname = defaultPath}) {
+    const secure = isSecureWindow();
+
+    if (securePort && secure) {
+      port = securePort;
+    }
+
+    return `${url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname})}`;
+  }
+
 
   function getMostAccessibleTopWindow() {
     let res = win;
@@ -32,11 +42,6 @@ module.exports = function (win = window) {
     catch(ignore){}
 
     return res;
-  }
-
-
-  function isMainPageAccessible() {
-    return getMostAccessibleTopWindow() === win.top;
   }
 
 
@@ -62,48 +67,77 @@ module.exports = function (win = window) {
   }
 
 
-  function getPageContext(placementCode) {
-    const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || "none";
-    const isSecureWindow = () => win.location.protocol === "https:";
+  function ajaxResponseFn(validBidRequestById) {
+    return function(rawResponse) {
+      let response;
 
-    return {
-      "page referer": getPageReferer(),
-      "secure window": isSecureWindow(),
-      "in viewport": elementInView(placementCode),
-      "main page accessible": isMainPageAccessible()
+      try {
+        response = JSON.parse(rawResponse);
+      }
+      catch (e) {
+        response = {bids:[]};
+        utils.logError('unable to parse bid response', 'ERROR', e);
+      }
+
+      response.bids.forEach(bidResponse => {
+        const bidRequest = validBidRequestById[bidResponse.bidId];
+
+        if (bidRequest) {
+          const bidObject = Object.assign(bidfactory.createBid(1, bidRequest), {
+            bidderCode,
+            cpm: bidResponse.cpm,
+            width: bidResponse.width,
+            height: bidResponse.height,
+            ad: bidResponse.ad
+          });
+          bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
+        }
+      });
+
+      const unfulfilledBidRequests = Object.keys(validBidRequestById)
+        .filter(id => response.bids.find(bid => bid.bidId === id) === undefined)
+        .map(id => validBidRequestById[id]);
+
+      unfulfilledBidRequests.forEach(bidRequest => {
+        bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
+      });
     };
   }
 
-  let callBidCount = 0;
-
   return {
     callBids: function (params) {
-      const cpm = 4.0;
-      const bidderCode = "stroeerCore";
+      const requestBody = {
+        id: params.bidderRequestId,
+        bids:[],
+        ref: getPageReferer(),
+        ssl: isSecureWindow(),
+        mpa: isMainPageAccessible(),
+        timeout: params.timeout - (Date.now() - params.auctionStart)
+      };
 
-      params.bids.forEach(bid => {
-        const [width, height] = bid.sizes[0];
+      const validBidRequestById = {};
 
-        const pageContext = Object.entries(getPageContext(bid.placementCode)).map(([key, val]) => key + ": " + val).sort().join(", ");
-
-        let bidObject;
-        if (validBid(bid)) {
-          bidObject = Object.assign(bidfactory.createBid(1, bid), {
-            cpm,
-            bidderCode,
-            width,
-            height,
-            ad: createDummyAdTag(width, height, `Hello, I'm an advert. ${pageContext}`, colourFn(callBidCount))
+      params.bids.forEach(bidRequest => {
+        if (validBidRequest(bidRequest)) {
+          requestBody.bids.push({
+            bid: bidRequest.bidId,
+            sid: bidRequest.params.sid,
+            siz: bidRequest.sizes,
+            viz: elementInView(bidRequest.placementCode)
           });
+          validBidRequestById[bidRequest.bidId] = bidRequest;
         }
         else {
-          bidObject = Object.assign(bidfactory.createBid(2, bid), {bidderCode});
+          bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
         }
-
-        bidmanager.addBidResponse(bid.placementCode, bidObject);
       });
 
-      callBidCount++;
+      if (requestBody.bids.length > 0) {
+        ajax(buildUrl(params.bids[0].params), ajaxResponseFn(validBidRequestById), JSON.stringify(requestBody), {
+          withCredentials: true,
+          contentType: 'application/json'
+        });
+      }
     }
   };
 };
