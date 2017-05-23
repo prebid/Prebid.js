@@ -9,11 +9,11 @@ var pbTargetingKeys = [];
 
 targeting.resetPresetTargeting = function(adUnitCode) {
   if (isGptPubadsDefined()) {
-    const adUnitCodes = adUnitCode && adUnitCode.length ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
+    const adUnits = adUnitCode && adUnitCode.length ? $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCode.includes(adUnit.code)) : $$PREBID_GLOBAL$$.adUnits;
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
-        adUnitCodes.find(function(unit) {
+        adUnits.find(function(unit) {
           if (unit.code === slot.getAdUnitPath() ||
               unit.code === slot.getSlotElementId()) {
             slot.setTargeting(key, null);
@@ -25,7 +25,13 @@ targeting.resetPresetTargeting = function(adUnitCode) {
 };
 
 targeting.getAllTargeting = function(adUnitCode) {
-  const adUnitCodes = adUnitCode && adUnitCode.length ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
+  let adUnitCodes =  $$PREBID_GLOBAL$$._adUnitCodes;
+  if (typeof adUnitCodes === 'string') {
+    adUnitCode = [adUnitCode];
+  }
+  else if (utils.isArray(adUnitCode)) {
+    adUnitCodes = adUnitCode;
+  }
 
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
