@@ -257,8 +257,8 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 };
 
 /**
- * Set query string targeting on all GPT ad units.
- * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
+ * Set query string targeting on one or more GPT ad units.
+ * @param {(string|string[])} adUnitsCodeArr a single `adUnit.code` or multiple.
  */
 $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnitsCodeArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);

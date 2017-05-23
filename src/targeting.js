@@ -25,13 +25,7 @@ targeting.resetPresetTargeting = function(adUnitCode) {
 };
 
 targeting.getAllTargeting = function(adUnitCode) {
-  let adUnitCodes = $$PREBID_GLOBAL$$._adUnitCodes;
-  if (typeof adUnitCodes === 'string') {
-    adUnitCodes = [adUnitCode];
-  }
-  else if (utils.isArray(adUnitCode)) {
-    adUnitCodes = adUnitCode;
-  }
+  const adUnitCodes = getAdUnitCodes(adUnitCode);
 
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
@@ -70,9 +64,28 @@ targeting.setTargeting = function(targetingConfig) {
   });
 };
 
+/**
+ * normlizes input to a `adUnit.code` array
+ * @param  {(string|string[])} adUnitCode [description]
+ * @return {string[]}     AdUnit code array
+ */
+function getAdUnitCodes(adUnitCode) {
+  if (typeof adUnitCode === 'string') {
+    return [adUnitCode];
+  }
+  else if (utils.isArray(adUnitCode)) {
+    return adUnitCode;
+  }
+  return $$PREBID_GLOBAL$$._adUnitCodes;
+}
+
+/**
+ * Returns top bids for a given adUnit or set of adUnits.
+ * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
+ * @return {[type]}            [description]
+ */
 targeting.getWinningBids = function(adUnitCode) {
-  // use the given adUnitCode as a filter if present or all adUnitCodes if not
-  const adUnitCodes = adUnitCode ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
+  const adUnitCodes = getAdUnitCodes(adUnitCode);
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(bid => adUnitCodes.includes(bid.adUnitCode))
@@ -107,8 +120,9 @@ targeting.setTargetingForAst = function() {
   );
 };
 
-function getWinningBidTargeting() {
-  let winners = targeting.getWinningBids();
+
+function getWinningBidTargeting(adUnitCodes) {
+  let winners = targeting.getWinningBids(adUnitCodes);
   let standardKeys = getStandardKeys();
 
   winners = winners.map(winner => {
