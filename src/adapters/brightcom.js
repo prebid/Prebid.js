@@ -8,7 +8,6 @@ var adloader = require('../adloader');
  * Adapter for requesting bids from Brightcom
  */
 var BrightcomAdapter = function BrightcomAdapter() {
-
   // Set Brightcom Bidder URL
   var brightcomUrl = 'hb.iselephant.com/auc/ortb';
 
@@ -20,10 +19,9 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
   // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
   var reqAdUnitsCode = [],
-      resAdUnitsCode = [];
+    resAdUnitsCode = [];
 
   function _callBids(params) {
-
     var bidRequests = params.bids || [];
 
     // Get page data
@@ -38,12 +36,11 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Go through the requests and build array of impressions
     utils._each(bidRequests, function(bid) {
-
       // Get impression details
       var tagId = utils.getBidIdParameter('tagId', bid.params);
       var ref = utils.getBidIdParameter('ref', bid.params);
-      var adWidth=0;
-      var adHeight=0;
+      var adWidth = 0;
+      var adHeight = 0;
 
       // If no publisher id is set, use the current
       if (pubId === '') {
@@ -83,18 +80,17 @@ var BrightcomAdapter = function BrightcomAdapter() {
       // Add current impression to collection
       brightcomImps.push(imp);
       // Add mapping to current bid via impression id
-      //bidmanager.pbCallbackMap[imp.id] = bid;
+      // bidmanager.pbCallbackMap[imp.id] = bid;
 
       // Add current ad unit's code to tracking
       reqAdUnitsCode.push(bid.placementCode);
-
     });
 
     // Build the bid request
     var brightcomBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
-      site:{
+      site: {
         publisher: {
           id: pubId
         },
@@ -119,9 +115,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
     adloader.loadScript(bidRequestCallUrl);
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.brightcomResponse = function(brightcomResponseObj) {
-
     var bid = {};
 
     // Make sure response is valid
@@ -130,16 +125,13 @@ var BrightcomAdapter = function BrightcomAdapter() {
         (brightcomResponseObj.seatbid) && (brightcomResponseObj.seatbid.length !== 0) &&
         (brightcomResponseObj.seatbid[0].bid) && (brightcomResponseObj.seatbid[0].bid.length !== 0)
     ) {
-
       // Go through the received bids
-      brightcomResponseObj.seatbid[0].bid.forEach( function(curBid) {
-
+      brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
         // Get the bid request data
         var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
 
         // Make sure the bid exists
         if (bidRequest) {
-
           var placementCode = bidRequest.placementCode;
           bidRequest.status = CONSTANTS.STATUS.GOOD;
 
@@ -185,10 +177,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
           // Add current ad unit's code to tracking
           resAdUnitsCode.push(placementCode);
-
         }
       });
-
     }
 
     // Define all unreceived ad unit codes as invalid (if Brightcom don't want to bid on an impression, it won't include it in the response)
@@ -202,7 +192,6 @@ var BrightcomAdapter = function BrightcomAdapter() {
         bidmanager.addBidResponse(adUnitCode, bid);
       }
     }
-
   };
 
   return {

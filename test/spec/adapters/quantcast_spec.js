@@ -5,7 +5,6 @@ import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 describe('quantcast adapter', () => {
-
   let bidsRequestedOriginal;
   let adapter;
   let sandbox;
@@ -13,17 +12,17 @@ describe('quantcast adapter', () => {
 
   const bidderRequest = {
     bidderCode: 'quantcast',
-    requestId : "595ffa73-d78a-46c9-b18e-f99548a5be6b",
-    bidderRequestId:"1cc026909c24c8",
+    requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+    bidderRequestId: '1cc026909c24c8',
     bids: [
       {
         bidId: '2f7b179d443f14',
         bidder: 'quantcast',
         placementCode: 'div-gpt-ad-1438287399331-0',
-        sizes: [[300,250],[300,600]],
+        sizes: [[300, 250], [300, 600]],
         params: {
           publisherId: 'test-publisher',
-          battr : [1,2],
+          battr: [1, 2],
         }
       }
     ]
@@ -47,17 +46,17 @@ describe('quantcast adapter', () => {
   describe('sizes', () => {
     let bidderRequest = {
       bidderCode: 'quantcast',
-      requestId : "595ffa73-d78a-46c9-b18e-f99548a5be6b",
-      bidderRequestId:"1cc026909c24c8",
+      requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+      bidderRequestId: '1cc026909c24c8',
       bids: [
         {
           bidId: '2f7b179d443f14',
           bidder: 'quantcast',
           placementCode: 'div-gpt-ad-1438287399331-0',
-          sizes: [[300,250],[300,600]],
+          sizes: [[300, 250], [300, 600]],
           params: {
             publisherId: 'test-publisher',
-            battr : [1,2],
+            battr: [1, 2],
           }
         }
       ]
@@ -77,7 +76,7 @@ describe('quantcast adapter', () => {
       expect(ajaxStub.firstCall.args[2]).to.include('div-gpt-ad-1438287399331-0');
       expect(ajaxStub.firstCall.args[2]).to.include('test-publisher');
       expect(ajaxStub.firstCall.args[2]).to.include('2f7b179d443f14');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
     });
 
     it('should call server once when one size is passed', () => {
@@ -87,51 +86,48 @@ describe('quantcast adapter', () => {
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
     });
 
     it('should call server once when size is passed as string', () => {
-      bidderRequest.bids[0].sizes = "728x90";
+      bidderRequest.bids[0].sizes = '728x90';
       adapter.callBids(bidderRequest);
       sinon.assert.calledOnce(ajaxStub);
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
     });
 
     it('should call server once when sizes are passed as a comma-separated string', () => {
-      bidderRequest.bids[0].sizes = "728x90,360x240";
+      bidderRequest.bids[0].sizes = '728x90,360x240';
       adapter.callBids(bidderRequest);
       sinon.assert.calledOnce(ajaxStub);
 
       expect(ajaxStub.firstCall.args[0]).to.eql(adapter.QUANTCAST_CALLBACK_URL);
       expect(ajaxStub.firstCall.args[1]).to.exist.and.to.be.a('function');
-      expect(ajaxStub.firstCall.args[3]).to.eql({method : 'POST', withCredentials: true});
+      expect(ajaxStub.firstCall.args[3]).to.eql({method: 'POST', withCredentials: true});
     });
-
-
   });
 
   describe('handleQuantcastCB add bids to the manager', () => {
-
     let firstBid;
     let addBidReponseStub;
     let bidsRequestedOriginal;
     // respond
     let bidderReponse = {
-      "bidderCode": "quantcast",
-      "requestId" : bidderRequest.requestId,
-      "bids" : [
-          {
-            "statusCode" : 1,
-            "placementCode" : bidderRequest.bids[0].bidId,
-            "cpm": 4.5,
-            "ad": "<!DOCTYPE html>\n\n\n<div style=\"height: 250; width: 300; display: table-cell; vertical-align: middle;\">\n<div style=\"width: 300px; margin-left: auto; margin-right: auto;\">  \n\n  <script src=\"https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=\" type=\"text/javascript\"></script>\n\n<img src=\"https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=\" style=\"display: none;\" border=\"0\" height=\"1\" width=\"1\" alt=\"Quantcast\"/>\n\n</div>\n</div>",
-            "width": 300,
-            "height": 250
-          }
-       ]
+      'bidderCode': 'quantcast',
+      'requestId': bidderRequest.requestId,
+      'bids': [
+        {
+          'statusCode': 1,
+          'placementCode': bidderRequest.bids[0].bidId,
+          'cpm': 4.5,
+          'ad': '<!DOCTYPE html>\n\n\n<div style="height: 250; width: 300; display: table-cell; vertical-align: middle;">\n<div style="width: 300px; margin-left: auto; margin-right: auto;">  \n\n  <script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script>\n\n<img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/>\n\n</div>\n</div>',
+          'width': 300,
+          'height': 250
+        }
+      ]
     };
 
     beforeEach(() => {
@@ -169,26 +165,25 @@ describe('quantcast adapter', () => {
       adapter.callBids(bidderRequest);
       $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify(bidderReponse));
       sinon.assert.calledOnce(addBidReponseStub);
-      expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
+      expect(addBidReponseStub.firstCall.args[0]).to.eql('div-gpt-ad-1438287399331-0');
     });
 
-    it('should return no bid even when requestId and sizes are missing', () =>{
+    it('should return no bid even when requestId and sizes are missing', () => {
       let bidderReponse = {
-          "bidderCode": "quantcast",
-          "bids" : [
-              {
-                "statusCode" : 0,
-                "placementCode" : bidderRequest.bids[0].bidId,
-              }
-           ]
-        };
+        'bidderCode': 'quantcast',
+        'bids': [
+          {
+            'statusCode': 0,
+            'placementCode': bidderRequest.bids[0].bidId,
+          }
+        ]
+      };
 
       // You need the following call so that the in-memory storage of the bidRequest is carried out. Without this the callback won't work correctly.
       adapter.callBids(bidderRequest);
       $$PREBID_GLOBAL$$.handleQuantcastCB(JSON.stringify(bidderReponse));
-      //sinon.assert.calledOnce(addBidReponseStub);
-      //expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
+      // sinon.assert.calledOnce(addBidReponseStub);
+      // expect(addBidReponseStub.firstCall.args[0]).to.eql("div-gpt-ad-1438287399331-0");
     });
   });
-
 });

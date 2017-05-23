@@ -3,8 +3,7 @@ import PulsePointAdapter from '../../../src/adapters/pulsepoint';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
-describe("PulsePoint Adapter Tests", () => {
-
+describe('PulsePoint Adapter Tests', () => {
   let pulsepointAdapter = new PulsePointAdapter();
   let slotConfigs;
   let requests = [];
@@ -17,7 +16,7 @@ describe("PulsePoint Adapter Tests", () => {
         BID: 0
       }
     };
-    /* Ad object*/
+    /* Ad object */
     window.pp.Ad = function(config) {
       this.display = function() {
         requests.push(config);
@@ -38,24 +37,24 @@ describe("PulsePoint Adapter Tests", () => {
     slotConfigs = {
       bids: [
         {
-          placementCode: "/DfpAccount1/slot1", 
-          bidder: "pulsepoint",
+          placementCode: '/DfpAccount1/slot1',
+          bidder: 'pulsepoint',
           bidId: 'bid12345',
           params: {
-            cp: "p10000",
-            ct: "t10000",
-            cf: "300x250",
-            param1: "value1",
+            cp: 'p10000',
+            ct: 't10000',
+            cf: '300x250',
+            param1: 'value1',
             param2: 2
           }
-        },{
-          placementCode: "/DfpAccount2/slot2", 
-          bidder: "pulsepoint",
+        }, {
+          placementCode: '/DfpAccount2/slot2',
+          bidder: 'pulsepoint',
           bidId: 'bid23456',
           params: {
-            cp: "p20000",
-            ct: "t20000",
-            cf: "728x90"
+            cp: 'p20000',
+            ct: 't20000',
+            cf: '728x90'
           }
         }
       ]
@@ -72,7 +71,7 @@ describe("PulsePoint Adapter Tests", () => {
   it('Verify requests sent to PulsePoint library', () => {
     pulsepointAdapter.callBids(slotConfigs);
     expect(requests).to.have.length(2);
-    //slot 1
+    // slot 1
     expect(requests[0].cp).to.equal('p10000');
     expect(requests[0].ct).to.equal('t10000');
     expect(requests[0].cf).to.equal('300x250');
@@ -138,7 +137,7 @@ describe("PulsePoint Adapter Tests", () => {
     let bidCall = bidManager.addBidResponse.firstCall;
     expect(callback).to.be.a('function');
     expect(bidCall).to.be.a('null');
-    //the library load should initialize pulsepoint lib
+    // the library load should initialize pulsepoint lib
     initPulsepointLib();
     callback();
     expect(requests.length).to.equal(2);
@@ -148,18 +147,17 @@ describe("PulsePoint Adapter Tests", () => {
     expect(bidCall.args[1]).to.be.a('object');
   });
 
-  //related to issue https://github.com/prebid/Prebid.js/issues/866
+  // related to issue https://github.com/prebid/Prebid.js/issues/866
   it('Verify Passbacks when window.pp is not available', () => {
     window.pp = function() {};
     pulsepointAdapter.callBids(slotConfigs);
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
-    //verify that we passed back without exceptions, should window.pp be already taken.
+    // verify that we passed back without exceptions, should window.pp be already taken.
     expect(placement).to.equal('/DfpAccount1/slot1');
     expect(bid.bidderCode).to.equal('pulsepoint');
     expect(bid).to.not.have.property('ad');
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
   });
-
 });
