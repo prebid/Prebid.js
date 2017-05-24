@@ -101,20 +101,32 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
   /* Get current page referrer url */
   function getReferrerUrl() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) { }
-    return document.referrer;
+    let referer = '';
+    if (window.self !== window.top) {
+      try {
+        referer = window.top.document.referrer;
+      } catch (e) { }
+    } else {
+      referer = document.referrer;
+    }
+    return referer;
   }
 
   /* Get current page canonical url */
   function getCanonicalUrl() {
-    if (utils.inIframes) {
+    let link;
+    if (window.self !== window.top) {
       try {
-        return (window.top.doucment.head.querySelector('link[rel="canonical"][href]') || {}).href;
+        link = window.top.document.head.querySelector('link[rel="canonical"][href]');
       } catch (e) { }
+    } else {
+      link = document.head.querySelector('link[rel="canonical"][href]');
     }
-    return (document.head.querySelector('link[rel="canonical"][href]') || {}).href;
+
+    if (link) {
+      return link.href;
+    }
+    return '';
   }
 
   /* Get parsed size from request size */

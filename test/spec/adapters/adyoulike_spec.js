@@ -132,28 +132,30 @@ describe('Adyoulike Adapter', () => {
   });
 
   describe('request function', () => {
-    let xhr;
     let requests;
-    let canonical;
+    let xhr;
     let addBidResponse;
+    let canonicalQuery;
 
     beforeEach(() => {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      canonical.href = canonicalUrl;
-      document.head.appendChild(canonical);
-
       requests = [];
+
       xhr = sinon.useFakeXMLHttpRequest();
       xhr.onCreate = request => requests.push(request);
 
       addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+      let canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      canonical.href = canonicalUrl;
+      canonicalQuery = sinon.stub(window.top.document.head, 'querySelector');
+      canonicalQuery.withArgs('link[rel="canonical"][href]').returns(canonical);
     });
 
     afterEach(() => {
       xhr.restore();
       bidmanager.addBidResponse.restore();
-      document.head.removeChild(canonical);
+      canonicalQuery.restore();
     });
 
     it('requires placement request', () => {
@@ -174,6 +176,21 @@ describe('Adyoulike Adapter', () => {
       expect(requests[0].method).to.equal('POST');
 
       expect(requests[0].url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+
+      let body = JSON.parse(requests[0].requestBody);
+      expect(body.Version).to.equal('0.1');
+      expect(body.Placements).deep.equal(['placement_0']);
+      expect(body.PageRefreshed).to.equal(false);
+    });
+
+    it('sends bid request to endpoint with single placement without canonical', () => {
+      canonicalQuery.restore();
+
+      adapter.callBids(bidRequestWithSinglePlacement);
+      expect(requests[0].url).to.contain(endpoint);
+      expect(requests[0].method).to.equal('POST');
+
+      expect(requests[0].url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
       expect(body.Version).to.equal('0.1');
