@@ -147,7 +147,7 @@ describe('justpremium adapter', () => {
             bidId: 'bidId1',
             bidder: 'justpremium',
             params: {
-              zone: 34364,
+              zone: 20000,
               allow: ['wp']
             },
             sizes: [[1, 1]],
@@ -177,7 +177,7 @@ describe('justpremium adapter', () => {
             bidId: 'bidId1',
             bidder: 'justpremium',
             params: {
-              zone: 34364,
+              zone: 20000,
               allow: ['wp']
             },
             sizes: [[1, 1]],
@@ -206,7 +206,7 @@ describe('justpremium adapter', () => {
             bidId: 'bidId1',
             bidder: 'justpremium',
             params: {
-              zone: 34364,
+              zone: 20000,
               allow: ['wp']
             },
             sizes: [[1, 1]],
@@ -246,7 +246,7 @@ describe('justpremium adapter', () => {
             bidId: 'bidId1',
             bidder: 'justpremium',
             params: {
-              zone: 34364,
+              zone: 20000,
               allow: ['wp']
             },
             sizes: [[1, 1]],
