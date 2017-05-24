@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/appnexusAst';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
 const REQUEST = {
   'bidderCode': 'appnexusAst',
@@ -129,6 +129,25 @@ describe('AppNexusAdapter', () => {
       delete REQUEST.bids[0].params.user;
     });
 
+    it('attaches native params to the request', () => {
+      REQUEST.bids[0].mediaType = 'native';
+      REQUEST.bids[0].nativeParams = {
+        title: {required: true},
+        body: {required: true}
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody);
+      expect(request.tags[0].native.layouts[0]).to.deep.equal({
+        title: {required: true},
+        description: {required: true}
+      });
+
+      delete REQUEST.bids[0].mediaType;
+      delete REQUEST.bids[0].params.nativeParams;
+    });
+
     it('sends bid request to ENDPOINT via POST', () => {
       adapter.callBids(REQUEST);
       expect(requests[0].url).to.equal(ENDPOINT);
@@ -238,6 +257,45 @@ describe('AppNexusAdapter', () => {
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
+    });
+
+    it('handles native responses', () => {
+      RESPONSE.tags[0].ads[0].ad_type = 'native';
+      RESPONSE.tags[0].ads[0].rtb.native = {
+        'title': 'Native Creative',
+        'desc': 'Cool description great stuff',
+        'sponsored': 'AppNexus',
+        'icon': {
+          'width': 0,
+          'height': 0,
+          'url': 'http://cdn.adnxs.com/icon.png'
+        },
+        'main_img': {
+          'width': 2352,
+          'height': 1516,
+          'url': 'http://cdn.adnxs.com/img.png'
+        },
+        'link': {
+          'url': 'https://www.appnexus.com',
+          'fallback_url': '',
+          'click_trackers': ['http://nym1-ib.adnxs.com/click']
+        },
+        'impression_trackers': ['http://example.com'],
+      };
+
+      adapter.callBids(REQUEST);
+      server.respondWith(JSON.stringify(RESPONSE));
+      server.respond();
+
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+
+      expect(response.native.title).to.equal('Native Creative');
+      expect(response.native.body).to.equal('Cool description great stuff');
+      expect(response.native.image).to.equal('http://cdn.adnxs.com/img.png');
+
+      RESPONSE.tags[0].ads[0].ad_type = 'banner';
     });
 
     it('handles JSON.parse errors', () => {

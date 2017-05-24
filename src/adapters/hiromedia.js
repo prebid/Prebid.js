@@ -1,18 +1,15 @@
-/* jslint white:true, browser:true, single: true */
-/* global $$PREBID_GLOBAL$$, require, module */
-
 /**
  * Adapter for HIRO Media
  *
  * @module HiroMediaAdapter
  *
- * @requires src/adloader
+ * @requires src/ajax
  * @requires src/bidfactory
  * @requires src/bidmanager
  * @requires src/constants
  * @requires src/utils
  */
-var adloader = require('src/adloader');
+var Ajax = require('src/ajax');
 var bidfactory = require('src/bidfactory');
 var bidmanager = require('src/bidmanager');
 var utils = require('src/utils');
@@ -43,7 +40,7 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * Default bid param values
    *
    * @memberof module:HiroMediaAdapter~
-   * @constant {module:HiroMediaAdapter~bidParams}
+   * @constant {array.<string>}
    * @private
    */
   var REQUIRED_BID_PARAMS = ['accountId'];
@@ -60,16 +57,17 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   };
 
   /**
-   * Storage for bid objects.
-   *
-   * Bids need to be stored between requests and response since the response
-   * is a global callback.
+   * Returns true if the given value is `undefined`
    *
    * @memberof module:HiroMediaAdapter~
-   * @var {array.<module:HiroMediaAdapter~bidInfo>}
    * @private
+   *
+   * @param  {*} value value to check
+   * @return {boolean} true if the given value is `undefined`, false otherwise
    */
-  var _bidStorage = [];
+  function isUndefined(value) {
+    return typeof value === 'undefined';
+  }
 
   /**
    * Call bidmanager.addBidResponse
@@ -80,14 +78,14 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @memberof module:HiroMediaAdapter~
    * @private
    *
-   * @param  {module:HiroMediaAdapter~bidInfo} bidInfo bid object wrapper to respond for
+   * @param  {object} bid bid object connected to the response
    * @param  {object|boolean} [bidResponse] response object for bid, if not
    * set the response will be an empty bid response.
    */
-  function addBidResponse(bidInfo, bidResponse) {
-    var placementCode = bidInfo.bid.placementCode;
+  function addBidResponse(bid, bidResponse) {
+    var placementCode = bid.placementCode;
     var bidStatus = bidResponse ? STATUS.GOOD : STATUS.NO_BID;
-    var bidObject = bidfactory.createBid(bidStatus, bidInfo.bid);
+    var bidObject = bidfactory.createBid(bidStatus, bid);
 
     bidObject.bidderCode = BIDDER_CODE;
 
@@ -121,34 +119,18 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @memberof module:HiroMediaAdapter~
    * @private
    *
-   * @param  {object} response [description]
+   * @param  {object} response bid response object
+   * @param  {object} bid bid object connected to response
    */
-  function handleResponse(response) {
-    _bidStorage.filter(function (bidInfo) {
-      return bidInfo.batchKey === response.batchKey;
-    }).forEach(function (bidInfo) {
-      // Sample the bid responses according to `response.chance`,
-      // if `response.chance` is not provided, sample at 100%.
-      if (response.chance === undefined || checkChance(response.chance)) {
-        addBidResponse(bidInfo, response);
-      } else {
-        addBidResponse(bidInfo, false);
-      }
-    });
-  }
-
-  /**
-   * Call {@linkcode module:HiroMediaAdapter~handleResponse} for valid responses
-   *
-   * @global
-   *
-   * @param  {object} [response] the response from the server
-   */
-  $$PREBID_GLOBAL$$.hiromedia_callback = function (response) {
-    if (response && response.batchKey) {
-      handleResponse(response);
+  function handleResponse(response, bid) {
+    // Sample the bid responses according to `response.chance`,
+    // if `response.chance` is not provided, sample at 100%.
+    if (isUndefined(response.chance) || checkChance(response.chance)) {
+      addBidResponse(bid, response);
+    } else {
+      addBidResponse(bid, false);
     }
-  };
+  }
 
   /**
    * Find browser name and version
@@ -235,97 +217,49 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   }
 
   /**
-   * Calculate and return a batchKey key for a bid
-   *
-   * Bid of similar placement can have similar responses,
-   * we can calculate a key based on the variant properties
-   * of a bid which can share the same response
+   * Build a {@linkcode module:HiroMediaAdapter~bidInfo|bidInfo} object based on a
+   * bid sent to {@linkcode module:HiroMediaAdapter#callBids|callBids}
    *
    * @memberof module:HiroMediaAdapter~
    * @private
    *
-   * @param  {module:HiroMediaAdapter~bidInfo} bidInfo bid information
-   * @return {string}  batch key for bid
+   * @param  {object} bid bid from `Prebid.js`
+   * @return {module:HiroMediaAdapter~bidInfo} information for bid request
    */
-  function getBatchKey(bidInfo) {
-    var bidParams = bidInfo.bidParams;
-    var batchParams = [
-      bidParams.bidUrl,
-      bidParams.accountId,
-      bidInfo.selectedSize,
-      bidInfo.additionalSizes
-    ];
+  function processBid(bid) {
+    var sizes = utils.parseSizesInput(bid.sizes);
+    var bidParams = defaultParams(bid.params);
+    var hasValidBidRequest = utils.hasValidBidRequest(bidParams, REQUIRED_BID_PARAMS, BIDDER_CODE);
+    var shouldBid = hasValidBidRequest;
+    var bidInfo = {
+      bidParams: bidParams,
+      shouldBid: shouldBid,
+      selectedSize: sizes[0],
+      additionalSizes: sizes.slice(1).join(',')
+    };
 
-    return batchParams.join('-');
+    return bidInfo;
   }
 
   /**
-   * Build a set of {@linkcode module:HiroMediaAdapter~bidInfo|bidInfo} objects based on the
-   * bids sent to {@linkcode module:HiroMediaAdapter#callBids|callBids}
+   * Wrapper around `JSON.parse()` that returns false on error
    *
    * @memberof module:HiroMediaAdapter~
    * @private
    *
-   * @param  {object} bids bids sent from `Prebid.js`
-   * @return {array.<module:HiroMediaAdapter~bidInfo>} wrapped bids
+   * @param  {string} text potential JSON string to convert to object
+   * @return {object|boolean} object parsed from text or `false` in case of and error
    */
-  function processBids(bids) {
-    var result = [];
+  function tryJson(text) {
+    var object = false;
 
-    if (bids) {
-      utils.logMessage('hiromedia.processBids, processing ' + bids.length + ' bids');
-
-      bids.forEach(function (bid) {
-        var sizes = utils.parseSizesInput(bid.sizes);
-        var bidParams = defaultParams(bid.params);
-        var hasValidBidRequest = utils.hasValidBidRequest(bidParams, REQUIRED_BID_PARAMS, BIDDER_CODE);
-        var shouldBid = hasValidBidRequest;
-        var bidInfo = {
-          bid: bid,
-          bidParams: bidParams,
-          shouldBid: shouldBid,
-          selectedSize: sizes[0],
-          additionalSizes: sizes.slice(1).join(',')
-        };
-
-        if (shouldBid) {
-          bidInfo.batchKey = getBatchKey(bidInfo);
-        }
-
-        result.push(bidInfo);
-      });
+    try {
+      object = JSON.parse(text);
+    } catch (ignore) {
+      // Ignored
     }
 
-    return result;
-  }
-
-  /**
-   * Send a bid request to the bid server endpoint
-   *
-   * Calls `adLoader.loadScript`
-   *
-   * @memberof module:HiroMediaAdapter~
-   * @private
-   *
-   * @param  {string} url base url, can already contain query parameters
-   * @param  {object} requestParams parameters to add to query
-   */
-  function sendBidRequest(url, requestParams) {
-    if (requestParams) {
-      if (url.indexOf('?') !== -1) {
-        url = url + '&';
-      } else {
-        url = url + '?';
-      }
-
-      Object.keys(requestParams).forEach(function (key) {
-        url = utils.tryAppendQueryString(url, key, requestParams[key]);
-      });
-    }
-
-    utils.logMessage('hiromedia.callBids, url:' + url);
-
-    adloader.loadScript(url);
+    return object;
   }
 
   /**
@@ -338,50 +272,59 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
   function _callBids(params) {
     var browser = getBrowser();
     var domain = getDomain();
-    var bidsRequested = {};
+    var bids = params && params.bids;
+    var ajaxOptions = {
+      method: 'GET',
+      withCredentials: true
+    };
+
+    // Fixed data, shared by all requests
+    var fixedRequest = {
+      adapterVersion: ADAPTER_VERSION,
+      browser: browser.name,
+      browserVersion: browser.version,
+      domain: domain
+    };
 
     utils.logMessage('hiromedia.callBids');
 
-    if (params) {
-      // Processed bids are stored in the adapter scope
-      _bidStorage = processBids(params.bids);
-    } else {
-      // Ensure we don't run on stale data
-      _bidStorage = [];
-    }
-
-    if (_bidStorage.length) {
-      // Loop over processed bids and send a request if a request for the bid
-      // batchKey has not been sent.
-      _bidStorage.forEach(function (bidInfo) {
-        var bid = bidInfo.bid;
-        var batchKey = bidInfo.batchKey;
+    if (bids && bids.length) {
+      bids.forEach(function (bid) {
+        var bidInfo = processBid(bid);
         var bidParams = bidInfo.bidParams;
-
         utils.logMessage('hiromedia.callBids, bidInfo ' + bid.placementCode + ' ' + bidInfo.shouldBid);
-
         if (bidInfo.shouldBid) {
           var url = bidParams.bidUrl;
+          var requestParams = Object.assign({}, fixedRequest, bidInfo.bidParams, {
+            placementCode: bid.placementCode,
+            selectedSize: bidInfo.selectedSize,
+            additionalSizes: bidInfo.additionalSizes
+          });
 
-          if (!bidsRequested[batchKey]) {
-            bidsRequested[batchKey] = true;
+          Object.keys(requestParams).forEach(function (key) {
+            if (requestParams[key] === '' || isUndefined(requestParams[key])) {
+              delete requestParams[key];
+            }
+          });
 
-            sendBidRequest(url, {
-              adapterVersion: ADAPTER_VERSION,
-              callback: '$$PREBID_GLOBAL$$.hiromedia_callback',
-              batchKey: batchKey,
-              placementCode: bid.placementCode,
-              accountId: bidParams.accountId,
-              browser: browser.name,
-              browserVersion: browser.version,
-              domain: domain,
-              selectedSize: bidInfo.selectedSize,
-              additionalSizes: bidInfo.additionalSizes
-            });
-          }
+          utils.logMessage('hiromedia.callBids, bid request ' + url + ' ' + JSON.stringify(bidInfo.bidRequest));
+
+          Ajax.ajax(url, {
+
+            success: function(responseText) {
+              var response = tryJson(responseText);
+              handleResponse(response, bid);
+            },
+
+            error: function(err, xhr) {
+              utils.logError('hiromedia.callBids, bid request error', xhr.status, err);
+              addBidResponse(bid, false);
+            }
+
+          }, requestParams, ajaxOptions);
         } else {
           // No bid
-          addBidResponse(bidInfo, false);
+          addBidResponse(bid, false);
         }
       });
     }
@@ -409,10 +352,8 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    * @typedef {object} module:HiroMediaAdapter~bidInfo
    * @private
    *
-   * @property {object} bid original bid passed to #callBids
    * @property {string} selectedSize the first size in the the placement sizes array
    * @property {string} additionalSizes list of sizes in the placement sizes array besides the first
-   * @property {string} batchKey key used for batching requests which have the same basic properties
    * @property {module:HiroMediaAdapter~bidParams} bidParams original params passed for bid in #callBids
    * @property {boolean} shouldBid flag to determine if the bid is valid for bidding or not
    */

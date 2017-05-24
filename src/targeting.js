@@ -1,4 +1,5 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
+import { NATIVE_TARGETING_KEYS } from './native';
 const bidmanager = require('./bidmanager.js');
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -6,12 +7,13 @@ var CONSTANTS = require('./constants.json');
 var targeting = exports;
 var pbTargetingKeys = [];
 
-targeting.resetPresetTargeting = function() {
+targeting.resetPresetTargeting = function(adUnitCode) {
   if (isGptPubadsDefined()) {
+    const adUnitCodes = adUnitCode && adUnitCode.length ? [adUnitCode] : $$PREBID_GLOBAL$$._adUnitCodes;
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
-        $$PREBID_GLOBAL$$.adUnits.find(function(unit) {
+        adUnitCodes.find(function(unit) {
           if (unit.code === slot.getAdUnitPath() ||
               unit.code === slot.getSlotElementId()) {
             slot.setTargeting(key, null);
@@ -149,7 +151,7 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 }
 
 function getBidLandscapeTargeting(adUnitCodes) {
-  const standardKeys = CONSTANTS.TARGETING_KEYS;
+  const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
   return $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, adUnitCodes))
