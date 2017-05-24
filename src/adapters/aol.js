@@ -212,8 +212,8 @@ const AolAdapter = function AolAdapter() {
         let formattedPixels = response.ext.pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
 
         ad += '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
-            'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' + formattedPixels +
-            '}</script>';
+          'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' + formattedPixels +
+          '}</script>';
       }
     }
 
@@ -237,8 +237,8 @@ const AolAdapter = function AolAdapter() {
     if (bid.params.id && bid.params.imp && bid.params.imp[0]) {
       let imp = bid.params.imp[0];
       return imp.id && imp.tagid &&
-          ((imp.banner && imp.banner.w && imp.banner.h) ||
-          (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
+        ((imp.banner && imp.banner.w && imp.banner.h) ||
+        (imp.video && imp.video.mimes && imp.video.minduration && imp.video.maxduration));
     }
   }
 
