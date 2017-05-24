@@ -3,7 +3,8 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants<<<import { registerSync } from 'src/userSync.js';
+import { STATUS } from 'src/constants';
+import { registerSync } from 'src/userSync.js';
 import { persist } from 'src/cookie.js';
 
 const TYPE = 's2s';
