@@ -5,17 +5,10 @@ import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import 'polyfill';
-<<<<<<< HEAD
-import {parse as parseURL, format as formatURL} from './url';
-import {isValidePriceConfig} from './cpmBucketManager';
-import {listenMessagesFromCreative} from './secure-creatives';
-import { syncUsers } from 'src/userSync.js';
-=======
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from 'src/cookie.js';
->>>>>>> 223b96960441e2bbc7031abe134074fdf08091e5
+import { syncUsers } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
