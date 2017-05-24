@@ -258,10 +258,10 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 
 /**
  * Set query string targeting on one or more GPT ad units.
- * @param {(string|string[])} adUnitsCodeArr a single `adUnit.code` or multiple.
+ * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
  * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnitsCodeArr) {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -269,10 +269,10 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnitsCodeArr) {
   }
 
   // get our ad unit codes
-  var targetingSet = targeting.getAllTargeting(adUnitsCodeArr);
+  var targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
-  targeting.resetPresetTargeting(adUnitsCodeArr);
+  targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
   targeting.setTargeting(targetingSet);
