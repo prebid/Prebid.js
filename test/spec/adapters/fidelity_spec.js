@@ -1,18 +1,17 @@
 describe('fidelity adapter tests', function() {
   const expect = require('chai').expect;
   const adapter = require('src/adapters/fidelity');
-  const adLoader = require('src/adloader'); 
+  const adLoader = require('src/adloader');
   const bidmanager = require('src/bidmanager');
   const STATUS = require('src/constants').STATUS;
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
 
   describe('creation of bid url', function () {
-
     it('should be called', function () {
       var stubLoadScript;
       stubLoadScript = sinon.stub(adLoader, 'loadScript');
-      
+
       var bidderRequest = {
         bidderCode: 'fidelity',
         bids: [
@@ -36,7 +35,7 @@ describe('fidelity adapter tests', function() {
     it('should populate required parameters', function () {
       var stubLoadScript;
       stubLoadScript = sinon.stub(adLoader, 'loadScript');
-      
+
       var bidderRequest = {
         bidderCode: 'fidelity',
         bids: [
@@ -59,7 +58,7 @@ describe('fidelity adapter tests', function() {
     it('should populate required and optional parameters', function () {
       var stubLoadScript;
       stubLoadScript = sinon.stub(adLoader, 'loadScript');
-      
+
       var bidderRequest = {
         bidderCode: 'fidelity',
         bids: [
@@ -88,7 +87,7 @@ describe('fidelity adapter tests', function() {
 
       expect(parsedBidUrlQueryString).to.have.property('zoneid').and.to.equal('37');
       expect(parsedBidUrlQueryString).to.have.property('impid').and.to.equal('bidId-123456-1');
-      expect(parsedBidUrlQueryString).to.have.property('callback').and.to.equal('window.$$PREBID_GLOBAL$$.fidelityResponse'); 
+      expect(parsedBidUrlQueryString).to.have.property('callback').and.to.equal('window.$$PREBID_GLOBAL$$.fidelityResponse');
       expect(parsedBidUrlQueryString).to.have.property('loc').and.to.equal('http://locurl');
       expect(parsedBidUrlQueryString).to.have.property('ct0').and.to.equal('http://clickurl');
       expect(parsedBidUrlQueryString).to.have.property('subid').and.to.equal('000');
@@ -96,9 +95,8 @@ describe('fidelity adapter tests', function() {
       stubLoadScript.restore();
     });
   });
-  
-  describe('fidelityResponse', function () {
 
+  describe('fidelityResponse', function () {
     it('should exist and be a function', function () {
       expect(pbjs.fidelityResponse).to.exist.and.to.be.a('function');
     });
@@ -122,8 +120,8 @@ describe('fidelity adapter tests', function() {
 
       // no bids returned in the response.
       var response = {
-        "id": "543210",
-        "seatbid": []
+        'id': '543210',
+        'seatbid': []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -161,15 +159,15 @@ describe('fidelity adapter tests', function() {
 
       // Returning a single bid in the response.
       var response = {
-        "id": "543210",
-        "seatbid": [ {
-          "bid" : [ {
-            "id" : "1111111",
-            "impid" : "bidId-123456-1",
-            "price" : 0.09,
-            "adm" : "<<creative>>",
-            "height" : 90,
-            "width" : 728
+        'id': '543210',
+        'seatbid': [ {
+          'bid': [ {
+            'id': '1111111',
+            'impid': 'bidId-123456-1',
+            'price': 0.09,
+            'adm': '<<creative>>',
+            'height': 90,
+            'width': 728
           } ]
         } ]
       };
