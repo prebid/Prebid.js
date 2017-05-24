@@ -4,10 +4,7 @@ import adLoader from 'src/adloader';
 import utils from 'src/utils';
 import {expect} from 'chai';
 
-//chai.config.includeStack = true;
-
 describe('CoxAdapter', () => {
-
   let adapter;
   let loadScriptStub;
   let addBidResponseSpy;
@@ -29,9 +26,7 @@ describe('CoxAdapter', () => {
     addBidResponseSpy.restore();
   });
 
-
   describe('response handling', () => {
-
     const normalResponse = 'cdsTag.__callback__({"zones":{"as2000005991707":{"ad" : "<h1>FOO<\/h1>","uid" : "","price" : 1.51,"floor" : 0,}},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
     const zeroPriceResponse = 'cdsTag.__callback__({"zones":{"as2000005991707":{"ad" : "<h1>DEFAULT FOO<\/h1>","uid" : "","price" : 0,"floor" : 0,}},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
     const incompleteResponse = 'cdsTag.__callback__({"zones":{},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
@@ -46,10 +41,9 @@ describe('CoxAdapter', () => {
       }]
     };
 
-    //===== 1
+    // ===== 1
     it('should provide a correctly populated Bid given a valid response', () => {
-
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => {emitScript(normalResponse);})
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(normalResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -59,10 +53,9 @@ describe('CoxAdapter', () => {
       expect(bid.bidderCode).to.equal('cox');
     });
 
-    //===== 2
+    // ===== 2
     it('should provide an empty Bid given a zero-price response', () => {
-
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => {emitScript(zeroPriceResponse);})
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(zeroPriceResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -71,10 +64,9 @@ describe('CoxAdapter', () => {
       expect(bid.ad).to.not.be.ok;
     });
 
-    //===== 3
+    // ===== 3
     it('should provide an empty Bid given an incomplete response', () => {
-
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => {emitScript(incompleteResponse);})
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(incompleteResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -83,10 +75,9 @@ describe('CoxAdapter', () => {
       expect(bid.ad).to.not.be.ok;
     });
 
-    //===== 4
+    // ===== 4
     it('should not provide a Bid given no response', () => {
-
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => {emitScript('');});
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(''); });
 
       adapter.callBids(oneBidConfig);
 
@@ -94,9 +85,7 @@ describe('CoxAdapter', () => {
     });
   });
 
-
   describe('request generation', () => {
-
     const missingBidsConfig = {
       bidderCode: 'cox',
       bids: null,
@@ -111,9 +100,8 @@ describe('CoxAdapter', () => {
       }]
     };
 
-    //===== 5
+    // ===== 5
     it('should not make an ad call given missing bids in config', () => {
-
       loadScriptStub = sinon.stub(adLoader, 'loadScript');
 
       adapter.callBids(missingBidsConfig);
@@ -121,9 +109,8 @@ describe('CoxAdapter', () => {
       expect(loadScriptStub.callCount).to.equal(0);
     });
 
-    //===== 6
+    // ===== 6
     it('should not make an ad call given missing params in config', () => {
-
       loadScriptStub = sinon.stub(adLoader, 'loadScript');
 
       adapter.callBids(missingParamsConfig);
