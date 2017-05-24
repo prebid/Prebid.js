@@ -3,8 +3,7 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import { registerSync } from 'src/userSync.js';
+import { STATUS } from 'src/constants<<<import { registerSync } from 'src/userSync.js';
 import { persist } from 'src/cookie.js';
 
 const TYPE = 's2s';
@@ -109,15 +108,27 @@ function PrebidServer() {
       if (result.status === 'OK') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_bid) {
+            if (bidder.no_bid || bidder.no_cookie) {
               // store a "No Bid" bid response
 
-              let bidObject = bidfactory.createBid(STATUS.NO_BID, {
-                bidId: bidder.bid_id
-              });
-              bidObject.adUnitCode = bidder.ad_unit;
-              bidObject.bidderCode = bidder.bidder;
-              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              if (!bidder.ad_unit) {
+                utils.getBidderRequestAllAdUnits(bidder.bidder).bids.forEach(bid => {
+                  let bidObject = bidfactory.createBid(STATUS.NO_BID, bid);
+                  bidObject.adUnitCode = bid.placementCode;
+                  bidObject.bidderCode = bidder.bidder;
+
+                  bidmanager.addBidResponse(bid.placementCode, bidObject);
+                });
+              } else {
+                let bidObject = bidfactory.createBid(STATUS.NO_BID, {
+                  bidId: bidder.bid_id
+                });
+
+                bidObject.adUnitCode = bidder.ad_unit;
+                bidObject.bidderCode = bidder.bidder;
+
+                bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+              }
             }
             if (bidder.no_cookie) {
               registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);

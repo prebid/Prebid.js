@@ -56,7 +56,10 @@ function BeachfrontAdapter() {
       appId: bid.params.appId,
       domain: document.location.hostname,
       imp: [{
-        video: {},
+        video: {
+          w: bid.width,
+          h: bid.height
+        },
         bidfloor: bid.params.bidfloor
       }],
       site: {

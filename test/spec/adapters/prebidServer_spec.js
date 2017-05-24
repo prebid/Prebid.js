@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import Adapter from 'src/adapters/prebidServer';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 let CONFIG = {
   accountId: '1',
@@ -70,6 +71,40 @@ const RESPONSE = {
   ]
 };
 
+const RESPONSE_NO_BID_NO_UNIT = {
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': 'appnexus',
+    'response_time_ms': 132,
+    'no_bid': true
+  }]
+};
+
+const RESPONSE_NO_BID_UNIT_SET = {
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': 'appnexus',
+    'ad_unit': 'div-gpt-ad-1460505748561-0',
+    'response_time_ms': 91,
+    'no_bid': true
+  }]
+};
+
+const RESPONSE_NO_COOKIE = {
+  'tid': 'd6eca075-4a59-4346-bdb3-86531830ef2c',
+  'status': 'OK',
+  'bidder_status': [{
+    'bidder': 'pubmatic',
+    'no_cookie': true,
+    'usersync': {
+      'url': '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=http://localhost:8000/setuid?bidder=pubmatic&uid=',
+      'type': 'iframe'
+    }
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter;
 
@@ -106,11 +141,18 @@ describe('S2S Adapter', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create();
       sinon.stub(bidmanager, 'addBidResponse');
+      sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
+        bids: [{
+          bidId: '32167',
+          placementCode: 'div-gpt-ad-1460505748561-0'
+        }]
+      });
     });
 
     afterEach(() => {
       server.restore();
       bidmanager.addBidResponse.restore();
+      utils.getBidderRequestAllAdUnits.restore();
     });
 
     it('registers bids', () => {
@@ -124,6 +166,57 @@ describe('S2S Adapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
+    });
+
+    it('registers no bid response when ad unit not set', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '32167');
+    });
+
+    it('registers no bid response when server requests cookie sync', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '32167');
+    });
+
+    it('registers no bid response when ad unit is set', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
   });
 });
