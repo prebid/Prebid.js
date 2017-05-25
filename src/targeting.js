@@ -77,7 +77,7 @@ function getAdUnitCodes(adUnitCode) {
   else if (utils.isArray(adUnitCode)) {
     return adUnitCode;
   }
-  return $$PREBID_GLOBAL$$._adUnitCodes;
+  return $$PREBID_GLOBAL$$._adUnitCodes || [];
 }
 
 /**
