@@ -3,7 +3,6 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var CriteoAdapter = function CriteoAdapter() {
-
   var sProt = (window.location.protocol === 'http:') ? 'http:' : 'https:';
   var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
