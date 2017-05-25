@@ -108,12 +108,16 @@ exports.addBidResponse = function (adUnitCode, bid) {
       adUnitCode
     });
 
-    bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+    if (start == null) {
+      utils.logWarn(`Cannot find bidder request for bid, bidderCode: ${bid.bidderCode}, adUnitCode: ${bid.adUnitCode}`);
+    } else {
+      bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-      const timedOut = true;
+      if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
+        const timedOut = true;
 
-      exports.executeCallback(timedOut);
+        exports.executeCallback(timedOut);
+      }
     }
 
     // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
