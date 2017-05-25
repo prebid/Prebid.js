@@ -12,18 +12,16 @@ const queue = {
  * @private
  */
 function fireSyncs() {
-  let bodyElem = document.getElementsByTagName('body')[0];
   try {
     // Fire image pixels
     queue.image.forEach((sync) => {
       let bidderName = sync[0];
       let trackingPixelUrl = sync[1];
-      let removeOnLoad = true;
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // insertAdjacentHTML expects HTML string - convert DOM object to string
-      let img = userSync.createImgObject(trackingPixelUrl, removeOnLoad);
+      let img = userSync.createImgObject(trackingPixelUrl);
       if (img) {
-        bodyElem.insertAdjacentHTML('beforeend', img.outerHTML);
+        utils.insertElement(img);
       }
     });
     // Reset the image pixel queue
@@ -35,42 +33,19 @@ function fireSyncs() {
 }
 
 /**
- * @function hideNode
- * @summary Modifies a DOM element to be hidden from user sight
- * @private
- * @params {object} elementNode A valid DOM element
- * @returns {object} A valid DOM element
- */
-function hideNode(elementNode) {
-  elementNode = elementNode.cloneNode();
-  elementNode.height = 0;
-  elementNode.width = 0;
-  elementNode.style.display = 'none';
-  return elementNode;
-}
-
-/**
- * @function setIdToNode
- * @summary Adds a unique ID to a DOM element
- * @private
- * @params {object} elementNode A valid DOM element
- * @returns {object} A valid DOM element
- */
-function setIdToNode(elementNode) {
-  elementNode = elementNode.cloneNode();
-  elementNode.id = utils.getUniqueIdentifierStr();
-  return elementNode;
-}
-
-/**
  * @function hideAndIdElem
- * @summary Functionally compose a DOM element to be hidden and add an ID
+ * @summary Modifies a DOM element to be hidden from user sight and adds a unique ID
  * @private
  * @params {object} elementNode A valid DOM element
  * @returns {object} A valid DOM element
  */
 function hideAndIdElem(elementNode) {
-  return hideNode(setIdToNode(elementNode));
+  elementNode = elementNode.cloneNode();
+  elementNode.height = 0;
+  elementNode.width = 0;
+  elementNode.style.display = 'none';
+  elementNode.id = utils.getUniqueIdentifierStr();
+  return elementNode;
 }
 
 /**
@@ -78,27 +53,22 @@ function hideAndIdElem(elementNode) {
  * @summary Create an img DOM element for sending a pixel. Made public for test purposes
  * @public
  * @params {string} url The URL for the image pixel
- * @params {boolean} removeOnLoad Remove this img element once the endpoint is reached
  * @returns {object} A valid DOM element
  */
-userSync.createImgObject = function(url, removeOnLoad) {
+userSync.createImgObject = function(url) {
   if (!url) {
     return;
   }
-  const img = hideAndIdElem(new Image());
+  let img = hideAndIdElem(new Image());
   img.src = encodeURI(url);
-  if (removeOnLoad) {
-    img.onload = function() {
-      // Once the sync is done remove the element
-      try {
-        let thisImg = document.getElementById(this.id);
-        thisImg.parentNode.removeChild(thisImg);
-      }
-      catch (e) {
-        utils.logWarn('Could not remove image pixel element', e);
-      }
-    };
-  }
+  img.onload = function() {
+    // Once the sync is done remove the element
+    try {
+      let thisImg = document.getElementById(this.id);
+      thisImg.parentNode.removeChild(thisImg);
+    }
+    catch (e) {}
+  };
   return img;
 };
 
