@@ -20,6 +20,7 @@
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "indexExchangeVideo",
     "innity",
     "kruxlink",
     "getintent",
@@ -137,6 +138,11 @@
     {
       "stickyadstv": {
         "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "indexExchangeVideo": {
+        "supportedMediaTypes": ["video"]
       }
     },
     {
