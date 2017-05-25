@@ -1,13 +1,12 @@
 const bidfactory = require('../bidfactory');
 const bidmanager = require('../bidmanager');
-const utils      = require('../utils');
-const adloader   = require('../adloader');
+const utils = require('../utils');
+const adloader = require('../adloader');
 
 const BIDDER_CODE = 'gumgum';
 const CALLBACKS = {};
 
 const GumgumAdapter = function GumgumAdapter() {
-
   const bidEndpoint = `https://g2.gumgum.com/hbid/imp`;
 
   let topWindow;
@@ -43,18 +42,18 @@ const GumgumAdapter = function GumgumAdapter() {
             , params = {}
             , placementCode
             } = bidRequest;
-      const timestamp  = _getTimeStamp();
+      const timestamp = _getTimeStamp();
       const trackingId = params.inScreen;
-      const nativeId   = params.native;
-      const slotId     = params.inSlot;
-      const bid        = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
+      const nativeId = params.native;
+      const slotId = params.inSlot;
+      const bid = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
       /* slot/native ads need the placement id */
       switch (true) {
-        case !!(params.inImage):  bid.pi = 1; break;
+        case !!(params.inImage): bid.pi = 1; break;
         case !!(params.inScreen): bid.pi = 2; break;
-        case !!(params.inSlot):   bid.pi = 3; break;
-        case !!(params.native):   bid.pi = 5; break;
+        case !!(params.inSlot): bid.pi = 3; break;
+        case !!(params.native): bid.pi = 5; break;
         default: return utils.logWarn(
           `[GumGum] No product selected for the placement ${placementCode}` +
           ', please check your implementation.'
@@ -62,14 +61,14 @@ const GumgumAdapter = function GumgumAdapter() {
       }
 
       /* throttle based on the latest request for this product */
-      const productId     = bid.pi;
-      const requestKey    = productId + '|' + placementCode;
-      const throttle      = throttleTable[productId];
+      const productId = bid.pi;
+      const requestKey = productId + '|' + placementCode;
+      const throttle = throttleTable[productId];
       const latestRequest = requestCache[requestKey];
       if (latestRequest && throttle && (timestamp - latestRequest) < throttle) {
         return utils.logWarn(
-          `[GumGum] The refreshes for "${ placementCode }" with the params ` +
-          `${ JSON.stringify(params) } should be at least ${ throttle / 1e3 }s apart.`
+          `[GumGum] The refreshes for "${placementCode}" with the params ` +
+          `${JSON.stringify(params)} should be at least ${throttle / 1e3}s apart.`
         );
       }
       /* update the last request */
@@ -90,7 +89,7 @@ const GumgumAdapter = function GumgumAdapter() {
         id: bidId
       }, bid);
 
-      const callback = { jsonp: `$$PREBID_GLOBAL$$.handleGumGumCB['${ bidId }']` };
+      const callback = { jsonp: `$$PREBID_GLOBAL$$.handleGumGumCB['${bidId}']` };
       CALLBACKS[bidId] = _handleGumGumResponse(cachedBid);
       const query = Object.assign(callback, browserParams, bid);
       const bidCall = `${bidEndpoint}?${utils.parseQueryStringParameters(query)}`;
@@ -121,7 +120,7 @@ const GumgumAdapter = function GumgumAdapter() {
           G = topWindow.GUMGUM;
           d = topWindow.document;
           function loadAd() {
-            topWindow.GUMGUM.pbjs("${ trackingId }", ${ productId }, "${ encodedResponse }" , context);
+            topWindow.GUMGUM.pbjs("${trackingId}", ${productId}, "${encodedResponse}" , context);
           }
           if (G) {
             loadAd();
@@ -151,7 +150,6 @@ const GumgumAdapter = function GumgumAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = GumgumAdapter;
