@@ -1,5 +1,5 @@
 /* prebid.js v0.25.0-pre
-Updated : 2017-05-24 */
+Updated : 2017-05-25 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -3024,6 +3024,13 @@ Updated : 2017-05-24 */
 	  return requested === received;
 	}
 
+	function getCurrentRequestId() {
+	  var requested = pbjs._bidsRequested;
+	  if (requested.length > 0) {
+	    return requested[0].requestId;
+	  }
+	}
+
 	exports.bidsBackAll = function () {
 	  return bidsBackAll();
 	};
@@ -3055,6 +3062,12 @@ Updated : 2017-05-24 */
 	      bidder: bid.bidderCode,
 	      adUnitCode: adUnitCode
 	    });
+
+	    var currentRequestId = getCurrentRequestId();
+	    if (requestId !== currentRequestId) {
+	      utils.logWarn('Got bid response for request ID ' + requestId + ', which does not match current request ID ' + currentRequestId + '. Response discarded.');
+	      return;
+	    }
 
 	    bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
