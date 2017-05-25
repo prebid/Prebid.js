@@ -57,8 +57,6 @@ gulp.task('bundle', function() {
   var modules = (argv.modules || '').split(',').filter(module => !!module),
       allModules = helpers.getModuleNames();
 
-  // var configFile = argv.moduleConfig ? argv.moduleConfig : path.join(__dirname, './moduleConfig.json');
-
   if(modules.length === 0) {
     modules = allModules;
   } else {
@@ -76,15 +74,12 @@ gulp.task('bundle', function() {
         helpers.getBuiltModules(argv.dev, modules)
       )
     ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js', {newLine: ''}))
-    .pipe(gulpif(!argv.manualEnable, footer('<%= global %>.enableModules(<%= config %>);', {
-      global: prebid.globalVarName,
-      config: JSON.stringify(_.pick(
-          JSON.parse(
-              fs.readFileSync(argv.config ? argv.config : './moduleConfig.json', 'utf8')
-          ),
-          modules
-      ))
-    })))
+    .pipe(gulpif(!argv.manualEnable, footer(
+      '<%= global %>.processQueue(<%= global %>.que);<%= global %>.processQueue(<%= global %>.cmd)',
+      {
+        global: prebid.globalVarName
+      }
+    )))
     .pipe(gulp.dest('build/' + (argv.dev ? 'dev' : 'dist')));
 });
 

@@ -81,7 +81,7 @@ module.exports = {
   nameModules: function() {
     var modules = this.getModules();
     return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
+      file.named = modules[file.path] ? modules[file.path] : 'prebid.js';
       this.push(file);
       done();
     })
