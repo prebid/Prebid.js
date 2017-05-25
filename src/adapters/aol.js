@@ -36,36 +36,13 @@ const AolAdapter = function AolAdapter() {
         readyEventFired = true;
         return fn();
       };
-      let doScrollCheck = () => {
-        if (readyEventFired) {
-          return;
-        }
-        try {
-          document.documentElement.doScroll('left');
-        } catch (e) {
-          setTimeout(doScrollCheck, 1);
-          return;
-        }
-        return idempotentFn();
-      };
+
       if (document.readyState === "complete") {
         return idempotentFn();
       }
-      if (document.addEventListener) {
-        document.addEventListener("DOMContentLoaded", idempotentFn, false);
-        window.addEventListener("load", idempotentFn, false);
-      } else if (document.attachEvent) {
-        document.attachEvent("onreadystatechange", idempotentFn);
-        window.attachEvent("onload", idempotentFn);
-        let topLevel = false;
-        try {
-          topLevel = window.frameElement === null;
-        } catch (e) {
-        }
-        if (document.documentElement.doScroll && topLevel) {
-          return doScrollCheck();
-        }
-      }
+
+      document.addEventListener("DOMContentLoaded", idempotentFn, false);
+      window.addEventListener("load", idempotentFn, false);
     };
   })();
 
@@ -125,7 +102,7 @@ const AolAdapter = function AolAdapter() {
     iframe.style.display = 'none';
     iframe.src = pixelsItem.src;
     if (document.readyState === 'interactive' ||
-        document.readyState === 'complete') {
+      document.readyState === 'complete') {
       document.body.appendChild(iframe);
     } else {
       domReady(() => {

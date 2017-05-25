@@ -83,6 +83,9 @@ export function ajax(url, callback, data, options = {}) {
       if (options.withCredentials) {
         x.withCredentials = true;
       }
+      utils._each(options.customHeaders, (value, header) => {
+        x.setRequestHeader(header, value);
+      });
       if (options.preflight) {
         x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       }

@@ -73,16 +73,18 @@ describe('sharethrough adapter', () => {
 
     let firstBid;
     let secondBid;
+    let server;
 
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
+      server = sinon.fakeServer.create();
 
       pbjs._bidsRequested.push(bidderRequest);
       adapter.str.placementCodeSet['foo'] = {};
       adapter.str.placementCodeSet['bar'] = {};
       // respond
 
-      let bidderReponse1 = {
+      let bidderResponse1 = {
                               "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
                               "bidId": "bidId1",
                               "creatives": [
@@ -95,7 +97,7 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      let bidderReponse2 = {
+      let bidderResponse2 = {
                               "adserverRequestId": "40b6afd5-6134-4fbb-850a-bb8972a46994",
                               "bidId": "bidId2",
                               "creatives": [
@@ -108,11 +110,18 @@ describe('sharethrough adapter', () => {
                               "stxUserId": ""
                             };
 
-      adapter.callback(bidderRequest.bids[0], JSON.stringify(bidderReponse1));
-      adapter.callback(bidderRequest.bids[1], JSON.stringify(bidderReponse2));
+      server.respondWith(/aaaa1111/,JSON.stringify(bidderResponse1));
+      server.respondWith(/bbbb2222/,JSON.stringify(bidderResponse2));
+      adapter.callBids(bidderRequest);
+
+      server.respond();
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
+    });
+
+    afterEach(() => {
+      server.restore();
     });
 
     it('should add a bid object for each bid', () => {

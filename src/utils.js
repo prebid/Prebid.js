@@ -438,6 +438,47 @@ var hasOwn = function (objectToCheck, propertyToCheckFor) {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
 };
+
+var insertElement = function(elm) {
+  let elToAppend = document.getElementsByTagName('head');
+  try{
+    elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
+    if (elToAppend.length) {
+      elToAppend = elToAppend[0];
+      elToAppend.insertBefore(elm, elToAppend.firstChild);
+    }
+  } catch (e) {}
+};
+
+exports.insertPixel = function (url) {
+  const img = new Image();
+  img.id = this.getUniqueIdentifierStr();
+  img.src = url;
+  img.height = 0;
+  img.width = 0;
+  img.style.display = 'none';
+  img.onload = function() {
+    try {
+      this.parentNode.removeChild(this);
+    } catch(e) {
+    }
+  };
+  insertElement(img);
+};
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ */
+exports.insertCookieSyncIframe = function(url, encodeUri) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe =  div.firstChild;
+  insertElement(iframe);
+};
+
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
@@ -457,14 +498,18 @@ exports.createTrackPixelHtml = function (url) {
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
   if (!url) {
     return '';
   }
+  if(encodeUri) {
+    url = encodeURI(url);
+  }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${encodeURI(url)}"></iframe>`;
+  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${url}"></iframe>`;
 };
 
 /**
@@ -597,4 +642,20 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+export function isSafariBrowser() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  if(!str) return;
+  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+}
+
+export function getBidderRequest(bidder, adUnitCode) {
+  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
+    return request.bids
+        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }

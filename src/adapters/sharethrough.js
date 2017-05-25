@@ -46,9 +46,9 @@ var SharethroughAdapter = function SharethroughAdapter() {
   }
 
   function _strcallback(bidObj, bidResponse) {
-    bidResponse = JSON.parse(bidResponse);
-    const bidId = bidResponse.bidId;
     try {
+      bidResponse = JSON.parse(bidResponse);
+      const bidId = bidResponse.bidId;
       const bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = STR_BIDDER_CODE;
       bid.cpm = bidResponse.creatives[0].cpm;
