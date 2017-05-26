@@ -9,6 +9,8 @@ top_nav_section: adops
 nav_section: tutorials
 ---
 
+<div class="bs-docs-section" markdown="1">
+
 # Setting up Prebid Native in DFP (Alpha)
 {: .no_toc}
 
@@ -136,3 +138,5 @@ p {
 + [Show Native Ads with Prebid.js]({{site.github.url}}/dev-docs/show-native-ads.html) (Engineering setup instructions)
 + [Step by Step Guide to DFP Setup]({{site.github.url}}/adops/step-by-step.html) (Send top bid to ad server)
 + [Send all bids to the ad server]({{site.github.url}}/adops/send-all-bids-adops.html)
+
+</div>
