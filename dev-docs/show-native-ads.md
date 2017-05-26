@@ -81,7 +81,7 @@ Native ad units require a `nativeParams` object, with the following keys that co
 | `sponsoredBy` | The name of the brand associated with the ad.                               |
 | `icon`        | The brand icon that will appear with the ad.                                |
 | `image`       | A picture that is associated with the brand, or grabs the user's attention. |
-| `url`         | Where the user will end up if they click the ad.                            |
+| `clickUrl`    | Where the user will end up if they click the ad.                            |
 
 Each key's value is an object with several fields.  Most important is the `required` field, which says whether that asset should be filled in by the bid response.  Specifically, bids that do not have all of the native assets marked as required will be dropped from the auction and will not be sent to the ad server.
 
@@ -119,7 +119,7 @@ pbjs.addAdUnits({
     image: {
       required: true
     },
-    url: {
+    clickUrl: {
       required: true
     },
   },
@@ -141,7 +141,7 @@ For each native ad unit, all of the bidders within that ad unit must have declar
 
 Prebid.js defines "types" of native ad for you as a convenience. This way you have less code to maintain, that is hopefully more descriptive of your intent.
 
-For now there is only the "image" type, but more will be added.
+For now there is only the `image` type, but more will be added.
 
 The image native ad type implies the following required fields:
 
@@ -149,10 +149,13 @@ The image native ad type implies the following required fields:
 + title
 + sponsoredBy
 + clickUrl
+
+And the following optional fields:
+
 + body
 + icon
 
-It's much easier to set up an ad unit with the "image" native type:
+A native `image` ad unit can be set up in the manner below:
 
 {% highlight js %}
 
@@ -166,21 +169,7 @@ It's much easier to set up an ad unit with the "image" native type:
 
 {% endhighlight %}
 
-### 3. Define your native ad slot with `googletag`
-
-Define the native ad slot with `googletag` as shown below.  Note that you need to pass the size array here as well.
-
-{% highlight js %}
-googletag.cmd.push(function() {
-    googletag.defineSlot(
-        '/19968336/prebid_native_adunit', ['fluid'],
-        'div-prebid-native-test-1'
-    ).addService(googletag.pubads());
-{% endhighlight %}
-
-### 4. Add the native ad slot to the page body
-
-Add your ad tag to the page as usual:
+### 3. Add your native ad tag to the page body as usual:
 
 {% highlight html %}
 <div id="div-prebid-native-test-1">
