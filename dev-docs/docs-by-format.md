@@ -31,5 +31,7 @@ For ad ops and other ad server-related information, see [our Ad Ops documentatio
 | *Standard Display*  | [Basic Prebid.js Example]({{site.github.url}}/dev-docs/examples/basic-example.html)                                              |
 |                     | [Getting Started]({{site.github.url}}/dev-docs/getting-started.html)                                                             |
 |                     | [Ad Unit Refresh / Infinite Scroll Example]({{site.github.url}}/dev-docs/examples/adunit-refresh.html)                           |
+| *Native*            | [Show Native Ads with Prebid.js]({{site.github.url}}/dev-docs/show-native-ads.html) (Engineering setup)                          |
+|                     | [Setting up Prebid Native in DFP]({{site.github.url}}/adops/setting-up-prebid-native-in-dfp.html) (Ad Ops setup)                 |
 
 </div>
