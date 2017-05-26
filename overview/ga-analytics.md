@@ -27,15 +27,15 @@ nav_section: analytics
 
 The day starts from making sure the bidders are not generating less revenue:
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/revenue-by-date.png)
+![Blocking Ad Calls 1]({{ site.baseurl }}/assets/images/blog/analytics/revenue-by-date.png)
 
 Something is not right here - total revenue from yesterday dropped quite a bit. This could be caused by certain bidders were down or experienced technical issues. Let's take a look at the bidder timeout rate:
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/timeout-by-date.png)
+![Blocking Ad Calls 1]({{ site.baseurl }}/assets/images/blog/analytics/timeout-by-date.png)
 
 Bidder timeout seems okay. The problem might then be caused by bidders' lower bid rate:
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/bidrate-by-date.png)
+![Blocking Ad Calls 1]({{ site.baseurl }}/assets/images/blog/analytics/bidrate-by-date.png)
 
 Here we go. Bidder 1 and 4 bid much less than usual. You may want to drill down even further - Prebid.js Analytics also provides:
 
@@ -54,7 +54,7 @@ To understand exactly how much time per bidder spent, the Analytics Platform all
 
 <br>
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/loadtime-histogram.png)
+![Blocking Ad Calls 1]({{ site.baseurl }}/assets/images/blog/analytics/loadtime-histogram.png)
 
 You might derive:
 
@@ -67,7 +67,7 @@ Similar query for bidders' bid CPM:
 
 <br>
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/blog/analytics/cpm-histogram.png)
+![Blocking Ad Calls 1]({{ site.baseurl }}/assets/images/blog/analytics/cpm-histogram.png)
 
 > **Try out the product and explore the demo dashboard <a href="https://docs.google.com/spreadsheets/d/11czzvF5wczKoWGMrGgz0NFEOM7wsnAISbp_MpmGzogU/edit?usp=sharing" target="_blank">here</a>!** This will be the base of your dashboard!
 
