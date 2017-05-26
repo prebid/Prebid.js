@@ -23,15 +23,15 @@ var SovrnAdapter = function SovrnAdapter() {
 
     var sovrnImps = [];
 
-    //build impression array for sovrn
+    // build impression array for sovrn
     utils._each(bidReqs, function (bid) {
-      var tagId = utils.getBidIdParamater('tagid', bid.params);
-      var bidFloor = utils.getBidIdParamater('bidfloor', bid.params);
+      var tagId = utils.getBidIdParameter('tagid', bid.params);
+      var bidFloor = utils.getBidIdParameter('bidfloor', bid.params);
       var adW = 0;
       var adH = 0;
 
-      //sovrn supports only one size per tagid, so we just take the first size if there are more
-      //if we are a 2 item array of 2 numbers, we must be a SingleSize array
+      // sovrn supports only one size per tagid, so we just take the first size if there are more
+      // if we are a 2 item array of 2 numbers, we must be a SingleSize array
       var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
       var sizeArrayLength = bidSizes.length;
       if (sizeArrayLength === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
@@ -43,15 +43,15 @@ var SovrnAdapter = function SovrnAdapter() {
       }
 
       var imp =
-      {
-        id: bid.bidId,
-        banner: {
-          w: adW,
-          h: adH
-        },
-        tagid: tagId,
-        bidfloor: bidFloor
-      };
+        {
+          id: bid.bidId,
+          banner: {
+            w: adW,
+            h: adH
+          },
+          tagid: tagId,
+          bidfloor: bidFloor
+        };
       sovrnImps.push(imp);
     });
 
@@ -72,8 +72,12 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-      .filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
+    if (missing) {
+      missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
+    } else {
+      missing = [];
+    }
 
     missing.forEach(function (bidRequest) {
       // Add a no-bid response for this bid request.
@@ -84,7 +88,7 @@ var SovrnAdapter = function SovrnAdapter() {
     });
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.sovrnResponse = function (sovrnResponseObj) {
     // valid object?
     if (sovrnResponseObj && sovrnResponseObj.id) {
@@ -92,7 +96,6 @@ var SovrnAdapter = function SovrnAdapter() {
       if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
         var impidsWithBidBack = [];
         sovrnResponseObj.seatbid[0].bid.forEach(function (sovrnBid) {
-
           var responseCPM;
           var placementCode = '';
           var id = sovrnBid.impid;
@@ -106,7 +109,7 @@ var SovrnAdapter = function SovrnAdapter() {
             placementCode = bidObj.placementCode;
             bidObj.status = CONSTANTS.STATUS.GOOD;
 
-            //place ad response on bidmanager._adResponsesByBidderId
+            // place ad response on bidmanager._adResponsesByBidderId
             responseCPM = parseFloat(sovrnBid.price);
 
             if (responseCPM !== 0) {
@@ -117,14 +120,14 @@ var SovrnAdapter = function SovrnAdapter() {
               // build impression url from response
               var responseNurl = '<img src="' + sovrnBid.nurl + '">';
 
-              //store bid response
-              //bid status is good (indicating 1)
+              // store bid response
+              // bid status is good (indicating 1)
               bid = bidfactory.createBid(1, bidObj);
               bid.creative_id = sovrnBid.id;
               bid.bidderCode = 'sovrn';
               bid.cpm = responseCPM;
 
-              //set ad content + impression url
+              // set ad content + impression url
               // sovrn returns <script> block, so use bid.ad, not bid.adurl
               bid.ad = decodeURIComponent(responseAd + responseNurl);
 
@@ -140,14 +143,13 @@ var SovrnAdapter = function SovrnAdapter() {
 
         addBlankBidResponses(impidsWithBidBack);
       } else {
-        //no response data for all requests
+        // no response data for all requests
         addBlankBidResponses([]);
       }
     } else {
-      //no response data for all requests
+      // no response data for all requests
       addBlankBidResponses([]);
     }
-
   }; // sovrnResponse
 
   return {

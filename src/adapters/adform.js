@@ -2,37 +2,46 @@ var utils = require('../utils.js');
 var adloader = require('../adloader.js');
 var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
+var STATUSCODES = require('../constants.json').STATUS;
 
 function AdformAdapter() {
-
   return {
     callBids: _callBids
   };
 
   function _callBids(params) {
-    //var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
-    var bid;
-    var noDomain = true;
+    var bid, _value, _key, i, j, k, l;
     var bids = params.bids;
     var request = [];
     var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'url', null ], [ 'tid', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
 
-    for (var i = 0, l = bids.length; i < l; i++) {
+    for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (bid.adxDomain && noDomain) {
-        noDomain = false;
-        request.unshift('//' + bid.adxDomain + '/adx/?rp=4');
+
+      for (j = 0, k = globalParams.length; j < k; j++) {
+        _key = globalParams[j][0];
+        _value = bid[_key] || bid.params[_key];
+        if (_value) {
+          bid[_key] = bid.params[_key] = null;
+          globalParams[j][1] = _value;
+        }
       }
 
       request.push(formRequestUrl(bid.params));
     }
 
-    if (noDomain) {
-      request.unshift('//adx.adform.net/adx/?rp=4');
+    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+
+    for (i = 1, l = globalParams.length; i < l; i++) {
+      _key = globalParams[i][0];
+      _value = globalParams[i][1];
+      if (_value) {
+        request.push(globalParams[i][0] + '=' + encodeURIComponent(_value));
+      }
     }
 
     $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
-    request.push('callback=$$PREBID_GLOBAL$$.' + callbackName);
 
     adloader.loadScript(request.join('&'));
   }
@@ -41,18 +50,11 @@ function AdformAdapter() {
     var key;
     var url = [];
 
-    var validProps = [
-        'mid', 'inv', 'pdom', 'mname', 'mkw', 'mkv', 'cat', 'bcat', 'bcatrt', 'adv', 'advt', 'cntr', 'cntrt', 'maxp',
-        'minp', 'sminp', 'w', 'h', 'pb', 'pos', 'cturl', 'iturl', 'cttype', 'hidedomain', 'cdims', 'test'
-    ];
-
-    for (var i = 0, l = validProps.length; i < l; i++) {
-      key = validProps[i];
-      if (reqData.hasOwnProperty(key))
-          url.push(key, '=', reqData[key], '&');
+    for (key in reqData) {
+      if (reqData.hasOwnProperty(key) && reqData[key]) { url.push(key, '=', reqData[key], '&'); }
     }
 
-    return encode64(url.join(''));
+    return encode64(url.join('').slice(0, -1));
   }
 
   function handleCallback(bids) {
@@ -66,17 +68,17 @@ function AdformAdapter() {
         bid = bids[i];
         if (adItem && adItem.response === 'banner' &&
             verifySize(adItem, bid.sizes)) {
-
-          bidObject = bidfactory.createBid(1);
+          bidObject = bidfactory.createBid(STATUSCODES.GOOD, bid);
           bidObject.bidderCode = bidder;
           bidObject.cpm = adItem.win_bid;
           bidObject.cur = adItem.win_cur;
           bidObject.ad = adItem.banner;
           bidObject.width = adItem.width;
           bidObject.height = adItem.height;
+          bidObject.dealId = adItem.deal_id;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         } else {
-          bidObject = bidfactory.createBid(2);
+          bidObject = bidfactory.createBid(STATUSCODES.NO_BID, bid);
           bidObject.bidderCode = bidder;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         }
@@ -110,7 +112,6 @@ function AdformAdapter() {
     input = utf8_encode(input);
 
     while (i < input.length) {
-
       chr1 = input.charCodeAt(i++);
       chr2 = input.charCodeAt(i++);
       chr3 = input.charCodeAt(i++);
@@ -127,10 +128,8 @@ function AdformAdapter() {
       }
 
       out.push(_keyStr.charAt(enc1), _keyStr.charAt(enc2));
-      if (enc3 !== 64)
-          out.push(_keyStr.charAt(enc3));
-      if (enc4 !== 64)
-          out.push(_keyStr.charAt(enc4));
+      if (enc3 !== 64) { out.push(_keyStr.charAt(enc3)); }
+      if (enc4 !== 64) { out.push(_keyStr.charAt(enc4)); }
     }
 
     return out.join('');
@@ -141,7 +140,6 @@ function AdformAdapter() {
     var utftext = '';
 
     for (var n = 0; n < string.length; n++) {
-
       var c = string.charCodeAt(n);
 
       if (c < 128) {
@@ -158,7 +156,6 @@ function AdformAdapter() {
 
     return utftext;
   }
-
 }
 
 module.exports = AdformAdapter;

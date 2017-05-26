@@ -5,30 +5,36 @@ import * as utils from './utils';
 let _win;
 
 function mapSizes(adUnit) {
-  if(!isSizeMappingValid(adUnit.sizeMapping)){
+  if (!isSizeMappingValid(adUnit.sizeMapping)) {
     return adUnit.sizes;
   }
   const width = getScreenWidth();
-  if(!width) {
-    //size not detected - get largest value set for desktop
+  if (!width) {
+    // size not detected - get largest value set for desktop
     const mapping = adUnit.sizeMapping.reduce((prev, curr) => {
       return prev.minWidth < curr.minWidth ? curr : prev;
     });
-    if(mapping.sizes) {
+    if (mapping.sizes && mapping.sizes.length) {
       return mapping.sizes;
     }
     return adUnit.sizes;
   }
-  const sizes = adUnit.sizeMapping.find(sizeMapping =>{
+  let sizes = '';
+  const mapping = adUnit.sizeMapping.find(sizeMapping => {
     return width > sizeMapping.minWidth;
-  }).sizes;
-  utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
+  });
+  if (mapping && mapping.sizes && mapping.sizes.length) {
+    sizes = mapping.sizes;
+    utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
+  }
+  else {
+    utils.logMessage(`AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`);
+  }
   return sizes;
-
 }
 
 function isSizeMappingValid(sizeMapping) {
-  if(utils.isArray(sizeMapping) && sizeMapping.length > 0){
+  if (utils.isArray(sizeMapping) && sizeMapping.length > 0) {
     return true;
   }
   utils.logInfo('No size mapping defined');
@@ -36,17 +42,17 @@ function isSizeMappingValid(sizeMapping) {
 }
 
 function getScreenWidth(win) {
-  const w = win || _win || window;
-  const docElem = w.document.documentElement;
-  const body = w.document.getElementsByTagName('body')[0];
-  if(w.innerWidth) {
+  var w = win || _win || window;
+  var d = w.document;
+
+  if (w.innerWidth) {
     return w.innerWidth;
   }
-  else if(docElem && docElem.clientWidth ) {
-    return docElem.clientWidth;
+  else if (d.body.clientWidth) {
+    return d.body.clientWidth;
   }
-  else if(body && body.clientWidth){
-    return body.clientWidth;
+  else if (d.documentElement.clientWidth) {
+    return d.documentElement.clientWidth;
   }
   return 0;
 }

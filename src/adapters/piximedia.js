@@ -11,16 +11,14 @@ var PiximediaAdapter = function PiximediaAdapter() {
   var bidStash = {};
 
   var tryAppendPixiQueryString = function(url, name, value) {
-    return url + "/" + encodeURIComponent(name) + "=" + value;
+    return url + '/' + encodeURIComponent(name) + '=' + value;
   };
 
   baseAdapter.callBids = function callBidsPiximedia(params) {
     utils._each(params.bids, function(bid) {
-
       // valid bids must include a siteId and an placementId
       if (bid.placementCode && bid.sizes && bid.params && bid.params.siteId && bid.params.placementId) {
-
-        var sizes = bid.params.hasOwnProperty('sizes')? bid.params.sizes: bid.sizes;
+        var sizes = bid.params.hasOwnProperty('sizes') ? bid.params.sizes : bid.sizes;
         sizes = utils.parseSizesInput(sizes);
 
         var cbid = utils.getUniqueIdentifierStr();
@@ -29,32 +27,32 @@ var PiximediaAdapter = function PiximediaAdapter() {
         var url = bid.params.prebidUrl || PREBID_URL;
 
         // params are passed to the Piximedia endpoint, including custom params
-        for(var key in bid.params) {
+        for (var key in bid.params) {
           /* istanbul ignore else */
-          if(bid.params.hasOwnProperty(key)) {
+          if (bid.params.hasOwnProperty(key)) {
             var value = bid.params[key];
-            switch(key) {
-              case "siteId":
+            switch (key) {
+              case 'siteId':
                 url = tryAppendPixiQueryString(url, 'site_id', encodeURIComponent(value));
                 break;
 
-              case "placementId":
+              case 'placementId':
                 url = tryAppendPixiQueryString(url, 'placement_id', encodeURIComponent(value));
                 break;
 
-              case "dealId":
+              case 'dealId':
                 url = tryAppendPixiQueryString(url, 'l_id', encodeURIComponent(value));
                 break;
 
-              case "sizes":
-              case "prebidUrl":
+              case 'sizes':
+              case 'prebidUrl':
                 break;
 
               default:
-                if(typeof value === "function") {
-                  url = tryAppendPixiQueryString(url, key, encodeURIComponent((value(baseAdapter, params, bid) || "").toString()));
+                if (typeof value === 'function') {
+                  url = tryAppendPixiQueryString(url, key, encodeURIComponent((value(baseAdapter, params, bid) || '').toString()));
                 } else {
-                  url = tryAppendPixiQueryString(url, key, encodeURIComponent((value || "").toString()));
+                  url = tryAppendPixiQueryString(url, key, encodeURIComponent((value || '').toString()));
                 }
                 break;
             }
@@ -62,7 +60,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
         }
 
         url = tryAppendPixiQueryString(url, 'jsonp', '$$PREBID_GLOBAL$$.handlePiximediaCallback');
-        url = tryAppendPixiQueryString(url, 'sizes', encodeURIComponent(sizes.join(",")));
+        url = tryAppendPixiQueryString(url, 'sizes', encodeURIComponent(sizes.join(',')));
         url = tryAppendPixiQueryString(url, 'cbid', encodeURIComponent(cbid));
         url = tryAppendPixiQueryString(url, 'rand', String(Math.floor(Math.random() * 1000000000)));
 
@@ -92,7 +90,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
    *
    */
   $$PREBID_GLOBAL$$.handlePiximediaCallback = function(bidResponse) {
-    if (bidResponse && bidResponse.hasOwnProperty("foundbypm")) {
+    if (bidResponse && bidResponse.hasOwnProperty('foundbypm')) {
       var stash = bidStash[bidResponse.cbid]; // retrieve our stashed data, by using the cbid
       var bid;
 
@@ -102,7 +100,6 @@ var PiximediaAdapter = function PiximediaAdapter() {
         timelapsed = timelapsed - stash.start;
 
         if (bidResponse.foundbypm && bidResponse.width && bidResponse.height && bidResponse.html && bidResponse.cpm && bidResponse.currency) {
-          
           /* we have a valid ad to display */
           bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bid.bidderCode = bidObj.bidder;
@@ -126,7 +123,6 @@ var PiximediaAdapter = function PiximediaAdapter() {
                            ' CPM: ' + String(bid.cpm) + ' ' + bid.currency +
                            ' Format: ' + String(bid.width) + 'x' + String(bid.height));
         } else {
-
           /* we have no ads to display */
           bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
           bid.bidderCode = bidObj.bidder;
@@ -139,7 +135,6 @@ var PiximediaAdapter = function PiximediaAdapter() {
 
         // We should no longer need this stashed object, so drop reference:
         bidStash[bidResponse.cbid] = null;
-
       } else {
         utils.logMessage("[Piximedia] Couldn't find stash for cbid=" + bidResponse.cbid);
       }

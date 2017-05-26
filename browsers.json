@@ -95,14 +95,6 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_9_windows_7": {
-    "base": "BrowserStack",
-    "os_version": "7",
-    "browser": "ie",
-    "browser_version": "9.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_firefox_46_windows_7": {
     "base": "BrowserStack",
     "os_version": "7",
@@ -118,6 +110,14 @@
     "browser_version": "51.0",
     "device": null,
     "os": "Windows"
+  },
+  "bs_chrome_56_mac_sierra": {
+    "base": "BrowserStack",
+    "os": "OS X",
+    "os_version": "Sierra",
+    "browser": "chrome",
+    "device": null,
+    "browser_version": "56.0"
   },
   "bs_safari_9.1_mac_elcapitan": {
     "base": "BrowserStack",
@@ -190,6 +190,30 @@
     "browser_version": "49.0",
     "device": null,
     "os": "OS X"
+  },
+  "bs_ios_7": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "7.0",
+    "browser": "iphone",
+    "device": "iPhone 5S",
+    "browser_version": null
+  },
+  "bs_ios_8": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "8.3",
+    "browser": "iphone",
+    "device": "iPhone 6",
+    "browser_version": null
+  },
+  "bs_ios_9": {
+    "base": "BrowserStack",
+    "os": "ios",
+    "os_version": "9.1",
+    "browser": "iphone",
+    "device": "iPhone 6S",
+    "browser_version": null
   },
   "Chrome_travis_ci": {
     "base": "Chrome",
