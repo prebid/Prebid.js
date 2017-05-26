@@ -25,7 +25,8 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
-var analyticsDirectory = '../analytics';
+//var analyticsDirectory = '../analytics';
+var analyticsDirectory = './src/adapters/analytics';
 var port = 9999;
 
 // Tasks
