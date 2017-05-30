@@ -285,4 +285,24 @@ describe('stroeerssp adapter', function () {
     });
 
   });
+
+  describe('if there is a problem accessing the element', () => {
+    it('should not set the viz field', () => {
+      const win = createWindow('http://www.xyz.com/', {parent: midWin, top: topWin, frameElement: createElement(304),
+                               placementElements: []});
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+
+      adapter(win).callBids(bidderRequest);
+
+      fakeServer.respond();
+      assert.equal(fakeServer.requests.length, 1);
+      const request = fakeServer.requests[0];
+
+      let bids = JSON.parse(request.requestBody).bids;
+      assert.lengthOf(bids, 2);
+      for (var bid of bids) {
+        assert.notProperty(bid, "viz");
+      }
+    });
+  });
 });

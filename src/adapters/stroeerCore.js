@@ -62,8 +62,8 @@ module.exports = function (win = window) {
     }
     catch(e) {
       // old browser, element not found, cross-origin etc.
-      return "unknown";
     }
+    return null;
   }
 
 
@@ -119,12 +119,16 @@ module.exports = function (win = window) {
 
       params.bids.forEach(bidRequest => {
         if (validBidRequest(bidRequest)) {
-          requestBody.bids.push({
+          let bidRequestToSend = {
             bid: bidRequest.bidId,
             sid: bidRequest.params.sid,
-            siz: bidRequest.sizes,
-            viz: elementInView(bidRequest.placementCode)
-          });
+            siz: bidRequest.sizes
+          };
+          let inView = elementInView(bidRequest.placementCode);
+          if (inView) {
+            bidRequestToSend.viz = inView;
+          }
+          requestBody.bids.push(bidRequestToSend);
           validBidRequestById[bidRequest.bidId] = bidRequest;
         }
         else {
