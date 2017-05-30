@@ -159,7 +159,7 @@ var getParameterByName = function (name) {
     } catch (err) {}
     wdw = wdw.parent;
   }
-  var topURL = top === self ? location.href : childsReferrer;
+  var topURL = utils.getTopWindowUrl();
   var regexS = '[\\?&]' + name + '=([^&#]*)';
   var regex = new RegExp(regexS);
   var results = regex.exec(topURL);
@@ -459,7 +459,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         }
 
         var usingSizeSpecificSiteID = false;
-        // Check for size defined in bidder params 
+        // Check for size defined in bidder params
         if (bid.params.size && bid.params.size instanceof Array) {
           if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1]))
             continue;

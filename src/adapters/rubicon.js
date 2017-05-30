@@ -145,7 +145,7 @@ function RubiconAdapter() {
     } else {
       throw 'Invalid Video Bid - No size provided';
     }
-    var pageUrl = document.referrer || window.location.href
+    var pageUrl = document.referrer || window.location.href;
     if (pageUrl.indexOf('overwolf') > -1) {
       pageUrl = 'https://content.overwolf.com';
     }
@@ -198,8 +198,12 @@ function RubiconAdapter() {
   }
 
   function buildOptimizedCall(bid) {
+    var referrer = document.referrer || window.location.href;
+    if (referrer.indexOf('overwolf') > -1) {
+      referrer = 'https://content.overwolf.com';
+    }
     bid.startTime = new Date().getTime();
-    var updatedBid = bid
+    var updatedBid = bid;
     if (updatedBid.params) {
       updatedBid.params.referrer = document.referrer;
     }
@@ -213,7 +217,6 @@ function RubiconAdapter() {
       visitor,
       inventory,
       userId,
-      referrer,
     } = updatedBid.params;
 
     // defaults
@@ -255,18 +258,10 @@ function RubiconAdapter() {
     if(inventory !== null && typeof inventory === 'object') {
       utils._each(inventory, (item, key) => queryString.push(`tg_i.${key}`, item));
     }
-
     queryString.push(
       'rand', Math.random(),
-      'rf', document.referrer || window.location.href
+      'rf', referrer
     );
-
-    var adRequestUrl = queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined ?
-        memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
-      FASTLANE_ENDPOINT + '?'
-    ).slice(0, -1);
 
     return queryString.reduce(
       (memo, curr, index) =>
@@ -276,7 +271,7 @@ function RubiconAdapter() {
     ).slice(0, -1); // remove trailing &
   }
 
-  let _renderCreative = (script, impId, adId) => {
+  let _renderCreative = (script, impId) => {
 
     return `<html>
       <head><script type='text/javascript'>inDapIF=true;</script></head>
@@ -287,7 +282,7 @@ function RubiconAdapter() {
       </div>
       </body>
       </html>`;
-  }
+  };
 
   function handleRpCB(responseText, bidRequest) {
     var responseObj = JSON.parse(responseText), // can throw

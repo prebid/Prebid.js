@@ -1,6 +1,6 @@
 import {createBid} from 'src/bidfactory';
 import {addBidResponse} from 'src/bidmanager';
-import {logError,getTopWindowLocation} from 'src/utils';
+import {logError} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 
@@ -30,7 +30,7 @@ function PulsePointAdapter() {
   }
 
   function environment() {
-    var topUrl = document.referrer || window.location.href
+    var topUrl = document.referrer || window.location.href;
     if (topUrl.indexOf('overwolf') > -1) {
       topUrl = 'https://content.overwolf.com';
     }
@@ -46,14 +46,6 @@ function PulsePointAdapter() {
       tz: new Date().getTimezoneOffset(),
       ln: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)
     };
-  }
-
-  function referrer() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) {
-      return document.referrer;
-    }
   }
 
   function bidResponseAvailable(bidRequest, rawResponse) {
