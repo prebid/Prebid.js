@@ -14,7 +14,7 @@ module.exports = function (win = window) {
 
   const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
 
-  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || "none";
+  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || undefined;
 
   const isSecureWindow = () => win.location.protocol === "https:";
 
@@ -63,7 +63,7 @@ module.exports = function (win = window) {
     catch(e) {
       // old browser, element not found, cross-origin etc.
     }
-    return null;
+    return undefined;
   }
 
 
@@ -119,16 +119,12 @@ module.exports = function (win = window) {
 
       params.bids.forEach(bidRequest => {
         if (validBidRequest(bidRequest)) {
-          let bidRequestToSend = {
+          requestBody.bids.push({
             bid: bidRequest.bidId,
             sid: bidRequest.params.sid,
-            siz: bidRequest.sizes
-          };
-          let inView = elementInView(bidRequest.placementCode);
-          if (inView) {
-            bidRequestToSend.viz = inView;
-          }
-          requestBody.bids.push(bidRequestToSend);
+            siz: bidRequest.sizes,
+            viz: elementInView(bidRequest.placementCode)
+          });
           validBidRequestById[bidRequest.bidId] = bidRequest;
         }
         else {

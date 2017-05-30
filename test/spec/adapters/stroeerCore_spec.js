@@ -84,6 +84,11 @@ const createWindow = (href, params = {}) => {
   if (!parent) {
     win.parent = win;
   }
+
+  if (!top) {
+    win.top = win;
+  }
+
   return win;
 };
 
@@ -220,6 +225,41 @@ describe('stroeerssp adapter', function () {
 
       assert.deepEqual(bidRequest, expectedJson);
     });
+
+
+    describe('optional fields', () => {
+      it('skip viz field when unable to determine visibility of placement', () => {
+        const win = createWindow('http://www.xyz.com/', {
+          referrer: 'http://www.google.com/?query=monkey',
+          placementElements: []
+        });
+
+        fakeServer.respondWith("");
+        adapter(win).callBids(bidderRequest);
+        fakeServer.respond();
+
+        const bids = JSON.parse(fakeServer.requests[0].requestBody).bids;
+        assert.lengthOf(bids, 2);
+        for (let bid of bids) {
+          assert.notProperty(bid, "viz");
+        }
+      });
+
+
+      it('skip ref field when unable to determine document referrer', () => {
+        const win = createWindow('http://www.xyz.com/', {
+          referrer: "",
+          placementElements: [createElement(17, 'div-1'), createElement(54, 'div-2')]
+        });
+
+        fakeServer.respondWith("");
+        adapter(win).callBids(bidderRequest);
+        fakeServer.respond();
+
+        const payload = JSON.parse(fakeServer.requests[0].requestBody);
+        assert.notProperty(payload, "ref");
+      });
+    });
   });
 
 
@@ -284,25 +324,5 @@ describe('stroeerssp adapter', function () {
       assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });
 
-  });
-
-  describe('if there is a problem accessing the element', () => {
-    it('should not set the viz field', () => {
-      const win = createWindow('http://www.xyz.com/', {parent: midWin, top: topWin, frameElement: createElement(304),
-                               placementElements: []});
-      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
-
-      adapter(win).callBids(bidderRequest);
-
-      fakeServer.respond();
-      assert.equal(fakeServer.requests.length, 1);
-      const request = fakeServer.requests[0];
-
-      let bids = JSON.parse(request.requestBody).bids;
-      assert.lengthOf(bids, 2);
-      for (var bid of bids) {
-        assert.notProperty(bid, "viz");
-      }
-    });
   });
 });
