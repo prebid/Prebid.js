@@ -5,41 +5,40 @@ const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
 const PLACEMENT_CODE = 'ad-tag';
-const BID_REQUEST_BASE_URL = "https://in-appadvertising.com/api/bidRequest?";
-const USER_SYNC_URL =  "https://in-appadvertising.com/api/userSync.js";
+const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
+const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 const TRION_BID_REQUEST = {
-  bidderCode: "trion",
+  bidderCode: 'trion',
   bids: [
     {
-      bidder: "trion",
+      bidder: 'trion',
       params: {
-        pubId : '1',
-        sectionId : '2'
+        pubId: '1',
+        sectionId: '2'
       },
       placementCode: PLACEMENT_CODE,
       sizes: [[300, 250], [300, 600]],
-      bidId: "test-bid-id"
+      bidId: 'test-bid-id'
     }
   ]
 };
 
 const TRION_BID_RESPONSE = {
-  bidId : 'test-bid-id',
+  bidId: 'test-bid-id',
   sizes: [[300, 250], [300, 600]],
-  result : {
-    cpm : 100,
+  result: {
+    cpm: 100,
     placeBid: true,
-    height: "250",
-    width: "300",
-    ad : 'test',
-    msg : 'response messaging'
+    height: '250',
+    width: '300',
+    ad: 'test',
+    msg: 'response messaging'
   }
 
 };
 
 describe('Trion adapter tests', () => {
-
   let adapter;
 
   beforeEach(() => {
@@ -59,7 +58,7 @@ describe('Trion adapter tests', () => {
     beforeEach(() => {
       spyLoadScript = sinon.spy(adloader, 'loadScript');
       window.TRION_INT = {
-        int_t : -1
+        int_t: -1
       };
     });
 
@@ -85,7 +84,7 @@ describe('Trion adapter tests', () => {
       let bidUrl = spyLoadScript.getCall(0).args[0];
       expect(bidUrl).to.include(BID_REQUEST_BASE_URL);
     });
-    
+
     it('should call loadscript with the correct required params', function () {
       adapter.callBids(TRION_BID_REQUEST);
 
@@ -110,26 +109,25 @@ describe('Trion adapter tests', () => {
       expect(bidUrl).to.include(window.location.href);
       delete params.re;
     });
-    
-    describe('user sync', ()=> {
-      
+
+    describe('user sync', () => {
       beforeEach(() => {
         delete window.TRION_INT;
         delete window.TR_INT_T;
       });
-      
-      it('user sync is called', ()=> {
+
+      it('user sync is called', () => {
         adapter.callBids(TRION_BID_REQUEST);
         sinon.assert.calledWith(spyLoadScript, USER_SYNC_URL);
       });
 
-      it('user sync tag is included in bid url', ()=> {
+      it('user sync tag is included in bid url', () => {
         window.TRION_INT = {
-          campaigns : [
+          campaigns: [
             'campaign1',
             'campaign2'
           ],
-          int_t : 'int_t'
+          int_t: 'int_t'
         };
         let userTag = encodeURIComponent(JSON.stringify(window.TRION_INT));
         adapter.callBids(TRION_BID_REQUEST);
@@ -138,20 +136,20 @@ describe('Trion adapter tests', () => {
         expect(bidUrl).to.include(userTag);
       });
 
-      it('user sync tag is included in bid url and includes the correct int_t', ()=> {
+      it('user sync tag is included in bid url and includes the correct int_t', () => {
         window.TRION_INT = {
-          campaigns : [
+          campaigns: [
             'campaign1',
             'campaign2'
           ]
         };
         let int_t = 'test';
         let expectedObject = {
-          campaigns : [
+          campaigns: [
             'campaign1',
             'campaign2'
           ],
-          int_t : int_t
+          int_t: int_t
         };
         window.TR_INT_T = int_t;
         let userTag = encodeURIComponent(JSON.stringify(expectedObject));
@@ -160,21 +158,21 @@ describe('Trion adapter tests', () => {
         let bidUrl = spyLoadScript.getCall(0).args[0];
         expect(bidUrl).to.include(userTag);
       });
-      
-      it('user sync tag variable int_t cannot be changed once set', ()=> {
+
+      it('user sync tag variable int_t cannot be changed once set', () => {
         window.TRION_INT = {
-          campaigns : [
+          campaigns: [
             'campaign1',
             'campaign2'
           ]
         };
         let int_t = 'test';
         let expectedObject = {
-          campaigns : [
+          campaigns: [
             'campaign1',
             'campaign2'
           ],
-          int_t : int_t
+          int_t: int_t
         };
         window.TR_INT_T = int_t;
         let userTag = encodeURIComponent(JSON.stringify(expectedObject));
@@ -185,13 +183,10 @@ describe('Trion adapter tests', () => {
         expect(bidUrl).to.include(userTag);
         expect(bidUrl).to.not.include('bad');
       });
-      
     });
-    
   });
 
   describe('response handler', () => {
-
     beforeEach(() => {
       sinon.stub(bidmanager, 'addBidResponse');
     });
@@ -272,6 +267,5 @@ describe('Trion adapter tests', () => {
       expect(response.cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
     });
-
   });
 });

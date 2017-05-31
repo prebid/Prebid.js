@@ -6,13 +6,13 @@ describe('memeglobal adapter tests', function () {
   var bidderName = 'memeglobal';
 
   let stubLoadScript;
-      beforeEach(function () {
-          stubLoadScript = sinon.stub(adLoader, 'loadScript');
-      });
+  beforeEach(function () {
+    stubLoadScript = sinon.stub(adLoader, 'loadScript');
+  });
 
-      afterEach(function () {
-          stubLoadScript.restore();
-      });
+  afterEach(function () {
+    stubLoadScript.restore();
+  });
 
   function getBidSetForBidder() {
     return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
@@ -20,7 +20,7 @@ describe('memeglobal adapter tests', function () {
 
   function checkBidsRequestedInit() {
     var bidSet = getBidSetForBidder();
-    if (!bidSet){
+    if (!bidSet) {
       var bidderRequest = {
         start: null,
         requestId: null,
@@ -39,17 +39,17 @@ describe('memeglobal adapter tests', function () {
 
     it('callBids with params', function () {
       var params = {
-          bidderCode: 'memeglobal',
+        bidderCode: 'memeglobal',
+        bidder: 'memeglobal',
+        bids: [{
+          bidId: '3c9408cdbf2f68',
+          sizes: [[300, 250]],
           bidder: 'memeglobal',
-          bids: [{
-            bidId: '3c9408cdbf2f68',
-              sizes: [[300, 250]],
-                bidder: 'memeglobal',
-                params: { siteId: '3608', adSizes:'300x250' },
-                requestId: '10b327aa396609',
-                placementCode: 'header-bid-tag-0'
-            }
-          ]
+          params: { siteId: '3608', adSizes: '300x250' },
+          requestId: '10b327aa396609',
+          placementCode: 'header-bid-tag-0'
+        }
+        ]
       };
 
       adapter().callBids(params);
@@ -58,17 +58,17 @@ describe('memeglobal adapter tests', function () {
 
     it('callBids empty params', function () {
       var params = {
-          bidderCode: 'memeglobal',
+        bidderCode: 'memeglobal',
+        bidder: 'memeglobal',
+        bids: [{
+          bidId: '3c9408cdbf2f68',
+          sizes: [[300, 250]],
           bidder: 'memeglobal',
-          bids: [{
-            bidId: '3c9408cdbf2f68',
-              sizes: [[300, 250]],
-                bidder: 'memeglobal',
-                params: { siteId: '3608', adSizes:'300x250' },
-                requestId: '10b327aa396609',
-                placementCode: 'header-bid-tag-0'
-            }
-          ]
+          params: { siteId: '3608', adSizes: '300x250' },
+          requestId: '10b327aa396609',
+          placementCode: 'header-bid-tag-0'
+        }
+        ]
       };
 
       adapter().callBids({});
@@ -88,12 +88,12 @@ describe('memeglobal adapter tests', function () {
           tagid: '007'
         },
         sizes: [[300, 250]],
-        placementCode: "test-1"
+        placementCode: 'test-1'
       }
       // no bids returned in the response.
       var response = {
-        "id": "54321",
-        "seatbid": []
+        'id': '54321',
+        'seatbid': []
       };
       var bidSet = getBidSetForBidder();
       bidSet.bids.push(bid);
@@ -131,21 +131,20 @@ describe('memeglobal adapter tests', function () {
 
       // Returning a single bid in the response.
       var response = {
-        "id": "54321111",
-        "seatbid": [ {
-          "bid" : [ {
-            "id" : "1111111",
-            "impid" : "bidId2",
-            "price" : 0.09,
-            "nurl" : "http://url",
-            "adm" : "ad-code",
-            "h" : 250,
-            "w" : 300,
-            "ext" : { }
+        'id': '54321111',
+        'seatbid': [ {
+          'bid': [ {
+            'id': '1111111',
+            'impid': 'bidId2',
+            'price': 0.09,
+            'nurl': 'http://url',
+            'adm': 'ad-code',
+            'h': 250,
+            'w': 300,
+            'ext': { }
           } ]
         } ]
       };
-
 
       var bidSet = getBidSetForBidder();
       bidSet.bids.push(bid);
