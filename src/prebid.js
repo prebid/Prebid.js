@@ -2,7 +2,6 @@
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
-import { module, enableModules } from "./modules";
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
@@ -12,6 +11,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
+import { setConfig } from './config';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -730,12 +730,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-
-// expose public module API
-Object.assign($$PREBID_GLOBAL$$, {
-  module,
-  enableModules
-});
+$$PREBID_GLOBAL$$.setConfig = setConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 
@@ -772,7 +767,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(cmd) {
 
 $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
-$$PREBID_GLOBAL$$.processQueue = function processQueue(queue) {
+function processQueue(queue) {
   queue.forEach(function(cmd) {
     if (typeof cmd.called === objectType_undefined) {
       try {
@@ -785,3 +780,8 @@ $$PREBID_GLOBAL$$.processQueue = function processQueue(queue) {
     }
   });
 }
+
+$$PREBID_GLOBAL$$.processQueue = function() {
+  processQueue($$PREBID_GLOBAL$$.que);
+  processQueue($$PREBID_GLOBAL$$.cmd);
+};

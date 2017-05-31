@@ -6,7 +6,7 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'source-map',
   resolve: {
-    modulesDirectories: ['', 'node_modules', 'src']
+    modulesDirectories: ['', 'node_modules', 'src', 'modules']
   },
   resolveLoader: {
     modulesDirectories: ['loaders', 'node_modules']

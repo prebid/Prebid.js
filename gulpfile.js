@@ -74,9 +74,7 @@ gulp.task('bundle', function() {
         helpers.getBuiltModules(argv.dev, modules)
       )
     ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js', {newLine: ''}))
-    .pipe(gulpif(!argv.manualEnable, footer(
-      '<%= global %>.processQueue(<%= global %>.que);<%= global %>.processQueue(<%= global %>.cmd)',
-      {
+    .pipe(gulpif(!argv.manualEnable, footer('<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
     )))
