@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import trionAdapter from 'src/adapters/trion';
 import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
@@ -108,8 +107,7 @@ describe('Trion adapter tests', () => {
 
       let bidUrl = spyLoadScript.getCall(0).args[0];
       expect(bidUrl).to.include('re=1');
-      expect(bidUrl).to.include(utils.getTopWindowUrl());
-      expect(bidUrl).to.include('slot=' + PLACEMENT_CODE);
+      expect(bidUrl).to.include(window.location.href);
       delete params.re;
     });
     
