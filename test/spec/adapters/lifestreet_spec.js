@@ -1,7 +1,7 @@
 import {expect} from 'chai';
+import {cloneJson} from 'src/utils';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
 import LifestreetAdapter from 'src/adapters/lifestreet';
 
 const BIDDER_REQUEST = {
@@ -28,7 +28,7 @@ const BIDDER_REQUEST = {
   timeout: 3000
 };
 
-describe ('LifestreetAdapter', () => {
+describe('LifestreetAdapter', () => {
   let adapter;
   beforeEach(() => adapter = new LifestreetAdapter());
 
@@ -44,7 +44,7 @@ describe ('LifestreetAdapter', () => {
 
       beforeEach(() => {
         tagRequests = [];
-        request = utils.extend(request, BIDDER_REQUEST);
+        request = cloneJson(BIDDER_REQUEST);
         sinon.stub(adloader, 'loadScript', (url, callback) => {
           tagRequests.push(url);
           callback();
@@ -100,7 +100,7 @@ describe ('LifestreetAdapter', () => {
         expect(tagRequests).to.be.empty;
       });
 
-      it ('adkey is not provided', () => {
+      it('adkey is not provided', () => {
         request.bids[0].params.adkey = '';
         adapter.callBids(request);
         expect(tagRequests).to.be.empty;

@@ -1,4 +1,4 @@
-//Factory for creating the bidderAdaptor
+// Factory for creating the bidderAdaptor
 // jshint ignore:start
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
@@ -9,13 +9,13 @@ var ADAPTER_NAME = 'INDEXEXCHANGE';
 var ADAPTER_CODE = 'indexExchange';
 
 var CONSTANTS = {
-  "INDEX_DEBUG_MODE": {
-    "queryParam": "pbjs_ix_debug",
-    "mode": {
-      "sandbox": {
-        "topFrameLimit": 10,
-        "queryValue": "sandbox",
-        "siteID": "999990"
+  'INDEX_DEBUG_MODE': {
+    'queryParam': 'pbjs_ix_debug',
+    'mode': {
+      'sandbox': {
+        'topFrameLimit': 10,
+        'queryValue': 'sandbox',
+        'siteID': '999990'
       }
     }
   }
@@ -27,16 +27,16 @@ var PRIVATE_MARKET = 'IPM';
 window.cygnus_index_parse_res = function(response) {
   try {
     if (response) {
-      if (typeof _IndexRequestData !== "object" || typeof _IndexRequestData.impIDToSlotID !== "object" || typeof _IndexRequestData.impIDToSlotID[response.id] === "undefined") {
+      if (typeof _IndexRequestData !== 'object' || typeof _IndexRequestData.impIDToSlotID !== 'object' || typeof _IndexRequestData.impIDToSlotID[response.id] === 'undefined') {
         return;
       }
       var targetMode = 1;
       var callbackFn;
       if (typeof _IndexRequestData.reqOptions === 'object' && typeof _IndexRequestData.reqOptions[response.id] === 'object') {
-        if (typeof _IndexRequestData.reqOptions[response.id].callback === "function") {
+        if (typeof _IndexRequestData.reqOptions[response.id].callback === 'function') {
           callbackFn = _IndexRequestData.reqOptions[response.id].callback;
         }
-        if (typeof _IndexRequestData.reqOptions[response.id].targetMode === "number") {
+        if (typeof _IndexRequestData.reqOptions[response.id].targetMode === 'number') {
           targetMode = _IndexRequestData.reqOptions[response.id].targetMode;
         }
       }
@@ -47,25 +47,25 @@ window.cygnus_index_parse_res = function(response) {
       _IndexRequestData.targetIDToCreative = {};
 
       var allBids = [];
-      var seatbidLength = typeof response.seatbid === "undefined" ? 0 : response.seatbid.length;
+      var seatbidLength = typeof response.seatbid === 'undefined' ? 0 : response.seatbid.length;
       for (var i = 0; i < seatbidLength; i++) {
         for (var j = 0; j < response.seatbid[i].bid.length; j++) {
           var bid = response.seatbid[i].bid[j];
-          if (typeof bid.ext !== "object" || typeof bid.ext.pricelevel !== "string") {
+          if (typeof bid.ext !== 'object' || typeof bid.ext.pricelevel !== 'string') {
             continue;
           }
-          if (typeof _IndexRequestData.impIDToSlotID[response.id][bid.impid] === "undefined") {
+          if (typeof _IndexRequestData.impIDToSlotID[response.id][bid.impid] === 'undefined') {
             continue;
           }
           var slotID = _IndexRequestData.impIDToSlotID[response.id][bid.impid];
           var targetID;
           var noTargetModeTargetID;
           var targetPrefix;
-          if (typeof bid.ext.dealid === "string") {
+          if (typeof bid.ext.dealid === 'string') {
             if (targetMode === 1) {
               targetID = slotID + bid.ext.pricelevel;
             } else {
-              targetID = slotID + "_" + bid.ext.dealid;
+              targetID = slotID + '_' + bid.ext.dealid;
             }
             noTargetModeTargetID = slotID + '_' + bid.ext.dealid;
             targetPrefix = PRIVATE_MARKET + '_';
@@ -97,14 +97,13 @@ window.cygnus_index_parse_res = function(response) {
           allBids.push(impBid);
         }
       }
-      if (typeof callbackFn === "function") {
+      if (typeof callbackFn === 'function') {
         if (allBids.length === 0) {
           callbackFn(response.id);
         } else {
           callbackFn(response.id, allBids);
         }
       }
-
     }
   } catch (e) {}
 
@@ -141,7 +140,7 @@ window.headertag_render = function(doc, targetID, slotID) {
 
 window.cygnus_index_args = {};
 
-var cygnus_index_adunits =  [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
+var cygnus_index_adunits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
 
 var getIndexDebugMode = function() {
   return getParameterByName(CONSTANTS.INDEX_DEBUG_MODE.queryParam).toUpperCase();
@@ -242,7 +241,7 @@ var cygnus_index_start = function () {
 
   OpenRTBRequest.prototype.serialize = function () {
     var json = '{"id":"' + this.requestID + '","site":{"page":"' + quote(this.sitePage) + '"';
-    if (typeof document.referrer === 'string' && document.referrer !== "") {
+    if (typeof document.referrer === 'string' && document.referrer !== '') {
       json += ',"ref":"' + quote(document.referrer) + '"';
     }
 
@@ -352,7 +351,7 @@ var cygnus_index_start = function () {
     } else {
       scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
     }
-    var prebidVersion = encodeURIComponent("$prebid.version$");
+    var prebidVersion = encodeURIComponent('$prebid.version$');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -417,18 +416,18 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       window._IndexRequestData.reqOptions = {};
     }
     // clear custom targets at the beginning of every request
-    _IndexRequestData.targetAggregate = {'open':{},'private':{}};
+    _IndexRequestData.targetAggregate = {'open': {}, 'private': {}};
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
       return;
     }
 
-    //Our standard is to always bid for all known slots.
+    // Our standard is to always bid for all known slots.
     cygnus_index_args.slots = [];
 
     var expectedBids = 0;
 
-    //Grab the slot level data for cygnus_index_args
+    // Grab the slot level data for cygnus_index_args
     for (var i = 0; i < bidArr.length; i++) {
       var bid = bidArr[i];
       var sizeID = 0;
@@ -454,15 +453,14 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         }
 
         if (!validSize) {
-          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to no valid sizes");
+          utils.logMessage(ADAPTER_NAME + ' slot excluded from request due to no valid sizes');
           continue;
         }
 
         var usingSizeSpecificSiteID = false;
-        // Check for size defined in bidder params 
+        // Check for size defined in bidder params
         if (bid.params.size && bid.params.size instanceof Array) {
-          if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1]))
-            continue;
+          if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) { continue; }
           usingSizeSpecificSiteID = true;
         }
 
@@ -470,10 +468,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           cygnus_index_args.timeout = bid.params.timeout;
         }
 
-
         var siteID = Number(bid.params.siteID);
-        if (typeof siteID !== "number" || siteID % 1 != 0 || siteID <= 0) {
-          utils.logMessage(ADAPTER_NAME + " slot excluded from request due to invalid siteID");
+        if (typeof siteID !== 'number' || siteID % 1 != 0 || siteID <= 0) {
+          utils.logMessage(ADAPTER_NAME + ' slot excluded from request due to invalid siteID');
           continue;
         }
         if (siteID && typeof cygnus_index_args.siteID === 'undefined') {
@@ -483,8 +480,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         if (utils.hasValidBidRequest(bid.params, requiredParams, ADAPTER_NAME)) {
           firstAdUnitCode = bid.placementCode;
           var slotID = bid.params[requiredParams[0]];
-          if ( typeof slotID !== 'string' && typeof slotID !== 'number' ){
-            utils.logError(ADAPTER_NAME + " bid contains invalid slot ID from " + bid.placementCode + ". Discarding slot");
+          if (typeof slotID !== 'string' && typeof slotID !== 'number') {
+            utils.logError(ADAPTER_NAME + ' bid contains invalid slot ID from ' + bid.placementCode + '. Discarding slot');
             continue
           }
 
@@ -497,7 +494,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           var slotName = usingSizeSpecificSiteID ? String(slotID) : slotID + '_' + sizeID;
           slotIdMap[slotName] = bid;
 
-          //Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
+          // Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
           cygnus_index_args.slots = mergeSlotInto({
             id: slotName,
             width: size.width,
@@ -540,7 +537,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       utils.logError('Too many unique sizes on slots, will use the first 20.', ADAPTER_NAME);
     }
 
-    //bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
+    // bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
     adloader.loadScript(cygnus_index_start());
 
     var responded = false;
@@ -567,8 +564,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           for (var cpmAndSlotId in indexObj) {
             var match = /^(T\d_)?(.+)_(\d+)$/.exec(cpmAndSlotId);
             // if parse fail, move to next bid
-            if (!(match)){
-              utils.logError("Unable to parse " + cpmAndSlotId + ", skipping slot", ADAPTER_NAME);
+            if (!(match)) {
+              utils.logError('Unable to parse ' + cpmAndSlotId + ', skipping slot', ADAPTER_NAME);
               continue;
             }
             var tier = match[1] || '';
@@ -585,21 +582,19 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
               bid.width = slotObj.width;
               bid.height = slotObj.height;
               bid.siteID = slotObj.siteID;
-              if ( typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined' ) {
-                if (typeof _IndexRequestData.targetAggregate['private'][adUnitCode] === 'undefined')
-                  _IndexRequestData.targetAggregate['private'][adUnitCode] = [];
+              if (typeof _IndexRequestData.targetIDToResp === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId] === 'object' && typeof _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID !== 'undefined') {
+                if (typeof _IndexRequestData.targetAggregate['private'][adUnitCode] === 'undefined') { _IndexRequestData.targetAggregate['private'][adUnitCode] = []; }
                 bid.dealId = _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID;
-                _IndexRequestData.targetAggregate['private'][adUnitCode].push( slotID + "_" + _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID );
+                _IndexRequestData.targetAggregate['private'][adUnitCode].push(slotID + '_' + _IndexRequestData.targetIDToResp[cpmAndSlotId].dealID);
               } else {
-                if (typeof _IndexRequestData.targetAggregate['open'][adUnitCode] === 'undefined')
-                  _IndexRequestData.targetAggregate['open'][adUnitCode] = [];
-                _IndexRequestData.targetAggregate['open'][adUnitCode].push( slotID + "_" + currentCPM );
+                if (typeof _IndexRequestData.targetAggregate['open'][adUnitCode] === 'undefined') { _IndexRequestData.targetAggregate['open'][adUnitCode] = []; }
+                _IndexRequestData.targetAggregate['open'][adUnitCode].push(slotID + '_' + currentCPM);
               }
               bids.push(bid);
             }
           }
 
-          var currentBid = undefined;
+          var currentBid;
 
           if (bids.length > 0) {
             // Add all bid responses
@@ -613,29 +608,27 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             currentBid = bid;
             bidmanager.addBidResponse(adUnitCode, currentBid);
           }
-
         }
       } catch (e) {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
         logErrorBidResponse();
-      }
-      finally {
+      } finally {
         // ensure that previous targeting mapping is cleared
         _IndexRequestData.targetIDToBid = {};
       }
 
-      //slotIdMap is used to determine which slots will be bid on in a given request.
-      //Therefore it needs to be blanked after the request is handled, else we will submit 'bids' for the wrong ads.
-      slotIdMap={};
+      // slotIdMap is used to determine which slots will be bid on in a given request.
+      // Therefore it needs to be blanked after the request is handled, else we will submit 'bids' for the wrong ads.
+      slotIdMap = {};
     };
   }
 
   /*
   Function in order to add a slot into the list if it hasn't been created yet, else it returns the same list.
   */
-  function mergeSlotInto(slot,slotList){
-    for(var i = 0; i < slotList.length; i++){
-      if(slot.id === slotList[i].id){
+  function mergeSlotInto(slot, slotList) {
+    for (var i = 0; i < slotList.length; i++) {
+      if (slot.id === slotList[i].id) {
         return slotList;
       }
     }
@@ -656,11 +649,11 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   }
 
   function logErrorBidResponse() {
-    //no bid response
+    // no bid response
     var bid = bidfactory.createBid(2);
     bid.bidderCode = ADAPTER_CODE;
 
-    //log error to first add unit
+    // log error to first add unit
     bidmanager.addBidResponse(firstAdUnitCode, bid);
   }
 

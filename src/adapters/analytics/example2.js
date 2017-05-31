@@ -5,12 +5,11 @@ import { ajax } from 'src/ajax';
  */
 
 import adapter from 'AnalyticsAdapter';
-const utils = require('../../utils');
 
 const url = 'https://httpbin.org/post';
 const analyticsType = 'endpoint';
 
-export default utils.extend(adapter(
+export default Object.assign(adapter(
   {
     url,
     analyticsType
@@ -18,8 +17,8 @@ export default utils.extend(adapter(
 ),
   {
   // Override AnalyticsAdapter functions by supplying custom methods
-  track({ eventType, args }) {
-    console.log('track function override for Example2 Analytics');
-    ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }));
-  }
-});
+    track({ eventType, args }) {
+      console.log('track function override for Example2 Analytics');
+      ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }));
+    }
+  });

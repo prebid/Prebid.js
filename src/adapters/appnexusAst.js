@@ -1,16 +1,27 @@
 import Adapter from 'src/adapters/adapter';
+import { Renderer } from 'src/Renderer';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v2/prebid';
+const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
+const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = [
-  'age', 'external_uid', 'segments', 'gender', 'dnt', 'language'
-];
+const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const NATIVE_MAPPING = {
+  body: 'description',
+  image: {
+    serverName: 'main_image',
+    serverParams: {
+      required: true,
+      sizes: [{}]
+    }
+  },
+  sponsoredBy: 'sponsored_by'
+};
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -18,7 +29,6 @@ const USER_PARAMS = [
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-
   let baseAdapter = Adapter.createNew('appnexusAst');
   let bidRequests = {};
   let usersync = false;
@@ -38,7 +48,7 @@ function AppnexusAstAdapter() {
         tag.sizes = getSizes(bid.sizes);
         tag.primary_size = tag.sizes[0];
         tag.uuid = bid.bidId;
-        if(bid.params.placementId) {
+        if (bid.params.placementId) {
           tag.id = parseInt(bid.params.placementId, 10);
         } else {
           tag.code = bid.params.invCode;
@@ -75,7 +85,39 @@ function AppnexusAstAdapter() {
           tag.keywords = getKeywords(bid.params.keywords);
         }
 
-        if (bid.mediaType === 'video') {tag.require_asset_url = true;}
+        if (bid.mediaType === 'native') {
+          tag.ad_types = ['native'];
+
+          if (bid.nativeParams) {
+            const nativeRequest = {};
+
+            // map standard prebid native asset identifier to /ut parameters
+            // e.g., tag specifies `body` but /ut only knows `description`
+            // mapping may be in form {tag: '<server name>'} or
+            // {tag: {serverName: '<server name>', serverParams: {...}}}
+            Object.keys(bid.nativeParams).forEach(key => {
+              // check if one of the <server name> forms is used, otherwise
+              // a mapping wasn't specified so pass the key straight through
+              const requestKey =
+                (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+                NATIVE_MAPPING[key] ||
+                key;
+
+              // if the mapping for this identifier specifies required server
+              // params via the `serverParams` object, merge that in
+              const params = Object.assign({},
+                bid.nativeParams[key],
+                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+              );
+
+              nativeRequest[requestKey] = params;
+            });
+
+            tag.native = {layouts: [nativeRequest]};
+          }
+        }
+
+        if (bid.mediaType === 'video') { tag.require_asset_url = true; }
         if (bid.params.video) {
           tag.video = {};
           // place any valid video params on the tag
@@ -102,7 +144,7 @@ function AppnexusAstAdapter() {
       const payload = JSON.stringify(payloadJson);
       ajax(ENDPOINT, handleResponse, payload, {
         contentType: 'text/plain',
-        withCredentials : true
+        withCredentials: true
       });
     }
   };
@@ -119,7 +161,7 @@ function AppnexusAstAdapter() {
 
     if (!parsed || parsed.error) {
       let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) {errorMessage += `: ${parsed.error}`;}
+      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
       utils.logError(errorMessage);
 
       // signal this response is complete
@@ -137,19 +179,21 @@ function AppnexusAstAdapter() {
       const type = ad && ad.ad_type;
 
       let status;
-      if (cpm !== 0 && (type === 'banner' || type === 'video')) {
+      if (cpm !== 0 && (SUPPORTED_AD_TYPES.includes(type))) {
         status = STATUS.GOOD;
       } else {
         status = STATUS.NO_BID;
       }
 
-      if (type && (type !== 'banner' && type !== 'video')) {
+      if (type && (!SUPPORTED_AD_TYPES.includes(type))) {
         utils.logError(`${type} ad type not supported`);
       }
 
       tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
+      if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
+      if (type === 'video-outstream') bid.mediaType = 'video-outstream';
       const placement = bidRequests[bid.adId].placementCode;
       bidmanager.addBidResponse(placement, bid);
     });
@@ -184,13 +228,12 @@ function AppnexusAstAdapter() {
         let values = [];
         utils._each(v, (val) => {
           val = utils.getValueString('keywords.' + k, val);
-          if (val) {values.push(val);}
+          if (val) { values.push(val); }
         });
         v = values;
       } else {
         v = utils.getValueString('keywords.' + k, v);
-        if (utils.isStr(v)) {v = [v];}
-        else {return;} // unsuported types - don't send a key
+        if (utils.isStr(v)) { v = [v]; } else { return; } // unsuported types - don't send a key
       }
       arrs.push({key: k, value: v});
     });
@@ -225,6 +268,26 @@ function AppnexusAstAdapter() {
     return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
   }
 
+  function outstreamRender(bid) {
+    window.ANOutstreamVideo.renderAd({
+      tagId: bid.adResponse.tag_id,
+      sizes: [bid.getSize().split('x')],
+      targetId: bid.adUnitCode, // target div id to render video
+      uuid: bid.adResponse.uuid,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(bid));
+  }
+
+  function onOutstreamRendererLoaded() {
+    // setup code for renderer, if any
+  }
+
+  function handleOutstreamRendererEvents(id, eventName) {
+    const bid = this;
+    bid.renderer.handleVideoEvent({ id, eventName });
+  }
+
   /* Create and return a bid object based on status and tag */
   function createBid(status, tag) {
     const ad = getRtbBid(tag);
@@ -235,12 +298,53 @@ function AppnexusAstAdapter() {
     if (ad && status === STATUS.GOOD) {
       bid.cpm = ad.cpm;
       bid.creative_id = ad.creative_id;
+      bid.dealId = ad.deal_id;
 
       if (ad.rtb.video) {
         bid.width = ad.rtb.video.player_width;
         bid.height = ad.rtb.video.player_height;
         bid.vastUrl = ad.rtb.video.asset_url;
         bid.descriptionUrl = ad.rtb.video.asset_url;
+        if (ad.renderer_url) {
+          // outstream video
+
+          bid.adResponse = tag;
+          bid.renderer = Renderer.install({
+            id: ad.renderer_id,
+            url: ad.renderer_url,
+            config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
+            callback: () => onOutstreamRendererLoaded.call(null, bid)
+          });
+
+          try {
+            bid.renderer.setRender(outstreamRender);
+          } catch (err) {
+            utils.logWarning('Prebid Error calling setRender on renderer', err);
+          }
+
+          bid.renderer.setEventHandlers({
+            impression: () => utils.logMessage('AppNexus outstream video impression event'),
+            loaded: () => utils.logMessage('AppNexus outstream video loaded event'),
+            ended: () => {
+              utils.logMessage('AppNexus outstream renderer video event');
+              document.querySelector(`#${bid.adUnitCode}`).style.display = 'none';
+            }
+          });
+
+          bid.adResponse.ad = bid.adResponse.ads[0];
+          bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        }
+      } else if (ad.rtb.native) {
+        const native = ad.rtb.native;
+        bid.native = {
+          title: native.title,
+          body: native.desc,
+          sponsoredBy: native.sponsored,
+          image: native.main_img && native.main_img.url,
+          icon: native.icon && native.icon.url,
+          clickUrl: native.link.url,
+          impressionTrackers: native.impression_trackers,
+        };
       } else {
         bid.width = ad.rtb.banner.width;
         bid.height = ad.rtb.banner.height;
@@ -263,7 +367,6 @@ function AppnexusAstAdapter() {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
-
 }
 
 AppnexusAstAdapter.createNew = function() {
