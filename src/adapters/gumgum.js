@@ -40,8 +40,7 @@ const GumgumAdapter = function GumgumAdapter() {
       return {};
     }
     return {
-      'dt.id': digiTrustId.id,
-      'dt.keyv': digiTrustId.keyv
+      'dt': digiTrustId.id
     };
   }
 

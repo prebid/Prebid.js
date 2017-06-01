@@ -106,20 +106,19 @@ describe('gumgum adapter', () => {
           success: true,
           identity: {
             privacy: {optout: false},
-            id: 'testId',
-            keyv: 'testKeyV'
+            id: 'testId'
           }
         })
       );
 
       adapter.callBids(bidderRequest);
-      expect(adLoader.loadScript.firstCall.args[0]).to.include('dt.id=testId');
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('&dt=testId');
       delete window.DigiTrust;
     });
 
     it('should not send DigiTrust params when DigiTrust is not loaded', () => {
       adapter.callBids(bidderRequest);
-      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('dt.id');
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
     });
 
     it('should not send DigiTrust params due to opt out', () => {
@@ -131,14 +130,13 @@ describe('gumgum adapter', () => {
           success: true,
           identity: {
             privacy: {optout: true},
-            id: 'testId',
-            keyv: 'testKeyV'
+            id: 'testId'
           }
         })
       );
 
       adapter.callBids(bidderRequest);
-      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('dt.id');
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
       delete window.DigiTrust;
     });
 
@@ -151,14 +149,13 @@ describe('gumgum adapter', () => {
           success: false,
           identity: {
             privacy: {optout: false},
-            id: 'testId',
-            keyv: 'testKeyV'
+            id: 'testId'
           }
         })
       );
 
       adapter.callBids(bidderRequest);
-      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('dt.id');
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
       delete window.DigiTrust;
     });
   });
