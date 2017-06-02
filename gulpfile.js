@@ -53,9 +53,13 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
+function getArgModules() {
+  return (argv.modules || '').split(',').filter(module => !!module);
+}
+
 gulp.task('bundle', function() {
-  var modules = (argv.modules || '').split(',').filter(module => !!module),
-      allModules = helpers.getModuleNames();
+  var modules = getArgModules(),
+      allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
     modules = allModules;
@@ -83,10 +87,14 @@ gulp.task('bundle', function() {
 
 gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
+  var externalModules = getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  const moduleSources = helpers.getModulePaths();
+  const moduleSources = helpers.getModulePaths(externalModules);
+  console.log(moduleSources);
+
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules())
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -102,10 +110,13 @@ gulp.task('webpack', ['clean'], function () {
 
   webpackConfig.devtool = null;
 
+  var externalModules = getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  const moduleSources = helpers.getModulePaths();
+  const moduleSources = helpers.getModulePaths(externalModules);
+
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules())
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())

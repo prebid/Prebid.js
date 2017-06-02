@@ -40,9 +40,11 @@ module.exports = {
         .replace(/\/>/g, '\\/>');
   },
 
-  getModules: _.memoize(function() {
+  getModules: _.memoize(function(externalModules) {
+    externalModules = externalModules || [];
+    var internalModules;
     try {
-      return fs.readdirSync(MODULE_PATH)
+      internalModules = fs.readdirSync(MODULE_PATH)
         .reduce((memo, file) => {
           var moduleName = file.split(new RegExp('[.' + path.sep + ']'))[0];
           var filePath = path.join(MODULE_PATH, file);
@@ -53,8 +55,18 @@ module.exports = {
           memo[modulePath] = moduleName;
           return memo;
         }, {});
-    } catch(err) {}
-    return {};
+    } catch(err) {
+      internalModules = {};
+    }
+    return Object.assign(externalModules.reduce((memo, module) => {
+      try {
+        var modulePath = require.resolve(module);
+        memo[modulePath] = module;
+      } catch(err) {
+        // do something
+      }
+      return memo;
+    }, internalModules));
   }),
 
   getBuiltModules: function(dev, names) {
@@ -69,19 +81,19 @@ module.exports = {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, 'prebid' + '.js');
   },
 
-  getModulePaths: function() {
-    var modules = this.getModules();
+  getModulePaths: function(externalModules) {
+    var modules = this.getModules(externalModules);
     return Object.keys(modules);
   },
 
-  getModuleNames: function() {
-    return _.values(this.getModules());
+  getModuleNames: function(externalModules) {
+    return _.values(this.getModules(externalModules));
   },
 
-  nameModules: function() {
-    var modules = this.getModules();
+  nameModules: function(externalModules) {
+    var modules = this.getModules(externalModules);
     return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid.js';
+      file.named = modules[file.path] ? modules[file.path] : 'prebid';
       this.push(file);
       done();
     })

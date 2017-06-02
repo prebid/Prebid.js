@@ -6,10 +6,16 @@ var webpack = require('webpack');
 module.exports = {
   devtool: 'source-map',
   resolve: {
-    modulesDirectories: ['', 'node_modules', 'src', 'modules']
+    root: [
+      path.resolve('.')
+    ],
+    modulesDirectories: ['', 'node_modules']
   },
   resolveLoader: {
-    modulesDirectories: ['loaders', 'node_modules']
+    root: [
+      path.resolve('./loaders'),
+      path.resolve('./node_modules')
+    ]
   },
   output: {
     jsonpFunction: 'pbjsSeg'
@@ -18,8 +24,7 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        include: /(src|modules|test)/,
-        exclude: path.resolve(__dirname, 'node_modules'),
+        exclude: path.resolve('./node_modules'),
         loader: 'babel', // 'babel-loader' is also a legal name to reference
         query: {
           presets: ['es2015']
@@ -76,6 +81,10 @@ module.exports = {
   },
   plugins: [
     new StringReplacePlugin(),
-    new webpack.optimize.CommonsChunkPlugin('prebid.js')
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'prebid',
+      filename: 'prebid.js',
+      minChunks: 2
+    })
   ]
 };
