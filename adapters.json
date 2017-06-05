@@ -143,5 +143,10 @@
       "rhythmone": {
         "supportedMediaTypes": ["video"]
       }
+    },
+    {
+      "admixer": {
+        "supportedMediaTypes": ["video"]
+      }
     }
 ]
