@@ -5,11 +5,10 @@ import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 
-const VER ='ADGENT_PREBID-2017051801';
+const VER = 'ADGENT_PREBID-2017051801';
 const BIDDER_CODE = 'ucfunnel';
 
 var ucfunnelAdapter = function ucfunnelAdapter() {
-
   function _callBids(params) {
     var bids = params.bids || [];
 
@@ -48,7 +47,7 @@ var ucfunnelAdapter = function ucfunnelAdapter() {
       page = window.location.pathname,
       refer = document.referrer,
       language = navigator.language,
-      dnt = (navigator.doNotTrack == "yes" || navigator.doNotTrack == "1" || navigator.msDoNotTrack == "1") ? 1 : 0;
+      dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
 
     var queryString = [
       'ifr', 0,
