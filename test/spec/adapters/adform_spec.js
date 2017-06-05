@@ -7,7 +7,7 @@ import bidManager from '../../../src/bidmanager';
 import adapter from '../../../src/adapters/adform';
 
 describe('Adform adapter', () => {
-  let _adapter, sandbox; 
+  let _adapter, sandbox;
 
   describe('request', () => {
     it('should create callback method on PREBID_GLOBAL', () => {
@@ -32,7 +32,6 @@ describe('Adform adapter', () => {
       assert.equal(_query.rp, 4);
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
-
 
     it('should correctly form bid items', () => {
       const _items = parseUrl(adLoader.loadScript.args[0][0]).items;
@@ -148,7 +147,7 @@ describe('Adform adapter', () => {
             pdom: 'home'
           }
         }
-    ]});
+      ]});
   });
 
   afterEach(() => {
@@ -162,7 +161,7 @@ function parseUrl(url) {
   return {
     path: parts.join('/'),
     items: query
-      .filter((i) => ! ~i.indexOf('='))
+      .filter((i) => !~i.indexOf('='))
       .map((i) => fromBase64(i)
         .split('&')
         .reduce(toObject, {})),
