@@ -36,15 +36,15 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'lint', 'webpack']);
+gulp.task('default', ['clean', 'lint', 'bundle']);
 
-gulp.task('serve', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'test']);
+gulp.task('serve', ['clean', 'lint', 'bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test', 'mocha']);
 
-gulp.task('build', ['webpack']);
+gulp.task('build', ['bundle']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -57,7 +57,7 @@ function getArgModules() {
   return (argv.modules || '').split(',').filter(module => !!module);
 }
 
-gulp.task('bundle', function() {
+function bundle(dev) {
   var modules = getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
@@ -74,16 +74,19 @@ gulp.task('bundle', function() {
   }
 
   return gulp.src(
-      [helpers.getBuiltPrebid(argv.dev)].concat(
-        helpers.getBuiltModules(argv.dev, modules)
+      [helpers.getBuiltPrebid(dev)].concat(
+        helpers.getBuiltModules(dev, modules)
       )
-    ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js', {newLine: ''}))
-    .pipe(gulpif(!argv.manualEnable, footer('<%= global %>.processQueue();', {
+    ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js'))
+    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
     )))
-    .pipe(gulp.dest('build/' + (argv.dev ? 'dev' : 'dist')));
-});
+    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+gulp.task('bundle-dev', ['devpack'], bundle.bind(null, true));
+gulp.task('bundle', ['webpack'], bundle.bind(null, false));
 
 gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
@@ -91,7 +94,6 @@ gulp.task('devpack', ['clean'], function () {
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   const moduleSources = helpers.getModulePaths(externalModules);
-  console.log(moduleSources);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
@@ -229,9 +231,10 @@ gulp.task('watch', function () {
 
   gulp.watch([
     'src/**/*.js',
+    'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['clean', 'lint', 'webpack', 'devpack', 'test']);
+  ], ['lint', 'bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
