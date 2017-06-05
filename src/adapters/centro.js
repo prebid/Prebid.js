@@ -75,12 +75,16 @@ var CentroAdapter = function CentroAdapter() {
     var bidObject;
     var bid = resp && resp.bid || resp;
 
-    if (bid && bid.adTag && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
-      bidObject = bidfactory.createBid(1);
-      bidObject.cpm = bid.value;
-      bidObject.ad = bid.adTag;
-      bidObject.width = bid.width;
-      bidObject.height = bid.height;
+    if (bid && (bid.adTag || bid.statusMessage === 'No bid') && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
+      if (bid.adTag) {
+        bidObject = bidfactory.createBid(1);
+        bidObject.cpm = bid.value;
+        bidObject.ad = bid.adTag;
+        bidObject.width = bid.width;
+        bidObject.height = bid.height;
+      } else {
+        bidObject = bidfactory.createBid(2);
+      }
     } else {
       // throw exception, or call utils.logError with resp.statusMessage
       utils.logError(LOG_ERROR_MESS.unitNum + unit + '. ' + (bid ? bid.statusMessage || LOG_ERROR_MESS.noAdTag : LOG_ERROR_MESS.noBid), bidderCode);
