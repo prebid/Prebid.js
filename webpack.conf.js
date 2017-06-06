@@ -2,6 +2,7 @@ var prebid = require('./package.json');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 var webpack = require('webpack');
+var helpers = require('./gulpHelpers');
 
 module.exports = {
   devtool: 'source-map',
@@ -24,8 +25,16 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        exclude: path.resolve('./node_modules'),
-        loader: 'babel', // 'babel-loader' is also a legal name to reference
+        exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
+        loader: 'babel',
+        query: {
+          presets: ['es2015']
+        }
+      },
+      { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
+        test: /\.js$/,
+        include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
+        loader: 'babel',
         query: {
           presets: ['es2015']
         }

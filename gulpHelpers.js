@@ -39,7 +39,9 @@ module.exports = {
         .replace(/<\//g, '<\\/')
         .replace(/\/>/g, '\\/>');
   },
-
+  getArgModules() {
+    return (argv.modules || '').split(',').filter(module => !!module);
+  },
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;

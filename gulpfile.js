@@ -36,15 +36,15 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'lint', 'bundle']);
+gulp.task('default', ['clean', 'lint', 'build-bundle-prod']);
 
-gulp.task('serve', ['clean', 'lint', 'bundle-dev', 'watch', 'test']);
+gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test', 'mocha']);
 
-gulp.task('build', ['bundle']);
+gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -53,12 +53,8 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
-function getArgModules() {
-  return (argv.modules || '').split(',').filter(module => !!module);
-}
-
 function bundle(dev) {
-  var modules = getArgModules(),
+  var modules = helpers.getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
@@ -85,12 +81,13 @@ function bundle(dev) {
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
-gulp.task('bundle-dev', ['devpack'], bundle.bind(null, true));
-gulp.task('bundle', ['webpack'], bundle.bind(null, false));
+gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
+gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
+gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
 gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
-  var externalModules = getArgModules();
+  var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   const moduleSources = helpers.getModulePaths(externalModules);
@@ -112,7 +109,7 @@ gulp.task('webpack', ['clean'], function () {
 
   webpackConfig.devtool = null;
 
-  var externalModules = getArgModules();
+  var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   const moduleSources = helpers.getModulePaths(externalModules);
@@ -234,7 +231,7 @@ gulp.task('watch', function () {
     'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['lint', 'bundle-dev', 'test']);
+  ], ['lint', 'build-bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
