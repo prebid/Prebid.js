@@ -36,7 +36,7 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'lint', 'build-bundle-prod']);
+gulp.task('default', ['clean', 'webpack']);
 
 gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
 
