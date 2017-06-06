@@ -19,7 +19,8 @@ const NATIVE_MAPPING = {
       required: true,
       sizes: [{}]
     }
-  }
+  },
+  sponsoredBy: 'sponsored_by'
 };
 
 /**

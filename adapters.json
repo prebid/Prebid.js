@@ -7,6 +7,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "adyoulike",
     "bidfluence",
     "vertamedia",
     "aol",
@@ -141,6 +142,11 @@
     },
     {
       "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "admixer": {
         "supportedMediaTypes": ["video"]
       }
     }

@@ -154,6 +154,9 @@ function PrebidServer() {
             bidObject.ad = bidObj.adm;
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
+            if (bidObj.deal_id) {
+              bidObject.dealId = bidObj.deal_id;
+            }
 
             bidmanager.addBidResponse(bidObj.code, bidObject);
           });
