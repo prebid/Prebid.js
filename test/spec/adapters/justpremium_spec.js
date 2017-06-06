@@ -9,12 +9,6 @@ const CONST = {
   LIB: '//d2nvliyzbo36lk.cloudfront.net/adp/bc.js'
 };
 
-const processCmd = (cmd) => {
-  cmd.forEach(_c => {
-    _c();
-  })
-};
-
 function createCookie(name, value, days) {
   var expires = '';
   if (days) {
@@ -98,25 +92,21 @@ describe('justpremium adapter', () => {
     let bidder;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
-      bidder = {
-        createBid: () => {
-        }
-      };
       window.top.jPAM = jPAM = {
         initialized: true,
         cmd: [],
+        cb: {
+          bidder20000: {
+            createBid: () => {
+            }
+          }
+        },
         listeners: {},
         hasPlugin: () => {
           return true;
         },
         getPlugin: () => {
           return bidder;
-        },
-        publish: (evName, args) => {
-          jPAM.listeners[evName].call(this, args);
-        },
-        subscribe: (evName, listener) => {
-          jPAM.listeners[evName] = listener;
         }
       };
       sandbox.stub(adLoader, 'loadScript');
@@ -138,7 +128,65 @@ describe('justpremium adapter', () => {
       assert(_request.calledOnce);
     });
 
-    it('should request bids and register task in jpx manager ', () => {
+    it('should throw an error', () => {
+      const _request = adLoader.loadScript;
+      const req = {
+        bidderCode: 'justpremium',
+        bids: [
+          {
+            bidId: 'bidId1',
+            bidder: 'justpremium',
+            params: {},
+            sizes: [[1, 1]],
+            placementCode: 'div-gpt-ad-1471513102552-1'
+          }
+        ]
+      };
+
+      try {
+        adapter.callBids(req);
+      } catch (e) {
+        assert.instanceOf(e, Error);
+      }
+      assert(_request.calledOnce);
+    });
+
+    it('should request bids and send proper arguments', () => {
+      const _request = adLoader.loadScript;
+      const req = {
+        bidderCode: 'justpremium',
+        bids: [
+          {
+            bidId: 'bidId1',
+            bidder: 'justpremium',
+            params: {
+              zone: 20000
+            },
+            sizes: [[1, 1]],
+            placementCode: 'div-gpt-ad-1471513102552-1'
+          }
+        ]
+      };
+
+      adapter.callBids(req);
+
+      const params = {};
+      _request.getCall(1).args[0].split('?').pop().split('&').forEach(keypair => {
+        const kp = keypair.split('=');
+        params[kp[0]] = kp[1];
+      });
+
+      assert(_request.calledTwice);
+      assert.equal(req.bids[0].params.zone, parseInt(params['zone']));
+      assert.equal(req.bids[0].params.zone, parseInt(params['id']));
+      assert.equal('1', params['c']);
+      assert.equal(window.top.innerHeight, parseInt(params['wh']));
+      assert.equal(window.top.innerWidth, parseInt(params['ww']));
+      assert.equal(window.top.screen.width, parseInt(params['sw']));
+      assert.equal(window.top.screen.height, parseInt(params['sh']));
+    });
+
+    it('should parse bid allow param and send proper arguments to the server', () => {
       const _request = adLoader.loadScript;
       const req = {
         bidderCode: 'justpremium',
@@ -158,8 +206,44 @@ describe('justpremium adapter', () => {
 
       adapter.callBids(req);
 
+      const params = {};
+      _request.getCall(1).args[0].split('?').pop().split('&').forEach(keypair => {
+        const kp = keypair.split('=');
+        params[kp[0]] = kp[1];
+      });
+
       assert(_request.calledTwice);
-      assert.lengthOf(jPAM.cmd, 1);
+      assert.equal(encodeURIComponent('[["wp"],[]]'), params['c']);
+    });
+
+    it('should parse bid exclude param and send proper arguments to the server', () => {
+      const _request = adLoader.loadScript;
+      const req = {
+        bidderCode: 'justpremium',
+        bids: [
+          {
+            bidId: 'bidId1',
+            bidder: 'justpremium',
+            params: {
+              zone: 20000,
+              exclude: ['wp', 'lb']
+            },
+            sizes: [[1, 1]],
+            placementCode: 'div-gpt-ad-1471513102552-1'
+          }
+        ]
+      };
+
+      adapter.callBids(req);
+
+      const params = {};
+      _request.getCall(1).args[0].split('?').pop().split('&').forEach(keypair => {
+        const kp = keypair.split('=');
+        params[kp[0]] = kp[1];
+      });
+
+      assert(_request.calledTwice);
+      assert.equal(encodeURIComponent('[[],["wp","lb"]]'), params['c']);
     });
 
     it('should add empty bid if there was no valid response', () => {
@@ -199,6 +283,7 @@ describe('justpremium adapter', () => {
     });
 
     it('should add empty bid if response was empty', () => {
+      adLoader.loadScript.restore();
       const req = {
         bidderCode: 'justpremium',
         bids: [
@@ -215,21 +300,23 @@ describe('justpremium adapter', () => {
         ]
       };
 
-      const spySubscribe = sandbox.spy(jPAM, 'subscribe');
+      const stubLoadScript = sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+        if (callback) {
+          callback();
+        }
+      });
       const stubAddBidResponse = sandbox.stub(bidmanager, 'addBidResponse');
-      const stubCreateBid = sandbox.stub(bidder, 'createBid', (factory) => {
+      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid', (factory) => {
         return factory();
       });
 
       adapter.callBids(req);
-      processCmd(jPAM.cmd);
-      jPAM.publish('tagLoaded:20000', []);
 
       const bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
       const bidResponse = stubAddBidResponse.getCall(0).args[1];
 
       assert(stubAddBidResponse.calledOnce);
-      expect(spySubscribe.callCount).to.be.equal(1);
+      expect(stubLoadScript.callCount).to.be.equal(1);
       expect(stubCreateBid.callCount).to.be.equal(1);
       expect(bidPlacementCode).to.equal('div-gpt-ad-1471513102552-1');
       expect(bidResponse.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.NO_BID);
@@ -239,6 +326,7 @@ describe('justpremium adapter', () => {
     });
 
     it('should add bid if tag contains any', () => {
+      adLoader.loadScript.restore();
       const req = {
         bidderCode: 'justpremium',
         bids: [
@@ -262,9 +350,13 @@ describe('justpremium adapter', () => {
         format: 'wp'
       };
 
-      const spySubscribe = sandbox.spy(jPAM, 'subscribe');
+      const stubLoadScript = sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+        if (callback) {
+          callback();
+        }
+      });
       const stubAddBidResponse = sandbox.stub(bidmanager, 'addBidResponse');
-      const stubCreateBid = sandbox.stub(bidder, 'createBid', (factory) => {
+      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid', (factory) => {
         const bid = factory({});
 
         Object.assign(bid, responseData);
@@ -273,14 +365,12 @@ describe('justpremium adapter', () => {
       });
 
       adapter.callBids(req);
-      processCmd(jPAM.cmd);
-      jPAM.publish('tagLoaded:20000', []);
 
       const bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       const bidResponse1 = stubAddBidResponse.getCall(0).args[1];
 
       assert(stubAddBidResponse.calledOnce);
-      expect(spySubscribe.callCount).to.be.equal(1);
+      expect(stubLoadScript.callCount).to.be.equal(1);
       expect(stubCreateBid.callCount).to.be.equal(1);
       expect(bidPlacementCode1).to.equal('div-gpt-ad-1471513102552-2');
       expect(bidResponse1.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.GOOD);

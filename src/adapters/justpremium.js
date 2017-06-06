@@ -6,7 +6,6 @@ import * as utils from 'src/utils';
 const JustpremiumAdapter = function JustpremiumAdapter() {
   const top = window.top;
   const d = top.document;
-  const gupi = false;
 
   function arrayUnique(array) {
     var a = array.concat();
@@ -44,7 +43,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     };
   const libVer = readCookie('jpxhbadp') || null;
   const toLoad = dConfig.toLoad || [d.location.protocol + '//d2nvliyzbo36lk.cloudfront.net/adp/' + (libVer ? libVer + '/' : '') + 'bc.js'];
-  const server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com';
+  const server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com/v/1.4';
 
   function loadCookie() {
     if (cookieLoaded) return;
@@ -53,14 +52,6 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
   }
 
   function loadTag(params, callback) {
-    for (let key in params) {
-      if (params.hasOwnProperty(key)) {
-        if (!params[key]) {
-          delete params[key];
-        }
-      }
-    }
-
     const keys = Object.keys(params || {});
     const url = `${server}${keys.length ? '/?' : ''}${keys.map(key => `${key}=${params[key]}`).join('&')}`;
     adloader.loadScript(url, callback);
@@ -110,7 +101,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     return false;
   }
 
-  function handleError(zone, reqBids) {
+  function handleError(err, zone, reqBids) {
     let bid = findBid(zone, reqBids);
     while (bid) {
       const bidObject = bidfactory.createBid(2);
@@ -118,37 +109,31 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
       bidmanager.addBidResponse(bid.placementCode, bidObject);
       bid = findBid(zone, reqBids);
     }
+    console.error(err);
   }
 
   function addBidResponse(zone, reqBids) {
-    jPAM.cmd = jPAM.cmd || [];
-    jPAM.cmd.push((function (zone) {
-      return function () {
-        const jPAM = window.top.jPAM = window.top.jPAM || window.jPAM || {};
-        const bidder = jPAM.getPlugin('bidder');
+    const jPAM = window.top.jPAM = window.top.jPAM || window.jPAM || {};
+    const c = jPAM.cb = jPAM.cb || {};
 
-        jPAM.subscribe('tagLoaded:' + zone, function () {
-          let bid = findBid(zone, reqBids);
-          while (bid) {
-            bidmanager.addBidResponse(bid.placementCode, bidder.createBid(function (ad) {
-              let bidObject;
+    reqBids
+      .filter(r => r.params.zone === parseInt(zone))
+      .forEach(bid => {
+        const bidder = c[`bidder${zone}`];
 
-              if (!ad) {
-                bidObject = bidfactory.createBid(2);
-                bidObject.bidderCode = 'justpremium';
-                return bidObject;
-              }
-              bidObject = bidfactory.createBid(1);
-              bidObject.bidderCode = 'justpremium';
-              bidObject.adSlot = bid.adSlot;
-
-              return bidObject;
-            }, bid));
-            bid = findBid(zone, reqBids);
+        bidmanager.addBidResponse(bid.placementCode, bidder.createBid(function (ad) {
+          let bidObject;
+          if (!ad) {
+            bidObject = bidfactory.createBid(2);
+            bidObject.bidderCode = 'justpremium';
+            return bidObject;
           }
-        });
-      }
-    }(zone)));
+          bidObject = bidfactory.createBid(1);
+          bidObject.bidderCode = 'justpremium';
+          bidObject.adSlot = bid.adSlot;
+          return bidObject;
+        }, bid));
+      });
   }
 
   function requestBids(bids) {
@@ -162,7 +147,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
           hostname: d.location.hostname,
           protocol: d.location.protocol.replace(':', ''),
           sw: top.screen.width,
-          sh: top.screen.width,
+          sh: top.screen.height,
           ww: top.innerWidth,
           wh: top.innerHeight,
           c: encodeURIComponent(JSON.stringify(pubCond[zone])),
@@ -171,12 +156,12 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
         },
         function (err) {
           if (err) {
-            handleError(zone, reqBids);
+            handleError(err, zone, reqBids);
           }
+          addBidResponse(zone, reqBids);
         },
         true
       );
-      addBidResponse(zone, reqBids);
     });
   }
 
