@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter';
+import * as Adapter from 'src/adapter.js';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adaptermanager from 'src/adaptermanager';
@@ -34,6 +34,7 @@ var sizeMap = {
   8: '120x600',
   9: '160x600',
   10: '300x600',
+  14: '250x250',
   15: '300x250',
   16: '336x280',
   19: '300x100',
