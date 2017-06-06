@@ -81,7 +81,6 @@ function HuddledMassesAdapter() {
 
     var secure = 0;
     var win;
-    
     try {
       win = window.top;
     } catch (e) {
