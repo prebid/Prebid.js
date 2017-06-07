@@ -71,10 +71,10 @@ module.exports = {
     }, internalModules));
   }),
 
-  getBuiltModules: function(dev, names) {
-    var modules = this.getModuleNames();
-    if(Array.isArray(names)) {
-      modules = _.intersection(modules, names);
+  getBuiltModules: function(dev, externalModules) {
+    var modules = this.getModuleNames(externalModules);
+    if(Array.isArray(externalModules)) {
+      modules = _.intersection(modules, externalModules);
     }
     return modules.map(name => path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, name + '.js'));
   },
