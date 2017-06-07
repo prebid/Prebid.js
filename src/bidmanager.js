@@ -1,6 +1,7 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
+import { retrieve, store } from './video-cache';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -83,6 +84,33 @@ exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
+/**
+ * If the bid is a video bid, publishers will need to be able to get the cache ID.
+ * Since the cache call is asynchronous, the getter must be too. This attaches a
+ * vastUrlCacheKey function to the bid.
+ *
+ * This function takes a callback argument, and promises to call it exactly once when the
+ * cache ID has been returned.
+ */
+function prepVideoBid(bid) {
+  // Queue callbacks which arrive before the cache has returned.
+  const callbacks = [];
+
+  function storageCallback(error, cacheIds) {
+    bid.vastUrlCacheKey = function(callback) {
+      callback(error, cacheIds[0].cacheId);
+    }
+    callbacks.forEach((callback) => callback(error, cacheIds[0].cacheId));
+  }
+
+  if (bid.vastUrl && !bid.vastUrlCacheKey) {
+    bid.vastUrlCacheKey = function(callback) {
+      callbacks.push(callback);
+    }
+    store([bid.vastUrl], storageCallback);
+  }
+}
+
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
@@ -138,6 +166,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     bid.adserverTargeting = keyValues;
+
+    prepVideoBid(bid);
+
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
   }
 
