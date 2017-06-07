@@ -97,14 +97,14 @@ function prepVideoBid(bid) {
   const callbacks = [];
 
   function storageCallback(error, cacheIds) {
-    bid.vastUrlCacheKey = function(callback) {
+    bid.onceCached = function(callback) {
       callback(error, cacheIds[0].cacheId);
     }
     callbacks.forEach((callback) => callback(error, cacheIds[0].cacheId));
   }
 
   if (bid.vastUrl && !bid.vastUrlCacheKey) {
-    bid.vastUrlCacheKey = function(callback) {
+    bid.onceCached = function(callback) {
       callbacks.push(callback);
     }
     store([bid.vastUrl], storageCallback);
