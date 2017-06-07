@@ -147,6 +147,11 @@
     },
     {
       "admixer": {
+              "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "conversant": {
         "supportedMediaTypes": ["video"]
       }
     }
