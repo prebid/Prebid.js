@@ -69,10 +69,13 @@ function bundle(dev) {
     }
   }
 
+  var entries = [helpers.getBuiltPrebid(dev)].concat(helpers.getBuiltModules(dev, modules));
+
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+
   return gulp.src(
-      [helpers.getBuiltPrebid(dev)].concat(
-        helpers.getBuiltModules(dev, modules)
-      )
+      entries
     ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js'))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
