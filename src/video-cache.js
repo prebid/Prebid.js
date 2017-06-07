@@ -84,8 +84,6 @@ function shimStorageCallback(callback) {
     success: function(responseBody) {
       let ids;
       try {
-        console.log('cache store responded with: ' + responseBody);
-
         ids = JSON.parse(responseBody).responses.map(fromStorageResponse)
       }
       catch (e) {
@@ -141,8 +139,6 @@ function shimRetrievalCallback(callback) {
       // If the cache didn't have our data, it returns JSON with an error property.
       let errorMsg;
       try {
-        console.log('cache retrieve responded with: ' + responseBody);
-
         errorMsg = JSON.parse(responseBody).error;
       }
       // But if it's not of this form, then we got a cache hit.
@@ -169,13 +165,10 @@ function shimRetrievalCallback(callback) {
  *   VAST content has been fetched from the cache.
  */
 function retrieveFromServer(cacheId, callback) {
-  console.log('fetching content with id: ' + cacheId);
-
   if (typeof cacheId !== 'string') {
     callback(new Error('The cacheId must be a string.'), EMPTY_VAST_RESPONSE);
     return;
   }
-  console.log('making ajax request to: ' + tryAppendQueryString(GET_URL, 'uuid', cacheId));
   ajax(tryAppendQueryString(GET_URL, 'uuid', cacheId), shimRetrievalCallback(callback));
 }
 
