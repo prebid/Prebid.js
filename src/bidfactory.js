@@ -41,11 +41,10 @@ function Bid(statusCode, bidRequest) {
     return _statusCode;
   };
 
-  //returns the size of the bid creative. Concatenation of width and height by ‘x’.
+  // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
-
 }
 
 // Bid factory function.

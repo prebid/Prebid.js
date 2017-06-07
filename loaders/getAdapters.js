@@ -4,8 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const argv = require('yargs').argv;
 
-const defaultAdapters = 'adapters.json';
-
 function load(file) {
   try {
     const buffer = fs.readFileSync(file);
@@ -15,8 +13,8 @@ function load(file) {
   }
 }
 
-module.exports = function getAdapters() {
-  let customAdapters = argv.adapters;
+module.exports = function getAdapters(defaultAdapters, argName) {
+  let customAdapters = argv[argName];
 
   if (!customAdapters) {
     return load(defaultAdapters);
@@ -29,7 +27,7 @@ module.exports = function getAdapters() {
     return load(customAdapters);
   } catch (e) {
     console.log(`Prebid Warning: custom adapters config cannot be loaded from ${customAdapters}, ` +
-      'using default adapters.json');
+      `using default ${defaultAdapters}`);
     return load(defaultAdapters);
   }
 };

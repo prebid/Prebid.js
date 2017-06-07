@@ -1,27 +1,27 @@
 
 import { getBidRequest } from '../utils.js';
 
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-
+const utils = require('../utils.js');
+const adloader = require('../adloader.js');
+const bidmanager = require('../bidmanager.js');
+const bidfactory = require('../bidfactory.js');
+const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
-  let useSSL = 'https:' === document.location.protocol,
-      baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-      callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+  let useSSL = document.location.protocol === 'https:',
+    baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
+    callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
     let bids = params && params.bids || [];
 
     for (var i = 0; i < bids.length; i++) {
       const bid = bids[i],
-					callbackUid = bid.bidId,
-					sid = bid.params.sid,
-					currency =  bid.params.currency;
+        callbackUid = bid.bidId,
+        sid = bid.params.sid,
+        currency = bid.params.cur || bid.params.currency;
 
-      //Handle Sizes string
+      // Handle Sizes string
       let sizeQueryString = '';
       let parsedSizes = utils.parseSizesInput(bid.sizes);
 
@@ -29,14 +29,27 @@ function WidespaceAdapter() {
         return prev ? `${prev},${curr}` : curr;
       }, sizeQueryString);
 
-      var requestURL = baseURL;
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.name', 'prebidjs');
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.callback', callbackName);
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.callbackUid', callbackUid);
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.sizes', sizeQueryString);
-      requestURL = utils.tryAppendQueryString(requestURL, 'sid', sid);
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.currency', currency);
+      let requestURL = baseURL;
+      requestURL = utils.tryAppendQueryString(requestURL, 'hb.ver', WS_ADAPTER_VERSION);
 
+      const params = {
+        'hb': '1',
+        'hb.name': 'prebidjs',
+        'hb.callback': callbackName,
+        'hb.callbackUid': callbackUid,
+        'hb.sizes': sizeQueryString,
+        'hb.currency': currency,
+        'sid': sid
+      };
+
+      requestURL += '#';
+
+      var paramKeys = Object.keys(params);
+
+      for (var k = 0; k < paramKeys.length; k++) {
+        var key = paramKeys[k];
+        requestURL += key + '=' + params[key] + '&';
+      }
 
       // Expose the callback
       $$PREBID_GLOBAL$$.widespaceHandleCB = window[callbackName] = handleCallback;
@@ -45,19 +58,19 @@ function WidespaceAdapter() {
     }
   }
 
-  //Handle our callback
+  // Handle our callback
   var handleCallback = function handleCallback(bidsArray) {
     if (!bidsArray) { return; }
 
     var bidObject,
-        bidCode = 'widespace';
+      bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
       var bid = bidsArray[i],
-          placementCode = '',
-          validSizes = [];
+        placementCode = '',
+        validSizes = [];
 
-      bid.sizes = {height: bid.height, width: bid.height};
+      bid.sizes = {height: bid.height, width: bid.width};
 
       var inBid = getBidRequest(bid.callbackUid);
 
@@ -66,7 +79,8 @@ function WidespaceAdapter() {
         placementCode = inBid.placementCode;
         validSizes = inBid.sizes;
       }
-      if (bid && bid.callbackUid && bid.status !=='noad' && verifySize(bid.sizes, validSizes)) {
+
+      if (bid && bid.callbackUid && bid.status !== 'noad' && verifySize(bid.sizes, validSizes)) {
         bidObject = bidfactory.createBid(1);
         bidObject.bidderCode = bidCode;
         bidObject.cpm = bid.cpm;
@@ -82,7 +96,6 @@ function WidespaceAdapter() {
         bidmanager.addBidResponse(placementCode, bidObject);
       }
     }
-
 
     function verifySize(bid, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
