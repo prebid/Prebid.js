@@ -10,7 +10,7 @@
      **/
     function coinflip() {
       var _coin = Math.random();
-      var calls = 0;
+      var calls = 1;
       this.coinflip = function () {
         if (++calls % 2 > 0) {
           return _coin;
@@ -32,7 +32,7 @@
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
 
-    var PREBID_TIMEOUT = 400;
+    var PREBID_TIMEOUT = 1000;
 
     var date = new Date().getTime();
 
@@ -84,7 +84,7 @@
           }
         ]
       },
-      {
+/**      {
         code: 'video2',
         sizes: [ 640, 480 ],
         mediaType: 'video-outstream',
@@ -107,7 +107,7 @@
             }
           }
         ]
-      }
+      } **/
     ];
 
     pbjs.que.push(function () {
@@ -189,7 +189,7 @@
       var d = document;
       var pbs = d.createElement("script");
       pbs.type = "text/javascript";
-      pbs.src = '/build/dev/prebid.js';
+      pbs.src = 'unrulydemoprebid.js';
       var target = d.getElementsByTagName("head")[ 0 ];
       target.insertBefore(pbs, target.firstChild);
     })();
@@ -208,7 +208,7 @@
 
     googletag.cmd.push(function () {
       var slot1 = googletag.defineSlot('/19968336/header-bid-tag-1', rightSlotSizes, 'video1').addService(googletag.pubads());
-      var slot2 = googletag.defineSlot('/19968336/header-bid-tag-2', rightSlotSizes, 'video2').addService(googletag.pubads());
+      // var slot2 = googletag.defineSlot('/19968336/header-bid-tag-2', rightSlotSizes, 'video2').addService(googletag.pubads());
       googletag.pubads().disableInitialLoad();
       googletag.pubads().enableSingleRequest();
       googletag.enableServices();
@@ -397,14 +397,14 @@
     vehicula odio at, molestie orci. In a hendrerit lectus. Aenean congue ipsum ac imperdiet
     suscipit. Maecenas eleifend pretium metus id mollis.
   </p>
-  <div id='video2'>
+<!--  <div id='video2'>
     <p>Prebid Outstream Video Ad</p>
     <script type='text/javascript'>
       googletag.cmd.push(function () {
         googletag.display('video2');
       });
     </script>
-  </div>
+  </div> -->
 
   <p>
     Ut vel ultricies erat. Pellentesque non ipsum quis odio ornare tempus in cursus ex. In a turpis
