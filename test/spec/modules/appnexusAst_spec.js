@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/appnexusAst';
+import Adapter from 'modules/appnexusAstBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';

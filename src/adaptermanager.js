@@ -2,7 +2,7 @@
 
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
-import native from './native';
+import { processNativeAdUnitParams, nativeAdapters } from './native';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -32,7 +32,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
 
         if (adUnit.nativeParams) {
           bid = Object.assign({}, bid, {
-            nativeParams: native(adUnit.nativeParams),
+            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
           });
         }
 
@@ -154,10 +154,19 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+// exports.videoAdapters = [];  // added by adapterLoader for now
+
+exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
       _bidderRegistry[bidderCode] = bidAdaptor;
+
+      if (supportedMediaTypes.includes('video')) {
+        exports.videoAdapters.push(bidderCode);
+      }
+      if (supportedMediaTypes.includes('native')) {
+        nativeAdapters.push(bidderCode);
+      }
     } else {
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }

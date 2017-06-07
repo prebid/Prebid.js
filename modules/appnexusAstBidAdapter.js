@@ -5,6 +5,7 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
@@ -375,5 +376,9 @@ function AppnexusAstAdapter() {
 AppnexusAstAdapter.createNew = function() {
   return new AppnexusAstAdapter();
 };
+
+adaptermanager.registerBidAdapter(new AppnexusAstAdapter, 'appnexusAst', {
+  supportedMediaTypes: ['video', 'native']
+});
 
 module.exports = AppnexusAstAdapter;

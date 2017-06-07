@@ -1,11 +1,12 @@
-import { getBidRequest } from '../utils.js';
+import { getBidRequest } from 'src/utils';
+import adaptermanager from 'src/adaptermanager';
 
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var Adapter = require('./adapter.js');
+var CONSTANTS = require('src/constants');
+var utils = require('src/utils');
+var adloader = require('src/adloader');
+var bidmanager = require('src/bidmanager');
+var bidfactory = require('src/bidfactory');
+var Adapter = require('src/adapter');
 
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
@@ -224,5 +225,14 @@ AppNexusAdapter = function AppNexusAdapter() {
 AppNexusAdapter.createNew = function () {
   return new AppNexusAdapter();
 };
+
+adaptermanager.registerBidAdapter(new AppNexusAdapter, 'appnexus');
+adaptermanager.aliasBidAdapter('appnexus', 'brealtime');
+adaptermanager.aliasBidAdapter('appnexus', 'pagescience');
+adaptermanager.aliasBidAdapter('appnexus', 'defymedia');
+adaptermanager.aliasBidAdapter('appnexus', 'gourmetads');
+adaptermanager.aliasBidAdapter('appnexus', 'matomy');
+adaptermanager.aliasBidAdapter('appnexus', 'featureforward');
+adaptermanager.aliasBidAdapter('appnexus', 'oftmedia');
 
 module.exports = AppNexusAdapter;

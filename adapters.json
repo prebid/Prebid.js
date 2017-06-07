@@ -11,8 +11,6 @@
     "bidfluence",
     "vertamedia",
     "aol",
-    "appnexus",
-    "appnexusAst",
     "beachfront",
     "audienceNetwork",
     "carambola",
@@ -37,7 +35,6 @@
     "pulsepointLite",
     "quantcast",
     "rhythmone",
-    "rubicon",
     "smartyads",
     "huddledmasses",
     "smartadserver",
@@ -73,31 +70,6 @@
     "adsupply",
     "cox",
     {
-      "appnexus": {
-        "alias": "brealtime"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "pagescience"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "defymedia"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "gourmetads"
-      }
-    },
-    {
-      "appnexusAst": {
-        "supportedMediaTypes": ["video", "native"]
-      }
-    },
-    {
       "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
@@ -105,27 +77,6 @@
     {
       "beachfront": {
         "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "matomy"
-      }
-    },
-    {
-      "rubicon": {
-        "alias": "rubiconLite",
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "featureforward"
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "oftmedia"
       }
     },
     {

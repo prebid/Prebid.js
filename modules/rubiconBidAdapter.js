@@ -419,7 +419,9 @@ RubiconAdapter.createNew = function() {
   return new RubiconAdapter();
 };
 
-adaptermanager.registerBidAdapter(new RubiconAdapter, RUBICON_BIDDER_CODE);
+adaptermanager.registerBidAdapter(new RubiconAdapter, RUBICON_BIDDER_CODE, {
+  supportedMediaTypes: ['video']
+});
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;

@@ -54,11 +54,6 @@ module.exports = {
         loader: 'adapterLoader'
       },
       {
-        test: /native.js/,
-        include: /(src)/,
-        loader: 'nativeLoader'
-      },
-      {
         test: /constants.json$/,
         include: /(src)/,
         loader: StringReplacePlugin.replace({

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/appnexus';
+import Adapter from '../../../modules/appnexusBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 

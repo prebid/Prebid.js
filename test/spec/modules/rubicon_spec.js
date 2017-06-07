@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import adloader from 'src/adloader';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
-import RubiconAdapter from 'src/adapters/rubicon';
+import RubiconAdapter from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 
 var CONSTANTS = require('src/constants.json');
