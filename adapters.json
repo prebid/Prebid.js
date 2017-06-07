@@ -69,6 +69,7 @@
     "trion",
     "prebidServer",
     "adsupply",
+    "unruly",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -149,5 +150,10 @@
       "admixer": {
         "supportedMediaTypes": ["video"]
       }
+    },
+  {
+    "unruly": {
+      "supportedMediaTypes": ["video"]
     }
+  }
 ]
