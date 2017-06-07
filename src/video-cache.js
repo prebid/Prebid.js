@@ -218,10 +218,3 @@ function memoize(retrievalFunction) {
  *   VAST content has been fetched from the cache.
  */
 export const retrieve = memoize(retrieveFromServer);
-
-/**
- * @return {string} An "empty" VAST XML response. This is a suitable default if
- */
-export function emptyVast() {
-  return EMPTY_VAST_RESPONSE;
-}
