@@ -13,6 +13,7 @@ var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
 // create s2s settings objectType_function
+let setS2sConfig = CONSTANTS.EVENTS.SET_S2S_CONFIG;
 let _s2sConfig = {};
 var _analyticsRegistry = {};
 let _bidderSequence = null;
@@ -229,6 +230,7 @@ exports.setBidderSequence = function (order) {
 };
 
 exports.setS2SConfig = function (config) {
+  events.emit(setS2sConfig, {s2sConfig: config});
   _s2sConfig = config;
 };
 

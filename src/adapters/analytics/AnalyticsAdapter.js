@@ -12,6 +12,7 @@ const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+const SET_S2S_CONFIG = CONSTANTS.EVENTS.SET_S2S_CONFIG;
 
 const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
@@ -101,6 +102,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       // Next register event listeners to send data immediately
 
       _handlers = {
+        [SET_S2S_CONFIG]: args => this.enqueue({ eventType: SET_S2S_CONFIG, args }),
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
         [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
