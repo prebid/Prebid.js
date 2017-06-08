@@ -59,7 +59,7 @@ AppNexusAdapter = function AppNexusAdapter() {
       utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
     }
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
+    jptCall = utils.tryAppendQueryString(jptCall, 'inv_code', inventoryCode);
     jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', (utils.getBidIdParameter('trafficSourceCode', bid.params)));
 
     // sizes takes a bit more logic
