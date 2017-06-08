@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from '../../../src/adapters/adbund';
+import Adapter from '../../../modules/adbundBidAdapter';
 import bidManager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 
