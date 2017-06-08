@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/adblade';
+import Adapter from '../../../modules/adbladeBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
