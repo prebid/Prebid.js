@@ -1,6 +1,5 @@
-window.pbjs = window.pbjs || {};
 var chai = require('chai');
-var Adapter = require('src/adapters/admixer')();
+var Adapter = require('modules/admixerBidAdapter')();
 var Ajax = require('src/ajax');
 var bidmanager = require('src/bidmanager.js');
 var CONSTANTS = require('src/constants.json');

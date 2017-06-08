@@ -1,7 +1,8 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var Ajax = require('../ajax');
-var utils = require('../utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var Ajax = require('src/ajax');
+var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from Admixer.
@@ -79,5 +80,9 @@ var AdmixerAdapter = function AdmixerAdapter() {
     responseCallback: _responseCallback
   };
 };
+
+adaptermanager.registerBidAdapter(new AdmixerAdapter, 'admixer', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = AdmixerAdapter;

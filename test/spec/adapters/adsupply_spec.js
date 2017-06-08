@@ -1,4 +1,6 @@
 describe('adsupply adapter tests', function () {
+  window.pbjs = window.pbjs || {};
+
   const expect = require('chai').expect;
 
   const AdSupplyAdapter = require('../../../src/adapters/adsupply');
@@ -6,9 +8,6 @@ describe('adsupply adapter tests', function () {
   const bidmanager = require('../../../src/bidmanager');
   const CONSTANTS = require('../../../src/constants.json');
   let adsupplyAdapter = new AdSupplyAdapter();
-
-	// before(() => sinon.stub(document.body, 'appendChild'));
-	// after(() => document.body.appendChild.restore());
 
   it('adsupply response handler should exist and be a function', function () {
     expect(pbjs.adSupplyResponseHandler).to.exist.and.to.be.a('function');

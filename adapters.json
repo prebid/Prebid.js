@@ -53,7 +53,6 @@
     "roxot",
     "vertoz",
     "widespace",
-    "admixer",
     "atomx",
     "tapsense",
     "trion",
@@ -93,7 +92,7 @@
     },
     {
       "admixer": {
-              "supportedMediaTypes": ["video"]
+          "supportedMediaTypes": ["video"]
       }
     },
     {
