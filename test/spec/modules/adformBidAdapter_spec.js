@@ -2,7 +2,7 @@ import { assert } from 'chai';
 import * as utils from '../../../src/utils';
 import adLoader from '../../../src/adloader';
 import bidManager from '../../../src/bidmanager';
-import adapter from '../../../src/adapters/adform';
+import adapter from '../../../modules/adformBidAdapter';
 
 describe('Adform adapter', () => {
   let _adapter, sandbox;
