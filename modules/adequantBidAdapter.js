@@ -1,10 +1,11 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var utils = require('../utils.js');
-var CONSTANTS = require('../constants.json');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils.js');
+var CONSTANTS = require('src/constants.json');
+var adaptermanager = require('src/adaptermanager');
 
-module.exports = function() {
+function AdequantAdapter() {
   var req_url_base = 'https://rex.adequant.com/rex/c2s_prebid?';
 
   function _callBids(params) {
@@ -70,4 +71,8 @@ module.exports = function() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new AdequantAdapter, 'adequant');
+
+module.exports = AdequantAdapter;

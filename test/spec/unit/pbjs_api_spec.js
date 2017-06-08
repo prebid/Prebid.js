@@ -23,8 +23,9 @@ var events = require('src/events');
 var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
-// The native tests expect a native adapter to be registered.  So this is being included here for now.
-var appnexusAstBidAdapter = require('modules/appnexusAstBidAdapter');
+// These bid adapters are required to be loaded for the following tests to work
+require('modules/appnexusAstBidAdapter');
+require('modules/adequantBidAdapter');
 
 var config = require('test/fixtures/config.json');
 
