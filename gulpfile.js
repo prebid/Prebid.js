@@ -10,7 +10,6 @@ var webpack = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
-var mocha = require('gulp-mocha');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
@@ -42,7 +41,7 @@ gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test', 'mocha']);
+gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test']);
 
 gulp.task('build', ['build-bundle-prod']);
 
@@ -186,26 +185,6 @@ gulp.task('test', ['clean'], function () {
     }));
 });
 
-//
-// Making this task depend on lint is a bit of a hack. The `run-tests` command is the entrypoint for the CI process,
-// and it needs to run all these tasks together. However, the "lint" and "mocha" tasks explode when used in parallel,
-// resulting in some mysterious "ShellJS: internal error TypeError: Cannot read property 'isFile' of undefined"
-// errors.
-//
-// Gulp doesn't support serial dependencies (until gulp 4.0... which is most likely never coming out)... so we have
-// to trick it by declaring 'lint' as a dependency here. See https://github.com/gulpjs/gulp/blob/master/docs/recipes/running-tasks-in-series.md
-//
-gulp.task('mocha', ['webpack', 'lint'], function() {
-    return gulp.src(['test/spec/loaders/**/*.js'], { read: false })
-        .pipe(mocha({
-          reporter: 'spec',
-          globals: {
-            expect: require('chai').expect
-          }
-        }))
-        .on('error', gutil.log);
-});
-
 // Small task to load coverage reports in the browser
 gulp.task('coverage', function (done) {
   var coveragePort = 1999;
@@ -238,7 +217,8 @@ gulp.task('watch', function () {
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
-  ], ['lint', 'mocha']);
+  ], ['lint']);
+  gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   connect.server({
     https: argv.https,
     port: port,
