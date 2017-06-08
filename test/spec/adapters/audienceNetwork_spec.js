@@ -96,14 +96,14 @@ describe('AudienceNetwork adapter', () => {
       expect(logError.calledOnce).to.equal(true);
     });
 
-    it('valid parameters', () => {
+    it('filter valid sizes', () => {
       // Valid parameters
       const params = {
         bidderCode,
         bids: [{
           bidder: bidderCode,
           params: { placementId },
-          sizes: [[320, 50], [300, 250], '300x250', 'fullwidth', '320x50', 'native']
+          sizes: [[1, 1], [300, 250]]
         }]
       };
       // Request bids
@@ -111,12 +111,90 @@ describe('AudienceNetwork adapter', () => {
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
-      expectToContain(requests[0].url, 'https://an.facebook.com/v2/placementbid.json?');
-      expectToContain(requests[0].url, 'placementids[]=test-placement-id', 6);
-      expectToContain(requests[0].url, 'adformats[]=320x50', 2);
-      expectToContain(requests[0].url, 'adformats[]=300x250', 2);
-      expectToContain(requests[0].url, 'adformats[]=fullwidth');
-      expectToContain(requests[0].url, 'adformats[]=native');
+      expect(requests[0].url)
+        .to.contain('https://an.facebook.com/v2/placementbid.json?')
+        .and.to.contain('placementids[]=test-placement-id')
+        .and.to.contain('adformats[]=300x250');
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false);
+    });
+
+    it('valid parameters', () => {
+      const params = {
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          params: { placementId },
+          sizes: [[300, 250], [320, 50]]
+        },
+        {
+          bidder: bidderCode,
+          params: { placementId },
+          sizes: [[320, 50], [300, 250]]
+        }]
+      };
+      // Request bids
+      AudienceNetwork().callBids(params);
+      // Verify attempt to fetch response
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].url)
+        .to.contain('https://an.facebook.com/v2/placementbid.json?')
+        .and.to.contain('placementids[]=test-placement-id&placementids[]=test-placement-id')
+        .and.to.contain('adformats[]=320x50')
+        .and.to.contain('adformats[]=300x250');
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false);
+    });
+
+    it('fullwidth', () => {
+      // Valid parameters
+      const params = {
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          params: {
+            placementId,
+            format: 'fullwidth'
+          },
+          sizes: [[300, 250]]
+        }]
+      };
+      // Request bids
+      AudienceNetwork().callBids(params);
+      // Verify attempt to fetch response
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].url)
+        .to.contain('https://an.facebook.com/v2/placementbid.json?')
+        .and.to.contain('placementids[]=test-placement-id')
+        .and.to.contain('adformats[]=fullwidth');
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false);
+    });
+
+    it('native', () => {
+      // Valid parameters
+      const params = {
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          params: {
+            placementId,
+            format: 'native'
+          },
+          sizes: [[300, 250]]
+        }]
+      };
+      // Request bids
+      AudienceNetwork().callBids(params);
+      // Verify attempt to fetch response
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].url)
+        .to.contain('https://an.facebook.com/v2/placementbid.json?')
+        .and.to.contain('placementids[]=test-placement-id')
+        .and.to.contain('adformats[]=native');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -151,7 +229,7 @@ describe('AudienceNetwork adapter', () => {
         bids: [{
           bidder: bidderCode,
           params: { placementId },
-          sizes: ['native']
+          sizes: [[300, 250]]
         }]
       });
       server.respond();
@@ -185,8 +263,11 @@ describe('AudienceNetwork adapter', () => {
         bids: [{
           bidder: bidderCode,
           placementCode,
-          params: { placementId },
-          sizes: ['native']
+          params: {
+            placementId,
+            format: 'native'
+          },
+          sizes: [[300, 250]]
         }]
       });
       server.respond();
@@ -199,11 +280,12 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.getStatusCode()).to.equal(STATUS.GOOD);
       expect(bidResponse.cpm).to.equal(1.23);
       expect(bidResponse.bidderCode).to.equal(bidderCode);
-      expect(bidResponse.width).to.equal(0);
-      expect(bidResponse.height).to.equal(0);
-      expect(bidResponse.ad).to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters');
-      expect(bidResponse.ad).to.contain('getElementsByTagName("style")', 'ad missing native styles');
-      expect(bidResponse.ad).to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse.ad)
+        .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
+        .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
+        .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
       // Verify Audience Network attributes in bid response
       expect(bidResponse.hb_bidder).to.equal('fan');
       expect(bidResponse.fb_bidid).to.equal('test-bid-id');
@@ -234,7 +316,7 @@ describe('AudienceNetwork adapter', () => {
           bidder: bidderCode,
           placementCode,
           params: { placementId },
-          sizes: ['300x250']
+          sizes: [[300, 250]]
         }]
       });
       server.respond();
@@ -249,9 +331,10 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.bidderCode).to.equal(bidderCode);
       expect(bidResponse.width).to.equal(300);
       expect(bidResponse.height).to.equal(250);
-      expect(bidResponse.ad).to.contain(`placementid:'${placementId}',format:'300x250',bidid:'test-bid-id'`, 'ad missing parameters');
-      expect(bidResponse.ad).not.to.contain('getElementsByTagName("style")', 'ad should not contain native styles');
-      expect(bidResponse.ad).not.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad should not contain native container');
+      expect(bidResponse.ad)
+        .to.contain(`placementid:'${placementId}',format:'300x250',bidid:'test-bid-id'`, 'ad missing parameters')
+        .and.not.to.contain('getElementsByTagName("style")', 'ad should not contain native styles')
+        .and.not.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad should not contain native container');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false, 'logError called');
     });
@@ -282,7 +365,7 @@ describe('AudienceNetwork adapter', () => {
           bidder: bidderCode,
           placementCode,
           params: { placementId },
-          sizes: ['300x250']
+          sizes: [[300, 250]]
         }]
       });
       server.respond();
@@ -332,13 +415,16 @@ describe('AudienceNetwork adapter', () => {
         bids: [{
           bidder: bidderCode,
           placementCode: placementCodeNative,
-          params: { placementId: placementIdNative },
-          sizes: ['native']
+          params: {
+            placementId: placementIdNative,
+            format: 'native'
+          },
+          sizes: [[300, 250]]
         }, {
           bidder: bidderCode,
           placementCode: placementCodeIab,
           params: { placementId: placementIdIab },
-          sizes: ['300x250']
+          sizes: [[300, 250]]
         }]
       });
       server.respond();
@@ -351,8 +437,8 @@ describe('AudienceNetwork adapter', () => {
       expect(addBidResponseNativeCall[1].getStatusCode()).to.equal(STATUS.GOOD);
       expect(addBidResponseNativeCall[1].cpm).to.equal(1.23);
       expect(addBidResponseNativeCall[1].bidderCode).to.equal(bidderCode);
-      expect(addBidResponseNativeCall[1].width).to.equal(0);
-      expect(addBidResponseNativeCall[1].height).to.equal(0);
+      expect(addBidResponseNativeCall[1].width).to.equal(300);
+      expect(addBidResponseNativeCall[1].height).to.equal(250);
       expect(addBidResponseNativeCall[1].ad).to.contain(`placementid:'${placementIdNative}',format:'native',bidid:'test-bid-id-native'`, 'ad missing parameters');
       // Verify IAB
       const addBidResponseIabCall = addBidResponse.args[1];
