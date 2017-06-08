@@ -59,7 +59,7 @@ function restoreYieldbotMockLib() {
   window.yieldbot = null;
 }
 
-function mockYieldbotInitBidRequest() {
+function mockYieldbotBidRequest() {
   window.ybotq = window.ybotq || [];
   window.ybotq.forEach(fn => {
     fn.apply(window.yieldbot);
@@ -90,7 +90,7 @@ describe('Yieldbot adapter tests', function() {
 
       const adapter = new YieldbotAdapter();
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
     });
 
     afterEach(function() {
@@ -168,19 +168,50 @@ describe('Yieldbot adapter tests', function() {
     it('should use yieldbot.nextPageview after first callBids', function() {
       const adapter = new YieldbotAdapter();
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
 
       expect(window.yieldbot._initialized).to.equal(true);
 
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
       sinon.assert.calledOnce(yieldbotLibStub.nextPageview);
+    });
+
+    it('should call yieldbot.nextPageview with slot config of requested bids', function() {
+      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+        return o.bidderCode !== 'yieldbot';
+      });
+
+      const adapter = new YieldbotAdapter();
+      adapter.callBids(bidderRequest);
+      mockYieldbotBidRequest();
+
+      expect(window.yieldbot._initialized).to.equal(true);
+      sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'medrec');
+      sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'leaderboard');
+
+      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+        return o.bidderCode !== 'yieldbot';
+      });
+
+      const refreshBids = bidderRequest.bids.filter((object) => { return object.placementCode === '/4294967296/adunit1'; });
+      let refreshRequest = Object.assign({}, bidderRequest);
+      refreshRequest.bids = refreshBids;
+      expect(refreshRequest.bids.length).to.equal(1);
+
+      adapter.callBids(refreshRequest);
+      mockYieldbotBidRequest();
+
+      const bid = refreshBids[0];
+      const expectedSlots = { 'leaderboard': [[728, 90], [970, 90]] };
+
+      sinon.assert.calledWithExactly(yieldbotLibStub.nextPageview, expectedSlots);
     });
 
     it('should not throw on callBids without bidsRequested', function() {
       const adapter = new YieldbotAdapter();
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
 
       expect(window.yieldbot._initialized).to.equal(true);
 
@@ -189,7 +220,7 @@ describe('Yieldbot adapter tests', function() {
       });
 
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
       sinon.assert.calledOnce(yieldbotLibStub.nextPageview);
     });
 
@@ -200,7 +231,7 @@ describe('Yieldbot adapter tests', function() {
 
       const adapter = new YieldbotAdapter();
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
 
       let bidResponses = window.$$PREBID_GLOBAL$$._bidsReceived.filter(o => {
         return o.bidderCode === 'yieldbot';
@@ -209,7 +240,7 @@ describe('Yieldbot adapter tests', function() {
       expect(bidResponses.length).to.equal(0);
 
       adapter.callBids(bidderRequest);
-      mockYieldbotInitBidRequest();
+      mockYieldbotBidRequest();
       sinon.assert.calledOnce(yieldbotLibStub.nextPageview);
     });
   });
