@@ -70,7 +70,7 @@ function AdformAdapter() {
             verifySize(adItem, bid.sizes)) {
           bidObject = bidfactory.createBid(STATUSCODES.GOOD, bid);
           bidObject.bidderCode = bidder;
-          bidObject.cpm = adItem.win_bid;
+          bidObject.cpm = adItem.win_bid * 1000;
           bidObject.cur = adItem.win_cur;
           bidObject.ad = adItem.banner;
           bidObject.width = adItem.width;
