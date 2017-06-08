@@ -28,7 +28,12 @@ There should be no changes required on the ad ops side, since the outstream unit
 + Demand from a bidder adapter that supports the `"video-outstream"` media type, and returns a renderer for outstream video in its bid response
 + For more technical information about renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082)
 
-## 1. Set up outstream video slot sizes
+## Implementation
+
+This section will take you through the code you need to write to show
+outstream video ads using Prebid.js.
+
+### 1. Set up outstream video slot sizes
 
 In your standard Prebid preamble in the header, configure slot sizes to suit your page layout and/or the available demand for those sizes.
 
@@ -44,7 +49,7 @@ var rightSlotSizes = [[ 300, 250 ], [ 300, 600 ], [ 300, 250 ], [ 100, 100 ]];
 
 {% endhighlight %}
 
-## 2. Set up your ad units with the outstream video media type
+### 2. Set up your ad units with the outstream video media type
 
 Still in the header, set up your ad units with the `video-outstream` media type.
 
@@ -91,7 +96,7 @@ var videoAdUnits = [
 
 {% endhighlight %}
 
-## 3. Show ads on the page as normal
+### 3. Show ads on the page as normal
 
 In the body of the page, insert your ads as usual:
 
@@ -107,6 +112,12 @@ In the body of the page, insert your ads as usual:
 </div>
 
 {% endhighlight %}
+
+## Working Examples
+
+Below, find links to end-to-end "working examples" demonstrating Prebid Outstream:
+
++ [AppNexus vs. Unruly](http://acdn.adnxs.com/prebid/alpha/unrulydemo.html)
 
 ## Related Topics
 
