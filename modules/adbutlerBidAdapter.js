@@ -5,10 +5,11 @@
 
 'use strict';
 
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
+var utils = require('src/utils.js');
+var adloader = require('src/adloader.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var adaptermanager = require('src/adaptermanager');
 
 var AdButlerAdapter = function AdButlerAdapter() {
   function _callBids(params) {
@@ -137,5 +138,7 @@ var AdButlerAdapter = function AdButlerAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new AdButlerAdapter, 'adbutler');
 
 module.exports = AdButlerAdapter;

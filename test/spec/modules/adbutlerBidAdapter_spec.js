@@ -1,6 +1,6 @@
 describe('adbutler adapter tests', function () {
   var expect = require('chai').expect;
-  var adapter = require('src/adapters/adbutler');
+  var adapter = require('modules/adbutlerBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
