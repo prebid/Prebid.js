@@ -101,6 +101,12 @@ const CarambolaAdapter = function CarambolaAdapter() {
         }
         try {
           response = JSON.parse(response);
+          if (response && response.cpm <= 0)
+          {
+            utils.logError('Bid response returned 0', BIDDER_CODE, bid);
+            _addErrorBidResponse(bid, response, 'Bid response returned 0');
+            return;
+          }
         } catch (e) {
           utils.logError('Invalid JSON in bid response', BIDDER_CODE, bid);
           _addErrorBidResponse(bid, response, 'Invalid JSON in bid response');
