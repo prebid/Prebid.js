@@ -94,7 +94,7 @@ function shimStorageCallback(callback) {
       callback(null, ids);
     },
     error: function(statusText, responseBody) {
-      callback(new Error('Error storing video ad in the cache: ' + statusText + ': ' + responseBody), []);
+      callback(new Error('Error storing video ad in the cache: ' + statusText + ': ' + JSON.stringify(responseBody)), []);
     }
   }
 }
@@ -169,7 +169,7 @@ function retrieveFromServer(cacheId, callback) {
     callback(new Error('The cacheId must be a string.'), EMPTY_VAST_RESPONSE);
     return;
   }
-  ajax(tryAppendQueryString(GET_URL, 'uuid', cacheId), shimRetrievalCallback(callback));
+  ajax(tryAppendQueryString(GET_URL, 'uuid', cacheId).slice(0, -1), shimRetrievalCallback(callback));
 }
 
 /**
