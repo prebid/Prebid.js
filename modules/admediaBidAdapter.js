@@ -1,9 +1,10 @@
-import { getBidRequest } from '../utils.js';
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var utils = require('../utils.js');
-var CONSTANTS = require('../constants.json');
+import { getBidRequest } from 'src/utils';
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils.js');
+var CONSTANTS = require('src/constants.json');
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from AdMedia.
@@ -98,5 +99,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new AdmediaAdapter, 'admedia');
 
 module.exports = AdmediaAdapter;
