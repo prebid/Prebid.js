@@ -60,7 +60,9 @@
     "hb_size",
     "hb_deal"
   ],
-  "S2S" : {
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction"
-  }
+  "S2S": {
+    "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/auction"
+  },
+  "CURRENCY_RATE_PRECISION": 4,
+  "DEFAULT_CURRENCY_RATE_URL": "http://prebid.aws.rubiconproject.com/latest.json"
 }

@@ -524,4 +524,13 @@ describe('Utils', function () {
       assert.equal(arr.length, count, 'Polyfill test fails')
     });
   });
+
+  describe('roundFloat test', function () {
+    it('should round to correct decimal places', function() {
+      assert.equal(utils.roundFloat(1.00001, 4), 1);
+      assert.equal(utils.roundFloat(105.99999, 4), 106);
+      assert.equal(utils.roundFloat(42.49999, 4), 42.5);
+      assert.equal(utils.roundFloat(12.34567, 4), 12.3457);
+    });
+  });
 });

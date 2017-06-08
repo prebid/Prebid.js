@@ -5,7 +5,8 @@ import {
   getBidResponsesFromAPI,
   getTargetingKeys,
   getTargetingKeysBidLandscape,
-  getAdUnits
+  getAdUnits,
+  getCurrencyRates
 } from 'test/fixtures/fixtures';
 
 var assert = require('chai').assert;
@@ -22,7 +23,6 @@ var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
 var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
-
 var config = require('test/fixtures/config.json');
 
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
@@ -1749,6 +1749,14 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$.setS2SConfig(options);
       assert.ok(logErrorSpy.calledOnce, true);
+    });
+  });
+
+  describe('setConfig', () => {
+    it('results in pageConfig being set', () => {
+      $$PREBID_GLOBAL$$.setConfig({ 'currency': { 'adServerCurrency': 'JPY' } });
+      expect($$PREBID_GLOBAL$$.pageConfig).to.not.equal({});
+      expect($$PREBID_GLOBAL$$.pageConfig.currency.adServerCurrency).to.equal('JPY');
     });
   });
 });

@@ -5,9 +5,10 @@ import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import 'polyfill';
-import { parse as parseURL, format as formatURL } from './url';
-import { isValidePriceConfig } from './cpmBucketManager';
-import { listenMessagesFromCreative } from './secureCreatives';
+
+import { parse as parseURL, format as formatURL} from './url';
+import { isValidPriceConfig} from './cpmBucketManager';
+import { listenMessagesFromCreative} from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
@@ -23,6 +24,8 @@ var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
 
+$$PREBID_GLOBAL$$.currency = require('./currency.js');
+
 /* private variables */
 
 var objectType_function = 'function';
@@ -30,6 +33,7 @@ var objectType_undefined = 'undefined';
 var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var DEFAULT_CURRENCY_RATE_URL = CONSTANTS.DEFAULT_CURRENCY_RATE_URL;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -157,11 +161,44 @@ function setRenderSize(doc, width, height) {
   }
 }
 
+function configureCurrencySupport(pageConfig) {
+  if ('currency' in pageConfig && 'adServerCurrency' in pageConfig.currency) {
+    utils.logInfo('$$PREBID_GLOBAL$$.setConfig is enabling currency support', arguments);
+    var url = DEFAULT_CURRENCY_RATE_URL;
+    if ('conversionRateFile' in pageConfig.currency) {
+      utils.logInfo('$$PREBID_GLOBAL$$.setConfig will use override conversionRateFile', pageConfig.currency.conversionRateFile);
+      url = pageConfig.currency.conversionRateFile;
+    }
+    $$PREBID_GLOBAL$$.currency.initCurrencyRates(url);
+  } else {
+    // currency support is disabled, setting defaults
+    utils.logInfo('$$PREBID_GLOBAL$$.setConfig currency support is disabled');
+    Object.assign(pageConfig, {
+      'currency': {
+        'adServerCurrency': 'USD'
+      }
+    });
+    $$PREBID_GLOBAL$$.currency.resetCurrencyRates();
+  }
+}
+
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
 //                              //
 /// ///////////////////////////////
+
+/**
+ * Set the global page config
+ * @param {object} [pageConfig] Object holding any global configuration parameters
+ */
+$$PREBID_GLOBAL$$.setConfig = function(pageConfig) {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
+
+  $$PREBID_GLOBAL$$.pageConfig = pageConfig;
+
+  configureCurrencySupport($$PREBID_GLOBAL$$.pageConfig);
+};
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
@@ -662,6 +699,9 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 /**
  * Sets a default price granularity scheme.
  * @param {String|Object} granularity - the granularity scheme.
+ * @param {Float} currencyMultiplier - the exchange rate from USD to the ad server currency at the time of line item
+ * generation.
+ *
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
  * "high": $0.01 increments, capped at $20 CPM
@@ -672,22 +712,22 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
-$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplier) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
     return;
   }
   if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
+    bidmanager.setPriceGranularity(granularity, currencyMultiplier);
   }
   else if (typeof granularity === 'object') {
-    if (!isValidePriceConfig(granularity)) {
+    if (!isValidPriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
     bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM, currencyMultiplier);
     utils.logMessage('Using custom price granularity');
   }
 };

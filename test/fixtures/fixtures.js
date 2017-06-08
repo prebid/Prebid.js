@@ -1370,3 +1370,13 @@ export function getBidRequestedPayload() {
     'start': 1465426155412
   };
 }
+
+export function getCurrencyRates() {
+  return {
+    'dataAsOf': '2017-04-25',
+    'conversions': {
+      'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
+      'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
+    }
+  };
+}

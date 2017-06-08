@@ -6,11 +6,13 @@ var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
+var currency = require('./currency.js');
 
 var objectType_function = 'function';
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+var _currencyMultiplier = 1;
 let _customPriceBucket;
 var defaultBidderSettingsMap = {};
 
@@ -84,9 +86,10 @@ exports.bidsBackAll = function () {
 };
 
 /*
- *   This function should be called to by the bidder adapter to register a bid response
+ * This function should be called to by the bidder adapter to register a bid response
+ * (Currency support added via decorator)
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse = currency.addBidResponseDecorator(function(adUnitCode, bid) {
   if (!adUnitCode) {
     utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
     return;
@@ -123,7 +126,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     // append price strings
-    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
+    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket, _currencyMultiplier);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -148,7 +151,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bidsBackAll()) {
     exports.executeCallback();
   }
-};
+});
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
@@ -229,7 +232,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   return keyValues;
 }
 
-exports.setPriceGranularity = function setPriceGranularity(granularity) {
+exports.setPriceGranularity = function setPriceGranularity(granularity, currencyMultiplier) {
   var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
   if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
     _granularity = granularity;
@@ -237,6 +240,9 @@ exports.setPriceGranularity = function setPriceGranularity(granularity) {
     utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
       ' `medium` as default.');
     _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+  }
+  if (currencyMultiplier !== undefined) {
+    _currencyMultiplier = currencyMultiplier;
   }
 };
 
