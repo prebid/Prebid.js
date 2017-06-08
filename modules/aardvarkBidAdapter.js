@@ -4,12 +4,13 @@
  * or for additional integration support please contact sales@rtk.io
  */
 
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var adapter = require('./adapter.js');
-var constants = require('../constants.json');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var adapter = require('src/adapter.js');
+var constants = require('src/constants.json');
+var adaptermanager = require('src/adaptermanager');
 
 var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
   AARDVARK_REQUESTS_MAP = 'aardvarkRequests',
@@ -122,5 +123,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
 exports.createNew = function() {
   return new AardvarkAdapter();
 };
+
+adaptermanager.registerBidAdapter(new AardvarkAdapter, 'aardvark');
 
 module.exports = AardvarkAdapter;

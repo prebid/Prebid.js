@@ -1,6 +1,6 @@
 describe('aardvark adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/aardvark');
+  const adapter = require('modules/aardvarkBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const constants = require('src/constants.json');
