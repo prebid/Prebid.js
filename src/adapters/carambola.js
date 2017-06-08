@@ -183,7 +183,7 @@ const CarambolaAdapter = function CarambolaAdapter() {
       }).join('&');
   }
 
-  // Export the `callBids` function, so that Prebid.js can execute
+  // Export the `callBids` function, so that Prebid.js can  execute
   // this function when the page asks to send out bid requests.
   return {
     callBids: _callBids
