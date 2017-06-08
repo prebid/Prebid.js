@@ -3,6 +3,7 @@ import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 import Adapter from 'src/adapters/adapter';
+import adaptermanager from 'src/adaptermanager';
 
 /**
  * Adapter for requesting bids from AdKernel white-label platform
@@ -266,5 +267,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
 AdKernelAdapter.createNew = function() {
   return new AdKernelAdapter();
 };
+
+adaptermanager.registerBidAdapter(new AdKernelAdapter, 'adkernel');
 
 module.exports = AdKernelAdapter;

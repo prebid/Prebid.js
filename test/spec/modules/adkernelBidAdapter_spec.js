@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from 'src/adapters/adkernel';
+import Adapter from 'modules/adkernelBidAdapter';
 import * as ajax from 'src/ajax';
 import * as utils from 'src/utils';
 import bidmanager from 'src/bidmanager';
