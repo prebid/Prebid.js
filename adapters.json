@@ -5,7 +5,6 @@
     "aol",
     "beachfront",
     "audienceNetwork",
-    "carambola",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -58,8 +57,6 @@
     "trion",
     "eplanning",
     "prebidServer",
-    "adsupply",
-    "cox",
     {
       "vertamedia": {
         "supportedMediaTypes": ["video"]

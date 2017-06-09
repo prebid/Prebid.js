@@ -1,11 +1,15 @@
 describe('adsupply adapter tests', function () {
   const expect = require('chai').expect;
 
-  const AdSupplyAdapter = require('../../../src/adapters/adsupply');
+  const AdSupplyAdapter = require('../../../modules/adsupplyBidAdapter');
   const adloader = require('../../../src/adloader');
   const bidmanager = require('../../../src/bidmanager');
   const CONSTANTS = require('../../../src/constants.json');
   let adsupplyAdapter = new AdSupplyAdapter();
+
+  beforeEach(() => {
+    pbjs._bidsRequested = [];
+  });
 
   it('adsupply response handler should exist and be a function', function () {
     expect(pbjs.adSupplyResponseHandler).to.exist.and.to.be.a('function');

@@ -1,7 +1,9 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var utils = require('../utils');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var utils = require('src/utils');
+var adaptermanager = require('src/adaptermanager');
+
 const ADSUPPLY_CODE = 'adsupply';
 
 var AdSupplyAdapter = function AdSupplyAdapter() {
@@ -82,5 +84,7 @@ var AdSupplyAdapter = function AdSupplyAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new AdSupplyAdapter, 'adsupply');
 
 module.exports = AdSupplyAdapter;
