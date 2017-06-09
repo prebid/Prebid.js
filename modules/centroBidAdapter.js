@@ -1,7 +1,8 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 var CentroAdapter = function CentroAdapter() {
   var baseUrl = '//t.brand-server.com/hb',
@@ -113,5 +114,7 @@ var CentroAdapter = function CentroAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new CentroAdapter, 'centro');
 
 module.exports = CentroAdapter;

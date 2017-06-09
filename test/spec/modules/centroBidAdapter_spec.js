@@ -4,7 +4,7 @@ describe('centro adapter tests', function () {
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
 
-  var adapter = require('src/adapters/centro');
+  var adapter = require('modules/centroBidAdapter');
   var bidmanager = require('src/bidmanager');
   var adLoader = require('src/adloader');
   var utils = require('src/utils');
