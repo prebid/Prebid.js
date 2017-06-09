@@ -4,7 +4,7 @@
 
 import {expect} from 'chai';
 import {should} from 'chai';
-import Adaptor from '../../../src/adapters/districtmDMX';
+import Adaptor from '../../../modules/districtmDMXBidAdapter';
 
 import adLoader from '../../../src/adloader';
 

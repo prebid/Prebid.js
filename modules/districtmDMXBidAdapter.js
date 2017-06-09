@@ -1,6 +1,7 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adLoader = require('../adloader');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adLoader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 var DistrictmAdaptor = function districtmAdaptor() {
   let districtmUrl = window.location.protocol + '//prebid.districtm.ca/lib.js';
@@ -49,5 +50,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
     handlerRes: this.handlerRes
   };
 };
+
+adaptermanager.registerBidAdapter(new DistrictmAdaptor, 'districtmDMX');
 
 module.exports = DistrictmAdaptor;
