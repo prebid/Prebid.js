@@ -1,5 +1,5 @@
 var expect = require('chai').expect;
-var Adapter = require('src/adapters/conversant');
+var Adapter = require('modules/conversantBidAdapter');
 var bidManager = require('src/bidmanager');
 
 describe('Conversant adapter tests', function () {

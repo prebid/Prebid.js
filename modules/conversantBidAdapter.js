@@ -1,11 +1,12 @@
 'use strict';
 var VERSION = '2.1.0';
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var ajax = require('../ajax').ajax;
+var CONSTANTS = require('src/constants.json');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var ajax = require('src/ajax').ajax;
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from Conversant
@@ -269,5 +270,7 @@ var ConversantAdapter = function () {
     callBids: callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new ConversantAdapter, 'conversant');
 
 module.exports = ConversantAdapter;
