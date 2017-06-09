@@ -46,13 +46,13 @@ describe('Vertoz Adapter', () => {
   beforeEach(() => {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
-    bidsRequestBuff = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestBuff = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
   });
 
   afterEach(() => {
     sandbox.restore();
-    pbjs._bidsRequested = bidsRequestBuff;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestBuff;
   });
 
   describe('callBids', () => {
@@ -81,7 +81,7 @@ describe('Vertoz Adapter', () => {
     };
 
     beforeEach(() => {
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     });
 
     describe('success', () => {
@@ -90,7 +90,7 @@ describe('Vertoz Adapter', () => {
 
       beforeEach(() => {
         sandbox.stub(bidManager, 'addBidResponse');
-        pbjs.vzResponse(bidderReponse);
+        $$PREBID_GLOBAL$$.vzResponse(bidderReponse);
         firstBidReg = bidManager.addBidResponse.firstCall.args[1];
         adSpaceId = bidManager.addBidResponse.firstCall.args[0];
       });
@@ -121,7 +121,7 @@ describe('Vertoz Adapter', () => {
 
       beforeEach(() => {
         sandbox.stub(bidManager, 'addBidResponse');
-        pbjs.vzResponse(bidderResponse);
+        $$PREBID_GLOBAL$$.vzResponse(bidderResponse);
         secondBidReg = bidManager.addBidResponse.firstCall.args[1];
         adSpaceId = bidManager.addBidResponse.firstCall.args[0];
       });

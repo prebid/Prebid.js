@@ -72,7 +72,7 @@ let bidManagerStub;
 let yieldbotLibStub;
 
 before(function() {
-  window.pbjs._bidsRequested.push(bidderRequest);
+  window.$$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 });
 
 describe('Yieldbot adapter tests', function() {
@@ -184,7 +184,7 @@ describe('Yieldbot adapter tests', function() {
 
       expect(window.yieldbot._initialized).to.equal(true);
 
-      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+      window.$$PREBID_GLOBAL$$._bidsRequested = window.$$PREBID_GLOBAL$$._bidsRequested.filter(o => {
         return o.bidderCode !== 'yieldbot';
       });
 
@@ -194,7 +194,7 @@ describe('Yieldbot adapter tests', function() {
     });
 
     it('should not add empty bidResponse on callBids without bidsRequested', function() {
-      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+      window.$$PREBID_GLOBAL$$._bidsRequested = window.$$PREBID_GLOBAL$$._bidsRequested.filter(o => {
         return o.bidderCode !== 'yieldbot';
       });
 
@@ -202,7 +202,7 @@ describe('Yieldbot adapter tests', function() {
       adapter.callBids(bidderRequest);
       mockYieldbotInitBidRequest();
 
-      let bidResponses = window.pbjs._bidsReceived.filter(o => {
+      let bidResponses = window.$$PREBID_GLOBAL$$._bidsReceived.filter(o => {
         return o.bidderCode === 'yieldbot';
       });
 

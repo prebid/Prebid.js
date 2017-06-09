@@ -200,7 +200,7 @@ describe('TapSenseAdapter', () => {
     });
     it('generates callback in namespaced object with correct bidder id', () => {
       makeSuccessfulRequest(adapter);
-      expect(pbjs.tapsense.callback_with_price_2b211418dd0575).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.tapsense.callback_with_price_2b211418dd0575).to.exist.and.to.be.a('function');
     })
   });
 
@@ -218,7 +218,7 @@ describe('TapSenseAdapter', () => {
     });
     describe('successful response', () => {
       beforeEach(() => {
-        pbjs.tapsense.callback_with_price_2b211418dd0575(SUCCESSFUL_RESPONSE, 1.2);
+        $$PREBID_GLOBAL$$.tapsense.callback_with_price_2b211418dd0575(SUCCESSFUL_RESPONSE, 1.2);
       });
       it('called the bidmanager and registers a bid', () => {
         sinon.assert.calledOnce(bidmanager.addBidResponse);
@@ -231,7 +231,7 @@ describe('TapSenseAdapter', () => {
     });
     describe('unsuccessful response', () => {
       beforeEach(() => {
-        pbjs.tapsense.callback_with_price_2b211418dd0575(UNSUCCESSFUL_RESPONSE, 1.2);
+        $$PREBID_GLOBAL$$.tapsense.callback_with_price_2b211418dd0575(UNSUCCESSFUL_RESPONSE, 1.2);
       })
       it('should call the bidmanger and register an invalid bid', () => {
         sinon.assert.calledOnce(bidmanager.addBidResponse);
@@ -249,7 +249,7 @@ describe('TapSenseAdapter', () => {
     describe('edge cases', () => {
       it('does not register a bid if no price is supplied', () => {
         sandbox.stub(utils, 'logMessage');
-        pbjs.tapsense.callback_with_price_2b211418dd0575(SUCCESSFUL_RESPONSE);
+        $$PREBID_GLOBAL$$.tapsense.callback_with_price_2b211418dd0575(SUCCESSFUL_RESPONSE);
         sinon.assert.notCalled(bidmanager.addBidResponse);
       });
     });

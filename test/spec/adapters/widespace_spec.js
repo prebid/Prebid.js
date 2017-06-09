@@ -118,7 +118,7 @@ describe('WidespaceAdapter', () => {
 
   describe('widespaceHandleCB', () => {
     it('should exist and be a function', () => {
-      expect(pbjs.widespaceHandleCB).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.widespaceHandleCB).to.exist.and.to.be.a('function');
     });
   });
 
@@ -131,8 +131,8 @@ describe('WidespaceAdapter', () => {
       sandbox.stub(adLoader, 'loadScript');
 
       adapter.callBids(BID_REQUEST);
-      pbjs._bidsRequested.push(BID_REQUEST);
-      pbjs.widespaceHandleCB(BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(BID_REQUEST);
+      $$PREBID_GLOBAL$$.widespaceHandleCB(BID_RESPONSE);
 
       successfulBid = bidManager.addBidResponse.firstCall.args[1];
       placementCode = bidManager.addBidResponse.firstCall.args[0];
@@ -168,8 +168,8 @@ describe('WidespaceAdapter', () => {
       sandbox.stub(adLoader, 'loadScript');
 
       adapter.callBids(BID_REQUEST);
-      pbjs._bidsRequested.push(BID_REQUEST);
-      pbjs.widespaceHandleCB(BID_NOAD_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(BID_REQUEST);
+      $$PREBID_GLOBAL$$.widespaceHandleCB(BID_NOAD_RESPONSE);
 
       noadBid = bidManager.addBidResponse.firstCall.args[1];
     });

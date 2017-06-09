@@ -79,7 +79,7 @@ describe('gumgum adapter', () => {
     sandbox.stub(bidManager, 'addBidResponse');
     sandbox.stub(adLoader, 'loadScript');
     adapter.callBids(bidderRequest);
-    pbjs.handleGumGumCB['InScreenBidId'](response);
+    $$PREBID_GLOBAL$$.handleGumGumCB['InScreenBidId'](response);
     return bidManager.addBidResponse.firstCall.args[1];
   }
 
@@ -207,7 +207,7 @@ describe('gumgum adapter', () => {
 
   describe('handleGumGumCB[...]', () => {
     it('exists and is function', () => {
-      expect(pbjs.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.handleGumGumCB['InScreenBidId']).to.exist.and.to.be.a('function');
     });
   });
 

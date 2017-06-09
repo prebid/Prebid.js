@@ -5,7 +5,7 @@ describe('sovrn adapter tests', function () {
 
   describe('sovrnResponse', function () {
     it('should exist and be a function', function () {
-      expect(pbjs.sovrnResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.sovrnResponse).to.exist.and.to.be.a('function');
     });
 
     it('should add empty bid responses if no bids returned', function () {
@@ -50,11 +50,11 @@ describe('sovrn adapter tests', function () {
         'seatbid': []
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter()
 
-      pbjs.sovrnResponse(response);
+      $$PREBID_GLOBAL$$.sovrnResponse(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -133,11 +133,11 @@ describe('sovrn adapter tests', function () {
         } ]
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter()
 
-      pbjs.sovrnResponse(response);
+      $$PREBID_GLOBAL$$.sovrnResponse(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

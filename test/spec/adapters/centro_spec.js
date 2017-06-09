@@ -28,8 +28,8 @@ describe('centro adapter tests', function () {
   });
 
   describe('creation of bid url', function () {
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
 
     it('should fix parameter name', function () {
@@ -98,14 +98,14 @@ describe('centro adapter tests', function () {
   });
 
   describe('handling of the callback response', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     var params = {
@@ -167,13 +167,13 @@ describe('centro adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
       var response = {'adTag': '<div>test content</div>', 'statusMessage': 'Bid available', 'height': 250, '_comment': '', 'value': 0.2, 'width': 300, 'sectionID': 28136};
       var response2 = {'adTag': '', 'statusMessage': 'No bid.', 'height': 0, 'value': 0, 'width': 0, 'sectionID': 111111};

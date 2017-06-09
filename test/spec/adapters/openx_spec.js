@@ -11,7 +11,7 @@ describe('openx adapter tests', function () {
 
   describe('test openx callback responce', function () {
     it('should exist and be a function', function () {
-      expect(pbjs.oxARJResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.oxARJResponse).to.exist.and.to.be.a('function');
     });
 
     it('should add empty bid responses if no bids returned', function () {
@@ -44,11 +44,11 @@ describe('openx adapter tests', function () {
         }
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter();
 
-      pbjs.oxARJResponse(response);
+      $$PREBID_GLOBAL$$.oxARJResponse(response);
 
       let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
@@ -116,11 +116,11 @@ describe('openx adapter tests', function () {
       }
     };
 
-    pbjs._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     // adapter needs to be called, in order for the stub to register.
     adapter();
 
-    pbjs.oxARJResponse(response);
+    $$PREBID_GLOBAL$$.oxARJResponse(response);
 
     let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
     let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
@@ -193,11 +193,11 @@ describe('openx adapter tests', function () {
       }
     };
 
-    pbjs._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     // adapter needs to be called, in order for the stub to register.
     adapter();
 
-    pbjs.oxARJResponse(response);
+    $$PREBID_GLOBAL$$.oxARJResponse(response);
 
     let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
     let bidResponse1 = stubAddBidResponse.getCall(0).args[1];

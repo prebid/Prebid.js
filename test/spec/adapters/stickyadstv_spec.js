@@ -49,13 +49,13 @@ describe('StickyAdsTV Adapter', function () {
   beforeEach(function () {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
-    bidsRequestBuff = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestBuff = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
   });
 
   afterEach(function () {
     sandbox.restore();
-    pbjs._bidsRequested = bidsRequestBuff;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestBuff;
   });
 
   describe('callBids', function () {

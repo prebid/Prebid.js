@@ -198,8 +198,8 @@ describe('Trion adapter tests', () => {
     });
 
     it('when there is no response do not bid', function () {
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB();
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
@@ -207,8 +207,8 @@ describe('Trion adapter tests', () => {
 
     it('when place bid is returned as false', function () {
       TRION_BID_RESPONSE.result.placeBid = false;
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       sinon.assert.calledOnce(bidmanager.addBidResponse);
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
@@ -217,8 +217,8 @@ describe('Trion adapter tests', () => {
 
     it('when no cpm is in the response', function () {
       TRION_BID_RESPONSE.result.cpm = 0;
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       sinon.assert.calledOnce(bidmanager.addBidResponse);
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
@@ -227,8 +227,8 @@ describe('Trion adapter tests', () => {
 
     it('when no ad is in the response', function () {
       TRION_BID_RESPONSE.result.ad = null;
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       sinon.assert.calledOnce(bidmanager.addBidResponse);
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
@@ -236,8 +236,8 @@ describe('Trion adapter tests', () => {
     });
 
     it('bid response is formatted correctly', function () {
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       const placementCode = bidmanager.addBidResponse.firstCall.args[0];
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(placementCode).to.equal(PLACEMENT_CODE);
@@ -250,8 +250,8 @@ describe('Trion adapter tests', () => {
       let bidHeight = '2';
       TRION_BID_RESPONSE.result.width = bidWidth;
       TRION_BID_RESPONSE.result.height = bidHeight;
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       const placementCode = bidmanager.addBidResponse.firstCall.args[0];
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.width).to.equal(bidWidth);
@@ -263,8 +263,8 @@ describe('Trion adapter tests', () => {
     it('cpm is properly set and transformed to cents', function () {
       let bidCpm = 2;
       TRION_BID_RESPONSE.result.cpm = bidCpm * 100;
-      pbjs._bidsRequested.push(TRION_BID_REQUEST);
-      pbjs.handleTrionCB(TRION_BID_RESPONSE);
+      $$PREBID_GLOBAL$$._bidsRequested.push(TRION_BID_REQUEST);
+      $$PREBID_GLOBAL$$.handleTrionCB(TRION_BID_RESPONSE);
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response.cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;

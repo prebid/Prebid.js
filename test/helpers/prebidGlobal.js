@@ -1,3 +1,3 @@
-window.pbjs = (window.pbjs || {});
-window.pbjs.cmd = window.pbjs.cmd || [];
-window.pbjs.que = window.pbjs.que || [];
+window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
+window.$$PREBID_GLOBAL$$.cmd = window.$$PREBID_GLOBAL$$.cmd || [];
+window.$$PREBID_GLOBAL$$.que = window.$$PREBID_GLOBAL$$.que || [];

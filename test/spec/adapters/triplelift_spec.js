@@ -35,8 +35,8 @@ describe('triplelift adapter', () => {
   };
 
   beforeEach(() => {
-    bidsRequestedOriginal = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
 
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
@@ -45,7 +45,7 @@ describe('triplelift adapter', () => {
   afterEach(() => {
     sandbox.restore();
 
-    pbjs._bidsRequested = bidsRequestedOriginal;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
   });
 
   describe('callBids', () => {
@@ -68,14 +68,14 @@ describe('triplelift adapter', () => {
       expect(secondBidScriptURL).to.contain(route);
 
       let firstScriptParams = parseURL(firstBidScriptURL).search;
-      expect(firstScriptParams).to.have.property('callback', 'pbjs.TLCB');
+      expect(firstScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.TLCB');
       expect(firstScriptParams).to.have.property('callback_id', 'bidId1');
       expect(firstScriptParams).to.have.property('inv_code', 'codeA');
       expect(firstScriptParams).to.have.property('size', '728x90');
       expect(firstScriptParams).to.have.property('referrer');
 
       let secondScriptParams = parseURL(secondBidScriptURL).search;
-      expect(secondScriptParams).to.have.property('callback', 'pbjs.TLCB');
+      expect(secondScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.TLCB');
       expect(secondScriptParams).to.have.property('callback_id', 'bidId2');
       expect(secondScriptParams).to.have.property('inv_code', 'codeB');
       expect(secondScriptParams).to.have.property('size', '300x600');
@@ -86,7 +86,7 @@ describe('triplelift adapter', () => {
 
   describe('TLCB', () => {
     it('should exist and be a function', () => {
-      expect(pbjs.TLCB).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.TLCB).to.exist.and.to.be.a('function');
     });
   });
 
@@ -97,7 +97,7 @@ describe('triplelift adapter', () => {
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
       let bidderReponse1 = {
@@ -119,8 +119,8 @@ describe('triplelift adapter', () => {
         'deal_id': 'dealA'
       };
 
-      pbjs.TLCB(bidderReponse1);
-      pbjs.TLCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.TLCB(bidderReponse1);
+      $$PREBID_GLOBAL$$.TLCB(bidderReponse2);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
@@ -183,14 +183,14 @@ describe('triplelift adapter', () => {
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
       let bidderReponse1 = {'status': 'no_bid', 'callback_id': 'bidId1'};
       let bidderReponse2 = {'status': 'no_bid', 'callback_id': 'bidId2'};
 
-      pbjs.TLCB(bidderReponse1);
-      pbjs.TLCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.TLCB(bidderReponse1);
+      $$PREBID_GLOBAL$$.TLCB(bidderReponse2);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];

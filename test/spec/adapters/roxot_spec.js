@@ -5,7 +5,7 @@ describe('Roxot adapter tests', function() {
 
   describe('roxotResponseHandler', function () {
     it('should exist and be a function', function () {
-      expect(pbjs.roxotResponseHandler).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.roxotResponseHandler).to.exist.and.to.be.a('function');
     });
 
     it('should add empty bid responses if no bids returned', function () {
@@ -35,12 +35,12 @@ describe('Roxot adapter tests', function() {
         'bids': []
       };
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // adapter needs to be called, in order for the stub to register.
       adapter();
 
-      pbjs.roxotResponseHandler(response);
+      $$PREBID_GLOBAL$$.roxotResponseHandler(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -93,12 +93,12 @@ describe('Roxot adapter tests', function() {
           }
         ]};
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // adapter needs to be called, in order for the stub to register.
       adapter();
 
-      pbjs.roxotResponseHandler(response);
+      $$PREBID_GLOBAL$$.roxotResponseHandler(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

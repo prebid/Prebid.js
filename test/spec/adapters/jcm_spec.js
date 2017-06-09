@@ -20,14 +20,14 @@ describe('jcm adapter tests', function () {
   });
 
   describe('creation of bid url', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     it('should be called only once', function () {
@@ -94,14 +94,14 @@ describe('jcm adapter tests', function () {
   });
 
   describe('placement by size', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     it('should be called with specific parameters for two bids', function () {
@@ -160,14 +160,14 @@ describe('jcm adapter tests', function () {
   });
 
   describe('handling of the callback response', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     var params = {
@@ -198,7 +198,7 @@ describe('jcm adapter tests', function () {
     var response = '{"bids":[{"width":300,"cpm":3,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_300x250.png%22%3E","callbackId":"3c9408cdbf2f68","height":250},{"width":728,"cpm":0,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_728x90.png%22%3E","callbackId":"3c9408cdbf2f69","height":90}]}';
 
     it('callback function should exist', function () {
-      expect(pbjs.processJCMResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.processJCMResponse).to.exist.and.to.be.a('function');
     });
 
     it('bidmanager.addBidResponse should be called twice with correct arguments', function () {
@@ -213,13 +213,13 @@ describe('jcm adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
-      pbjs.processJCMResponse(response);
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.processJCMResponse(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

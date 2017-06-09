@@ -38,7 +38,7 @@ describe('Bidfluence Adapter', () => {
 
   it('Shoud push a valid bid', () => {
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    pbjs._bidsRequested.push(REQUEST);
+    $$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
     adapter();
     $$PREBID_GLOBAL$$.bfPbjsCB(RESPONSE);
 
@@ -54,7 +54,7 @@ describe('Bidfluence Adapter', () => {
 
   it('Shoud push an empty bid', () => {
     var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    pbjs._bidsRequested.push(REQUEST);
+    $$PREBID_GLOBAL$$._bidsRequested.push(REQUEST);
     adapter();
 
     $$PREBID_GLOBAL$$.bfPbjsCB(NO_RESPONSE);

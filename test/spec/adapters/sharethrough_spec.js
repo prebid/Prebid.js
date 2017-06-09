@@ -34,14 +34,14 @@ describe('sharethrough adapter', () => {
   beforeEach(() => {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
-    bidsRequestedOriginal = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
   });
 
   afterEach(() => {
     sandbox.restore();
 
-    pbjs._bidsRequested = bidsRequestedOriginal;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
   });
 
   describe('callBids', () => {
@@ -74,7 +74,7 @@ describe('sharethrough adapter', () => {
       sandbox.stub(bidManager, 'addBidResponse');
       server = sinon.fakeServer.create();
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       adapter.str.placementCodeSet['foo'] = {};
       adapter.str.placementCodeSet['bar'] = {};
       // respond

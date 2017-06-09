@@ -15,7 +15,7 @@ describe('memeglobal adapter tests', function () {
   });
 
   function getBidSetForBidder() {
-    return pbjs._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
+    return $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === bidderName);
   }
 
   function checkBidsRequestedInit() {
@@ -28,13 +28,13 @@ describe('memeglobal adapter tests', function () {
         bidderCode: 'memeglobal',
         bids: []
       };
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
     }
   }
 
   describe('functions and initialization', function () {
     it('should exist and be a function', function () {
-      expect(pbjs.mgres).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.mgres).to.exist.and.to.be.a('function');
     });
 
     it('callBids with params', function () {
@@ -101,7 +101,7 @@ describe('memeglobal adapter tests', function () {
       // adapter needs to be called for stub registration.
       adapter()
 
-      pbjs.mgres(response);
+      $$PREBID_GLOBAL$$.mgres(response);
 
       expect(stubAddBidResponse.getCall(0)).to.equal(null);
 //      var bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
@@ -149,7 +149,7 @@ describe('memeglobal adapter tests', function () {
       var bidSet = getBidSetForBidder();
       bidSet.bids.push(bid);
       adapter()
-      pbjs.mgres(response);
+      $$PREBID_GLOBAL$$.mgres(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

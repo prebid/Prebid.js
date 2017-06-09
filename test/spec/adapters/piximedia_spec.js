@@ -21,14 +21,14 @@ describe('Piximedia adapter tests', function () {
   });
 
   describe('creation of prebid url', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     it('should call the Piximedia prebid URL once on valid calls', function () {
@@ -124,7 +124,7 @@ describe('Piximedia adapter tests', function () {
 
       expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
       expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/l_id=1295/custom=bespoke/custom2=bespoke2/custom3=/custom4=/jsonp=pbjs.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
+      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/l_id=1295/custom=bespoke/custom2=bespoke2/custom3=/custom4=/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
     });
 
     it('should call the correct Prebid URL when using the default URL and overridding sizes', function () {
@@ -152,7 +152,7 @@ describe('Piximedia adapter tests', function () {
 
       expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
       expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=pbjs.handlePiximediaCallback/sizes=300x600%2C728x90/cbid=210af5668b1e23/rand=42');
+      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x600%2C728x90/cbid=210af5668b1e23/rand=42');
     });
 
     it('should call the correct Prebid URL when supplying a custom URL', function () {
@@ -180,19 +180,19 @@ describe('Piximedia adapter tests', function () {
 
       expect(parsedBidUrl.hostname).to.equal('resources.pm');
       expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/tests/prebid/bids.js/site_id=TEST/placement_id=TEST/jsonp=pbjs.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
+      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/tests/prebid/bids.js/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
     });
   });
 
   describe('handling of the callback response', function () {
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     var params = {
@@ -211,7 +211,7 @@ describe('Piximedia adapter tests', function () {
     };
 
     it('Piximedia callback function should exist', function () {
-      expect(pbjs.handlePiximediaCallback).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.handlePiximediaCallback).to.exist.and.to.be.a('function');
     });
 
     it('bidmanager.addBidResponse should be called once with correct arguments', function () {
@@ -237,15 +237,15 @@ describe('Piximedia adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
       response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
 
-      pbjs.handlePiximediaCallback(response);
+      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
 
       sinon.assert.calledOnce(stubAddBidResponse);
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -287,15 +287,15 @@ describe('Piximedia adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
       response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
 
-      pbjs.handlePiximediaCallback(response);
+      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
 
       sinon.assert.calledOnce(stubAddBidResponse);
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -330,15 +330,15 @@ describe('Piximedia adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
       response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
 
-      pbjs.handlePiximediaCallback(response);
+      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
 
       sinon.assert.calledOnce(stubAddBidResponse);
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -369,15 +369,15 @@ describe('Piximedia adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
       response.cbid = stubGetUniqueIdentifierStr.returnValues[0] + '_BOGUS';
 
-      pbjs.handlePiximediaCallback(response);
+      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
 
       sinon.assert.notCalled(stubAddBidResponse);
 
@@ -399,14 +399,14 @@ describe('Piximedia adapter tests', function () {
       unit.sizes = [[300, 250], [728, 90]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.handlePiximediaCallback(response);
+      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
 
       sinon.assert.notCalled(stubAddBidResponse);
 
