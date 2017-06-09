@@ -1,13 +1,14 @@
 /**
  * @file AudienceNetwork adapter.
  */
-import { ajax } from '../ajax';
-import { createBid } from '../bidfactory';
-import { addBidResponse } from '../bidmanager';
-import { STATUS } from '../constants.json';
-import { format } from '../url';
-import { logError } from '../utils';
-import { createNew } from './adapter';
+import { ajax } from 'src/ajax';
+import { createBid } from 'src/bidfactory';
+import { addBidResponse } from 'src/bidmanager';
+import { STATUS } from 'src/constants.json';
+import { format } from 'src/url';
+import { logError } from 'src/utils';
+import { createNew } from 'src/adapter';
+import adaptermanager from 'src/adaptermanager';
 
 const { setBidderCode, getBidderCode } = createNew('audienceNetwork');
 
@@ -200,5 +201,7 @@ const callBids = bidRequest => {
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
 const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
+
+adaptermanager.registerBidAdapter(new AudienceNetwork, 'audienceNetwork');
 
 module.exports = AudienceNetwork;

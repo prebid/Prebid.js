@@ -7,7 +7,7 @@ import bidmanager from 'src/bidmanager';
 import { STATUS } from 'src/constants.json';
 import * as utils from 'src/utils';
 
-import AudienceNetwork from 'src/adapters/audienceNetwork';
+import AudienceNetwork from 'modules/audienceNetworkBidAdapter';
 
 const bidderCode = 'audienceNetwork';
 const placementId = 'test-placement-id';
