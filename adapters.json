@@ -1,7 +1,6 @@
 [
     "bidfluence",
     "vertamedia",
-    "beachfront",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -55,11 +54,6 @@
     "prebidServer",
     {
       "vertamedia": {
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "beachfront": {
         "supportedMediaTypes": ["video"]
       }
     },

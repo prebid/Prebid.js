@@ -1,9 +1,10 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
@@ -131,5 +132,9 @@ function BeachfrontAdapter() {
 BeachfrontAdapter.createNew = function () {
   return new BeachfrontAdapter();
 };
+
+adaptermanager.registerBidAdapter(new BeachfrontAdapter, 'beachfront', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = BeachfrontAdapter;

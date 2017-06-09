@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import BeachfrontAdapter from 'src/adapters/beachfront';
+import BeachfrontAdapter from 'modules/beachfrontBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=11bc5dd5-7421-4dd8-c926-40fa653bec76';
