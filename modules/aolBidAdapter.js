@@ -1,8 +1,9 @@
-const utils = require('../utils.js');
-const ajax = require('../ajax.js').ajax;
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager.js');
-const constants = require('../constants.json');
+const utils = require('src/utils.js');
+const ajax = require('src/ajax.js').ajax;
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const constants = require('src/constants.json');
+const adaptermanager = require('src/adaptermanager');
 
 $$PREBID_GLOBAL$$.aolGlobals = {
   pixelsDropped: false
@@ -301,5 +302,7 @@ const AolAdapter = function AolAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new AolAdapter, 'aol');
 
 module.exports = AolAdapter;

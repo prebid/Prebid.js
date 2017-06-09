@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
-import AolAdapter from 'src/adapters/aol';
+import AolAdapter from 'modules/aolBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 let getDefaultBidResponse = () => {
