@@ -1,6 +1,6 @@
 describe('fidelity adapter tests', function() {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/fidelity');
+  const adapter = require('modules/fidelityBidAdapter');
   const adLoader = require('src/adloader');
   const bidmanager = require('src/bidmanager');
   const STATUS = require('src/constants').STATUS;

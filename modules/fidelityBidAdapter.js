@@ -1,8 +1,9 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var STATUS = require('../constants').STATUS;
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var STATUS = require('src/constants').STATUS;
+var adaptermanager = require('src/adaptermanager');
 
 var FidelityAdapter = function FidelityAdapter() {
   var FIDELITY_BIDDER_NAME = 'fidelity';
@@ -95,5 +96,7 @@ var FidelityAdapter = function FidelityAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new FidelityAdapter, 'fidelity');
 
 module.exports = FidelityAdapter;
