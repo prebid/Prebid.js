@@ -1,4 +1,4 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import { Renderer } from 'src/Renderer';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
