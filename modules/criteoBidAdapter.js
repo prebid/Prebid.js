@@ -1,6 +1,7 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 var CriteoAdapter = function CriteoAdapter() {
   var sProt = (window.location.protocol === 'http:') ? 'http:' : 'https:';
@@ -133,5 +134,7 @@ var CriteoAdapter = function CriteoAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new CriteoAdapter, 'criteo');
 
 module.exports = CriteoAdapter;

@@ -1,4 +1,4 @@
-import Adapter from '../../../src/adapters/criteo';
+import Adapter from '../../../modules/criteoBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import {ajax} from '../../../src/ajax'
 import {expect} from 'chai';
