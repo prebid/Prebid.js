@@ -9,10 +9,6 @@ describe('jcm adapter tests', function () {
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
-  window.pbjs = window.pbjs || {};
-  if (typeof (pbjs) === 'undefined') {
-    var pbjs = window.pbjs;
-  }
   let stubLoadScript;
 
   beforeEach(function () {

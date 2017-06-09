@@ -1,6 +1,4 @@
 describe('adsupply adapter tests', function () {
-  window.pbjs = window.pbjs || {};
-
   const expect = require('chai').expect;
 
   const AdSupplyAdapter = require('../../../src/adapters/adsupply');

@@ -1,4 +1,3 @@
-window.pbjs = window.pbjs || {};
 var chai = require('chai');
 var Adapter = require('src/adapters/atomx')();
 var Ajax = require('src/ajax');

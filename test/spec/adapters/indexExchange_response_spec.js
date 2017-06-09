@@ -10,7 +10,7 @@ var ADAPTER_CODE = 'indexExchange';
 var DefaultValue = {
   dealID: 'IXDeal'
 };
-window.pbjs = window.pbjs || {};
+
 var ResponseStatus = {
   noBid: 'Bid returned empty or error response'
 };

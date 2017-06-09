@@ -4,11 +4,6 @@ describe('adbutler adapter tests', function () {
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
-  window.pbjs = window.pbjs || {};
-  if (typeof (pbjs) === 'undefined') {
-    var pbjs = window.pbjs;
-  }
-
   describe('creation of bid url', function () {
     var stubLoadScript;
 

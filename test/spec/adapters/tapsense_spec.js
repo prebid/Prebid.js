@@ -4,8 +4,6 @@ import bidmanager from 'src/bidmanager';
 import adloader from 'src/adloader';
 import * as utils from 'src/utils';
 
-window.pbjs = window.pbjs || {};
-
 const DEFAULT_BIDDER_REQUEST = {
   'bidderCode': 'tapsense',
   'bidderRequestId': '141ed07a281ca3',

@@ -8,8 +8,6 @@ var HeaderTagRequest = '/cygnus';
 var SlotThreshold = 20;
 var ADAPTER_CODE = 'indexExchange';
 
-window.pbjs = window.pbjs || {};
-
 describe('indexExchange adapter - Request', function () {
   let adapter;
   let sandbox;

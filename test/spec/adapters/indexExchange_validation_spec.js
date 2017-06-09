@@ -7,8 +7,6 @@ var IndexUtils = require('../../helpers/index_adapter_utils.js');
 var HeaderTagRequest = '/cygnus';
 var ADAPTER_CODE = 'indexExchange';
 
-window.pbjs = window.pbjs || {};
-
 describe('indexExchange adapter - Validation', function () {
   let adapter;
   let sandbox;

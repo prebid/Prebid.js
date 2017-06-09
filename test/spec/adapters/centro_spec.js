@@ -9,11 +9,6 @@ describe('centro adapter tests', function () {
   var adLoader = require('src/adloader');
   var utils = require('src/utils');
 
-  window.pbjs = window.pbjs || {};
-  if (typeof (pbjs) === 'undefined') {
-    var pbjs = window.pbjs;
-  }
-
   let stubLoadScript;
   beforeEach(function () {
     stubLoadScript = sinon.stub(adLoader, 'loadScript');

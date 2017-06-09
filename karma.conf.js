@@ -41,13 +41,9 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'test/helpers/prebidGlobal.js',
       'test/**/*_spec.js',
       'test/helpers/karma-init.js'
-    ],
-
-    // list of files to exclude
-    exclude: [
-      'test/spec/loaders/**/*.js'
     ],
 
     // preprocess matching files before serving them to the browser

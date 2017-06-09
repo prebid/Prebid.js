@@ -10,7 +10,6 @@ describe('Piximedia adapter tests', function () {
   var utils = require('src/utils');
   var CONSTANTS = require('src/constants.json');
 
-  var pbjs = window.pbjs = window.pbjs || {};
   let stubLoadScript;
 
   beforeEach(function () {
