@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { parse } from '../../../src/url';
-import AdyoulikAdapter from '../../../src/adapters/adyoulike';
+import AdyoulikAdapter from '../../../modules/adyoulikeBidAdapter';
 import bidmanager from 'src/bidmanager';
 import { STATUS } from 'src/constants';
 

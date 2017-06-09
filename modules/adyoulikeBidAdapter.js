@@ -1,10 +1,11 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { format } from 'src/url';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
   const _VERSION = '0.1';
@@ -197,5 +198,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 AdyoulikeAdapter.createNew = function () {
   return new AdyoulikeAdapter();
 };
+
+adaptermanager.registerBidAdapter(new AdyoulikeAdapter, 'adyoulike');
 
 module.exports = AdyoulikeAdapter;
