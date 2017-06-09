@@ -1,8 +1,9 @@
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
 
 var GetIntentAdapter = function GetIntentAdapter() {
   var headerBiddingStaticJS = window.location.protocol + '//cdn.adhigh.net/adserver/hb.js';
@@ -68,5 +69,9 @@ var GetIntentAdapter = function GetIntentAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new GetIntentAdapter, 'getintent', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = GetIntentAdapter;

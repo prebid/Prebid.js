@@ -1,4 +1,4 @@
-import Adapter from '../../../src/adapters/getintent';
+import Adapter from '../../../modules/getintentBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import {expect} from 'chai';
 

@@ -5,7 +5,6 @@
     "indexExchange",
     "innity",
     "kruxlink",
-    "getintent",
     "inneractive",
     "komoona",
     "lifestreet",
@@ -53,11 +52,6 @@
     {
       "adkernel": {
         "alias": "headbidding"
-      }
-    },
-    {
-      "getintent": {
-        "supportedMediaTypes" : ["video"]
       }
     },
     {
