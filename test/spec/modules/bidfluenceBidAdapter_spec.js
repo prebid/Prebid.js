@@ -1,6 +1,6 @@
 describe('Bidfluence Adapter', () => {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/bidfluence');
+  const adapter = require('modules/bidfluenceBidAdapter');
   const bidmanager = require('src/bidmanager');
 
   var REQUEST = {
