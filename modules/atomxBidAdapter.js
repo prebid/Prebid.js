@@ -1,9 +1,10 @@
-var CONSTANTS = require('../constants.json');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
+var CONSTANTS = require('src/constants.json');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
-var Ajax = require('../ajax');
-var utils = require('../utils.js');
+var Ajax = require('src/ajax');
+var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from Atomx.
@@ -71,5 +72,8 @@ var AtomxAdapter = function AtomxAdapter() {
     responseCallback: _responseCallback
   };
 };
+
+
+adaptermanager.registerBidAdapter(new AtomxAdapter, 'atomx');
 
 module.exports = AtomxAdapter;

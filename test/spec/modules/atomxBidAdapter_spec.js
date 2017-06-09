@@ -1,5 +1,5 @@
 var chai = require('chai');
-var Adapter = require('src/adapters/atomx')();
+var Adapter = require('modules/atomxBidAdapter')();
 var Ajax = require('src/ajax');
 var adLoader = require('src/adloader');
 var bidmanager = require('src/bidmanager.js');
