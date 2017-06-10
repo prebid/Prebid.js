@@ -19,8 +19,8 @@ We'll use the [AppNexus AST adapter]({{site.github.url}}/dev-docs/bidders.html#a
 
 Similarly, we'll use DFP as the ad server, but the concept and implementation should be pretty similar to other ad servers.
 
-{: .alert.alert-success :}
-For a full working code sample using the techniques described on this page, see the [Prebid Native Example]({{site.github.url}}/dev-docs/examples/prebid-native-example.html).
+<!-- {: .alert.alert-success :}
+For a full working code sample using the techniques described on this page, see the [Prebid Native Example]({{site.github.url}}/dev-docs/examples/prebid-native-example.html). -->
 
 * TOC
 {:toc}
