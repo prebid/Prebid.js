@@ -95,14 +95,6 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_9_windows_7": {
-    "base": "BrowserStack",
-    "os_version": "7",
-    "browser": "ie",
-    "browser_version": "9.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_firefox_46_windows_7": {
     "base": "BrowserStack",
     "os_version": "7",
@@ -118,6 +110,14 @@
     "browser_version": "51.0",
     "device": null,
     "os": "Windows"
+  },
+  "bs_chrome_56_mac_sierra": {
+    "base": "BrowserStack",
+    "os": "OS X",
+    "os_version": "Sierra",
+    "browser": "chrome",
+    "device": null,
+    "browser_version": "56.0"
   },
   "bs_safari_9.1_mac_elcapitan": {
     "base": "BrowserStack",

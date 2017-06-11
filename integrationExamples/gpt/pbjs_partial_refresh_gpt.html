@@ -19,7 +19,7 @@
         if ($$PREBID_GLOBAL$$.initAdserverSet) return;
 
         googletag.cmd.push(function () {
-            $$PREBID_GLOBAL$$.que.push(function () {
+            $$PREBID_GLOBAL$$.cmd.push(function () {
                 $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
                 googletag.pubads().refresh();
             });
@@ -31,7 +31,7 @@
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
     var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
-    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
+    $$PREBID_GLOBAL$$.cmd = $$PREBID_GLOBAL$$.cmd || [];
 
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
@@ -43,7 +43,7 @@
         target.insertBefore(pbs, target.firstChild);
     })();
 
-    $$PREBID_GLOBAL$$.que.push(function () {
+    $$PREBID_GLOBAL$$.cmd.push(function () {
 
         /* 1. Register bidder tag Ids
 
@@ -230,7 +230,7 @@
     });
 
     function refreshBid1() {
-        $$PREBID_GLOBAL$$.que.push(function () {
+        $$PREBID_GLOBAL$$.cmd.push(function () {
             $$PREBID_GLOBAL$$.requestBids({
                 timeout: PREBID_TIMEOUT,
                 adUnitCodes: ['/9968336/header-bid-tag-0'],
@@ -243,7 +243,7 @@
     }
 
     function refreshBid2() {
-        $$PREBID_GLOBAL$$.que.push(function () {
+        $$PREBID_GLOBAL$$.cmd.push(function () {
             $$PREBID_GLOBAL$$.requestBids({
                 timeout: PREBID_TIMEOUT,
                 adUnitCodes: ['/9968336/header-bid-tag1'],

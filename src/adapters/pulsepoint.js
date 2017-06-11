@@ -1,10 +1,10 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader.js');
+var utils = require('../utils.js');
 
 var PulsePointAdapter = function PulsePointAdapter() {
-
-  var getJsStaticUrl = window.location.protocol + '//tag.contextweb.com/getjs.static.js';
+  var getJsStaticUrl = window.location.protocol + '//tag-st.contextweb.com/getjs.static.js';
   var bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag';
 
   function _callBids(params) {
@@ -19,8 +19,18 @@ var PulsePointAdapter = function PulsePointAdapter() {
     var bids = params.bids;
     for (var i = 0; i < bids.length; i++) {
       var bidRequest = bids[i];
+      requestBid(bidRequest);
+    }
+  }
+
+  function requestBid(bidRequest) {
+    try {
       var ppBidRequest = new window.pp.Ad(bidRequestOptions(bidRequest));
       ppBidRequest.display();
+    } catch (e) {
+      // register passback on any exceptions while attempting to fetch response.
+      utils.logError('pulsepoint.requestBid', 'ERROR', e);
+      bidResponseAvailable(bidRequest);
     }
   }
 
@@ -33,8 +43,8 @@ var PulsePointAdapter = function PulsePointAdapter() {
       adUnitId: bidRequest.placementCode,
       callback: callback
     };
-    for(var param in bidRequest.params) {
-      if(bidRequest.params.hasOwnProperty(param)) {
+    for (var param in bidRequest.params) {
+      if (bidRequest.params.hasOwnProperty(param)) {
         options[param] = bidRequest.params[param];
       }
     }
@@ -67,7 +77,6 @@ var PulsePointAdapter = function PulsePointAdapter() {
   return {
     callBids: _callBids
   };
-
 };
 
 module.exports = PulsePointAdapter;
