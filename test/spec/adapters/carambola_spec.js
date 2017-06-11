@@ -17,7 +17,7 @@ const DEFAULT_BIDDER_REQUEST = {
     pageViewId: '22478638',
     params: {
       pid: 'hbtest',
-      did: 110000,
+      did: 112591,
       wid: 0
     }
   }]
@@ -25,7 +25,7 @@ const DEFAULT_BIDDER_REQUEST = {
 
 const DEFAULT_HB_RESPONSE = {
   cpm: 0.1693953107111156,
-  ad: '<!--Carambola Script -->     <script data-cfasync="false" class="carambola_InContent" type="text/javascript" data-hb_pvid="22478638"  data-hb_token="9cd6bf9c-433d-4663-b67f-da727f4cebff" cbola_wid="2" >(function (i,d,s,o,m,r,c,l,w,q,y,h,g) {    var e=d.getElementById(r);if(e===null){        var t = d.createElement(o); t.src = g; t.id = r; t.setAttribute(m, s);t.async = 1;var n=d.getElementsByTagName(o)[0];n.parentNode.insertBefore(t, n);        var dt=new Date().getTime();        try{i[l][w+y](h,i[l][q+y](h)+\'&\'+dt);}catch(er){i[h]=dt;}    } else if(typeof i[c]!==\'undefined\'){i[c]++}    else{i[c]=1;}})(window, document, \'InContent\', \'script\', \'mediaType\', \'carambola_proxy\',\'Cbola_IC\',\'localStorage\',\'set\',\'get\',\'Item\',\'cbolaDt\',\'//route.carambo.la/hb/inimage/getLayer?pid=cbola217&did=110013&wid=2&hb_token=CGYCLyIy&pvid=22478638&rdn=[RANDOM_NUMBER]\')</script>',
+  ad: '<!--Carambola Script -->     <script data-cfasync="false" class="carambola_InContent" type="text/javascript" data-hb_pvid="22478638"  data-hb_token="9cd6bf9c-433d-4663-b67f-da727f4cebff" cbola_wid="2" >(function (i,d,s,o,m,r,c,l,w,q,y,h,g) {    var e=d.getElementById(r);if(e===null){        var t = d.createElement(o); t.src = g; t.id = r; t.setAttribute(m, s);t.async = 1;var n=d.getElementsByTagName(o)[0];n.parentNode.insertBefore(t, n);        var dt=new Date().getTime();        try{i[l][w+y](h,i[l][q+y](h)+\'&\'+dt);}catch(er){i[h]=dt;}    } else if(typeof i[c]!==\'undefined\'){i[c]++}    else{i[c]=1;}})(window, document, \'InContent\', \'script\', \'mediaType\', \'carambola_proxy\',\'Cbola_IC\',\'localStorage\',\'set\',\'get\',\'Item\',\'cbolaDt\',\'//route.carambo.la/hb/inimage/getLayer?pid=hbtest&did=112591&wid=2&hb_token=CGYCLyIy&pvid=22478638&rdn=[RANDOM_NUMBER]\')</script>',
   token: '9cd6bf9c-433d-4663-b67f-da727f4cebff',
   width: '300',
   height: '250',
@@ -87,11 +87,11 @@ describe('carambolaAdapter', function () {
       it('should should send the correct did', () => {
         adapter.callBids(createBidderRequest({
           params: {
-            did: 110000,
+            did: 112591,
             wid: 0
           }
         }));
-        expect(requests[0].url).to.contain('did=110000');
+        expect(requests[0].url).to.contain('did=112591');
       });
     });
     //  bid request ends
