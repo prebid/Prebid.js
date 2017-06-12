@@ -1,6 +1,6 @@
 describe('Roxot adapter tests', function() {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/roxot');
+  const adapter = require('modules/roxotBidAdapter');
   const bidmanager = require('src/bidmanager');
 
   describe('roxotResponseHandler', function () {
