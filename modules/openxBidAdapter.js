@@ -1,8 +1,9 @@
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager.js');
-const adloader = require('../adloader');
-const CONSTANTS = require('../constants.json');
-const utils = require('../utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const adloader = require('src/adloader');
+const CONSTANTS = require('src/constants.json');
+const utils = require('src/utils.js');
+const adaptermanager = require('src/adaptermanager');
 
 const OpenxAdapter = function OpenxAdapter() {
   const BIDDER_CODE = 'openx';
@@ -229,5 +230,7 @@ const OpenxAdapter = function OpenxAdapter() {
     callBids: callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new OpenxAdapter, 'openx');
 
 module.exports = OpenxAdapter;

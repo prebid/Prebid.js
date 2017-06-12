@@ -1,7 +1,7 @@
 describe('openx adapter tests', function () {
   const expect = require('chai').expect;
   const assert = require('chai').assert;
-  const adapter = require('src/adapters/openx');
+  const adapter = require('modules/openxBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const CONSTANTS = require('src/constants.json');
