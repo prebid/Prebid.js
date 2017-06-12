@@ -1,6 +1,6 @@
 describe('sovrn adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/sovrn');
+  const adapter = require('modules/sovrnBidAdapter');
   const bidmanager = require('src/bidmanager');
 
   describe('sovrnResponse', function () {
