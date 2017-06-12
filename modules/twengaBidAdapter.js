@@ -1,14 +1,12 @@
-import { getBidRequest } from '../utils.js';
+var CONSTANTS = require('src/constants.json');
+var utils = require('src/utils.js');
+var adloader = require('src/adloader.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var Adapter = require('src/adapter.js');
+var adaptermanager = require('src/adaptermanager');
 
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var Adapter = require('./adapter.js');
-
-var TwengaAdapter;
-TwengaAdapter = function TwengaAdapter() {
+function TwengaAdapter() {
   var baseAdapter = Adapter.createNew('twenga');
 
   baseAdapter.callBids = function (params) {
@@ -66,7 +64,7 @@ TwengaAdapter = function TwengaAdapter() {
       var responseCPM;
       var id = bidResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = getBidRequest(id);
+      var bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
 
@@ -137,5 +135,7 @@ TwengaAdapter = function TwengaAdapter() {
 TwengaAdapter.createNew = function () {
   return new TwengaAdapter();
 };
+
+adaptermanager.registerBidAdapter(new TwengaAdapter, 'twenga');
 
 module.exports = TwengaAdapter;

@@ -1,7 +1,7 @@
 describe('twenga adapter tests', function () {
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('src/adapters/twenga');
+  var adapter = require('modules/twengaBidAdapter');
   var adLoader = require('src/adloader');
   var expect = require('chai').expect;
   var bidmanager = require('src/bidmanager');
