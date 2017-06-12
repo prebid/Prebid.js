@@ -1,8 +1,9 @@
-const utils = require('../utils.js');
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager.js');
-const ajax = require('../ajax.js');
-const CONSTANTS = require('../constants.json');
+const utils = require('src/utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const ajax = require('src/ajax.js');
+const CONSTANTS = require('src/constants.json');
+const adaptermanager = require('src/adaptermanager');
 const QUANTCAST_CALLBACK_URL = 'http://global.qc.rtb.quantserve.com:8080/qchb';
 
 var QuantcastAdapter = function QuantcastAdapter() {
@@ -128,5 +129,6 @@ exports.createNew = function() {
   return new QuantcastAdapter();
 };
 
+adaptermanager.registerBidAdapter(new QuantcastAdapter, 'quantcast');
 
 module.exports = QuantcastAdapter;

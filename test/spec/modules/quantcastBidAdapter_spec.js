@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/quantcast';
+import Adapter from '../../../modules/quantcastBidAdapter';
 import * as ajax from 'src/ajax';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
