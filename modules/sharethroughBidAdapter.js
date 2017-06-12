@@ -1,7 +1,8 @@
-var utils = require('../utils.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var ajax = require('../ajax.js').ajax;
+var utils = require('src/utils.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var ajax = require('src/ajax.js').ajax;
+var adaptermanager = require('src/adaptermanager');
 
 const STR_BIDDER_CODE = 'sharethrough';
 const STR_VERSION = '1.2.0';
@@ -102,5 +103,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
     str: str,
   };
 };
+
+adaptermanager.registerBidAdapter(new SharethroughAdapter, 'sharethrough');
 
 module.exports = SharethroughAdapter;

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from '../../../src/adapters/sharethrough';
+import Adapter from '../../../modules/sharethroughBidAdapter';
 import bidManager from '../../../src/bidmanager';
 
 describe('sharethrough adapter', () => {
