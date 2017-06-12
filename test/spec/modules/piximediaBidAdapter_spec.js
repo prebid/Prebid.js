@@ -4,7 +4,7 @@ describe('Piximedia adapter tests', function () {
 
     // var querystringify = require('querystringify');
 
-  var adapter = require('src/adapters/piximedia');
+  var adapter = require('modules/piximediaBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
   var utils = require('src/utils');

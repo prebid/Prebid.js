@@ -1,9 +1,10 @@
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var adloader = require('../adloader.js');
-var Adapter = require('./adapter.js');
+var CONSTANTS = require('src/constants.json');
+var utils = require('src/utils.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var adloader = require('src/adloader.js');
+var Adapter = require('src/adapter.js');
+var adaptermanager = require('src/adaptermanager');
 
 var PiximediaAdapter = function PiximediaAdapter() {
   var PREBID_URL = '//static.adserver.pm/prebid';
@@ -148,5 +149,7 @@ var PiximediaAdapter = function PiximediaAdapter() {
     getBidderCode: baseAdapter.getBidderCode
   };
 };
+
+adaptermanager.registerBidAdapter(new PiximediaAdapter, 'piximedia');
 
 module.exports = PiximediaAdapter;
