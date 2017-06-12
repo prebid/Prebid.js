@@ -1,9 +1,10 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
@@ -115,5 +116,9 @@ function VertamediaAdapter() {
 VertamediaAdapter.createNew = function () {
   return new VertamediaAdapter();
 };
+
+adaptermanager.registerBidAdapter(new VertamediaAdapter, 'vertamedia', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = VertamediaAdapter;

@@ -1,14 +1,8 @@
 [
-    "vertamedia",
     "smartadserver",
     "yieldbot",
     "wideorbit",
     "xhb",
     "vertoz",
-    "widespace",
-    {
-      "vertamedia": {
-        "supportedMediaTypes": ["video"]
-      }
-    }
+    "widespace"
 ]

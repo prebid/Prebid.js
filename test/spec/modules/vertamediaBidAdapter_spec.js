@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/vertamedia';
+import Adapter from 'modules/vertamediaBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = 'http://rtb.vertamedia.com/hb/?aid=22489&w=640&h=480&domain=localhost';
