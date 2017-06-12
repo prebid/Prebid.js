@@ -1,6 +1,5 @@
 [
     "vertamedia",
-    "rhythmone",
     "smartyads",
     "smartadserver",
     "sekindoUM",
@@ -35,21 +34,6 @@
     {
       "stickyadstv": {
         "alias": "freewheel-ssp"
-      }
-    },
-    {
-      "rhythmone": {
-        "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "admixer": {
-          "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "conversant": {
-        "supportedMediaTypes": ["video"]
       }
     }
 ]

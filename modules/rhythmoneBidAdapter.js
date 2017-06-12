@@ -1,10 +1,11 @@
-var bidmanager = require('../bidmanager.js'),
-  bidfactory = require('../bidfactory.js'),
-  CONSTANTS = require('../constants.json');
+import {ajax} from 'src/ajax';
+import adaptermanager from 'src/adaptermanager';
 
-import {ajax} from '../ajax';
+var bidmanager = require('src/bidmanager.js'),
+  bidfactory = require('src/bidfactory.js'),
+  CONSTANTS = require('src/constants.json');
 
-module.exports = function(bidManager, global, loader) {
+function RhythmoneAdapter (bidManager, global, loader) {
   var version = '0.9.0.0',
     defaultZone = '1r',
     defaultPath = 'mvo',
@@ -290,4 +291,10 @@ module.exports = function(bidManager, global, loader) {
 
     logToConsole('version: ' + version);
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new RhythmoneAdapter, 'rhythmone', {
+  supportedMediaTypes: ['video']
+});
+
+module.exports = RhythmoneAdapter;

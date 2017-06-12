@@ -1,4 +1,4 @@
-var r1 = require('../../../src/adapters/rhythmone.js');
+var r1 = require('../../../modules/rhythmoneBidAdapter');
 var assert = require('assert');
 
 describe('rhythmone adapter tests', function () {
