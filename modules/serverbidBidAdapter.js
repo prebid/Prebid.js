@@ -1,8 +1,9 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
+import adaptermanager from 'src/adaptermanager';
 
 const ServerBidAdapter = function ServerBidAdapter() {
   const baseAdapter = Adapter.createNew('serverbid');
@@ -149,5 +150,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
 ServerBidAdapter.createNew = function() {
   return new ServerBidAdapter();
 };
+
+adaptermanager.registerBidAdapter(new ServerBidAdapter, 'serverbid');
 
 module.exports = ServerBidAdapter;

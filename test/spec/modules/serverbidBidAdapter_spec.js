@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/serverbid';
+import Adapter from 'modules/serverbidBidAdapter';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 
