@@ -35,7 +35,7 @@ describe('FeatureForward Adapter Tests', () => {
     featureForwardAdapter.callBids(slotConfigs);
     var call = ajaxStub.firstCall.args[0];
     var request = JSON.parse(ajaxStub.args[0][2]);
-    var creds  = ajaxStub.args[0][3];		
+    var creds = ajaxStub.args[0][3];	
     expect(call).to.equal('http://prmbdr.featureforward.com/newbidder/bidder1_prm.php?');
     expect(request.ca).to.equal('BID');
     expect(request.pubId).to.equal('001');
@@ -43,7 +43,7 @@ describe('FeatureForward Adapter Tests', () => {
     expect(request.placementId).to.equal('1');
     expect(request.size[0]).to.equal(300);
     expect(request.size[1]).to.equal(250);
-    expect(creds.method).to.equal('POST');	
+    expect(creds.method).to.equal('POST');
   });
 
   it('Verify bid', () => {

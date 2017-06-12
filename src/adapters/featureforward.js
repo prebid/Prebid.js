@@ -16,16 +16,15 @@ function FeatureForwardAdapter() {
     var i = 0;
     bidderRequest.bids.forEach(bidRequest => {
       try {
-        while (bidRequest.sizes[i] !== undefined)
-	{
-	  var params = Object.assign({}, environment(), bidRequest.params, {'size':bidRequest.sizes[i]});
-	  var postRequest  = JSON.stringify(params);
-	  var url = bidUrl;
-	  i++;
-	  ajax(url, (bidResponse) => {
-	    bidResponseAvailable(bidRequest, bidResponse);
-	  }, postRequest, ajaxOptions);
-	}
+        while (bidRequest.sizes[i] !== undefined) {
+          var params = Object.assign({}, environment(), bidRequest.params, {'size': bidRequest.sizes[i]});
+          var postRequest  = JSON.stringify(params);
+          var url = bidUrl;
+          i++;
+          ajax(url, (bidResponse) => {
+            bidResponseAvailable(bidRequest, bidResponse);
+          }, postRequest, ajaxOptions);
+        }
       } catch (e) {
         // register passback on any exceptions while attempting to fetch response.
         logError('featureforward.requestBid', 'ERROR', e);
