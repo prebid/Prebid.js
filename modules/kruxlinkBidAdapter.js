@@ -1,6 +1,7 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var adaptermanager = require('src/adaptermanager');
 
 function _qs(key, value) {
   return encodeURIComponent(key) + '=' + encodeURIComponent(value);
@@ -78,8 +79,12 @@ function _callBids(params) {
   adloader.loadScript(url);
 }
 
-module.exports = function KruxAdapter() {
+function KruxAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new KruxAdapter, 'kruxlink');
+
+module.exports = KruxAdapter;
