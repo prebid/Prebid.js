@@ -1,10 +1,9 @@
 
-import { getBidRequest } from '../utils.js';
-
-const utils = require('../utils.js');
-const adloader = require('../adloader.js');
-const bidmanager = require('../bidmanager.js');
-const bidfactory = require('../bidfactory.js');
+const utils = require('src/utils.js');
+const adloader = require('src/adloader.js');
+const bidmanager = require('src/bidmanager.js');
+const bidfactory = require('src/bidfactory.js');
+const adaptermanager = require('src/adaptermanager');
 const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
@@ -72,7 +71,7 @@ function WidespaceAdapter() {
 
       bid.sizes = {height: bid.height, width: bid.width};
 
-      var inBid = getBidRequest(bid.callbackUid);
+      var inBid = utils.getBidRequest(bid.callbackUid);
 
       if (inBid) {
         bidCode = inBid.bidder;
@@ -112,5 +111,7 @@ function WidespaceAdapter() {
     callBids: _callBids
   };
 }
+
+adaptermanager.registerBidAdapter(new WidespaceAdapter, 'widespace');
 
 module.exports = WidespaceAdapter;

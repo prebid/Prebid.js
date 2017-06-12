@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import adLoader from '../../../src/adloader';
 import bidManager from '../../../src/bidmanager';
-import Adapter from '../../../src/adapters/widespace';
+import Adapter from '../../../modules/widespaceBidAdapter';
 
 const ENDPOINT = '//engine.widespace.com/map/engine/hb/dynamic';
 
