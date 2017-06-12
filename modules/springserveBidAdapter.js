@@ -1,6 +1,7 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 var SpringServeAdapter;
 SpringServeAdapter = function SpringServeAdapter() {
@@ -109,5 +110,7 @@ SpringServeAdapter = function SpringServeAdapter() {
     buildSpringServeCall: buildSpringServeCall
   };
 };
+
+adaptermanager.registerBidAdapter(new SpringServeAdapter, 'springserveg');
 
 module.exports = SpringServeAdapter;
