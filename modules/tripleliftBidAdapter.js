@@ -1,7 +1,8 @@
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
+var utils = require('src/utils.js');
+var adloader = require('src/adloader.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var adaptermanager = require('src/adaptermanager');
 
 /* TripleLift bidder factory function
 *  Use to create a TripleLiftAdapter object
@@ -126,4 +127,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
   };
 };
+
+adaptermanager.registerBidAdapter(new TripleLiftAdapter, 'triplelift');
+
 module.exports = TripleLiftAdapter;

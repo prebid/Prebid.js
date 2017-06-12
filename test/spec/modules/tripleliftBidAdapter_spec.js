@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/triplelift';
+import Adapter from '../../../modules/tripleliftBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 import {parse as parseURL} from '../../../src/url';
