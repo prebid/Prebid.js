@@ -1,7 +1,8 @@
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager');
-const utils = require('../utils.js');
-const adloader = require('../adloader');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager');
+const utils = require('src/utils.js');
+const adloader = require('src/adloader');
+const adaptermanager = require('src/adaptermanager');
 
 const LifestreetAdapter = function LifestreetAdapter() {
   const BIDDER_CODE = 'lifestreet';
@@ -159,5 +160,7 @@ const LifestreetAdapter = function LifestreetAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new LifestreetAdapter, 'lifestreet');
 
 module.exports = LifestreetAdapter;

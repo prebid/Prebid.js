@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {cloneJson} from 'src/utils';
 import adloader from 'src/adloader';
 import bidmanager from 'src/bidmanager';
-import LifestreetAdapter from 'src/adapters/lifestreet';
+import LifestreetAdapter from 'modules/lifestreetBidAdapter';
 
 const BIDDER_REQUEST = {
   auctionStart: new Date().getTime(),
