@@ -1,9 +1,10 @@
-import * as Adapter from './adapter.js';
+import * as Adapter from 'src/adapter.js';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 var BIDDER_CODE = 'huddledmasses';
 
@@ -165,5 +166,7 @@ HuddledMassesAdapter.masSizeOrdering = function (sizes) {
 HuddledMassesAdapter.createNew = function () {
   return new HuddledMassesAdapter();
 };
+
+adaptermanager.registerBidAdapter(new HuddledMassesAdapter, 'huddledmasses');
 
 module.exports = HuddledMassesAdapter;
