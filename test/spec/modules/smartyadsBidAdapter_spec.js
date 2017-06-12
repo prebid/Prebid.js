@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from '../../../src/adapters/smartyads';
+import Adapter from '../../../modules/smartyadsBidAdapter';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
