@@ -1,8 +1,9 @@
 // Factory for creating the bidderAdaptor
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var adaptermanager = require('src/adaptermanager');
 
 var ADAPTER_NAME = 'INDEXEXCHANGE';
 var ADAPTER_CODE = 'indexExchange';
@@ -660,5 +661,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new IndexExchangeAdapter, 'indexExchange');
 
 module.exports = IndexExchangeAdapter;

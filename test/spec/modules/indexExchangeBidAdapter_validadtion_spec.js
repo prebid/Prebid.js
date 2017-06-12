@@ -1,5 +1,4 @@
-import Adapter from '../../../src/adapters/indexExchange';
-import bidManager from '../../../src/bidmanager';
+import Adapter from '../../../modules/indexExchangeBidAdapter';
 import adLoader from '../../../src/adloader';
 
 var assert = require('chai').assert;

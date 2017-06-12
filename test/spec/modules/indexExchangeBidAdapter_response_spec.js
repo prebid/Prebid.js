@@ -1,4 +1,4 @@
-import Adapter from '../../../src/adapters/indexExchange';
+import Adapter from '../../../modules/indexExchangeBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
