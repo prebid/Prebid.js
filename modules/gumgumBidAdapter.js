@@ -1,7 +1,8 @@
-const bidfactory = require('../bidfactory');
-const bidmanager = require('../bidmanager');
-const utils = require('../utils');
-const adloader = require('../adloader');
+const bidfactory = require('src/bidfactory');
+const bidmanager = require('src/bidmanager');
+const utils = require('src/utils');
+const adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 const BIDDER_CODE = 'gumgum';
 const CALLBACKS = {};
@@ -169,5 +170,7 @@ const GumgumAdapter = function GumgumAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new GumgumAdapter, 'gumgum');
 
 module.exports = GumgumAdapter;

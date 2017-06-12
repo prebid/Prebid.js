@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../src/adapters/gumgum';
+import Adapter from '../../../modules/gumgumBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 import * as utils from '../../../src/utils';
