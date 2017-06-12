@@ -1,9 +1,10 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
-var constants = require('../constants.json');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var constants = require('src/constants.json');
+var adaptermanager = require('src/adaptermanager');
 
-module.exports = function () {
+function MantisAdapter () {
   function inIframe() {
     try {
       return window.self !== window.top && !window.mantis_link;
@@ -220,4 +221,8 @@ module.exports = function () {
   };
 
   return new Prebid(bidfactory, bidmanager, adloader, constants);
-};
+}
+
+adaptermanager.registerBidAdapter(new MantisAdapter, 'mantis');
+
+module.exports = MantisAdapter;

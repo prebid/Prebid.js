@@ -2,7 +2,7 @@
 
 describe('mantis adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/mantis.js');
+  const adapter = require('modules/mantisBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const constants = require('src/constants.json');
