@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import sekindoUMAdapter from '../../../src/adapters/sekindoUM';
+import sekindoUMAdapter from '../../../modules/sekindoUMBidAdapter';
 var bidManager = require('src/bidmanager');
 
 describe('sekindoUM Adapter Tests', () => {
