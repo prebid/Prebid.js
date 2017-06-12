@@ -1,6 +1,7 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from Pubmatic.
@@ -8,7 +9,7 @@ var bidmanager = require('../bidmanager.js');
  * @returns {{callBids: _callBids}}
  * @constructor
  */
-var PubmaticAdapter = function PubmaticAdapter() {
+function PubmaticAdapter() {
   var bids;
   var _pm_pub_id;
   var _pm_pub_age;
@@ -146,6 +147,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new PubmaticAdapter, 'pubmatic');
 
 module.exports = PubmaticAdapter;
