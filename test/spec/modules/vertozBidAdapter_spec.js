@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {assert} from 'chai';
-import Adapter from '../../../src/adapters/vertoz';
+import Adapter from '../../../modules/vertozBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
