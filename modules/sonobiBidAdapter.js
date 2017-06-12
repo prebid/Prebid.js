@@ -1,7 +1,8 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var utils = require('../utils');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils');
+var adaptermanager = require('src/adaptermanager');
 
 var SonobiAdapter = function SonobiAdapter() {
   var keymakerAssoc = {};   //  Remember placement codes for callback mapping
@@ -111,5 +112,7 @@ var SonobiAdapter = function SonobiAdapter() {
     failure: _failure
   };
 };
+
+adaptermanager.registerBidAdapter(new SonobiAdapter, 'sonobi');
 
 module.exports = SonobiAdapter;

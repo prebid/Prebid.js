@@ -1,6 +1,6 @@
 const chai = require('chai');
 const expect = require('chai').expect;
-const Adapter = require('src/adapters/sonobi');
+const Adapter = require('modules/sonobiBidAdapter');
 const bidManager = require('src/bidmanager');
 const adLoader = require('src/adloader');
 const utils = require('src/utils');
