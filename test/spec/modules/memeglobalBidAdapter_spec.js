@@ -1,6 +1,6 @@
 describe('memeglobal adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('src/adapters/memeglobal');
+  const adapter = require('modules/memeglobalBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adLoader = require('src/adloader');
   var bidderName = 'memeglobal';

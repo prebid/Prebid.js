@@ -1,8 +1,9 @@
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+var CONSTANTS = require('src/constants.json');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 
 var defaultPlacementForBadBid = null;
 var bidderName = 'memeglobal';
@@ -121,5 +122,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new MemeGlobalAdapter, 'memeglobal');
 
 module.exports = MemeGlobalAdapter;
