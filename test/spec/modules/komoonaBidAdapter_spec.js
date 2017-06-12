@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/komoona';
+import Adapter from 'modules/komoonaBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
