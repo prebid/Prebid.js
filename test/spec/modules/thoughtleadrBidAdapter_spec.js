@@ -1,6 +1,6 @@
 'use strict';
 var chai_1 = require('chai');
-var ta = require('../../../src/adapters/thoughtleadr');
+var ta = require('../../../modules/thoughtleadrBidAdapter');
 var adloader = require('../../../src/adloader');
 var bidfactory = require('../../../src/bidfactory');
 var Adapter = ta;

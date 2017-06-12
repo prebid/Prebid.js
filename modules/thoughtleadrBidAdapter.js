@@ -1,8 +1,9 @@
 'use strict';
-var bidfactory = require('../bidfactory');
-var bidmanager = require('../bidmanager');
-var utils = require('../utils');
-var adloader_1 = require('../adloader');
+var bidfactory = require('src/bidfactory');
+var bidmanager = require('src/bidmanager');
+var utils = require('src/utils');
+var adloader_1 = require('src/adloader');
+var adaptermanager = require('src/adaptermanager');
 var ROOT_URL = '//cdn.thoughtleadr.com/v4/';
 var BID_AVAILABLE = 1;
 
@@ -95,5 +96,7 @@ var ThoughtleadrAdapter = (function () {
   };
   return ThoughtleadrAdapter;
 }());
+
+adaptermanager.registerBidAdapter(new ThoughtleadrAdapter, 'thoughtleadr');
 
 module.exports = ThoughtleadrAdapter;
