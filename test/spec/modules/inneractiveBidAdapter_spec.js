@@ -1,7 +1,7 @@
 /* globals context */
 
 import {expect} from 'chai';
-import {default as InneractiveAdapter} from 'src/adapters/inneractive';
+import {default as InneractiveAdapter} from 'modules/inneractiveBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 // Using plain-old-style functions, why? see: http://mochajs.org/#arrow-functions

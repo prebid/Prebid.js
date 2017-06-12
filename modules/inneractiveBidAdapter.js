@@ -1,10 +1,11 @@
-import * as utils from '../utils';
-import Adapter from './adapter';
-import {ajax} from '../ajax';
+import * as utils from 'src/utils';
+import Adapter from 'src/adapter';
+import {ajax} from 'src/ajax';
 import bidManager from 'src/bidmanager';
 import bidFactory from 'src/bidfactory';
 import {STATUS} from 'src/constants';
-import {formatQS} from '../url';
+import {formatQS} from 'src/url';
+import adaptermanager from 'src/adaptermanager';
 
 /**
  * @type {{IA_JS: string, ADAPTER_NAME: string, V: string, RECTANGLE_SIZE: {W: number, H: number}, SPOT_TYPES: {INTERSTITIAL: string, RECTANGLE: string, FLOATING: string, BANNER: string}, DISPLAY_AD: number, ENDPOINT_URL: string, EVENTS_ENDPOINT_URL: string, RESPONSE_HEADERS_NAME: {PRICING_VALUE: string, AD_H: string, AD_W: string}}}
@@ -457,4 +458,7 @@ class InnerActiveAdapter {
     return new InnerActiveAdapter();
   }
 }
+
+adaptermanager.registerBidAdapter(new InnerActiveAdapter, 'inneractive');
+
 module.exports = InnerActiveAdapter;
