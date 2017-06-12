@@ -3,6 +3,7 @@ import {addBidResponse} from 'src/bidmanager';
 import {logError, getTopWindowLocation} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 function PulsePointLiteAdapter() {
   const bidUrl = window.location.protocol + '//bid.contextweb.com/header/tag?';
@@ -84,5 +85,7 @@ function PulsePointLiteAdapter() {
     callBids: _callBids
   };
 }
+
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');
 
 module.exports = PulsePointLiteAdapter;

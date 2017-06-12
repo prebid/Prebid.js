@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import PulsePointAdapter from 'src/adapters/pulsepointLite';
+import PulsePointAdapter from 'modules/pulsepointLiteBidAdapter';
 import bidManager from 'src/bidmanager';
 import * as ajax from 'src/ajax';
 import {parse as parseURL} from 'src/url';

@@ -1,7 +1,8 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var utils = require('../utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
 var PulsePointAdapter = function PulsePointAdapter() {
   var getJsStaticUrl = window.location.protocol + '//tag-st.contextweb.com/getjs.static.js';
@@ -78,5 +79,7 @@ var PulsePointAdapter = function PulsePointAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new PulsePointAdapter, 'pulsepoint');
 
 module.exports = PulsePointAdapter;

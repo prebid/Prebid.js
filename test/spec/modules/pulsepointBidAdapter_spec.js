@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import PulsePointAdapter from '../../../src/adapters/pulsepoint';
+import PulsePointAdapter from '../../../modules/pulsepointBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
