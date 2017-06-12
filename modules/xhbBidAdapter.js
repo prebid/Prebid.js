@@ -1,12 +1,11 @@
-import {getBidRequest} from '../utils.js';
+const CONSTANTS = require('src/constants.json');
+const utils = require('src/utils.js');
+const adloader = require('src/adloader.js');
+const bidmanager = require('src/bidmanager.js');
+const bidfactory = require('src/bidfactory.js');
+const adaptermanager = require('src/adaptermanager');
 
-const CONSTANTS = require('../constants.json');
-const utils = require('../utils.js');
-const adloader = require('../adloader.js');
-const bidmanager = require('../bidmanager.js');
-const bidfactory = require('../bidfactory.js');
-
-const XhbAdapter = function XhbAdapter() {
+function XhbAdapter() {
   const _defaultBidderSettings = {
     alwaysUseBid: true,
     adserverTargeting: [
@@ -109,7 +108,7 @@ const XhbAdapter = function XhbAdapter() {
       let responseCPM;
       let id = jptResponseObj.callback_uid;
       let placementCode = '';
-      let bidObj = getBidRequest(id);
+      let bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
@@ -158,6 +157,8 @@ const XhbAdapter = function XhbAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new XhbAdapter, 'xhb');
 
 module.exports = XhbAdapter;
