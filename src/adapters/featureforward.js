@@ -18,7 +18,7 @@ function FeatureForwardAdapter() {
       try {
         while (bidRequest.sizes[i] !== undefined) {
           var params = Object.assign({}, environment(), bidRequest.params, {'size': bidRequest.sizes[i]});
-          var postRequest  = JSON.stringify(params);
+          var postRequest = JSON.stringify(params);
           var url = bidUrl;
           i++;
           ajax(url, (bidResponse) => {
