@@ -69,6 +69,7 @@
     "trion",
     "prebidServer",
     "adsupply",
+    "featureforward",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -113,11 +114,6 @@
       "rubicon": {
         "alias": "rubiconLite",
         "supportedMediaTypes": ["video"]
-      }
-    },
-    {
-      "appnexus": {
-        "alias": "featureforward"
       }
     },
     {
