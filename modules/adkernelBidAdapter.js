@@ -269,5 +269,6 @@ AdKernelAdapter.createNew = function() {
 };
 
 adaptermanager.registerBidAdapter(new AdKernelAdapter, 'adkernel');
+adaptermanager.aliasBidAdapter('adkernel', 'headbidding');
 
 module.exports = AdKernelAdapter;

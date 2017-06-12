@@ -27,11 +27,6 @@
       }
     },
     {
-      "adkernel": {
-        "alias": "headbidding"
-      }
-    },
-    {
       "stickyadstv": {
         "alias": "freewheel-ssp"
       }
