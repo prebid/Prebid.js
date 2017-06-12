@@ -1,17 +1,15 @@
-import { getBidRequest } from '../utils.js';
-
-var CONSTANTS = require('../constants.json');
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var Adapter = require('./adapter.js');
+var CONSTANTS = require('src/constants.json');
+var utils = require('src/utils.js');
+var adloader = require('src/adloader.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var Adapter = require('src/adapter.js');
+var adaptermanager = require('src/adaptermanager');
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
-var TrionAdapter;
-TrionAdapter = function TrionAdapter() {
+function TrionAdapter() {
   var baseAdapter = Adapter.createNew('trion');
   var userTag = null;
 
@@ -98,7 +96,7 @@ TrionAdapter = function TrionAdapter() {
       var bidId = trionResponseObj.bidId;
       var result = trionResponseObj && trionResponseObj.result;
 
-      bidObj = getBidRequest(bidId);
+      bidObj = utils.getBidRequest(bidId);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
@@ -131,5 +129,7 @@ TrionAdapter = function TrionAdapter() {
 TrionAdapter.createNew = function () {
   return new TrionAdapter();
 };
+
+adaptermanager.registerBidAdapter(new TrionAdapter, 'trion');
 
 module.exports = TrionAdapter;

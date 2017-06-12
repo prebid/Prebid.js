@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import trionAdapter from 'src/adapters/trion';
+import trionAdapter from 'modules/trionBidAdapter';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 const CONSTANTS = require('src/constants.json');
