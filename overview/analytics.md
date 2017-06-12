@@ -14,6 +14,7 @@ nav_section: analytics
 
 There are several analytics adapter plugins available to track header bidding performance for your site.
 
+{: .table .table-bordered .table-striped }
 | Analytics Adapter | Cost | Contact | Version Added |
 | ------------- | ------------- | ----------- | ------------|
 | [Google Analytics](http://prebid.org/overview/ga-analytics.html) | Free up to a certain volume. See [terms](https://www.google.com/analytics/terms/). | [Website](https://www.google.com/analytics) | |
@@ -47,6 +48,7 @@ pbjs.que.push(function() {
     });
 });
 ```
+
 ## More Details
 * [Creating a new analytics adapter](/dev-docs/integrate-with-the-prebid-analytics-api.html)
 </div>
