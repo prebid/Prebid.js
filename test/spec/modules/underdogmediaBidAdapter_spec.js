@@ -1,4 +1,4 @@
-import Adapter from '../../../src/adapters/underdogmedia';
+import Adapter from '../../../modules/underdogmediaBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import adloader from '../../../src/adloader';
 

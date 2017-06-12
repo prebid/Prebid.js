@@ -1,9 +1,10 @@
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
-var utils = require('../utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
-var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
+function UnderdogMediaAdapter() {
   const UDM_ADAPTER_VERSION = '1.0.0';
   var getJsStaticUrl = window.location.protocol + '//udmserve.net/udm/img.fetch?tid=1;dt=9;callback=$$PREBID_GLOBAL$$.handleUnderdogMediaCB;';
   var bidParams = {};
@@ -104,6 +105,8 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new UnderdogMediaAdapter, 'underdogmedia');
 
 module.exports = UnderdogMediaAdapter;
