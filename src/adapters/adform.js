@@ -10,11 +10,11 @@ function AdformAdapter() {
   };
 
   function _callBids(params) {
-    var bid, _value, _key, i, j, k, l;
+    var bid, _value, _key, i, j, k, l, reqParams;
     var bids = params.bids;
     var request = [];
     var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'url', null ], [ 'tid', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], ['fd', 1], [ 'url', null ], [ 'tid', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
 
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
@@ -28,7 +28,9 @@ function AdformAdapter() {
         }
       }
 
-      request.push(formRequestUrl(bid.params));
+      reqParams = bid.params;
+      reqParams.transactionId = bid.transactionId;
+      request.push(formRequestUrl(reqParams));
     }
 
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
@@ -76,6 +78,7 @@ function AdformAdapter() {
           bidObject.width = adItem.width;
           bidObject.height = adItem.height;
           bidObject.dealId = adItem.deal_id;
+          bidObject.transactionId = bid.transactionId;
           bidmanager.addBidResponse(bid.placementCode, bidObject);
         } else {
           bidObject = bidfactory.createBid(STATUSCODES.NO_BID, bid);
