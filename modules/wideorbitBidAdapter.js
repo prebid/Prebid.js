@@ -1,9 +1,10 @@
-var bidfactory = require('../bidfactory.js'),
-  bidmanager = require('../bidmanager.js'),
-  utils = require('../utils.js'),
-  adloader = require('../adloader');
+var bidfactory = require('src/bidfactory.js'),
+  bidmanager = require('src/bidmanager.js'),
+  utils = require('src/utils.js'),
+  adloader = require('src/adloader'),
+  adaptermanager = require('src/adaptermanager');
 
-var WideOrbitAdapter = function WideOrbitAdapter() {
+function WideOrbitAdapter() {
   var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
     pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
     pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
@@ -213,6 +214,8 @@ var WideOrbitAdapter = function WideOrbitAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new WideOrbitAdapter, 'wideorbit');
 
 module.exports = WideOrbitAdapter;

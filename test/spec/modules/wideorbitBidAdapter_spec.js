@@ -5,7 +5,7 @@ describe('wideorbit adapter tests', function () {
     // FYI: querystringify will perform encoding/decoding
   var querystringify = require('querystringify');
 
-  var adapter = require('src/adapters/wideorbit');
+  var adapter = require('modules/wideorbitBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
