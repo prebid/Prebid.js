@@ -1,15 +1,13 @@
 import {createBid} from 'src/bidfactory';
 import {addBidResponse} from 'src/bidmanager';
-import {logError,getTopWindowLocation} from 'src/utils';
+import {logError, getTopWindowLocation} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 
 function FeatureForwardAdapter() {
-
   const bidUrl = window.location.protocol + '//prmbdr.featureforward.com/newbidder/bidder1_prm.php?';
   const ajaxOptions = {
     method: 'POST',
-    //method: 'GET',
     withCredentials: true,
     contentType: 'text/plain'
   };
@@ -18,18 +16,18 @@ function FeatureForwardAdapter() {
     var i = 0;
     bidderRequest.bids.forEach(bidRequest => {
       try {
-	while (bidRequest.sizes[i] !== undefined)
+        while (bidRequest.sizes[i] !== undefined)
 	{
-		var params = Object.assign({}, environment(), bidRequest.params,{"size":bidRequest.sizes[i]});
-		var postRequest  = JSON.stringify(params);
-		var url = bidUrl;
-		i++;
-		ajax(url, (bidResponse) => {
-		  bidResponseAvailable(bidRequest, bidResponse);
-		}, postRequest, ajaxOptions);
+	  var params = Object.assign({}, environment(), bidRequest.params, {'size':bidRequest.sizes[i]});
+	  var postRequest  = JSON.stringify(params);
+	  var url = bidUrl;
+	  i++;
+	  ajax(url, (bidResponse) => {
+	    bidResponseAvailable(bidRequest, bidResponse);
+	  }, postRequest, ajaxOptions);
 	}
-      } catch(e) {
-        //register passback on any exceptions while attempting to fetch response.
+      } catch (e) {
+        // register passback on any exceptions while attempting to fetch response.
         logError('featureforward.requestBid', 'ERROR', e);
         bidResponseAvailable(bidRequest);
       }
@@ -59,7 +57,7 @@ function FeatureForwardAdapter() {
   function bidResponseAvailable(bidRequest, rawResponse) {
     if (rawResponse) {
       var bidResponse = parse(rawResponse);
-      if(bidResponse) {
+      if (bidResponse) {
         var bid = createBid(STATUS.GOOD, bidRequest);
         bid.bidderCode = bidRequest.bidder;
         bid.cpm = bidResponse.bidCpm;
@@ -87,7 +85,6 @@ function FeatureForwardAdapter() {
   return {
     callBids: _callBids
   };
-
 }
 
 module.exports = FeatureForwardAdapter;
