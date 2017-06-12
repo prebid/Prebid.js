@@ -2,7 +2,7 @@ describe('innity adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('src/adapters/innity');
+  var adapter = require('modules/innityBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
