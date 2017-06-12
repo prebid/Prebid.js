@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/pubgears'
+import Adapter from 'modules/pubgearsBidAdapter'
 import bidmanager from 'src/bidmanager'
 
 describe('PubGearsAdapter', () => {
