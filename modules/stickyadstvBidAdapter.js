@@ -1,7 +1,9 @@
-var Adapter = require('./adapter.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader.js');
+var Adapter = require('src/adapter.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
+var adloader = require('src/adloader.js');
+var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
 var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   var STICKYADS_BIDDERCODE = 'stickyadstv';
@@ -21,7 +23,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       if (bid.placementCode && bid.params.zoneId) {
         sendBidRequest(bid);
       } else {
-        console.warn('StickyAdsTV: Missing mandatory field(s).');
+        utils.logWarn('StickyAdsTV: Missing mandatory field(s).');
       }
     }
   }
@@ -200,7 +202,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var priceData = vast.getPricing();
 
     if (!priceData) {
-      console.warn("StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact.");
+      utils.logWarn("StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact.");
     }
 
     return priceData;
@@ -270,5 +272,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
 StickyAdsTVAdapter.createNew = function() {
   return new StickyAdsTVAdapter();
 };
+
+adaptermanager.registerBidAdapter(new StickyAdsTVAdapter, 'stickyadstv');
+adaptermanager.aliasBidAdapter('stickyadstv', 'freewheel-ssp');
 
 module.exports = StickyAdsTVAdapter;
