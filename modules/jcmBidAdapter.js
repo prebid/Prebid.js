@@ -2,6 +2,7 @@ var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
 var utils = require('src/utils.js');
+var adaptermanager = require('src/adaptermanager');
 
 var JCMAdapter = function JCMAdapter() {
   window.pbjs = window.pbjs || {};
@@ -62,5 +63,7 @@ var JCMAdapter = function JCMAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new JCMAdapter, 'jcm');
 
 module.exports = JCMAdapter;

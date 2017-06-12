@@ -5,7 +5,7 @@ describe('jcm adapter tests', function () {
     // FYI: querystringify will perform encoding/decoding
   var querystringify = require('querystringify');
 
-  var adapter = require('src/adapters/jcm');
+  var adapter = require('modules/jcmBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
 
