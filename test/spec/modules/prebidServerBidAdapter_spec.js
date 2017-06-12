@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/prebidServer';
+import Adapter from 'modules/prebidServerBidAdapter';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -160,6 +160,7 @@ describe('S2S Adapter', () => {
       utils.getBidRequest.restore();
     });
 
+    // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
     it('registers bids', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 

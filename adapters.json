@@ -27,8 +27,6 @@
     "widespace",
     "tapsense",
     "trion",
-    "eplanning",
-    "prebidServer",
     {
       "vertamedia": {
         "supportedMediaTypes": ["video"]
