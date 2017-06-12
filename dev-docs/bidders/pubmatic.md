@@ -14,7 +14,8 @@ biddercode_longer_than_12: false
 
 ---
 
-
+### Prebid Server Note:
+Before configuring the PubMatic adapter as S2S, you must reach out to the PubMatic team for approval and setup steps.
 
 ### bid params
 

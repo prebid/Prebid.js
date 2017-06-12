@@ -21,6 +21,7 @@ The AdSupply adapter requires setup and approval from the AdSupply team, even fo
 
 ### bid params
 
+{: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
 | `clientId` | required | AdSupply client identifier. Provided by AdSupply. | `"b367CB268B1094004A3689751E7AC568F"` |
