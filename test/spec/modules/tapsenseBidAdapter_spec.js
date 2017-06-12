@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'src/adapters/tapsense';
+import Adapter from 'modules/tapsenseBidAdapter';
 import bidmanager from 'src/bidmanager';
 import adloader from 'src/adloader';
 import * as utils from 'src/utils';
@@ -29,7 +29,7 @@ const DEFAULT_BIDDER_REQUEST = {
       }
     }
   ]
-}
+};
 
 const SUCCESSFUL_RESPONSE = {
   'count_ad_units': 1,

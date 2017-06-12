@@ -1,9 +1,10 @@
 // v0.0.1
 
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager.js');
-const adloader = require('../adloader');
-const utils = require('../utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const adloader = require('src/adloader');
+const utils = require('src/utils.js');
+const adaptermanager = require('src/adaptermanager');
 
 const TapSenseAdapter = function TapSenseAdapter() {
   const version = '0.0.1';
@@ -82,5 +83,7 @@ const TapSenseAdapter = function TapSenseAdapter() {
     callBids: _callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new TapSenseAdapter, 'tapsense');
 
 module.exports = TapSenseAdapter;
