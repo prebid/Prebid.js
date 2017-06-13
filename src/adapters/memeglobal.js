@@ -79,11 +79,10 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.mgres = function (bidResp) {
-
     // valid object?
     if ((!bidResp || !bidResp.id) ||
       (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
-      return ;
+      return;
     }
 
     bidResp.seatbid[0].bid.forEach(function (bidderBid) {
@@ -106,7 +105,7 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
         bidResponse.placementCode = placementCode;
         bidResponse.size = bidRequested.sizes;
         var responseAd = bidderBid.adm;
-        var responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
+        var responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px" style="display: none;">';
         bidResponse.creative_id = bidderBid.id;
         bidResponse.bidderCode = bidderName;
         bidResponse.cpm = responseCPM;

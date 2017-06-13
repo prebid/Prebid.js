@@ -19,6 +19,7 @@ var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
 var _trackerSend = null;
+var _sampled = true;
 
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
@@ -27,9 +28,10 @@ var _trackerSend = null;
  * @return {[type]}    [description]
  */
 exports.enableAnalytics = function ({ provider, options }) {
-
   _gaGlobal = provider || 'ga';
   _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
+  _sampled = typeof options === 'undefined' || typeof options.sampling === 'undefined' ||
+             Math.random() < parseFloat(options.sampling);
 
   if (options && typeof options.global !== 'undefined') {
     _gaGlobal = options.global;
@@ -40,53 +42,57 @@ exports.enableAnalytics = function ({ provider, options }) {
 
   var bid = null;
 
-  //first send all events fired before enableAnalytics called
+  if (_sampled) {
+    // first send all events fired before enableAnalytics called
 
-  var existingEvents = events.getEvents();
-  utils._each(existingEvents, function (eventObj) {
-    var args = eventObj.args;
-    if (!eventObj) {
-      return;
-    }
+    var existingEvents = events.getEvents();
 
-    if (eventObj.eventType === BID_REQUESTED) {
-      bid = args;
-      sendBidRequestToGa(bid);
-    } else if (eventObj.eventType === BID_RESPONSE) {
-      //bid is 2nd args
-      bid = args;
+    utils._each(existingEvents, function (eventObj) {
+      if (typeof eventObj !== 'object') {
+        return;
+      }
+      var args = eventObj.args;
+
+      if (eventObj.eventType === BID_REQUESTED) {
+        bid = args;
+        sendBidRequestToGa(bid);
+      } else if (eventObj.eventType === BID_RESPONSE) {
+        // bid is 2nd args
+        bid = args;
+        sendBidResponseToGa(bid);
+      } else if (eventObj.eventType === BID_TIMEOUT) {
+        const bidderArray = args;
+        sendBidTimeouts(bidderArray);
+      } else if (eventObj.eventType === BID_WON) {
+        bid = args;
+        sendBidWonToGa(bid);
+      }
+    });
+
+    // Next register event listeners to send data immediately
+
+    // bidRequests
+    events.on(BID_REQUESTED, function (bidRequestObj) {
+      sendBidRequestToGa(bidRequestObj);
+    });
+
+    // bidResponses
+    events.on(BID_RESPONSE, function (bid) {
       sendBidResponseToGa(bid);
+    });
 
-    } else if (eventObj.eventType === BID_TIMEOUT) {
-      const bidderArray = args;
+    // bidTimeouts
+    events.on(BID_TIMEOUT, function (bidderArray) {
       sendBidTimeouts(bidderArray);
-    } else if (eventObj.eventType === BID_WON) {
-      bid = args;
+    });
+
+    // wins
+    events.on(BID_WON, function (bid) {
       sendBidWonToGa(bid);
-    }
-  });
-
-  //Next register event listeners to send data immediately
-
-  //bidRequests
-  events.on(BID_REQUESTED, function (bidRequestObj) {
-    sendBidRequestToGa(bidRequestObj);
-  });
-
-  //bidResponses
-  events.on(BID_RESPONSE, function (bid) {
-    sendBidResponseToGa(bid);
-  });
-
-  //bidTimeouts
-  events.on(BID_TIMEOUT, function (bidderArray) {
-    sendBidTimeouts(bidderArray);
-  });
-
-  //wins
-  events.on(BID_WON, function (bid) {
-    sendBidWonToGa(bid);
-  });
+    });
+  } else {
+    utils.logMessage('Prebid.js google analytics disabled by sampling');
+  }
 
   // finally set this function to return log message, prevents multiple adapter listeners
   this.enableAnalytics = function _enable() {
@@ -103,17 +109,16 @@ exports.getTrackerSend = function getTrackerSend() {
  */
 function checkAnalytics() {
   if (_enableCheck && typeof window[_gaGlobal] === 'function') {
-
     for (var i = 0; i < _analyticsQueue.length; i++) {
       _analyticsQueue[i].call();
     }
 
-    //override push to execute the command immediately from now on
+    // override push to execute the command immediately from now on
     _analyticsQueue.push = function (fn) {
       fn.call();
     };
 
-    //turn check into NOOP
+    // turn check into NOOP
     _enableCheck = false;
   }
 
@@ -192,12 +197,11 @@ function sendBidRequestToGa(bid) {
     });
   }
 
-  //check the queue
+  // check the queue
   checkAnalytics();
 }
 
 function sendBidResponseToGa(bid) {
-
   if (bid && bid.bidderCode) {
     _analyticsQueue.push(function () {
       var cpmCents = convertToCents(bid.cpm);
@@ -222,12 +226,11 @@ function sendBidResponseToGa(bid) {
     });
   }
 
-  //check the queue
+  // check the queue
   checkAnalytics();
 }
 
 function sendBidTimeouts(timedOutBidders) {
-
   _analyticsQueue.push(function () {
     utils._each(timedOutBidders, function (bidderCode) {
       _eventCount++;

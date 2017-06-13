@@ -4,7 +4,6 @@ describe('sovrn adapter tests', function () {
   const bidmanager = require('src/bidmanager');
 
   describe('sovrnResponse', function () {
-
     it('should exist and be a function', function () {
       expect(pbjs.sovrnResponse).to.exist.and.to.be.a('function');
     });
@@ -47,8 +46,8 @@ describe('sovrn adapter tests', function () {
 
       // no bids returned in the response.
       var response = {
-        "id": "54321",
-        "seatbid": []
+        'id': '54321',
+        'seatbid': []
       };
 
       pbjs._bidsRequested.push(bidderRequest);
@@ -119,17 +118,17 @@ describe('sovrn adapter tests', function () {
 
       // Returning a single bid in the response.
       var response = {
-        "id": "54321111",
-        "seatbid": [ {
-          "bid" : [ {
-            "id" : "1111111",
-            "impid" : "bidId2",
-            "price" : 0.09,
-            "nurl" : "http://url",
-            "adm" : "ad-code",
-            "h" : 250,
-            "w" : 300,
-            "ext" : { }
+        'id': '54321111',
+        'seatbid': [ {
+          'bid': [ {
+            'id': '1111111',
+            'impid': 'bidId2',
+            'price': 0.09,
+            'nurl': 'http://url',
+            'adm': 'ad-code',
+            'h': 250,
+            'w': 300,
+            'ext': { }
           } ]
         } ]
       };
@@ -171,4 +170,3 @@ describe('sovrn adapter tests', function () {
     });
   });
 });
-

@@ -1,36 +1,54 @@
 [
     "aardvark",
     "adblade",
+    "adbund",
     "adbutler",
     "adequant",
     "adform",
     "adkernel",
     "admedia",
+    "adyoulike",
+    "bidfluence",
+    "vertamedia",
     "aol",
     "appnexus",
     "appnexusAst",
+    "beachfront",
+    "audienceNetwork",
     "conversant",
     "districtmDMX",
     "fidelity",
-    "getintent",
     "gumgum",
     "hiromedia",
     "indexExchange",
+    "innity",
     "kruxlink",
+    "getintent",
+    "inneractive",
     "komoona",
+    "lifestreet",
+    "mantis",
     "openx",
     "piximedia",
     "pubmatic",
+    "pubgears",
     "pulsepoint",
+    "pulsepointLite",
+    "quantcast",
     "rhythmone",
     "rubicon",
     "smartyads",
-	  "smartadserver",
+    "huddledmasses",
+    "smartadserver",
     "sekindoUM",
+    "serverbid",
     "sonobi",
     "sovrn",
     "springserve",
+    "thoughtleadr",
+    "stickyadstv",
     "triplelift",
+    "twenga",
     "yieldbot",
     "nginad",
     "brightcom",
@@ -38,12 +56,19 @@
     "jcm",
     "underdogmedia",
     "memeglobal",
+    "criteo",
     "centro",
     "xhb",
     "sharethrough",
     "roxot",
     "vertoz",
     "widespace",
+    "admixer",
+    "atomx",
+    "tapsense",
+    "trion",
+    "prebidServer",
+    "adsupply",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -60,13 +85,34 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "gourmetads"
+      }
+    },
+    {
       "appnexusAst": {
+        "supportedMediaTypes": ["video", "native"]
+      }
+    },
+    {
+      "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
     },
     {
+      "beachfront": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "matomy"
+      }
+    },
+    {
       "rubicon": {
-        "alias": "rubiconLite"
+        "alias": "rubiconLite",
+        "supportedMediaTypes": ["video"]
       }
     },
     {
@@ -75,9 +121,38 @@
       }
     },
     {
+      "appnexus": {
+        "alias": "oftmedia"
+      }
+    },
+    {
       "adkernel": {
         "alias": "headbidding"
       }
+    },
+    {
+      "getintent": {
+        "supportedMediaTypes" : ["video"]
+      }
+    },
+    {
+      "stickyadstv": {
+        "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "admixer": {
+              "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "conversant": {
+        "supportedMediaTypes": ["video"]
+      }
     }
-
 ]
