@@ -54,6 +54,7 @@
     "nginad",
     "brightcom",
     "wideorbit",
+    "spotx",
     "jcm",
     "underdogmedia",
     "memeglobal",
@@ -95,6 +96,11 @@
     {
       "appnexusAst": {
         "supportedMediaTypes": ["video", "native"]
+      }
+    },
+    {
+      "spotx": {
+        "supportedMediaTypes": ["video"]
       }
     },
     {
