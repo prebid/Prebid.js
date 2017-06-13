@@ -44,16 +44,6 @@ module.exports = {
         loader: 'json'
       },
       {
-        test: /adaptermanager.js/,
-        include: /(src)/,
-        loader: 'analyticsLoader'
-      },
-      {
-        test: /adaptermanager.js/,
-        include: /(src)/,
-        loader: 'adapterLoader'
-      },
-      {
         test: /constants.json$/,
         include: /(src)/,
         loader: StringReplacePlugin.replace({

@@ -153,7 +153,7 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-// exports.videoAdapters = [];  // added by adapterLoader for now
+exports.videoAdapters = [];  // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
@@ -234,11 +234,3 @@ exports.setBidderSequence = function (order) {
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
-
-/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ADAPTERS */
-
-/** INSERT ANALYTICS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ANALYTICS */
