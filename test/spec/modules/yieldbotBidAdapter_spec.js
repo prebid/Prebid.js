@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import YieldbotAdapter from 'src/adapters/yieldbot';
+import YieldbotAdapter from 'modules/yieldbotBidAdapter';
 import bidManager from 'src/bidmanager';
 import adLoader from 'src/adloader';
 
@@ -71,7 +71,7 @@ let sandbox;
 let bidManagerStub;
 let yieldbotLibStub;
 
-before(function() {
+beforeEach(function() {
   window.$$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 });
 

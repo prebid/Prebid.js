@@ -2,10 +2,11 @@
  * @overview Yieldbot sponsored Prebid.js adapter.
  * @author elljoh
  */
-var adloader = require('../adloader');
-var bidfactory = require('../bidfactory');
-var bidmanager = require('../bidmanager');
-var utils = require('../utils');
+var adloader = require('src/adloader');
+var bidfactory = require('src/bidfactory');
+var bidmanager = require('src/bidmanager');
+var utils = require('src/utils');
+var adaptermanager = require('src/adaptermanager');
 
 /**
  * Adapter for requesting bids from Yieldbot.
@@ -13,7 +14,7 @@ var utils = require('../utils');
  * @returns {Object} Object containing implementation for invocation in {@link module:adaptermanger.callBids}
  * @class
  */
-var YieldbotAdapter = function YieldbotAdapter() {
+function YieldbotAdapter() {
   window.ybotq = window.ybotq || [];
 
   var ybotlib = {
@@ -136,6 +137,8 @@ var YieldbotAdapter = function YieldbotAdapter() {
   return {
     callBids: ybotlib.callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new YieldbotAdapter, 'yieldbot');
 
 module.exports = YieldbotAdapter;
