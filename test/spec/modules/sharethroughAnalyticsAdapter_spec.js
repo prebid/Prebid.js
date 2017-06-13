@@ -1,4 +1,4 @@
-import sharethroughAnalytics from 'src/adapters/analytics/sharethrough_analytics';
+import sharethroughAnalytics from 'modules/sharethroughAnalyticsAdapter';
 import { expect } from 'chai';
 
 describe('sharethrough analytics adapter', () => {

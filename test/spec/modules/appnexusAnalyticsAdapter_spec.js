@@ -1,4 +1,4 @@
-import appnexusAnalytics from 'src/adapters/analytics/appnexus';
+import appnexusAnalytics from 'modules/appnexusAnalyticsAdapter';
 import { assert } from 'chai';
 import { getBidRequestedPayload } from 'test/fixtures/fixtures';
 

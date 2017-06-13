@@ -3,7 +3,7 @@ import { loadScript } from 'src/adloader';
 import { ajax } from 'src/ajax';
 
 const events = require('src/events');
-const utils = require('../../utils');
+const utils = require('src/utils');
 
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;

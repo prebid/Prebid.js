@@ -1,6 +1,7 @@
 import {ajax} from 'src/ajax';
-import adapter from 'AnalyticsAdapter';
-const utils = require('../../utils');
+import adapter from 'src/AnalyticsAdapter';
+import adaptermanager from 'src/adaptermanager';
+const utils = require('src/utils');
 
 /****
  * PubWise.io Analytics
@@ -42,5 +43,11 @@ let pubwiseAnalytics = Object.assign(adapter(
       );
     }
   });
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: pubwiseAnalytics,
+  code: 'pubwise'
+});
+
 export default pubwiseAnalytics;
 

@@ -1,13 +1,12 @@
 import { assert } from 'chai';
-import adaptermanager from '../../../../../src/adaptermanager';
-import events from '../../../../../src/events';
-import CONSTANTS from '../../../../../src/constants.json';
+import events from 'src/events';
+import CONSTANTS from 'src/constants.json';
 
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
-const AnalyticsAdapter = require('../../../../../src/adapters/analytics/AnalyticsAdapter').default;
+const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
   url: 'http://localhost:9999/src/adapters/analytics/libraries/example.js',
   analyticsType: 'library',

@@ -1,7 +1,7 @@
-import pubwiseAnalytics from 'src/adapters/analytics/pubwiseanalytics';
-let events = require('../../../../src/events');
-let adaptermanager = require('../../../../src/adaptermanager');
-let constants = require('../../../../src/constants.json');
+import pubwiseAnalytics from 'modules/pubwiseAnalyticsAdapter';
+let events = require('src/events');
+let adaptermanager = require('src/adaptermanager');
+let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
   describe('enableAnalytics', function () {

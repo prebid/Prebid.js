@@ -1,12 +1,13 @@
-import adapter from 'AnalyticsAdapter';
-const utils = require('../../utils');
+import adapter from 'src/AnalyticsAdapter';
+import adaptermanager from 'src/adaptermanager';
+const utils = require('src/utils');
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const STR_BIDDER_CODE = 'sharethrough';
 const STR_VERSION = '0.1.0';
 
-export default Object.assign(adapter(
+var sharethroughAdapter = Object.assign(adapter(
   {
     emptyUrl,
     analyticsType
@@ -61,3 +62,10 @@ export default Object.assign(adapter(
       img.src = theUrl;
     }
   });
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: sharethroughAdapter,
+  code: 'sharethrough'
+});
+
+export default sharethroughAdapter;

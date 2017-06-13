@@ -2,9 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('./../../events');
-var utils = require('./../../utils');
-var CONSTANTS = require('./../../constants.json');
+var events = require('src/events');
+var utils = require('src/utils');
+var CONSTANTS = require('src/constants.json');
+var adaptermanager = require('src/adaptermanager');
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -20,6 +21,11 @@ var _eventCount = 0;
 var _enableDistribution = false;
 var _trackerSend = null;
 var _sampled = true;
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: exports,
+  code: 'ga'
+});
 
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!

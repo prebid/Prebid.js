@@ -1,8 +1,9 @@
 import {ajax} from 'src/ajax';
-import adapter from 'AnalyticsAdapter';
+import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
+import adaptermanager from 'src/adaptermanager';
 
-const utils = require('../../utils');
+const utils = require('src/utils');
 
 const url = '//pa.rxthdr.com/analytic';
 const analyticsType = 'endpoint';
@@ -94,5 +95,10 @@ roxotAdapter.enableAnalytics = function (config) {
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
 };
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: roxotAdapter,
+  code: 'roxot'
+});
 
 export default roxotAdapter;

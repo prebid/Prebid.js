@@ -1,7 +1,7 @@
-import roxotAnalytic from 'src/adapters/analytics/roxot';
-let events = require('../../../../src/events');
-let adaptermanager = require('../../../../src/adaptermanager');
-let constants = require('../../../../src/constants.json');
+import roxotAnalytic from 'modules/roxotAnalyticsAdapter';
+let events = require('src/events');
+let adaptermanager = require('src/adaptermanager');
+let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
   describe('enableAnalytics', function () {
