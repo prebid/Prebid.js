@@ -15,7 +15,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_p',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         placement_id: '1a2b3c4d5e6f1a2b3c4d'
       }
@@ -27,7 +27,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_pd',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         placement_id: '1a2b3c4d5e6f1a2b3c4d',
         dom_id: 'div-gpt-ad-12345-0'
@@ -40,7 +40,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_pdf',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         placement_id: '1a2b3c4d5e6f1a2b3c4d',
         dom_id: 'div-gpt-ad-12345-0',
@@ -54,19 +54,32 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_a',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
       }
     }]
   };
+
+  const adUnit_as = {
+    code: 'sbi_s',
+    sizes: [[120, 600], [300, 600], [160, 600]],
+    bids: [{
+      bidder: 'sonobi',
+      params: {
+        ad_unit: '/7780971/sparks_prebid_LB',
+        sizes: [[300, 250], [300, 600]]
+      }
+    }]
+  };
+
   const adUnit_ad = {
     bidderCode: 'sonobi',
     bids: [{
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_ad',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
         dom_id: 'div-gpt-ad-12345-0'
@@ -79,7 +92,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_af',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
         floor: '1'
@@ -92,7 +105,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_adf',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
         dom_id: 'div-gpt-ad-12345-0',
@@ -106,7 +119,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_A',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
       }
@@ -118,7 +131,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_Ad',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '7780971/sparks_prebid_MR',
         dom_id: 'div-gpt-ad-12345-0'
@@ -131,7 +144,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_Af',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '7780971/sparks_prebid_MR',
         floor: '1'
@@ -144,7 +157,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_Adf',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '7780971/sparks_prebid_MR',
         dom_id: 'div-gpt-ad-12345-0',
@@ -159,7 +172,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_m1hb',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '1a2b3c4d5e6f1a2b3c4d',
         dom_id: 'div-gpt-ad-12345-0'
@@ -172,7 +185,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_m2hb',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
         placement_id: 'OPTIONAL',
@@ -186,7 +199,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_m3hb',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '/7780971/sparks_prebid_MR',
         placement_id: '',
@@ -200,7 +213,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_m4hb',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         ad_unit: '',
         placement_id: '1a2b3c4d5e6f1a2b3c4d',
@@ -214,7 +227,7 @@ describe('Sonobi adapter tests', () => {
       bidId: 'testbid',
       bidder: 'sonobi',
       placementCode: 'adUnit_m5hb',
-      sizes: [[300, 250],[300,600]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         placement_id: '/7780971/sparks_prebid_MR',
         dom_id: 'div-gpt-ad-12345-0'
@@ -223,28 +236,28 @@ describe('Sonobi adapter tests', () => {
   };
   //  FTFY
   const sbi_adUnits = {
-    'adUnit_p' : adUnit_p,
-    'adUnit_pd' : adUnit_pd,
-    'adUnit_pdf' : adUnit_pdf,
-    'adUnit_a' : adUnit_a,
-    'adUnit_ad' : adUnit_ad,
-    'adUnit_af' : adUnit_af,
-    'adUnit_adf' : adUnit_adf,
-    'adUnit_A' : adUnit_A,
-    'adUnit_Ad' : adUnit_Ad,
-    'adUnit_Af' : adUnit_Af,
-    'adUnit_Adf' : adUnit_Adf,
-    'adUnit_m1hb' : adUnit_m1hb,
-    'adUnit_m2hb' : adUnit_m2hb,
-    'adUnit_m3hb' : adUnit_m3hb,
-    'adUnit_m4hb' : adUnit_m4hb,
-    'adUnit_m5hb' : adUnit_m5hb
+    'adUnit_p': adUnit_p,
+    'adUnit_pd': adUnit_pd,
+    'adUnit_pdf': adUnit_pdf,
+    'adUnit_a': adUnit_a,
+    'adUnit_as': adUnit_as,
+    'adUnit_ad': adUnit_ad,
+    'adUnit_af': adUnit_af,
+    'adUnit_adf': adUnit_adf,
+    'adUnit_A': adUnit_A,
+    'adUnit_Ad': adUnit_Ad,
+    'adUnit_Af': adUnit_Af,
+    'adUnit_Adf': adUnit_Adf,
+    'adUnit_m1hb': adUnit_m1hb,
+    'adUnit_m2hb': adUnit_m2hb,
+    'adUnit_m3hb': adUnit_m3hb,
+    'adUnit_m4hb': adUnit_m4hb,
+    'adUnit_m5hb': adUnit_m5hb
   };
 
   //  Run the same test against all the (now tons of) different configurations
   utils._each(sbi_adUnits, (adUnit, adUnitName) => {
     describe('should form valid bid requests', () => {
-
       let adapter = new Adapter();
       let stubLoadScript;
       let stubFailBid;
@@ -277,71 +290,68 @@ describe('Sonobi adapter tests', () => {
         expect(stubLoadScript.callCount).to.equal(1);
         expect(stubFailBid.callCount).to.equal(0);
       });
-
     });
-
   });
 
   describe('should parse bid returns and register bid objects', () => {
-
     let adapter = new Adapter();
     let spyAddBidResponse;
     let stubFailBid;
     let stubGoodBid;
 
     const sbi_bid = {
-      "slots":
+      'slots':
       {
-        "sbi_a":
+        'sbi_a':
         {
-          "sbi_size": "300x250",
-          "sbi_apoc": "premium",
-          "sbi_aid": "159.60.7533347",
-          "sbi_mouse": 4.20
+          'sbi_size': '300x250',
+          'sbi_apoc': 'premium',
+          'sbi_aid': '159.60.7533347',
+          'sbi_mouse': 4.20
         }
       },
-      "sbi_dc": "mco-1-"
+      'sbi_dc': 'mco-1-'
     };
 
     const sbi_video_bid = {
-      "slots":
+      'slots':
       {
-        "sbi_a":
+        'sbi_a':
         {
-          "sbi_size": "outstream",
-          "sbi_apoc": "premium",
-          "sbi_aid": "159.60.7533347",
-          "sbi_mouse": 4.20,
+          'sbi_size': 'outstream',
+          'sbi_apoc': 'premium',
+          'sbi_aid': '159.60.7533347',
+          'sbi_mouse': 4.20,
         }
       },
-      "sbi_dc": "mco-1-"
+      'sbi_dc': 'mco-1-'
     };
 
     const sbi_deal_bid = {
-      "slots":
+      'slots':
       {
-        "sbi_a":
+        'sbi_a':
         {
-          "sbi_size": "300x250",
-          "sbi_apoc": "premium",
-          "sbi_aid": "159.60.7533347",
-          "sbi_mouse": 4.20,
-          "sbi_dozer": "apex-test-deal"
+          'sbi_size': '300x250',
+          'sbi_apoc': 'premium',
+          'sbi_aid': '159.60.7533347',
+          'sbi_mouse': 4.20,
+          'sbi_dozer': 'apex-test-deal'
         }
       },
-      "sbi_dc": "mco-1-"
+      'sbi_dc': 'mco-1-'
     };
 
     const sbi_noBid = {
-      "slots":
+      'slots':
       {
-        "sbi_a": {}
+        'sbi_a': {}
       },
-      "sbi_dc": "mco-1-"
+      'sbi_dc': 'mco-1-'
     };
 
     beforeEach(() => {
-      spyAddBidResponse = sinon.spy(bidManager, "addBidResponse");
+      spyAddBidResponse = sinon.spy(bidManager, 'addBidResponse');
       stubFailBid = sinon.stub(adapter, 'failure');
       stubGoodBid = sinon.stub(adapter, 'success');
     });
@@ -375,8 +385,5 @@ describe('Sonobi adapter tests', () => {
       expect(spyAddBidResponse.called).to.be.true;
       expect(stubGoodBid.callCount).to.equal(0);
     });
-
   });
-
-
 });

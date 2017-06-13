@@ -7,7 +7,7 @@ import bidManager from '../../../src/bidmanager';
 import adapter from '../../../src/adapters/adform';
 
 describe('Adform adapter', () => {
-  let _adapter, sandbox; 
+  let _adapter, sandbox;
 
   describe('request', () => {
     it('should create callback method on PREBID_GLOBAL', () => {
@@ -30,16 +30,16 @@ describe('Adform adapter', () => {
       assert.equal(_query.callback.split('.')[1], '_adf_callback');
       assert.equal(_query.tid, 145);
       assert.equal(_query.rp, 4);
+      assert.equal(_query.fd, 1);
       assert.equal(_query.url, encodeURIComponent('some// there'));
     });
-
 
     it('should correctly form bid items', () => {
       const _items = parseUrl(adLoader.loadScript.args[0][0]).items;
 
-      assert.deepEqual(_items[0], { mid: '1' });
-      assert.deepEqual(_items[1], { mid: '2', someVar: 'someValue' });
-      assert.deepEqual(_items[2], { mid: '3', pdom: 'home' });
+      assert.deepEqual(_items[0], { mid: '1', transactionId: 'transactionId' });
+      assert.deepEqual(_items[1], { mid: '2', someVar: 'someValue', transactionId: 'transactionId' });
+      assert.deepEqual(_items[2], { mid: '3', pdom: 'home', transactionId: 'transactionId' });
     });
   });
 
@@ -61,6 +61,7 @@ describe('Adform adapter', () => {
       assert.equal(_bidObject.width, 90);
       assert.equal(_bidObject.height, 90);
       assert.equal(_bidObject.dealId, 'deal-1');
+      assert.equal(_bidObject.transactionId, 'transactionId');
     });
 
     it('should correctly form empty bid response object', () => {
@@ -112,6 +113,7 @@ describe('Adform adapter', () => {
   });
 
   beforeEach(() => {
+    var transactionId = 'transactionId';
     _adapter = adapter();
     utils.getUniqueIdentifierStr = () => 'callback';
     sandbox = sinon.sandbox.create();
@@ -127,7 +129,8 @@ describe('Adform adapter', () => {
             url: 'some// there'
           },
           adxDomain: 'newdomain',
-          tid: 45
+          tid: 45,
+          transactionId: transactionId
         },
         {
           bidId: '123',
@@ -137,7 +140,8 @@ describe('Adform adapter', () => {
             mid: 2,
             tid: 145,
             someVar: 'someValue'
-          }
+          },
+          transactionId: transactionId
         },
         {
           bidId: 'a1b',
@@ -146,9 +150,10 @@ describe('Adform adapter', () => {
           params: {
             mid: 3,
             pdom: 'home'
-          }
+          },
+          transactionId: transactionId
         }
-    ]});
+      ]});
   });
 
   afterEach(() => {
@@ -162,7 +167,7 @@ function parseUrl(url) {
   return {
     path: parts.join('/'),
     items: query
-      .filter((i) => ! ~i.indexOf('='))
+      .filter((i) => !~i.indexOf('='))
       .map((i) => fromBase64(i)
         .split('&')
         .reduce(toObject, {})),

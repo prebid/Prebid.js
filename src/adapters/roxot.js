@@ -5,7 +5,7 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var RoxotAdapter = function RoxotAdapter() {
-  var roxotUrl = "r.rxthdr.com";
+  var roxotUrl = 'r.rxthdr.com';
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 

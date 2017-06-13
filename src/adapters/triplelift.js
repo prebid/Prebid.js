@@ -7,9 +7,7 @@ var bidfactory = require('../bidfactory.js');
 *  Use to create a TripleLiftAdapter object
 */
 
-
 var TripleLiftAdapter = function TripleLiftAdapter() {
-
   function _callBids(params) {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
@@ -26,9 +24,8 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     }
   }
 
-
   function buildTLCall(bid, callbackId) {
-    //determine tag params
+    // determine tag params
     var inventoryCode = utils.getBidIdParameter('inventoryCode', bid.params);
     var floor = utils.getBidIdParameter('floor', bid.params);
 
@@ -99,7 +96,6 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
       var bid = [];
       if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
-
         bid = bidfactory.createBid(1, bidObj);
         bid.bidderCode = 'triplelift';
         bid.cpm = tlResponseObj.cpm;
@@ -108,25 +104,21 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.height = tlResponseObj.height;
         bid.dealId = tlResponseObj.deal_id;
         bidmanager.addBidResponse(placementCode, bid);
-
       } else {
         // no response data
         // @if NODE_ENV='debug'
-        if (bidObj) {utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode);}
+        if (bidObj) { utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode); }
         // @endif
         bid = bidfactory.createBid(2, bidObj);
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
-
     } else {
       // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
       // @endif
-
     }
-
   };
 
   return {

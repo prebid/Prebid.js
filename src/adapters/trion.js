@@ -7,8 +7,8 @@ var bidmanager = require('../bidmanager.js');
 var bidfactory = require('../bidfactory.js');
 var Adapter = require('./adapter.js');
 
-const BID_REQUEST_BASE_URL = "https://in-appadvertising.com/api/bidRequest?";
-const USER_SYNC_URL =  "https://in-appadvertising.com/api/userSync.js";
+const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
+const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 var TrionAdapter;
 TrionAdapter = function TrionAdapter() {
@@ -18,7 +18,7 @@ TrionAdapter = function TrionAdapter() {
   baseAdapter.callBids = function (params) {
     var bids = params.bids || [];
 
-    if(!bids.length){
+    if (!bids.length) {
       return;
     }
 
@@ -27,10 +27,10 @@ TrionAdapter = function TrionAdapter() {
         userTag = window.TRION_INT || {};
         userTag.pubId = utils.getBidIdParameter('pubId', bids[0].params);
         userTag.sectionId = utils.getBidIdParameter('sectionId', bids[0].params);
-        if(!userTag.to){
+        if (!userTag.to) {
           getBids(bids);
         }
-        else{
+        else {
           setTimeout(function () {
             getBids(bids);
           }, userTag.to);
@@ -42,8 +42,8 @@ TrionAdapter = function TrionAdapter() {
     }
   };
 
-  function getBids(bids){
-    if(!userTag.int_t) {
+  function getBids(bids) {
+    if (!userTag.int_t) {
       userTag.int_t = window.TR_INT_T || -1;
     }
 
@@ -58,27 +58,28 @@ TrionAdapter = function TrionAdapter() {
     var pubId = utils.getBidIdParameter('pubId', bid.params);
     var sectionId = utils.getBidIdParameter('sectionId', bid.params);
     var re = utils.getBidIdParameter('re', bid.params);
-    var url = window.location.href;
+    var url = utils.getTopWindowUrl();
     var sizes = utils.parseSizesInput(bid.sizes).join(',');
 
     var trionUrl = BID_REQUEST_BASE_URL;
 
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'callback', 'pbjs.handleTrionCB');
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'callback', '$$PREBID_GLOBAL$$.handleTrionCB');
     trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bidId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 're', re);
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'slot', bid.placementCode);
     if (url) {
       trionUrl += 'url=' + url + '&';
     }
     if (sizes) {
       trionUrl += 'sizes=' + sizes + '&';
     }
-    if(userTag) {
+    if (userTag) {
       trionUrl += 'tag=' + encodeURIComponent(JSON.stringify(userTag)) + '&';
     }
 
-    //remove the trailing "&"
+    // remove the trailing "&"
     if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {
       trionUrl = trionUrl.substring(0, trionUrl.length - 1);
     }
@@ -86,7 +87,7 @@ TrionAdapter = function TrionAdapter() {
     return trionUrl;
   }
 
-  //expose the callback to the global object:
+  // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleTrionCB = function (trionResponseObj) {
     var bid;
     var bidObj = {};
@@ -113,7 +114,7 @@ TrionAdapter = function TrionAdapter() {
         bid.height = result.height;
       }
     }
-    if(!bid) {
+    if (!bid) {
       bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidObj);
     }
     bidmanager.addBidResponse(placementCode, bid);

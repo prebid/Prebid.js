@@ -7,6 +7,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "adyoulike",
     "bidfluence",
     "vertamedia",
     "aol",
@@ -30,8 +31,10 @@
     "openx",
     "piximedia",
     "pubmatic",
+    "pubgears",
     "pulsepoint",
     "pulsepointLite",
+    "quantcast",
     "rhythmone",
     "rubicon",
     "smartyads",
@@ -64,6 +67,8 @@
     "atomx",
     "tapsense",
     "trion",
+    "prebidServer",
+    "adsupply",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -86,9 +91,10 @@
     },
     {
       "appnexusAst": {
-        "supportedMediaTypes": ["video"]
+        "supportedMediaTypes": ["video", "native"]
       }
-    },    {
+    },
+    {
       "vertamedia": {
         "supportedMediaTypes": ["video"]
       }
@@ -136,6 +142,16 @@
     },
     {
       "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "admixer": {
+              "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "conversant": {
         "supportedMediaTypes": ["video"]
       }
     }

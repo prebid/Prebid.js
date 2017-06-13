@@ -3,8 +3,8 @@ var bidmanager = require('../bidmanager.js');
 var adloader = require('../adloader');
 
 var CriteoAdapter = function CriteoAdapter() {
-
-  var _publisherTagUrl = window.location.protocol + '//static.criteo.net/js/ld/publishertag.js';
+  var sProt = (window.location.protocol === 'http:') ? 'http:' : 'https:';
+  var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
   var _profileId = 125;
 
@@ -18,8 +18,7 @@ var CriteoAdapter = function CriteoAdapter() {
         function () {},
         true
       );
-    }
-    else {
+    } else {
       // publisherTag already loaded
       _pushBidRequestEvent(params);
     }
@@ -27,14 +26,12 @@ var CriteoAdapter = function CriteoAdapter() {
 
   // send bid request to criteo direct bidder handler
   function _pushBidRequestEvent(params) {
-
     // if we want to be fully asynchronous, we must first check window.criteo_pubtag in case publishertag.js is not loaded yet.
     window.Criteo = window.Criteo || {};
     window.Criteo.events = window.Criteo.events || [];
 
     // generate the bidding event
     var biddingEventFunc = function () {
-
       var bids = params.bids || [];
 
       var slots = [];
@@ -70,14 +67,12 @@ var CriteoAdapter = function CriteoAdapter() {
     };
 
     window.Criteo.events.push(biddingEventFunc);
-
   }
 
   function parseBidResponse(bidsResponse) {
     try {
       return JSON.parse(bidsResponse);
-    }
-    catch (error) {
+    } catch (error) {
       return {};
     }
   }
@@ -90,8 +85,7 @@ var CriteoAdapter = function CriteoAdapter() {
     return function (bidsResponse) {
       var jsonbidsResponse = parseBidResponse(bidsResponse);
 
-      if (isNoBidResponse(jsonbidsResponse))
-        return _callbackError(slots)();
+      if (isNoBidResponse(jsonbidsResponse)) { return _callbackError(slots)(); }
 
       for (var i = 0; i < slots.length; i++) {
         var bidResponse = null;
@@ -113,8 +107,7 @@ var CriteoAdapter = function CriteoAdapter() {
           bidObject.ad = bidResponse.creative;
           bidObject.width = bidResponse.width;
           bidObject.height = bidResponse.height;
-        }
-        else {
+        } else {
           bidObject = _invalidBidResponse();
         }
         bidmanager.addBidResponse(slots[i].impId, bidObject);

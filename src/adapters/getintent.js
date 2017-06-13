@@ -1,4 +1,4 @@
-/*jshint loopfunc: true */
+/* jshint loopfunc: true */
 
 import { STATUS } from 'src/constants';
 
@@ -37,7 +37,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
         known: bidRequest.params.known || 1,
         is_video: bidRequest.mediaType === 'video',
         video: bidRequest.params.video || {},
-        size: bidRequest.sizes[0].join("x"),
+        size: bidRequest.sizes[0].join('x'),
       };
       addOptional(bidRequest.params, request, ['cur', 'floor']);
       (function (r, br) {
