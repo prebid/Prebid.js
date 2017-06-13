@@ -8,8 +8,9 @@ export function Renderer(options) {
   this.handlers = {};
   this.id = id;
 
-  // a renderer may use the following properties with Renderer.prototype.process
-  // to delay rendering until the render function is loaded
+  // a renderer may push to the command queue to delay rendering until the
+  // render function is loaded by loadScript, at which point the the command
+  // queue will be processed
   this.loaded = loaded;
   this.cmd = [];
   this.push = func => {
@@ -20,8 +21,14 @@ export function Renderer(options) {
     this.loaded ? func.call() : this.cmd.push(func);
   };
 
+  // bidders may override this with the `callback` property given to `install`
+  this.callback = callback || (() => {
+    this.loaded = true;
+    this.process();
+  });
+
   // we expect to load a renderer url once only so cache the request to load script
-  loadScript(url, callback, true);
+  loadScript(url, this.callback, true);
 }
 
 Renderer.install = function({ url, config, id, callback, loaded }) {
@@ -49,10 +56,8 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
 };
 
 /*
- * If a Renderer is not loaded at the time renderer.render(bid) is called, add
- * the render function to the command queue with render.push(() => renderFunc)
- * then create a renderer callback that sets renderer.loaded to true and call
- * this function as renderer.process() to begin rendering
+ * Calls functions that were pushed to the command queue before the
+ * renderer was loaded by `loadScript`
  */
 Renderer.prototype.process = function() {
   while (this.cmd.length > 0) {

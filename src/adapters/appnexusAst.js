@@ -282,12 +282,6 @@ function AppnexusAstAdapter() {
     });
   }
 
-  function onOutstreamRendererLoaded(bid) {
-    // adload.loadScript has loaded ANOutstreamVideo
-    bid.renderer.loaded = true;
-    bid.renderer.process();
-  }
-
   function handleOutstreamRendererEvents(id, eventName) {
     const bid = this;
     bid.renderer.handleVideoEvent({ id, eventName });
@@ -319,9 +313,7 @@ function AppnexusAstAdapter() {
             url: ad.renderer_url,
             config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
             loaded: false,
-            callback: () => onOutstreamRendererLoaded.call(null, bid)
           });
-
           try {
             bid.renderer.setRender(outstreamRender);
           } catch (err) {
