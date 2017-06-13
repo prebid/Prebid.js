@@ -24,27 +24,17 @@ function Spotx() {
     tag.src = '//js.spotx.tv/directsdk/v1/' + channelId + '.js';
     tag.async = true;
     tag.type = 'text/javascript';
-    document.head.appendChild(tag);
     tag.onload = initDSDK;
+    document.head.appendChild(tag);
   }
 
   function initDSDK()
   {
-    var directAdOS = new SpotX.DirectAdOS({
-      channel_id: bidReq.params.video.channel_id,
-      demand_source_timeout: 10000,
-      slot: document.getElementById(bidReq.params.video.slot),
-      video_slot: document.getElementById(bidReq.params.video.video_slot),
-      content_width: bidReq.params.video.content_width,
-      content_height: bidReq.params.video.content_height,
-      content_id: bidReq.params.video.content_id,
-      contentPageUrl: bidReq.params.video.contentPageUrl,
-      ad_volume: bidReq.params.video.ad_volume,
-      hide_skin: bidReq.params.video.hide_skin,
-      autoplay: bidReq.params.video.autoplay,
-      ad_mute: bidReq.params.video.ad_mute,
-      custom: bidReq.params.video.custom
-    });
+    var options = bidReq.params.video;
+    options.slot = document.getElementById(bidReq.params.video.slot);
+    options.video_slot = document.getElementById(bidReq.params.video.video_slot);
+
+    var directAdOS = new SpotX.DirectAdOS(options);
 
     directAdOS.getAdServerKVPs().then(function(adServerKVPs) {
       var resp = {};
@@ -61,6 +51,8 @@ function Spotx() {
       resp.bids.push(obj);
       KVP_Object = adServerKVPs;
       handleResponse(resp);
+    },function(error){
+      handleResponse()
     });
   }
 
@@ -91,10 +83,10 @@ function Spotx() {
   function handleResponse(response) {
     if (!response || !response.bids || !response.bids.length) {
       bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.NO_BID));
-      return;
     }
-
-    bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.GOOD, response.bids[0]));
+    else {
+      bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.GOOD, response.bids[0]));
+    }
   }
 
   return {
