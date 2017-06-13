@@ -1,7 +1,7 @@
 describe('smartadserver adapter tests', function () {
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('src/adapters/smartadserver');
+  var adapter = require('modules/smartadserverBidAdapter');
   var adLoader = require('src/adloader');
   var expect = require('chai').expect;
   var bidmanager = require('src/bidmanager');

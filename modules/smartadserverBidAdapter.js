@@ -1,8 +1,9 @@
-var utils = require('../utils.js');
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
+var utils = require('src/utils.js');
+var bidfactory = require('src/bidfactory.js');
+var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
-var url = require('url');
+var url = require('src/url.js');
+var adaptermanager = require('src/adaptermanager');
 
 var SmartAdServer = function SmartAdServer() {
   var generateCallback = function(bid) {
@@ -53,5 +54,7 @@ var SmartAdServer = function SmartAdServer() {
     }
   };
 };
+
+adaptermanager.registerBidAdapter(new SmartAdServer, 'smartadserver');
 
 module.exports = SmartAdServer;
