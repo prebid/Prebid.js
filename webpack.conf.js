@@ -3,6 +3,7 @@ var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers');
+var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonP.js');
 
 module.exports = {
   devtool: 'source-map',
@@ -19,7 +20,7 @@ module.exports = {
     ]
   },
   output: {
-    jsonpFunction: 'pbjsSeg'
+    jsonpFunction: 'pbjsChunk'
   },
   module: {
     loaders: [
@@ -75,6 +76,9 @@ module.exports = {
   },
   plugins: [
     new StringReplacePlugin(),
+    new RequireEnsureWithoutJsonp(),
+
+    // this plugin must be last so it can be easily removed for karma unit tests
     new webpack.optimize.CommonsChunkPlugin({
       name: 'prebid',
       filename: 'prebid.js',
