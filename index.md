@@ -124,6 +124,7 @@ description: Free and open source solutions for publishers to quickly implement 
     <div class="col-xs-6 col-sm-4"><h3>Bidfluence</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Trion</h3></div>
     <div class="col-xs-6 col-sm-4"><h3>Innity</h3></div>
+    <div class="col-xs-6 col-sm-4"><h3>Adyoulike</h3></div>
 
     <!-- END BIDDERS -->
     </div>
