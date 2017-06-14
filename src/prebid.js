@@ -344,6 +344,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
+          iframe.style.overflow = 'hidden';
           iframe.src = url;
 
           utils.insertElement(iframe, doc, 'body');
