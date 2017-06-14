@@ -1,7 +1,7 @@
 describe('eplanning adapter tests', function () {
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('src/adapters/eplanning');
+  var adapter = require('modules/eplanningBidAdapter');
   var adLoader = require('src/adloader');
   var expect = require('chai').expect;
   var bidmanager = require('src/bidmanager');

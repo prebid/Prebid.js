@@ -1,7 +1,8 @@
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
+var adaptermanager = require('src/adaptermanager');
 
-var EPlanningAdapter = function EPlanningAdapter() {
+function EPlanningAdapter() {
   (function() {
     var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = location.protocol === 'https:' ? 'https:' : 'http:', ISV = 'aklc.img.e-planning.net';
     function Hbpb() {
@@ -275,6 +276,8 @@ var EPlanningAdapter = function EPlanningAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new EPlanningAdapter, 'eplanning');
 
 module.exports = EPlanningAdapter;
