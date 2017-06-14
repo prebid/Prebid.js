@@ -71,6 +71,7 @@
     "prebidServer",
     "adsupply",
     "cox",
+    "aerserv",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -154,6 +155,11 @@
     },
     {
       "conversant": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "aerserv": {
         "supportedMediaTypes": ["video"]
       }
     }
