@@ -69,6 +69,7 @@
     "trion",
     "prebidServer",
     "adsupply",
+    "aerserv",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -152,6 +153,11 @@
     },
     {
       "conversant": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "aerserv": {
         "supportedMediaTypes": ["video"]
       }
     }
