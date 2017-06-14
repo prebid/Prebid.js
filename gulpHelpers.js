@@ -6,6 +6,7 @@ const MANIFEST = 'package.json';
 const exec = require('child_process').exec;
 const through = require('through2');
 const _ = require('lodash');
+const gutil = require('gulp-util');
 
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
@@ -40,7 +41,24 @@ module.exports = {
         .replace(/\/>/g, '\\/>');
   },
   getArgModules() {
-    return (argv.modules || '').split(',').filter(module => !!module);
+    var modules = (argv.modules || '').split(',').filter(module => !!module);
+
+    try {
+      if (modules.length === 1 && path.extname(modules[0]).toLowerCase() === '.json') {
+        var moduleFile = modules[0];
+
+        modules = JSON.parse(
+          fs.readFileSync(moduleFile, 'utf8')
+        );
+      }
+    } catch(e) {
+      throw new gutil.PluginError({
+        plugin: 'modules',
+        message: 'failed reading: ' + argv.modules
+      });
+    }
+
+    return modules;
   },
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
