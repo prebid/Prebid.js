@@ -1,13 +1,13 @@
-var bidmanager = require('../bidmanager.js'),
-	bidfactory = require('../bidfactory.js'),
-	utils = require('../utils.js'),
-	CONSTANTS = require('../constants.json');
+var bidmanager = require('../bidmanager.js');
+var bidfactory = require('../bidfactory.js');
+var utils = require('../utils.js');
+var CONSTANTS = require('../constants.json');
 
 import {ajax} from '../ajax';
 
 function track(debug, p1, p2, p3) {
 	if (debug === true) {
-		console.log('GA: %s %s %s', p1, p2, p3 || '');
+		utils.logMessage('GA: ' + ' ' + p1 + ' ' + p2 + ' ' + p3);
 	}
 }
 
@@ -42,6 +42,7 @@ module.exports = function (bidManager, global, loader) {
 	}
 
 	function load(bidParams, url, postData, callback) {
+		utils.logMessage('bidParams: ' + bidParams);
 		loader(url, function (responseText, response) {
 			if (response.status === 200) {
 				callback(200, 'success', response.responseText);
@@ -66,12 +67,13 @@ module.exports = function (bidManager, global, loader) {
 				o[key] = value;
 			}
 		} catch (ex) {
+			utils.logMessage('findAndFillParam error:', ex);
 		}
 	}
 
 	function logToConsole(txt) {
 		if (debug) {
-			console.log(txt);
+			utils.logMessage(txt);
 		}
 	}
 
@@ -195,7 +197,7 @@ module.exports = function (bidManager, global, loader) {
 		});
 
 		for (var i = 0; i < bids.length; i++) {
-			var bidID = utils.generateUUID();
+			var bidID = utils.getUniqueIdentifierStr();
 			slotMap[bidID] = bids[i];
 			slotMap[bids[i].placementCode] = bids[i];
 
