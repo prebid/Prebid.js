@@ -269,18 +269,17 @@ function AppnexusAstAdapter() {
   }
 
   function outstreamRender(bid) {
-    window.ANOutstreamVideo.renderAd({
-      tagId: bid.adResponse.tag_id,
-      sizes: [bid.getSize().split('x')],
-      targetId: bid.adUnitCode, // target div id to render video
-      uuid: bid.adResponse.uuid,
-      adResponse: bid.adResponse,
-      rendererOptions: bid.renderer.getConfig()
-    }, handleOutstreamRendererEvents.bind(bid));
-  }
-
-  function onOutstreamRendererLoaded() {
-    // setup code for renderer, if any
+    // push to render queue because ANOutstreamVideo may not be loaded yet
+    bid.renderer.push(() => {
+      window.ANOutstreamVideo.renderAd({
+        tagId: bid.adResponse.tag_id,
+        sizes: [bid.getSize().split('x')],
+        targetId: bid.adUnitCode, // target div id to render video
+        uuid: bid.adResponse.uuid,
+        adResponse: bid.adResponse,
+        rendererOptions: bid.renderer.getConfig()
+      }, handleOutstreamRendererEvents.bind(bid));
+    });
   }
 
   function handleOutstreamRendererEvents(id, eventName) {
@@ -313,9 +312,8 @@ function AppnexusAstAdapter() {
             id: ad.renderer_id,
             url: ad.renderer_url,
             config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
-            callback: () => onOutstreamRendererLoaded.call(null, bid)
+            loaded: false,
           });
-
           try {
             bid.renderer.setRender(outstreamRender);
           } catch (err) {
