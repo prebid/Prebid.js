@@ -3,7 +3,7 @@ var bidmanager = require('src/bidmanager.js');
 
 var EPlanningAdapter = function EPlanningAdapter() {
   (function() {
-    var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = '', ISV = 'aklc.img.e-planning.net';
+    var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = location.protocol === 'https:' ? 'https:' : 'http:', ISV = 'aklc.img.e-planning.net';
     function Hbpb() {
       var slots = (function() {
         var _data = [];
