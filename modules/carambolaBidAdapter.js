@@ -2,12 +2,13 @@
  * Carambola adapter
  */
 
-var bidfactory = require('../bidfactory.js');
-var bidmanager = require('../bidmanager.js');
-const utils = require('../utils.js');
-const ajax = require('../ajax.js').ajax;
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const utils = require('src/utils.js');
+const ajax = require('src/ajax.js').ajax;
+const adaptermanager = require('src/adaptermanager');
 
-const CarambolaAdapter = function CarambolaAdapter() {
+function CarambolaAdapter() {
   const BIDDER_CODE = 'carambola';
   const REQUEST_PATH = 'hb/inimage/getHbBIdProcessedResponse';
 
@@ -188,6 +189,8 @@ const CarambolaAdapter = function CarambolaAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
+
+adaptermanager.registerBidAdapter(new CarambolaAdapter, 'carambola');
 
 module.exports = CarambolaAdapter;

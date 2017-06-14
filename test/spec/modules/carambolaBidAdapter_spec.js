@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
-import CarambolaAdapter from 'src/adapters/carambola';
+import CarambolaAdapter from 'modules/carambolaBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const DEFAULT_BIDDER_REQUEST = {
