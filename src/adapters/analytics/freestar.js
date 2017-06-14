@@ -14,8 +14,8 @@ let freestarAnalytics = Object.assign(adapter(
     track({ eventType, args }) {
       // to see loggin add '?pbjs_debug=true' to the end of the URL
       utils.logInfo('Sending Freestar Analytics Event ' + eventType, args);
-      if (freestarMsg && freestarMsg.que) {
-        freestarMsg.que.push({ eventType, args });
+      if (freestar.msg && freestar.msg.que) {
+        freestar.msg.que.push({ eventType, args });
       }
     }
   });
