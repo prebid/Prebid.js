@@ -152,7 +152,7 @@ module.exports = function (bidManager, global, loader) {
 			'site': {},
 			'tmax': 3000,
 			'cur': [currency],
-			'id': utils.generateUUID(),
+			'id': utils.getUniqueIdentifierStr(),
 			'imp': []
 		};
 
@@ -219,7 +219,7 @@ module.exports = function (bidManager, global, loader) {
 					'bidfloorcur': currency,
 					'secure': secure,
 					'banner': {
-						'id': utils.generateUUID(),
+						'id': utils.getUniqueIdentifierStr(),
 						'pos': 0,
 						'w': parseInt(wh[0]),
 						'h': parseInt(wh[1])
