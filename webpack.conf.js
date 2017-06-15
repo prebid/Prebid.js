@@ -5,6 +5,11 @@ var webpack = require('webpack');
 var helpers = require('./gulpHelpers');
 var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonP.js');
 
+// list of module names to never include in the common bundle chunk
+var neverBundle = [
+  'AnalyticsAdapter.js'
+];
+
 module.exports = {
   devtool: 'source-map',
   resolve: {
@@ -82,7 +87,9 @@ module.exports = {
     new webpack.optimize.CommonsChunkPlugin({
       name: 'prebid',
       filename: 'prebid.js',
-      minChunks: 2
+      minChunks: function(module, count) {
+        return !(count < 2 || neverBundle.includes(path.basename(module.resource)))
+      }
     })
   ]
 };
