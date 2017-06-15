@@ -92,50 +92,53 @@ exports.addBidResponse = function (adUnitCode, bid) {
     return;
   }
 
-  if (bid) {
-    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
-      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
-      return;
-    }
-
-    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
-    Object.assign(bid, {
-      requestId: requestId,
-      responseTimestamp: timestamp(),
-      requestTimestamp: start,
-      cpm: parseFloat(bid.cpm) || 0,
-      bidder: bid.bidderCode,
-      adUnitCode
-    });
-
-    bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
-
-    // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-    // emit the bidResponse event
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-
-    // append price strings
-    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
-    bid.pbLg = priceStringsObj.low;
-    bid.pbMg = priceStringsObj.med;
-    bid.pbHg = priceStringsObj.high;
-    bid.pbAg = priceStringsObj.auto;
-    bid.pbDg = priceStringsObj.dense;
-    bid.pbCg = priceStringsObj.custom;
-
-    // if there is any key value pairs to map do here
-    var keyValues = {};
-    if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
-      keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
-    }
-
-    bid.adserverTargeting = keyValues;
-    $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+  if (typeof bid != 'object') {
+    utils.logWarn('Invalid bid supplied to addBidResponse, response discarded');
+    return;
   }
 
-  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+  if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+    utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
+    return;
+  }
+
+  const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+  Object.assign(bid, {
+    requestId: requestId,
+    responseTimestamp: timestamp(),
+    requestTimestamp: start,
+    cpm: parseFloat(bid.cpm) || 0,
+    bidder: bid.bidderCode,
+    adUnitCode
+  });
+
+  bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+  // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
+  // emit the bidResponse event
+  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
+
+  // append price strings
+  const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
+  bid.pbLg = priceStringsObj.low;
+  bid.pbMg = priceStringsObj.med;
+  bid.pbHg = priceStringsObj.high;
+  bid.pbAg = priceStringsObj.auto;
+  bid.pbDg = priceStringsObj.dense;
+  bid.pbCg = priceStringsObj.custom;
+
+  // if there is any key value pairs to map do here
+  var keyValues = {};
+  if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
+    keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
+  }
+
+  bid.adserverTargeting = keyValues;
+  $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+
+  if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
   }
 
