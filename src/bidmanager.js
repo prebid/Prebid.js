@@ -102,6 +102,27 @@ exports.addBidResponse = function (adUnitCode, bid) {
     return;
   }
 
+  enhanceBidResponse(adUnitCode, bid);
+
+  $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+
+  // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
+  // emit the bidResponse event
+  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
+
+  if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+    triggerAdUnitCallbacks(bid.adUnitCode);
+  }
+  const timedOut = bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer;
+
+  if (timedOut || bidsBackAll()) {
+    exports.executeCallback(timedOut);
+  }
+};
+
+function enhanceBidResponse(adUnitCode, bid) {
   const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
   Object.assign(bid, {
     requestId: requestId,
@@ -130,24 +151,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   bid.adserverTargeting = keyValues;
-  $$PREBID_GLOBAL$$._bidsReceived.push(bid);
-
-  // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
-  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-  // emit the bidResponse event
-  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-
-  if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
-  }
-
-  const timedOut = bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer;
-
-  if (timedOut || bidsBackAll()) {
-    exports.executeCallback(timedOut);
-  }
-};
+}
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
