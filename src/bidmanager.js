@@ -114,12 +114,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-  // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
-  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-  // emit the bidResponse event
-  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-
   // append price strings
   const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
   bid.pbLg = priceStringsObj.low;
@@ -137,6 +131,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   bid.adserverTargeting = keyValues;
   $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+
+  // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
+  events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
+  // emit the bidResponse event
+  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
   if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
     triggerAdUnitCallbacks(bid.adUnitCode);
