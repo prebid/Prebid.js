@@ -67,7 +67,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     };
 
     // performance isn't supported by mobile safari iOS7. window.performance works, but
-    // evaluates to true during unit tests, which is a failure.
+    // evaluates to true on a unit test which expects false.
     //
     // try/catch was added to un-block the Prebid 0.25 release, but the adyoulike adapter
     // maintainers should revisit this and see if it's really what they want.
@@ -75,7 +75,9 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
       if (performance && performance.navigation) {
         body.PageRefreshed = performance.navigation.type === performance.navigation.TYPE_RELOAD;
       }
-    } catch (e) { }
+    } catch (e) {
+      body.PageRefreshed = false;
+    }
 
     return JSON.stringify(body);
   }
