@@ -30,7 +30,7 @@ var CentroAdapter = function CentroAdapter() {
   }
 
   function _sendBidRequest(requestedBid) {
-      var bid, size = requestedBid.sizes && requestedBid.sizes[0];
+    var bid, size = requestedBid.sizes && requestedBid.sizes[0];
 
     bid = requestedBid.params;
     if (!bid.unit) {
