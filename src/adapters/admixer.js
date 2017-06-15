@@ -10,6 +10,7 @@ var utils = require('../utils.js');
  */
 var AdmixerAdapter = function AdmixerAdapter() {
   var invUrl = '//inv-nets.admixer.net/prebid.aspx';
+  var invVastUrl = '//inv-nets.admixer.net/videoprebid.aspx';
 
   function _callBids(data) {
     var bids = data.bids || [];
@@ -21,7 +22,16 @@ var AdmixerAdapter = function AdmixerAdapter() {
         'callback_uid': bid.placementCode
       };
       if (params.zone) {
-        _requestBid(invUrl, params);
+        if (bid.mediaType === 'video') {
+          var videoParams = {};
+          if (typeof bid.video === 'object') {
+            Object.assign(videoParams, bid.video);
+          }
+          Object.assign(videoParams, params);
+          _requestBid(invVastUrl, params);
+        } else {
+          _requestBid(invUrl, params);
+        }
       } else {
         var bidObject = bidfactory.createBid(2);
         bidObject.bidderCode = 'admixer';
@@ -48,7 +58,13 @@ var AdmixerAdapter = function AdmixerAdapter() {
       bidObject = bidfactory.createBid(1);
       bidObject.bidderCode = 'admixer';
       bidObject.cpm = bid.cpm;
-      bidObject.ad = bid.ad;
+      if (bid.vastUrl) {
+        bidObject.mediaType = 'video';
+        bidObject.vastUrl = bid.vastUrl;
+        bidObject.descriptionUrl = bid.vastUrl;
+      } else {
+        bidObject.ad = bid.ad;
+      }
       bidObject.width = bid.width;
       bidObject.height = bid.height;
     } else {
