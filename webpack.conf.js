@@ -3,7 +3,7 @@ var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonP.js');
+var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
