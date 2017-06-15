@@ -11,7 +11,6 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
-import { setConfig } from './config';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -729,8 +728,6 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }, options);
   adaptermanager.setS2SConfig(config);
 };
-
-$$PREBID_GLOBAL$$.setConfig = setConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

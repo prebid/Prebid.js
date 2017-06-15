@@ -1,11 +1,10 @@
-import * as Adapter from 'src/adapter.js';
+import * as Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-import { getConfig } from 'src/config';
 
 const RUBICON_BIDDER_CODE = 'rubicon';
 
@@ -23,10 +22,6 @@ const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 
 const TIMEOUT_BUFFER = 500;
-
-var ACCOUNT_ID;
-getConfig('rubiconAdapter', config => ACCOUNT_ID = config.accountId);
-
 
 var sizeMap = {
   1: '468x60',
@@ -186,7 +181,7 @@ function RubiconAdapter() {
     let postData = {
       page_url: !params.referrer ? utils.getTopWindowUrl() : params.referrer,
       resolution: _getScreenResolution(),
-      account_id: params.accountId || ACCOUNT_ID,
+      account_id: params.accountId,
       integration: getIntegration(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart + TIMEOUT_BUFFER),
       stash_creatives: true,
@@ -260,13 +255,13 @@ function RubiconAdapter() {
       throw 'no valid sizes';
     }
 
-    if (!/^\d+$/.test(accountId) && !ACCOUNT_ID) {
+    if (!/^\d+$/.test(accountId)) {
       throw 'invalid accountId provided';
     }
 
     // using array to honor ordering. if order isn't important (it shouldn't be), an object would probably be preferable
     var queryString = [
-      'account_id', accountId || ACCOUNT_ID,
+      'account_id', accountId,
       'site_id', siteId,
       'zone_id', zoneId,
       'size_id', parsedSizes[0],
