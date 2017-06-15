@@ -5,7 +5,7 @@ import bidmanager from 'src/bidmanager'
 import * as utils from 'src/utils'
 import { STATUS } from 'src/constants'
 import { Renderer } from 'src/Renderer'
-import createUnrulyAdapter from 'src/adapters/unruly'
+import createUnrulyAdapter from 'modules/unrulyBidAdapter'
 
 describe('UnrulyAdapter', () => {
   function createBidRequestBid({ placementCode }) {

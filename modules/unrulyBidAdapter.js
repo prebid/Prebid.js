@@ -4,6 +4,7 @@ import bidmanager from 'src/bidmanager'
 import * as utils from 'src/utils'
 import { STATUS } from 'src/constants'
 import { Renderer } from 'src/Renderer'
+import adaptermanager from 'src/adaptermanager'
 
 function createRenderHandler({ bidResponseBid, rendererConfig }) {
   function createApi() {
@@ -104,5 +105,7 @@ function createUnrulyAdapter() {
 
   return adapter
 }
+
+adaptermanager.registerBidAdapter(new createUnrulyAdapter, 'unruly')
 
 module.exports = createUnrulyAdapter
