@@ -15,6 +15,7 @@ const GumgumAdapter = function GumgumAdapter() {
   const requestCache = {};
   const throttleTable = {};
   const defaultThrottle = 3e4;
+  const dtCredentials = { member: 'YcXr87z2lpbB' };
 
   try {
     topWindow = global.top;
@@ -27,6 +28,22 @@ const GumgumAdapter = function GumgumAdapter() {
     return new Date().getTime();
   }
 
+  function _getDigiTrustQueryParams() {
+    function getDigiTrustId () {
+      var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(dtCredentials) : {};
+      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || '';
+    };
+
+    let digiTrustId = getDigiTrustId();
+    // Verify there is an ID and this user has not opted out
+    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+      return {};
+    }
+    return {
+      'dt': digiTrustId.id
+    };
+  }
+
   function _callBids({ bids }) {
     const browserParams = {
       vw: topWindow.innerWidth,
@@ -37,6 +54,7 @@ const GumgumAdapter = function GumgumAdapter() {
       ce: navigator.cookieEnabled,
       dpr: topWindow.devicePixelRatio || 1
     };
+
     utils._each(bids, bidRequest => {
       const { bidId
             , params = {}
@@ -91,7 +109,7 @@ const GumgumAdapter = function GumgumAdapter() {
 
       const callback = { jsonp: `$$PREBID_GLOBAL$$.handleGumGumCB['${bidId}']` };
       CALLBACKS[bidId] = _handleGumGumResponse(cachedBid);
-      const query = Object.assign(callback, browserParams, bid);
+      const query = Object.assign(callback, browserParams, bid, _getDigiTrustQueryParams());
       const bidCall = `${bidEndpoint}?${utils.parseQueryStringParameters(query)}`;
       adloader.loadScript(bidCall);
     });

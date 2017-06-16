@@ -57,9 +57,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
     content += '' +
       'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
       'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];' +
-      'window.kaddctr = "%%PM_ADDCTR%%;"' +
-      'window.kadgender = "%%PM_GENDER%%;"' +
-      'window.kadage = "%%PM_AGE%%;"' +
+      'window.kaddctr = "%%PM_ADDCTR%%";' +
+      'window.kadgender = "%%PM_GENDER%%";' +
+      'window.kadage = "%%PM_AGE%%";' +
       'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
 
     content += '</scr' + 'ipt>';
