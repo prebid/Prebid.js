@@ -8,9 +8,9 @@ import {STATUS} from 'src/constants';
 const VER = 'ADGENT_PREBID-2017051801';
 const BIDDER_CODE = 'ucfunnel';
 
-var ucfunnelAdapter = function ucfunnelAdapter() {
+let ucfunnelAdapter = function ucfunnelAdapter() {
   function _callBids(params) {
-    var bids = params.bids || [];
+    let bids = params.bids || [];
 
     bids.forEach((bid) => {
       try {
@@ -43,13 +43,13 @@ var ucfunnelAdapter = function ucfunnelAdapter() {
   function buildOptimizedCall(bid) {
     bid.startTime = new Date().getTime();
 
-    var host = window.location.host,
-      page = window.location.pathname,
+    let host = utils.getTopWindowLocation.host,
+      page = utils.getTopWindowLocation.pathname,
       refer = document.referrer,
       language = navigator.language,
       dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
 
-    var queryString = [
+    let queryString = [
       'ifr', 0,
       'bl', language,
       'je', 1,
@@ -75,7 +75,7 @@ var ucfunnelAdapter = function ucfunnelAdapter() {
   function handleRpCB(responseText, bidRequest) {
     let ad = JSON.parse(responseText); // can throw
 
-    var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
+    let bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
     bid.creative_id = ad.ad_id;
     bid.bidderCode = BIDDER_CODE;
     bid.cpm = ad.cpm || 0;

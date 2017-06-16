@@ -102,5 +102,9 @@ describe('ucfunnel adapter tests', function () {
 });
 
 function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    return {};
+  }
 }
