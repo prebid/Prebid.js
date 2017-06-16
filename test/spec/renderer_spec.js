@@ -53,4 +53,39 @@ describe('Renderer: A renderer installed on a bid response', () => {
     testRenderer1.handleVideoEvent({ id: 1, eventName: 'testEvent' });
     expect(spyEventHandler.called).to.equal(true);
   });
+
+  it('pushes commands to queue if renderer is not loaded', () => {
+    testRenderer1.push(spyRenderFn);
+
+    expect(testRenderer1.cmd.length).to.equal(1);
+
+    // clear queue for next tests
+    testRenderer1.cmd = [];
+  });
+
+  it('fires commands immediately if the renderer is loaded', () => {
+    const func = sinon.spy();
+
+    testRenderer1.loaded = true;
+    testRenderer1.push(func);
+
+    expect(testRenderer1.cmd.length).to.equal(0);
+    sinon.assert.calledOnce(func);
+  });
+
+  it('processes queue by calling each function in queue', () => {
+    testRenderer1.loaded = false;
+    const func1 = sinon.spy();
+    const func2 = sinon.spy();
+
+    testRenderer1.push(func1);
+    testRenderer1.push(func2);
+    expect(testRenderer1.cmd.length).to.equal(2);
+
+    testRenderer1.process();
+
+    sinon.assert.calledOnce(func1);
+    sinon.assert.calledOnce(func2);
+    expect(testRenderer1.cmd.length).to.equal(0);
+  });
 });

@@ -218,7 +218,6 @@ const OpenxAdapter = function OpenxAdapter() {
       ifr: isIfr,
       tz: startTime.getTimezoneOffset(),
       tws: getViewportDimensions(isIfr),
-      ee: 'api_sync_write',
       ef: 'bt%2Cdb',
       be: 1,
       bc: BIDDER_CONFIG

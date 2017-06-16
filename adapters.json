@@ -7,6 +7,7 @@
     "adform",
     "adkernel",
     "admedia",
+    "adyoulike",
     "bidfluence",
     "vertamedia",
     "aol",
@@ -14,6 +15,7 @@
     "appnexusAst",
     "beachfront",
     "audienceNetwork",
+    "carambola",
     "conversant",
     "districtmDMX",
     "fidelity",
@@ -66,9 +68,11 @@
     "atomx",
     "tapsense",
     "trion",
+    "eplanning",
     "prebidServer",
     "adsupply",
     "ucfunnel",
+    "cox",
     {
       "appnexus": {
         "alias": "brealtime"
@@ -142,6 +146,16 @@
     },
     {
       "rhythmone": {
+        "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "admixer": {
+              "supportedMediaTypes": ["video"]
+      }
+    },
+    {
+      "conversant": {
         "supportedMediaTypes": ["video"]
       }
     }
