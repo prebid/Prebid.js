@@ -206,4 +206,12 @@ describe('StickyAdsTV Adapter', function () {
       expect(result).to.equal(window.top);
     });
   });
+
+  describe('get component id', function(){
+    it('should returns valid component ids', function(){
+      expect(adapter.getComponentId("inbanner")).to.equal("mustang");
+      expect(adapter.getComponentId("intext-roll")).to.equal("intext-roll");
+      expect(adapter.getComponentId("screen-roll")).to.equal("screen-roll");
+    });
+  });
 });

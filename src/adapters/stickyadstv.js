@@ -77,7 +77,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       zoneId: zoneId,
       playerSize: size[0] + 'x' + size[1],
       vastUrlParams: bid.params.vastUrlParams,
-      componentId: 'prebid-sticky' + (bid.params.format ? '-' + bid.params.format : '')
+      componentId: getComponentId(bid.params.format);
     };
 
     if (bid.params.format === 'screen-roll') {
@@ -86,6 +86,17 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
 
     vastLoader.load(config, vastCallback);
+  }
+
+  function getComponentId(inputFormat) {
+    var component = "mustang"; //default component id
+
+    if(inputFormat == FORMAT_INTEXT || inputFormat == FORMAT_SCREEN){
+      //format identifiers are equals to their component ids.
+      component = inputFormat;
+    }
+
+    return component;
   }
 
   function getBiggerSize(array) {
@@ -263,6 +274,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     getBiggerSize: getBiggerSize,
     getBid: getBid,
     getTopMostWindow: getTopMostWindow,
+    getComponentId: getComponentId,
     createNew: StickyAdsTVAdapter.createNew // enable alias feature (to be used for freewheel-ssp alias)
   });
 };
