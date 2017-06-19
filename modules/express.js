@@ -3,7 +3,16 @@ import * as utils from 'src/utils';
 
 const MODULE_NAME = 'express';
 
-
+/**
+ * Express Module
+ *
+ * The express module allows the initiation of Prebid.js auctions automatically based on calls such as gpt.defineSlot.
+ * It works by monkey-patching the gpt methods and overloading their functionality.  In order for this module to be
+ * used gpt must be included in the page, this module must be included in the Prebid.js bundle, and a call to
+ * pbjs.express() must be made.
+ *
+ * @param {Object[]} [adUnits = pbjs.adUnits] - an array of adUnits for express to operate on.
+ */
 $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
 
   utils.logMessage('loading ' + MODULE_NAME);
