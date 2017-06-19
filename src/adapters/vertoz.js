@@ -19,6 +19,7 @@ var VertozAdapter = function VertozAdapter() {
       let vzEndPoint = BASE_URI;
       let reqParams = bid.params || {};
       let placementId = utils.getValue(reqParams, 'placementId');
+      let cpm = utils.getValue(reqParams, 'cpm');
 
       if (utils.isEmptyStr(placementId)) {
         utils.logError('missing params:', BIDDER_NAME, 'Enter valid vzPlacementId');
@@ -30,8 +31,10 @@ var VertozAdapter = function VertozAdapter() {
         _vzPlacementId: placementId,
         _rqsrc: reqSrc,
         _cb: cb,
-        _slotBidId: slotBidId
+        _slotBidId: slotBidId,
+        _cpm: cpm
       };
+
       let queryParamValue = JSON.stringify(vzReq);
       vzEndPoint = utils.tryAppendQueryString(vzEndPoint, QUERY_PARAM_KEY, queryParamValue);
       adloader.loadScript(vzEndPoint);
