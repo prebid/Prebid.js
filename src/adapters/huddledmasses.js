@@ -48,7 +48,7 @@ function HuddledMassesAdapter() {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
         } catch (err) {
-          if (typeof err === "string") {
+          if (typeof err === 'string') {
             utils.logWarn(`${err} when processing huddledmasses response for placement code ${bid.placementCode}`);
           } else {
             utils.logError('Error processing huddledmasses response for placement code ' + bid.placementCode, null, err);
@@ -76,7 +76,7 @@ function HuddledMassesAdapter() {
     );
 
     if (parsedSizes.length < 1) {
-      throw "no valid sizes";
+      throw 'no valid sizes';
     }
 
     var secure = 0;
@@ -91,23 +91,23 @@ function HuddledMassesAdapter() {
     var deviceHeight = window.screen.height;
 
     var queryString = [
-            'banner_id', bid.params.placement_id,
-            'size_ad', parsedSizes[0],
-            'alt_size_ad', parsedSizes.slice(1).join(',') || [],
-            'host', host,
-            "page", page,
-            "language", language,
-            "deviceWidth", deviceWidth,
-            "deviceHeight", deviceHeight,
-            "secure", secure,
-            "bidId", bid.bidId,
-            "checkOn", 'rf'
+      'banner_id', bid.params.placement_id,
+      'size_ad', parsedSizes[0],
+      'alt_size_ad', parsedSizes.slice(1).join(',') || [],
+      'host', host,
+      'page', page,
+      'language', language,
+      'deviceWidth', deviceWidth,
+      'deviceHeight', deviceHeight,
+      'secure', secure,
+      'bidId', bid.bidId,
+      'checkOn', 'rf'
     ];
 
     return queryString.reduce(
             (memo, curr, index) =>
-                index % 2 === 0 && queryString[index + 1] !== undefined ?
-                memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+                index % 2 === 0 && queryString[index + 1] !== undefined
+                ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
                     : memo,
             '//huddledmassessupply.com/?'
     ).slice(0, -1);

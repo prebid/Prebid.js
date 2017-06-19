@@ -43,7 +43,7 @@ exports.assertion = function(expected, msg) {
   this.command = function(callback) {
     var _this = this;
     var execcallback = function(result) {
-      //console.log(_this);
+      // console.log(_this);
       console.log('**********');
       console.log(result);
       console.log(callback.toString());
@@ -52,14 +52,13 @@ exports.assertion = function(expected, msg) {
 		  }
     };
 
-    this.api.execute(function(){
-      //cusotm logic
+    this.api.execute(function() {
+      // cusotm logic
       return 'hello';
     }, [], execcallback);
 
-    //var result = {'value':'hello'};
+    // var result = {'value':'hello'};
 
     return this;
   };
-
 };

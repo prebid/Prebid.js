@@ -22,37 +22,37 @@ const _hgPriceConfig = {
 };
 const _densePriceConfig = {
   'buckets': [{
-      'min': 0,
-      'max': 3,
-      'increment': 0.01
-    },
-    {
-      'min': 3,
-      'max': 8,
-      'increment': 0.05
-    },
-    {
-      'min': 8,
-      'max': 20,
-      'increment': 0.5
-    }]
+    'min': 0,
+    'max': 3,
+    'increment': 0.01
+  },
+  {
+    'min': 3,
+    'max': 8,
+    'increment': 0.05
+  },
+  {
+    'min': 8,
+    'max': 20,
+    'increment': 0.5
+  }]
 };
 const _autoPriceConfig = {
   'buckets': [{
-      'min': 0,
-      'max': 5,
-      'increment': 0.05
-    },
-    {
-      'min': 5,
-      'max': 10,
-      'increment': 0.1
-    },
-    {
-      'min': 10,
-      'max': 20,
-      'increment': 0.5
-    }]
+    'min': 0,
+    'max': 5,
+    'increment': 0.05
+  },
+  {
+    'min': 5,
+    'max': 10,
+    'increment': 0.1
+  },
+  {
+    'min': 10,
+    'max': 20,
+    'increment': 0.5
+  }]
 };
 
 function getPriceBucketString(cpm, customConfig) {
@@ -68,7 +68,7 @@ function getPriceBucketString(cpm, customConfig) {
     high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig),
     auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig),
     dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom:  (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
+    custom: (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
   };
 }
 
@@ -77,7 +77,7 @@ function getCpmStringValue(cpm, config) {
   if (!isValidePriceConfig(config)) {
     return cpmStr;
   }
-  const cap = config.buckets.reduce((prev,curr) => {
+  const cap = config.buckets.reduce((prev, curr) => {
     if (prev.max > curr.max) {
       return prev;
     }
@@ -105,7 +105,7 @@ function isValidePriceConfig(config) {
   }
   let isValid = true;
   config.buckets.forEach(bucket => {
-    if(typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
+    if (typeof bucket.min === 'undefined' || !bucket.max || !bucket.increment) {
       isValid = false;
     }
   });

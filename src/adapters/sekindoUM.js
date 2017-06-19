@@ -7,23 +7,19 @@ var adloader = require('../adloader.js');
 
 var sekindoUMAdapter;
 sekindoUMAdapter = function sekindoUMAdapter() {
-
   function _callBids(params) {
     var bids = params.bids;
     var bidsCount = bids.length;
 
     var pubUrl = null;
-    if (parent !== window)
-      pubUrl = document.referrer;
-    else
-      pubUrl = window.location.href;
+    if (parent !== window) { pubUrl = document.referrer; } else { pubUrl = window.location.href; }
 
     for (var i = 0; i < bidsCount; i++) {
       var bidReqeust = bids[i];
       var callbackId = bidReqeust.bidId;
       _requestBids(bidReqeust, callbackId, pubUrl);
-      //store a reference to the bidRequest from the callback id
-      //bidmanager.pbCallbackMap[callbackId] = bidReqeust;
+      // store a reference to the bidRequest from the callback id
+      // bidmanager.pbCallbackMap[callbackId] = bidReqeust;
     }
   }
 
@@ -36,7 +32,6 @@ sekindoUMAdapter = function sekindoUMAdapter() {
         var placementCode = bidObj.placementCode;
 
         if (response.cpm !== undefined && response.cpm > 0) {
-
           bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bid.callback_uid = callbackId;
           bid.bidderCode = bidCode;
@@ -47,35 +42,29 @@ sekindoUMAdapter = function sekindoUMAdapter() {
           bid.height = response.height;
 
           bidmanager.addBidResponse(placementCode, bid);
-        }
-
-        else {
+        } else {
           bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
           bid.callback_uid = callbackId;
           bid.bidderCode = bidCode;
           bidmanager.addBidResponse(placementCode, bid);
         }
       }
-    }
-
-    else {
+    } else {
       if (bidObj) {
-        utils.logMessage('No prebid response for placement '+bidObj.placementCode);
-      }
-
-      else {
+        utils.logMessage('No prebid response for placement ' + bidObj.placementCode);
+      } else {
         utils.logMessage('sekindoUM callback general error');
       }
     }
   };
 
   function _requestBids(bid, callbackId, pubUrl) {
-    //determine tag params
+    // determine tag params
     var spaceId = utils.getBidIdParameter('spaceId', bid.params);
     var subId = utils.getBidIdParameter('subId', bid.params);
     var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-    var protocol = ('https:' === document.location.protocol ? 's' : '');
-    var scriptSrc = 'http'+protocol+'://hb.sekindo.com/live/liveView.php?';
+    var protocol = (document.location.protocol === 'https:' ? 's' : '');
+    var scriptSrc = 'http' + protocol + '://hb.sekindo.com/live/liveView.php?';
 
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 's', spaceId);
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'subId', subId);
@@ -96,4 +85,3 @@ sekindoUMAdapter = function sekindoUMAdapter() {
 };
 
 module.exports = sekindoUMAdapter;
-

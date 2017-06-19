@@ -59,20 +59,20 @@ describe('gumgum adapter', () => {
     }]
   };
   const pageParams = {
-    "pvid": "PVID"
+    'pvid': 'PVID'
   };
   const bidderResponse = {
-    "ad": {
-      "id": 1,
-      "width": 728,
-      "height": 90,
-      "markup": "<div>some fancy ad</div>",
-      "ii": true,
-      "du": "http://example.com/",
-      "price": TEST.CPM,
-      "impurl": "http://example.com/"
+    'ad': {
+      'id': 1,
+      'width': 728,
+      'height': 90,
+      'markup': '<div>some fancy ad</div>',
+      'ii': true,
+      'du': 'http://example.com/',
+      'price': TEST.CPM,
+      'impurl': 'http://example.com/'
     },
-    "pag": pageParams
+    'pag': pageParams
   };
 
   function mockBidResponse(response) {
@@ -92,8 +92,75 @@ describe('gumgum adapter', () => {
     sandbox.restore();
   });
 
-  describe('callBids', () => {
+  describe('DigiTrust params', () => {
+    beforeEach(() => {
+      sandbox.stub(adLoader, 'loadScript');
+    });
 
+    it('should send digiTrust params', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: true,
+          identity: {
+            privacy: {optout: false},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('&dt=testId');
+      delete window.DigiTrust;
+    });
+
+    it('should not send DigiTrust params when DigiTrust is not loaded', () => {
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+    });
+
+    it('should not send DigiTrust params due to opt out', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: true,
+          identity: {
+            privacy: {optout: true},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+      delete window.DigiTrust;
+    });
+
+    it('should not send DigiTrust params on failure', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: false,
+          identity: {
+            privacy: {optout: false},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+      delete window.DigiTrust;
+    });
+  });
+
+  describe('callBids', () => {
     beforeEach(() => {
       sandbox.stub(adLoader, 'loadScript');
       adapter.callBids(bidderRequest);
@@ -136,7 +203,6 @@ describe('gumgum adapter', () => {
     it('last call should be slot', () => {
       expect(adLoader.loadScript.lastCall.args[0]).to.include('pi=3');
     });
-
   });
 
   describe('handleGumGumCB[...]', () => {
@@ -146,7 +212,6 @@ describe('gumgum adapter', () => {
   });
 
   describe('respond with a successful bid', () => {
-
     let successfulBid;
 
     beforeEach(() => {
@@ -179,11 +244,9 @@ describe('gumgum adapter', () => {
       expect(successfulBid).to.have.property('width', 728);
       expect(successfulBid).to.have.property('height', 90);
     });
-
   });
 
   describe('respond with an empty bid', () => {
-
     let noBid;
 
     beforeEach(() => {
@@ -206,11 +269,9 @@ describe('gumgum adapter', () => {
     it('adds the bidder code to the bid object', () => {
       expect(noBid).to.have.property('bidderCode', TEST.BIDDER_CODE);
     });
-
   });
 
   describe('refresh throttle', () => {
-
     beforeEach(() => {
       mockBidResponse(bidderResponse);
     });
@@ -230,7 +291,5 @@ describe('gumgum adapter', () => {
       warning.to.include(TEST.PLACEMENT);
       warning.to.include('inScreen');
     });
-
   });
-
 });

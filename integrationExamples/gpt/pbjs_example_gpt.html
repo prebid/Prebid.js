@@ -12,7 +12,7 @@
         googletag.pubads().disableInitialLoad();
     });
     var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
-    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
+    $$PREBID_GLOBAL$$.cmd = $$PREBID_GLOBAL$$.cmd || [];
     $$PREBID_GLOBAL$$.retries = 0;
 
     /* $$PREBID_GLOBAL$$.initAdserver will be called either when all bids are back, or
@@ -26,7 +26,7 @@
           return;
         }
         googletag.cmd.push(function () {
-            $$PREBID_GLOBAL$$.que.push(function () {
+            $$PREBID_GLOBAL$$.cmd.push(function () {
                 $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
             });
             googletag.pubads().refresh();
@@ -60,7 +60,7 @@
         node.parentNode.insertBefore(gads, node);
     })();
 
-    $$PREBID_GLOBAL$$.que.push(function () {
+    $$PREBID_GLOBAL$$.cmd.push(function () {
 
         /* 1. Register bidder tag Ids
 
@@ -540,7 +540,7 @@
     ga('create', 'XXXXXX', 'auto');
 
     //Send data from prebid.js automatically
-    $$PREBID_GLOBAL$$.que.push(function () {
+    $$PREBID_GLOBAL$$.cmd.push(function () {
         $$PREBID_GLOBAL$$.enableAnalytics({
             provider: 'ga',
             options: {
