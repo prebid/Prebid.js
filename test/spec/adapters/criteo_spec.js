@@ -2,9 +2,54 @@
 
 import Adapter from '../../../src/adapters/criteo';
 import bidManager from '../../../src/bidmanager';
+import {ajax} from '../../../src/ajax'
 import {expect} from 'chai';
 
 var CONSTANTS = require('../../../src/constants');
+
+/* ------------ Publishertag stub begin ------------ */
+before(() => {
+  window.Criteo = {
+    PubTag: {
+      DirectBidding: {
+        DirectBiddingSlot: function DirectBiddingSlot(placementCode, zoneid, nativeCallback, transactionId, sizes) {
+          return {
+            impId: placementCode
+          };
+        },
+
+        DirectBiddingUrlBuilder: function DirectBiddingUrlBuilder(isAudit) { return {} },
+
+        DirectBiddingEvent: function DirectBiddingEvent(profileId, urlBuilder, slots, success, error, timeout) {
+          return {
+            slots: slots,
+            eval: function () {
+              var callbacks = {
+                error: error,
+                success: success
+              }
+              ajax('//bidder.criteo.com/cdb', callbacks)
+            }
+          }
+        }
+      }
+    }
+  };
+
+  window.criteo_pubtag = window.criteo_pubtag || {
+    push: function (event) {
+      event.eval();
+    }
+  }
+
+  window.Criteo.events = window.Criteo.events || [];
+  window.Criteo.events.push = function (elem) {
+    if (typeof elem === 'function') {
+      elem();
+    }
+  };
+});
+/* ------------ Publishertag stub end ------------ */
 
 describe('criteo adapter test', () => {
   let adapter;
