@@ -55,7 +55,7 @@ Keep the following prerequisites in mind during the implementation:
 
 ## Implementation
 
-This section describes the implementation using code samples, but ignores some of the details that are common to all Prebid.js setups.  For full working example code, see the [Prebid Native example]({{site.github.url}}/dev-docs/examples/show-native-ads.html).
+This section describes the implementation using code samples, but ignores some of the details that are common to all Prebid.js setups.  <!-- For full working example code, see the [Prebid Native example]({{site.github.url}}/dev-docs/examples/show-native-ads.html). -->
 
 ### 1. Set up your ad slot
 
