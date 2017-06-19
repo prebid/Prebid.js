@@ -84,48 +84,34 @@ exports.bidsBackAll = function () {
   return bidsBackAll();
 };
 
-/**
- * If the bid is a video bid, publishers will need to be able to get the cache ID.
- * Since the cache call is asynchronous, the getter must be too. This attaches a
- * vastUrlCacheKey function to the bid.
- *
- * This function takes a callback argument, and promises to call it exactly once when the
- * cache ID has been returned.
- */
-function prepVideoBid(bid) {
-  // Queue callbacks which arrive before the cache has returned.
-  const callbacks = [];
-
-  function storageCallback(error, cacheIds) {
-    bid.onceCached = function(callback) {
-      callback(error, cacheIds[0].cacheId);
-    }
-    callbacks.forEach((callback) => callback(error, cacheIds[0].cacheId));
-  }
-
-  if (bid.vastUrl && !bid.vastUrlCacheKey) {
-    bid.onceCached = function(callback) {
-      callbacks.push(callback);
-    }
-    store([bid.vastUrl], storageCallback);
-  }
-}
-
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
-  if (!adUnitCode) {
-    utils.logWarn('No adUnitCode supplied to addBidResponse, response discarded');
-    return;
-  }
-
-  if (bid) {
-    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
-      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
-      return;
+  // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
+  function isValid() {
+    function errorMessage(msg) {
+      return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
     }
 
+    if (!adUnitCode) {
+      utils.logWarn(errorMessage('No adUnitCode was supplied to addBidResponse.'));
+      return false;
+    }
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+      utils.logError(errorMessage('Native bid missing some required properties.'));
+      return false;
+    }
+    if (bid.mediaType === 'video' && !bid.vastUrl) {
+      utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
+      return false;
+    }
+    return true;
+  }
+
+  // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
+  // This should be called before addBidToAuction().
+  function prepareBidForAuction() {
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
     Object.assign(bid, {
       requestId: requestId,
@@ -137,18 +123,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
-
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-      const timedOut = true;
-
-      exports.executeCallback(timedOut);
-    }
-
-    // emit the bidAdjustment event before bidResponse, so bid response has the adjusted bid value
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-    // emit the bidResponse event
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     // append price strings
     const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
@@ -166,18 +140,56 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     bid.adserverTargeting = keyValues;
+  }
 
-    prepVideoBid(bid);
+  // Add a bid to the auction.
+  function addBidToAuction() {
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
+      return;
+    }
+
+    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
+      const timedOut = true;
+      exports.executeCallback(timedOut);
+    }
+
+    // Make sure that the bidAdjustment event fires before bidResponse, so that the bid response
+    // has the adjusted bid value
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
+
+    if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
+      triggerAdUnitCallbacks(bid.adUnitCode);
+    }
   }
 
-  if (bid && bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-    triggerAdUnitCallbacks(bid.adUnitCode);
+  // Video bids may fail if the cache is down, or there's trouble on the network.
+  function tryAddVideoBid(bid) {
+    store([bid.vastUrl], function(error, cacheIds) {
+      if (error) {
+        utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+      } else {
+        bid.videoCacheKey = cacheIds[0];
+        addBidToAuction(bid);
+      }
+    });
   }
 
-  if (bidsBackAll()) {
-    exports.executeCallback();
+  if (isValid()) {
+    prepareBidForAuction();
+
+    if (bid.mediaType === 'video') {
+      tryAddVideoBid(bid);
+    } else {
+      addBidToAuction(bid);
+    }
+
+    if (bidsBackAll()) {
+      exports.executeCallback();
+    }
   }
 };
 
