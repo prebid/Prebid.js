@@ -86,6 +86,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   function _handleInvalidBid(bidObj) {
     const bid = bidfactory.createBid(2, bidObj);
+    bid.bidderCode = STR_BIDDER_CODE;
     bidmanager.addBidResponse(bidObj.placementCode, bid);
   }
 
