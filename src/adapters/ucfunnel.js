@@ -43,8 +43,8 @@ let ucfunnelAdapter = function ucfunnelAdapter() {
   function buildOptimizedCall(bid) {
     bid.startTime = new Date().getTime();
 
-    let host = utils.getTopWindowLocation.host,
-      page = utils.getTopWindowLocation.pathname,
+    let host = utils.getTopWindowLocation().host,
+      page = utils.getTopWindowLocation().pathname,
       refer = document.referrer,
       language = navigator.language,
       dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
