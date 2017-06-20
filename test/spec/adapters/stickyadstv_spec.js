@@ -207,21 +207,21 @@ describe('StickyAdsTV Adapter', function () {
     });
   });
 
-  describe('get component id', function(){
-    it('should returns valid component ids', function(){
-      expect(adapter.getComponentId("inbanner")).to.equal("mustang");
-      expect(adapter.getComponentId("intext-roll")).to.equal("intext-roll");
-      expect(adapter.getComponentId("screen-roll")).to.equal("screen-roll");
+  describe('get component id', function() {
+    it('should returns valid component ids', function() {
+      expect(adapter.getComponentId('inbanner')).to.equal('mustang');
+      expect(adapter.getComponentId('intext-roll')).to.equal('intext-roll');
+      expect(adapter.getComponentId('screen-roll')).to.equal('screen-roll');
     });
   });
 
-  describe('get API name', function(){
-    it('should returns valid component ids', function(){
-      expect(adapter.getAPIName()).to.equal("");
-      expect(adapter.getAPIName("intext-roll")).to.equal("intextroll");
-      expect(adapter.getAPIName("screen-roll")).to.equal("screenroll");
-      expect(adapter.getAPIName("floorad")).to.equal("floorad");
+  describe('get API name', function() {
+    it('should returns valid component ids', function() {
+      expect(adapter.getAPIName()).to.equal('');
+      expect(adapter.getAPIName('intext-roll')).to.equal('intextroll');
+      expect(adapter.getAPIName('screen-roll')).to.equal('screenroll');
+      expect(adapter.getAPIName('floorad')).to.equal('floorad');
     });
   });
-  
+
 });

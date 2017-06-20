@@ -95,7 +95,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   function getComponentId(inputFormat) {
     var component = 'mustang'; // default component id
 
-    if(inputFormat && inputFormat !== 'inbanner'){
+    if (inputFormat && inputFormat !== 'inbanner') {
       // format identifiers are equals to their component ids.
       component = inputFormat;
     }
@@ -104,10 +104,10 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   }
 
   function getAPIName(componentId) {
-    componentId = componentId || "";
+    componentId = componentId || '';
 
-    //remove dash in componentId to get API name
-    return componentId.replace('-','');
+    // remove dash in componentId to get API name
+    return componentId.replace('-', '');
   }
 
   function getBiggerSize(array) {
@@ -134,7 +134,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     '  autoPlay:true' +
     '};' +
     'var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);' +
-    'if(topWindow.stickyadstv_asLoader) topWindow.stickyadstv_asLoader.registerEvents(ad);'+
+    'if(topWindow.stickyadstv_asLoader) topWindow.stickyadstv_asLoader.registerEvents(ad);' +
     'ad.initAd(' + size[0] + ',' + size[1] + ',"",0,"","");' +
 
     '</script>';
@@ -157,7 +157,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     'var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();' +
     'var vast =  topWindow.stickyadstv_cache["' + placementCode + '"];' +
     'var config = {' +
-    '  preloadedVast:vast,'+
+    '  preloadedVast:vast,' +
     '  ASLoader:topWindow.stickyadstv_asLoader';
 
     for (var key in config) {
@@ -169,7 +169,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += '};' +
 
-    'topWindow.com.stickyadstv.'+getAPIName(bid.params.format)+'.start(config);' +
+    'topWindow.com.stickyadstv.' + getAPIName(bid.params.format) + '.start(config);' +
 
     '</script>';
 
@@ -258,7 +258,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     getBid: getBid,
     getTopMostWindow: getTopMostWindow,
     getComponentId: getComponentId,
-    getAPIName:getAPIName,
+    getAPIName: getAPIName,
     createNew: StickyAdsTVAdapter.createNew // enable alias feature (to be used for freewheel-ssp alias)
   });
 };
