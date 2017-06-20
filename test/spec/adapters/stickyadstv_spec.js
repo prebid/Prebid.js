@@ -223,5 +223,4 @@ describe('StickyAdsTV Adapter', function () {
       expect(adapter.getAPIName('floorad')).to.equal('floorad');
     });
   });
-
 });
