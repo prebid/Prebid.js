@@ -157,7 +157,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     'var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();' +
     'var vast =  topWindow.stickyadstv_cache["' + placementCode + '"];' +
     'var config = {' +
-    '  preloadedVast:vast';
+    '  preloadedVast:vast,'+
+    '  ASLoader:topWindow.stickyadstv_asLoader';
 
     for (var key in config) {
       // dont' send format parameter
@@ -168,7 +169,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += '};' +
 
-    'topWindow.com.stickyadstv.'+getAPIName(bid.params.format)+'.start(config, topWindow.stickyadstv_asLoader);' +
+    'topWindow.com.stickyadstv.'+getAPIName(bid.params.format)+'.start(config);' +
 
     '</script>';
 
