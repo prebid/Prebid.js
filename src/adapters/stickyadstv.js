@@ -6,8 +6,7 @@ var adloader = require('../adloader.js');
 var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   var STICKYADS_BIDDERCODE = 'stickyadstv';
   var MUSTANG_URL = '//cdn.stickyadstv.com/mustang/mustang.min.js';
-  var INTEXTROLL_URL = '//cdn.stickyadstv.com/prime-time/intext-roll.min.js';
-  var SCREENROLL_URL = '//cdn.stickyadstv.com/prime-time/screen-roll.min.js';
+  var OUTSTREAM_URL = '//cdn.stickyadstv.com/prime-time/[COMP-ID].min.js';
 
   var topMostWindow = getTopMostWindow();
   topMostWindow.stickyadstv_cache = {};
@@ -32,11 +31,9 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var integrationType = bid.params.format ? bid.params.format : 'inbanner';
     var urltoLoad = MUSTANG_URL;
 
-    if (integrationType === 'intext-roll') {
-      urltoLoad = INTEXTROLL_URL;
-    }
-    if (integrationType === 'screen-roll') {
-      urltoLoad = SCREENROLL_URL;
+    if (integrationType !== 'inbanner') {
+      //  integration types are equals to component ids
+      urltoLoad = OUTSTREAM_URL.replace('[COMP-ID]', integrationType);
     }
 
     var bidRegistered = false;
@@ -53,6 +50,12 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
   function getBid(bid, callback) {
     var zoneId = bid.params.zoneId || bid.params.zone; // accept both
     var size = getBiggerSize(bid.sizes);
+
+    //  some of our formats doesn't have tools API exposed
+    var toolsAPI = window.com.stickyadstv.tools;
+    if (toolsAPI && toolsAPI.ASLoader) {
+      topMostWindow.stickyadstv_asLoader = new toolsAPI.ASLoader(zoneId, getComponentId(bid.params.format));
+    }
 
     var vastLoader = new window.com.stickyadstv.vast.VastLoader();
     bid.vast = topMostWindow.stickyadstv_cache[bid.placementCode] = vastLoader.getVast();
@@ -77,26 +80,34 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
       zoneId: zoneId,
       playerSize: size[0] + 'x' + size[1],
       vastUrlParams: bid.params.vastUrlParams,
-      componentId: getComponentId(bid.params.format);
+      componentId: getComponentId(bid.params.format)
     };
 
-    if (bid.params.format === 'screen-roll') {
-      // in screenroll case we never use the original div size.
-      config.playerSize = window.com.stickyadstv.screenroll.getPlayerSize();
+    var api = window.com.stickyadstv[getAPIName(bid.params.format)];
+    if (api && typeof api.getPlayerSize === 'function') {
+      // in screenroll and similar cases we don't use the original div size.
+      config.playerSize = api.getPlayerSize();
     }
 
     vastLoader.load(config, vastCallback);
   }
 
   function getComponentId(inputFormat) {
-    var component = "mustang"; //default component id
+    var component = 'mustang'; // default component id
 
-    if(inputFormat == FORMAT_INTEXT || inputFormat == FORMAT_SCREEN){
-      //format identifiers are equals to their component ids.
+    if(inputFormat && inputFormat !== 'inbanner'){
+      // format identifiers are equals to their component ids.
       component = inputFormat;
     }
 
     return component;
+  }
+
+  function getAPIName(componentId) {
+    componentId = componentId || "";
+
+    //remove dash in componentId to get API name
+    return componentId.replace('-','');
   }
 
   function getBiggerSize(array) {
@@ -123,6 +134,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     '  autoPlay:true' +
     '};' +
     'var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);' +
+    'if(topWindow.stickyadstv_asLoader) topWindow.stickyadstv_asLoader.registerEvents(ad);'+
     'ad.initAd(' + size[0] + ',' + size[1] + ',"",0,"","");' +
 
     '</script>';
@@ -130,7 +142,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return divHtml + script;
   };
 
-  var formatIntextHTML = function(bid) {
+  var formatOutstreamHTML = function(bid) {
     var placementCode = bid.placementCode;
 
     var config = bid.params;
@@ -156,50 +168,20 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     }
     script += '};' +
 
-    'topWindow.com.stickyadstv.intextroll.start(config);' +
+    'topWindow.com.stickyadstv.'+getAPIName(bid.params.format)+'.start(config, topWindow.stickyadstv_asLoader);' +
 
     '</script>';
 
     return script;
   };
 
-  var formatScreenRollHTML = function(bid) {
-    var placementCode = bid.placementCode;
-
-    var config = bid.params;
-
-    var script = "<script type='text/javascript'>" +
-
-    // get the top most accessible window
-    'var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();' +
-    'var vast =  topWindow.stickyadstv_cache["' + placementCode + '"];' +
-    'var config = {' +
-    '  preloadedVast:vast';
-
-    for (var key in config) {
-      // dont' send format parameter
-      // neither zone nor vastUrlParams values as Vast is already loaded
-      if (config.hasOwnProperty(key) && key !== 'format' && key !== 'zone' && key !== 'zoneId' && key !== 'vastUrlParams') {
-        script += ',' + key + ':"' + config[key] + '"';
-      }
-    }
-    script += '};' +
-
-    'topWindow.com.stickyadstv.screenroll.start(config);' +
-
-    '</script>';
-
-    return script;
-  };
 
   function formatAdHTML(bid, size) {
     var integrationType = bid.params.format;
 
     var html = '';
-    if (integrationType === 'intext-roll') {
-      html = formatIntextHTML(bid);
-    } else if (integrationType === 'screen-roll') {
-      html = formatScreenRollHTML(bid);
+    if (integrationType && integrationType !== 'inbanner') {
+      html = formatOutstreamHTML(bid);
     } else {
       html = formatInBannerHTML(bid, size);
     }
@@ -211,7 +193,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     var priceData = vast.getPricing();
 
     if (!priceData) {
-      console.warn("StickyAdsTV: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your sticky contact.");
+      console.warn("freewheel-ssp: Bid pricing Can't be retreived. You may need to enable pricing on you're zone. Please get in touch with your Freewheel contact.");
     }
 
     return priceData;
@@ -275,6 +257,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     getBid: getBid,
     getTopMostWindow: getTopMostWindow,
     getComponentId: getComponentId,
+    getAPIName:getAPIName,
     createNew: StickyAdsTVAdapter.createNew // enable alias feature (to be used for freewheel-ssp alias)
   });
 };
