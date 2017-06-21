@@ -122,7 +122,7 @@ describe('InneractiveAdapter', function () {
         delete bidRequest.bids;
         adapter.callBids(bidRequest);
 
-        expect(bidRequests).to.be.empty; // jshint ignore:line
+        expect(bidRequests).to.be.empty;
       });
     });
 
@@ -133,7 +133,7 @@ describe('InneractiveAdapter', function () {
         adapter.callBids(bidRequest);
 
         for (let id = 0; id < INVALID_BIDS_COUNT; id++) {
-          expect(adapter._isValidRequest.getCall(id).returned(false)).to.be.true; // jshint ignore:line
+          expect(adapter._isValidRequest.getCall(id).returned(false)).to.be.true;
         }
 
         adapter._isValidRequest.restore();

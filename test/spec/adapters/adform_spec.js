@@ -1,5 +1,3 @@
-// jshint esversion: 6
-
 import { assert } from 'chai';
 import * as utils from '../../../src/utils';
 import adLoader from '../../../src/adloader';
