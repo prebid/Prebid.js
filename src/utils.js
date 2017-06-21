@@ -137,11 +137,11 @@ exports.parseSizesInput = function (sizeObj) {
     if (sizeArrayLength > 0) {
       // if we are a 2 item array of 2 numbers, we must be a SingleSize array
       if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
-        parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
+        parsedSizes.push(exports.parseGPTSingleSizeArray(sizeObj));
       } else {
         // otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
-          parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
+          parsedSizes.push(exports.parseGPTSingleSizeArray(sizeObj[i]));
         }
       }
     }
@@ -154,7 +154,7 @@ exports.parseSizesInput = function (sizeObj) {
 // into an AppNexus style string, (i.e. 300x250)
 exports.parseGPTSingleSizeArray = function (singleSize) {
   // if we aren't exactly 2 items in this array, it is invalid
-  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (exports.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
 };
