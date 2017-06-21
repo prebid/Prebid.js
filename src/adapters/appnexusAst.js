@@ -35,6 +35,8 @@ function AppnexusAstAdapter() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
+    bidRequests = {};
+
     const bids = bidRequest.bids || [];
     var member = 0;
     let userObj;
@@ -194,8 +196,11 @@ function AppnexusAstAdapter() {
       if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
       if (type === 'video-outstream') bid.mediaType = 'video-outstream';
-      const placement = bidRequests[bid.adId].placementCode;
-      bidmanager.addBidResponse(placement, bid);
+
+      if (bid.adId in bidRequests) {
+        const placement = bidRequests[bid.adId].placementCode;
+        bidmanager.addBidResponse(placement, bid);
+      }
     });
 
     if (!usersync) {
