@@ -757,6 +757,49 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
+/**
+ * Set config options
+ * @param {object} options
+ */
+$$PREBID_GLOBAL$$.setConfig = function(options) {
+  if (typeof options !== objectType_object) {
+    utils.logError('setConfig options must be an object');
+  }
+
+  if (options.bidderTimeout) {
+    $$PREBID_GLOBAL$$.bidderTimeout = options.bidderTimeout;
+  }
+
+  // `logging` was renamed to `debug`
+  if (options.debug) {
+    $$PREBID_GLOBAL$$.logging = options.debug;
+  }
+
+  if (options.publisherDomain) {
+    $$PREBID_GLOBAL$$.publisherDomain = options.publisherDomain;
+  }
+
+  if (options.cookieSyncDelay) {
+    $$PREBID_GLOBAL$$.cookieSyncDelay = options.cookieSyncDelay;
+  }
+
+  if (options.priceGranularity) {
+    $$PREBID_GLOBAL$$.setPriceGranularity(options.priceGranularity);
+  }
+
+  if (options.enableSendAllBids) {
+    $$PREBID_GLOBAL$$.enableSendAllBids();
+  }
+
+  if (options.bidderSequence) {
+    $$PREBID_GLOBAL$$.setBidderSequence(options.bidderSequence);
+  }
+
+  if (options.s2sConfig) {
+    $$PREBID_GLOBAL$$.setS2SConfig(options.s2sConfig);
+  }
+};
+
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 
 /**
