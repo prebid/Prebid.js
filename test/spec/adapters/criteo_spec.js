@@ -1,5 +1,3 @@
-/* jshint -W030 */
-
 import Adapter from '../../../src/adapters/criteo';
 import bidManager from '../../../src/bidmanager';
 import {ajax} from '../../../src/ajax'
