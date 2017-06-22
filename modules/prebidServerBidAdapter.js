@@ -106,7 +106,7 @@ function PrebidServer() {
     try {
       result = JSON.parse(response);
 
-      if (result.status === 'OK') {
+      if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie) {
@@ -158,7 +158,7 @@ function PrebidServer() {
             });
         });
       }
-      else if (result.status === 'no_cookie') {
+      if (result.status === 'no_cookie') {
         // cookie sync
         persist(cookiePersistUrl, cookiePersistMessage);
       }
