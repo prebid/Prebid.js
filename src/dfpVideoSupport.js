@@ -11,7 +11,7 @@ import { parseSizesInput } from './utils';
  * @typedef {Object} DfpVideoParams
  *
  * This object contains the params needed to form a URL which hits the
- * [DFP API](https://support.google.com/dfp_premium/answer/1068325?hl=en).
+ * [DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en}.
  *
  * All params (except iu, mentioned below) should be considered optional. This module will choose reasonable
  * defaults for all of the other required params.
@@ -29,15 +29,11 @@ import { parseSizesInput } from './utils';
  * @param [Object] bid The bid which should be considered alongside the rest of the adserver's demand.
  *   If this isn't defined, then we'll use the winning bid for the adUnit.
  *
- * @param {DfpVideoParams} params This object should have keys for each entry in the
- *   [DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en#env}.
- *   Optional params there are optional keys here. Required Params there are required keys here.
- *   Keys in this object which aren't part of the official API will be folded into cust_params.
+ * @param {DfpVideoParams} params Query params which should be set on the DFP request.
+ *   These will override this module's defaults whenever they conflict.
  */
 
-/**
- * Safe defaults which work on all calls.
- */
+/** Safe defaults which work on pretty much all video calls. */
 const defaultParamConstants = {
   env: 'vp',
   gdfp_req: 1,
@@ -50,13 +46,15 @@ const defaultParamConstants = {
  *
  * @see [The DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en#env} for details.
  *
- * @param {DfpVideoOptions} options
+ * @param {DfpVideoOptions} options Options which should be used to construct the URL.
  *
- * @return {string}
+ * @return {string} A URL which calls DFP, letting options.bid
+ *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
+ *   demand in DFP.
  */
 export function buildDfpVideoUrl(options) {
-  const bid = options.bid || getWinningBids(this.code)[0];
   const adUnit = options.adUnit;
+  const bid = options.bid || getWinningBids(adUnit.code)[0];
 
   const derivedParams = {
     correlator: Date.now(),
