@@ -1,3 +1,4 @@
+// jshint esnext:true
 import * as Adapter from './adapter.js';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
@@ -70,6 +71,8 @@ var sizeMap = {
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
+  let hasUserSyncFired = false;
+
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -366,6 +369,8 @@ function RubiconAdapter() {
         utils.logError('Error from addBidResponse', null, err);
       }
     });
+    // Run the Emily user sync
+    hasUserSyncFired = syncEmily(hasUserSyncFired);
   }
 
   function _adCpmSort(adA, adB) {
@@ -409,6 +414,41 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
       return first - second;
     });
 };
+
+/**
+ * syncEmily
+ * @summary A user sync dependency for the Rubicon Project adapter
+ * When enabled, creates an user sync iframe after a delay once the first auction is complete.
+ * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
+ * @example
+ *  // Config example for Rubicon user sync
+ *  $$PREBID_GLOBAL$$.rubiconGlobals = {
+ *    userSync: {
+ *      enabled: true,
+ *      delay: 1000
+ *    }
+ *  }
+ */
+function syncEmily(hasSynced) {
+  const defaultUserSyncConfig = {
+    enabled: true,
+    delay: 5000
+  };
+  const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+
+  let publisherUserSyncConfig = $$PREBID_GLOBAL$$.rubiconGlobals && $$PREBID_GLOBAL$$.rubiconGlobals.userSync;
+  // Merge publisher user sync config with the defaults
+  let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
+
+  // Check that user sync is enabled and that it has not already been triggered - only meant to fire once
+  if (hasSynced || !userSyncConfig.enabled) {
+    return;
+  }
+
+  // Delay inserting the Emily iframe
+  setTimeout(() => utils.insertCookieSyncIframe(iframeUrl), Number(userSyncConfig.delay));
+  return true;
+}
 
 RubiconAdapter.createNew = function() {
   return new RubiconAdapter();
