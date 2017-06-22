@@ -4,7 +4,7 @@ import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
-import 'polyfill';
+import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
@@ -344,6 +344,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
+          iframe.style.overflow = 'hidden';
           iframe.src = url;
 
           utils.insertElement(iframe, doc, 'body');

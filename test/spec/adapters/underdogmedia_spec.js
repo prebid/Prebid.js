@@ -1,5 +1,3 @@
-/* jshint -W030 */
-
 import Adapter from '../../../src/adapters/underdogmedia';
 import bidManager from '../../../src/bidmanager';
 import adloader from '../../../src/adloader';

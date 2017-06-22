@@ -108,34 +108,12 @@ function PrebidServer() {
       if (result.status === 'OK') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_bid || bidder.no_cookie) {
-              // store a "No Bid" bid response
-
-              if (!bidder.ad_unit) {
-                utils.getBidderRequestAllAdUnits(bidder.bidder).bids.forEach(bid => {
-                  let bidObject = bidfactory.createBid(STATUS.NO_BID, bid);
-                  bidObject.adUnitCode = bid.placementCode;
-                  bidObject.bidderCode = bidder.bidder;
-
-                  bidmanager.addBidResponse(bid.placementCode, bidObject);
-                });
-              } else {
-                let bidObject = bidfactory.createBid(STATUS.NO_BID, {
-                  bidId: bidder.bid_id
-                });
-
-                bidObject.adUnitCode = bidder.ad_unit;
-                bidObject.bidderCode = bidder.bidder;
-
-                bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
-              }
-            }
             if (bidder.no_cookie) {
-              // if no cookie is present then no bids were made, we don't store a bid response
               queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
             }
           });
         }
+
         if (result.bids) {
           result.bids.forEach(bidObj => {
             let bidRequest = utils.getBidRequest(bidObj.bid_id);
@@ -161,6 +139,23 @@ function PrebidServer() {
             bidmanager.addBidResponse(bidObj.code, bidObject);
           });
         }
+
+        const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
+
+        // issue a no-bid response for every bid request that can not be matched with received bids
+        config.bidders.forEach(bidder => {
+          utils
+            .getBidderRequestAllAdUnits(bidder)
+            .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
+            .forEach(bidRequest => {
+              let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
+
+              bidObject.adUnitCode = bidRequest.placementCode;
+              bidObject.bidderCode = bidRequest.bidder;
+
+              bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
+            });
+        });
       }
       else if (result.status === 'no_cookie') {
         // cookie sync
