@@ -164,6 +164,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
       triggerAdUnitCallbacks(bid.adUnitCode);
     }
+
+    if (bidsBackAll()) {
+      exports.executeCallback();
+    }
   }
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -172,7 +176,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       if (error) {
         utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
       } else {
-        bid.videoCacheKey = cacheIds[0];
+        bid.videoCacheKey = cacheIds[0].cacheId;
         addBidToAuction(bid);
       }
     });
@@ -185,10 +189,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
       tryAddVideoBid(bid);
     } else {
       addBidToAuction(bid);
-    }
-
-    if (bidsBackAll()) {
-      exports.executeCallback();
     }
   }
 };
