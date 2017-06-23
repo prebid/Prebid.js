@@ -23,7 +23,7 @@ describe('The Bid Manager', () => {
      * 1. Whether or not that bid got added.
      * 2. Whether or not the "end of auction" callbacks got called.
      */
-    function testAddBidResponse(expectBidAdded, expectCallbackCalled) {
+    function testAddVideoBid(expectBidAdded, expectCallbackCalled) {
       return function() {
         const mockResponse = Object.assign({}, bidResponse);
         const callback = sinon.spy();
@@ -76,7 +76,7 @@ describe('The Bid Manager', () => {
           bidRequest.start = new Date().getTime();
         });
 
-      it('should add video bids, but *not* call the end-of-auction callbacks', testAddBidResponse(true, false));
+      it('should add video bids, but *not* call the end-of-auction callbacks', testAddVideoBid(true, false));
     });
 
     describe('when this is the last bid expected in the auction', () => {
@@ -92,7 +92,7 @@ describe('The Bid Manager', () => {
       });
 
       it('should add valid video bids and then execute the callbacks signaling the end of the auction',
-         testAddBidResponse(true, true));
+         testAddVideoBid(true, true));
     });
 
     describe('when the auction has timed out', () => {
@@ -109,7 +109,7 @@ describe('The Bid Manager', () => {
       // Because of the preconditions, this makes sure that the end-of-auction callbacks get called when
       // the auction hits the timeout.
       it('should add the bid, but also execute the callbacks signaling the end of the auction',
-         testAddBidResponse(true, true));
+         testAddVideoBid(true, true));
     })
   });
 });
