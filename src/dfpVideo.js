@@ -52,7 +52,7 @@ const defaultParamConstants = {
  *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
  *   demand in DFP.
  */
-export function buildDfpVideoUrl(options) {
+export default function buildDfpVideoUrl(options) {
   const adUnit = options.adUnit;
   const bid = options.bid || getWinningBids(adUnit.code)[0];
 
@@ -65,7 +65,7 @@ export function buildDfpVideoUrl(options) {
 
   const customParams = Object.assign({},
     bid.adserverTargeting,
-    { hb_uuid: bid.videoCacheKey.cacheId },
+    { hb_uuid: bid.videoCacheKey },
     options.params.cust_params);
 
   const queryParams = Object.assign({},
