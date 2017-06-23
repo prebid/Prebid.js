@@ -12,10 +12,6 @@ describe('The Bid Manager', () => {
   });
 
   describe('addBidResponse() function,', () => {
-    useVideoCacheStubs({
-      store: [{ cacheId: 'FAKE_UUID' }],
-    });
-
     /**
      * Add the bidResponse fixture as a bid into the auction, and run some assertions
      * to verify:
@@ -50,6 +46,13 @@ describe('The Bid Manager', () => {
       };
     }
 
+    /**
+     * Initialize the global state so that the auction-space looks like we want it to.
+     *
+     * @param {Array} adUnits The array of ad units which should appear in this auction.
+     * @param {function} bidRequestTweaker A function which accepts a basic bidRequest, and
+     *   transforms it to prepare it for auction.
+     */
     function prepAuction(adUnits, bidRequestTweaker) {
       beforeEach(() => {
         let thisBidRequest = bidRequest;
@@ -65,51 +68,82 @@ describe('The Bid Manager', () => {
       });
     }
 
-    describe('when more bids are expected after this one', () => {
-      // Set up the global state so that we expect two bids, and the auction started just now
-      // (so as to reduce the chance of timeout. This assumes that the unit test runs run in < 5000 ms).
-      prepAuction(
-        [adUnit, Object.assign({}, adUnit, { code: 'video2' })],
-        (bidRequest) => {
-          const tweakedBidRequestBid = Object.assign({}, bidRequest.bids[0], { placementCode: 'video2' });
-          bidRequest.bids.push(tweakedBidRequestBid);
-          bidRequest.start = new Date().getTime();
-        });
+    function auctionStart(timedOut) {
+      return timedOut
+        ? new Date().getTime() - $$PREBID_GLOBAL$$.cbTimeout - $$PREBID_GLOBAL$$.timeoutBuffer - 1
+        : new Date().getTime();
+    }
 
-      it('should add video bids, but *not* call the end-of-auction callbacks', testAddVideoBid(true, false));
-    });
-
-    describe('when this is the last bid expected in the auction', () => {
-      // Set up the global state so that we expect only one bid, and the auction started just now
-      // (so as to reduce the chance of timeout. This assumes that the unit test runs run in < 5000 ms).
-      prepAuction([adUnit], (bidRequest) => bidRequest.start = new Date().getTime());
-
-      it("shouldn't add invalid bids", () => {
-        bidManager.addBidResponse('', { });
-        bidManager.addBidResponse('testCode', { mediaType: 'video' });
-        bidManager.addBidResponse('testCode', { mediaType: 'native' });
-        expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
+    describe('when the cache is functioning properly', () => {
+      useVideoCacheStubs({
+        store: [{ cacheId: 'FAKE_UUID' }],
       });
 
-      it('should add valid video bids and then execute the callbacks signaling the end of the auction',
-         testAddVideoBid(true, true));
-    });
+      describe('when more bids are expected after this one', () => {
+        // Set up the global state so that we expect two bids, and the auction started just now
+        // (so as to reduce the chance of timeout. This assumes that the unit test runs run in < 5000 ms).
+        prepAuction(
+          [adUnit, Object.assign({}, adUnit, { code: 'video2' })],
+          (bidRequest) => {
+            const tweakedBidRequestBid = Object.assign({}, bidRequest.bids[0], { placementCode: 'video2' });
+            bidRequest.bids.push(tweakedBidRequestBid);
+            bidRequest.start = auctionStart(false);
+          });
 
-    describe('when the auction has timed out', () => {
-      // Set up the global state to expect two bids, and mock an auction which happened long enough
-      // in the past that it will *seem* like this bid is arriving after the timeouts.
-      prepAuction(
-        [adUnit, Object.assign({}, adUnit, { code: 'video2' })],
-        (bidRequest) => {
-          const tweakedBidRequestBid = Object.assign({}, bidRequest.bids[0], { placementCode: 'video2' });
-          bidRequest.bids.push(tweakedBidRequestBid);
-          bidRequest.start = new Date().getTime() - $$PREBID_GLOBAL$$.cbTimeout - $$PREBID_GLOBAL$$.timeoutBuffer - 1;
+        it("should add video bids, but shouldn't call the end-of-auction callbacks yet", testAddVideoBid(true, false));
+      });
+
+      describe('when this is the last bid expected in the auction', () => {
+        // Set up the global state so that we expect only one bid, and the auction started just now
+        // (so as to reduce the chance of timeout. This assumes that the unit test runs run in < 5000 ms).
+        prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(false));
+
+        it("shouldn't add invalid bids", () => {
+          bidManager.addBidResponse('', { });
+          bidManager.addBidResponse('testCode', { mediaType: 'video' });
+          bidManager.addBidResponse('testCode', { mediaType: 'native' });
+          expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
         });
 
-      // Because of the preconditions, this makes sure that the end-of-auction callbacks get called when
-      // the auction hits the timeout.
-      it('should add the bid, but also execute the callbacks signaling the end of the auction',
-         testAddVideoBid(true, true));
-    })
+        it('should add valid video bids and then execute the callbacks signaling the end of the auction',
+          testAddVideoBid(true, true));
+      });
+
+      describe('when the auction has timed out', () => {
+        // Set up the global state to expect two bids, and mock an auction which happened long enough
+        // in the past that it will *seem* like this bid is arriving after the timeouts.
+        prepAuction(
+          [adUnit, Object.assign({}, adUnit, { code: 'video2' })],
+          (bidRequest) => {
+            const tweakedBidRequestBid = Object.assign({}, bidRequest.bids[0], { placementCode: 'video2' });
+            bidRequest.bids.push(tweakedBidRequestBid);
+            bidRequest.start = auctionStart(true);
+          });
+
+        // Because of the preconditions, this makes sure that the end-of-auction callbacks get called when
+        // the auction hits the timeout.
+        it('should add the bid, but also execute the callbacks signaling the end of the auction',
+          testAddVideoBid(true, true));
+      });
+    });
+
+    describe('when the cache is failing for some reason,', () => {
+      useVideoCacheStubs({
+        store: new Error('Unable to save to the cache'),
+      });
+
+      describe('when the auction still has time left', () => {
+        prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(false));
+
+        it("shouldn't add the bid to the auction, and shouldn't execute the end-of-auction callbacks",
+           testAddVideoBid(false, false));
+      });
+
+      describe('when the auction has timed out', () => {
+        prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(true));
+        it("shouldn't add the bid to the auction, but should execute the end-of-auction callbacks",
+          testAddVideoBid(false, true));
+      })
+    });
   });
 });

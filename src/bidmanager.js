@@ -142,18 +142,15 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.adserverTargeting = keyValues;
   }
 
-  // Add a bid to the auction.
-  function addBidToAuction() {
-    if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
-      utils.logError(`Native bid response does not contain all required assets. This bid won't be addeed to the auction`);
-      return;
-    }
-
+  function doCallbacksIfNeeded() {
     if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
       const timedOut = true;
       exports.executeCallback(timedOut);
     }
+  }
 
+  // Add a bid to the auction.
+  function addBidToAuction() {
     // Make sure that the bidAdjustment event fires before bidResponse, so that the bid response
     // has the adjusted bid value
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
@@ -173,6 +170,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
   // Video bids may fail if the cache is down, or there's trouble on the network.
   function tryAddVideoBid(bid) {
     store([bid.vastUrl], function(error, cacheIds) {
+      doCallbacksIfNeeded();
+
       if (error) {
         utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
       } else {
@@ -188,6 +187,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.mediaType === 'video') {
       tryAddVideoBid(bid);
     } else {
+      doCallbacksIfNeeded();
       addBidToAuction(bid);
     }
   }
