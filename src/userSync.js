@@ -6,6 +6,19 @@ const queue = {
   image: []
 };
 
+// Image pixels are enabled
+let pixelSyncEnabled;
+
+/**
+ * @function userSyncTypesEnabled
+ * @summary Checks each user sync type and sets each global boolean
+ * Add other syncs when they are available
+ * @private
+ */
+function userSyncTypesEnabled() {
+  pixelSyncEnabled = !!($$PREBID_GLOBAL$$.userSync && $$PREBID_GLOBAL$$.userSync.pixelEnabled);
+}
+
 /**
  * @function fireSyncs
  * @summary Trigger all user syncs in the queue
@@ -13,6 +26,9 @@ const queue = {
  */
 function fireSyncs() {
   try {
+    if (!pixelSyncEnabled) {
+      return;
+    }
     // Fire image pixels
     queue.image.forEach((sync) => {
       let bidderName = sync[0];
@@ -85,7 +101,7 @@ userSync.createImgObject = function(url) {
  * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
  */
 userSync.registerSync = function(type, bidder, ...data) {
-  if (!queue[type]) {
+  if (!utils.isArray(queue[type])) {
     return utils.logWarn(`User sync type "{$type}" not supported`);
   }
   queue[type].push([bidder, ...data]);
@@ -98,5 +114,6 @@ userSync.registerSync = function(type, bidder, ...data) {
  * @params {int} timeout The delay in ms before syncing data - default 0
  */
 userSync.syncUsers = function(timeout = 0) {
+  userSyncTypesEnabled();
   setTimeout(fireSyncs, timeout);
 };

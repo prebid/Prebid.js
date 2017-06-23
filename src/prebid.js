@@ -74,8 +74,10 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
+// Set the default userSync object if it was not set by the publisher
+$$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
 // delay to request cookie sync to stay out of critical path
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
+$$PREBID_GLOBAL$$.userSync.syncDelay = $$PREBID_GLOBAL$$.userSync.syncDelay || 3000;
 
 
 /**
