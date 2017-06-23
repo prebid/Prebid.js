@@ -1,6 +1,6 @@
 import 'mocha';
 import chai from 'chai';
-import { retrieve, store } from 'src/video-cache';
+import { retrieve, store } from 'src/videoCache';
 
 const should = chai.should();
 const EMPTY_VAST_RESPONSE = '<VAST version="3.0"></VAST>'

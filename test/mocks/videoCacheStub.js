@@ -1,4 +1,4 @@
-import * as videoCache from 'src/video-cache';
+import * as videoCache from 'src/videoCache';
 
 /**
  * Function which can be called from unit tests to stub out the video cache.

@@ -1,3 +1,7 @@
+import { getGlobal } from 'src/prebidGlobal';
+
+const prebid = getGlobal();
+
 /**
  * This file serves as the plugin point for adserver module functionality.
  *
@@ -9,9 +13,6 @@
  * If publishers bundle with more than one Ad Server, they'll need to interact with them through
  * `pbjs.adservers.{adServerCode}`, where the adServerCode is defined by the ad server itself.
  */
-import { getGlobal } from './prebidGlobal';
-
-const prebid = getGlobal();
 
 /**
  * @typedef {Object} CachedVideoBid
@@ -46,33 +47,35 @@ const prebid = getGlobal();
  */
 
 /**
- * Prepares the prebid global namespace so that utility functions can be added to it.
+ * Prepares a namespace on object so that utility functions can be added to it.
  *
  * If this is the only code we've seen, attach functionality to $$PREBID_GLOBAL$$.adServer.
  * If we've seen any other codes, attach functionality to $$PREBID_GLOBAL$$.adServers[code].
  *
+ * @param {object} object The object where this function should manage namespaces.
  * @param {string} code The code for this ad server.
  * @return {object} An object where functions for dealing with this ad server can be added.
  */
-function prepareNamespace(code) {
-  if (prebid.adServer && prebid.adServer.code !== code) {
-    prebid.adServers = { };
-    prebid.adServers[prebid.adserver.code] = prebid.adServer;
-    delete prebid.adServer;
+function prepareNamespaceIn(object, code) {
+  if (object.adServer && object.adServer.code !== code) {
+    object.adServers = { };
+    object.adServers[object.adServer.code] = object.adServer;
+    delete object.adServer.code;
+    delete object.adServer;
   }
 
-  if (prebid.adServer) {
-    return prebid.adServer;
+  if (object.adServer) {
+    return object.adServer;
   }
-  if (prebid.adServers) {
-    if (!prebid.adServers[adServer.code]) {
-      prebid.adServers[adServer.code] = { };
+  if (object.adServers) {
+    if (!object.adServers[code]) {
+      object.adServers[code] = { };
     }
-    return prebid.adServers[adServer.code];
+    return object.adServers[code];
   }
   else {
-    prebid.adServer = { };
-    return prebid.adServer;
+    object.adServer = { code };
+    return object.adServer;
   }
 }
 
@@ -83,6 +86,5 @@ function prepareNamespace(code) {
  * @property {VideoSupport} videoSupport An object with the functions needed to support video in Prebid.
  */
 export function registerVideoSupport(code, videoSupport) {
-  prepareNamespace(code).buildVideoAdUrl = videoSupport.buildVideoAdUrl;
+  prepareNamespaceIn(prebid, code).buildVideoAdUrl = videoSupport.buildVideoAdUrl;
 }
-
