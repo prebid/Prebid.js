@@ -24,6 +24,7 @@ var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
+var sourcemaps = require('gulp-sourcemaps');
 var fs = require('fs');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
@@ -75,11 +76,14 @@ function bundle(dev) {
 
   return gulp.src(
       entries
-    ).pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js'))
+    )
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js'))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
     )))
+    .pipe(sourcemaps.write())
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
