@@ -55,8 +55,8 @@ const DEFAULT_VPAID_MIMES_MAP = {
   HTML5: ['application/javascript']
 };
 
-const BASE_CYGNUS_VIDEO_URL_INSECURE = 'http://as.casalemedia.com/cygnus?v=8&fn=handleCygnusResponse';
-const BASE_CYGNUS_VIDEO_URL_SECURE = 'https://as-sec.casalemedia.com/cygnus?v=8&fn=handleCygnusResponse';
+const BASE_CYGNUS_VIDEO_URL_INSECURE = `http://as.casalemedia.com/cygnus?v=8&fn=$$PREBID_GLOBAL$$.handleCygnusResponse`;
+const BASE_CYGNUS_VIDEO_URL_SECURE = `https://as-sec.casalemedia.com/cygnus?v=8&fn=$$PREBID_GLOBAL$$.handleCygnusResponse`;
 
 function IndexExchangeVideoAdapter() {
   let baseAdapter = Adapter.createNew('ixVideo');
@@ -149,7 +149,7 @@ function IndexExchangeVideoAdapter() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  window.handleCygnusResponse = function (response) {
+  $$PREBID_GLOBAL$$.handleCygnusResponse = function (response) {
     if (!response || !response.seatbid || utils.isEmpty(response.seatbid)) {
       utils.logInfo('Cynus returned no bids');
 
@@ -240,7 +240,7 @@ function IndexExchangeVideoAdapter() {
       utils.hasValidBidRequest(bid.params.video, Object.keys(VIDEO_REQUIRED_PARAMS_MAP), baseAdapter) &&
       isValidSite(bid.params.video.siteID) &&
       isValidPlayerType(bid.params.video.playerType) &&
-      isValidProtolArray(bid.params.video.protocols) &&
+      isValidProtocolArray(bid.params.video.protocols) &&
       isValidDuration(bid.params.video.maxduration) && bid.params.video.maxduration > 0
     ) {
       return bid;
@@ -269,7 +269,7 @@ function IndexExchangeVideoAdapter() {
     return true;
   }
 
-  function isValidProtolArray(protocolArray) {
+  function isValidProtocolArray(protocolArray) {
     if (!utils.isArray(protocolArray) || utils.isEmpty(protocolArray)) {
       utils.logError(`Protocol array is not an array. Got: ${protocolArray}`);
       return false;

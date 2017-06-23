@@ -16,9 +16,9 @@ const EMPTY_MESSAGE = 'Bid returned empty or error response';
 const ERROR_MESSAGE = 'Bid returned empty or error response';
 const AVAILABLE_MESSAGE = 'Bid available';
 
-const CYGNUS_REQUEST_BASE_URL_INSECURE = 'http://as.casalemedia.com/cygnus?v=8&fn=handleCygnusResponse&s=6&r=';
+const CYGNUS_REQUEST_BASE_URL_INSECURE = 'http://as.casalemedia.com/cygnus?v=8&fn=$$PREBID_GLOBAL$$.handleCygnusResponse&s=6&r=';
 
-const CYGNUS_REQUEST_BASE_URL_SECURE = 'https://as-sec.casalemedia.com/cygnus?v=8&fn=handleCygnusResponse&s=6&r=';
+const CYGNUS_REQUEST_BASE_URL_SECURE = 'https://as-sec.casalemedia.com/cygnus?v=8&fn=$$PREBID_GLOBAL$$.handleCygnusResponse&s=6&r=';
 
 const DEFAULT_MIMES_MAP = {
   FLASH: ['video/mp4', 'video/x-flv'],
@@ -735,7 +735,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is empty object', () => {
-          global.window.handleCygnusResponse({});
+          $$PREBID_GLOBAL$$.handleCygnusResponse({});
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -745,7 +745,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is empty array', () => {
-          global.window.handleCygnusResponse({});
+          $$PREBID_GLOBAL$$.handleCygnusResponse({});
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -757,7 +757,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is undefined', () => {
-          global.window.handleCygnusResponse(undefined);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(undefined);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -767,7 +767,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is number', () => {
-          global.window.handleCygnusResponse(1);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(1);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -777,7 +777,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is string', () => {
-          global.window.handleCygnusResponse('cucumber');
+          $$PREBID_GLOBAL$$.handleCygnusResponse('cucumber');
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -787,7 +787,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is explicit pass', () => {
-          global.window.handleCygnusResponse({ id: CYGNUS_RESPONSE.id });
+          $$PREBID_GLOBAL$$.handleCygnusResponse({ id: CYGNUS_RESPONSE.id });
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
@@ -804,7 +804,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is mismatched', () => {
           response.seatbid[0].bid[0].impid = 'cucumber';
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -815,7 +815,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is undefined', () => {
           response.seatbid[0].bid[0].impid = undefined;
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -826,7 +826,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is array', () => {
           response.seatbid[0].bid[0].impid = [];
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -837,7 +837,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is object', () => {
           response.seatbid[0].bid[0].impid = {};
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -848,7 +848,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is string', () => {
           response.seatbid[0].bid[0].impid = {};
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -865,7 +865,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is string', () => {
           response.seatbid[0].bid[0].ext.pricelevel = 'cucumber';
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -876,7 +876,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is undefined', () => {
           response.seatbid[0].bid[0].ext.pricelevel = undefined;
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -887,7 +887,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is array', () => {
           response.seatbid[0].bid[0].ext.pricelevel = [];
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -898,7 +898,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is object', () => {
           response.seatbid[0].bid[0].ext.pricelevel = {};
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -915,7 +915,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is undefined', () => {
           response.seatbid[0].bid[0].ext.vasturl = undefined;
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -926,7 +926,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is number', () => {
           response.seatbid[0].bid[0].ext.vasturl = 1;
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -937,7 +937,7 @@ describe('IndexExchangeVideoAdapter', () => {
 
         it('is not a url', () => {
           response.seatbid[0].bid[0].ext.vasturl = 'cucumber';
-          global.window.handleCygnusResponse(response);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(response);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const bidResponse = bidmanager.addBidResponse.firstCall.args[1];
@@ -955,7 +955,7 @@ describe('IndexExchangeVideoAdapter', () => {
         });
 
         it('is success', () => {
-          global.window.handleCygnusResponse(CYGNUS_RESPONSE);
+          $$PREBID_GLOBAL$$.handleCygnusResponse(CYGNUS_RESPONSE);
           sinon.assert.calledOnce(bidmanager.addBidResponse);
 
           const response = bidmanager.addBidResponse.firstCall.args[1];
