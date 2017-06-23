@@ -23,6 +23,7 @@
     "hiromedia",
     "indexExchange",
     "innity",
+    "ixVideo",
     "kruxlink",
     "getintent",
     "inneractive",
@@ -141,6 +142,11 @@
     {
       "stickyadstv": {
         "alias": "freewheel-ssp"
+      }
+    },
+    {
+      "ixVideo": {
+        "supportedMediaTypes": ["video"]
       }
     },
     {
