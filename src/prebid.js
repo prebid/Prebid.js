@@ -472,7 +472,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 /**
  *
  * Add adunit(s)
- * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
+ * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
  * @alias module:$$PREBID_GLOBAL$$.addAdUnits
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
