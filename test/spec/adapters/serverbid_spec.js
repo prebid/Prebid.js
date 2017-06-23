@@ -3,7 +3,7 @@ import Adapter from 'src/adapters/serverbid';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 
-const ENDPOINT = '//e.serverbid.com/api/v2';
+const ENDPOINT = 'https://e.serverbid.com/api/v2';
 
 const REQUEST = {
   'bidderCode': 'serverbid',
@@ -37,15 +37,15 @@ const RESPONSE = {
       'creativeId': 1950991,
       'flightId': 2788300,
       'campaignId': 542982,
-      'clickUrl': 'http://e.serverbid.com/r',
-      'impressionUrl': 'http://e.serverbid.com/i.gif',
+      'clickUrl': 'https://e.serverbid.com/r',
+      'impressionUrl': 'https://e.serverbid.com/i.gif',
       'contents': [{
         'type': 'html',
         'body': '<html></html>',
         'data': {
           'height': 90,
           'width': 728,
-          'imageUrl': 'http://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+          'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
           'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
         },
         'template': 'image'
@@ -85,6 +85,7 @@ describe('serverbidAdapter', () => {
 
     it('requires paramaters to make request', () => {
       adapter.callBids({});
+      expect(window.serverbidCallBids).to.be.empty;
       expect(requests).to.be.empty;
     });
 
@@ -92,10 +93,12 @@ describe('serverbidAdapter', () => {
       let backup = pbConfig.bids[0].params;
       pbConfig.bids[0].params = { networkId: 1234 }; // no hbid
       adapter.callBids(pbConfig);
+      window.serverbidCallBids(pbConfig);
       expect(requests).to.be.empty;
 
       pbConfig.bids[0].params = { siteId: 1234 }; // no placementid
       adapter.callBids(pbConfig);
+      window.serverbidCallBids(pbConfig);
       expect(requests).to.be.empty;
 
       pbConfig.bids[0].params = backup;
@@ -103,6 +106,7 @@ describe('serverbidAdapter', () => {
 
     it('sends bid request to ENDPOINT via POST', () => {
       adapter.callBids(pbConfig);
+      window.serverbidCallBids(pbConfig);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('POST');
     });
@@ -127,6 +131,7 @@ describe('serverbidAdapter', () => {
       server.respondWith(JSON.stringify(RESPONSE));
 
       adapter.callBids(REQUEST);
+      window.serverbidCallBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
@@ -142,6 +147,7 @@ describe('serverbidAdapter', () => {
       }));
 
       adapter.callBids(REQUEST);
+      window.serverbidCallBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
@@ -156,6 +162,7 @@ describe('serverbidAdapter', () => {
       server.respondWith('');
 
       adapter.callBids(REQUEST);
+      window.serverbidCallBids(REQUEST);
       server.respond();
       sinon.assert.calledOnce(bidmanager.addBidResponse);
 
