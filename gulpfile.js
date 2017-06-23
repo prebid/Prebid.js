@@ -83,7 +83,7 @@ function bundle(dev) {
         global: prebid.globalVarName
       }
     )))
-    .pipe(sourcemaps.write())
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
