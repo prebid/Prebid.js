@@ -430,20 +430,19 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
  *  }
  */
 function syncEmily(hasSynced) {
+  // Check that user sync is enabled and that it has not already been triggered - only meant to fire once
+  if (hasSynced || !userSyncConfig.enabled) {
+    return;
+  }
+
   const defaultUserSyncConfig = {
     enabled: true,
     delay: 5000
   };
   const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
-
   let publisherUserSyncConfig = $$PREBID_GLOBAL$$.rubiconGlobals && $$PREBID_GLOBAL$$.rubiconGlobals.userSync;
   // Merge publisher user sync config with the defaults
   let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
-
-  // Check that user sync is enabled and that it has not already been triggered - only meant to fire once
-  if (hasSynced || !userSyncConfig.enabled) {
-    return;
-  }
 
   // Delay inserting the Emily iframe
   setTimeout(() => utils.insertCookieSyncIframe(iframeUrl), Number(userSyncConfig.delay));
