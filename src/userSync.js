@@ -6,17 +6,18 @@ const queue = {
   image: []
 };
 
-// Image pixels are enabled
-let pixelSyncEnabled;
+// This is initialized in prebid.js, but some of the tests need it
+$$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
 
 /**
- * @function userSyncTypesEnabled
- * @summary Checks each user sync type and sets each global boolean
- * Add other syncs when they are available
+ * @function getConfig
+ * @summary Get the config value on the PBJS userSync object as proviced by the publisher
  * @private
+ * @param {string} configKey The key on the userSync object for which you want a value
+ * @return {multi} The value in the user sync config
  */
-function userSyncTypesEnabled() {
-  pixelSyncEnabled = !!($$PREBID_GLOBAL$$.userSync && $$PREBID_GLOBAL$$.userSync.pixelEnabled);
+function getConfig(configKey) {
+  return ($$PREBID_GLOBAL$$.userSync && $$PREBID_GLOBAL$$.userSync[configKey]) || null;
 }
 
 /**
@@ -26,7 +27,7 @@ function userSyncTypesEnabled() {
  */
 function fireSyncs() {
   try {
-    if (!pixelSyncEnabled) {
+    if (!getConfig('pixelEnabled')) {
       return;
     }
     // Fire image pixels
@@ -114,6 +115,22 @@ userSync.registerSync = function(type, bidder, ...data) {
  * @params {int} timeout The delay in ms before syncing data - default 0
  */
 userSync.syncUsers = function(timeout = 0) {
-  userSyncTypesEnabled();
-  setTimeout(fireSyncs, timeout);
+  if (timeout) {
+    return setTimeout(fireSyncs, Number(timeout));
+  }
+  fireSyncs();
 };
+
+/**
+ * @function overrideSync
+ * @summary Expose syncUsers method to the publisher for manual syncing when enabled
+ * @param {boolean} enableOverride Tells this module to expose the syncAll method to the public
+ * @public
+ */
+userSync.overrideSync = function(enableOverride) {
+  if (enableOverride) {
+    $$PREBID_GLOBAL$$.userSync.syncAll = userSync.syncUsers;
+  }
+}
+
+

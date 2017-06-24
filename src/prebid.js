@@ -8,7 +8,7 @@ import 'polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncUsers } from 'src/userSync.js';
+import { syncUsers, overrideSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
@@ -76,9 +76,8 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 // Set the default userSync object if it was not set by the publisher
 $$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
-// delay to request cookie sync to stay out of critical path
+// Delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.userSync.syncDelay = $$PREBID_GLOBAL$$.userSync.syncDelay || 3000;
-
 
 /**
  * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
@@ -382,7 +381,11 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncUsers($$PREBID_GLOBAL$$.cookieSyncDelay);
+  // Automatically trigger the user syncs if configured by the publisher
+  if (!$$PREBID_GLOBAL$$.userSync.enableOverride) {
+    // Delay the auto sync by the config delay
+    syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay);
+  }
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -777,6 +780,9 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }, options);
   adaptermanager.setS2SConfig(config);
 };
+
+// Expose user syncing to the public API based on config "userSync.enableOverride"
+overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
 
 $$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
 processQueue($$PREBID_GLOBAL$$.cmd);
