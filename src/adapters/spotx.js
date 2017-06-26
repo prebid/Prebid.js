@@ -50,8 +50,8 @@ function Spotx() {
       var bid = {};
 
       bid.cmpID = bidReq.params.video.channel_id;
-      bid.cpm = adServerKVPs['spotx_bid'];
-      bid.url = adServerKVPs['spotx_ad_key'];
+      bid.cpm = adServerKVPs.spotx_bid;
+      bid.url = adServerKVPs.spotx_ad_key;
       bid.cur = 'USD';
       bid.bidderCode = 'spotx';
       bid.height = bidReq.sizes[0][1];
