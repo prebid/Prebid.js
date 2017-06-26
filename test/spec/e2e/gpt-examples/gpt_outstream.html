@@ -8,8 +8,6 @@
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
-    pbjs.logging = true;
-
     var googletag = googletag || {};
     googletag.cmd = googletag.cmd || [];
 
@@ -78,6 +76,7 @@
     ];
 
     pbjs.que.push(function () {
+      pbjs.setConfig({ debug: true });
       pbjs.addAdUnits(videoAdUnits);
       pbjs.requestBids({
         timeout: 3000,
