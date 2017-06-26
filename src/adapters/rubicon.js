@@ -428,8 +428,14 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
  *      delay: 1000
  *    }
  *  }
+ * @return {boolean} Whether or not Emily synced
  */
 function syncEmily(hasSynced) {
+  // Check that it has not already been triggered - only meant to fire once
+  if (hasSynced) {
+    return false;
+  }
+
   const defaultUserSyncConfig = {
     enabled: true,
     delay: 5000
@@ -440,9 +446,9 @@ function syncEmily(hasSynced) {
   // Merge publisher user sync config with the defaults
   let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
 
-  // Check that user sync is enabled and that it has not already been triggered - only meant to fire once
-  if (hasSynced || !userSyncConfig.enabled) {
-    return;
+  // Check that user sync is enabled
+  if (!userSyncConfig.enabled) {
+    return false;
   }
 
   // Delay inserting the Emily iframe
