@@ -340,7 +340,7 @@ exports.isNumber = function(object) {
 exports.isEmpty = function (object) {
   if (!object) return true;
   if (this.isArray(object) || this.isStr(object)) {
-    return !(object.length > 0); // jshint ignore:line
+    return !(object.length > 0);
   }
 
   for (var k in object) {

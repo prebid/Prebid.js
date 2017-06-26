@@ -92,6 +92,74 @@ describe('gumgum adapter', () => {
     sandbox.restore();
   });
 
+  describe('DigiTrust params', () => {
+    beforeEach(() => {
+      sandbox.stub(adLoader, 'loadScript');
+    });
+
+    it('should send digiTrust params', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: true,
+          identity: {
+            privacy: {optout: false},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.include('&dt=testId');
+      delete window.DigiTrust;
+    });
+
+    it('should not send DigiTrust params when DigiTrust is not loaded', () => {
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+    });
+
+    it('should not send DigiTrust params due to opt out', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: true,
+          identity: {
+            privacy: {optout: true},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+      delete window.DigiTrust;
+    });
+
+    it('should not send DigiTrust params on failure', () => {
+      window.DigiTrust = {
+        getUser: function() {}
+      };
+      sandbox.stub(window.DigiTrust, 'getUser', () =>
+        ({
+          success: false,
+          identity: {
+            privacy: {optout: false},
+            id: 'testId'
+          }
+        })
+      );
+
+      adapter.callBids(bidderRequest);
+      expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
+      delete window.DigiTrust;
+    });
+  });
+
   describe('callBids', () => {
     beforeEach(() => {
       sandbox.stub(adLoader, 'loadScript');

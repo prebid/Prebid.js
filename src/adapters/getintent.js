@@ -1,5 +1,3 @@
-/* jshint loopfunc: true */
-
 import { STATUS } from 'src/constants';
 
 var bidfactory = require('../bidfactory.js');
