@@ -2,12 +2,11 @@
 
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
-import native from './native';
+import { processNativeAdUnitParams, nativeAdapters } from './native';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
-import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -32,7 +31,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
 
         if (adUnit.nativeParams) {
           bid = Object.assign({}, bid, {
-            nativeParams: native(adUnit.nativeParams),
+            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
           });
         }
 
@@ -154,10 +153,19 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+exports.videoAdapters = [];  // added by adapterLoader for now
+
+exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
       _bidderRegistry[bidderCode] = bidAdaptor;
+
+      if (supportedMediaTypes.includes('video')) {
+        exports.videoAdapters.push(bidderCode);
+      }
+      if (supportedMediaTypes.includes('native')) {
+        nativeAdapters.push(bidderCode);
+      }
     } else {
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }
@@ -177,14 +185,9 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
     } else {
       try {
         let newAdapter = null;
-        if (bidAdaptor instanceof BaseAdapter) {
-          // newAdapter = new bidAdaptor.constructor(alias);
-          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
-        } else {
-          newAdapter = bidAdaptor.createNew();
-          newAdapter.setBidderCode(alias);
-          this.registerBidAdapter(newAdapter, alias);
-        }
+        newAdapter = bidAdaptor.createNew();
+        newAdapter.setBidderCode(alias);
+        this.registerBidAdapter(newAdapter, alias);
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
@@ -231,11 +234,3 @@ exports.setBidderSequence = function (order) {
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
-
-/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ADAPTERS */
-
-/** INSERT ANALYTICS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ANALYTICS */
