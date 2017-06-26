@@ -30,6 +30,16 @@ function Spotx() {
   {
     var options = bidReq.params.video;
 
+    // If we are passed a id string set the slot and video slot to the element using that id.
+    if (typeof options.slot === 'string')
+    {
+      options.slot = document.getElementById(bidReq.params.video.slot);
+    }
+    if (typeof options.video_slot === 'string')
+    {
+      options.video_slot = document.getElementById(bidReq.params.video.video_slot);
+    }
+
     var directAdOS = new SpotX.DirectAdOS(options);
 
     directAdOS.getAdServerKVPs().then(function(adServerKVPs) {
