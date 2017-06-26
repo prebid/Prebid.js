@@ -108,7 +108,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
-    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter]; // jshint ignore:line
+    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
     s2sAdapter.setConfig(_s2sConfig);
     s2sAdapter.callBids(s2sBidRequest);

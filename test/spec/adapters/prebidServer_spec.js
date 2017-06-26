@@ -66,7 +66,8 @@ const RESPONSE = {
       'price': 0.5,
       'adm': '<script type="application/javascript" src="http://nym1-ib.adnxs.com/ab?e=wqT_3QL_Baj_AgAAAwDWAAUBCO-s38cFEJG-p6iRgOfvdhivtLWVpomhsWUgASotCQAAAQII4D8RAQc0AADgPxkAAACA61HgPyEREgApEQmgMPLm_AQ4vgdAvgdIAlDWy5MOWOGASGAAaJFAeP3PBIABAYoBA1VTRJIFBvBSmAGsAqAB-gGoAQGwAQC4AQLAAQPIAQLQAQnYAQDgAQHwAQCKAjp1ZignYScsIDQ5NDQ3MiwgMTQ5MjYzNzI5NSk7dWYoJ3InLCAyOTY4MTExMCwyHgDwnJIC7QEhcHpUNkZ3aTYwSWNFRU5iTGt3NFlBQ0RoZ0Vnd0FEZ0FRQVJJdmdkUTh1YjhCRmdBWVBfX19fOFBhQUJ3QVhnQmdBRUJpQUVCa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUVwaTRpREFBRGdQOEVCS1l1SWd3QUE0RF9KQWQ0V2JVTnJmUEVfMlFFQUFBQUFBQUR3UC1BQkFQVUIFD0BKZ0Npb2FvcEFtZ0FnQzFBZwEWBEM5CQjoREFBZ0hJQWdIUUFnSFlBZ0hnQWdEb0FnRDRBZ0NBQXdHUUF3Q1lBd0dvQTdyUWh3US6aAjEhRXduSHU68AAcNFlCSUlBUW8JbARreAFmDQHwui7YAugH4ALH0wHqAg93d3cubnl0aW1lcy5jb23yAhEKBkNQR19JRBIHMTk3NzkzM_ICEAoFQ1BfSUQSBzg1MTM1OTSAAwGIAwGQAwCYAxSgAwGqAwDAA6wCyAMA2APjBuADAOgDAPgDA4AEAJIECS9vcGVucnRiMpgEAKIECzEwLjI0NC4wLjIyqAQAsgQKCAAQABgAIAAwALgEAMAEAMgEANIEDDEwLjMuMTM4LjE0ONoEAggB4AQA8ARBXyCIBQGYBQCgBf8RAZwBqgUkNDM3ZmJiZjUtMzNmNS00ODdhLThlMTYtYTcxMTI5MDNjZmU1&s=b52bf8a6265a78a5969444bc846cc6d0f9f3b489&test=1&referrer=www.nytimes.com&pp=${AUCTION_PRICE}&"></script>',
       'width': 300,
-      'height': 250
+      'height': 250,
+      'deal_id': 'test-dealid'
     }
   ]
 };
@@ -143,9 +144,12 @@ describe('S2S Adapter', () => {
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
         bids: [{
-          bidId: '32167',
+          bidId: '123',
           placementCode: 'div-gpt-ad-1460505748561-0'
         }]
+      });
+      sinon.stub(utils, 'getBidRequest').returns({
+        bidId: '123'
       });
     });
 
@@ -153,6 +157,7 @@ describe('S2S Adapter', () => {
       server.restore();
       bidmanager.addBidResponse.restore();
       utils.getBidderRequestAllAdUnits.restore();
+      utils.getBidRequest.restore();
     });
 
     it('registers bids', () => {
@@ -166,9 +171,10 @@ describe('S2S Adapter', () => {
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('adId', '123');
     });
 
-    it('registers no bid response when ad unit not set', () => {
+    it('registers no-bid response when ad unit not set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       adapter.setConfig(CONFIG);
@@ -183,10 +189,10 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
 
       const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
-      expect(bid_request_passed).to.have.property('adId', '32167');
+      expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('registers no bid response when server requests cookie sync', () => {
+    it('registers no-bid response when server requests cookie sync', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
 
       adapter.setConfig(CONFIG);
@@ -201,10 +207,10 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
 
       const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
-      expect(bid_request_passed).to.have.property('adId', '32167');
+      expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('registers no bid response when ad unit is set', () => {
+    it('registers no-bid response when ad unit is set', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
       adapter.setConfig(CONFIG);
@@ -217,6 +223,48 @@ describe('S2S Adapter', () => {
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
+    });
+
+    it('registers no-bid response when there are less bids than requests', () => {
+      utils.getBidderRequestAllAdUnits.restore();
+      sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
+        bids: [{
+          bidId: '123',
+          placementCode: 'div-gpt-ad-1460505748561-0'
+        }, {
+          bidId: '101111',
+          placementCode: 'div-gpt-ad-1460505748561-1'
+        }]
+      });
+
+      server.respondWith(JSON.stringify(RESPONSE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
+      expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal('div-gpt-ad-1460505748561-1');
+
+      expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
+      expect(bidmanager.addBidResponse.secondCall.args[1]).to.have.property('adId', '101111');
+
+      expect(bidmanager.addBidResponse.firstCall.args[1])
+        .to.have.property('statusMessage', 'Bid available');
+      expect(bidmanager.addBidResponse.secondCall.args[1])
+        .to.have.property('statusMessage', 'Bid returned empty or error response');
+    });
+
+    it('should have dealId in bidObject', () => {
+      server.respondWith(JSON.stringify(RESPONSE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('dealId', 'test-dealid');
     });
   });
 });

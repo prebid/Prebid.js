@@ -43,10 +43,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var query = utils.getBidIdParameter('query', bid.params);
     var referrer = utils.getBidIdParameter('referrer', bid.params);
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
-
-    // build our base tag, based on if we are http or https
-
-    var jptCall = 'http' + (document.location.protocol === 'https:' ? 's://secure.adnxs.com/jpt?' : '://ib.adnxs.com/jpt?');
+    var jptCall = '//ib.adnxs.com/jpt?';
 
     jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
