@@ -86,7 +86,7 @@ module.exports = {
     // this plugin must be last so it can be easily removed for karma unit tests
     new webpack.optimize.CommonsChunkPlugin({
       name: 'prebid',
-      filename: 'prebid.js',
+      filename: 'prebid-core.js',
       minChunks: function(module, count) {
         return !(count < 2 || neverBundle.includes(path.basename(module.resource)))
       }

@@ -97,8 +97,8 @@ module.exports = {
     return modules.map(name => path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, name + '.js'));
   },
 
-  getBuiltPrebid: function(dev) {
-    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, 'prebid' + '.js');
+  getBuiltPrebidCoreFile: function(dev) {
+    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, 'prebid-core' + '.js');
   },
 
   getModulePaths: function(externalModules) {

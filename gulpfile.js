@@ -69,7 +69,7 @@ function bundle(dev) {
     }
   }
 
-  var entries = [helpers.getBuiltPrebid(dev)].concat(helpers.getBuiltModules(dev, modules));
+  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
   gutil.log('Concatenating files:\n', entries);
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
@@ -77,13 +77,13 @@ function bundle(dev) {
   return gulp.src(
       entries
     )
-    .pipe(sourcemaps.init({loadMaps: true}))
-    .pipe(concat(argv.bundleName ? argv.bundleName : 'bundle.js'))
+    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
     )))
-    .pipe(sourcemaps.write('.'))
+    .pipe(gulpif(dev, sourcemaps.write('.')))
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
