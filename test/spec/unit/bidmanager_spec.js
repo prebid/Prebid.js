@@ -19,7 +19,7 @@ describe('The Bid Manager', () => {
      * 1. Whether or not that bid got added.
      * 2. Whether or not the "end of auction" callbacks got called.
      */
-    function testAddVideoBid(expectBidAdded, expectCallbackCalled) {
+    function testAddVideoBid(expectBidAdded, expectCallbackCalled, videoCacheStubProvider) {
       return function() {
         const mockResponse = Object.assign({}, bidResponse);
         const callback = sinon.spy();
@@ -32,6 +32,10 @@ describe('The Bid Manager', () => {
 
         const expectedBidsReceived = expectBidAdded ? 1 : 0;
         expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(expectedBidsReceived);
+
+        const storeStub = videoCacheStubProvider().store;
+        expect(storeStub.calledOnce).to.equal(true);
+        expect(storeStub.getCall(0).args[0][0]).to.equal(mockResponse);
 
         if (expectedBidsReceived === 1) {
           const bid = $$PREBID_GLOBAL$$._bidsReceived[0];
@@ -75,7 +79,7 @@ describe('The Bid Manager', () => {
     }
 
     describe('when the cache is functioning properly', () => {
-      useVideoCacheStubs({
+      let stubProvider = useVideoCacheStubs({
         store: [{ cacheId: 'FAKE_UUID' }],
       });
 
@@ -90,7 +94,8 @@ describe('The Bid Manager', () => {
             bidRequest.start = auctionStart(false);
           });
 
-        it("should add video bids, but shouldn't call the end-of-auction callbacks yet", testAddVideoBid(true, false));
+        it("should add video bids, but shouldn't call the end-of-auction callbacks yet",
+           testAddVideoBid(true, false, stubProvider));
       });
 
       describe('when this is the last bid expected in the auction', () => {
@@ -106,7 +111,7 @@ describe('The Bid Manager', () => {
         });
 
         it('should add valid video bids and then execute the callbacks signaling the end of the auction',
-          testAddVideoBid(true, true));
+          testAddVideoBid(true, true, stubProvider));
       });
 
       describe('when the auction has timed out', () => {
@@ -123,12 +128,12 @@ describe('The Bid Manager', () => {
         // Because of the preconditions, this makes sure that the end-of-auction callbacks get called when
         // the auction hits the timeout.
         it('should add the bid, but also execute the callbacks signaling the end of the auction',
-          testAddVideoBid(true, true));
+          testAddVideoBid(true, true, stubProvider));
       });
     });
 
     describe('when the cache is failing for some reason,', () => {
-      useVideoCacheStubs({
+      let stubProvider = useVideoCacheStubs({
         store: new Error('Unable to save to the cache'),
       });
 
@@ -136,13 +141,13 @@ describe('The Bid Manager', () => {
         prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(false));
 
         it("shouldn't add the bid to the auction, and shouldn't execute the end-of-auction callbacks",
-           testAddVideoBid(false, false));
+           testAddVideoBid(false, false, stubProvider));
       });
 
       describe('when the auction has timed out', () => {
         prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(true));
         it("shouldn't add the bid to the auction, but should execute the end-of-auction callbacks",
-          testAddVideoBid(false, true));
+          testAddVideoBid(false, true, stubProvider));
       })
     });
   });
