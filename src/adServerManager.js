@@ -39,28 +39,28 @@ const prebid = getGlobal();
 /**
  * @typedef {Object} VideoSupport
  *
- * @property {string} code The identifying code for this adserver. Note that this contributes to
- *   the user-facing API. For example, if the adserver code is 'dfp', and the Prebid bundle contains two
+ * @property {string} name A name which identifies this adserver. Note that this contributes to
+ *   the user-facing API. For example, if the adserver name is 'dfp', and the Prebid bundle contains two
  *   or more ad server modules, then publishers will access its functions through 'pbjs.adservers.dfp'.
  *
- * @method {VideoAdUrlBuilder} buildVideoAdUrl
+ * @function {VideoAdUrlBuilder} buildVideoAdUrl
  */
 
 /**
  * Prepares a namespace on object so that utility functions can be added to it.
  *
- * If this is the only code we've seen, attach functionality to $$PREBID_GLOBAL$$.adServer.
- * If we've seen any other codes, attach functionality to $$PREBID_GLOBAL$$.adServers[code].
+ * If this is the only name we've seen, attach functionality to $$PREBID_GLOBAL$$.adServer.
+ * If we've seen any other names, attach functionality to $$PREBID_GLOBAL$$.adServers[name].
  *
  * @param {object} object The object where this function should manage namespaces.
- * @param {string} code The code for this ad server.
+ * @param {string} name The name for this ad server.
  * @return {object} An object where functions for dealing with this ad server can be added.
  */
-function prepareNamespaceIn(object, code) {
-  if (object.adServer && object.adServer.code !== code) {
+function prepareNamespaceIn(object, name) {
+  if (object.adServer && object.adServer.name !== name) {
     object.adServers = { };
-    object.adServers[object.adServer.code] = object.adServer;
-    delete object.adServer.code;
+    object.adServers[object.adServer.name] = object.adServer;
+    delete object.adServer.name;
     delete object.adServer;
   }
 
@@ -68,13 +68,13 @@ function prepareNamespaceIn(object, code) {
     return object.adServer;
   }
   if (object.adServers) {
-    if (!object.adServers[code]) {
-      object.adServers[code] = { };
+    if (!object.adServers[name]) {
+      object.adServers[name] = { };
     }
-    return object.adServers[code];
+    return object.adServers[name];
   }
   else {
-    object.adServer = { code };
+    object.adServer = { name };
     return object.adServer;
   }
 }
@@ -82,9 +82,9 @@ function prepareNamespaceIn(object, code) {
 /**
  * Enable video support for the Ad Server.
  *
- * @property {string} code The identifying code for this adserver.
+ * @property {string} name The identifying name for this adserver.
  * @property {VideoSupport} videoSupport An object with the functions needed to support video in Prebid.
  */
-export function registerVideoSupport(code, videoSupport) {
-  prepareNamespaceIn(prebid, code).buildVideoAdUrl = videoSupport.buildVideoAdUrl;
+export function registerVideoSupport(name, videoSupport) {
+  prepareNamespaceIn(prebid, name).buildVideoAdUrl = videoSupport.buildVideoAdUrl;
 }

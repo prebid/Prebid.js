@@ -75,11 +75,11 @@ function fromStorageResponse(response) {
 /**
  * A function which bridges the APIs between the videoCacheStoreCallback and our ajax function's API.
  *
- * @param {videoCacheStoreCallback} callback A callback to the "store" function.
+ * @param {videoCacheStoreCallback} done A callback to the "store" function.
  * @return {Function} A callback which interprets the cache server's responses, and makes up the right
  *   arguments for our callback.
  */
-function shimStorageCallback(callback) {
+function shimStorageCallback(done) {
   return {
     success: function(responseBody) {
       let ids;
@@ -87,14 +87,14 @@ function shimStorageCallback(callback) {
         ids = JSON.parse(responseBody).responses.map(fromStorageResponse)
       }
       catch (e) {
-        callback(e, []);
+        done(e, []);
         return;
       }
 
-      callback(null, ids);
+      done(null, ids);
     },
     error: function(statusText, responseBody) {
-      callback(new Error('Error storing video ad in the cache: ' + statusText + ': ' + JSON.stringify(responseBody)), []);
+      done(new Error('Error storing video ad in the cache: ' + statusText + ': ' + JSON.stringify(responseBody)), []);
     }
   }
 }
@@ -103,15 +103,15 @@ function shimStorageCallback(callback) {
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
- * @param {videoCacheStoreCallback} [callback] An optional callback which should be executed after
+ * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
  *   the data has been stored in the cache.
  */
-export function store(bids, callback) {
+export function store(bids, done) {
   const requestData = {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(PUT_URL, shimStorageCallback(callback), JSON.stringify(requestData), {
+  ajax(PUT_URL, shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });

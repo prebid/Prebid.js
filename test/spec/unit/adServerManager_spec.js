@@ -15,8 +15,7 @@ describe('The ad server manager', () => {
     registerVideoSupport('dfp', { buildVideoAdUrl: videoSupport });
 
     expect(prebid).to.have.property('adServer');
-    expect(prebid.adServer).to.have.property('code');
-    expect(prebid.adServer.code).to.equal('dfp');
+    expect(prebid.adServer).to.have.property('name', 'dfp');
 
     expect(prebid.adServer).to.have.property('buildVideoAdUrl');
     expect(prebid.adServer.buildVideoAdUrl).to.equal(videoSupport);
@@ -35,8 +34,8 @@ describe('The ad server manager', () => {
     expect(prebid.adServers.ast).to.have.property('buildVideoAdUrl');
     expect(prebid.adServers).to.have.property('dfp');
     expect(prebid.adServers.dfp).to.have.property('buildVideoAdUrl');
-    expect(prebid.adServers.ast).not.to.have.property('code');
-    expect(prebid.adServers.dfp).not.to.have.property('code');
+    expect(prebid.adServers.ast).not.to.have.property('name');
+    expect(prebid.adServers.dfp).not.to.have.property('name');
 
     expect(prebid.adServers.dfp.buildVideoAdUrl).to.equal(dfpVideoSupport);
     expect(prebid.adServers.ast.buildVideoAdUrl).to.equal(astVideoSupport);
