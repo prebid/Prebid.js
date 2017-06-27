@@ -2,36 +2,48 @@ import userSync from '../../src/userSync';
 import { expect } from 'chai';
 var utils = require('../../src/utils');
 
-describe.only('user sync', () => {
-  let createImgObjectStub = sinon.stub(userSync, 'createImgObject');
-  let logWarnStub = sinon.stub(utils, 'logWarn');
-  let timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+describe('user sync', () => {
+  let createImgObjectStub;
+  let logWarnStub;
+  let timeoutStub;
 
   beforeEach(() => {
+    createImgObjectStub = sinon.stub(userSync, 'createImgObject');
+    logWarnStub = sinon.stub(utils, 'logWarn');
+    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc, to) => { callbackFunc(); });
     createImgObjectStub.reset();
     logWarnStub.reset();
     timeoutStub.reset();
   });
 
-  it('registers and fires a pixel URL', () => {
+  afterEach(() => {
+    createImgObjectStub.restore();
+    logWarnStub.restore();
+    timeoutStub.restore();
+  });
+
+  it('should register and fires a pixel URL', () => {
     $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
-  it('clears queue after sync', () => {
+  it('should clear queue after sync', () => {
     userSync.syncUsers();
     expect(createImgObjectStub.callCount).to.equal(0);
   });
 
-  it('delays firing a pixel by the expected amount', () => {
+  it('should delay firing a pixel by the expected amount', () => {
+console.log('timeout test');
     userSync.registerSync('image', 'testBidder', 'http://example.com');
+    // This implicitly tests cookie and browser support
     userSync.syncUsers(999);
     expect(timeoutStub.getCall(0).args[1]).to.equal(999);
+console.log('end test');
   });
 
-  it('registers and fires multiple pixel URLs', () => {
+  it('should register and fires multiple pixel URLs', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
@@ -39,19 +51,34 @@ describe.only('user sync', () => {
     expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/2');
   });
 
-  it('pixel URL does not register since it is not supported', () => {
+  it('should not register pixel URL since it is not supported', () => {
     $$PREBID_GLOBAL$$.userSync.pixelEnabled = false;
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.be.null;
   });
 
-  it('prevents registering invalid type', () => {
+  // Since cookie support is only checked when the module is loaded this test will not work, but a test that covers
+  // this scenario is important and this should be revisited.
+  // it('should not fire syncs since cookies are not supported', () => {
+  //   let isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser', () => true);
+  //   $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
+  //   userSync.registerSync('image', 'testBidder', 'http://example.com');
+  //   userSync.syncUsers();
+  //   expect(createImgObjectStub.getCall(0)).to.be.null;
+  //   isSafariBrowserStub.restore();
+  //   let cookiesAreEnabledStub = sinon.stub(utils, 'cookiesAreEnabled', () => false);
+  //   userSync.registerSync('image', 'testBidder', 'http://example.com');
+  //   userSync.syncUsers();
+  //   expect(createImgObjectStub.getCall(0)).to.be.null;
+  // });
+
+  it('should prevent registering invalid type', () => {
     userSync.registerSync('invalid', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
   });
 
-  it('exposes the syncUsers method for the publisher to manually trigger syncs', () => {
+  it('should expose the syncUsers method for the publisher to manually trigger syncs', () => {
     expect(typeof $$PREBID_GLOBAL$$.userSync.syncAll).to.equal('undefined');
     $$PREBID_GLOBAL$$.userSync.enableOverride = true;
     userSync.overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);

@@ -5,6 +5,8 @@ const userSync = exports;
 const queue = {
   image: []
 };
+// Cookie support
+const cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
 
 // This is initialized in prebid.js, but some of the tests need it
 $$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
@@ -26,6 +28,10 @@ function getConfig(configKey) {
  * @private
  */
 function fireSyncs() {
+  if (!cookiesAreSupported) {
+    return;
+  }
+
   try {
     if (!getConfig('pixelEnabled')) {
       return;
@@ -116,7 +122,7 @@ userSync.registerSync = function(type, bidder, ...data) {
  */
 userSync.syncUsers = function(timeout = 0) {
   if (timeout) {
-    return setTimeout(fireSyncs, Number(timeout));
+    return window.setTimeout(fireSyncs, Number(timeout));
   }
   fireSyncs();
 };
@@ -132,5 +138,3 @@ userSync.overrideSync = function(enableOverride) {
     $$PREBID_GLOBAL$$.userSync.syncAll = userSync.syncUsers;
   }
 }
-
-

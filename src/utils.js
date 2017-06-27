@@ -666,3 +666,11 @@ export function getBidderRequest(bidder, adUnitCode) {
         .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
+
+export function cookiesAreEnabled() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+  window.document.cookie = 'prebid.cookieTest';
+  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+}
