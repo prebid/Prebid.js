@@ -1,27 +1,31 @@
 'use strict';
 
+var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
+var argv = require('yargs').argv;
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack-stream');
 var uglify = require('gulp-uglify');
-var jshint = require('gulp-jshint');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
-var mocha = require('gulp-mocha');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
 var del = require('del');
 var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
 var concat = require('gulp-concat');
-var jscs = require('gulp-jscs');
 var header = require('gulp-header');
+var footer = require('gulp-footer');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
+var eslint = require('gulp-eslint');
+var gulpif = require('gulp-if');
+var sourcemaps = require('gulp-sourcemaps');
+var fs = require('fs');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -32,15 +36,15 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'quality', 'webpack']);
+gulp.task('default', ['clean', 'webpack']);
 
-gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
+gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
 
-gulp.task('serve-nw', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'e2etest']);
+gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test', 'mocha']);
+gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test']);
 
-gulp.task('build', ['webpack']);
+gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -49,17 +53,60 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
-gulp.task('devpack', function () {
+function bundle(dev) {
+  var modules = helpers.getArgModules(),
+      allModules = helpers.getModuleNames(modules);
+
+  if(modules.length === 0) {
+    modules = allModules;
+  } else {
+    var diff = _.difference(modules, allModules);
+    if(diff.length !== 0) {
+      throw new gutil.PluginError({
+        plugin: 'bundle',
+        message: 'invalid modules: ' + diff.join(', ')
+      });
+    }
+  }
+
+  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+
+  return gulp.src(
+      entries
+    )
+    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
+    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
+        global: prebid.globalVarName
+      }
+    )))
+    .pipe(gulpif(dev, sourcemaps.write('.')))
+    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
+gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
+gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
+  var externalModules = helpers.getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
 
-gulp.task('webpack', function () {
+gulp.task('webpack', ['clean'], function () {
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
@@ -68,19 +115,24 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
+  var externalModules = helpers.getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
-    .pipe(header(banner, { prebid: prebid }))
+    .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))
     .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
 });
 
 //zip up for release
-gulp.task('zip', ['jscs', 'clean', 'webpack'], function () {
+gulp.task('zip', ['clean', 'webpack'], function () {
   return gulp.src(['build/dist/*', 'integrationExamples/gpt/*'])
     .pipe(zip(packageNameVersion + '.zip'))
     .pipe(gulp.dest('./'));
@@ -89,7 +141,7 @@ gulp.task('zip', ['jscs', 'clean', 'webpack'], function () {
 // Karma Continuous Testing
 // Pass your browsers by using --browsers=chrome,firefox,ie9
 // Run CI by passing --watch
-gulp.task('test', function () {
+gulp.task('test', ['clean'], function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
@@ -137,17 +189,6 @@ gulp.task('test', function () {
     }));
 });
 
-gulp.task('mocha', ['webpack'], function() {
-    return gulp.src(['test/spec/loaders/**/*.js'], { read: false })
-        .pipe(mocha({
-          reporter: 'spec',
-          globals: {
-            expect: require('chai').expect
-          }
-        }))
-        .on('error', gutil.log);
-});
-
 // Small task to load coverage reports in the browser
 gulp.task('coverage', function (done) {
   var coveragePort = 1999;
@@ -173,13 +214,14 @@ gulp.task('watch', function () {
 
   gulp.watch([
     'src/**/*.js',
+    'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['quality', 'webpack', 'devpack', 'test']);
+  ], ['lint', 'build-bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
-  ], ['quality', 'mocha']);
+  ], ['lint']);
   gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   connect.server({
     https: argv.https,
@@ -189,21 +231,11 @@ gulp.task('watch', function () {
   });
 });
 
-gulp.task('quality', ['hint', 'jscs']);
-
-gulp.task('hint', function () {
-  return gulp.src('src/**/*.js')
-    .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('jshint-stylish'))
-    .pipe(jshint.reporter('fail'));
-});
-
-gulp.task('jscs', function () {
-  return gulp.src('src/**/*.js')
-    .pipe(jscs({
-      configPath: '.jscsrc'
-    }))
-    .pipe(jscs.reporter());
+gulp.task('lint', () => {
+  return gulp.src(['src/**/*.js', 'test/**/*.js'])
+    .pipe(eslint())
+    .pipe(eslint.format('stylish'))
+    .pipe(eslint.failAfterError());
 });
 
 gulp.task('clean-docs', function () {
