@@ -89,6 +89,10 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       });
     });
 
+    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+      return adUnit.bids.length !== 0;
+    });
+
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
