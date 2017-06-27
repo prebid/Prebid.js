@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {assert} from 'chai';
-import Adapter from 'src/adapters/spotx';
+import Adapter from 'modules/spotxBidAdapter';
 import bidManager from 'src/bidmanager';
 import adLoader from 'src/adloader';
 

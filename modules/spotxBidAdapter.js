@@ -1,9 +1,10 @@
-import Adapter from 'src/adapters/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adLoader from 'src/adloader';
 import * as utils from 'src/utils';
 import { STATUS } from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
 
 function Spotx() {
   let baseAdapter = Adapter.createNew('Spotx');
@@ -112,5 +113,9 @@ function Spotx() {
 Spotx.createNew = function() {
   return new Spotx();
 };
+
+adaptermanager.registerBidAdapter(new Spotx, 'spotx', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = Spotx;
