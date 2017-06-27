@@ -104,7 +104,9 @@ function YieldbotAdapter() {
         if (yieldbot._initialized !== true) {
           yieldbot.pub(psn);
           for (var slotName in slots) {
-            yieldbot.defineSlot(slotName, { sizes: slots[slotName] || [] });
+            if (slots.hasOwnProperty(slotName)) {
+              yieldbot.defineSlot(slotName, { sizes: slots[slotName] || [] });
+            }
           }
           yieldbot.enableAsync();
           yieldbot.go();

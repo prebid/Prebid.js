@@ -75,27 +75,35 @@ beforeEach(function() {
   window.$$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 });
 
+function setupTest() {
+  sandbox = sinon.sandbox.create();
+
+  createYieldbotMockLib();
+
+  sandbox.stub(adLoader, 'loadScript');
+  yieldbotLibStub = sandbox.stub(window.yieldbot);
+  yieldbotLibStub.getSlotCriteria.restore();
+
+  bidManagerStub = sandbox.stub(bidManager, 'addBidResponse');
+
+  const adapter = new YieldbotAdapter();
+  adapter.callBids(bidderRequest);
+  mockYieldbotBidRequest();
+}
+
+function restoreTest() {
+  sandbox.restore();
+  restoreYieldbotMockLib();
+}
+
 describe('Yieldbot adapter tests', function() {
   describe('callBids', function() {
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-
-      createYieldbotMockLib();
-
-      sandbox.stub(adLoader, 'loadScript');
-      yieldbotLibStub = sandbox.stub(window.yieldbot);
-      yieldbotLibStub.getSlotCriteria.restore();
-
-      bidManagerStub = sandbox.stub(bidManager, 'addBidResponse');
-
-      const adapter = new YieldbotAdapter();
-      adapter.callBids(bidderRequest);
-      mockYieldbotBidRequest();
+      setupTest();
     });
 
     afterEach(function() {
-      sandbox.restore();
-      restoreYieldbotMockLib();
+      restoreTest();
     });
 
     it('should request the yieldbot library', function() {
@@ -112,6 +120,23 @@ describe('Yieldbot adapter tests', function() {
       sinon.assert.calledTwice(yieldbotLibStub.defineSlot);
       sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'medrec', {sizes: [[300, 250], [300, 600]]});
       sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'leaderboard', {sizes: [[728, 90], [970, 90]]});
+    });
+
+    it('should not use inherited Object properties', function() {
+      restoreTest();
+
+      let oProto = Object.prototype;
+      oProto.superProp = [300, 250];
+
+      expect(Object.prototype.superProp).to.be.an('array');
+      setupTest();
+
+      sinon.assert.neverCalledWith(yieldbotLibStub.defineSlot, 'superProp', {sizes: [300, 250]});
+      sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'medrec', {sizes: [[300, 250], [300, 600]]});
+      sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'leaderboard', {sizes: [[728, 90], [970, 90]]});
+
+      delete oProto.superProp;
+      expect(Object.prototype.superProp).to.be.an('undefined');
     });
 
     it('should enable yieldbot async mode', function() {
