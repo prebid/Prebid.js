@@ -3,14 +3,31 @@ import bidmanager from 'src/bidmanager';
 import adloader from 'src/adloader';
 import * as utils from 'src/utils';
 
+const CONSTANTS = require('../constants.json');
+
 const JustpremiumAdapter = function JustpremiumAdapter() {
   const top = window.top;
-  const d = top.document;
+  let d;
+  let bids;
+  let cookieLoaded = false;
+  let adManagerLoaded = false;
+  let jPAM;
+  let dConfig;
+  let toLoad;
+  let server;
+
+  function isCrossOriginIframe() {
+    try {
+      return !top.document;
+    } catch (e) {
+      return true;
+    }
+  }
 
   function arrayUnique(array) {
-    var a = array.concat();
-    for (var i = 0; i < a.length; ++i) {
-      for (var j = i + 1; j < a.length; ++j) {
+    const a = array.concat();
+    for (let i = 0; i < a.length; ++i) {
+      for (let j = i + 1; j < a.length; ++j) {
         if (a[i] === a[j]) {
           a.splice(j--, 1);
         }
@@ -24,26 +41,25 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     const nameEQ = name + '=';
     const ca = document.cookie.split(';');
     for (let i = 0; i < ca.length; i++) {
-      var c = ca[i];
+      let c = ca[i];
       while (c.charAt(0) == ' ') c = c.substring(1, c.length);
       if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
     }
     return null;
   }
 
-  let bids;
-  let cookieLoaded = false;
-  let adManagerLoaded = false;
-  let jPAM = top.jPAM = top.jPAM || window.jPAM || {};
-
-  const dConfig = jPAM._dev ||
-    {
-      toLoad: null,
-      server: null
-    };
-  const libVer = readCookie('jpxhbadp') || null;
-  const toLoad = dConfig.toLoad || [d.location.protocol + '//d2nvliyzbo36lk.cloudfront.net/adp/' + (libVer ? libVer + '/' : '') + 'bc.js'];
-  const server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com/v/1.4';
+  function setupVar() {
+    d = top.document;
+    jPAM = top.jPAM = top.jPAM || window.jPAM || {};
+    dConfig = jPAM._dev ||
+      {
+        toLoad: null,
+        server: null
+      };
+    const libVer = readCookie('jpxhbjs') || null;
+    toLoad = dConfig.toLoad || [d.location.protocol + '//d2nvliyzbo36lk.cloudfront.net/js/' + (libVer ? libVer + '/' : '') + 'jpx.js'];
+    server = dConfig.server || d.location.protocol + '//pre.ads.justpremium.com/v/1.4';
+  }
 
   function loadCookie() {
     if (cookieLoaded) return;
@@ -92,7 +108,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
   function findBid(zone, bids) {
     let len = bids.length;
     while (len--) {
-      if (bids[len].params.zone == zone) {
+      if (parseInt(bids[len].params.zone) === parseInt(zone)) {
         const rec = bids.splice(len, 1);
         return rec.length ? rec.pop() : false;
       }
@@ -104,12 +120,12 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
   function handleError(err, zone, reqBids) {
     let bid = findBid(zone, reqBids);
     while (bid) {
-      const bidObject = bidfactory.createBid(2);
+      const bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
       bidObject.bidderCode = 'justpremium';
       bidmanager.addBidResponse(bid.placementCode, bidObject);
       bid = findBid(zone, reqBids);
     }
-    console.error(err);
+    utils.logError(err);
   }
 
   function addBidResponse(zone, reqBids) {
@@ -117,18 +133,18 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     const c = jPAM.cb = jPAM.cb || {};
 
     reqBids
-      .filter(r => r.params.zone === parseInt(zone))
+      .filter(r => parseInt(r.params.zone) === parseInt(zone))
       .forEach(bid => {
         const bidder = c[`bidder${zone}`];
 
         bidmanager.addBidResponse(bid.placementCode, bidder.createBid(function (ad) {
           let bidObject;
           if (!ad) {
-            bidObject = bidfactory.createBid(2);
+            bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
             bidObject.bidderCode = 'justpremium';
             return bidObject;
           }
-          bidObject = bidfactory.createBid(1);
+          bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bidObject.bidderCode = 'justpremium';
           bidObject.adSlot = bid.adSlot;
           return bidObject;
@@ -207,7 +223,6 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
       Object.keys(cond[zone][1]).forEach(format => {
         if (cond[zone][1][format] === count[zone]) exclude.push(format);
       });
-
       cond[zone][1] = exclude;
     });
 
@@ -231,11 +246,17 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
   function callBids(params) {
     bids = params.bids || [];
 
-    loadAdManager();
-    requestBids(bids);
+    if (!isCrossOriginIframe()) {
+      setupVar();
+      loadCookie();
+      loadAdManager();
+      requestBids(bids);
+    } else {
+      bids.forEach(bid => {
+        handleError(new Error('Justpremium: Adapter does not support cross origin iframe.'), bid.params.zone, bids);
+      });
+    }
   }
-
-  loadCookie();
 
   return {
     callBids: callBids

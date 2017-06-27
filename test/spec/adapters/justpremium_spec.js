@@ -3,10 +3,11 @@ import Adapter from 'src/adapters/justpremium';
 import bidmanager from 'src/bidmanager';
 import adLoader from 'src/adloader';
 import PREBID_CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 const CONST = {
   COOKIE: '//ox-d.justpremium.com/w/1.0/cj',
-  LIB: '//d2nvliyzbo36lk.cloudfront.net/adp/bc.js'
+  LIB: '//d2nvliyzbo36lk.cloudfront.net/js/jpx.js'
 };
 
 function createCookie(name, value, days) {
@@ -69,7 +70,7 @@ describe('justpremium adapter', () => {
     });
 
     it('should request proper version of jpx ad manager', () => {
-      createCookie('jpxhbadp', 'v2.0.0', 1);
+      createCookie('jpxhbjs', 'v2.0.0', 1);
 
       const adapter = new Adapter();
       const _request = adLoader.loadScript;
@@ -81,7 +82,7 @@ describe('justpremium adapter', () => {
       assert.equal(_request.args[1][0], window.location.protocol + parts.join('/'));
       expect(_request.args[1][1]).to.exist.and.to.be.a('function');
 
-      createCookie('jpxhbadp', '', 0);
+      createCookie('jpxhbjs', '', 0);
     });
   });
 
@@ -253,6 +254,7 @@ describe('justpremium adapter', () => {
           callback(new Error('test'));
         }
       });
+      const stubUtilLogError = sandbox.stub(utils, 'logError');
       const stubAddBidResponse = sandbox.stub(bidmanager, 'addBidResponse');
       const req = {
         bidderCode: 'justpremium',
@@ -275,7 +277,8 @@ describe('justpremium adapter', () => {
       const bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
       const bidResponse = stubAddBidResponse.getCall(0).args[1];
 
-      assert(stubLoadScript.calledOnce);
+      assert(stubLoadScript.calledTwice);
+      assert(stubUtilLogError.calledOnce);
       assert(stubAddBidResponse.calledOnce);
       expect(bidPlacementCode).to.equal('div-gpt-ad-1471513102552-1');
       expect(bidResponse.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.NO_BID);
@@ -316,7 +319,7 @@ describe('justpremium adapter', () => {
       const bidResponse = stubAddBidResponse.getCall(0).args[1];
 
       assert(stubAddBidResponse.calledOnce);
-      expect(stubLoadScript.callCount).to.be.equal(1);
+      expect(stubLoadScript.callCount).to.be.equal(2);
       expect(stubCreateBid.callCount).to.be.equal(1);
       expect(bidPlacementCode).to.equal('div-gpt-ad-1471513102552-1');
       expect(bidResponse.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.NO_BID);
@@ -370,7 +373,7 @@ describe('justpremium adapter', () => {
       const bidResponse1 = stubAddBidResponse.getCall(0).args[1];
 
       assert(stubAddBidResponse.calledOnce);
-      expect(stubLoadScript.callCount).to.be.equal(1);
+      expect(stubLoadScript.callCount).to.be.equal(2);
       expect(stubCreateBid.callCount).to.be.equal(1);
       expect(bidPlacementCode1).to.equal('div-gpt-ad-1471513102552-2');
       expect(bidResponse1.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.GOOD);
