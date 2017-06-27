@@ -1,5 +1,4 @@
 // Factory for creating the bidderAdaptor
-// jshint ignore:start
 var utils = require('../utils.js');
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
@@ -140,7 +139,7 @@ window.headertag_render = function(doc, targetID, slotID) {
 
 window.cygnus_index_args = {};
 
-var cygnus_index_adunits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]]; // jshint ignore:line
+var cygnus_index_adunits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]];
 
 var getIndexDebugMode = function() {
   return getParameterByName(CONSTANTS.INDEX_DEBUG_MODE.queryParam).toUpperCase();

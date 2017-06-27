@@ -1,21 +1,21 @@
 'use strict';
-var VERSION = '2.0.1',
-  CONSTANTS = require('../constants.json'),
-  utils = require('../utils.js'),
-  bidfactory = require('../bidfactory.js'),
-  bidmanager = require('../bidmanager.js'),
-  adloader = require('../adloader'),
-  ajax = require('../ajax').ajax;
+var VERSION = '2.1.0';
+var CONSTANTS = require('../constants.json');
+var utils = require('../utils.js');
+var bidfactory = require('../bidfactory.js');
+var bidmanager = require('../bidmanager.js');
+var adloader = require('../adloader');
+var ajax = require('../ajax').ajax;
 
 /**
  * Adapter for requesting bids from Conversant
  */
 var ConversantAdapter = function () {
-  var w = window,
-    n = navigator;
+  var w = window;
+  var n = navigator;
 
   // production endpoint
-  var conversantUrl = '//media.msg.dotomi.com/s2s/header?callback=$$PREBID_GLOBAL$$.conversantResponse';
+  var conversantUrl = '//media.msg.dotomi.com/s2s/header/24?callback=$$PREBID_GLOBAL$$.conversantResponse';
 
   // SSAPI returns JSONP with window.pbjs.conversantResponse as the cb
   var appendScript = function (code) {
@@ -55,21 +55,26 @@ var ConversantAdapter = function () {
 
   var requestBids = function (bidReqs) {
     // build bid request object
-    var page = location.pathname + location.search + location.hash,
-      siteId = '',
-      conversantImps = [],
-      conversantBidReqs,
-      secure = 0;
+    var page = location.pathname + location.search + location.hash;
+    var siteId = '';
+    var conversantImps = [];
+    var conversantBidReqs;
+    var secure = 0;
 
     // build impression array for conversant
     utils._each(bidReqs, function (bid) {
-      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params),
-        adW = 0,
-        adH = 0,
-        imp;
+      var bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      var adW = 0;
+      var adH = 0;
+      var format;
+      var tagId;
+      var pos;
+      var imp;
 
       secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
       siteId = utils.getBidIdParameter('site_id', bid.params) + '';
+      tagId = utils.getBidIdParameter('tag_id', bid.params);
+      pos = utils.getBidIdParameter('position', bid.params);
 
       // Allow sizes to be overridden per placement
       var bidSizes = Array.isArray(bid.params.sizes) ? bid.params.sizes : bid.sizes;
@@ -78,21 +83,68 @@ var ConversantAdapter = function () {
         adW = bidSizes[0];
         adH = bidSizes[1];
       } else {
-        adW = bidSizes[0][0];
-        adH = bidSizes[0][1];
+        format = [];
+        utils._each(bidSizes, function (bidSize) {
+          format.push({
+            w: bidSize[0],
+            h: bidSize[1]
+          });
+        });
       }
 
       imp = {
         id: bid.bidId,
-        banner: {
-          w: adW,
-          h: adH
-        },
         secure: secure,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
         displaymanagerver: VERSION
       };
+
+      if (tagId !== '') {
+        imp.tagid = tagId;
+      }
+
+      if (bid.mediaType === 'video') {
+        var mimes = [];
+        var maxduration = 0;
+        var protocols = [];
+        var api = [];
+
+        var video = Array.isArray(format) ? {format: format} : {w: adW, h: adH};
+
+        mimes = utils.getBidIdParameter('mimes', bid.params);
+        if (mimes !== '') {
+          video.mimes = mimes;
+        }
+
+        maxduration = utils.getBidIdParameter('maxduration', bid.params);
+        if (maxduration !== '') {
+          video.maxduration = maxduration;
+        }
+
+        protocols = utils.getBidIdParameter('protocols', bid.params);
+        if (protocols !== '') {
+          video.protocols = protocols;
+        }
+
+        api = utils.getBidIdParameter('api', bid.params);
+        if (api !== '') {
+          video.api = api;
+        }
+
+        if (pos !== '') {
+          video.pos = pos;
+        }
+
+        imp.video = video;
+      } else {
+        var banner = Array.isArray(format) ? {format: format} : {w: adW, h: adH};
+
+        if (pos !== '') {
+          banner.pos = pos;
+        }
+        imp.banner = banner;
+      }
 
       conversantImps.push(imp);
     });
@@ -135,13 +187,13 @@ var ConversantAdapter = function () {
   var parseSeatbid = function (bidResponse) {
     var placementsWithBidsBack = [];
     utils._each(bidResponse.bid, function (conversantBid) {
-      var responseCPM,
-        placementCode = '',
-        id = conversantBid.impid,
-        bid = {},
-        responseAd,
-        responseNurl,
-        sizeArrayLength;
+      var responseCPM;
+      var placementCode = '';
+      var id = conversantBid.impid;
+      var bid = {};
+      var responseAd;
+      var responseNurl;
+      var sizeArrayLength;
 
       // Bid request we sent Conversant
       var bidRequested = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'conversant').bids.find(bid => bid.bidId === id);
@@ -162,11 +214,14 @@ var ConversantAdapter = function () {
           bid = bidfactory.createBid(1, bidRequested);
           bid.creative_id = conversantBid.id || '';
           bid.bidderCode = 'conversant';
-
           bid.cpm = responseCPM;
 
-          // Track impression image onto returned html
-          bid.ad = responseAd + '<img src=\"' + responseNurl + '\" />';
+          if (bidRequested.mediaType === 'video') {
+            bid.vastUrl = responseAd;
+          } else {
+            // Track impression image onto returned html
+            bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+          }
 
           sizeArrayLength = bidRequested.sizes.length;
           if (sizeArrayLength === 2 && typeof bidRequested.sizes[0] === 'number' && typeof bidRequested.sizes[1] === 'number') {

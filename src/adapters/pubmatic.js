@@ -11,6 +11,9 @@ var bidmanager = require('../bidmanager.js');
 var PubmaticAdapter = function PubmaticAdapter() {
   var bids;
   var _pm_pub_id;
+  var _pm_pub_age;
+  var _pm_pub_gender;
+  var _pm_pub_kvs;
   var _pm_optimize_adslots = [];
   let iframe;
 
@@ -21,6 +24,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
       var bid = bids[i];
       // bidmanager.pbCallbackMap['' + bid.params.adSlot] = bid;
       _pm_pub_id = _pm_pub_id || bid.params.publisherId;
+      _pm_pub_age = _pm_pub_age || (bid.params.age || '');
+      _pm_pub_gender = _pm_pub_gender || (bid.params.gender || '');
+      _pm_pub_kvs = _pm_pub_kvs || (bid.params.kvs || '');
       _pm_optimize_adslots.push(bid.params.adSlot);
     }
 
@@ -51,11 +57,18 @@ var PubmaticAdapter = function PubmaticAdapter() {
     content += '' +
       'window.pm_pub_id  = "%%PM_PUB_ID%%";' +
       'window.pm_optimize_adslots     = [%%PM_OPTIMIZE_ADSLOTS%%];' +
+      'window.kaddctr = "%%PM_ADDCTR%%";' +
+      'window.kadgender = "%%PM_GENDER%%";' +
+      'window.kadage = "%%PM_AGE%%";' +
       'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
+
     content += '</scr' + 'ipt>';
 
     var map = {};
     map.PM_PUB_ID = _pm_pub_id;
+    map.PM_ADDCTR = _pm_pub_kvs;
+    map.PM_GENDER = _pm_pub_gender;
+    map.PM_AGE = _pm_pub_age;
     map.PM_OPTIMIZE_ADSLOTS = _pm_optimize_adslots.map(function (adSlot) {
       return "'" + adSlot + "'";
     }).join(',');
@@ -114,7 +127,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
         adResponse.bidderCode = 'pubmatic';
         adResponse.adSlot = bid.adSlot;
         adResponse.cpm = Number(adUnitInfo.bid);
-        adResponse.ad = unescape(adUnit.creative_tag);  // jshint ignore:line
+        adResponse.ad = unescape(adUnit.creative_tag);
         adResponse.ad += utils.createTrackPixelIframeHtml(decodeURIComponent(adUnit.tracking_url));
         adResponse.width = dimensions[0];
         adResponse.height = dimensions[1];

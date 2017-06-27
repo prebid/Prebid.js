@@ -58,16 +58,17 @@ TrionAdapter = function TrionAdapter() {
     var pubId = utils.getBidIdParameter('pubId', bid.params);
     var sectionId = utils.getBidIdParameter('sectionId', bid.params);
     var re = utils.getBidIdParameter('re', bid.params);
-    var url = window.location.href;
+    var url = utils.getTopWindowUrl();
     var sizes = utils.parseSizesInput(bid.sizes).join(',');
 
     var trionUrl = BID_REQUEST_BASE_URL;
 
-    trionUrl = utils.tryAppendQueryString(trionUrl, 'callback', 'pbjs.handleTrionCB');
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'callback', '$$PREBID_GLOBAL$$.handleTrionCB');
     trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bidId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
     trionUrl = utils.tryAppendQueryString(trionUrl, 're', re);
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'slot', bid.placementCode);
     if (url) {
       trionUrl += 'url=' + url + '&';
     }

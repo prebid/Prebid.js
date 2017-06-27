@@ -1,6 +1,3 @@
-/* jshint -W024 */
-/* jshint expr:true */
-
 import { expect } from 'chai';
 import Adapter from 'src/adapters/serverbid';
 import bidmanager from 'src/bidmanager';

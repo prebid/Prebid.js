@@ -16,10 +16,11 @@ describe('Conversant adapter tests', function () {
         sizes: [[300, 600]],
         params: {
           site_id: '87293',
+          position: 1,
+          tag_id: 'tagid-1',
           secure: false
         }
-      },
-      {
+      }, {
         bidId: 'bidId2',
         bidder: 'conversant',
         placementCode: 'div2',
@@ -28,14 +29,27 @@ describe('Conversant adapter tests', function () {
           site_id: '87293',
           secure: false
         }
-      },
-      {
+      }, {
         bidId: 'bidId3',
         bidder: 'conversant',
         placementCode: 'div3',
         sizes: [[300, 600], [160, 600]],
         params: {
           site_id: '87293',
+          position: 1,
+          tag_id: '',
+          secure: false
+        }
+      }, {
+        bidId: 'bidId4',
+        bidder: 'conversant',
+        placementCode: 'div4',
+        mediaType: 'video',
+        sizes: [[480, 480]],
+        params: {
+          site_id: '89192',
+          pos: 1,
+          tagid: 'tagid-4',
           secure: false
         }
       }
@@ -101,7 +115,7 @@ describe('Conversant adapter tests', function () {
       expect(thirdBid.bidderCode).to.equal('conversant');
       expect(placementCode3).to.equal('div3');
 
-      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+      expect(addBidResponseSpy.getCalls().length).to.equal(4);
     });
 
     it('Should submit bids with statuses of 2 to the bid manager for empty bid responses', function () {
@@ -126,7 +140,7 @@ describe('Conversant adapter tests', function () {
       expect(thirdBid.getStatusCode()).to.equal(2);
       expect(thirdBid.bidderCode).to.equal('conversant');
 
-      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+      expect(addBidResponseSpy.getCalls().length).to.equal(4);
     });
 
     it('Should submit valid bids to the bid manager', function () {
@@ -150,8 +164,7 @@ describe('Conversant adapter tests', function () {
             adm: 'adm2',
             h: 300,
             w: 600
-          },
-          {
+          }, {
             id: 33333,
             impid: 'bidId3',
             price: 0.33,
@@ -190,8 +203,34 @@ describe('Conversant adapter tests', function () {
       expect(thirdBid.ad).to.equal('adm3' + '<img src="" />');
       expect(placementCode3).to.equal('div3');
 
-      expect(addBidResponseSpy.getCalls().length).to.equal(3);
+      expect(addBidResponseSpy.getCalls().length).to.equal(4);
     });
+
+    it('Should submit video bid responses correctly.', function () {
+      var bidResponse = {
+        id: 123,
+        seatbid: [{
+          bid: [{
+            id: 1111111,
+            impid: 'bidId4',
+            price: 0.11,
+            nurl: 'imp_tracker',
+            adm: 'vasturl'
+          }]
+        }]
+      };
+
+      $$PREBID_GLOBAL$$.conversantResponse(bidResponse);
+
+      var videoBid = addBidResponseSpy.getCall(0).args[1];
+      var placementCode = addBidResponseSpy.getCall(0).args[0];
+
+      expect(videoBid.getStatusCode()).to.equal(1);
+      expect(videoBid.bidderCode).to.equal('conversant');
+      expect(videoBid.cpm).to.equal(0.11);
+      expect(videoBid.vastUrl).to.equal('vasturl');
+      expect(placementCode).to.equal('div4');
+    })
   });
 
   describe('Should submit the correct headers in the xhr', function () {
@@ -218,8 +257,7 @@ describe('Conversant adapter tests', function () {
           adm: 'adm2',
           h: 300,
           w: 600
-        },
-        {
+        }, {
           id: 3333,
           impid: 'bidId3',
           price: 0.33,
@@ -251,6 +289,88 @@ describe('Conversant adapter tests', function () {
 
       var request = server.requests[0];
       expect(request.requestBody).to.not.be.empty;
+    });
+  });
+  describe('Should create valid bid requests.', function () {
+    var server,
+      adapter;
+
+    var bidResponse = {
+      id: 123,
+      seatbid: [{
+        bid: [{
+          id: 1111,
+          impid: 'bidId1',
+          price: 0.11,
+          nurl: '',
+          adm: 'adm',
+          h: 250,
+          w: 300,
+          ext: {}
+        }, {
+          id: 2222,
+          impid: 'bidId2',
+          price: 0.22,
+          nurl: '',
+          adm: 'adm2',
+          h: 300,
+          w: 600
+        }, {
+          id: 3333,
+          impid: 'bidId3',
+          price: 0.33,
+          nurl: '',
+          adm: 'adm3',
+          h: 160,
+          w: 600
+        }]
+      }]
+    };
+
+    beforeEach(function () {
+      server = sinon.fakeServer.create();
+      adapter = new Adapter();
+    });
+
+    afterEach(function () {
+      server.restore();
+    });
+
+    beforeEach(function () {
+      var resp = [200, {'Content-type': 'text/javascript'}, '$$PREBID_GLOBAL$$.conversantResponse(\'' + JSON.stringify(bidResponse) + '\')'];
+      server.respondWith('POST', new RegExp('media.msg.dotomi.com/s2s/header'), resp);
+    });
+
+    it('Should create valid bid requests.', function () {
+      adapter.callBids(bidderRequest);
+      server.respond();
+      var request = JSON.parse(server.requests[0].requestBody);
+      expect(request.imp[0].banner.format[0].w).to.equal(300);
+      expect(request.imp[0].banner.format[0].h).to.equal(600);
+      expect(request.imp[0].tagid).to.equal('tagid-1');
+      expect(request.imp[0].banner.pos).to.equal(1);
+      expect(request.imp[0].secure).to.equal(0);
+      expect(request.site.id).to.equal('89192');
+    });
+
+    it('Should not pass empty or missing optional parameters on requests.', function () {
+      adapter.callBids(bidderRequest);
+      server.respond();
+
+      var request = JSON.parse(server.requests[0].requestBody);
+      expect(request.imp[1].tagid).to.equal(undefined);
+      expect(request.imp[2].tagid).to.equal(undefined);
+      expect(request.imp[1].pos).to.equal(undefined);
+    });
+
+    it('Should create the format objects correctly.', function () {
+      adapter.callBids(bidderRequest);
+      server.respond();
+
+      var request = JSON.parse(server.requests[0].requestBody);
+      expect(request.imp[2].banner.format.length).to.equal(2);
+      expect(request.imp[2].banner.format[0].w).to.equal(300);
+      expect(request.imp[2].banner.format[1].w).to.equal(160);
     });
   });
 });

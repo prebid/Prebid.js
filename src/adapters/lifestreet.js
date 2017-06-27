@@ -82,7 +82,6 @@ const LifestreetAdapter = function LifestreetAdapter() {
             slotTagParams[property] = bid.params[property];
           }
         }
-        /* jshint newcap: false */
         LSM_Slot(slotTagParams);
         window.addEventListener('message', (ev) => {
           let key = ev.message ? 'message' : 'data';

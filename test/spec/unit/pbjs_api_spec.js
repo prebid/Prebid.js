@@ -137,6 +137,10 @@ describe('Unit: Prebid Module', function () {
     $$PREBID_GLOBAL$$.adUnits = [];
   })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
+    beforeEach(() => {
+      resetAuction();
+    });
+
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.enableSendAllBids();
@@ -331,10 +335,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getBidResponses', function () {
-    var result = $$PREBID_GLOBAL$$.getBidResponses();
-    var compare = getBidResponsesFromAPI();
-
     it('should return expected bid responses when not passed an adunitCode', function () {
+      var result = $$PREBID_GLOBAL$$.getBidResponses();
+      var compare = getBidResponsesFromAPI();
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 

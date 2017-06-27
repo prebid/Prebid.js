@@ -46,7 +46,7 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
-gulp.task('devpack', function () {
+gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
   return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
@@ -181,12 +181,11 @@ gulp.task('watch', function () {
     'src/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['lint', 'webpack', 'devpack', 'test']);
+  ], ['clean', 'lint', 'webpack', 'devpack', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
   ], ['lint', 'mocha']);
-  gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   connect.server({
     https: argv.https,
     port: port,
