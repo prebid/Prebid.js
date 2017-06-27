@@ -433,7 +433,7 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
 function syncEmily(hasSynced) {
   // Check that it has not already been triggered - only meant to fire once
   if (hasSynced) {
-    return false;
+    return true;
   }
 
   const defaultUserSyncConfig = {
