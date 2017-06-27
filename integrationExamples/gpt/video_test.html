@@ -49,7 +49,7 @@
         pbjs.requestBids({
           timeout : 700,
           bidsBackHandler : function(bids) {
-            var videoUrl = pbjs.adServer.buildVideoAdUrl({
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
               adUnit: videoAdUnit,
               params: {
                 iu: '/19968336/prebid_cache_video_adunit'

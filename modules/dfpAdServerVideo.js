@@ -83,5 +83,5 @@ export default function buildDfpVideoUrl(options) {
 }
 
 registerVideoSupport('dfp', {
-  buildVideoAdUrl: buildDfpVideoUrl
+  buildVideoUrl: buildDfpVideoUrl
 });

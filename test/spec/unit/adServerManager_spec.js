@@ -6,38 +6,25 @@ const prebid = getGlobal();
 
 describe('The ad server manager', () => {
   beforeEach(() => {
-    delete prebid.adServer;
     delete prebid.adServers;
   });
 
-  it('should register video support to the proper place when one ad server is loaded', () => {
+  it('should register video support to the proper place on the API', () => {
     function videoSupport() { }
-    registerVideoSupport('dfp', { buildVideoAdUrl: videoSupport });
+    registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
 
-    expect(prebid).to.have.property('adServer');
-    expect(prebid.adServer).to.have.property('name', 'dfp');
-
-    expect(prebid.adServer).to.have.property('buildVideoAdUrl');
-    expect(prebid.adServer.buildVideoAdUrl).to.equal(videoSupport);
+    expect(prebid).to.have.property('adServers');
+    expect(prebid.adServers).to.have.property('dfp');
+    expect(prebid.adServers.dfp).to.have.property('buildVideoUrl', videoSupport);
   });
 
-  it('should change the namespaces when two ad servers are loaded', () => {
-    function dfpVideoSupport() { }
-    function astVideoSupport() { }
-    registerVideoSupport('ast', { buildVideoAdUrl: astVideoSupport });
-    registerVideoSupport('dfp', { buildVideoAdUrl: dfpVideoSupport });
+  it('should keep the first function when we try to add a second', () => {
+    function videoSupport() { }
+    registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
+    registerVideoSupport('dfp', { buildVideoUrl: function noop() { } });
 
-    expect(prebid).to.not.have.property('adServer');
     expect(prebid).to.have.property('adServers');
-
-    expect(prebid.adServers).to.have.property('ast');
-    expect(prebid.adServers.ast).to.have.property('buildVideoAdUrl');
     expect(prebid.adServers).to.have.property('dfp');
-    expect(prebid.adServers.dfp).to.have.property('buildVideoAdUrl');
-    expect(prebid.adServers.ast).not.to.have.property('name');
-    expect(prebid.adServers.dfp).not.to.have.property('name');
-
-    expect(prebid.adServers.dfp.buildVideoAdUrl).to.equal(dfpVideoSupport);
-    expect(prebid.adServers.ast.buildVideoAdUrl).to.equal(astVideoSupport);
+    expect(prebid.adServers.dfp).to.have.property('buildVideoUrl', videoSupport);
   });
 });
