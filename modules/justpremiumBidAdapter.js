@@ -2,6 +2,7 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adloader from 'src/adloader';
 import * as utils from 'src/utils';
+import adaptermanager from 'src/adaptermanager';
 
 const CONSTANTS = require('src/constants.json');
 
@@ -262,5 +263,7 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
     callBids: callBids
   };
 };
+
+adaptermanager.registerBidAdapter(new JustpremiumAdapter, 'justpremium');
 
 module.exports = JustpremiumAdapter;
