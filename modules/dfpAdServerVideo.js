@@ -2,10 +2,10 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { registerVideoSupport } from './adServerManager';
-import { getWinningBids } from './targeting';
-import { formatQS, format as buildUrl } from './url';
-import { parseSizesInput } from './utils';
+import { registerVideoSupport } from '../src/adServerManager';
+import { getWinningBids } from '../src/targeting';
+import { formatQS, format as buildUrl } from '../src/url';
+import { parseSizesInput } from '../src/utils';
 
 /**
  * @typedef {Object} DfpVideoParams

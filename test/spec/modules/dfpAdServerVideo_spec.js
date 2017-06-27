@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import buildDfpVideoUrl from 'src/dfpVideo';
+import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
 import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
 
