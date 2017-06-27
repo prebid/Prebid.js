@@ -4,7 +4,7 @@ import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
-import 'polyfill';
+import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
@@ -76,54 +76,6 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 // delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
-
-
-/**
- * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
- * before or after their script executes. For example, given the code:
- *
- * <script src="url/to/Prebid.js" async></script>
- * <script>
- *   var pbjs = pbjs || {};
- *   pbjs.cmd = pbjs.cmd || [];
- *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
- * </script>
- *
- * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
- * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
- * function to execute immediately.
- *
- * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
- *                        the Prebid script has been fully loaded.
- * @alias module:$$PREBID_GLOBAL$$.cmd.push
- */
-$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === objectType_function) {
-    try {
-      cmd.call();
-    } catch (e) {
-      utils.logError('Error processing command :' + e.message);
-    }
-  } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
-  }
-};
-
-$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
-
-function processQueue(queue) {
-  queue.forEach(function(cmd) {
-    if (typeof cmd.called === objectType_undefined) {
-      try {
-        cmd.call();
-        cmd.called = true;
-      }
-      catch (e) {
-        utils.logError('Error processing command :', 'prebid.js', e);
-      }
-    }
-  });
-}
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -257,10 +209,11 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 };
 
 /**
- * Set query string targeting on all GPT ad units.
+ * Set query string targeting on one or more GPT ad units.
+ * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
  * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnits) {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -268,13 +221,13 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnits) {
   }
 
   // get our ad unit codes
-  var adUnitCodes = targeting.getAllTargeting(adUnits);
+  var targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
-  targeting.resetPresetTargeting(adUnitCodes);
+  targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargeting(adUnitCodes);
+  targeting.setTargeting(targetingSet);
 
 
   // emit event
@@ -343,6 +296,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
+          iframe.style.overflow = 'hidden';
           iframe.src = url;
 
           utils.insertElement(iframe, doc, 'body');
@@ -470,7 +424,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 /**
  *
  * Add adunit(s)
- * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
+ * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
  * @alias module:$$PREBID_GLOBAL$$.addAdUnits
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
@@ -775,6 +729,56 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
-processQueue($$PREBID_GLOBAL$$.cmd);
-processQueue($$PREBID_GLOBAL$$.que);
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
+
+/**
+ * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
+ * before or after their script executes. For example, given the code:
+ *
+ * <script src="url/to/Prebid.js" async></script>
+ * <script>
+ *   var pbjs = pbjs || {};
+ *   pbjs.cmd = pbjs.cmd || [];
+ *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
+ * </script>
+ *
+ * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
+ * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
+ * function to execute immediately.
+ *
+ * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                        the Prebid script has been fully loaded.
+ * @alias module:$$PREBID_GLOBAL$$.cmd.push
+ */
+$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
+  if (typeof cmd === objectType_function) {
+    try {
+      cmd.call();
+    } catch (e) {
+      utils.logError('Error processing command :' + e.message);
+    }
+  } else {
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
+  }
+};
+
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
+
+function processQueue(queue) {
+  queue.forEach(function(cmd) {
+    if (typeof cmd.called === objectType_undefined) {
+      try {
+        cmd.call();
+        cmd.called = true;
+      }
+      catch (e) {
+        utils.logError('Error processing command :', 'prebid.js', e);
+      }
+    }
+  });
+}
+
+$$PREBID_GLOBAL$$.processQueue = function() {
+  processQueue($$PREBID_GLOBAL$$.que);
+  processQueue($$PREBID_GLOBAL$$.cmd);
+};

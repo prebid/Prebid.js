@@ -23,6 +23,10 @@ var events = require('src/events');
 var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
+// These bid adapters are required to be loaded for the following tests to work
+require('modules/appnexusAstBidAdapter');
+require('modules/adequantBidAdapter');
+
 var config = require('test/fixtures/config.json');
 
 $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
@@ -137,6 +141,10 @@ describe('Unit: Prebid Module', function () {
     $$PREBID_GLOBAL$$.adUnits = [];
   })
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
+    beforeEach(() => {
+      resetAuction();
+    });
+
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.enableSendAllBids();
@@ -331,10 +339,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getBidResponses', function () {
-    var result = $$PREBID_GLOBAL$$.getBidResponses();
-    var compare = getBidResponsesFromAPI();
-
     it('should return expected bid responses when not passed an adunitCode', function () {
+      var result = $$PREBID_GLOBAL$$.getBidResponses();
+      var compare = getBidResponsesFromAPI();
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
@@ -383,12 +390,22 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
     });
 
-    it('should set targeting when passed an array of ad unit codes', function () {
+    it('should set targeting when passed a string ad unit code with enableSendAllBids', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
+      $$PREBID_GLOBAL$$.enableSendAllBids();
 
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(config.adUnitElementIDs);
-      expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus']]);
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync('/19968336/header-bid-tag-0');
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus'], ['hb_adid_appnexus', '233bcbee889d46d'], ['hb_pb_appnexus', '10.00']]);
+    });
+
+    it('should set targeting when passed an array of ad unit codes with enableSendAllBids', function () {
+      var slots = createSlotArray();
+      window.googletag.pubads().setSlots(slots);
+      $$PREBID_GLOBAL$$.enableSendAllBids();
+
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync(['/19968336/header-bid-tag-0']);
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members([['hb_bidder', 'appnexus'], ['hb_adid_appnexus', '233bcbee889d46d'], ['hb_pb_appnexus', '10.00']]);
     });
 
     it('should set targeting from googletag data', function () {
