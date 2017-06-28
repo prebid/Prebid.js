@@ -8,7 +8,7 @@ Please see the sections below before submitting a PR.
 + [License](#license)
 + [Prerequisites](#prerequisites)
 + [Running Jekyll Locally](#running-jekyll-locally)
-+ [Alphabetization of Bidder Adaptors](#alphabetization-of-bidder-adaptors)
++ [Alphabetization of Bidder Adapters](#alphabetization-of-bidder-adaptors)
 + [The Downloads Page](#the-downloads-page)
 + [Thanks](#thanks)
 

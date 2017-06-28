@@ -51,7 +51,7 @@ The ad ops team will then reference these keys in the ad server to set up the ti
 
 Keep the following prerequisites in mind during the implementation:
 
-+ Make sure to work with native-enabled bidders (In the file `adapters.json` in the [Prebid.js repo](), the bidder will have `"native"` in their list of supported media types).
++ Make sure to work with native-enabled bidders. In the adapter's registerBidAdapter call, the bidder will have `"native"` in their list of supportedMediaTypes.
 
 ## Implementation
 
@@ -135,7 +135,7 @@ pbjs.addAdUnits({
 {% endhighlight %}
 
 {: .alert.alert-danger :}
-For each native ad unit, all of the bidders within that ad unit must have declared native support in `adapters.json`.  If there are any bidders without native support in a native ad unit, the request won't be made.
+For each native ad unit, all of the bidders within that ad unit must have declared native support in supportedMediaTypes as defined in the adapter's call to registerBidAdapter().  If there are any bidders without native support in a native ad unit, the request won't be made.
 
 #### Pre-defined native types
 

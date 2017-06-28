@@ -88,8 +88,8 @@ nav_sections:
     code: reference
     name: REFERENCE
   - top_nav: dev_docs
-    code: adaptors
-    name: ADAPTORS
+    code: adapters
+    name: ADAPTERS
   - top_nav: dev_docs
     code: hacking
     name: HACKING ON PREBID.JS

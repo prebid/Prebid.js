@@ -62,7 +62,7 @@ For each ad unit, register the header bidding bidders' tag Ids. For example in t
 
 ##### Line 35: Load the Prebid.js library Asynchronously
 
-Generate your version of Prebid.js with the selected adaptors [here](http://prebid.org/download.html). Do not use the prebid.js version on the left in your production environment.
+Generate your version of Prebid.js with the selected adapters [here](http://prebid.org/download.html). Do not use the prebid.js version on the left in your production environment.
 
 </div>
 

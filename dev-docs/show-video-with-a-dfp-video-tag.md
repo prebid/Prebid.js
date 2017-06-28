@@ -19,8 +19,7 @@ the AppNexus AST bidder, but this should work similarly with other
 video players.
 
 Note that you'll need to make sure to work with video-enabled bidders
-(In the file `adapters.json` in the Prebid.js repo, they will have
-`"video"` in their list of supported media types).
+(In the registerBidAdapter() call, the supportedMediaTypes array contains `"video"`.)
 
 * TOC
 {:toc }
@@ -33,16 +32,14 @@ The code below was built with access to the following libraries:
 + MailOnline videojs-vast-vpaid plugin version 2.0.2
 
 Also, you need to make sure to include the code below in your
-`adapters.json` when building Prebid.js.  If you don't build Prebid.js
+adapter's call to registerBidAdapter().  If you don't build Prebid.js
 with support for at least one video-enabled bidder, you will not be
 able to show any video ads.
 
 {% highlight js %}
-{
-  "appnexusAst" : {
-    "supportedMediaTypes" : ["video"]
-  }
-}
+adaptermanager.registerBidAdapter(new XYZBidAdapter, 'xyz', {
+  supportedMediaTypes: ['video']
+});
 {% endhighlight %}
 
 ## Implementation
