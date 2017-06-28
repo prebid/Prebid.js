@@ -24,7 +24,7 @@ The Prebid Analytics API provides a way to get analytics data from `Prebid.js` a
 
 ## Architecture of the Analytics API
 
-Before we jump into looking at code, let's look at the high-level architecture.  As shown in the diagram below, `Prebid.js` calls into an _analytics adapter_.  The analytic adapter is the only part of the code that must be stored in the `Prebid.js` repo.
+Before we jump into looking at code, let's look at the high-level architecture.  As shown in the diagram below, `Prebid.js` calls into an _analytics adapter_.  The analytics adapter is the only part of the code that must be stored in the `Prebid.js` repo.
 
 The analytics adapter listens to events and may call out directly to the analytics backend, or it may call out to an analytics _library_ that integrates with the analytics server.
 
