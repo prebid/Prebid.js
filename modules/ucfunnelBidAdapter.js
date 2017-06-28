@@ -9,7 +9,7 @@ import adaptermanager from 'src/adaptermanager';
 const VER = 'ADGENT_PREBID-2017051801';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
-let ucfunnelAdapter = function ucfunnelAdapter() {
+function ucfunnelAdapter() {
   function _callBids(params) {
     let bids = params.bids || [];
 
@@ -93,6 +93,6 @@ let ucfunnelAdapter = function ucfunnelAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new ucfunnelAdapter, UCFUNNEL_BIDDER_CODE)
+adaptermanager.registerBidAdapter(new ucfunnelAdapter, UCFUNNEL_BIDDER_CODE);
 
 module.exports = ucfunnelAdapter;
