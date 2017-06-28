@@ -57,7 +57,7 @@ function PulsePointLiteAdapter() {
         const size = adSize(idToSlotMap[id]);
         const bid = createBid(STATUS.GOOD, bidRequest);
         bid.bidderCode = bidRequest.bidderCode;
-        bid.cpm = 0.50;//idToBidMap[id].price;
+        bid.cpm = idToBidMap[id].price;
         bid.adId = id;
         if(isNative(idToSlotMap[id])) {
           bid.native = nativeResponse(idToSlotMap[id], idToBidMap[id]);
@@ -70,7 +70,8 @@ function PulsePointLiteAdapter() {
         addBidResponse(idToSlotMap[id].placementCode, bid);
       } else {
         const passback = createBid(STATUS.NO_BID, bidRequest);
-        passback.bidderCode = idToSlotMap[id].bidderCode;
+        passback.bidderCode = bidRequest.bidderCode;
+        passback.adId = id;
         addBidResponse(idToSlotMap[id].placementCode, passback);
       }
     });
@@ -230,6 +231,7 @@ function PulsePointLiteAdapter() {
 }
 
 // registering an alias for backwards compatibility.
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'ppLite');
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'ppt');
 
 module.exports = PulsePointLiteAdapter;
