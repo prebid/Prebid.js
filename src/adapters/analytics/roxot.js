@@ -101,14 +101,12 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
 
       if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
         buildBidWon(eventType, info);
-        setBidWonS2sBidderCode();
         send(eventType, bidWon, 'bidWon');
         return;
       }
 
       if (eventType === auctionEndConst) {
         buildEventStack(eventType);
-        setS2sBidderCode();
         send(eventType, eventStack, 'eventStack');
         flushEvents();
         auctionStatus = 'not_started';
