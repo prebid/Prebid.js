@@ -519,7 +519,7 @@ Define ad units and their corresponding header bidding bidders' tag IDs.  For us
 {: .table .table-bordered .table-striped }
 | Param | Type | Description |
 | --- | --- | --- |
-| Array | `string` &#124; `Array of strings` | of adUnits or single adUnit Object. |
+| Array | `Object` &#124; `Array of objects` | of adUnits or single adUnit Object. |
 
 **adUnit**
 
@@ -747,7 +747,7 @@ In the above example, the AOL bidder will inherit from "standard" adserverTarget
 
 ##### 2.4. sendStandardTargeting
 
-This boolean flag minimizes key/value pairs sent to the ad server when 
+This boolean flag minimizes key/value pairs sent to the ad server when
 adapter-specific targeting is specified. By default, the platform will send both adapter-specific adServerTargeting as well as the standard adServerTargeting.
 
 While sending extra targeting the ad server may not matter, this flag can be used to
