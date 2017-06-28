@@ -89,6 +89,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       });
     });
 
+    // don't send empty requests
     adUnitsCopy = adUnitsCopy.filter(adUnit => {
       return adUnit.bids.length !== 0;
     });
@@ -106,8 +107,9 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout
       };
-      // Pushing server side bidder
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      if (bidderRequest.bids.length !== 0) {
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      }
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
