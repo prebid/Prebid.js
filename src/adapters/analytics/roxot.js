@@ -56,16 +56,20 @@ function flushEvents() {
 
 function setS2sBidderCode() {
   eventStack.events.forEach(function (event) {
-    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
-      event.args.bidderCode += '(s2s)';
+    if (Object.keys(s2sConfig).length) {
+      if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+        event.args.bidderCode += '(s2s)';
+      }
     }
   });
 }
 
 function setBidWonS2sBidderCode() {
   bidWon.events.forEach(function (event) {
-    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
-      event.args.bidderCode += '(s2s)';
+    if (Object.keys(s2sConfig).length) {
+      if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+        event.args.bidderCode += '(s2s)';
+      }
     }
   });
 }
