@@ -1,9 +1,10 @@
-const bidfactory = require('../bidfactory.js');
-const bidmanager = require('../bidmanager.js');
-const adloader = require('../adloader');
-const ajax = require('../ajax.js');
-const CONSTANTS = require('../constants.json');
-const utils = require('../utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const adloader = require('src/adloader');
+const ajax = require('src/ajax.js');
+const CONSTANTS = require('src/constants.json');
+const utils = require('src/utils.js');
+const adaptermanager = require('src/adaptermanager');
 
 const mobfoxAdapter = function () {
   const BIDDER_CODE = 'mobfox';
@@ -88,16 +89,20 @@ const mobfoxAdapter = function () {
 
     ajax.ajax(`${BID_REQUEST_BASE_URL}?${queryString}`, {
       success(resp, xhr) {
-        if (xhr.getResponseHeader("Content-Type") == "application/json")
-          resp = JSON.parse(resp);
+        if (xhr.getResponseHeader("Content-Type") == "application/json") {
+          try {resp = JSON.parse(resp);}
+          catch (e) {onBidResponse(bid, [resp])}
+        }
         onBidResponse({
           data: resp,
           xhr: xhr
         }, bid);
       },
       error(err) {
-        if (xhr.getResponseHeader("Content-Type") == "application/json")
-          err = JSON.parse(err);
+        if (xhr.getResponseHeader("Content-Type") == "application/json") {
+          try {err = JSON.parse(err);}
+          catch (e) {onBidResponse(bid, [err])};
+        }
         onBidResponseError(bid, [err]);
       }
     });
@@ -164,4 +169,6 @@ const mobfoxAdapter = function () {
   };
 };
 
+
+adaptermanager.registerBidAdapter(new mobfoxAdapter, 'mobfox');
 module.exports = mobfoxAdapter;

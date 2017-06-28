@@ -1,7 +1,7 @@
 describe('mobfox adapter tests', function () {
   const expect = require('chai').expect;
   const utils = require('src/utils');
-  const adapter = require('src/adapters/mobfox');
+  const adapter = require('modules/mobfoxBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const CONSTANTS = require('src/constants.json');
