@@ -17,7 +17,7 @@ nav_section: quick-start
 
 ### Quick Start
 
-The easiest way to get started with Prebid.js is using the following JSFiddle example. Go to the "Result" tab to see the keyword targeting for this header auction.
+The easiest way to get started with Prebid.js is to use the following JSFiddle example. Go to the "Result" tab to see the keyword targeting for this header auction.
 
 {% include dev-docs/build-from-source-warning.md %}
 
@@ -73,7 +73,7 @@ setTimeout(initAdserver, PREBID_TIMEOUT);
 
 #### 3. Set bid targeting
 
-Call the helper function `setTargetingForGPTAsync()` to handle all the targeting for all bidders. 
+Call the helper function `setTargetingForGPTAsync()` to handle all the targeting for all bidders.
 
 {% highlight js %}
 
