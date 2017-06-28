@@ -1,3 +1,7 @@
+'use strict';
+
+var _ = require('lodash');
+var argv = require('yargs').argv;
 var gulp = require('gulp');
 var argv = require('yargs').argv;
 var gutil = require('gulp-util');
@@ -6,7 +10,6 @@ var webpack = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
-var mocha = require('gulp-mocha');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
@@ -14,11 +17,15 @@ var del = require('del');
 var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
+var footer = require('gulp-footer');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
-const eslint = require('gulp-eslint');
+var eslint = require('gulp-eslint');
+var gulpif = require('gulp-if');
+var sourcemaps = require('gulp-sourcemaps');
+var fs = require('fs');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
@@ -29,15 +36,15 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'lint', 'webpack']);
+gulp.task('default', ['clean', 'webpack']);
 
-gulp.task('serve', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'test']);
+gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test', 'mocha']);
+gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test']);
 
-gulp.task('build', ['webpack']);
+gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -46,10 +53,53 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
+function bundle(dev) {
+  var modules = helpers.getArgModules(),
+      allModules = helpers.getModuleNames(modules);
+
+  if(modules.length === 0) {
+    modules = allModules;
+  } else {
+    var diff = _.difference(modules, allModules);
+    if(diff.length !== 0) {
+      throw new gutil.PluginError({
+        plugin: 'bundle',
+        message: 'invalid modules: ' + diff.join(', ')
+      });
+    }
+  }
+
+  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+
+  return gulp.src(
+      entries
+    )
+    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
+    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
+        global: prebid.globalVarName
+      }
+    )))
+    .pipe(gulpif(dev, sourcemaps.write('.')))
+    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
+gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
+gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
 gulp.task('devpack', ['clean'], function () {
   webpackConfig.devtool = 'source-map';
+  var externalModules = helpers.getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
@@ -65,12 +115,17 @@ gulp.task('webpack', ['clean'], function () {
 
   webpackConfig.devtool = null;
 
+  var externalModules = helpers.getArgModules();
+
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
-  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
     .pipe(webpack(webpackConfig))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
-    .pipe(header(banner, { prebid: prebid }))
+    .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))
     .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
@@ -134,26 +189,6 @@ gulp.task('test', ['clean'], function () {
     }));
 });
 
-//
-// Making this task depend on lint is a bit of a hack. The `run-tests` command is the entrypoint for the CI process,
-// and it needs to run all these tasks together. However, the "lint" and "mocha" tasks explode when used in parallel,
-// resulting in some mysterious "ShellJS: internal error TypeError: Cannot read property 'isFile' of undefined"
-// errors.
-//
-// Gulp doesn't support serial dependencies (until gulp 4.0... which is most likely never coming out)... so we have
-// to trick it by declaring 'lint' as a dependency here. See https://github.com/gulpjs/gulp/blob/master/docs/recipes/running-tasks-in-series.md
-//
-gulp.task('mocha', ['webpack', 'lint'], function() {
-    return gulp.src(['test/spec/loaders/**/*.js'], { read: false })
-        .pipe(mocha({
-          reporter: 'spec',
-          globals: {
-            expect: require('chai').expect
-          }
-        }))
-        .on('error', gutil.log);
-});
-
 // Small task to load coverage reports in the browser
 gulp.task('coverage', function (done) {
   var coveragePort = 1999;
@@ -179,13 +214,15 @@ gulp.task('watch', function () {
 
   gulp.watch([
     'src/**/*.js',
+    'modules/**/*.js',
     'test/spec/**/*.js',
     '!test/spec/loaders/**/*.js'
-  ], ['clean', 'lint', 'webpack', 'devpack', 'test']);
+  ], ['lint', 'build-bundle-dev', 'test']);
   gulp.watch([
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
-  ], ['lint', 'mocha']);
+  ], ['lint']);
+  gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   connect.server({
     https: argv.https,
     port: port,
