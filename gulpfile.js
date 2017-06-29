@@ -18,7 +18,6 @@ var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
-var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
@@ -129,13 +128,6 @@ gulp.task('webpack', ['clean'], function () {
     .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
-});
-
-//zip up for release
-gulp.task('zip', ['webpack'], function () {
-  return gulp.src(['build/dist/*', 'integrationExamples/gpt/*'])
-    .pipe(zip(packageNameVersion + '.zip'))
-    .pipe(gulp.dest('./'));
 });
 
 // Karma Continuous Testing
