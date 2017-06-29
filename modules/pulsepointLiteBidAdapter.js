@@ -293,7 +293,9 @@ function PulsePointLiteAdapter() {
  * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an
  * example, where keys got truncated when using the "pulsepointLite" alias - "hb_adid_pulsepointLi=1300bd87d59c4c2"
 */
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulseLite');
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulseLite', {
+  supportedMediaTypes: [ 'native' ]
+});
+adaptermanager.aliasBidAdapter('pulseLite', 'pulsepointLite');
 
 module.exports = PulsePointLiteAdapter;
