@@ -40,6 +40,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.setBidderSequence(order)](#module_pbjs.setBidderSequence)
   * [.onEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.offEvent(event, handler, id)](#module_pbjs.onEvent)
+  * [.aliasBidder(adapterName, aliasedName)](#module_pbjs.aliasBidder)
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -937,5 +938,28 @@ The example below shows how to use these methods:
                 ...
 
 {% endhighlight %}
+
+<a name="module_pbjs.aliasBidder"></a>
+
+### pbjs.aliasBidder(adapterName, aliasedName)
+
+To define an alias for a bidder adapter, call this method at runtime:
+
+{% highlight js %}
+
+pbjs.aliasBidder('appnexusAst', 'newAlias');
+
+{% endhighlight %}
+
+Defining an alias can help avoid user confusion since it's possible to send parameters to the same adapter but in different contexts (e.g, The publisher uses `"appnexusAst"` for demand and also uses `"newAlias"` which is an SSP partner that uses the `"appnexusAst"` adapter to serve their own unique demand).
+
+It's not technically necessary to define an alias, since each copy of an adapter with the same name gets a different ID in the internal bidder registry so Prebid.js can still tell them apart.
+
+If you define an alias and are using `pbjs.sendAllBids`, you must also set up additional line items in the ad server with keyword targeting that matches the name of the alias.  For example:
+
++ `hb_pb_newalias`
++ `hb_adid_newalias`
++ `hb_size_newalias`
++ `hb_deal_newalias`
 
 </div>
