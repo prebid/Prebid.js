@@ -57,8 +57,10 @@ function flushEvents() {
 
 function setS2sBidderCode() {
   eventStack.events.forEach(function (event) {
-    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
-      event.args.bidderCode += '(s2s)';
+    if (Object.keys(s2sConfig).length) {
+      if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+        event.args.bidderCode += '(s2s)';
+      }
     }
   });
 }
@@ -75,8 +77,10 @@ function setIframe(src) {
 
 function setBidWonS2sBidderCode() {
   bidWon.events.forEach(function (event) {
-    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
-      event.args.bidderCode += '(s2s)';
+    if (Object.keys(s2sConfig).length) {
+      if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+        event.args.bidderCode += '(s2s)';
+      }
     }
   });
 }
@@ -101,12 +105,14 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
 
       if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
         buildBidWon(eventType, info);
+        setS2sBidderCode();
         send(eventType, bidWon, 'bidWon');
         return;
       }
 
       if (eventType === auctionEndConst) {
         buildEventStack(eventType);
+        setBidWonS2sBidderCode();
         send(eventType, eventStack, 'eventStack');
         flushEvents();
         auctionStatus = 'not_started';
