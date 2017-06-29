@@ -15,7 +15,7 @@ about:
 - Standard price granularity
 - Standard integration with DFP's GPT single request asynchronous mode
 
-jsfiddle_link: jsfiddle.net/prebid/qu68xoz5/35/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/qu68xoz5/44/embedded/html,result
 
 code_lines: 121
 code_height: 2641
