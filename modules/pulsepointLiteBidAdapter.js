@@ -6,12 +6,10 @@ import {STATUS} from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
 /**
- * Adapter for PulsePoint. This adapter implementation, is lighter
- * compared to the original PulsePointAdapter. Reasons being - this adapter
- * does not download the JS library and makes a single OpenRTB call, instead of separate
- * call per slot.
- *
- * @author anand-venkatraman
+ * PulsePoint "Lite" Adapter.  This adapter implementation is lighter than the
+ * alternative/original PulsePointAdapter because it has no external
+ * dependencies and relies on a single OpenRTB request to the PulsePoint
+ * bidder instead of separate requests per slot.
  */
 function PulsePointLiteAdapter() {
   const bidUrl = window.location.protocol + '//bid.contextweb.com/header/ortb';
@@ -279,7 +277,7 @@ function PulsePointLiteAdapter() {
    * Parses the native response from the Bid given.
    */
   function isNative(slot) {
-    return slot.nativeParams;
+    return slot.nativeParams ? true : false;
   }
 
   return {
@@ -292,7 +290,7 @@ function PulsePointLiteAdapter() {
  * deprecated, but kept here for backwards compatibility.
  * Reason is key truncation. When the Publisher opts for sending all bids to DFP, then
  * the keys get truncated due to the limit in key-size (20 characters, detailed
- * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an 
+ * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an
  * example, where keys got truncated when using the "pulsepointLite" alias - "hb_adid_pulsepointLi=1300bd87d59c4c2"
 */
 adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');

@@ -15,7 +15,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     ajaxStub = sinon.stub(ajax, 'ajax');
 
     slotConfigs = {
-      bidderCode: 'ppt',
+      bidderCode: 'pulseLite',
       bids: [
         {
           placementCode: '/DfpAccount1/slot1',
@@ -37,7 +37,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
       ]
     };
     nativeSlotConfig = {
-      bidderCode: 'ppt',
+      bidderCode: 'pulseLite',
       bids: [
         {
           placementCode: '/DfpAccount1/slot3',
@@ -106,7 +106,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
     expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.bidderCode).to.equal('pulseLite');
     expect(bid.cpm).to.equal(1.25);
     expect(bid.ad).to.equal('This is an Ad');
     expect(bid.width).to.equal(300);
@@ -117,7 +117,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     bid = bidManager.addBidResponse.secondCall.args[1];
     expect(placement).to.equal('/DfpAccount2/slot2');
     expect(bid.adId).to.equal('bid23456');
-    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.bidderCode).to.equal('pulseLite');
     expect(bid.cpm).to.be.undefined;
   });
 
@@ -128,7 +128,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
     expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.bidderCode).to.equal('pulseLite');
     expect(bid).to.not.have.property('ad');
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
@@ -140,7 +140,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
     expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.bidderCode).to.equal('pulseLite');
     expect(bid).to.not.have.property('ad');
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
@@ -212,7 +212,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     let placement = bidManager.addBidResponse.firstCall.args[0];
     let bid = bidManager.addBidResponse.firstCall.args[1];
     expect(placement).to.equal('/DfpAccount1/slot3');
-    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.bidderCode).to.equal('pulseLite');
     expect(bid.cpm).to.equal(1.25);
     expect(bid.adId).to.equal('bid12345');
     expect(bid.ad).to.be.undefined;
