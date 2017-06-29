@@ -6,14 +6,17 @@ const utils = require('../../utils');
 
 const url = '//pa.rxthdr.com/analytic';
 const analyticsType = 'endpoint';
+const userSyncUrl = '//pa.rxthdr.com/user_sync';
 
 let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
 let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
 let bidWonConst = CONSTANTS.EVENTS.BID_WON;
+let setS2sConfig = CONSTANTS.EVENTS.SET_S2S_CONFIG;
 
 let initOptions = {publisherIds: []};
 let bidWon = {options: {}, events: []};
 let eventStack = {options: {}, events: []};
+let s2sConfig = {};
 
 let auctionStatus = 'not_started';
 
@@ -52,6 +55,32 @@ function flushEvents() {
   eventStack.events = [];
 }
 
+function setS2sBidderCode() {
+  eventStack.events.forEach(function (event) {
+    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+      event.args.bidderCode += '(s2s)';
+    }
+  });
+}
+
+function setIframe(src) {
+  let iframe = document.createElement('IFRAME');
+  iframe.setAttribute('src', src);
+  iframe.setAttribute('style', 'display:none');
+  iframe.setAttribute('width', '0');
+  iframe.setAttribute('height', '0');
+  iframe.setAttribute('frameborder', '0');
+  document.body.appendChild(iframe);
+}
+
+function setBidWonS2sBidderCode() {
+  bidWon.events.forEach(function (event) {
+    if (s2sConfig.bidders.includes(event.args.bidderCode)) {
+      event.args.bidderCode += '(s2s)';
+    }
+  });
+}
+
 let roxotAdapter = Object.assign(adapter({url, analyticsType}),
   {
     track({eventType, args}) {
@@ -84,6 +113,10 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       } else {
         pushEvent(eventType, info);
       }
+
+      if (eventType === setS2sConfig) {
+        s2sConfig = args.s2sConfig;
+      }
     }
   });
 
@@ -93,6 +126,7 @@ roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
+  setIframe(userSyncUrl);
 };
 
 export default roxotAdapter;
