@@ -14,7 +14,7 @@ module.exports = function (win = window) {
 
   const isMainPageAccessible = () => getMostAccessibleTopWindow() === win.top;
 
-  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || "none";
+  const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || undefined;
 
   const isSecureWindow = () => win.location.protocol === "https:";
 
@@ -62,8 +62,8 @@ module.exports = function (win = window) {
     }
     catch(e) {
       // old browser, element not found, cross-origin etc.
-      return "unknown";
     }
+    return undefined;
   }
 
 
