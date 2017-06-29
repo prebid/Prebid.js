@@ -106,7 +106,8 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
-        timeout: _s2sConfig.timeout
+        timeout: _s2sConfig.timeout,
+        src: CONSTANTS.S2S.SRC
       };
       if (bidderRequest.bids.length !== 0) {
         $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
