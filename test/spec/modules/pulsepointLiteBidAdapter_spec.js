@@ -7,6 +7,7 @@ import * as ajax from 'src/ajax';
 describe('PulsePoint Lite Adapter Tests', () => {
   let pulsepointAdapter = new PulsePointAdapter();
   let slotConfigs;
+  let nativeSlotConfig;
   let ajaxStub;
 
   beforeEach(() => {
@@ -31,6 +32,24 @@ describe('PulsePoint Lite Adapter Tests', () => {
             cp: 'p10000',
             ct: 't20000',
             cf: '728x90'
+          }
+        }
+      ]
+    };
+    nativeSlotConfig = {
+      bidderCode: 'ppt',
+      bids: [
+        {
+          placementCode: '/DfpAccount1/slot3',
+          bidId: 'bid12345',
+          nativeParams: {
+            title: { required: true, len: 200 },
+            image: { wmin: 100 },
+            sponsoredBy: { }
+          },
+          params: {
+            cp: 'p10000',
+            ct: 't10000'
           }
         }
       ]
@@ -125,5 +144,86 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid).to.not.have.property('ad');
     expect(bid).to.not.have.property('cpm');
     expect(bid.adId).to.equal('bid12345');
+  });
+
+  it('Verify Native request', () => {
+    pulsepointAdapter.callBids(nativeSlotConfig);
+    expect(ajaxStub.callCount).to.equal(1);
+    expect(ajaxStub.firstCall.args[0]).to.equal('http://bid.contextweb.com/header/ortb');
+    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
+    // native impression
+    expect(ortbRequest.imp[0].tagid).to.equal('t10000');
+    expect(ortbRequest.imp[0].banner).to.equal(null);
+    expect(ortbRequest.imp[0].native).to.not.equal(null);
+    expect(ortbRequest.imp[0].native.ver).to.equal('1.1');
+    expect(ortbRequest.imp[0].native.request).to.not.equal(null);
+    // native request assets
+    const nativeRequest = JSON.parse(ortbRequest.imp[0].native.request);
+    expect(nativeRequest).to.not.equal(null);
+    expect(nativeRequest.assets).to.have.lengthOf(3);
+    // title asset
+    expect(nativeRequest.assets[0].id).to.equal(1);
+    expect(nativeRequest.assets[0].required).to.equal(1);
+    expect(nativeRequest.assets[0].title).to.not.equal(null);
+    expect(nativeRequest.assets[0].title.len).to.equal(200);
+    // data asset
+    expect(nativeRequest.assets[1].id).to.equal(2);
+    expect(nativeRequest.assets[1].required).to.equal(0);
+    expect(nativeRequest.assets[1].title).to.be.undefined;
+    expect(nativeRequest.assets[1].data).to.not.equal(null);
+    expect(nativeRequest.assets[1].data.type).to.equal(1);
+    expect(nativeRequest.assets[1].data.len).to.equal(50);
+    // image asset
+    expect(nativeRequest.assets[2].id).to.equal(3);
+    expect(nativeRequest.assets[2].required).to.equal(0);
+    expect(nativeRequest.assets[2].title).to.be.undefined;
+    expect(nativeRequest.assets[2].img).to.not.equal(null);
+    expect(nativeRequest.assets[2].img.wmin).to.equal(100);
+    expect(nativeRequest.assets[2].img.hmin).to.equal(150);
+    expect(nativeRequest.assets[2].img.type).to.equal(3);
+  });
+
+  it('Verify Native response', () => {
+    pulsepointAdapter.callBids(nativeSlotConfig);
+    expect(ajaxStub.callCount).to.equal(1);
+    expect(ajaxStub.firstCall.args[0]).to.equal('http://bid.contextweb.com/header/ortb');
+    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
+    const nativeResponse = {
+      native: {
+        assets: [
+          { title: { text: 'Ad Title'} },
+          { data: { type: 1, value: 'Sponsored By: Brand' }},
+          { img: { type: 3, url: 'http://images.cdn.brand.com/123' } }
+        ],
+        link: { url: 'http://brand.clickme.com/' },
+        imptrackers: [ 'http://imp1.trackme.com/', 'http://imp1.contextweb.com/' ]
+      }
+    };
+    ajaxStub.firstCall.args[1](JSON.stringify({
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: JSON.stringify(nativeResponse)
+        }]
+      }]
+    }));
+    // verify bid
+    let placement = bidManager.addBidResponse.firstCall.args[0];
+    let bid = bidManager.addBidResponse.firstCall.args[1];
+    expect(placement).to.equal('/DfpAccount1/slot3');
+    expect(bid.bidderCode).to.equal('ppt');
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.adId).to.equal('bid12345');
+    expect(bid.ad).to.be.undefined;
+    expect(bid.mediaType).to.equal('native');
+    expect(bid.native).to.not.equal(null);
+    expect(bid.native.title).to.equal('Ad Title');
+    expect(bid.native.sponsoredBy).to.equal('Sponsored By: Brand');
+    expect(bid.native.image).to.equal('http://images.cdn.brand.com/123');
+    expect(bid.native.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
+    expect(bid.native.impressionTrackers).to.have.lengthOf(2);
+    expect(bid.native.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
+    expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
 });

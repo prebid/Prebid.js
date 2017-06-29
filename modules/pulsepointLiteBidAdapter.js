@@ -5,6 +5,14 @@ import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
+/**
+ * Adapter for PulsePoint. This adapter implementation, is lighter
+ * compared to the original PulsePointAdapter. Reasons being - this adapter
+ * does not download the JS library and makes a single OpenRTB call, instead of separate
+ * call per slot.
+ *
+ * @author anand-venkatraman
+ */
 function PulsePointLiteAdapter() {
   const bidUrl = window.location.protocol + '//bid.contextweb.com/header/ortb';
   const ajaxOptions = {
@@ -20,6 +28,9 @@ function PulsePointLiteAdapter() {
     ICON_MIN: 50,
   };
 
+  /**
+   * Makes the call to PulsePoint endpoint and registers bids.
+   */
   function _callBids(bidRequest) {
     try {
       // construct the openrtb bid request from slots
@@ -38,6 +49,9 @@ function PulsePointLiteAdapter() {
     }
   }
 
+  /**
+   * Callback for bids, after the call to PulsePoint completes.
+   */
   function bidResponseAvailable(bidRequest, rawResponse) {
     const idToSlotMap = {};
     const idToBidMap = {};
@@ -77,6 +91,9 @@ function PulsePointLiteAdapter() {
     });
   }
 
+  /**
+   * Produces an OpenRTBImpression from a slot config.
+   */
   function impression(slot) {
     return {
       id: slot.bidId,
@@ -86,6 +103,9 @@ function PulsePointLiteAdapter() {
     };
   }
 
+  /**
+   * Produces an OpenRTB Banner object for the slot given.
+   */
   function banner(slot) {
     const size = adSize(slot);
     return slot.nativeParams ? null : {
@@ -94,6 +114,9 @@ function PulsePointLiteAdapter() {
     };
   }
 
+  /**
+   * Produces an OpenRTB Native object for the slot given.
+   */
   function native(slot) {
     if (slot.nativeParams) {
       const assets = [];
@@ -110,25 +133,34 @@ function PulsePointLiteAdapter() {
     return null;
   }
 
+  /**
+   * Helper method to add an asset to the assets list.
+   */
   function addAsset(assets, asset) {
     if(asset) {
       assets.push(asset);
     }
   }
 
+  /**
+   * Produces a Native Title asset for the configuration given.
+   */
   function titleAsset(id, params, defaultLen) {
     if (params) {
       return {
         id: id,
         required: params.required ? 1 : 0,
         title: {
-          len: params.len || 100,
+          len: params.len || defaultLen,
         },
       };
     }
     return null;
   }
 
+  /**
+   * Produces a Native Image asset for the configuration given.
+   */
   function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
     return params ? {
       id: id,
@@ -141,17 +173,23 @@ function PulsePointLiteAdapter() {
     } : null;
   }
 
+  /**
+   * Produces a Native Data asset for the configuration given.
+   */
   function dataAsset(id, params, type, defaultLen) {
     return params ? {
       id: id,
       required: params.required ? 1 : 0,
       data: {
         type,
-        len: params.len || 50,
+        len: params.len || defaultLen,
       }
     } : null;
   }
 
+  /**
+   * Produces an OpenRTB site object.
+   */
   function site(bidderRequest) {
     const pubId = bidderRequest.bids.length > 0 ? bidderRequest.bids[0].params.cp : '0';
     return {
@@ -163,6 +201,9 @@ function PulsePointLiteAdapter() {
     };
   }
 
+  /**
+   * Attempts to capture the referrer url.
+   */
   function referrer() {
     try {
       return window.top.document.referrer;
@@ -171,6 +212,9 @@ function PulsePointLiteAdapter() {
     }
   }
 
+  /**
+   * Produces an OpenRTB Device object.
+   */
   function device() {
     return {
       ua: navigator.userAgent,
@@ -178,6 +222,10 @@ function PulsePointLiteAdapter() {
     };
   }
 
+  /**
+   * Safely parses the input given. Returns null on
+   * parsing failure.
+   */
   function parse(rawResponse) {
     try {
       if(rawResponse) {
@@ -189,16 +237,22 @@ function PulsePointLiteAdapter() {
     return null;
   }
 
+  /**
+   * Determines the AdSize for the slot.
+   */
   function adSize(slot) {
-    if(!slot.params.cf) {
-      return [1, 1];
+    if(slot.params.cf) {
+      const size = slot.params.cf.toUpperCase().split('X');
+      const width = parseInt(slot.params.cw || size[0], 10);
+      const height = parseInt(slot.params.ch || size[1], 10);
+      return [width, height];
     }
-    const size = slot.params.cf.toUpperCase().split('X');
-    const width = parseInt(slot.params.cw || size[0], 10);
-    const height = parseInt(slot.params.ch || size[1], 10);
-    return [width, height];
+    return [1, 1];
   }
 
+  /**
+   * Parses the native response from the Bid given.
+   */
   function nativeResponse(slot, bid) {
     if(slot.nativeParams) {
       const nativeAd = parse(bid.adm);
@@ -221,6 +275,9 @@ function PulsePointLiteAdapter() {
     return null;
   }
 
+  /**
+   * Parses the native response from the Bid given.
+   */
   function isNative(slot) {
     return slot.nativeParams;
   }
@@ -230,8 +287,15 @@ function PulsePointLiteAdapter() {
   };
 }
 
-// registering an alias for backwards compatibility.
+/**
+ * "pulseLite" will be the adapter name going forward. "pulsepointLite" to be
+ * deprecated, but kept here for backwards compatibility.
+ * Reason is key truncation. When the Publisher opts for sending all bids to DFP, then
+ * the keys get truncated due to the limit in key-size (20 characters, detailed
+ * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an 
+ * example, where keys got truncated when using the "pulsepointLite" alias - "hb_adid_pulsepointLi=1300bd87d59c4c2"
+*/
 adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulsepointLite');
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'ppt');
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulseLite');
 
 module.exports = PulsePointLiteAdapter;
