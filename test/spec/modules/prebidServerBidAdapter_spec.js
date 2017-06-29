@@ -3,6 +3,7 @@ import Adapter from 'modules/prebidServerBidAdapter';
 import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import cookie from 'src/cookie';
 
 let CONFIG = {
   accountId: '1',
@@ -106,6 +107,47 @@ const RESPONSE_NO_COOKIE = {
   }]
 };
 
+const RESPONSE_NO_PBS_COOKIE = {
+  'tid': '882fe33e-2981-4257-bd44-bd3b03945f48',
+  'status': 'no_cookie',
+  'bidder_status': [{
+    'bidder': 'rubicon',
+    'no_cookie': true,
+    'usersync': {
+      'url': 'https://pixel.rubiconproject.com/exchange/sync.php?p=prebid',
+      'type': 'redirect'
+    }
+  }, {
+    'bidder': 'pubmatic',
+    'no_cookie': true,
+    'usersync': {
+      'url': '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=https%3A%2F%2Fprebid.adnxs.com%2Fpbs%2Fv1%2Fsetuid%3Fbidder%3Dpubmatic%26uid%3D',
+      'type': 'iframe'
+    }
+  }, {
+    'bidder': 'appnexus',
+    'response_time_ms': 162,
+    'num_bids': 1,
+    'debug': [{
+      'request_uri': 'http://ib.adnxs.com/openrtb2',
+      'request_body': '{"id":"882fe33e-2981-4257-bd44-bd3b03945f48","imp":[{"id":"/19968336/header-bid-tag-0","banner":{"w":300,"h":250,"format":[{"w":300,"h":250}]},"secure":1,"ext":{"appnexus":{"placement_id":5914989}}}],"site":{"domain":"nytimes.com","page":"http://www.nytimes.com"},"device":{"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36","ip":"75.97.0.47"},"user":{"id":"3519479852893340159","buyeruid":"3519479852893340159"},"at":1,"tmax":1000,"source":{"fd":1,"tid":"882fe33e-2981-4257-bd44-bd3b03945f48"}}',
+      'response_body': '{"id":"882fe33e-2981-4257-bd44-bd3b03945f48"}',
+      'status_code': 200
+    }]
+  }],
+  'bids': [{
+    'bid_id': '123',
+    'code': 'div-gpt-ad-1460505748561-0',
+    'creative_id': '70928274',
+    'bidder': 'appnexus',
+    'price': 0.07425,
+    'adm': '<script type="application/javascript" src="https://secure-nym.adnxs.com/ab?e=wqT_3QLeCPBOXgQAAAMA1gAFAQi5krDKBRCwho2ft8LKoCMY_4PozveI7eswIAEqLQnbgoxDEVi5PxElYqnyDAKzPxkAAAAgXA8zQCHOzMzMzMy8PykzMwECsMM_MO2C6QI47RtA_AxIAlCSj-khWL-tNGAAaNfUTniivwSAAQGKAQNVU0SSAQEG8FSYAawCoAH6AagBAbABALgBAsABBcgBAtABCdgBAOABAPABAIoCkgF1ZignYScsIDE2OTc2MjksIDE0OTgxNTUzMjEpO3VmKCdyJywgNzA5MjgyNzQsQh4ABGMnATsQODY2NTVKPAAgZycsIDM5OTgzTh0AKGknLCA0OTM1MTUsMlcA8IeSAs0CIWhWRE5jZ2pfdVlVSUVKS1A2U0VZQUNDX3JUUXdBRGdBUUFCSV9BeFE3WUxwQWxnQVlKOEJhQUJ3QUhnQWdBRUFpQUVBa0FFQm1BRUJvQUVCcUFFRHNBRUF1UUhPRGRmZE16UERQOEVCemczWDNUTXp3el9KQVFBQUFBQUFBUEFfMlFFCQw0QUR3UC1BQnk0OGU5UUUFFChnQUlCaUFLMzdjRQEIQEIzNWNCaUFMZzZJNEVpQUxoDQgAag0IAG4NCABvAQhIa0FJSG1BSUFvQUlBcUFJR3RRSQVUAHYNCPBed0FJQXlBSUEwQUlBMkFJQTRBTDYtd2ZvQXBqaXI4b0Y4Z0lGZG1semFUSDRBZ0NBQXdHUUF3Q1lBd0dvQV8tNWhRaTZBd2xPV1UweU9qTTJNamcumgItIV93ajdud2oyUAHwTHY2MDBJQUFvQURvSlRsbE5Nam96TmpJNNgCAOACvtUr6gIWaHR0cDovL3d3dy5ueXRpbWVzLmNvbfICEQoGQURWX0lEEgcxNjk3NjI5BRQIQ1BHBRQt9AEUCAVDUAETBAgxTSXA8gINCghBRFZfRlJFURIBMPICGQoPQ1VTVE9NX01PREVMX0lEEgYxMzA1NTTyAh8KFjIcAFBMRUFGX05BTUUSBXZpc2kx8gIoCho2IgAIQVNUAUkcSUZJRUQSCjFBzvB4NDkxNDSAAwCIAwGQAwCYAxSgAwGqAwDAA6wCyAMA2APjBuADAOgDAPgDA4AEAJIECS9vcGVucnRiMpgEAKIECjc1Ljk3LjAuNDeoBACyBAoIABAAGAAgADAAuAQAwAQAyAQA0gQJTllNMjozNjI42gQCCAHgBADwBGGlIIgFAZgFAKAF_xEBuAGqBSQ4ODJmZTMzZS0yOTgxLTQyNTctYmQ0NC1iZDNiMDM5NDVmNDjABQDJBQAAAQI08D_SBQkJAAAAAAAAAAA.&s=d4bc7cd2e5d7e1910a591bc97df6ae9e63333e52&referrer=http%3A%2F%2Fwww.nytimes.com&pp=${AUCTION_PRICE}&"></script>',
+    'width': 300,
+    'height': 250,
+    'response_time_ms': 162
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter;
 
@@ -141,6 +183,8 @@ describe('S2S Adapter', () => {
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
+      sinon.stub(cookie, 'queueSync');
+      sinon.stub(cookie, 'persist');
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
         bids: [{
@@ -158,6 +202,8 @@ describe('S2S Adapter', () => {
       bidmanager.addBidResponse.restore();
       utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
+      cookie.queueSync.restore();
+      cookie.persist.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
@@ -266,6 +312,43 @@ describe('S2S Adapter', () => {
       server.respond();
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property('dealId', 'test-dealid');
+    });
+
+    it('registers bid responses when server requests cookie sync', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+      const ad_unit_code = bidmanager.addBidResponse.firstCall.args[0];
+      expect(ad_unit_code).to.equal('div-gpt-ad-1460505748561-0');
+
+      const response = bidmanager.addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('source', 's2s');
+
+      const bid_request_passed = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bid_request_passed).to.have.property('adId', '123');
+    });
+
+    it('queue cookie sync when no_cookie response', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledTwice(cookie.queueSync);
+    });
+
+    it('persist cookie sync when no_cookie response', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(cookie.persist);
     });
   });
 });

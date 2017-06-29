@@ -56,6 +56,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   const auctionInit = {
     timestamp: auctionStart,
     requestId,
+    timeout: cbTimeout
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
