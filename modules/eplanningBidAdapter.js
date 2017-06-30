@@ -4,7 +4,7 @@ var adaptermanager = require('src/adaptermanager');
 
 function EPlanningAdapter() {
   (function() {
-    var win = window, doc = win.document, pbjs = win.pbjs, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = location.protocol === 'https:' ? 'https:' : 'http:', ISV = 'aklc.img.e-planning.net';
+    var win = window, doc = win.document, pbjsVar = win.$$PREBID_GLOBAL$$, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = location.protocol === 'https:' ? 'https:' : 'http:', ISV = 'aklc.img.e-planning.net';
     function Hbpb() {
       var slots = (function() {
         var _data = [];
@@ -168,8 +168,8 @@ function EPlanningAdapter() {
         doc.body.appendChild(script);
       }
       function callback(response) {
-        if (pbjs && pbjs.processEPlanningResponse && typeof pbjs.processEPlanningResponse === 'function') {
-          pbjs.processEPlanningResponse(response);
+        if (pbjsVar && pbjsVar.processEPlanningResponse && typeof pbjsVar.processEPlanningResponse === 'function') {
+          pbjsVar.processEPlanningResponse(response);
         }
       }
       function syncUsers(cs) {
@@ -238,8 +238,8 @@ function EPlanningAdapter() {
     win.hbpb = win.hbpb || new Hbpb();
   })();
 
-  window.pbjs = window.pbjs || {};
-  window.pbjs.processEPlanningResponse = function(response) {
+  window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
+  window.$$PREBID_GLOBAL$$.processEPlanningResponse = function(response) {
     var bids, bidObject, i;
     if (response) {
       bids = response.bids;
