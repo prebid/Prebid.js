@@ -45,10 +45,12 @@
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^2.0.6",
     "gulp-eslint": "^3.0.1",
+    "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",
+    "gulp-if": "^2.0.2",
+    "gulp-jscs": "^3.0.2",
     "gulp-jsdoc-to-markdown": "^1.2.1",
     "gulp-karma": "0.0.4",
-    "gulp-mocha": "^2.2.0",
     "gulp-optimize-js": "^1.1.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
@@ -94,6 +96,7 @@
     "requirejs": "^2.1.20",
     "sinon": "^1.12.1",
     "string-replace-webpack-plugin": "0.0.3",
+    "through2": "^2.0.3",
     "uglify-js": "^2.8.10",
     "url-parse": "^1.0.5",
     "webpack": "^1.12.3",
@@ -102,6 +105,7 @@
   },
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
-    "core-js": "^2.4.1"
+    "core-js": "^2.4.1",
+    "gulp-sourcemaps": "^2.6.0"
   }
 }

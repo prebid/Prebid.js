@@ -51,17 +51,11 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 
 ### Build Optimization
 
-The standard build output contains all the available bidder adapters listed in `adapters.json`.
+The standard build output contains all the available modules from within the `modules` folder.
 
-You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the adapters you want, you can make your own adapters file.
+You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
-For example, in `path/to/your/list-of-adapters.json`, write:
-
-        [
-            "openx",
-            "rubicon",
-            "sovrn"
-        ]
+For example, when running the serve command: `gulp serve --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter`
 
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
@@ -71,26 +65,35 @@ Prebid now supports the `yarn` npm client. This is an alternative to using `npm`
 For more info about yarn see https://yarnpkg.com
 
 - Clone the repo, run `yarn install`
-- Duplicate `adapters.json` to e.g. `list-of-adapters.json`
-- Remove the unnecessary adapters from `list-of-adapters.json`
 - Then run the build:
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
+        
+Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
+
+    $ gulp build --modules=modules.json
+        
+With `modules.json` containing the following
+```json modules.json
+[
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "sovrnBidAdapter"
+]
+```
 
 **Build prebid.js using Yarn for bundling**
 
 In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
 
 - Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
-- Duplicate `node_modules/prebid.js/adapters.json` to under your project path, e.g. `path/to/your/list-of-adapters.json`
-- Remove the unnecessary adapters
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=path/to/your/list-of-modules.json
 
 Most likely your custom `prebid.js` will only change when there's:
 
-- A change in your list of adapters
+- A change in your list of modules
 - A new release of `prebid.js`
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
@@ -156,7 +159,7 @@ Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tr
 
 ### Add a Bidder Adapter
 
-To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
 Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
 
