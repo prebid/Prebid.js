@@ -90,6 +90,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       });
     });
 
+    // don't send empty requests
+    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+      return adUnit.bids.length !== 0;
+    });
+
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -101,10 +106,12 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
-        timeout: _s2sConfig.timeout
+        timeout: _s2sConfig.timeout,
+        src: CONSTANTS.S2S.SRC
       };
-      // Pushing server side bidder
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      if (bidderRequest.bids.length !== 0) {
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      }
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};

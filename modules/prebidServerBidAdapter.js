@@ -3,11 +3,11 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
+import { STATUS, S2S } from 'src/constants';
 import { queueSync, persist } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 
-const TYPE = 's2s';
+const TYPE = S2S.SRC;
 const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
 const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 
@@ -185,6 +185,6 @@ PrebidServer.createNew = function() {
   return new PrebidServer();
 };
 
-adaptermanager.registerBidAdapter(new PrebidServer, 'prebidServer');
+adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
 
 module.exports = PrebidServer;
