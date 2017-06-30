@@ -20,6 +20,8 @@ import { parseSizesInput } from '../src/utils';
  * standard Prebid targeting params (hb_adid, hb_bidder, etc).
  *
  * @param {string} iu This param *must* be included, in order for us to create a valid request.
+ * @param [string] description_url This field is required if you want Ad Exchange to bid on our ad unit...
+ *   but otherwise optional
  */
 
 /**
@@ -58,7 +60,6 @@ export default function buildDfpVideoUrl(options) {
 
   const derivedParams = {
     correlator: Date.now(),
-    description_url: encodeURIComponent(bid.descriptionUrl),
     sz: parseSizesInput(adUnit.sizes).join('|'),
     url: location.href,
   };

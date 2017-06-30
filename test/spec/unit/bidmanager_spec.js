@@ -80,7 +80,7 @@ describe('The Bid Manager', () => {
 
     describe('when the cache is functioning properly', () => {
       let stubProvider = useVideoCacheStubs({
-        store: [{ cacheId: 'FAKE_UUID' }],
+        store: [{ uuid: 'FAKE_UUID' }],
       });
 
       describe('when more bids are expected after this one', () => {

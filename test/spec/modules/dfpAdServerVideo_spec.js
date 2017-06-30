@@ -6,7 +6,6 @@ import { parseQS } from 'src/url';
 import adUnit from 'test/fixtures/video/adUnit';
 
 const bid = {
-  descriptionUrl: 'someUrl.com',
   videoCacheKey: 'abc',
   adserverTargeting: { },
 };
@@ -18,6 +17,7 @@ describe('The DFP video support module', () => {
       bid: bid,
       params: {
         'iu': 'my/adUnit',
+        'description_url': 'someUrl.com',
       }
     }));
 

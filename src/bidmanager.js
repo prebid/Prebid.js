@@ -88,6 +88,19 @@ exports.bidsBackAll = function () {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+  if (isValid()) {
+    prepareBidForAuction();
+
+    if (bid.mediaType === 'video') {
+      tryAddVideoBid(bid);
+    } else {
+      doCallbacksIfNeeded();
+      addBidToAuction(bid);
+    }
+  }
+
+  // Actual method logic is above. Everything below is helper functions.
+
   // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
   function isValid() {
     function errorMessage(msg) {
@@ -175,21 +188,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
       if (error) {
         utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
       } else {
-        bid.videoCacheKey = cacheIds[0].cacheId;
+        bid.videoCacheKey = cacheIds[0].uuid;
         addBidToAuction(bid);
       }
     });
-  }
-
-  if (isValid()) {
-    prepareBidForAuction();
-
-    if (bid.mediaType === 'video') {
-      tryAddVideoBid(bid);
-    } else {
-      doCallbacksIfNeeded();
-      addBidToAuction(bid);
-    }
   }
 };
 
