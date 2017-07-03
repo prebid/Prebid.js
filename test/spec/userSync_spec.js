@@ -1,6 +1,7 @@
-import userSync from '../../src/userSync';
 import { expect } from 'chai';
-var utils = require('../../src/utils');
+import userSync from '../../src/userSync';
+// Use require since we need to be able to write to these vars
+let utils = require('../../src/utils');
 
 describe('user sync', () => {
   let createImgObjectStub;
@@ -11,21 +12,20 @@ describe('user sync', () => {
     createImgObjectStub = sinon.stub(userSync, 'createImgObject');
     logWarnStub = sinon.stub(utils, 'logWarn');
     timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc, to) => { callbackFunc(); });
-    createImgObjectStub.reset();
-    logWarnStub.reset();
-    timeoutStub.reset();
   });
 
   afterEach(() => {
     createImgObjectStub.restore();
     logWarnStub.restore();
     timeoutStub.restore();
+    userSync.resetQueue();
   });
 
   it('should register and fires a pixel URL', () => {
     $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
     expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
@@ -35,19 +35,19 @@ describe('user sync', () => {
   });
 
   it('should delay firing a pixel by the expected amount', () => {
-console.log('timeout test');
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     // This implicitly tests cookie and browser support
     userSync.syncUsers(999);
     expect(timeoutStub.getCall(0).args[1]).to.equal(999);
-console.log('end test');
   });
 
   it('should register and fires multiple pixel URLs', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
     expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(1)).to.not.be.null;
     expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/2');
   });
 
@@ -56,6 +56,17 @@ console.log('end test');
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.be.null;
+  });
+
+  it('should only trigger syncs once per page', () => {
+    $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
+    userSync.registerSync('image', 'testBidder', 'http://example.com/1');
+    userSync.syncUsers();
+    userSync.registerSync('image', 'testBidder', 'http://example.com/2');
+    userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(1)).to.be.null;
   });
 
   // Since cookie support is only checked when the module is loaded this test will not work, but a test that covers

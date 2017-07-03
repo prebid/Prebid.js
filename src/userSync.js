@@ -2,14 +2,26 @@ import * as utils from 'src/utils';
 
 const userSync = exports;
 // A queue of user syncs for each adapter
-const queue = {
-  image: []
-};
-// Cookie support
-const cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+let queue;
+setQueue();
 
+// Since user syncs require cookie access we want to prevent sending syncs if cookies are not supported
+let cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+// Whether or not user syncs have been trigger on this page load
+let hasFired = false;
 // This is initialized in prebid.js, but some of the tests need it
 $$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
+
+/**
+ * @function setQueue
+ * @summary Sets the default empty queue
+ * @private
+ */
+function setQueue() {
+  queue = {
+    image: []
+  }
+}
 
 /**
  * @function getConfig
@@ -28,7 +40,7 @@ function getConfig(configKey) {
  * @private
  */
 function fireSyncs() {
-  if (!cookiesAreSupported) {
+  if (!cookiesAreSupported || hasFired) {
     return;
   }
 
@@ -49,6 +61,7 @@ function fireSyncs() {
     });
     // Reset the image pixel queue
     queue.image = [];
+    hasFired = true;
   }
   catch (e) {
     utils.logError('Error firing user syncs', e);
@@ -74,11 +87,11 @@ function hideAndIdElem(elementNode) {
 /**
  * @function createImgObject
  * @summary Create an img DOM element for sending a pixel. Made public for test purposes
- * @public
+ * @private
  * @params {string} url The URL for the image pixel
  * @returns {object} A valid DOM element
  */
-userSync.createImgObject = function(url) {
+userSync.createImgObject = (url) => {
   if (!url) {
     return;
   }
@@ -107,7 +120,7 @@ userSync.createImgObject = function(url) {
  * // registerSync(type, adapter, pixelUrl)
  * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
  */
-userSync.registerSync = function(type, bidder, ...data) {
+userSync.registerSync = (type, bidder, ...data) => {
   if (!utils.isArray(queue[type])) {
     return utils.logWarn(`User sync type "{$type}" not supported`);
   }
@@ -120,7 +133,7 @@ userSync.registerSync = function(type, bidder, ...data) {
  * @public
  * @params {int} timeout The delay in ms before syncing data - default 0
  */
-userSync.syncUsers = function(timeout = 0) {
+userSync.syncUsers = (timeout = 0) => {
   if (timeout) {
     return window.setTimeout(fireSyncs, Number(timeout));
   }
@@ -133,8 +146,18 @@ userSync.syncUsers = function(timeout = 0) {
  * @param {boolean} enableOverride Tells this module to expose the syncAll method to the public
  * @public
  */
-userSync.overrideSync = function(enableOverride) {
+userSync.overrideSync = (enableOverride) => {
   if (enableOverride) {
     $$PREBID_GLOBAL$$.userSync.syncAll = userSync.syncUsers;
   }
-}
+};
+
+/**
+ * @function resetQueue
+ * @summary Resets the queue and any other relevant data for starting fresh - likely only used for testing
+ * @public
+ */
+userSync.resetQueue = () => {
+  hasFired = false;
+  setQueue();
+};
