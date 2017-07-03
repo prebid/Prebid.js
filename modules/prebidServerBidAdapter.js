@@ -3,11 +3,11 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
+import { STATUS, S2S } from 'src/constants';
 import { queueSync, persist } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 
-const TYPE = 's2s';
+const TYPE = S2S.SRC;
 const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
 const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
 
@@ -106,7 +106,7 @@ function PrebidServer() {
     try {
       result = JSON.parse(response);
 
-      if (result.status === 'OK') {
+      if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie) {
@@ -127,6 +127,7 @@ function PrebidServer() {
             }
 
             let bidObject = bidfactory.createBid(status, bidRequest);
+            bidObject.source = TYPE;
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
@@ -150,7 +151,7 @@ function PrebidServer() {
             .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
             .forEach(bidRequest => {
               let bidObject = bidfactory.createBid(STATUS.NO_BID, bidRequest);
-
+              bidObject.source = TYPE;
               bidObject.adUnitCode = bidRequest.placementCode;
               bidObject.bidderCode = bidRequest.bidder;
 
@@ -158,7 +159,7 @@ function PrebidServer() {
             });
         });
       }
-      else if (result.status === 'no_cookie') {
+      if (result.status === 'no_cookie') {
         // cookie sync
         persist(cookiePersistUrl, cookiePersistMessage);
       }
@@ -184,6 +185,6 @@ PrebidServer.createNew = function() {
   return new PrebidServer();
 };
 
-adaptermanager.registerBidAdapter(new PrebidServer, 'prebidServer');
+adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
 
 module.exports = PrebidServer;

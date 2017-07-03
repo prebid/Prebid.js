@@ -18,7 +18,6 @@ var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
-var zip = require('gulp-zip');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var optimizejs = require('gulp-optimize-js');
@@ -36,13 +35,13 @@ var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // Tasks
-gulp.task('default', ['clean', 'webpack']);
+gulp.task('default', ['webpack']);
 
-gulp.task('serve', ['clean', 'lint', 'build-bundle-dev', 'watch', 'test']);
+gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
-gulp.task('serve-nw', ['clean', 'lint', 'devpack', 'webpack', 'watch', 'e2etest']);
+gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['clean', 'lint', 'webpack', 'test']);
+gulp.task('run-tests', ['lint', 'test']);
 
 gulp.task('build', ['build-bundle-prod']);
 
@@ -131,13 +130,6 @@ gulp.task('webpack', ['clean'], function () {
     .pipe(connect.reload());
 });
 
-//zip up for release
-gulp.task('zip', ['clean', 'webpack'], function () {
-  return gulp.src(['build/dist/*', 'integrationExamples/gpt/*'])
-    .pipe(zip(packageNameVersion + '.zip'))
-    .pipe(gulp.dest('./'));
-});
-
 // Karma Continuous Testing
 // Pass your browsers by using --browsers=chrome,firefox,ie9
 // Run CI by passing --watch
@@ -222,7 +214,6 @@ gulp.task('watch', function () {
     'loaders/**/*.js',
     'test/spec/loaders/**/*.js'
   ], ['lint']);
-  gulp.watch(['integrationExamples/gpt/*.html'], ['test']);
   connect.server({
     https: argv.https,
     port: port,
@@ -252,7 +243,7 @@ gulp.task('docs', ['clean-docs'], function () {
     .pipe(gulp.dest('docs'));
 });
 
-gulp.task('e2etest', function() {
+gulp.task('e2etest', ['devpack', 'webpack'], function() {
   var cmdQueue = [];
   if(argv.browserstack) {
     var browsers = require('./browsers.json');
