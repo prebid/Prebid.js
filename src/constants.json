@@ -37,8 +37,7 @@
     "BID_RESPONSE": "bidResponse",
     "BID_WON": "bidWon",
     "SET_TARGETING": "setTargeting",
-    "REQUEST_BIDS": "requestBids",
-    "SET_S2S_CONFIG": "setS2sConfig"
+    "REQUEST_BIDS": "requestBids"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
