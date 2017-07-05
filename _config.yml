@@ -129,6 +129,25 @@ nav_sections:
     code: download
     name: DOWNLOAD
 
+  - top_nav: prebid-mobile
+    code: prebid-mobile
+    name: PREBID MOBILE
+  - top_nav: prebid-mobile
+    code: prebid-mobile-pbs
+    name: PREBID SERVER
+  - top_nav: prebid-mobile
+    code: prebid-mobile-ios
+    name: FOR IOS
+  - top_nav: prebid-mobile
+    code: prebid-mobile-android
+    name: FOR ANDROID
+  - top_nav: prebid-mobile
+    code: prebid-mobile-adops
+    name: FOR ADOPS
+  - top_nav: prebid-mobile
+    code: prebid-mobile-contributors
+    name: FOR CONTRIBUTORS
+
 
 port: 8080
 
