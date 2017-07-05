@@ -16,6 +16,13 @@ function Spotx() {
       return;
     }
     bidReq = bidRequest.bids[0] || [];
+
+    if(!validateParams(bidReq))
+    {
+      console.log("Bid Request does not contain valid parameters.");
+      return;
+    }
+
     loadDSDK();
   };
 
@@ -83,7 +90,6 @@ function Spotx() {
 
       bid.cpm = KVP_Object.spotx_bid;
       bid.vastUrl = url;
-      bid.descriptionUrl = url;
       bid.ad = url;
 
       bid.width = bidReq.sizes[0][0];
@@ -101,6 +107,20 @@ function Spotx() {
     else {
       bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.GOOD, response.bids[0]));
     }
+  }
+
+  function validateParams(request){
+    if(typeof request.params !== "object" && typeof request.params.video !== "object")
+    {
+      return false;
+    }
+
+    // Check that all of our required parameters are defined.
+    if(bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined)
+    {
+      return false;
+    }
+    return true;
   }
 
   return {
