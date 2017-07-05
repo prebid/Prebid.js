@@ -1,7 +1,7 @@
 ---
 layout: example
 title: Adjust Price
-description: Adjust Price Example with DFP GPT
+description: Adjust Bid Price
 
 top_nav_section: dev_docs
 nav_section: quick-start
@@ -9,7 +9,8 @@ nav_section: quick-start
 hide: true
 
 about:
-- <strong>Adjust bidder price for real earnings</strong>
+- <strong>Adjust bidder price to show real earnings</strong>
+- This may be necessary because some bidders return net price, while others return gross price
 - Integration with DFP's GPT single request asynchronous mode
 - One set of line items for all bidders
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>)
