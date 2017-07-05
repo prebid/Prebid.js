@@ -11,7 +11,7 @@ hide: true
 about:
 - Simplified price bucket setup with one function call to <a href="/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity"><code>pbjs.setPriceGranularity()</code></a>
 
-jsfiddle_link: jsfiddle.net/prebid/bp9magow/96/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/bp9magow/98/embedded/html,result
 code_height: 2641
 code_lines: 121
 
