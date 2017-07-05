@@ -1,7 +1,7 @@
 ---
 layout: example
 title: Custom Price Bucket
-description: Custom Price Bucket Prebid.js Example with DFP GPT
+description: Custom Price Bucket Example
 
 top_nav_section: dev_docs
 nav_section: quick-start
@@ -44,6 +44,9 @@ In this example, the keywords sent to DFP are changed from the default `hb_pb` t
 This logic may be driven by the effort to reduce the number of line items while capturing the most accurate bid prices.
 
 You can see the effect of this customization if you click into the Result tab of this JSFiddle gadget.
+
+Note that this example doesn't show the default Prebid.org ad (instead returning the house ad) because we don't have the targeting set up for the custom keyword `"custom_bid_price_key"`.
+
 </div>
 
 
