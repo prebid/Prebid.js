@@ -15,7 +15,7 @@ about:
 - Standard keyword targeting setup (<a href="/dev-docs/publisher-api-reference.html#bidderSettingsDefault">reference</a>)
 - Standard price granularity
 
-jsfiddle_link: jsfiddle.net/prebid/amg49spy/13/embedded/html,result
+jsfiddle_link: jsfiddle.net/prebid/amg49spy/18/embedded/html,result
 code_height: 2662
 code_lines: 122
 
