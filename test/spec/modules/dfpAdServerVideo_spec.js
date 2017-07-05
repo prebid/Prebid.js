@@ -30,7 +30,7 @@ describe('The DFP video support module', () => {
     expect(queryParams).to.have.property('env', 'vp');
     expect(queryParams).to.have.property('gdfp_req', '1');
     expect(queryParams).to.have.property('iu', 'my/adUnit');
-    expect(queryParams).to.have.property('output', 'xml_vast2');
+    expect(queryParams).to.have.property('output', 'xml_vast3');
     expect(queryParams).to.have.property('sz', '640x480');
     expect(queryParams).to.have.property('unviewed_position_start', '1');
     expect(queryParams).to.have.property('url');

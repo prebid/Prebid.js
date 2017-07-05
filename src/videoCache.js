@@ -10,10 +10,8 @@
  */
 
 import { ajax } from './ajax';
-import { tryAppendQueryString } from './utils';
 
 const PUT_URL = 'https://prebid.adnxs.com/pbc/v1/put'
-const EMPTY_VAST_RESPONSE = '<VAST version="2.0"></VAST>'
 
 /**
  * These are the properties required on a Bid in order to cache and retrieve it.
@@ -32,8 +30,8 @@ function wrapURI(uri) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
-  return `<VAST version="2.0">
-    <Ad id="">
+  return `<VAST version="3.0">
+    <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>

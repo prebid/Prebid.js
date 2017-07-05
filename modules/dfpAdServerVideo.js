@@ -39,7 +39,7 @@ import { parseSizesInput } from '../src/utils';
 const defaultParamConstants = {
   env: 'vp',
   gdfp_req: 1,
-  output: 'xml_vast2',
+  output: 'xml_vast3',
   unviewed_position_start: 1,
 };
 

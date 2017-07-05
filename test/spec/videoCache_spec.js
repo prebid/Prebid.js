@@ -3,7 +3,6 @@ import chai from 'chai';
 import { store } from 'src/videoCache';
 
 const should = chai.should();
-const EMPTY_VAST_RESPONSE = '<VAST version="3.0"></VAST>'
 
 describe('The video cache', () => {
   function assertError(callbackSpy) {
@@ -63,8 +62,8 @@ describe('The video cache', () => {
 
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{
-          value: `<VAST version="2.0">
-    <Ad id="">
+          value: `<VAST version="3.0">
+    <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
