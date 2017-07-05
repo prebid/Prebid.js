@@ -49,4 +49,4 @@ module.exports = {
     "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off"
   }
-}
+};
