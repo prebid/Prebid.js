@@ -77,3 +77,6 @@ typings/
 
 # MacOS system files
 .DS_Store
+
+# Freestar build storage folder
+freestar-builds
