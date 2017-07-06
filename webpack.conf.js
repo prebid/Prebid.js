@@ -22,26 +22,34 @@ module.exports = {
     jsonpFunction: 'pbjsChunk'
   },
   module: {
-    loaders: [
+    rules: [
+      {
+        test: /\.json$/,
+        loader: 'json-loader'
+      },
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
-        loader: 'babel-loader',
-        query: {
-          presets: ['es2015']
-        }
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['es2015']
+            }
+          }
+        ]
       },
       { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
         test: /\.js$/,
         include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
-        loader: 'babel-loader',
-        query: {
-          presets: ['es2015']
-        }
-      },
-      {
-        test: /\.json$/,
-        loader: 'json-loader'
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['es2015']
+            }
+          }
+        ],
       },
       {
         test: /constants.json$/,
@@ -57,20 +65,20 @@ module.exports = {
           ]
         })
       },
-        {
-          test: /\.js$/,
-          include: /(src|test|modules|integrationExamples)/,
-          loader: StringReplacePlugin.replace({
-            replacements: [
-              {
-                pattern: /\$\$PREBID_GLOBAL\$\$/g,
-                replacement: function (match, p1, offset, string) {
-                    return prebid.globalVarName;
-                }
+      {
+        test: /\.js$/,
+        include: /(src|test|modules|integrationExamples)/,
+        loader: StringReplacePlugin.replace({
+          replacements: [
+            {
+              pattern: /\$\$PREBID_GLOBAL\$\$/g,
+              replacement: function (match, p1, offset, string) {
+                return prebid.globalVarName;
               }
-            ]
-          })
-        }
+            }
+          ]
+        })
+      }
     ]
   },
   plugins: [
