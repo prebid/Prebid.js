@@ -13,16 +13,10 @@ var neverBundle = [
 module.exports = {
   devtool: 'source-map',
   resolve: {
-    root: [
-      path.resolve('.')
+    modules: [
+      path.resolve('.'),
+      'node_modules'
     ],
-    modulesDirectories: ['', 'node_modules']
-  },
-  resolveLoader: {
-    root: [
-      path.resolve('./loaders'),
-      path.resolve('./node_modules')
-    ]
   },
   output: {
     jsonpFunction: 'pbjsChunk'
@@ -32,7 +26,7 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
-        loader: 'babel',
+        loader: 'babel-loader',
         query: {
           presets: ['es2015']
         }
@@ -40,14 +34,14 @@ module.exports = {
       { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
         test: /\.js$/,
         include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
-        loader: 'babel',
+        loader: 'babel-loader',
         query: {
           presets: ['es2015']
         }
       },
       {
         test: /\.json$/,
-        loader: 'json'
+        loader: 'json-loader'
       },
       {
         test: /constants.json$/,

@@ -3,10 +3,10 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var argv = require('yargs').argv;
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
-var webpack = require('webpack-stream');
+var webpack = require('webpack');
+var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
 var karma = require('gulp-karma');
@@ -29,7 +29,6 @@ var fs = require('fs');
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
 var port = 9999;
@@ -99,7 +98,7 @@ gulp.task('devpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpack(webpackConfig))
+    .pipe(webpackStream(webpackConfig, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
@@ -112,7 +111,7 @@ gulp.task('webpack', ['clean'], function () {
     webpackConfig.output.filename = 'prebid.' + argv.tag + '.js';
   }
 
-  webpackConfig.devtool = null;
+  delete webpackConfig.devtool;
 
   var externalModules = helpers.getArgModules();
 
@@ -121,7 +120,7 @@ gulp.task('webpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpack(webpackConfig))
+    .pipe(webpackStream(webpackConfig, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))

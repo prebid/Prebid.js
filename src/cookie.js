@@ -1,5 +1,5 @@
 const cookie = exports;
-import * as utils from 'utils';
+import * as utils from './utils';
 
 const queue = [];
 
