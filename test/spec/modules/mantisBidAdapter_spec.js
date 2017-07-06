@@ -114,7 +114,7 @@ describe('mantis adapter tests', function () {
       expect(serverCall).to.string('version=1');
     });
 
-		/* tests below are to just adhere to code coverage requirements, but it is already tested in our own libraries/deployment process */
+    /* tests below are to just adhere to code coverage requirements, but it is already tested in our own libraries/deployment process */
     it('should send uuid from window if set', () => {
       sandbox.stub(adloader, 'loadScript');
 
@@ -162,7 +162,7 @@ describe('mantis adapter tests', function () {
       var serverCall = adloader.loadScript.firstCall.args[0];
 
       expect(serverCall).to.string('mobile=true&');
-			// expect(serverCall).to.string('url=bar&');
+      // expect(serverCall).to.string('url=bar&');
     });
   });
 });

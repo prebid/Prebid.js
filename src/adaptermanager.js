@@ -161,7 +161,7 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-exports.videoAdapters = [];  // added by adapterLoader for now
+exports.videoAdapters = []; // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
