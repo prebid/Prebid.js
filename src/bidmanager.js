@@ -50,8 +50,8 @@ function bidsBackAdUnit(adUnitCode) {
     .reduce(flatten, [])
     .map(bid => {
       return bid.bidder === 'indexExchange'
-          ? bid.sizes.length
-          : 1;
+        ? bid.sizes.length
+        : 1;
     }).reduce(add, 0);
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
@@ -293,8 +293,8 @@ function processCallbacks(callbackQueue, singleAdUnitCode) {
     callbackQueue.forEach(callback => {
       const adUnitCodes = singleAdUnitCode || $$PREBID_GLOBAL$$._adUnitCodes;
       const bids = [$$PREBID_GLOBAL$$._bidsReceived
-                      .filter(adUnitsFilter.bind(this, adUnitCodes))
-                      .reduce(groupByPlacement, {})];
+        .filter(adUnitsFilter.bind(this, adUnitCodes))
+        .reduce(groupByPlacement, {})];
 
       callback.apply($$PREBID_GLOBAL$$, bids);
     });

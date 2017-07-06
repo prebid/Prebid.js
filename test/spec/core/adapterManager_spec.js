@@ -32,7 +32,7 @@ describe('adapterManager tests', () => {
 
     it('invokes callBids with only s2s bids', () => {
       const adUnits = getAdUnits();
-    // adUnit without appnexus bidder
+      // adUnit without appnexus bidder
       adUnits.push({
         'code': '123',
         'sizes': [300, 250],
