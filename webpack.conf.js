@@ -24,10 +24,6 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.json$/,
-        loader: 'json-loader'
-      },
-      {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
         use: [
@@ -50,6 +46,10 @@ module.exports = {
             }
           }
         ],
+      },
+      {
+        test: /\.json$/,
+        loader: 'json-loader'
       },
       {
         test: /constants.json$/,
