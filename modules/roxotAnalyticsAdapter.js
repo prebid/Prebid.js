@@ -7,7 +7,6 @@ const utils = require('src/utils');
 
 const url = '//pa.rxthdr.com/analytic';
 const analyticsType = 'endpoint';
-const userSyncUrl = '//pa.rxthdr.com/user_sync';
 
 let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
 let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
@@ -54,16 +53,6 @@ function flushEvents() {
   eventStack.events = [];
 }
 
-function setIframe(src) {
-  let iframe = document.createElement('IFRAME');
-  iframe.setAttribute('src', src);
-  iframe.setAttribute('style', 'display:none');
-  iframe.setAttribute('width', '0');
-  iframe.setAttribute('height', '0');
-  iframe.setAttribute('frameborder', '0');
-  document.body.appendChild(iframe);
-}
-
 let roxotAdapter = Object.assign(adapter({url, analyticsType}),
   {
     track({eventType, args}) {
@@ -105,7 +94,6 @@ roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
-  setIframe(userSyncUrl);
 };
 
 adaptermanager.registerAnalyticsAdapter({
