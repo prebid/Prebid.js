@@ -41,7 +41,8 @@ function send(eventType, data, sendDataType) {
   ajax(
     fullUrl,
     (result) => utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result),
-    JSON.stringify(data)
+    JSON.stringify(data),
+    {withCredentials: true},
   );
 }
 
