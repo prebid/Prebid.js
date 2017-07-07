@@ -9,7 +9,9 @@
 
 > A free and open source library for publishers to quickly implement header bidding.
 
-This README is for developers who want to contribute to Prebid.js.  For user-facing documentation, see [Prebid.org](http://prebid.org).
+This README is for developers who want to contribute to Prebid.js.
+Additional documentation can be found at [the Prebid homepage](http://prebid.org).
+Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
 **Table of Contents**
 
@@ -26,13 +28,13 @@ This README is for developers who want to contribute to Prebid.js.  For user-fac
     $ cd Prebid.js
     $ yarn install
 
-Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+Prebid also supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
 
-For more info about yarn see https://yarnpkg.com
+For more info, see [the Yarn documentation](https://yarnpkg.com).
 
 <a name="Build"></a>
 
-## Build for Dev
+## Build for Development
 
 To build the project on your local machine, run:
 
@@ -49,17 +51,11 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 
 ### Build Optimization
 
-The standard build output contains all the available bidder adapters listed in `adapters.json`.
+The standard build output contains all the available modules from within the `modules` folder.
 
-You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the adapters you want, you can make your own adapters file.
+You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
-For example, in `path/to/your/list-of-adapters.json`, write:
-
-        [
-            "openx",
-            "rubicon",
-            "sovrn"
-        ]
+For example, when running the serve command: `gulp serve --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter`
 
 Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
@@ -69,26 +65,35 @@ Prebid now supports the `yarn` npm client. This is an alternative to using `npm`
 For more info about yarn see https://yarnpkg.com
 
 - Clone the repo, run `yarn install`
-- Duplicate `adapters.json` to e.g. `list-of-adapters.json`
-- Remove the unnecessary adapters from `list-of-adapters.json`
 - Then run the build:
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
+        
+Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
+
+    $ gulp build --modules=modules.json
+        
+With `modules.json` containing the following
+```json modules.json
+[
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "sovrnBidAdapter"
+]
+```
 
 **Build prebid.js using Yarn for bundling**
 
 In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
 
 - Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
-- Duplicate `node_modules/prebid.js/adapters.json` to under your project path, e.g. `path/to/your/list-of-adapters.json`
-- Remove the unnecessary adapters
 - Run the `prebid.js` build under the `node_modules/prebid.js/` folder
 
-        $ gulp build --adapters path/to/your/list-of-adapters.json
+        $ gulp build --modules=path/to/your/list-of-modules.json
 
 Most likely your custom `prebid.js` will only change when there's:
 
-- A change in your list of adapters
+- A change in your list of modules
 - A new release of `prebid.js`
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
@@ -148,19 +153,21 @@ A watch is also in place that will run continuous tests in the terminal as you e
 
 Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
 
+For guidelines, see [Contributing](./CONTRIBUTING.md).
+
 Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
 
 ### Add a Bidder Adapter
 
-To add a bidder adapter, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
 
 Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
 
 ### Code Quality
 
-Code quality is defined by `.jscs` and `.jshint` files and errors are reported in the terminal.
+Code quality is defined by `.eslintrc` and errors are reported in the terminal.
 
-If you are contributing code, you should configure your editor with the provided `.jscs` and `.jshint` settings.
+If you are contributing code, you should [configure your editor](http://eslint.org/docs/user-guide/integrations#editors) with the provided `.eslintrc` settings.
 
 ### Unit Testing with Karma
 
@@ -188,7 +195,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE9+ and modern browsers.
+Prebid.js is supported on IE10+ and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
