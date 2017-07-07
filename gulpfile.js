@@ -198,7 +198,7 @@ gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test'
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
-    .pipe(shell('cat build/coverage/lcov/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+    .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 });
 
 // Watch Task with Live Reload

@@ -74,7 +74,7 @@ module.exports = function (config) {
         html: {
           subdir: 'karma_html',
           urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-          reportName: 'report' // report summary filename; browser info by default
+          // reportName: 'report' // report summary filename; browser info by default
         }
       }
     },
@@ -115,7 +115,6 @@ module.exports = function (config) {
       'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
-      // 'karma-html-reporter',
       'karma-chrome-launcher',
       'karma-sauce-launcher',
       'karma-firefox-launcher',
