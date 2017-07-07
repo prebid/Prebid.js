@@ -43,7 +43,7 @@
     "gulp-babel": "^6.1.2",
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
-    "gulp-connect": "^2.0.6",
+    "gulp-connect": "^5.0.0",
     "gulp-eslint": "^4.0.0",
     "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",

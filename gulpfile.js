@@ -133,7 +133,7 @@ gulp.task('webpack', ['clean'], function () {
 // Karma Continuous Testing
 // Pass your browsers by using --browsers=chrome,firefox,ie9
 // Run CI by passing --watch
-gulp.task('test', ['clean'], function () {
+gulp.task('test', ['clean'], function (done) {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
 
@@ -178,7 +178,7 @@ gulp.task('test', ['clean'], function () {
     browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
     configFile: path.join(__dirname, 'karma.conf.js'),
     singleRun: true
-  }).start();
+  }, done).start();
 });
 
 // Small task to load coverage reports in the browser
