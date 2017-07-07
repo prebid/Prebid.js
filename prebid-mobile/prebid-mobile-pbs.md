@@ -60,6 +60,6 @@ Example config with AppNexus demand source:
 
 ## Step 4. Implement Prebid Mobile on your app
 
-By following [iOS developer docs]({{site.github.url}}/prebid-mobile/quickstart-ios.html) or the [Android developer docs]({{site.github.url}}/prebid-mobile/quickstart-android.html).
+By following [iOS developer docs]({{site.github.url}}/prebid-mobile/code-integration-ios.html) or the [Android developer docs]({{site.github.url}}/prebid-mobile/code-integration-android.html).
 
 </div>
