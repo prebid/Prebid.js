@@ -203,7 +203,6 @@ gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test'
 
 // Watch Task with Live Reload
 gulp.task('watch', function () {
-
   gulp.watch([
     'src/**/*.js',
     'modules/**/*.js',

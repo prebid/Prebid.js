@@ -60,7 +60,7 @@ module.exports = function (config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['junit', 'coverage-istanbul'] : ['progress', 'coverage-istanbul'],
+    reporters: CI_MODE ? ['coverage-istanbul'] : ['progress', 'coverage-istanbul'],
 
     // junit reporter config
     junitReporter: {
@@ -114,7 +114,6 @@ module.exports = function (config) {
       'karma-expect',
       'karma-sinon-ie',
       'karma-webpack',
-      'karma-junit-reporter',
       'karma-chrome-launcher',
       'karma-sauce-launcher',
       'karma-firefox-launcher',
