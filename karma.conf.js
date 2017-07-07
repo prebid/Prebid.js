@@ -15,8 +15,6 @@ webpackConfig.module.rules.push({
 // remove optimize plugin for tests
 webpackConfig.plugins.pop();
 
-var CI_MODE = process.env.NODE_ENV === 'ci';
-
 module.exports = function (config) {
   config.set({
 
@@ -57,15 +55,7 @@ module.exports = function (config) {
       noInfo: true
     },
 
-    // test results reporter to use
-    // possible values: 'dots', 'progress'
-    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['coverage-istanbul'] : ['progress', 'coverage-istanbul'],
-
-    // junit reporter config
-    junitReporter: {
-      outputDir: 'test'
-    },
+    reporters: ['coverage-istanbul'],
 
     coverageIstanbulReporter: {
       reports: ['html', 'lcovonly', 'text-summary'],
