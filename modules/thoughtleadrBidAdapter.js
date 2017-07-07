@@ -76,7 +76,7 @@ var ThoughtleadrAdapter = (function () {
     var uid = getUid();
     var size = ThoughtleadrAdapter.getSizes(bid.sizes);
 
-    ajax_1.ajax('' + URL_API + bid.placementCode + '/header-bid.json?uid=' + uid, function (response) {
+    ajax_1.ajax('' + URL_API + bid.params.placementId + '/header-bid.json?uid=' + uid, function (response) {
       var wonBid = JSON.parse(response);
       if (wonBid.cookie_syncs) {
         _this.syncCookies(wonBid.cookie_syncs);
