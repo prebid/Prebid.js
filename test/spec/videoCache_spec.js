@@ -57,11 +57,12 @@ describe('The video cache', () => {
 
       const request = requests[0];
       request.method.should.equal('POST');
-      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/put');
+      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
 
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{
+          type: 'xml',
           value: `<VAST version="3.0">
     <Ad>
       <Wrapper>

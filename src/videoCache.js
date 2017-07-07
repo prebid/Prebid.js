@@ -11,7 +11,7 @@
 
 import { ajax } from './ajax';
 
-const PUT_URL = 'https://prebid.adnxs.com/pbc/v1/put'
+const PUT_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
 
 /**
  * These are the properties required on a Bid in order to cache and retrieve it.
@@ -50,7 +50,8 @@ function wrapURI(uri) {
  */
 function toStorageRequest(bid) {
   return {
-    'value': wrapURI(bid.vastUrl)
+    type: 'xml',
+    value: wrapURI(bid.vastUrl)
   };
 }
 
