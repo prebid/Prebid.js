@@ -1,13 +1,16 @@
-// Karma configuration
-// Generated on Thu Aug 07 2014 09:45:28 GMT-0700 (PDT)
+// This configures Karma, describing how to run the tests and where to output code coverage reports.
+//
+// For more information, see http://karma-runner.github.io/0.13/config/configuration-file.html
+
 var webpackConfig = require('./webpack.conf');
-webpackConfig.module.postLoaders = [
-  {
-    test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-    loader: 'istanbul-instrumenter'
-  }
-];
+var path = require('path');
+
+webpackConfig.module.rules.push({
+  enforce: 'post',
+  exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
+  loader: 'istanbul-instrumenter-loader',
+  test: /\.js$/
+});
 
 // remove optimize plugin for tests
 webpackConfig.plugins.pop();
@@ -33,12 +36,6 @@ module.exports = function (config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
-    client: {
-      mocha: {
-        reporter: 'html'
-      }
-    },
-
     // list of files / patterns to load in the browser
     files: [
       'test/helpers/prebidGlobal.js',
@@ -51,8 +48,7 @@ module.exports = function (config) {
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
       'test/helpers/prebidGlobal.js': ['webpack'],
-      '!test/**/*_spec.js': 'coverage',
-      'src/**/*.js': ['webpack', 'coverage']
+      'src/**/*.js': ['webpack']
     },
 
     // WebPack Related
@@ -64,26 +60,23 @@ module.exports = function (config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: CI_MODE ? ['junit', 'coverage'] : ['progress', 'html', 'coverage'],
+    reporters: CI_MODE ? ['junit', 'coverage-istanbul'] : ['progress', 'coverage-istanbul'],
 
     // junit reporter config
     junitReporter: {
       outputDir: 'test'
     },
 
-    // optionally, configure the reporter
-    coverageReporter: {
-      reporters: [
-        { type: 'html', dir: './build/coverage/' },
-        { type: 'text', dir: './build/coverage/' },
-        { type: 'lcov', dir: './build/coverage/lcov', subdir: '.' }
-      ]
-    },
-
-    htmlReporter: {
-      outputDir: 'build/coverage/karma_html', // where to put the reports
-      urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-      reportName: 'report' // report summary filename; browser info by default
+    coverageIstanbulReporter: {
+      reports: ['html', 'lcovonly', 'text-summary'],
+      dir: path.join(__dirname, 'build', 'coverage'),
+      'report-config': {
+        html: {
+          subdir: 'karma_html',
+          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
+          reportName: 'report' // report summary filename; browser info by default
+        }
+      }
     },
 
     // web server port
@@ -107,22 +100,22 @@ module.exports = function (config) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: false,
-    browserDisconnectTimeout : 10000, // default 2000
-    browserDisconnectTolerance : 1, // default 0
-    browserNoActivityTimeout : 4*60*1000, //default 10000
-    captureTimeout : 4*60*1000, //default 60000
+    browserDisconnectTimeout: 10000, // default 2000
+    browserDisconnectTolerance: 1, // default 0
+    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
+    captureTimeout: 4 * 60 * 1000, // default 60000
 
     plugins: [
       'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
-      'karma-coverage',
+      'karma-coverage-istanbul-reporter',
       'karma-es5-shim',
       'karma-mocha',
       'karma-expect',
       'karma-sinon-ie',
       'karma-webpack',
       'karma-junit-reporter',
-      'karma-html-reporter',
+      // 'karma-html-reporter',
       'karma-chrome-launcher',
       'karma-sauce-launcher',
       'karma-firefox-launcher',

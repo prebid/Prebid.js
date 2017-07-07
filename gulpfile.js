@@ -5,11 +5,12 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
+var path = require('path');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
-var karma = require('gulp-karma');
+var KarmaServer = require('karma').Server;
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
@@ -172,12 +173,12 @@ gulp.task('test', ['clean'], function () {
     ];
   }
 
-  return gulp.src('lookAtKarmaConfJS')
-    .pipe(karma({
-      browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
-      configFile: 'karma.conf.js',
-      action: (argv.watch) ? 'watch' : 'run'
-    }));
+  new KarmaServer({
+    action: (argv.watch) ? 'watch' : 'run',
+    browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
+    configFile: path.join(__dirname, 'karma.conf.js'),
+    singleRun: true
+  }).start();
 });
 
 // Small task to load coverage reports in the browser
