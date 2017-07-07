@@ -186,11 +186,11 @@ gulp.task('coverage', function (done) {
   var coveragePort = 1999;
 
   connect.server({
-    port: 1999,
-    root: 'build/coverage',
+    port: coveragePort,
+    root: 'build/coverage/karma_html',
     livereload: false
   });
-  opens('http://localhost:' + coveragePort + '/coverage/');
+  opens('http://localhost:' + coveragePort);
   done();
 });
 
