@@ -39,22 +39,22 @@ function getUid() {
   return uid;
 }
 
-function parseElement(tag) {
-  var tmp = document.createElement('div');
-  tmp.innerHTML = tag;
-  var els = tmp.getElementsByTagName('*');
+function writeFriendlyFrame(html, container) {
+  const iframe = document.createElement("iframe");
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
 
-  if (els.length > 0) {
-    var el = els[0];
-    var newEl = document.createElement(el.nodeName);
-    for (var i = el.attributes.length; i--;) {
-      var attr = el.attributes.item(i);
-      newEl.setAttribute(attr.name, attr.value);
-    }
-    newEl.innerHTML = el.innerHTML;
-    return newEl;
-  }
+  iframe.src = "javascript:false";
+  container.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open().write(`<html><head></head><body>${html}</body></html>`);
+  doc.close();
+
+  return iframe;
 }
+
 
 var ThoughtleadrAdapter = (function () {
   function ThoughtleadrAdapter() {
@@ -116,10 +116,7 @@ var ThoughtleadrAdapter = (function () {
 
     for (var _i = 0, tags_1 = tags; _i < tags_1.length; _i++) {
       var tag = tags_1[_i];
-      var element = parseElement(tag);
-      if (element) {
-        container.appendChild(element);
-      }
+      writeFriendlyFrame(tag, container);
     }
   };
 
