@@ -5,7 +5,7 @@
 var path = require('path')
 var karmaConstants = require('karma').constants;
 
-module.exports = function(codeCoverage, browserstack) {
+function newWebpackConfig(codeCoverage) {
   var webpackConfig = require('./webpack.conf');
 
   // remove optimize plugin for tests
@@ -19,7 +19,10 @@ module.exports = function(codeCoverage, browserstack) {
       test: /\.js$/
     })
   }
+  return webpackConfig;
+}
 
+function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
     'karma-coverage-istanbul-reporter',
@@ -39,6 +42,72 @@ module.exports = function(codeCoverage, browserstack) {
     plugins.push('karma-script-launcher');
     plugins.push('karma-ie-launcher');
   }
+  return plugins;
+}
+
+function setReporters(karmaConf, codeCoverage, browserstack) {
+  if (browserstack) {
+    karmaConf.reporters = []; // Removes the default 'progress' reporter, which totally floods the logs
+  }
+  if (codeCoverage) {
+    karmaConf.reporters.push('coverage-istanbul');
+    karmaConf.coverageIstanbulReporter = {
+      reports: ['html', 'lcovonly', 'text-summary'],
+      dir: path.join(__dirname, 'build', 'coverage'),
+      'report-config': {
+        html: {
+          subdir: 'karma_html',
+          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
+          // reportName: 'report' // report summary filename; browser info by default
+        }
+      }
+    }
+  }
+}
+
+function setBrowsers(karmaConf, browserstack) {
+  if (browserstack) {
+    karmaConf.browserStack = {
+      username: process.env.BROWSERSTACK_USERNAME,
+      accessKey: process.env.BROWSERSTACK_KEY
+    }
+    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.browsers = [
+      'bs_ie_13_windows_10',
+      'bs_ie_11_windows_10',
+      'bs_firefox_46_windows_10',
+      'bs_chrome_51_windows_10',
+      'bs_ie_11_windows_8.1',
+      'bs_firefox_46_windows_8.1',
+      'bs_chrome_51_windows_8.1',
+      'bs_ie_10_windows_8',
+      'bs_firefox_46_windows_8',
+      'bs_chrome_51_windows_8',
+      'bs_ie_11_windows_7',
+      'bs_ie_10_windows_7',
+      'bs_firefox_46_windows_7',
+      'bs_chrome_51_windows_7',
+      'bs_safari_9.1_mac_elcapitan',
+      'bs_firefox_46_mac_elcapitan',
+      'bs_chrome_51_mac_elcapitan',
+      'bs_safari_8_mac_yosemite',
+      'bs_firefox_46_mac_yosemite',
+      'bs_chrome_51_mac_yosemite',
+      'bs_safari_7.1_mac_mavericks',
+      'bs_firefox_46_mac_mavericks',
+      'bs_chrome_49_mac_mavericks',
+      'bs_ios_7',
+      'bs_ios_8',
+      'bs_ios_9',
+    ];
+  } else {
+    karmaConf.browsers = ['ChromeHeadless'];
+  }
+}
+
+module.exports = function(codeCoverage, browserstack) {
+  var webpackConfig = newWebpackConfig(codeCoverage);
+  var plugins = newPluginsArray(browserstack);
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -75,7 +144,7 @@ module.exports = function(codeCoverage, browserstack) {
     colors: true,
 
     // level of logging
-    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+    // possible values: LOG_DISABLE || LOG_ERROR || LOG_WARN || LOG_INFO || LOG_DEBUG
     logLevel: karmaConstants.LOG_INFO,
 
     // enable / disable watching file and executing tests whenever any file changes
@@ -91,60 +160,7 @@ module.exports = function(codeCoverage, browserstack) {
 
     plugins: plugins
   }
-
-  if (codeCoverage) {
-    config.reporters = ['coverage-istanbul']
-    config.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-          // reportName: 'report' // report summary filename; browser info by default
-        }
-      }
-    }
-  }
-
-  if (browserstack) {
-    config.browserStack = {
-      username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_KEY
-    }
-
-    config.customLaunchers = require('./browsers.json')
-    config.browsers = [
-      'bs_ie_13_windows_10',
-      'bs_ie_11_windows_10',
-      'bs_firefox_46_windows_10',
-      'bs_chrome_51_windows_10',
-      'bs_ie_11_windows_8.1',
-      'bs_firefox_46_windows_8.1',
-      'bs_chrome_51_windows_8.1',
-      'bs_ie_10_windows_8',
-      'bs_firefox_46_windows_8',
-      'bs_chrome_51_windows_8',
-      'bs_ie_11_windows_7',
-      'bs_ie_10_windows_7',
-      'bs_firefox_46_windows_7',
-      'bs_chrome_51_windows_7',
-      'bs_safari_9.1_mac_elcapitan',
-      'bs_firefox_46_mac_elcapitan',
-      'bs_chrome_51_mac_elcapitan',
-      'bs_safari_8_mac_yosemite',
-      'bs_firefox_46_mac_yosemite',
-      'bs_chrome_51_mac_yosemite',
-      'bs_safari_7.1_mac_mavericks',
-      'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks',
-      'bs_ios_7',
-      'bs_ios_8',
-      'bs_ios_9',
-    ];
-  } else {
-    config.browsers = ['ChromeHeadless']
-  }
-
+  setReporters(config, codeCoverage, browserstack);
+  setBrowsers(config, browserstack);
   return config;
 }

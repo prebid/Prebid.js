@@ -139,9 +139,7 @@ gulp.task('webpack', ['clean'], function () {
 gulp.task('test', ['clean'], function (done) {
   var karmaConf = karmaConfMaker(false, argv.browserstack);
 
-  var browserOverride = process.env.TRAVIS
-    ? ['Chrome_travis_ci']
-    : helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+  var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
   if (browserOverride.length > 0) {
     karmaConf.browsers = browserOverride;
   }
