@@ -53,11 +53,13 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter is more concise in reporting failures
   if (browserstack) {
-    karmaConf.reporters = ['spec']; // Removes the default 'progress' reporter, which totally floods the logs
+    karmaConf.reporters = ['spec'];
     karmaConf.specReporter = {
       suppressSkipped: false,
       suppressPassed: true
     };
+  } else {
+    karmaConf.reporters = ['progress'];
   }
   if (codeCoverage) {
     karmaConf.reporters.push('coverage-istanbul');
@@ -131,6 +133,8 @@ module.exports = function(codeCoverage, browserstack) {
 
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
+
+    reporters: ['progress'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
