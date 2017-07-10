@@ -127,7 +127,6 @@ module.exports = function(codeCoverage, browserstack) {
       'bs_chrome_51_windows_8',
       'bs_ie_11_windows_7',
       'bs_ie_10_windows_7',
-      'bs_ie_9_windows_7',
       'bs_firefox_46_windows_7',
       'bs_chrome_51_windows_7',
       'bs_safari_9.1_mac_elcapitan',
