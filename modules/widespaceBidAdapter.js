@@ -41,6 +41,18 @@ function WidespaceAdapter() {
         'sid': sid
       };
 
+      if (bid.params.demo) {
+          let demoDields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+
+          for (let i = 0; i < demoDields.length; i++) {
+              if (!bid.params.demo[demoDields[i]]) {
+                  continue;
+              }
+
+              params['hb.demo.' + demoDields[i]] = bid.params.demo[demoDields[i]];
+          }
+      }
+
       requestURL += '#';
 
       var paramKeys = Object.keys(params);
