@@ -95,4 +95,17 @@ describe('user sync', () => {
     userSync.overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
     expect(typeof $$PREBID_GLOBAL$$.userSync.syncAll).to.equal('function');
   });
+
+  it('should limit the sync per bidder', () => {
+    $$PREBID_GLOBAL$$.userSync.syncsPerBidder = 2;
+    userSync.registerSync('image', 'testBidder', 'http://example.com/1');
+    userSync.registerSync('image', 'testBidder', 'http://example.com/2');
+    userSync.registerSync('image', 'testBidder', 'http://example.com/3');
+    userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(1)).to.not.be.null;
+    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/2');
+    expect(createImgObjectStub.getCall(2)).to.be.null;
+  });
 });

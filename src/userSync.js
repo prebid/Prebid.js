@@ -2,6 +2,7 @@ import * as utils from 'src/utils';
 
 const userSync = exports;
 // A queue of user syncs for each adapter
+// Let setQueue() set the defaults
 let queue;
 setQueue();
 
@@ -9,8 +10,16 @@ setQueue();
 let cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
 // Whether or not user syncs have been trigger on this page load
 let hasFired = false;
-// This is initialized in prebid.js, but some of the tests need it
-$$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
+// How many bids for each adapter
+let numAdapterBids = {};
+// Set user sync config default values which can be overridden by the publisher
+const userSyncDefaultConfig = {
+  pixelEnabled: true,
+  syncDelay: 3000,
+  syncsPerBidder: 5
+}
+// Merge the defaults with the user-defined config
+$$PREBID_GLOBAL$$.userSync = Object.assign($$PREBID_GLOBAL$$.userSync || {}, userSyncDefaultConfig);
 
 /**
  * @function setQueue
@@ -59,8 +68,8 @@ function fireSyncs() {
         utils.insertElement(img);
       }
     });
-    // Reset the image pixel queue
-    queue.image = [];
+    // Reset the user sync queue
+    userSync.resetQueue();
     hasFired = true;
   }
   catch (e) {
@@ -82,6 +91,23 @@ function hideAndIdElem(elementNode) {
   elementNode.style.display = 'none';
   elementNode.id = utils.getUniqueIdentifierStr();
   return elementNode;
+}
+
+/**
+ * @function incrementAdapterBids
+ * @summary Increment the count of user syncs queue for the adapter
+ * @private
+ * @params {object} numAdapterBids The object contain counts for all adapters
+ * @params {string} bidder The name of the bidder adding a sync
+ * @returns {object} The updated version of numAdapterBids
+ */
+function incrementAdapterBids(numAdapterBids, bidder) {
+  if (!numAdapterBids[bidder]) {
+    numAdapterBids[bidder] = 1;
+  } else {
+    numAdapterBids[bidder] += 1;
+  }
+  return numAdapterBids;
 }
 
 /**
@@ -124,7 +150,11 @@ userSync.registerSync = (type, bidder, ...data) => {
   if (!utils.isArray(queue[type])) {
     return utils.logWarn(`User sync type "{$type}" not supported`);
   }
+  if (Number(numAdapterBids[bidder]) >= getConfig('syncsPerBidder')) {
+    return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
+  }
   queue[type].push([bidder, ...data]);
+  numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
 };
 
 /**
@@ -160,4 +190,5 @@ userSync.overrideSync = (enableOverride) => {
 userSync.resetQueue = () => {
   hasFired = false;
   setQueue();
+  numAdapterBids = {};
 };
