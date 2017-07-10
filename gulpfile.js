@@ -11,6 +11,7 @@ var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
+var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('open');
 var webpackConfig = require('./webpack.conf.js');
 var helpers = require('./gulpHelpers');
@@ -27,7 +28,6 @@ var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var fs = require('fs');
 
-var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
@@ -41,7 +41,7 @@ gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['lint', 'test']);
+gulp.task('run-tests', ['lint', 'test-coverage']);
 
 gulp.task('build', ['build-bundle-prod']);
 
@@ -130,59 +130,31 @@ gulp.task('webpack', ['clean'], function () {
     .pipe(connect.reload());
 });
 
-// Karma Continuous Testing
-// Pass your browsers by using --browsers=chrome,firefox,ie9
-// Run CI by passing --watch
+// Run the unit tests.
+//
+// By default, this runs in headless chrome.
+//
+// If --browserstack is given, it will run the full suite of currently supported browsers.
+// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 gulp.task('test', ['clean'], function (done) {
-  var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
-  var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+  var karmaConf = karmaConfMaker(false, argv.browserstack);
 
-  if (process.env.TRAVIS) {
-    browserArgs = ['Chrome_travis_ci'];
+  var browserOverride = process.env.TRAVIS
+    ? ['Chrome_travis_ci']
+    : helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+  if (browserOverride.length > 0) {
+    karmaConf.browsers = browserOverride;
   }
 
-  if (argv.browserstack) {
-    browserArgs = [
-      'bs_ie_13_windows_10',
-      'bs_ie_11_windows_10',
-      'bs_firefox_46_windows_10',
-      'bs_chrome_51_windows_10',
-      'bs_ie_11_windows_8.1',
-      'bs_firefox_46_windows_8.1',
-      'bs_chrome_51_windows_8.1',
-      'bs_ie_10_windows_8',
-      'bs_firefox_46_windows_8',
-      'bs_chrome_51_windows_8',
-      'bs_ie_11_windows_7',
-      'bs_ie_10_windows_7',
-      'bs_ie_9_windows_7',
-      'bs_firefox_46_windows_7',
-      'bs_chrome_51_windows_7',
-      'bs_safari_9.1_mac_elcapitan',
-      'bs_firefox_46_mac_elcapitan',
-      'bs_chrome_51_mac_elcapitan',
-      'bs_safari_8_mac_yosemite',
-      'bs_firefox_46_mac_yosemite',
-      'bs_chrome_51_mac_yosemite',
-      'bs_safari_7.1_mac_mavericks',
-      'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks',
-      'bs_ios_7',
-      'bs_ios_8',
-      'bs_ios_9',
-    ];
-  }
-
-  new KarmaServer({
-    action: (argv.watch) ? 'watch' : 'run',
-    browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
-    configFile: path.join(__dirname, 'karma.conf.js'),
-    singleRun: true
-  }, done).start();
+  new KarmaServer(karmaConf, done).start();
 });
 
+gulp.task('test-coverage', ['clean'], function(done) {
+  new KarmaServer(karmaConfMaker(true, false), done).start();
+})
+
 // Small task to load coverage reports in the browser
-gulp.task('coverage', function (done) {
+gulp.task('view-coverage', function (done) {
   var coveragePort = 1999;
 
   connect.server({
@@ -284,5 +256,4 @@ gulp.task('e2etest-report', function() {
   setTimeout(function() {
     opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
-
 });
