@@ -31,6 +31,7 @@ function newPluginsArray(browserstack) {
     'karma-mocha',
     'karma-requirejs',
     'karma-sinon-ie',
+    'karma-spec-reporter',
     'karma-webpack',
   ];
   if (browserstack) {
@@ -46,8 +47,14 @@ function newPluginsArray(browserstack) {
 }
 
 function setReporters(karmaConf, codeCoverage, browserstack) {
+  // In browserstack, the default 'progress' reporter floods the logs.
+  // The karma-spec-reporter is more concise in reporting failures
   if (browserstack) {
-    karmaConf.reporters = []; // Removes the default 'progress' reporter, which totally floods the logs
+    karmaConf.reporters = ['spec']; // Removes the default 'progress' reporter, which totally floods the logs
+    karmaConf.specReporter = {
+      suppressSkipped: false,
+      suppressPassed: true
+    };
   }
   if (codeCoverage) {
     karmaConf.reporters.push('coverage-istanbul');

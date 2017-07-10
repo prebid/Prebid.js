@@ -86,6 +86,18 @@ function bundle(dev) {
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
+// Workaround for incompatibility between Karma & gulp callbacks.
+// See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
+function newKarmaCallback(done) {
+  return function (exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+    } else {
+      done();
+    }
+  }
+}
+
 gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
 gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
 gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
@@ -144,11 +156,11 @@ gulp.task('test', ['clean'], function (done) {
     karmaConf.browsers = browserOverride;
   }
 
-  new KarmaServer(karmaConf, done).start();
+  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 });
 
 gulp.task('test-coverage', ['clean'], function(done) {
-  new KarmaServer(karmaConfMaker(true, false), done).start();
+  new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
 })
 
 // Small task to load coverage reports in the browser
