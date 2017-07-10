@@ -90,7 +90,7 @@ exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k))
-      { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -663,6 +663,6 @@ export function getBidderRequestAllAdUnits(bidder) {
 export function getBidderRequest(bidder, adUnitCode) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
     return request.bids
-        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+      .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }

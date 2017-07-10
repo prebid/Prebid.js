@@ -26,8 +26,8 @@ const BID_REQUEST = {
       },
       'placementCode': TEST.PLACEMENT_CODE,
       'sizes': [
-          [320, 320],
-          [320, 250]
+        [320, 320],
+        [320, 250]
       ],
       'bidId': '45c7f5afb996c1',
       'bidderRequestId': '7101db09af0db3',

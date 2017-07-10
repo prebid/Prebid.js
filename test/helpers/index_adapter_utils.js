@@ -46,7 +46,7 @@ function _createBidSlot(placementCode, indexSlotID, sizes, config) {
   bid.params.siteID = ('siteID' in config) ? config.siteID : DefaultSiteID;
   bid.sizes = sizes;
 
-	// optional parameter
+  // optional parameter
   if (typeof config.timeout !== 'undefined') {
     bid.params.timeout = config.timeout;
   }
@@ -60,7 +60,7 @@ function _createBidSlot(placementCode, indexSlotID, sizes, config) {
     bid.params.size = config.slotSize;
   }
 
-	// special parameter
+  // special parameter
   if (typeof (config.missingSlotID) !== 'undefined') {
     delete bid.params.id;
   }
