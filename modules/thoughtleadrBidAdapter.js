@@ -83,10 +83,10 @@ var ThoughtleadrAdapter = (function () {
       }
 
       var bidObject;
-      if (wonBid && wonBid.bid_amount) {
+      if (wonBid && wonBid.amount) {
         bidObject = bidfactory.createBid(BID_AVAILABLE);
         bidObject.bidderCode = 'thoughtleadr';
-        bidObject.cpm = wonBid.bid_amount;
+        bidObject.cpm = wonBid.amount;
         bidObject.ad =
           '<script src="' + URL_CDN + 'bid.js" header-bid-token="' + wonBid.header_bid_token + '"></script>';
         bidObject.width = size.width;
