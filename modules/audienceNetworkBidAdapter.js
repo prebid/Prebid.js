@@ -21,7 +21,8 @@ const validateBidRequest = bid =>
   typeof bid.params === 'object' &&
   typeof bid.params.placementId === 'string' &&
   bid.params.placementId.length > 0 &&
-  Array.isArray(bid.sizes) && bid.sizes.length > 0;
+  Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
+  (isVideo(bid.params.format) || bid.sizes.map(flattenSize).some(isValidSize));
 
 /**
  * Flattens a 2-element [W, H] array as a 'WxH' string,
@@ -33,11 +34,32 @@ const flattenSize = size =>
   (Array.isArray(size) && size.length === 2) ? `${size[0]}x${size[1]}` : size;
 
 /**
+ * Expands a 'WxH' string as a 2-element [W, H] array
+ * @param {String} size
+ * @returns {Array}
+ */
+const expandSize = size => size.split('x').map(Number);
+
+/**
  * Is this a valid slot size?
  * @param {String} size
  * @returns {Boolean}
  */
 const isValidSize = size => ['300x250', '320x50'].includes(size);
+
+/**
+ * Is this a video format?
+ * @param {String} format
+ * @returns {Boolean}
+ */
+const isVideo = format => format === 'video';
+
+/**
+ * Which SDK version should be used for this format?
+ * @param {String} format
+ * @returns {String}
+ */
+const sdkVersion = format => isVideo(format) ? '' : '5.5.web';
 
 /**
  * Does the search part of the URL contain "anhb_testmode"
@@ -83,24 +105,33 @@ ${nativeContainer}</div></body></html>`;
 /**
  * Creates a "good" Bid object with the given bid ID and CPM.
  * @param {String} placementId
- * @param {String} bidId
  * @param {String} size
+ * @param {String} format
+ * @param {String} bidId
  * @param {Number} cpmCents
+ * @param {String} pageurl
  * @returns {Object} Bid
  */
-const createSuccessBidResponse = (placementId, size, format, bidId, cpmCents) => {
+const createSuccessBidResponse = (placementId, size, format, bidId, cpmCents, pageurl) => {
   const bid = createBid(STATUS.GOOD, { bidId });
   // Prebid attributes
   bid.bidderCode = getBidderCode();
   bid.cpm = cpmCents / 100;
   bid.ad = createAdHtml(placementId, format, bidId);
-  [bid.width, bid.height] = size.split('x').map(Number);
+  [bid.width, bid.height] = expandSize(size);
 
   // Audience Network attributes
   bid.hb_bidder = 'fan';
   bid.fb_bidid = bidId;
   bid.fb_format = format;
   bid.fb_placementid = placementId;
+  // Video attributes
+  if (isVideo(format)) {
+    const vast = `https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=${encodeURIComponent(pageurl)}&playerwidth=${bid.width}&playerheight=${bid.height}&bidid=${bidId}`;
+    bid.mediaType = 'video';
+    bid.vastUrl = vast;
+    bid.descriptionUrl = vast;
+  }
   return bid;
 };
 
@@ -121,7 +152,7 @@ const createFailureBidResponse = () => {
  * @param {String} params.bids[].placementCode - Prebid placement identifier
  * @param {Object} params.bids[].params
  * @param {String} params.bids[].params.placementId - Audience Network placement identifier
- * @param {String} params.bids[].params.format - Optional format, one of 'native' or 'fullwidth' if set
+ * @param {String} params.bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
  * @param {Array} params.bids[].sizes - list of desired advert sizes
  * @param {Array} params.bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
  * @returns {void}
@@ -132,33 +163,43 @@ const callBids = bidRequest => {
   const placementids = [];
   const adformats = [];
   const sizes = [];
+  const sdk = [];
+
   bidRequest.bids
     .filter(validateBidRequest)
     .forEach(bid => bid.sizes
       .map(flattenSize)
-      .filter(isValidSize)
+      .filter(size => isValidSize(size) || isVideo(bid.params.format))
       .slice(0, 1)
       .forEach(size => {
         adUnitCodes.push(bid.placementCode);
         placementids.push(bid.params.placementId);
         adformats.push(bid.params.format || size);
         sizes.push(size);
+        sdk.push(sdkVersion(bid.params.format));
       })
     );
 
   if (placementids.length) {
     // Build URL
     const testmode = isTestmode();
+    const pageurl = location.href;
+    const search = {
+      placementids,
+      adformats,
+      testmode,
+      pageurl,
+      sdk
+    };
+    const video = adformats.findIndex(isVideo);
+    if (video !== -1) {
+      [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
+    }
     const url = format({
       protocol: 'https',
       host: 'an.facebook.com',
       pathname: '/v2/placementbid.json',
-      search: {
-        sdk: '5.5.web',
-        testmode,
-        placementids,
-        adformats
-      }
+      search
     });
     // Request
     ajax(url, res => {
@@ -182,7 +223,8 @@ const callBids = bidRequest => {
               sizes[i],
               adformats[i],
               bid.bid_id,
-              bid.bid_price_cents
+              bid.bid_price_cents,
+              pageurl
             ))
           );
       }
@@ -202,6 +244,8 @@ const callBids = bidRequest => {
  */
 const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
 
-adaptermanager.registerBidAdapter(new AudienceNetwork, 'audienceNetwork');
+adaptermanager.registerBidAdapter(new AudienceNetwork, 'audienceNetwork', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = AudienceNetwork;
