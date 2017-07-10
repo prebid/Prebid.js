@@ -94,9 +94,9 @@ describe('twenga adapter tests', function () {
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
 
       $$PREBID_GLOBAL$$._bidsRequested
-                .push({ bidderCode: DEFAULT_PARAMS.bidderCode,
-                  bids: [{ bidId: parsedBidUrlQueryString.callback_uid,
-                    placementCode: DEFAULT_PARAMS.bids[0].placementCode }]});
+        .push({ bidderCode: DEFAULT_PARAMS.bidderCode,
+          bids: [{ bidId: parsedBidUrlQueryString.callback_uid,
+            placementCode: DEFAULT_PARAMS.bids[0].placementCode }]});
 
       var callback = stringToFunction(parsedBidUrlQueryString.callback);
       expect(callback).to.exist.and.to.be.a('function');
