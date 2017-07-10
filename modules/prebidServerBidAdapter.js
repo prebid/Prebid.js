@@ -189,7 +189,7 @@ function PrebidServer() {
           response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
         }
         catch (e) {
-          console.log(e);
+          utils.logError(e);
         }
       },
       payload, {
