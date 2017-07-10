@@ -95,7 +95,7 @@ describe('The Bid Manager', () => {
           });
 
         it("should add video bids, but shouldn't call the end-of-auction callbacks yet",
-           testAddVideoBid(true, false, stubProvider));
+          testAddVideoBid(true, false, stubProvider));
       });
 
       describe('when this is the last bid expected in the auction', () => {
@@ -141,7 +141,7 @@ describe('The Bid Manager', () => {
         prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(false));
 
         it("shouldn't add the bid to the auction, and shouldn't execute the end-of-auction callbacks",
-           testAddVideoBid(false, false, stubProvider));
+          testAddVideoBid(false, false, stubProvider));
       });
 
       describe('when the auction has timed out', () => {
