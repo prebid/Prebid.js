@@ -11,6 +11,8 @@ function newWebpackConfig(codeCoverage) {
   // remove optimize plugin for tests
   webpackConfig.plugins.pop()
 
+  webpackConfig.devtool = 'inline-source-map';
+
   if (codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
@@ -31,6 +33,7 @@ function newPluginsArray(browserstack) {
     'karma-mocha',
     'karma-requirejs',
     'karma-sinon-ie',
+    'karma-sourcemap-loader',
     'karma-spec-reporter',
     'karma-webpack',
   ];
@@ -112,9 +115,8 @@ module.exports = function(codeCoverage, browserstack) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/**/*_spec.js': ['webpack'],
-      'test/helpers/prebidGlobal.js': ['webpack'],
-      'src/**/*.js': ['webpack']
+      'test/**/*_spec.js': ['webpack', 'sourcemap'],
+      'test/helpers/prebidGlobal.js': ['webpack', 'sourcemap']
     },
 
     // web server port
