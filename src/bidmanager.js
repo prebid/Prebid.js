@@ -11,6 +11,7 @@ var events = require('./events');
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+var _currencyMultiplier = 1;
 let _customPriceBucket;
 var defaultBidderSettingsMap = {};
 
@@ -156,7 +157,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
+    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket, _currencyMultiplier);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -288,7 +289,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   return keyValues;
 }
 
-exports.setPriceGranularity = function setPriceGranularity(granularity) {
+exports.setPriceGranularity = function setPriceGranularity(granularity, currencyMultiplier) {
   var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
   if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
     _granularity = granularity;
@@ -296,6 +297,10 @@ exports.setPriceGranularity = function setPriceGranularity(granularity) {
     utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
       ' `medium` as default.');
     _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+  }
+
+  if (typeof currencyMultiplier !== 'undefined') {
+    _currencyMultiplier = currencyMultiplier;
   }
 };
 

@@ -6,7 +6,7 @@ import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
-import { isValidePriceConfig } from './cpmBucketManager';
+import { isValidPriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
@@ -641,22 +641,22 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
-$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplier) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
     return;
   }
   if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
+    bidmanager.setPriceGranularity(granularity, currencyMultiplier);
   }
   else if (typeof granularity === 'object') {
-    if (!isValidePriceConfig(granularity)) {
+    if (!isValidPriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
     bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM, currencyMultiplier);
     utils.logMessage('Using custom price granularity');
   }
 };
