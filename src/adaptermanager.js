@@ -2,12 +2,11 @@
 
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
-import native from './native';
+import { processNativeAdUnitParams, nativeAdapters } from './native';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
-import { BaseAdapter } from './adapters/baseAdapter';
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -32,7 +31,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
 
         if (adUnit.nativeParams) {
           bid = Object.assign({}, bid, {
-            nativeParams: native(adUnit.nativeParams),
+            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
           });
         }
 
@@ -57,6 +56,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   const auctionInit = {
     timestamp: auctionStart,
     requestId,
+    timeout: cbTimeout
   };
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
@@ -90,6 +90,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       });
     });
 
+    // don't send empty requests
+    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+      return adUnit.bids.length !== 0;
+    });
+
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -101,14 +106,16 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
-        timeout: _s2sConfig.timeout
+        timeout: _s2sConfig.timeout,
+        src: CONSTANTS.S2S.SRC
       };
-      // Pushing server side bidder
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      if (bidderRequest.bids.length !== 0) {
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      }
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
-    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter]; // jshint ignore:line
+    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
     s2sAdapter.setConfig(_s2sConfig);
     s2sAdapter.callBids(s2sBidRequest);
@@ -154,10 +161,19 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode) {
+exports.videoAdapters = []; // added by adapterLoader for now
+
+exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
     if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
       _bidderRegistry[bidderCode] = bidAdaptor;
+
+      if (supportedMediaTypes.includes('video')) {
+        exports.videoAdapters.push(bidderCode);
+      }
+      if (supportedMediaTypes.includes('native')) {
+        nativeAdapters.push(bidderCode);
+      }
     } else {
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }
@@ -177,14 +193,9 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
     } else {
       try {
         let newAdapter = null;
-        if (bidAdaptor instanceof BaseAdapter) {
-          // newAdapter = new bidAdaptor.constructor(alias);
-          utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
-        } else {
-          newAdapter = bidAdaptor.createNew();
-          newAdapter.setBidderCode(alias);
-          this.registerBidAdapter(newAdapter, alias);
-        }
+        newAdapter = bidAdaptor.createNew();
+        newAdapter.setBidderCode(alias);
+        this.registerBidAdapter(newAdapter, alias);
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
@@ -231,11 +242,3 @@ exports.setBidderSequence = function (order) {
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
 };
-
-/** INSERT ADAPTERS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ADAPTERS */
-
-/** INSERT ANALYTICS - DO NOT EDIT OR REMOVE */
-
-/** END INSERT ANALYTICS */

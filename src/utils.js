@@ -90,7 +90,7 @@ exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k))
-      { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -340,7 +340,7 @@ exports.isNumber = function(object) {
 exports.isEmpty = function (object) {
   if (!object) return true;
   if (this.isArray(object) || this.isStr(object)) {
-    return !(object.length > 0); // jshint ignore:line
+    return !(object.length > 0);
   }
 
   for (var k in object) {
@@ -663,7 +663,7 @@ export function getBidderRequestAllAdUnits(bidder) {
 export function getBidderRequest(bidder, adUnitCode) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
     return request.bids
-        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+      .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
 
