@@ -63,23 +63,23 @@ describe('ucfunnel adapter tests', function () {
       let bidderRequest = adapter.callBids.getCall(0).args[0];
 
       expect(bidderRequest).to.have.property('bids')
-                .that.is.an('array')
-                .with.lengthOf(1);
+        .that.is.an('array')
+        .with.lengthOf(1);
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .to.have.property('bidder', 'ucfunnel');
+        .to.have.property('bidder', 'ucfunnel');
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('sizes')
-                .that.is.an('array')
-                .with.lengthOf(1)
-                .that.deep.equals(adUnit.sizes);
+        .with.property('sizes')
+        .that.is.an('array')
+        .with.lengthOf(1)
+        .that.deep.equals(adUnit.sizes);
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('params')
-                .to.have.property('adid', 'test-ad-83444226E44368D1E32E49EEBE6D29');
+        .with.property('params')
+        .to.have.property('adid', 'test-ad-83444226E44368D1E32E49EEBE6D29');
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('params')
-                .to.have.property('width', 300);
+        .with.property('params')
+        .to.have.property('width', 300);
     });
 
     it('Valid bid-response', () => {
