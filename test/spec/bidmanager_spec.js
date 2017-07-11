@@ -484,6 +484,37 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid1.adId, bid1.adId);
     });
 
+    it('should not add banner bids that have no width or height', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        {
+          width: undefined,
+          height: undefined
+        }
+      );
+
+      bidmanager.addBidResponse('adUnitCode', bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+
+      assert.notEqual(bid.adId, addedBid.adId);
+    });
+
+    it('should add valid non-banner bids regardless of width or height', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        {
+          mediaType: 'video',
+          width: undefined,
+          height: undefined
+        }
+      );
+
+      bidmanager.addBidResponse('adUnitCode', bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+
+      assert.equal(bid.adId, addedBid.adId);
+    });
+
     it('should not add native bids that do not have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
         bidder: 'appnexusAst',
