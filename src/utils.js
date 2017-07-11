@@ -112,7 +112,7 @@ exports.transformAdServerTargetingObj = function (targeting) {
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
-exports.parseSizesInput = function (sizeObj) {
+export function parseSizesInput(sizeObj) {
   var parsedSizes = [];
 
   // if a string for now we can assume it is a single size, like "300x250"
@@ -137,11 +137,11 @@ exports.parseSizesInput = function (sizeObj) {
     if (sizeArrayLength > 0) {
       // if we are a 2 item array of 2 numbers, we must be a SingleSize array
       if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
-        parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
+        parsedSizes.push(parseGPTSingleSizeArray(sizeObj));
       } else {
         // otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
-          parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
+          parsedSizes.push(parseGPTSingleSizeArray(sizeObj[i]));
         }
       }
     }
@@ -152,9 +152,9 @@ exports.parseSizesInput = function (sizeObj) {
 
 // parse a GPT style sigle size array, (i.e [300,250])
 // into an AppNexus style string, (i.e. 300x250)
-exports.parseGPTSingleSizeArray = function (singleSize) {
+export function parseGPTSingleSizeArray(singleSize) {
   // if we aren't exactly 2 items in this array, it is invalid
-  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (exports.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
 };

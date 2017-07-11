@@ -657,6 +657,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
  * @param {object} options options for video tag
+ *
+ * @deprecated Include the dfpVideoSupport module in your build, and use the
+ *   $$PREBID_GLOBAL$$.adserver.buildVideoAdUrl (if DFP is your only Ad Server) or
+ *   $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl (if you use other Ad Servers too)
+ *   function instead. This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
