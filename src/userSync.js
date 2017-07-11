@@ -62,11 +62,8 @@ function fireSyncs() {
       let bidderName = sync[0];
       let trackingPixelUrl = sync[1];
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // insertAdjacentHTML expects HTML string - convert DOM object to string
-      let img = userSync.createImgObject(trackingPixelUrl);
-      if (img) {
-        utils.insertElement(img);
-      }
+      // Create image object and add the src url
+      userSync.createImgObject(trackingPixelUrl);
     });
     // Reset the user sync queue
     userSync.resetQueue();
