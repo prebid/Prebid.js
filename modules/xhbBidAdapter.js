@@ -10,6 +10,25 @@ const XhbAdapter = function XhbAdapter() {
   const baseAdapter = Adapter.createNew('xhb');
   let usersync = false;
 
+  const _defaultBidderSettings = {
+    alwaysUseBid: true,
+    adserverTargeting: [
+      {
+        key: 'hb_xhb_deal',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      },
+      {
+        key: 'hb_xhb_adid',
+        val: function (bidResponse) {
+          return bidResponse.adId;
+        }
+      }
+    ]
+  };
+  bidmanager.registerDefaultBidderSetting('xhb', _defaultBidderSettings);
+
   baseAdapter.callBids = function (params) {
     const anArr = params.bids;
     for (let i = 0; i < anArr.length; i++) {
