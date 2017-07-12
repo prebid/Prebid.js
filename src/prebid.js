@@ -739,7 +739,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     maxBids: 1,
     adapter: CONSTANTS.S2S.ADAPTER,
     syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
-    cookieSet: false,
+    cookieSet: true,
     bidders: []
   }, options);
   adaptermanager.setS2SConfig(config);
