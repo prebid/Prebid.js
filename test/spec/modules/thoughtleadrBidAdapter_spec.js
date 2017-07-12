@@ -99,12 +99,10 @@ describe('thoughtleadr adapter tests', function () {
       adapter.callBids(request);
 
       var element = document.getElementById('tldr-cookie-sync-div');
-      chai_1.expect(element.outerHTML).to.be.equal(
-        '<div id="tldr-cookie-sync-div" style="width: 0px; height: 0px;">' +
-        '<iframe style="width: 0px; height: 0px; border: 0px none;" src="javascript:false"></iframe></div>');
+      var iframes = element.getElementsByTagName('iframe');
+      chai_1.expect(iframes.length).to.be.equal(1);
 
-      var iframe = element.getElementsByTagName('iframe')[0];
-      chai_1.expect(iframe.contentDocument.body.innerHTML).to.be.equal('<script src="/path/to/script"></script>');
+      chai_1.expect(iframes[0].contentDocument.body.innerHTML).to.be.equal('<script src="/path/to/script"></script>');
     });
   });
 });
