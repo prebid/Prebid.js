@@ -20,7 +20,7 @@ const NATIVE_MAPPING = {
   },
   icon: {
     serverName: 'icon',
-    serverParams: { sizes: [{}] }
+    serverParams: { required: true, sizes: [{}] }
   },
   sponsoredBy: 'sponsored_by'
 };
