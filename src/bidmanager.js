@@ -111,6 +111,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logWarn(errorMessage('No adUnitCode was supplied to addBidResponse.'));
       return false;
     }
+    if (!bid) {
+      utils.logWarn(errorMessage(`Some adapter tried to add an undefined bid for ${adUnitCode}.`));
+      return false;
+    }
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
