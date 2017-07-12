@@ -112,6 +112,16 @@ describe('The Bid Manager', () => {
 
         it('should add valid video bids and then execute the callbacks signaling the end of the auction',
           testAddVideoBid(true, true, stubProvider));
+
+        it('should gracefully do nothing when adUnitCode is undefined', () => {
+          bidManager.addBidResponse(undefined, {});
+          expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
+        });
+
+        it('should gracefully do nothing when bid is undefined', () => {
+          bidManager.addBidResponse('mock/code');
+          expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
+        });
       });
 
       describe('when the auction has timed out', () => {

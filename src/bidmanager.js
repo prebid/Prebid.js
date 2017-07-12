@@ -108,11 +108,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     if (!adUnitCode) {
-      utils.logWarn(errorMessage('No adUnitCode was supplied to addBidResponse.'));
+      utils.logWarn('No adUnitCode was supplied to addBidResponse.');
       return false;
     }
     if (!bid) {
-      utils.logWarn(errorMessage(`Some adapter tried to add an undefined bid for ${adUnitCode}.`));
+      utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
       return false;
     }
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
