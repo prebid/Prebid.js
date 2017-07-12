@@ -1,9 +1,16 @@
 import { expect } from 'chai';
+import constants from 'src/constants';
+import events from 'src/events';
+
 import * as bidManager from 'src/bidmanager';
 import useVideoCacheStubs from 'test/mocks/videoCacheStub';
 import adUnit from 'test/fixtures/video/adUnit';
 import bidRequest from 'test/fixtures/video/bidRequest';
 import bidResponse from 'test/fixtures/video/bidResponse';
+
+function adjustCpm(cpm) {
+  return cpm + 1;
+}
 
 describe('The Bid Manager', () => {
   before(() => {
@@ -39,6 +46,10 @@ describe('The Bid Manager', () => {
 
         if (expectedBidsReceived === 1) {
           const bid = $$PREBID_GLOBAL$$._bidsReceived[0];
+
+          // Ensures that the BidAdjustment listeners execute before the bid goes into the auction.
+          expect(bid.cpm).to.equal(adjustCpm(0.1));
+
           expect(bid.vastUrl).to.equal('www.myVastUrl.com');
           expect(bid.videoCacheKey).to.equal('FAKE_UUID');
         }
@@ -58,6 +69,9 @@ describe('The Bid Manager', () => {
      *   transforms it to prepare it for auction.
      */
     function prepAuction(adUnits, bidRequestTweaker) {
+      function bidAdjuster(bid) {
+        bid.cpm = adjustCpm(bid.cpm);
+      }
       beforeEach(() => {
         let thisBidRequest = bidRequest;
         if (bidRequestTweaker) {
@@ -65,10 +79,16 @@ describe('The Bid Manager', () => {
           bidRequestTweaker(thisBidRequest);
         }
 
+        events.on(constants.EVENTS.BID_ADJUSTMENT, bidAdjuster);
+
         $$PREBID_GLOBAL$$.adUnits = adUnits;
         $$PREBID_GLOBAL$$._bidsRequested = [thisBidRequest];
         $$PREBID_GLOBAL$$._bidsReceived = [];
         $$PREBID_GLOBAL$$._adUnitCodes = $$PREBID_GLOBAL$$.adUnits.map(unit => unit.code);
+      });
+
+      afterEach(() => {
+        events.off(constants.EVENTS.BID_ADJUSTMENT, bidAdjuster);
       });
     }
 
