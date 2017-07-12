@@ -8,7 +8,7 @@ import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 
 const TYPE = S2S.SRC;
-const cookieSetUrl = 'http://acdn.adnxs.com/cookieset/cs.js';
+const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 
 const paramTypes = {
   'appnexus': {

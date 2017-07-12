@@ -40,8 +40,8 @@ cookie.syncCookies = function(timeout) {
 };
 
 cookie.cookieSet = function(cookieSetUrl) {
-  // if (!utils.isSafariBrowser()) {
-  //   return;
-  // }
+  if (!utils.isSafariBrowser()) {
+    return;
+  }
   adLoader.loadScript(cookieSetUrl, null, true);
 };
