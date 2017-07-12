@@ -104,7 +104,7 @@ const XhbAdapter = function XhbAdapter() {
         // store bid response
         // bid status is good (indicating 1)
         let adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1, bidObj);
+        bid = bidfactory.createBid(STATUS.GOOD, bidObj);
         bid.creative_id = adId;
         bid.bidderCode = bidCode;
         bid.cpm = responseCPM;
@@ -117,7 +117,7 @@ const XhbAdapter = function XhbAdapter() {
       } else {
         // no response data
         // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2, bidObj);
+        bid = bidfactory.createBid(STATUS.NO_BID, bidObj);
         bid.bidderCode = bidCode;
         bidmanager.addBidResponse(placementCode, bid);
       }
