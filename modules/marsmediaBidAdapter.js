@@ -26,16 +26,16 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
           {}
         );
       } catch (err) {
-        utils.logError('Error sending marsmedia request for publisher id: ' + bid.publisherID, null, err);
+        utils.logError('Error sending marsmedia request for publisher id: ' + bid.params.publisherID, null, err);
         handleBidError();
       }
 
       function handleBidResponse(res) {
         try {
-          utils.logMessage('Register bid for publisher ID: ' + bid.publisherID);
+          utils.logMessage('Register bid for publisher ID: ' + bid.params.publisherID);
           addBid(res, bid);
         } catch (err) {
-          utils.logError('Error processing response for publisher ID: ' + bid.publisherID, null, err);
+          utils.logError('Error processing response for publisher ID: ' + bid.params.publisherID, null, err);
           handleBidError();
         }
       }
@@ -94,7 +94,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
         var sizes = bidRequest.sizes[0];
         var floor = (typeof bidRequest.params.floor !== 'undefined' && bidRequest.params.floor === '') ? 0 : bidRequest.params.floor;
         var protocol = (window.location.protocol === 'https') ? 1 : 0;
-        var publisher_id = bidRequest.publisherID;
+        var publisher_id = (typeof bidRequest.params.publisherID !== 'undefined') ? bidRequest.params.publisherID : '';
         var params = {};
         params.id = getid();
 
@@ -151,11 +151,6 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
       }
     });
   }
-
-  // return {
-  //   callBids: _callBids,
-  //   createNew: MarsmediaBidAdapter.createNew
-  // };
 
   return Object.assign(Adapter.createNew(MARS_BIDDER_CODE), {
     callBids: _callBids,

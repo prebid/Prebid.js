@@ -15,9 +15,8 @@ describe('the marsmedia adapter', () => {
       bids: [
         {
           bidder: 'marsmedia',
-          publisherID: '77895',
-          id: 'marsRtbTeam',
           params: {
+            publisherID: '77895',
             floor: 0
           }
         }
