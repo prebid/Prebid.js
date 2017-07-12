@@ -103,7 +103,7 @@ describe('thoughtleadr adapter tests', function () {
         '<div id="tldr-cookie-sync-div" style="width: 0px; height: 0px;">' +
         '<iframe style="width: 0px; height: 0px; border: 0px none;" src="javascript:false"></iframe></div>');
 
-      var iframe =  element.getElementsByTagName('iframe')[0];
+      var iframe = element.getElementsByTagName('iframe')[0];
       chai_1.expect(iframe.contentDocument.body.innerHTML).to.be.equal('<script src="/path/to/script"></script>');
     });
   });
