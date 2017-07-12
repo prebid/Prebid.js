@@ -287,3 +287,9 @@ gulp.task('e2etest-report', function() {
   }, 5000);
 
 });
+
+gulp.task('build-postbid', function() {
+  return gulp.src('./integrationExamples/postbid/oas/postbid.js')
+    .pipe(uglify())
+    .pipe(gulp.dest('build/dist'));
+});

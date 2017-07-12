@@ -156,7 +156,7 @@ describe('indexExchange adapter - Response', function () {
 
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-		// pass on bid on second size
+    // pass on bid on second size
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, [ [ false, true ] ]);
     cygnus_index_parse_res(asResponse);
 
@@ -197,7 +197,7 @@ describe('indexExchange adapter - Response', function () {
 
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-		// pass on bid on all bids
+    // pass on bid on all bids
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, [ [ true, true ] ]);
     cygnus_index_parse_res(asResponse);
 
@@ -270,8 +270,8 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
     var passOnBid = [
-			[ false ], // bids back on first slot
-			[ true ], // pass on bid on second slot
+      [ false ], // bids back on first slot
+      [ true ], // pass on bid on second slot
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, passOnBid);
     cygnus_index_parse_res(asResponse);
@@ -316,8 +316,8 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
     var passOnBid = [
-			[ true ], // pass on bid on the first slot
-			[ true ], // pass on bid on the second slot
+      [ true ], // pass on bid on the first slot
+      [ true ], // pass on bid on the second slot
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, passOnBid);
     cygnus_index_parse_res(asResponse);
@@ -354,7 +354,7 @@ describe('indexExchange adapter - Response', function () {
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-			// first ix call
+      // first ix call
       var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request);
       cygnus_index_parse_res(asResponse);
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(configuredBids, asResponse);
@@ -405,7 +405,7 @@ describe('indexExchange adapter - Response', function () {
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-			// first ix call
+      // first ix call
       var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request);
       cygnus_index_parse_res(asResponse);
 
@@ -456,7 +456,7 @@ describe('indexExchange adapter - Response', function () {
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-			// first ix call
+      // first ix call
       var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request);
       cygnus_index_parse_res(asResponse);
 
@@ -507,7 +507,7 @@ describe('indexExchange adapter - Response', function () {
       adapter.callBids({ bids: configuredBids });
       var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
 
-			// first ix call
+      // first ix call
       var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, [ [requestParams.price] ], requestParams.request, [ [ requestParams.passOnBid ] ]);
       cygnus_index_parse_res(asResponse);
       var expectedAdapterResponse = IndexUtils.getExpectedAdaptorResponse(configuredBids, asResponse);
@@ -572,7 +572,7 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: 'ixDeal' } } // first slot first size
+        { ext: { dealid: 'ixDeal' } } // first slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -616,7 +616,7 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: '239' } } // first slot first size
+        { ext: { dealid: '239' } } // first slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -660,7 +660,7 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: '1234Deal' } } // first slot first size
+        { ext: { dealid: '1234Deal' } } // first slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -704,7 +704,7 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: 'deal1234' } } // first slot first size
+        { ext: { dealid: 'deal1234' } } // first slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam); // Alpha numeric starting with non-numeric
@@ -749,8 +749,8 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' } }, // first slot first size
-				{ ext: { deal: 'deal2', dealid: 'ixDealID2', dealname: 'deal name 2' } }, // first slot second size
+        { ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' } }, // first slot first size
+        { ext: { deal: 'deal2', dealid: 'ixDealID2', dealname: 'deal name 2' } }, // first slot second size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -795,8 +795,8 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' } } // first slot first size
-				// No deal on first slot second size
+        { ext: { deal: 'deal1', dealid: 'ixDealID1', dealname: 'deal name 1' } } // first slot first size
+        // No deal on first slot second size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -847,10 +847,10 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{},
-				{}
-				// No deal on first slot first size
-				// No deal on first slot second size
+        {},
+        {}
+        // No deal on first slot first size
+        // No deal on first slot second size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -896,10 +896,10 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: 'ixDeal1' } } // first slot first size
+        { ext: { dealid: 'ixDeal1' } } // first slot first size
       ],
       [
-				{ ext: { dealid: 'ixDeal2' } } // second slot first size
+        { ext: { dealid: 'ixDeal2' } } // second slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -943,11 +943,11 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{ ext: { dealid: 'ixDeal1' } } // first slot first size
+        { ext: { dealid: 'ixDeal1' } } // first slot first size
       ],
       [
-				{}
-				// no deal on second slot first size
+        {}
+        // no deal on second slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -996,12 +996,12 @@ describe('indexExchange adapter - Response', function () {
     var requestJSON = IndexUtils.parseIndexRequest(adLoader.loadScript.firstCall.args[0]);
     var optionalResponseParam = [
       [
-				{}
-				// no deal on first slot first size
+        {}
+        // no deal on first slot first size
       ],
       [
-				{}
-				// no deal on second slot first size
+        {}
+        // no deal on second slot first size
       ]
     ];
     var asResponse = IndexUtils.getBidResponse(configuredBids, requestJSON, undefined, undefined, undefined, optionalResponseParam);
@@ -1058,7 +1058,7 @@ describe('indexExchange adapter - Response', function () {
     var sidMatched = IndexUtils.matchBidsOnSID(expandedBids, impressionObj);
 
     assert.equal(sidMatched.matched.length, 3, 'Three slots are configured and sent to AS');
-		// check normal site id
+    // check normal site id
     var normalSitePair = sidMatched.matched[0];
 
     var expectedSlotID = normalSitePair.configured.params.id + '_1';
@@ -1069,7 +1069,7 @@ describe('indexExchange adapter - Response', function () {
     assert.equal(normalSitePair.sent.ext.siteID, expectedSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID);
     assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
-		// check tier 1  site id
+    // check tier 1  site id
     var tier2SitePair = sidMatched.matched[1];
     var expectedTierSlotID = 'T1_' + tier2SitePair.configured.params.id + '_1';
     assert.equal(tier2SitePair.sent.ext.sid, expectedTierSlotID, 'request ' + tier2SitePair.name + ' site ID is set to ' + expectedTierSlotID);
@@ -1079,7 +1079,7 @@ describe('indexExchange adapter - Response', function () {
     assert.equal(tier2SitePair.sent.ext.siteID, expectedTierSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedTierSiteID);
     assert.isNumber(tier2SitePair.sent.ext.siteID, 'site ID is integer');
 
-		// check tier 2  site id
+    // check tier 2  site id
     var tier3SitePair = sidMatched.matched[2];
     var expectedTierSlotID = 'T2_' + tier3SitePair.configured.params.id + '_1';
     assert.equal(tier3SitePair.sent.ext.sid, expectedTierSlotID, 'request ' + tier3SitePair.name + ' site ID is set to ' + expectedTierSlotID);
@@ -1089,7 +1089,7 @@ describe('indexExchange adapter - Response', function () {
     assert.equal(tier3SitePair.sent.ext.siteID, expectedTier3SiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedTier3SiteID);
     assert.isNumber(tier3SitePair.sent.ext.siteID, 'site ID is integer');
 
-		// check unsent bids
+    // check unsent bids
     assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
     assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
   });

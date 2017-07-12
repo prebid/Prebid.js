@@ -108,7 +108,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AUCTION_INIT]: args => {
-          args.config = config.options;  // enableAnaltyics configuration object
+          args.config = config.options; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
         }
       };

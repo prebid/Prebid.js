@@ -84,7 +84,7 @@ describe('StickyAdsTV Adapter', function () {
     let getPricingCalled;
 
     beforeEach(function () {
-            // Mock VastLoader for test purpose
+      // Mock VastLoader for test purpose
       window.com = {
         stickyadstv: {
           vast: {
