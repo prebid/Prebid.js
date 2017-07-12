@@ -13,7 +13,7 @@ var clean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('open');
-var webpackConfig = require('./webpack.conf.js');
+var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var del = require('del');
 var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
@@ -103,7 +103,8 @@ gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
 gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
 gulp.task('devpack', ['clean'], function () {
-  webpackConfig.devtool = 'source-map';
+  var cloned = _.cloneDeep(webpackConfig);
+  cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
@@ -111,20 +112,21 @@ gulp.task('devpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(webpackConfig, webpack))
+    .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
 
 gulp.task('webpack', ['clean'], function () {
+  var cloned = _.cloneDeep(webpackConfig);
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
-    webpackConfig.output.filename = 'prebid.' + argv.tag + '.js';
+    cloned.output.filename = 'prebid.' + argv.tag + '.js';
   }
 
-  delete webpackConfig.devtool;
+  delete cloned.devtool;
 
   var externalModules = helpers.getArgModules();
 
@@ -133,7 +135,7 @@ gulp.task('webpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(webpackConfig, webpack))
+    .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))
@@ -146,10 +148,11 @@ gulp.task('webpack', ['clean'], function () {
 //
 // By default, this runs in headless chrome.
 //
+// If --watch is given, the task will re-run unit tests whenever the source code changes
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 gulp.task('test', ['clean'], function (done) {
-  var karmaConf = karmaConfMaker(false, argv.browserstack);
+  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch);
 
   var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
   if (browserOverride.length > 0) {

@@ -2,11 +2,14 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
+var _ = require('lodash');
+var webpackConf = require('./webpack.conf');
 var path = require('path')
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
-  var webpackConfig = require('./webpack.conf');
+  // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
+  var webpackConfig = _.cloneDeep(webpackConf);
 
   // remove optimize plugin for tests
   webpackConfig.plugins.pop()
@@ -89,7 +92,7 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack) {
+module.exports = function(codeCoverage, browserstack, watchMode) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
 
@@ -137,7 +140,7 @@ module.exports = function(codeCoverage, browserstack) {
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    singleRun: !watchMode,
     browserDisconnectTimeout: 10000, // default 2000
     browserDisconnectTolerance: 1, // default 0
     browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
