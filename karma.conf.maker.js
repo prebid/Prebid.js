@@ -51,7 +51,7 @@ function newPluginsArray(browserstack) {
 
 function setReporters(karmaConf, codeCoverage, browserstack) {
   // In browserstack, the default 'progress' reporter floods the logs.
-  // The karma-spec-reporter is more concise in reporting failures
+  // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
     karmaConf.reporters = ['spec'];
     karmaConf.specReporter = {
@@ -70,7 +70,6 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
         html: {
           subdir: 'karma_html',
           urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-          // reportName: 'report' // report summary filename; browser info by default
         }
       }
     }

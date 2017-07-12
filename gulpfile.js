@@ -161,9 +161,9 @@ gulp.task('test', ['clean'], function (done) {
 
 gulp.task('test-coverage', ['clean'], function(done) {
   new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
-})
+});
 
-// Small task to load coverage reports in the browser
+// View the code coverage report in the browser.
 gulp.task('view-coverage', function (done) {
   var coveragePort = 1999;
 
@@ -176,7 +176,7 @@ gulp.task('view-coverage', function (done) {
   done();
 });
 
-gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test' must be finished
+gulp.task('coveralls', ['test-coverage'], function() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
