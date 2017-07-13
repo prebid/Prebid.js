@@ -270,3 +270,9 @@ gulp.task('e2etest-report', function() {
     opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
 });
+
+gulp.task('build-postbid', function() {
+  return gulp.src('./integrationExamples/postbid/oas/postbid.js')
+    .pipe(uglify())
+    .pipe(gulp.dest('build/dist'));
+});
