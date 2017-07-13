@@ -43,7 +43,8 @@ OrbitsoftAdapter = function OrbitsoftAdapter() {
     for (let i = 0; i < bids.length; i++) {
       let bidRequest = bids[i];
       let callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
+      let jptCall = buildJPTCall(bidRequest, callbackId);
+      if (jptCall) {adloader.loadScript(jptCall);}
     }
   };
 
