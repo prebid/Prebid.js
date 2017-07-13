@@ -59,8 +59,6 @@ function ucfunnelAdapter() {
       'u', page,
       'ru', refer,
       'adid', bid.params.adid,
-      'w', bid.params.width,
-      'h', bid.params.height,
       'ver', VER
     ];
 
