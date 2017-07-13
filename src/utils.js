@@ -1,4 +1,4 @@
-var CONSTANTS = require('./constants.json');
+var CONSTANTS = require('./constants');
 
 var objectType_object = 'object';
 var objectType_string = 'string';
