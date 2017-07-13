@@ -108,7 +108,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     if (!adUnitCode) {
-      utils.logWarn(errorMessage('No adUnitCode was supplied to addBidResponse.'));
+      utils.logWarn('No adUnitCode was supplied to addBidResponse.');
+      return false;
+    }
+    if (!bid) {
+      utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
       return false;
     }
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
@@ -125,7 +129,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
   function prepareBidForAuction() {
+    // Let listeners know that now is the time to adjust the bid, if they want to.
+    //
+    // This must be fired first, so that we calculate derived values from the updates
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
     const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+
     Object.assign(bid, {
       requestId: requestId,
       responseTimestamp: timestamp(),
@@ -137,7 +147,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    // append price strings
     const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
@@ -164,9 +173,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   // Add a bid to the auction.
   function addBidToAuction() {
-    // Make sure that the bidAdjustment event fires before bidResponse, so that the bid response
-    // has the adjusted bid value
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);
