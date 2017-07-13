@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "mocha": true
@@ -47,4 +47,4 @@
     "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off"
   }
-}
+};
