@@ -150,9 +150,9 @@ describe('centro adapter tests', function () {
       adapter().callBids(params);
 
       expect(window['adCentroHandler_28136300x250%2F19968336%2Fheader-bid-tag-0'])
-                .to.exist.and.to.be.a('function');
+        .to.exist.and.to.be.a('function');
       expect(window['adCentroHandler_111111728x90%2F19968336%2Fheader-bid-tag-1'])
-                .to.exist.and.to.be.a('function');
+        .to.exist.and.to.be.a('function');
     });
 
     it('bidmanager.addBidResponse should be called with correct arguments', function () {

@@ -282,7 +282,7 @@ describe('indexExchange adapter - Request', function () {
     var unsupportedSizeCount = 1;
     var requestSlotNumber = SlotThreshold;
     var configuredBids = IndexUtils.createBidSlots(requestSlotNumber);
-		// add additional unsupported sized slot
+    // add additional unsupported sized slot
     var invalidSlotPlacement = IndexUtils.DefaultPlacementCodePrefix + 'invalid';
     var invalidSlotID = 'slot-invalid';
     configuredBids.push(IndexUtils.createBidSlot(invalidSlotPlacement, invalidSlotID, [ IndexUtils.unsupportedSizes[0] ]));

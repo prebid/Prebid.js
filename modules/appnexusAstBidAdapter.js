@@ -16,10 +16,11 @@ const NATIVE_MAPPING = {
   body: 'description',
   image: {
     serverName: 'main_image',
-    serverParams: {
-      required: true,
-      sizes: [{}]
-    }
+    serverParams: { required: true, sizes: [{}] }
+  },
+  icon: {
+    serverName: 'icon',
+    serverParams: { required: true, sizes: [{}] }
   },
   sponsoredBy: 'sponsored_by'
 };
