@@ -406,22 +406,3 @@ It's important to enable DFP report on free-form query strings ([DFP doc for rep
 4. Add values for this key. The values should be the bidders' bidder code [documented here](bidders.html) under each bidder. You have to add the bidder code for the bidder that you want to run report on.
 
 </div>
-
-<!--
-<div class="bs-docs-section" markdown="1">
-
-#Reporting
-
-</div>
-
--->
-
-
-<!-- 
-### You’re ready!
-
-Once your test pages serve and you’re comfortable with pre-bid:
-
-* Add more line items for higher granularity. Use the default setting for bidderSettings.
-* Implement prebid.js in your site. -->
-

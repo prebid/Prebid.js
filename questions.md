@@ -46,14 +46,3 @@ hide: true
 </div>
 
 </div>
-
-<!--
-<div class="bs-docs-section" markdown="1">
-
-#FAQ
-
-##### Q: How should I host the Javascript library in my site?
-
-
-</div>
--->

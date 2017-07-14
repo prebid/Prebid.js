@@ -20,15 +20,6 @@ description: Free and open source solutions for publishers to quickly implement 
 
     <p class="lead">The above header bidding ad is auctioned with Prebid.js. <a href="/overview/intro.html" target="_blank">Learn more about this auction here.</a></p>
 
-<!-- <div class="form-inline"> -->
-<!--   <div class="form-group form-group-lg"> -->
-<!--     <input type="text" class="form-control" id="email-field" placeholder="Email" required> -->
-<!--   </div> -->
-<!--   <div class="form-group"> -->
-<!--     <button class="btn btn-outline btn-lg" id="submit-email" onclick="submitEmail()">Get the Latest Updates</button> -->
-<!--   </div> -->
-<!-- </div> -->
-
     <hr class="full-rule">
 
     <div class="row benefits">

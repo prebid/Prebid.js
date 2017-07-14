@@ -14,8 +14,6 @@ The content on this page is from 2015 and is now obsolete.
 
 While implementing Prebid.js' adaptors for different bidders, we've noticed not all bidders return exact price to the publisher's page. Different bidders also have vastly different response latency. We hope the analysis here can help you make smart decisions when implementing header bidding. 
 
-<!--| Amazon | Estimated at $0.50 increment | 300ms | -->
-
 {: .table .table-bordered .table-striped }
 |	Bidder |	Price 	|	*Latency (rough estimate)   |
 | :----  |:--------| :-------|
