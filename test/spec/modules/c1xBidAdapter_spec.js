@@ -3,15 +3,18 @@ import C1XAdapter from 'modules/c1xBidAdapter';
 import bidmanager from 'src/bidmanager';
 import adLoader from 'src/adloader';
 
-let getDefaultBidderSetting = () => {
+let getDefaultBidRequest = () => {
   return {
     bidderCode: 'c1x',
     bids: [{
-      siteId: 9999,
-      pixelId: 9999,
+      bidder: 'c1x',
       sizes: [[300, 250], [300, 600]],
-      placementCode: 'div-c1x-ht',
-      domain: 'http://c1exchange.com/'
+      params: {
+        siteId: '999',
+        pixelId: '9999',
+        placementCode: 'div-c1x-ht',
+        domain: 'http://c1exchange.com/'
+      }
     }]
   };
 };
@@ -33,7 +36,7 @@ describe('c1x adapter tests: ', () => {
   let adapter;
 
   function createBidderRequest(bids) {
-    let bidderRequest = getDefaultBidderSetting();
+    let bidderRequest = getDefaultBidRequest();
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
     }
@@ -57,7 +60,7 @@ describe('c1x adapter tests: ', () => {
       stubLoadScript.restore();
     });
     it('should be called only once', () => {
-      adapter.callBids(getDefaultBidderSetting());
+      adapter.callBids(getDefaultBidRequest());
       sinon.assert.calledOnce(stubLoadScript);
       expect(window._c1xResponse).to.exist.and.to.be.a('function');
     });
@@ -67,26 +70,28 @@ describe('c1x adapter tests: ', () => {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
-      adapter.callBids(getDefaultBidderSetting());
+      adapter.callBids(getDefaultBidRequest());
       expect(requests).to.be.empty;
       xhr.restore();
     });
     it('should send with correct parameters', () => {
-      adapter.callBids(getDefaultBidderSetting());
+      adapter.callBids(getDefaultBidRequest());
       let expectedUrl = stubLoadScript.getCall(0).args[0];
       sinon.assert.calledWith(stubLoadScript, expectedUrl);
     });
     it('should hit endpoint with optional param', () => {
       let bids = [{
-        siteId: 9999,
-        sizes: [[300, 250]],
-        placementCode: 'div-c1x-ht',
-        endpoint: 'http://test.c1exchange.com:2000/ht',
-        domain: 'http://c1exchange.com/',
-        floorPriceMap: {
-          '300x250': 4.00
-        },
-        dspid: 4288
+        bidder: 'c1x',
+        sizes: [[300, 250], [300, 600]],
+        params: {
+          siteId: '999',
+          placementCode: 'div-c1x-ht',
+          endpoint: 'http://ht-integration.c1exchange.com:9000/ht',
+          floorPriceMap: {
+            '300x250': 4.00
+          },
+          dspid: '4288'
+        }
       }];
       adapter.callBids(createBidderRequest(bids));
       let expectedUrl = stubLoadScript.getCall(0).args[0];
@@ -96,30 +101,22 @@ describe('c1x adapter tests: ', () => {
       sinon.assert.calledTwice(stubLoadScript);
     });
     it('should hit default bidder endpoint', () => {
-      let bid = getDefaultBidderSetting();
-      bid.bids[0].endpoint = null;
+      let bid = getDefaultBidRequest();
+      bid.bids[0].params.endpoint = null;
       adapter.callBids(bid);
       let expectedUrl = stubLoadScript.getCall(0).args[0];
       sinon.assert.calledWith(stubLoadScript, expectedUrl);
     });
     it('should throw error msg if no site id provided', () => {
-      let bid = getDefaultBidderSetting();
-      bid.bids[0].siteId = '';
+      let bid = getDefaultBidRequest();
+      bid.bids[0].params.siteId = '';
       adapter.callBids(bid);
       sinon.assert.notCalled(stubLoadScript);
     });
-    it('should get pixelId from bidder settings if no pixelId in bid request', () => {
-      let bid = getDefaultBidderSetting();
-      let responsePId;
-      pbjs.bidderSettings['c1x'] = { pixelId: 4567 };
-      bid.bids[0].pixelId = '';
-      adapter.callBids(bid);
-    });
     it('should not inject audience pixel if no pixelId provided', () => {
-      let bid = getDefaultBidderSetting();
+      let bid = getDefaultBidRequest();
       let responsePId;
-      pbjs.bidderSettings['c1x'] = null;
-      bid.bids[0].pixelId = '';
+      bid.bids[0].params.pixelId = '';
       adapter.callBids(bid);
     });
   });

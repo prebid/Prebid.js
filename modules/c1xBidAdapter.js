@@ -70,14 +70,6 @@ function C1XAdapter() {
     return bidObject;
   }
 
-  function getSettings(key) {
-    if (pbjs && pbjs.bidderSettings['c1x']) {
-      var c1xSettings = pbjs.bidderSettings['c1x'];
-      return c1xSettings[key];
-    } else {
-      return null;
-    }
-  }
   // inject the audience pixel only if pbjs.bidderSettings['c1x'].pixelId is set.
   function injectAudiencePixel(pixel) {
     var pixelId = pixel;
@@ -94,13 +86,14 @@ function C1XAdapter() {
 
   function _callBids(params) {
     var bids = params.bids;
+    var c1xParams = bids[0].params;
 
-    if (bids[0].pixelId || getSettings('pixelId')) {
-      var pixelId = bids[0].pixelId ? bids[0].pixelId : getSettings('pixelId');
+    if (c1xParams.pixelId) {
+      var pixelId = c1xParams.pixelId;
       injectAudiencePixel(pixelId);
     }
 
-    var siteId = bids[0].siteId ? bids[0].siteId : getSettings('siteId');
+    var siteId = c1xParams.siteId;
     if (!siteId) {
       utils.logWarn(LOG_MSG.noSite);
       return;
@@ -108,12 +101,13 @@ function C1XAdapter() {
 
     var options = ['adunits=' + bids.length];
     options.push('site=' + siteId);
+
     for (var i = 0; i < bids.length; i++) {
       options.push('a' + (i + 1) + '=' + bids[i].placementCode);
       var sizes = bids[i].sizes,
         sizeStr = sizes.reduce(function(prev, current) { return prev + (prev === '' ? '' : ',') + current.join('x') }, '');
 // send floor price if the setting is available.
-      var floorPriceMap = bids[0].floorPriceMap ? bids[0].floorPriceMap : getSettings('floorPriceMap');
+      var floorPriceMap = c1xParams.floorPriceMap;
       if (floorPriceMap) {
         var adUnitSize = sizes[0].join('x');
         if (adUnitSize in floorPriceMap) {
@@ -124,10 +118,10 @@ function C1XAdapter() {
     }
     options.push('rid=' + new Date().getTime());  // cache busting
     var c1xEndpoint = ENDPOINT;
-    if (bids[0].endpoint || getSettings('endpoint')) {
-      c1xEndpoint = bids[0].endpoint ? bids[0].endpoint : getSettings('endpoint');
+    if (c1xParams.endpoint) {
+      c1xEndpoint = c1xParams.endpoint;
     }
-    var dspid = bids[0].dspid ? bids[0].dspid : getSettings('dspid');
+    var dspid = c1xParams.dspid;
     if (dspid) {
       options.push('dspid=' + dspid);
     }
