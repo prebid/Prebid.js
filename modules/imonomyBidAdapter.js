@@ -1,11 +1,11 @@
 /* imonomy.js v3.1.0
 Updated : 2017-03-15 */
 
-var utils = require('../utils.js');
-var adloader = require('../adloader.js');
-var bidmanager = require('../bidmanager.js');
-var bidfactory = require('../bidfactory.js');
-var STATUSCODES = require('../constants.json').STATUS;
+var utils = require('src/utils.js');
+var adloader = require('src/adloader.js');
+var bidmanager = require('src/bidmanager.js');
+var bidfactory = require('src/bidfactory.js');
+var STATUSCODES = require('src/constants.json').STATUS;
 
 function ImonomyAdapter() {
 
