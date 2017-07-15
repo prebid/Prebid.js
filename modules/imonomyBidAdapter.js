@@ -87,7 +87,7 @@ function ImonomyAdapter() {
 
       adloader.loadScript(request.join('&'));
     } catch (e) {
-        return;
+      return;
     }
   }
 
@@ -112,8 +112,7 @@ function ImonomyAdapter() {
         var bid;
 
         try{
-          if(adItems.um_list)
-          {
+          if(adItems.um_list){
             _processUserMatchings(adItems.um_list);
           }
         } catch(e) {}
@@ -123,7 +122,7 @@ function ImonomyAdapter() {
         }catch(e){}
 
         adItems = adItems.ads;
-        
+
         for (var i = 0, l = bids.length; i < l; i++) {
           bid = bids[i];
           adItem = getAdItem(adItems, bids[i].bidId);
@@ -182,8 +181,7 @@ function ImonomyAdapter() {
   function getAdItem(adItems, imp){
     adItems = adItems || []
     for (var i = 0, l = adItems.length; i < l; i++) {
-      if(adItems[i].impression_id == imp )
-      {
+      if(adItems[i].impression_id == imp ){
         return adItems[i];
       }
     }
