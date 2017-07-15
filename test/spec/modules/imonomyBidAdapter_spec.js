@@ -37,7 +37,7 @@ describe('imonomy adapter test', () => {
       }
     ]
   };
-  
+
   let validResponseUM = {
     um_list: [{type: 'iframe', Url: '#' }],
     ads: [
