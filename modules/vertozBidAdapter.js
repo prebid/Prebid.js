@@ -20,7 +20,7 @@ function VertozAdapter() {
       let vzEndPoint = BASE_URI;
       let reqParams = bid.params || {};
       let placementId = utils.getValue(reqParams, 'placementId');
-      let cpm = utils.getValue(reqParams, 'cpm');
+      let cpm = utils.getValue(reqParams, 'cpmFloor');
 
       if (utils.isEmptyStr(placementId)) {
         utils.logError('missing params:', BIDDER_NAME, 'Enter valid vzPlacementId');
