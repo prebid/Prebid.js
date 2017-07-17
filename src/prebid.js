@@ -657,6 +657,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
  * @param {object} options options for video tag
+ *
+ * @deprecated Include the dfpVideoSupport module in your build, and use the
+ *   $$PREBID_GLOBAL$$.adserver.buildVideoAdUrl (if DFP is your only Ad Server) or
+ *   $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl (if you use other Ad Servers too)
+ *   function instead. This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
@@ -706,7 +711,15 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 
 /**
  * Set config for server to server header bidding
- * @param {object} options - config object for s2s
+ * @typedef {Object} options - required
+ * @property {boolean} enabled enables S2S bidding
+ * @property {string[]} bidders bidders to request S2S
+ *  === optional params below ===
+ * @property {string} [endpoint] endpoint to contact
+ * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {string} [adapter] adapter code to use for S2S
+ * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {boolean} [cookieSet] enables cookieSet functionality
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   if (!utils.contains(Object.keys(options), 'accountId')) {
@@ -724,7 +737,10 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
     timeout: 1000,
     maxBids: 1,
-    adapter: 'prebidServer'
+    adapter: CONSTANTS.S2S.ADAPTER,
+    syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
+    cookieSet: true,
+    bidders: []
   }, options);
   adaptermanager.setS2SConfig(config);
 };

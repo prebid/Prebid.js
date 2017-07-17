@@ -2,7 +2,7 @@ describe('jcm adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
 
-    // FYI: querystringify will perform encoding/decoding
+  // FYI: querystringify will perform encoding/decoding
   var querystringify = require('querystringify');
 
   var adapter = require('modules/jcmBidAdapter');
