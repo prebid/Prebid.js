@@ -226,4 +226,9 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.native.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
     expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
+
+  it('Verify createNew', function () {
+    const adapter = PulsePointAdapter.createNew();
+    expect(adapter).to.have.property('callBids');
+  });
 });
