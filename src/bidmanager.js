@@ -2,6 +2,7 @@ import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
+import { Renderer } from 'src/Renderer';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -134,18 +135,27 @@ exports.addBidResponse = function (adUnitCode, bid) {
     // This must be fired first, so that we calculate derived values from the updates
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
-    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+    const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
 
     Object.assign(bid, {
-      requestId: requestId,
+      requestId: bidRequest.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: start,
+      requestTimestamp: bidRequest.start,
       cpm: parseFloat(bid.cpm) || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+    // a publisher-defined renderer can be used to render bids
+    const adUnitRenderer =
+      bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+
+    if (adUnitRenderer) {
+      bid.renderer = Renderer.install({ url: adUnitRenderer.url });
+      bid.renderer.setRender(adUnitRenderer.render);
+    }
 
     const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
