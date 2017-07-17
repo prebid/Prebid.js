@@ -41,24 +41,22 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
       }
 
       function addBid(res, bid) {
-        var obj = JSON.parse(res);
-
-        if (typeof obj !== 'object') {
-          throw 'Bad response';
+        var obj;
+        
+        try{
+          obj = JSON.parse(res);
+        } catch (err) {
+          throw 'Faild to parse bid response';
         }
 
-        if (obj.length === 0) {
-          throw 'Empty response';
-        }
-
-        if (typeof bid.sizes === 'undefined') {
-          throw 'No bid sizes';
+        if (Object.keys(obj).length === 0 || Object.keys(bid).length === 0) {
+          throw 'Empty Bid';
         }
 
         var ad = obj.seatbid[0].bid[0];
         var bid_params = bidfactory.createBid(STATUS.GOOD, bid);
         var sizes = bid.sizes[0];
-
+        
         bid_params.un_id = obj.id;
         bid_params.bidderCode = bid.bidder;
         bid_params.cpm = Number(ad.price);
@@ -69,11 +67,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
         bid_params.cid = ad.cid;
         bid_params.seat = obj.seatbid[0].seat;
 
-        try {
-          bidmanager.addBidResponse(bid.placementCode, bid_params);
-        } catch (err) {
-          throw 'Faild to add bid response';
-        }
+        bidmanager.addBidResponse(bid.placementCode, bid_params);
       }
 
       function handleBidError() {
@@ -81,80 +75,88 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
         bidObj.bidderCode = bid.bidder;
         bidmanager.addBidResponse(bid.bidid, bidObj);
       }
-
-      function buildCallParams(bidRequest) {
-        if (typeof bidRequest.params === 'undefined') {
-          throw 'Params field not found';
-        }
-
-        if (typeof bidRequest.sizes === 'undefined' || bidRequest.sizes.length === 0) {
-          throw 'Bid sizes not found';
-        }
-
-        var sizes = bidRequest.sizes[0];
-        var floor = (typeof bidRequest.params.floor !== 'undefined' && bidRequest.params.floor === '') ? 0 : bidRequest.params.floor;
-        var protocol = (window.location.protocol === 'https') ? 1 : 0;
-        var publisher_id = (typeof bidRequest.params.publisherID !== 'undefined') ? bidRequest.params.publisherID : '';
-        var params = {};
-        params.id = getid();
-
-        params.cur = ['USD'];
-
-        params.imp = [{
-          id: params.id,
-          banner: {
-            w: sizes[0],
-            h: sizes[1],
-            secure: protocol
-          },
-          bidfloor: floor
-        }];
-
-        params.device = {
-          ua: navigator.userAgent
-        };
-
-        params.user = {
-          id: publisher_id
-        };
-
-        params.app = {
-          id: params.id,
-          domain: document.domain,
-          publisher: {
-            id: publisher_id
-          }
-        };
-
-        params.site = {
-          'id': publisher_id,
-          'domain': window.location.hostname,
-          'page': document.URL,
-          'ref': document.referrer,
-          'publisher': {
-            'id': publisher_id,
-            'domain': window.location.hostname
-          }
-        };
-
-        params.publisher = {
-          'id': publisher_id,
-          'domain': window.location.hostname
-        };
-
-        return JSON.stringify(params);
-      }
-
-      function getid() {
-        function s4() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); }
-        return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-      }
     });
+  }
+
+  function buildCallParams(bidRequest) {
+    if (typeof bidRequest.params === 'undefined') {
+      throw 'No params';
+    }
+
+    if (typeof bidRequest.sizes === 'undefined' || bidRequest.sizes.length === 0) {
+      throw 'No sizes';
+    }
+
+    if (typeof bidRequest.params.floor === 'undefined') {
+      throw 'No floor';
+    }
+    else if (isNaN(Number(bidRequest.params.floor))) {
+      throw 'Floor must be numeric value';
+    }
+
+    var sizes = bidRequest.sizes[0];
+    var floor = (typeof bidRequest.params.floor !== 'undefined' && bidRequest.params.floor === '') ? 0 : bidRequest.params.floor;
+    var protocol = (window.location.protocol === 'https') ? 1 : 0;
+    var publisher_id = (typeof bidRequest.params.publisherID !== 'undefined') ? bidRequest.params.publisherID : '';
+    var params = {};
+    params.id = getid();
+
+    params.cur = ['USD'];
+
+    params.imp = [{
+      id: params.id,
+      banner: {
+        w: sizes[0],
+        h: sizes[1],
+        secure: protocol
+      },
+      bidfloor: floor
+    }];
+
+    params.device = {
+      ua: navigator.userAgent
+    };
+
+    params.user = {
+      id: publisher_id
+    };
+
+    params.app = {
+      id: params.id,
+      domain: document.domain,
+      publisher: {
+        id: publisher_id
+      }
+    };
+
+    params.site = {
+      'id': publisher_id,
+      'domain': window.location.hostname,
+      'page': document.URL,
+      'ref': document.referrer,
+      'publisher': {
+        'id': publisher_id,
+        'domain': window.location.hostname
+      }
+    };
+
+    params.publisher = {
+      'id': publisher_id,
+      'domain': window.location.hostname
+    };
+
+    return JSON.stringify(params);
+  }
+
+  function getid() {
+    function s4() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
   return Object.assign(Adapter.createNew(MARS_BIDDER_CODE), {
     callBids: _callBids,
-    createNew: MarsmediaBidAdapter.createNew
+    createNew: MarsmediaBidAdapter.createNew,
+    buildCallParams: buildCallParams
   });
 };
 
