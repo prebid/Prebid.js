@@ -666,3 +666,7 @@ export function getBidderRequest(bidder, adUnitCode) {
       .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
 }
+
+export function timestamp() {
+  return new Date().getTime();
+}
