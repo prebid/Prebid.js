@@ -31,8 +31,8 @@ targeting.getAllTargeting = function(adUnitCode) {
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
   var targeting = getWinningBidTargeting(adUnitCodes)
-      .concat(getAlwaysUseBidTargeting(adUnitCodes))
-      .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
+    .concat(getAlwaysUseBidTargeting(adUnitCodes))
+    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
 
   // store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -96,12 +96,12 @@ targeting.getWinningBids = function(adUnitCode) {
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
       .reduce(getHighestCpm,
-      {
-        adUnitCode: adUnitCode,
-        cpm: 0,
-        adserverTargeting: {},
-        timeToRespond: 0
-      }));
+        {
+          adUnitCode: adUnitCode,
+          cpm: 0,
+          adserverTargeting: {},
+          timeToRespond: 0
+        }));
 };
 
 targeting.setTargetingForAst = function() {
@@ -141,9 +141,9 @@ function getWinningBidTargeting(adUnitCodes) {
 }
 
 function getStandardKeys() {
-  return bidmanager.getStandardBidderAdServerTargeting()        // in case using a custom standard key set
-                   .map(targeting => targeting.key)
-                   .concat(CONSTANTS.TARGETING_KEYS).filter(uniques);     // standard keys defined in the library.
+  return bidmanager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
+    .map(targeting => targeting.key)
+    .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
 }
 
 /**

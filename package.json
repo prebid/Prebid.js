@@ -32,9 +32,9 @@
     "del": "^2.2.0",
     "ejs": "^2.5.1",
     "es5-shim": "^4.5.2",
-    "eslint-config-standard": "^10.2.0",
+    "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-node": "^4.2.2",
+    "eslint-plugin-node": "^5.1.0",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
     "faker": "^3.1.0",
@@ -44,11 +44,13 @@
     "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^2.0.6",
-    "gulp-eslint": "^3.0.1",
+    "gulp-eslint": "^4.0.0",
+    "gulp-footer": "^1.0.5",
     "gulp-header": "^1.7.1",
+    "gulp-if": "^2.0.2",
+    "gulp-jscs": "^3.0.2",
     "gulp-jsdoc-to-markdown": "^1.2.1",
     "gulp-karma": "0.0.4",
-    "gulp-mocha": "^2.2.0",
     "gulp-optimize-js": "^1.1.0",
     "gulp-rename": "^1.2.0",
     "gulp-replace": "^0.4.0",
@@ -56,7 +58,6 @@
     "gulp-uglify": "^0.3.1",
     "gulp-util": "^3.0.0",
     "gulp-webdriver": "^1.0.1",
-    "gulp-zip": "^3.1.0",
     "istanbul": "^0.3.2",
     "istanbul-instrumenter-loader": "^0.1.2",
     "json-loader": "^0.5.1",
@@ -94,6 +95,7 @@
     "requirejs": "^2.1.20",
     "sinon": "^1.12.1",
     "string-replace-webpack-plugin": "0.0.3",
+    "through2": "^2.0.3",
     "uglify-js": "^2.8.10",
     "url-parse": "^1.0.5",
     "webpack": "^1.12.3",
@@ -102,6 +104,7 @@
   },
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
-    "core-js": "^2.4.1"
+    "core-js": "^2.4.1",
+    "gulp-sourcemaps": "^2.6.0"
   }
 }
