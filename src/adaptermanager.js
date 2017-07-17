@@ -20,7 +20,7 @@ let _s2sConfig = {
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
-function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .map(bid => {
@@ -46,14 +46,110 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           sizes: sizes,
           bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
           bidderRequestId,
-          requestId
+          auctionId
         });
       }
       );
   }).reduce(flatten, []).filter(val => val !== '');
 }
 
-exports.callBids = ({adUnits, cbTimeout}) => {
+exports.callBids = (auction, cbTimeout) => {
+  let adUnits = auction.getAdUnits();
+  const auctionStart = auction.getAuctionStart();
+  const auctionId = auction.getAuctionId();
+  let bidderCodes = getBidderCodes(adUnits);
+  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
+    bidderCodes = shuffle(bidderCodes);
+  }
+
+  const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
+  if (s2sAdapter) {
+    s2sAdapter.setConfig(_s2sConfig);
+    s2sAdapter.queueSync({bidderCodes});
+  }
+
+  if (_s2sConfig.enabled) {
+    // these are called on the s2s adapter
+    let adaptersServerSide = _s2sConfig.bidders;
+
+    // don't call these client side
+    bidderCodes = bidderCodes.filter((elm) => {
+      return !adaptersServerSide.includes(elm);
+    });
+    let adUnitsCopy = utils.cloneJson(adUnits);
+
+    // filter out client side bids
+    adUnitsCopy.forEach((adUnit) => {
+      if (adUnit.sizeMapping) {
+        adUnit.sizes = mapSizes(adUnit);
+        delete adUnit.sizeMapping;
+      }
+      adUnit.sizes = transformHeightWidth(adUnit);
+      adUnit.bids = adUnit.bids.filter((bid) => {
+        return adaptersServerSide.includes(bid.bidder);
+      }).map((bid) => {
+        bid.bid_id = utils.getUniqueIdentifierStr();
+        return bid;
+      });
+    });
+
+    // don't send empty requests
+    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+      return adUnit.bids.length !== 0;
+    });
+
+    let tid = utils.generateUUID();
+    adaptersServerSide.forEach(bidderCode => {
+      const bidderRequestId = utils.getUniqueIdentifierStr();
+      const bidderRequest = {
+        bidderCode,
+        auctionId,
+        bidderRequestId,
+        tid,
+        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsCopy}),
+        start: new Date().getTime(),
+        auctionStart: auctionStart,
+        timeout: _s2sConfig.timeout,
+        src: CONSTANTS.S2S.SRC
+      };
+      if (bidderRequest.bids.length !== 0) {
+        // $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+        auction.setBidderRequests(bidderRequest);
+      }
+    });
+
+    let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
+    utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
+    s2sAdapter.callBids(s2sBidRequest);
+  }
+
+  bidderCodes.forEach(bidderCode => {
+    const adapter = _bidderRegistry[bidderCode];
+    if (adapter) {
+      const bidderRequestId = utils.getUniqueIdentifierStr();
+      const bidderRequest = {
+        bidderCode,
+        auctionId,
+        bidderRequestId,
+        bids: getBids({bidderCode, auctionId, bidderRequestId, adUnits}),
+        start: new Date().getTime(),
+        auctionStart: auctionStart,
+        timeout: cbTimeout
+      };
+      if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
+        utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
+        // $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+        auction.setBidderRequests(bidderRequest);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
+        adapter.callBids(bidderRequest, auction.addBidResponse);
+      }
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
+    }
+  });
+}
+
+exports.callBids1 = ({adUnits, cbTimeout}) => {
   const requestId = utils.generateUUID();
   const auctionStart = Date.now();
 

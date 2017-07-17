@@ -11,6 +11,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from 'src/cookie.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
+import { auctionManager } from './auctionManager';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -382,43 +383,31 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
-  if (auctionRunning) {
-    bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes });
-    });
-    return;
-  }
-
-  auctionRunning = true;
-
   // we will use adUnitCodes for filtering the current auction
   $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
-
-  bidmanager.externalCallbackReset();
-  clearPlacements();
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     if (typeof bidsBackHandler === objectType_function) {
-      bidmanager.addOneTimeCallback(bidsBackHandler, false);
+      // add callback
     }
-    bidmanager.executeCallback();
+    // executeCallback, what if its a second request
     return;
   }
 
-  // set timeout for all bids
-  const timedOut = true;
-  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  const timer = setTimeout(timeoutCallback, cbTimeout);
-  setAjaxTimeout(cbTimeout);
+  const auction = auctionManager.createAuction();
+  auction.setAdUnits(adUnits);
   if (typeof bidsBackHandler === objectType_function) {
-    bidmanager.addOneTimeCallback(bidsBackHandler, timer);
+    auction.setCallback(bidsBackHandler);
   }
+  // set timeout for all bids
+  if (!auctionRunning) {
+    setTimeout(auctionManager.executeCallback, cbTimeout);
+    auctionRunning = true;
+  }
+  auction.callBids(cbTimeout);
 
-  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
-  if ($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
-    bidmanager.executeCallback();
-  }
+  setAjaxTimeout(cbTimeout);
 };
 
 /**
