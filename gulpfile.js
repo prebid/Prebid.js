@@ -3,15 +3,17 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var argv = require('yargs').argv;
 var gutil = require('gulp-util');
 var connect = require('gulp-connect');
-var webpack = require('webpack-stream');
+var path = require('path');
+var webpack = require('webpack');
+var webpackStream = require('webpack-stream');
 var uglify = require('gulp-uglify');
 var clean = require('gulp-clean');
-var karma = require('gulp-karma');
+var KarmaServer = require('karma').Server;
+var karmaConfMaker = require('./karma.conf.maker');
 var opens = require('open');
-var webpackConfig = require('./webpack.conf.js');
+var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var del = require('del');
 var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
@@ -26,10 +28,8 @@ var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var fs = require('fs');
 
-var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
-var packageNameVersion = prebid.name + '_' + prebid.version;
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var analyticsDirectory = '../analytics';
 var port = 9999;
@@ -41,7 +41,7 @@ gulp.task('serve', ['lint', 'build-bundle-dev', 'watch', 'test']);
 
 gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
-gulp.task('run-tests', ['lint', 'test']);
+gulp.task('run-tests', ['lint', 'test-coverage']);
 
 gulp.task('build', ['build-bundle-prod']);
 
@@ -86,12 +86,25 @@ function bundle(dev) {
     .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
+// Workaround for incompatibility between Karma & gulp callbacks.
+// See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
+function newKarmaCallback(done) {
+  return function (exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+    } else {
+      done();
+    }
+  }
+}
+
 gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
 gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
 gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
 gulp.task('devpack', ['clean'], function () {
-  webpackConfig.devtool = 'source-map';
+  var cloned = _.cloneDeep(webpackConfig);
+  cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
@@ -99,20 +112,21 @@ gulp.task('devpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpack(webpackConfig))
+    .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
 
 gulp.task('webpack', ['clean'], function () {
+  var cloned = _.cloneDeep(webpackConfig);
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
-    webpackConfig.output.filename = 'prebid.' + argv.tag + '.js';
+    cloned.output.filename = 'prebid.' + argv.tag + '.js';
   }
 
-  webpackConfig.devtool = null;
+  delete cloned.devtool;
 
   var externalModules = helpers.getArgModules();
 
@@ -121,7 +135,7 @@ gulp.task('webpack', ['clean'], function () {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpack(webpackConfig))
+    .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid.js', header(banner, { prebid: prebid })))
@@ -130,80 +144,50 @@ gulp.task('webpack', ['clean'], function () {
     .pipe(connect.reload());
 });
 
-// Karma Continuous Testing
-// Pass your browsers by using --browsers=chrome,firefox,ie9
-// Run CI by passing --watch
-gulp.task('test', ['clean'], function () {
-  var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
-  var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+// Run the unit tests.
+//
+// By default, this runs in headless chrome.
+//
+// If --watch is given, the task will re-run unit tests whenever the source code changes
+// If --browserstack is given, it will run the full suite of currently supported browsers.
+// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
+gulp.task('test', ['clean'], function (done) {
+  var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch);
 
-  if (process.env.TRAVIS) {
-    browserArgs = ['Chrome_travis_ci'];
+  var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+  if (browserOverride.length > 0) {
+    karmaConf.browsers = browserOverride;
   }
 
-  if (argv.browserstack) {
-    browserArgs = [
-      'bs_ie_13_windows_10',
-      'bs_ie_11_windows_10',
-      'bs_firefox_46_windows_10',
-      'bs_chrome_51_windows_10',
-      'bs_ie_11_windows_8.1',
-      'bs_firefox_46_windows_8.1',
-      'bs_chrome_51_windows_8.1',
-      'bs_ie_10_windows_8',
-      'bs_firefox_46_windows_8',
-      'bs_chrome_51_windows_8',
-      'bs_ie_11_windows_7',
-      'bs_ie_10_windows_7',
-      'bs_ie_9_windows_7',
-      'bs_firefox_46_windows_7',
-      'bs_chrome_51_windows_7',
-      'bs_safari_9.1_mac_elcapitan',
-      'bs_firefox_46_mac_elcapitan',
-      'bs_chrome_51_mac_elcapitan',
-      'bs_safari_8_mac_yosemite',
-      'bs_firefox_46_mac_yosemite',
-      'bs_chrome_51_mac_yosemite',
-      'bs_safari_7.1_mac_mavericks',
-      'bs_firefox_46_mac_mavericks',
-      'bs_chrome_49_mac_mavericks',
-      'bs_ios_7',
-      'bs_ios_8',
-      'bs_ios_9',
-    ];
-  }
-
-  return gulp.src('lookAtKarmaConfJS')
-    .pipe(karma({
-      browsers: (browserArgs.length > 0) ? browserArgs : defaultBrowsers,
-      configFile: 'karma.conf.js',
-      action: (argv.watch) ? 'watch' : 'run'
-    }));
+  new KarmaServer(karmaConf, newKarmaCallback(done)).start();
 });
 
-// Small task to load coverage reports in the browser
-gulp.task('coverage', function (done) {
+gulp.task('test-coverage', ['clean'], function(done) {
+  new KarmaServer(karmaConfMaker(true, false), newKarmaCallback(done)).start();
+});
+
+// View the code coverage report in the browser.
+gulp.task('view-coverage', function (done) {
   var coveragePort = 1999;
 
   connect.server({
-    port: 1999,
-    root: 'build/coverage',
+    port: coveragePort,
+    root: 'build/coverage/karma_html',
     livereload: false
   });
-  opens('http://localhost:' + coveragePort + '/coverage/');
+  opens('http://localhost:' + coveragePort);
   done();
 });
 
-gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test' must be finished
+gulp.task('coveralls', ['test-coverage'], function() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
-    .pipe(shell('cat build/coverage/lcov/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+    .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 });
 
 // Watch Task with Live Reload
 gulp.task('watch', function () {
-
   gulp.watch([
     'src/**/*.js',
     'modules/**/*.js',
@@ -285,7 +269,6 @@ gulp.task('e2etest-report', function() {
   setTimeout(function() {
     opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
   }, 5000);
-
 });
 
 gulp.task('build-postbid', function() {
