@@ -23,6 +23,7 @@ function Bid(statusCode, bidRequest) {
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = _bidId;
+  this.mediaType = 'banner';
 
   function _getStatus() {
     switch (_statusCode) {

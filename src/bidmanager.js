@@ -124,6 +124,31 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
       return false;
     }
+    if (bid.mediaType === 'banner' && !hasSize(bid)) {
+      utils.logError(errorMessage(`Banner bids require a width and height`));
+      return false;
+    }
+
+    return true;
+  }
+
+  // check that the bid has a width and height set
+  function hasSize(bid) {
+    const adUnit = getBidderRequest(bid.bidderCode, adUnitCode);
+    const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+    const parsedSizes = utils.parseSizesInput(sizes);
+
+    // if a banner impression has one valid size, we assign that size to any bid
+    // response that does not explicitly set width or height, so pass validation
+    if (parsedSizes.length === 1) {
+      return true;
+    }
+
+    // falsy value except 0 are not valid
+    if ((!bid.width && bid.width !== 0) || (!bid.height && bid.height !== 0)) {
+      return false;
+    }
+
     return true;
   }
 
@@ -136,16 +161,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
     const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
-    // 'banner' is default and may not be explicitly set on mediaType, so any other mediaType isn't checked
-    if (!['video', 'video-outstream', 'native'].includes(bid.mediaType)) {
-      if (bid.width === undefined || bid.height === undefined) {
-        const adUnit = getBidderRequest(bid.bidderCode, adUnitCode);
-        const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
-        // TODO: set width and height if one valid size
-        utils.logError(`banner bids require a width and height. ${bid.bidderCode} bid id ${bid.adId} won't be added to the auction`);
-        return;
-      }
-    }
 
     Object.assign(bid, {
       requestId: bidRequest.requestId,

@@ -486,7 +486,7 @@ describe('bidmanager.js', function () {
 
     it('should not add banner bids that have no width or height', () => {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        bidfactory.createBid(1),
         {
           width: undefined,
           height: undefined
@@ -494,25 +494,10 @@ describe('bidmanager.js', function () {
       );
 
       bidmanager.addBidResponse('adUnitCode', bid);
-      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived[$$PREBID_GLOBAL$$._bidsReceived.length - 1];
 
       assert.notEqual(bid.adId, addedBid.adId);
-    });
-
-    it('should add valid non-banner bids regardless of width or height', () => {
-      const bid = Object.assign({},
-        bidfactory.createBid(2),
-        {
-          mediaType: 'video',
-          width: undefined,
-          height: undefined
-        }
-      );
-
-      bidmanager.addBidResponse('adUnitCode', bid);
-      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
-
-      assert.equal(bid.adId, addedBid.adId);
     });
 
     it('should not add native bids that do not have required assets', () => {
