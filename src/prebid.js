@@ -398,7 +398,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const auction = auctionManager.createAuction();
   auction.setAdUnits(adUnits);
   if (typeof bidsBackHandler === objectType_function) {
-    auction.setCallback(bidsBackHandler);
+    auctionManager.setCallback(bidsBackHandler);
   }
   // set timeout for all bids
   if (!auctionRunning) {
@@ -406,7 +406,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     auctionRunning = true;
   }
   auction.callBids(cbTimeout);
-
   setAjaxTimeout(cbTimeout);
 };
 

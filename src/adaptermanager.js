@@ -113,7 +113,6 @@ exports.callBids = (auction, cbTimeout) => {
         src: CONSTANTS.S2S.SRC
       };
       if (bidderRequest.bids.length !== 0) {
-        // $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         auction.setBidderRequests(bidderRequest);
       }
     });
@@ -138,7 +137,6 @@ exports.callBids = (auction, cbTimeout) => {
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
         utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-        // $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         auction.setBidderRequests(bidderRequest);
         events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
         adapter.callBids(bidderRequest, auction.addBidResponse);

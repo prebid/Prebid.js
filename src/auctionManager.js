@@ -7,6 +7,9 @@ import { getPriceBucketString } from './cpmBucketManager';
 
 export const auctionManager = (function() {
   var _auctions = [];
+  var callback;
+  let _customPriceBucket;
+  var defaultBidderSettingsMap = {};
 
   function bidsBackAdUnit(adUnitCode, auction) {
     const requested = auction.getBidderRequests()
@@ -155,7 +158,7 @@ export const auctionManager = (function() {
   }
 
   function _getAuction(auctionId) {
-    _auctions.find(auction => auction.auctionId === auctionId);
+    return _auctions.find(auction => auction.getAuctionId() === auctionId);
   }
 
   function _addAuction(auction) {
@@ -172,14 +175,11 @@ export const auctionManager = (function() {
       .filter(bidderRequest => bidderRequest.bidderCode === _bidderCode));
   }
 
-  function setCallback(cb) {
-    // set cb;
-  }
-
   function executeCallback() {
     // get all auctions
     // auction.setCallback
     // delete all auction instances
+    callback.apply($$PREBID_GLOBAL$$);
   }
 
   function Auction() {
@@ -190,6 +190,14 @@ export const auctionManager = (function() {
     var _bidsReceived = [];
     var _auctionStart;
     var _auctionId;
+
+    this.setAuctionId = (auctionId) => {
+      _auctionId = auctionId;
+    }
+
+    this.setAuctionStart = (auctionStart) => {
+      _auctionStart = auctionStart;
+    }
 
     this.setAdUnits = (adUnits) => _adUnits = adUnits;
     this.setTargeting = (targeting) => _targeting = targeting;
@@ -209,7 +217,7 @@ export const auctionManager = (function() {
     }
 
     this.addBidResponse = (adUnitCode, bid, auctionId) => {
-      let auction = getAuction(auctionId);
+      let auction = _getAuction(auctionId);
       if (isValid()) {
         prepareBidForAuction();
 
@@ -294,24 +302,21 @@ export const auctionManager = (function() {
       // Add a bid to the auction.
       function addBidToAuction() {
         events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-
         auction.setBidsReceived(bid);
-        if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode)) {
-          triggerAdUnitCallbacks(bid.adUnitCode);
-        }
 
-        if (bidsBackAll()) {
-          exports.executeCallback();
+        // Removing this as we are deprecating pbjs.addCallback public api
+        // if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode, auction)) {
+        //   triggerAdUnitCallbacks(bid.adUnitCode);
+        // }
+
+        if (auction.bidsBackAll()) {
+          executeCallback();
         }
       }
     }
 
-    this.setCallback = () => {
-      // bidsBackHandler
-    }
-
     this.bidsBackAll = () => {
-      const requested = $$PREBID_GLOBAL$$._bidsRequested
+      const requested = this.getBidderRequests()
         .map(request => request.bids)
         .reduce(flatten, [])
         .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
@@ -321,15 +326,15 @@ export const auctionManager = (function() {
             : 1;
         }).reduce((a, b) => a + b, 0);
 
-      const received = $$PREBID_GLOBAL$$._bidsReceived
+      const received = this.getBidsReceived()
         .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
 
       return requested === received;
     }
 
     this.callBids = (cbTimeout) => {
-      this._auctionId = utils.generateUUID();
-      this._auctionStart = Date.now();
+      this.setAuctionId(utils.generateUUID());
+      this.setAuctionStart(Date.now());
       const auctionInit = {
         timestamp: this.getAuctionStart(),
         auctionId: this.getAuctionId(),
@@ -358,10 +363,14 @@ export const auctionManager = (function() {
       return _findAuctionsByBidderCode(...arguments);
     },
 
+    setCallback(cb) {
+      callback = cb;
+    },
+
     findBidderRequestByBidId({ bidId }) {
       return _auctions.map(auction => auction.getBidderRequests()
-      .find(request => request.bids
-        .find(bid => bid.bidId === bidId)))[0] || { start: null };
+        .find(request => request.bids
+          .find(bid => bid.bidId === bidId)))[0] || { start: null };
     },
 
     findBidderRequestByBidParamImpId({ impId }) {
