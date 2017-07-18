@@ -24,11 +24,13 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 
 ## Install
 
+Prebid requires NodeJS 4.0 or higher.
+
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
     $ yarn install
 
-Prebid also supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
 
 For more info, see [the Yarn documentation](https://yarnpkg.com).
 
