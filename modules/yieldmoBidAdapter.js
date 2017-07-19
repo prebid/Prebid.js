@@ -10,8 +10,15 @@ var adaptermanager = require('src/adaptermanager');
  * @returns {{callBids: _callBids}}
  * @constructor
  */
+console.log('CALLED2');
+
 var YieldmoAdapter = function YieldmoAdapter() {
   function _callBids(params) {
+    
+    console.log('CALLED');
+
+
+
     var bids = params.bids;
 
     for (var i = 0; i < bids.length; i++) {
@@ -28,7 +35,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
     // build our base tag, based on if we are http or https
     var ymURI = '//ads.yieldmo.com/ads?';
-    var ymCall = document.location.protocol + tlURI;
+    var ymCall = document.location.protocol + ymURI;
 
     ymCall = utils.tryAppendQueryString(ymCall, 'callback', '$$PREBID_GLOBAL$$.TLCB');
     ymCall = utils.tryAppendQueryString(ymCall, 'lib', 'prebid');
@@ -37,6 +44,8 @@ var YieldmoAdapter = function YieldmoAdapter() {
     ymCall = utils.tryAppendQueryString(ymCall, 'inv_code', inventoryCode);
     ymCall = utils.tryAppendQueryString(ymCall, 'floor', floor);
 
+
+    console.log('CALLED');
     // sizes takes a bit more logic
     // var sizeQueryString = utils.parseSizesInput(bid.sizes);
     // if (sizeQueryString) {
@@ -75,7 +84,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       var bid = [];
       if (tlResponseObj && tlResponseObj.cpm && tlResponseObj.cpm !== 0) {
         bid = bidfactory.createBid(1, bidObj);
-        bid.bidderCode = 'triplelift';
+        bid.bidderCode = 'yieldmo';
         bid.cpm = tlResponseObj.cpm;
         bid.ad = tlResponseObj.ad;
         bid.width = tlResponseObj.width;
@@ -85,10 +94,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
       } else {
         // no response data
         // @if NODE_ENV='debug'
-        if (bidObj) { utils.logMessage('No prebid response from TripleLift for inventory code: ' + bidObj.params.inventoryCode); }
+        if (bidObj) { utils.logMessage('No prebid response from yieldmo for inventory code: ' + bidObj.params.inventoryCode); }
         // @endif
         bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = 'triplelift';
+        bid.bidderCode = 'yieldmo';
         bidmanager.addBidResponse(placementCode, bid);
       }
     } else {
@@ -105,6 +114,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new YieldmoAdapter, 'triplelift');
+adaptermanager.registerBidAdapter(new YieldmoAdapter, 'yieldmo');
 
 module.exports = YieldmoAdapter;
