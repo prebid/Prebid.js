@@ -4,32 +4,25 @@ import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 import {parse as parseURL} from '../../../src/url';
 
-describe('triplelift adapter', () => {
+describe('Yieldmo adapter', () => {
   let bidsRequestedOriginal;
   let adapter;
   let sandbox;
 
   const bidderRequest = {
-    bidderCode: 'triplelift',
+    bidderCode: 'yieldmo',
     bids: [
       {
         bidId: 'bidId1',
-        bidder: 'triplelift',
+        bidder: 'yieldmo',
         placementCode: 'foo',
-        sizes: [[728, 90]],
-        params: {
-          inventoryCode: 'codeA'
-        }
+        sizes: [[728, 90]]
       },
       {
         bidId: 'bidId2',
-        bidder: 'triplelift',
+        bidder: 'yieldmo',
         placementCode: 'bar',
-        sizes: [[300, 600]],
-        params: {
-          inventoryCode: 'codeB',
-          floor: 1
-        }
+        sizes: [[300, 600]]
       }
     ]
   };
@@ -68,25 +61,22 @@ describe('triplelift adapter', () => {
       expect(secondBidScriptURL).to.contain(route);
 
       let firstScriptParams = parseURL(firstBidScriptURL).search;
-      expect(firstScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.TLCB');
+      expect(firstScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
       expect(firstScriptParams).to.have.property('callback_id', 'bidId1');
-      expect(firstScriptParams).to.have.property('inv_code', 'codeA');
-      expect(firstScriptParams).to.have.property('size', '728x90');
-      expect(firstScriptParams).to.have.property('referrer');
+      expect(firstScriptParams).to.have.property('p', 'foo');
+      expect(firstScriptParams).to.have.property('page_url');
 
       let secondScriptParams = parseURL(secondBidScriptURL).search;
-      expect(secondScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.TLCB');
+      expect(secondScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
       expect(secondScriptParams).to.have.property('callback_id', 'bidId2');
-      expect(secondScriptParams).to.have.property('inv_code', 'codeB');
-      expect(secondScriptParams).to.have.property('size', '300x600');
-      expect(secondScriptParams).to.have.property('floor', '1');
-      expect(secondScriptParams).to.have.property('referrer');
+      expect(secondScriptParams).to.have.property('p', 'bar');
+      expect(secondScriptParams).to.have.property('page_url');
     });
   });
 
-  describe('TLCB', () => {
+  describe('YMCB', () => {
     it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.TLCB).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.YMCB).to.exist.and.to.be.a('function');
     });
   });
 
@@ -101,26 +91,23 @@ describe('triplelift adapter', () => {
 
       // respond
       let bidderReponse1 = {
-        'ad': '<script></script>',
+        'cpm': 3.45455,
+        'width': 300,
+        'height': 250,
         'callback_id': 'bidId1',
-        'cpm': 0.20,
-        'height': 90,
-        'iurl': '',
-        'width': 728
+        'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
       };
 
       let bidderReponse2 = {
-        'ad': '<script></script>',
+        'cpm': 4.35455,
+        'width': 400,
+        'height': 350,
         'callback_id': 'bidId2',
-        'cpm': 0.30,
-        'height': 600,
-        'iurl': '',
-        'width': 300,
-        'deal_id': 'dealA'
+        'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
       };
 
-      $$PREBID_GLOBAL$$.TLCB(bidderReponse1);
-      $$PREBID_GLOBAL$$.TLCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse1);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse2);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
@@ -138,24 +125,19 @@ describe('triplelift adapter', () => {
       expect(secondPlacementCode).to.eql('bar');
     });
 
-    it('should include the bid request bidId as the adId', () => {
-      expect(firstBid).to.have.property('adId', 'bidId1');
-      expect(secondBid).to.have.property('adId', 'bidId2');
-    });
-
     it('should have a good statusCode', () => {
       expect(firstBid.getStatusCode()).to.eql(1);
       expect(secondBid.getStatusCode()).to.eql(1);
     });
 
     it('should add the CPM to the bid object', () => {
-      expect(firstBid).to.have.property('cpm', 0.20);
-      expect(secondBid).to.have.property('cpm', 0.30);
+      expect(firstBid).to.have.property('cpm', 3.45455);
+      expect(secondBid).to.have.property('cpm', 4.35455);
     });
 
     it('should add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'triplelift');
-      expect(secondBid).to.have.property('bidderCode', 'triplelift');
+      expect(firstBid).to.have.property('bidderCode', 'yieldmo');
+      expect(secondBid).to.have.property('bidderCode', 'yieldmo');
     });
 
     it('should include the ad on the bid object', () => {
@@ -164,15 +146,10 @@ describe('triplelift adapter', () => {
     });
 
     it('should include the size on the bid object', () => {
-      expect(firstBid).to.have.property('width', 728);
-      expect(firstBid).to.have.property('height', 90);
-      expect(secondBid).to.have.property('width', 300);
-      expect(secondBid).to.have.property('height', 600);
-    });
-
-    it('should include the dealId on the bid object if present', () => {
-      expect(firstBid).to.have.property('dealId', undefined);
-      expect(secondBid).to.have.property('dealId', 'dealA');
+      expect(firstBid).to.have.property('width', 300);
+      expect(firstBid).to.have.property('height', 250);
+      expect(secondBid).to.have.property('width', 400);
+      expect(secondBid).to.have.property('height', 350);
     });
   });
 
@@ -189,8 +166,8 @@ describe('triplelift adapter', () => {
       let bidderReponse1 = {'status': 'no_bid', 'callback_id': 'bidId1'};
       let bidderReponse2 = {'status': 'no_bid', 'callback_id': 'bidId2'};
 
-      $$PREBID_GLOBAL$$.TLCB(bidderReponse1);
-      $$PREBID_GLOBAL$$.TLCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse1);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse2);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
@@ -219,8 +196,8 @@ describe('triplelift adapter', () => {
     });
 
     it('should add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'triplelift');
-      expect(secondBid).to.have.property('bidderCode', 'triplelift');
+      expect(firstBid).to.have.property('bidderCode', 'yieldmo');
+      expect(secondBid).to.have.property('bidderCode', 'yieldmo');
     });
   });
 });
