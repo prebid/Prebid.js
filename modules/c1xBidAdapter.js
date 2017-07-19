@@ -27,20 +27,23 @@ function C1XAdapter() {
     },
     BIDDER_CODE = 'c1x';
 
-  var pbjs = window.pbjs;
+  var pbjs = window.$$PREBID_GLOBAL$$;
 
   pbjs._c1xResponse = function(c1xResponse) {
-    if (c1xResponse) {
-      var response = c1xResponse;
+    var response = c1xResponse;
 
-      if (typeof c1xResponse === CONSTANTS.objectType_string) {
-        response = JSON.parse(c1xResponse);
-      }
+    try {
+      response = JSON.parse(c1xResponse);
+    } catch (error) {
+      utils.logError(error);
+    }
+
+    if (!('error' in response) && response !== null) {
       for (var i = 0; i < response.length; i++) {
         var data = response[i],
           bidObject = null;
         if (data.bid) {
-          bidObject = bidfactory.createBid(1);
+          bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bidObject.bidderCode = BIDDER_CODE;
           bidObject.cpm = data.cpm;
           bidObject.ad = data.ad;
@@ -50,7 +53,7 @@ function C1XAdapter() {
           bidmanager.addBidResponse(data.adId, bidObject);
         } else {
           // no bid
-          utils.logInfo(LOG_MSG.nobid + data.adId);
+          utils.logInfo(LOG_MSG.noBid + data.adId);
           bidmanager.addBidResponse(data.adId, noBidResponse());
         }
       }
@@ -65,7 +68,7 @@ function C1XAdapter() {
   };
 
   function noBidResponse() {
-    var bidObject = bidfactory.createBid(2);
+    var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
     bidObject.bidderCode = BIDDER_CODE;
     return bidObject;
   }
