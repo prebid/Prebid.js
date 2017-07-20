@@ -30,6 +30,7 @@ adapter include:
 | `video`             | optional | Video targeting parameters.  See the [video section below](#appnexus-ast-video) for details.                              | `video: { playback_method: ['auto_play_sound_off'] }` |
 | `invCode`           | optional | The inventory code from AppNexus. Must be used with `member`.                                                             | `"abc123"`                                            |
 | `member`            | optional | The member ID  from AppNexus. Must be used with `invCode`.                                                                | `"12345"`                                             |
+| `reserve`           | optional | Sets a floor price for the bid that is returned                                                                           | `0.90`                                                |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
