@@ -15,7 +15,7 @@ describe('Vertoz Adapter', () => {
       bidder: 'vertoz',
       placementCode: 'foo',
       sizes: [
-                [300, 250]
+        [300, 250]
       ],
       params: {
         placementId: 'VZ-HB-123'
@@ -25,7 +25,7 @@ describe('Vertoz Adapter', () => {
       bidder: 'vertoz',
       placementCode: 'bar',
       sizes: [
-                [728, 90]
+        [728, 90]
       ],
       params: {
         placementId: 'VZ-HB-456'
@@ -35,7 +35,7 @@ describe('Vertoz Adapter', () => {
       bidder: 'vertoz',
       placementCode: 'coo',
       sizes: [
-                [300, 600]
+        [300, 600]
       ],
       params: {
         placementId: ''
