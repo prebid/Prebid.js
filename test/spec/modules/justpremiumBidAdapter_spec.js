@@ -7,7 +7,7 @@ import * as utils from 'src/utils';
 
 const CONST = {
   COOKIE: '//ox-d.justpremium.com/w/1.0/cj',
-  LIB: '//d2nvliyzbo36lk.cloudfront.net/js/jpx.js'
+  LIB: '//cdn-cf.justpremium.com/js/jpx.js'
 };
 
 function createCookie(name, value, days) {
