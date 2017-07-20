@@ -13,14 +13,47 @@ describe('Essens adapter tests', function () {
       stubLoadScript.restore()
     );
 
-    it('invalid case: missing bid', () => {
-      let bidderRequest = {
+    it('bid request without bid', () => {
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids();
+      sinon.assert.notCalled(stubLoadScript);
+    });
+
+    it('bid request with missing parameter', () => {
+      const bidderRequest = {
         bidderCode: 'essens',
         requestId: 'impression-1',
         bidderRequestId: 'impression-for-essens-1'
       };
-      const essensadapter = adapter.createNew();
-      essensadapter.callBids(bidderRequest);
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
+      sinon.assert.notCalled(stubLoadScript);
+    });
+
+    it('Bid request with wrong parameter', () => {
+      const bidderRequest = {
+        bidderCode: 'essens',
+        requestId: 'impression-1',
+        bidderRequestId: 'impression-for-essens-1',
+        bids: [
+          {
+            bidId: 'placement1-for_essensT1',
+            bidder: 'essens',
+            requestId: 'essens-impression-1',
+            params: {
+              randomParam: 'placement1'
+            },
+            sizes: [
+              [100, 110],
+              [200, 210]
+            ],
+            placementCode: 'div-media1-top_banner-1',
+            bidderRequestId: 'impression-for-essens-1',
+          }
+        ]
+      }
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
       sinon.assert.notCalled(stubLoadScript);
     });
 
@@ -47,8 +80,8 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensadapter = adapter.createNew();
-      essensadapter.callBids(bidderRequest);
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
 
       const url = stubLoadScript.getCall(0).args[0];
       const payload = decodeURIComponent(url.split('&bid=')[1]);
@@ -115,8 +148,8 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensadapter = adapter.createNew();
-      essensadapter.callBids(bidderRequest);
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
 
       const url = stubLoadScript.getCall(0).args[0];
       const payload = decodeURIComponent(url.split('&bid=')[1]);
@@ -169,8 +202,8 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensadapter = adapter.createNew();
-      essensadapter.callBids(bidderRequest);
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
 
       const url = stubLoadScript.getCall(0).args[0];
       const payload = decodeURIComponent(url.split('&bid=')[1]);
@@ -208,8 +241,8 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensadapter = adapter.createNew();
-      essensadapter.callBids(bidderRequest);
+      const essensAdapter = adapter.createNew();
+      essensAdapter.callBids(bidderRequest);
 
       sinon.assert.notCalled(stubLoadScript);
     });
@@ -223,7 +256,6 @@ describe('Essens adapter tests', function () {
 
     afterEach(() => {
       stubAddBidResponse.restore()
-      pbjs._bidsRequested.pop()
     });
 
     it('Check method exist', function () {
@@ -257,10 +289,10 @@ describe('Essens adapter tests', function () {
         'id': '1234'
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter.createNew()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       const bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0]
       const bidObject1 = stubAddBidResponse.getCall(0).args[1]
@@ -328,10 +360,10 @@ describe('Essens adapter tests', function () {
         'seatbid': []
       }
 
-      adapter.createNew()
-      pbjs._bidsRequested.push(bidderRequest);
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       const bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0]
       const bidObject1 = stubAddBidResponse.getCall(0).args[1]
@@ -423,10 +455,10 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       let bidPlacementCode1;
       let bidPlacementCode2;
@@ -497,10 +529,10 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       const bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       const bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -560,10 +592,10 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       const bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       const bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -650,10 +682,10 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       let bidPlacementCode1
       let bidPlacementCode2
@@ -753,10 +785,10 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      pbjs._bidsRequested.push(bidderRequest);
-      adapter()
+      const essensAdapter = adapter.createNew()
+      essensAdapter.callBids(bidderRequest);
 
-      pbjs.essensResponseHandler(response);
+      $$PREBID_GLOBAL$$.essensResponseHandler(response);
 
       let bidPlacementCode1
       let bidPlacementCode2

@@ -12,7 +12,16 @@ function EssensAdapter () {
 
   const ENDPOINT = 'bid.essrtb.com/bid/prebid_call'
 
+  let receivedBidRequests = {}
+
   baseAdapter.callBids = function (bidRequest) {
+
+    if(!bidRequest){
+      utils.logError("empty bid request received")
+      return
+    }
+    receivedBidRequests = bidRequest
+
     const bids = bidRequest.bids || []
 
     const essensBids = bids
@@ -35,9 +44,7 @@ function EssensAdapter () {
       })
 
     const bidderRequestId = bidRequest.bidderRequestId
-
     const cur = ['USD']
-
     const urlParam = utils.getTopWindowUrl()
     const uaParam = getUa()
 
@@ -47,6 +54,8 @@ function EssensAdapter () {
       const scriptUrl = '//' + ENDPOINT + '?callback=$$PREBID_GLOBAL$$.essensResponseHandler' +
         '&bid=' + encodeURIComponent(JSON.stringify(payloadJson))
       adloader.loadScript(scriptUrl)
+    }else{
+      sendEmptyResponseForAllPlacement()
     }
 
     function isPlacementBidComplete (bid) {
@@ -56,40 +65,44 @@ function EssensAdapter () {
         utils.logError('bid requires missing essential params for essens')
       }
     }
+
+    function getUa () {
+      return window.navigator.userAgent
+    }
   }
 
 
-  function getUa () {
-    return window.navigator.userAgent
+
+
+
+
+  function sendEmptyResponseForAllPlacement () {
+
+    if(receivedBidRequests && receivedBidRequests.bids) {
+      receivedBidRequests.bids.forEach(registerEmptyResponse)
+    }
+  }
+
+  function registerEmptyResponse (bidRequest) {
+    const bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest)
+    bid.bidderCode = 'essens'
+    bidmanager.addBidResponse(bidRequest.placementCode, bid)
   }
 
   $$PREBID_GLOBAL$$.essensResponseHandler = function (essensResponse) {
     utils.logInfo('received bid request from Essens')
     if (!isValidResponse(essensResponse)) {
-      const allRequests = getEssesnBidRequests()
-      allRequests.bids.forEach(registerEmptyResponse)
+      sendEmptyResponseForAllPlacement()
       return;
     }
 
     registerBids(essensResponse);
-
-    function getEssesnBidRequests () {
-      return $$PREBID_GLOBAL$$
-        ._bidsRequested.find(bidSet => bidSet.bidderCode === 'essens')
-    }
-
-    function registerEmptyResponse (bidRequest) {
-      const bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest)
-      bid.bidderCode = 'essens'
-      bidmanager.addBidResponse(bidRequest.placementCode, bid)
-    }
 
     function isValidResponse (essensResponse) {
       return !!(essensResponse && essensResponse.id && essensResponse.seatbid)
     }
 
     function registerBids (essensResponses) {
-      const allRequests = getEssesnBidRequests()
       const requestHasResponse = []
 
       if (essensResponses.seatbid.length > 0) {
@@ -97,11 +110,11 @@ function EssensAdapter () {
           seat => seat.bid.forEach(sendResponse))
       }
 
-      allRequests.bids.filter(request => !hasResponse(request))
+      receivedBidRequests.bids.filter(request => !hasResponse(request))
         .forEach(registerEmptyResponse)
 
       function sendResponse (bidCandidate) {
-        const bidRequest = utils.getBidRequest(bidCandidate.impid)
+        const bidRequest = getBidRequest(bidCandidate.impid)
 
         const bidsToBeRegister = getBid(bidRequest, bidCandidate);
 
@@ -117,6 +130,10 @@ function EssensAdapter () {
 
       function isValidSeat (seatbid) {
         return ((seatbid.bid && seatbid.bid.length !== 0))
+      }
+
+      function getBidRequest(id) {
+        return receivedBidRequests.bids.find(bid => bid.bidId === id)
       }
     }
 
