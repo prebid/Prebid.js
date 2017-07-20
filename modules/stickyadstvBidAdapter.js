@@ -269,7 +269,7 @@ StickyAdsTVAdapter.createNew = function() {
   return new StickyAdsTVAdapter();
 };
 
-adaptermanager.registerBidAdapter(new StickyAdsTVAdapter, 'stickyadstv');
+adaptermanager.registerBidAdapter(new StickyAdsTVAdapter(), 'stickyadstv');
 adaptermanager.aliasBidAdapter('stickyadstv', 'freewheel-ssp');
 
 module.exports = StickyAdsTVAdapter;

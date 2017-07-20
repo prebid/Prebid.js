@@ -244,7 +244,7 @@ const callBids = bidRequest => {
  */
 const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
 
-adaptermanager.registerBidAdapter(new AudienceNetwork, 'audienceNetwork', {
+adaptermanager.registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
   supportedMediaTypes: ['video']
 });
 

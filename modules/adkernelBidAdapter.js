@@ -307,7 +307,7 @@ AdKernelAdapter.createNew = function() {
   return new AdKernelAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AdKernelAdapter, 'adkernel', {
+adaptermanager.registerBidAdapter(new AdKernelAdapter(), 'adkernel', {
   supportedMediaTypes: ['video']
 });
 adaptermanager.aliasBidAdapter('adkernel', 'headbidding');

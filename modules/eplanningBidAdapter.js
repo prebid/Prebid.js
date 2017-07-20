@@ -278,6 +278,6 @@ function EPlanningAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new EPlanningAdapter, 'eplanning');
+adaptermanager.registerBidAdapter(new EPlanningAdapter(), 'eplanning');
 
 module.exports = EPlanningAdapter;

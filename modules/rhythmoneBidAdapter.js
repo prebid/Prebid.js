@@ -17,13 +17,13 @@ function RhythmoneAdapter (bidManager, global, loader) {
     fat = /(^v|(\.0)+$)/gi;
 
   if (typeof global === 'undefined')
-    { global = window; }
+  { global = window; }
 
   if (typeof bidManager === 'undefined')
-    { bidManager = bidmanager; }
+  { bidManager = bidmanager; }
 
   if (typeof loader === 'undefined')
-    { loader = ajax; }
+  { loader = ajax; }
 
   function applyMacros(txt, values) {
     return txt.replace(/\{([^\}]+)\}/g, function(match) {
@@ -36,9 +36,9 @@ function RhythmoneAdapter (bidManager, global, loader) {
   function load(bidParams, url, callback) {
     loader(url, function(responseText, response) {
       if (response.status === 200)
-        { callback(200, 'success', response.responseText); }
+      { callback(200, 'success', response.responseText); }
       else
-        { callback(-1, 'http error ' + response.status, response.responseText); }
+      { callback(-1, 'http error ' + response.status, response.responseText); }
     }, false, {method: 'GET', withCredentials: true});
   }
 
@@ -54,7 +54,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
       m &&
       m[t] &&
       m[t].enabledPlugin)
-      { return true; }
+    { return true; }
 
     if (x) {
       try { if ((new global.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) return true; }
@@ -75,13 +75,13 @@ function RhythmoneAdapter (bidManager, global, loader) {
 
   function logToConsole(txt) {
     if (debug)
-      { console.log(txt); }
+    { console.log(txt); }
   }
 
   function getBidParameters(bids) {
     for (var i = 0; i < bids.length; i++)
-      { if (typeof bids[i].params === 'object' && bids[i].params.placementId)
-        { return bids[i].params; } }
+    { if (typeof bids[i].params === 'object' && bids[i].params.placementId)
+    { return bids[i].params; } }
     return null;
   }
 
@@ -101,19 +101,19 @@ function RhythmoneAdapter (bidManager, global, loader) {
       query = [];
 
     if (typeof bidParams.endpoint === 'string')
-      { endpoint = bidParams.endpoint; }
+    { endpoint = bidParams.endpoint; }
 
     if (typeof bidParams.zone === 'string')
-      { defaultZone = bidParams.zone; }
+    { defaultZone = bidParams.zone; }
 
     if (typeof bidParams.path === 'string')
-      { defaultPath = bidParams.path; }
+    { defaultPath = bidParams.path; }
 
     if (bidParams.debug === true)
-      { debug = true; }
+    { debug = true; }
 
     if (bidParams.trace === true)
-      { query.push('trace=true'); }
+    { query.push('trace=true'); }
 
     endpoint = applyMacros(endpoint, {
       placementid: bidParams.placementId,
@@ -123,15 +123,15 @@ function RhythmoneAdapter (bidManager, global, loader) {
 
     function p(k, v) {
       if (v instanceof Array)
-        { v = v.join(','); }
+      { v = v.join(','); }
       if (typeof v !== 'undefined')
-        { query.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }
+      { query.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }
     }
 
     p('domain', attempt(function() {
       var d = global.document.location.ancestorOrigins;
       if (d && d.length > 0)
-          { return d[d.length - 1]; }
+      { return d[d.length - 1]; }
       return global.top.document.location.hostname; // try/catch is in the attempt function
     }, ''));
     p('title', attempt(function() { return global.top.document.title; }, '')); // try/catch is in the attempt function
@@ -161,7 +161,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
       var th = [], tw = [];
 
       if (bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === 'number')
-        { bids[i].sizes = [bids[i].sizes]; }
+      { bids[i].sizes = [bids[i].sizes]; }
 
       for (var j = 0; j < bids[i].sizes.length; j++) {
         tw.push(bids[i].sizes[j][0]);
@@ -237,7 +237,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
     }
 
     for (var i = 0; i < params.bids.length; i++)
-      { slotMap[params.bids[i].placementCode] = params.bids[i]; }
+    { slotMap[params.bids[i].placementCode] = params.bids[i]; }
 
     loadStart = (new Date()).getTime();
     load(bidParams, getRMPURL(bidParams, params.bids), function(code, msg, txt) {
@@ -270,7 +270,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
                 pbResponse.descriptionUrl = bid.nurl;
               }
               else
-                { pbResponse.ad = bid.adm; }
+              { pbResponse.ad = bid.adm; }
 
               logToConsole('registering bid ' + placementCode + ' ' + JSON.stringify(pbResponse));
 
@@ -278,9 +278,9 @@ function RhythmoneAdapter (bidManager, global, loader) {
             };
 
           for (i = 0; result.seatbid && i < result.seatbid.length; i++)
-            { for (var j = 0; result.seatbid[i].bid && j < result.seatbid[i].bid.length; j++) {
-              registerBid(result.seatbid[i].bid[j]);
-            } }
+          { for (var j = 0; result.seatbid[i].bid && j < result.seatbid[i].bid.length; j++) {
+            registerBid(result.seatbid[i].bid[j]);
+          } }
         }
         catch (ex) {}
       }
@@ -293,7 +293,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
   };
 }
 
-adaptermanager.registerBidAdapter(new RhythmoneAdapter, 'rhythmone', {
+adaptermanager.registerBidAdapter(new RhythmoneAdapter(), 'rhythmone', {
   supportedMediaTypes: ['video']
 });
 
