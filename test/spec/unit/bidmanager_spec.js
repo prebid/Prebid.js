@@ -71,7 +71,19 @@ describe('The Bid Manager', () => {
     function prepAuction(adUnits, bidRequestTweaker) {
       function bidAdjuster(bid) {
         if (bid.hasOwnProperty('cpm')) {
-          bid.hadCpmDuringAdjuster = true;
+          bid.hadCpmDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('adUnitCode')) {
+          bid.hadAdUnitCodeDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('timeToRespond')) {
+          bid.hadTimeToRespondDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('requestTimestamp')) {
+          bid.hadRequestTimestampDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('responseTimestamp')) {
+          bid.hadResponseTimestampDuringBidAdjustment = true;
         }
         bid.cpm = adjustCpm(bid.cpm);
       }
@@ -154,7 +166,11 @@ describe('The Bid Manager', () => {
           };
           delete copy.cpm;
           bidManager.addBidResponse('mock/code', copy);
-          expect(copy).to.have.property('hadCpmDuringAdjuster', true);
+          expect(copy).to.have.property('hadCpmDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadAdUnitCodeDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadTimeToRespondDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadRequestTimestampDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadResponseTimestampDuringBidAdjustment', true);
         });
       });
 
