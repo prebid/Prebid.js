@@ -70,6 +70,9 @@ describe('The Bid Manager', () => {
      */
     function prepAuction(adUnits, bidRequestTweaker) {
       function bidAdjuster(bid) {
+        if (bid.hasOwnProperty('cpm')) {
+          bid.hadCpmDuringAdjuster = true;
+        }
         bid.cpm = adjustCpm(bid.cpm);
       }
       beforeEach(() => {
@@ -141,6 +144,17 @@ describe('The Bid Manager', () => {
         it('should gracefully do nothing when bid is undefined', () => {
           bidManager.addBidResponse('mock/code');
           expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
+        });
+
+        it('should define a default cpm *before* the BID_ADJUSTMENT event listeners are called', () => {
+          console.log('testing this bug');
+          const copy = Object.assign({}, bidResponse);
+          copy.getSize = function() {
+            return `${this.height}x${this.width}`;
+          };
+          delete copy.cpm;
+          bidManager.addBidResponse('mock/code', copy);
+          expect(copy).to.have.property('hadCpmDuringAdjuster', true);
         });
       });
 
