@@ -158,7 +158,7 @@ describe('The Bid Manager', () => {
           expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
         });
 
-        it('should define a default cpm *before* the BID_ADJUSTMENT event listeners are called', () => {
+        it('should attach properties for analytics *before* the BID_ADJUSTMENT event listeners are called', () => {
           console.log('testing this bug');
           const copy = Object.assign({}, bidResponse);
           copy.getSize = function() {
