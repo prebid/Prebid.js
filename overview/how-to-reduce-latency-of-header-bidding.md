@@ -1,64 +1,66 @@
 ---
 layout: page
-title: How to reduce latency
-head_title: How to reduce latency of header bidding with prebid.js
-
-description: A walkthrough of why header bidding implementations cause latency. An overview of how to use prebid.js to reduce it.
-
+title: How to reduce the latency of header bidding with Prebid.js
+head_title: How to reduce the latency of header bidding with Prebid.js
+description: A walkthrough of why header bidding implementations cause latency. An overview of how to use Prebid.js to reduce it.
 pid: 40
-
 top_nav_section: overview
 nav_section: studies
-
 ---
 
 <div class="bs-docs-section" markdown="1">
 
-# How to reduce latency of header bidding
+# How to reduce the latency of header bidding with Prebid.js
+{:.no_toc}
 
-
-> Why do header bidding cause latency? How to reduce it?
+> Why does header bidding cause latency? How can we reduce it?
 
 Having seen almost all bidders' header bidding API calls, we've observed the few problems listed below:
 
-* Many bidders can NOT load their Javascript library asynchronously.
-* Publishers make more money if all bidders are treated fairly. However, bidders that offer asynchronous integrations today (better for the publisher) are given LESS time to respond. 
-* Blocking ad calls is bad for user experience. Users leave the site if content takes too long to load.
+* Many bidders cannot load their Javascript library asynchronously.
+* Publishers make more money if all bidders are treated fairly. However, bidders that offer asynchronous integrations today (better for the publisher) are given less time to respond.
+* Blocking ad calls are bad for user experience. Users leave the site if content takes too long to load.
 
-Here're a few screenshots of websites' network calls after implemented header bidding. In a later section, there's a screenshot showing how header bidding is accelerated by prebid.js.
+The first two scenarios show websites' network calls after implementing header bidding.
 
-#### Blocking Call Screenshot 1
+The final scenario shows how header bidding is accelerated by Prebid.js.
 
+* TOC
+{:toc}
+
+## Blocking Call Scenario 1
+
+{: .pb-lg-img :}
 ![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-blocking-1.png)
 
-* All header bidding requests combined took 4 seconds to load!
+* In this scenario, all header bidding requests combined took 4 seconds to load!
 * Users have to wait for 4 seconds of blank space in their web browser before any content can load.
 
-<br> 
+<br /> 
 
-#### Blocking Call Screenshot 2
+## Blocking Call Scenario 2
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-blocking-2.png)
+{: .pb-lg-img :}
+![Blocking Ad Calls 2]({{ site.github.url }}/assets/images/icons/latency-blocking-2.png)
 
-* All header bidding requests in total took 1 second to load. 
-* However, if all calls are made asynchrnously, latency can be dramatically reduced.
+* In this scenario, all header bidding requests in total took 1 second to load.
+* However, if all of the calls were made asynchronously, latency could still be dramatically reduced.
 
-<br>
+<br />
 
-### After prebid.js's acceleration:
+## Asynchronous Call Scenario with Prebid.js
 
-![Blocking Ad Calls 1]({{ site.github.url }}/assets/images/icons/latency-concurrent.png)
+{: .pb-lg-img :}
+![Prebid ad calls made concurrently]({{ site.github.url }}/assets/images/icons/latency-concurrent.png)
 
-* ##### All Pre-bid Calls are made concurrently within 100ms.
+* *All Pre-bid Calls are made concurrently within 100ms*: Note that AppNexus, Pubmatic, OpenX, Rubicon bidding header calls were all made within the first 100ms. 
 
-	Note that AppNexus, Pubmatic, OpenX, Rubicon header bidding calls were all made within the first 100ms. 
+* *The timeout of 400ms is respected*: We set the timeout to 400ms. As you can see from the graph, the GPT tag (`gpt.js`) is loaded at around 500ms. The reason that GPT didn't get loaded exactly at 400ms is that the JavaScript timer is nondeterministic. Some partners take longer than others. The ones that took longer than the timeout setting did not get a chance to bid due to latency concerns.
 
-* ##### Timeout at 400ms is respected.
+* *Rotate order of bidders*: To help publishers maximize yield, all header bidders should be given the same amount of time to respond. However, JavaScript doesn't make calls exactly at the same time, so we help you rotate the order in which the bidders are called.
 
-	We set the timeout to 400ms. As you can see from the graph, the GPT tag (gpt.js) is loaded at around 500ms. The reason that GPT didn't get loaded exactly at 400ms is Javascript's timer is nondeterministic. Some partners take longer than the others. The ones that took longer than the timeout setting did not get a chance to bid due to latency concerns.
+## Further Reading
 
-* ##### Rotate order of bidders
-
-	To help publishers maximize yield, all header bidders should be given the same amount of time to respond. However, Javascript doesn't make calls exactly at the same time, so we help you rotate the order that the bidders get called.
++ [Getting Started]({{site.baseurl}}/overview/getting-started.html)
 
 </div>
