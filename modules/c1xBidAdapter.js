@@ -32,13 +32,15 @@ function C1XAdapter() {
   pbjs._c1xResponse = function(c1xResponse) {
     var response = c1xResponse;
 
-    try {
-      response = JSON.parse(c1xResponse);
-    } catch (error) {
-      utils.logError(error);
+    if (typeof response === 'string') {
+      try {
+        response = JSON.parse(c1xResponse);
+      } catch (error) {
+        utils.logError(error);
+      }
     }
 
-    if (!('error' in response) && response !== null) {
+    if (response && !response.error) {
       for (var i = 0; i < response.length; i++) {
         var data = response[i],
           bidObject = null;
