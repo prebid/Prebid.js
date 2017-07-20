@@ -159,7 +159,6 @@ describe('The Bid Manager', () => {
         });
 
         it('should attach properties for analytics *before* the BID_ADJUSTMENT event listeners are called', () => {
-          console.log('testing this bug');
           const copy = Object.assign({}, bidResponse);
           copy.getSize = function() {
             return `${this.height}x${this.width}`;
