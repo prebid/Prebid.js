@@ -135,7 +135,7 @@ module.exports = function (win = window) {
       if (requestBody.bids.length > 0) {
         ajax(buildUrl(params.bids[0].params), ajaxResponseFn(validBidRequestById), JSON.stringify(requestBody), {
           withCredentials: true,
-          contentType: 'application/json'
+          contentType: 'text/plain'
         });
       }
     }
