@@ -1,0 +1,13 @@
+{
+  "adUnitCode": "video1",
+  "bidder": "appnexusAst",
+  "bidderCode": "appnexusAst",
+  "code": "appnexusAst",
+  "dealId": "foo",
+  "cpm": 0.1,
+  "height": 480,
+  "mediaType": "video",
+  "requestId": "6172477f-987f-4523-a967-fa6d7a434ddf",
+  "vastPayload": "<VAST version=\"3.0\"></VAST>",
+  "width": 640
+}

@@ -49,9 +49,10 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
+  const vastValue = bid.vastPayload ? bid.vastPayload : wrapURI(bid.vastUrl);
   return {
     type: 'xml',
-    value: wrapURI(bid.vastUrl)
+    value: vastValue
   };
 }
 
@@ -87,7 +88,11 @@ function shimStorageCallback(done) {
         return;
       }
 
-      done(null, ids);
+      if (ids) {
+        done(null, ids);
+      } else {
+        done(new Error("The cache server didn't respond with a responses property."), []);
+      }
     },
     error: function(statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
