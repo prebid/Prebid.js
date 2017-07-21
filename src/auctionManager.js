@@ -7,24 +7,22 @@ import { getPriceBucketString } from './cpmBucketManager';
 
 export const auctionManager = (function() {
   var _auctions = [];
-  var callback;
-  let _customPriceBucket;
+  var _customPriceBucket;
   var defaultBidderSettingsMap = {};
 
-  function bidsBackAdUnit(adUnitCode, auction) {
-    const requested = auction.getBidderRequests()
-      .map(request => request.bids
-        .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
-        .filter(bid => bid.placementCode === adUnitCode))
-      .reduce(flatten, [])
-      .map(bid => {
-        return bid.bidder === 'indexExchange'
-          ? bid.sizes.length
-          : 1;
-      }).reduce(add, 0);
+  function setPriceGranularity(granularity) {
+    var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
+    if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
+      _granularity = granularity;
+    } else {
+      utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
+        ' `medium` as default.');
+      _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+    }
+  };
 
-    const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
-    return requested === received;
+  function getStandardBidderAdServerTargeting() {
+    return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   }
 
   function getStandardBidderSettings() {
@@ -175,46 +173,61 @@ export const auctionManager = (function() {
       .filter(bidderRequest => bidderRequest.bidderCode === _bidderCode));
   }
 
-  function executeCallback() {
-    // get all auctions
-    // auction.setCallback
-    // delete all auction instances
-    callback.apply($$PREBID_GLOBAL$$);
+  function executeCallback(timedOut) {
+    function callAuctionCallback(auction) {
+      let callback = auction.getCallback();
+      callback.apply($$PREBID_GLOBAL$$);
+      // set auction callback to noop
+      auction.setCallback(function() {});
+    }
+
+    if (timedOut) {
+      // if timedout call the callbacks for all instances of auction
+      _auctions.forEach(auction => {
+        callAuctionCallback(auction);
+      });
+      return;
+    }
+
+    _auctions.filter(auction => auction.getAuctionStatus() === CONSTANTS.AUCTION.STATUS.COMPLETED)
+      .forEach(auction => {
+        callAuctionCallback(auction);
+      });
+    // TODO : Delete auction instance ? I think should be only done after bids are added to pool.
   }
 
   function Auction() {
     var _id = utils.getUniqueIdentifierStr();
     var _adUnits = [];
+    var _adUnitCodes = [];
     var _targeting = [];
     var _bidderRequests = [];
     var _bidsReceived = [];
     var _auctionStart;
     var _auctionId;
-
-    this.setAuctionId = (auctionId) => {
-      _auctionId = auctionId;
-    }
-
-    this.setAuctionStart = (auctionStart) => {
-      _auctionStart = auctionStart;
-    }
+    var _auctionStatus;
+    var _callback;
 
     this.setAdUnits = (adUnits) => _adUnits = adUnits;
+    this.setAdUnitCodes = (adUnitcodes) => _adUnitCodes = adUnitcodes;
     this.setTargeting = (targeting) => _targeting = targeting;
     this.setBidderRequests = (bidderRequests) => _bidderRequests = _bidderRequests.concat(bidderRequests);
     this.setBidsReceived = (bidsReceived) => _bidsReceived = _bidsReceived.concat(bidsReceived);
+    this.setAuctionId = (auctionId) => _auctionId = auctionId;
+    this.setAuctionStart = (auctionStart) => _auctionStart = auctionStart;
+    this.setAuctionStatus = (auctionStatus) => _auctionStatus = auctionStatus;
+    this.setCallback = (callback) => _callback = callback;
 
     this.getId = () => _id;
     this.getAdUnits = () => _adUnits;
+    this.getAdUnitCodes = () => _adUnitCodes;
+    this.getTargeting = () => _targeting;
     this.getBidderRequests = () => _bidderRequests;
     this.getBidsReceived = () => _bidsReceived;
-    this.getTargeting = () => _targeting;
     this.getAuctionStart = () => _auctionStart;
     this.getAuctionId = () => _auctionId;
-    this.getBidderRequestByCode = (bidderCode) => {
-      return {};
-      //return this.getBidderRequests().filter()
-    }
+    this.getAuctionStatus = () => _auctionStatus;
+    this.getCallback = () => _callback;
 
     this.addBidResponse = (adUnitCode, bid, auctionId) => {
       let auction = _getAuction(auctionId);
@@ -262,7 +275,11 @@ export const auctionManager = (function() {
         // This must be fired first, so that we calculate derived values from the updates
         events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
-        let bidderRequest = auction.getBidderRequestByCode();
+        let bidderRequest = auction.getBidderRequests().find(request => {
+          return request.bids
+            .filter(rbid => rbid.bidder === bid.bidderCode && rbid.placementCode === adUnitCode).length > 0;
+        }) || {start: null};
+
         const start = bidderRequest.start;
 
         Object.assign(bid, {
@@ -303,12 +320,6 @@ export const auctionManager = (function() {
       function addBidToAuction() {
         events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
         auction.setBidsReceived(bid);
-
-        // Removing this as we are deprecating pbjs.addCallback public api
-        // if (bid.adUnitCode && bidsBackAdUnit(bid.adUnitCode, auction)) {
-        //   triggerAdUnitCallbacks(bid.adUnitCode);
-        // }
-
         if (auction.bidsBackAll()) {
           executeCallback();
         }
@@ -319,7 +330,7 @@ export const auctionManager = (function() {
       const requested = this.getBidderRequests()
         .map(request => request.bids)
         .reduce(flatten, [])
-        .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
+        .filter(adUnitsFilter.bind(this, this.getAdUnitCodes()))
         .map(bid => {
           return bid.bidder === 'indexExchange'
             ? bid.sizes.length
@@ -327,12 +338,13 @@ export const auctionManager = (function() {
         }).reduce((a, b) => a + b, 0);
 
       const received = this.getBidsReceived()
-        .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
+        .filter(adUnitsFilter.bind(this, this.getAdUnitCodes())).length;
 
       return requested === received;
     }
 
     this.callBids = (cbTimeout) => {
+      this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.STARTED);
       this.setAuctionId(utils.generateUUID());
       this.setAuctionStart(Date.now());
       const auctionInit = {
@@ -363,10 +375,6 @@ export const auctionManager = (function() {
       return _findAuctionsByBidderCode(...arguments);
     },
 
-    setCallback(cb) {
-      callback = cb;
-    },
-
     findBidderRequestByBidId({ bidId }) {
       return _auctions.map(auction => auction.getBidderRequests()
         .find(request => request.bids
@@ -390,6 +398,43 @@ export const auctionManager = (function() {
         .map(request => request.bids
           .find(bid => bid.bidId === bidId)))[0]
         .filter(bid => bid !== undefined)[0];
+    },
+
+    findBidByAdId(adId) {
+      return _auctions.map(auction => auction.getBidsReceived()
+        .find(bid => bid.adId = adId))[0];
+    },
+
+    getAdUnitCodes() {
+      return _auctions.map(auction => auction.getAdUnitCodes())
+        .reduce(flatten, [])
+        .filter(uniques);
+    },
+
+    getStandardBidderAdServerTargeting() {
+      return getStandardBidderAdServerTargeting();
+    },
+
+    getBidsReceived() {
+      return _auctions.map(auction => auction.getBidsReceived())
+        .reduce(flatten, []);
+    },
+
+    getAdUnits() {
+      return _auctions.map(auction => auction.getAdUnits())
+        .reduce(flatten, []);
+    },
+
+    setPriceGranularity(granularity) {
+      return setPriceGranularity(granularity);
+    },
+
+    setCustomPriceBucket(customConfig) {
+      _customPriceBucket = customConfig;
+    },
+
+    executeCallback() {
+      return executeCallback(...arguments);
     }
   };
 }());

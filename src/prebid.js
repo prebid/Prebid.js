@@ -271,7 +271,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   if (doc && id) {
     try {
       // lookup ad by ad Id
-      const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
+      const bid = auctionManager.findBidByAdId(id);
+      // const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
       if (bid) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
@@ -383,26 +384,27 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
-  // we will use adUnitCodes for filtering the current auction
-  $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
-
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     if (typeof bidsBackHandler === objectType_function) {
-      // add callback
+      // executeCallback, this will only be called in case of first request
+      bidsBackHandler();
     }
-    // executeCallback, what if its a second request
     return;
   }
 
   const auction = auctionManager.createAuction();
   auction.setAdUnits(adUnits);
+  auction.setAdUnitCodes(adUnitCodes);
+
   if (typeof bidsBackHandler === objectType_function) {
-    auctionManager.setCallback(bidsBackHandler);
+    auction.setCallback(bidsBackHandler);
   }
   // set timeout for all bids
+  const timedOut = true;
+  const timeoutCallback = auctionManager.executeCallback.bind(null, timedOut);
   if (!auctionRunning) {
-    setTimeout(auctionManager.executeCallback, cbTimeout);
+    setTimeout(timeoutCallback, cbTimeout);
     auctionRunning = true;
   }
   auction.callBids(cbTimeout);
@@ -564,6 +566,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  */
 $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
+  // TODO : Do we need this api for 1.0
   bidmanager.addBidResponse(adUnitCode, bid);
 };
 
@@ -620,15 +623,15 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
     return;
   }
   if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
+    auctionManager.setPriceGranularity(granularity);
   }
   else if (typeof granularity === 'object') {
     if (!isValidePriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
     }
-    bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
+    auctionManager.setCustomPriceBucket(granularity);
+    auctionManager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
     utils.logMessage('Using custom price granularity');
   }
 };

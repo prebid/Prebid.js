@@ -124,6 +124,7 @@ exports.callBids = (auction, cbTimeout) => {
 
   bidderCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
+    // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     if (adapter) {
       const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidderRequest = {
@@ -145,110 +146,8 @@ exports.callBids = (auction, cbTimeout) => {
       utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
   });
+  auction.setAuctionStatus(CONSTANTS.AUCTION.STATUS.IN_PROGRESS);
 }
-
-exports.callBids1 = ({adUnits, cbTimeout}) => {
-  const requestId = utils.generateUUID();
-  const auctionStart = Date.now();
-
-  const auctionInit = {
-    timestamp: auctionStart,
-    requestId,
-    timeout: cbTimeout
-  };
-  events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
-
-  let bidderCodes = getBidderCodes(adUnits);
-  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
-    bidderCodes = shuffle(bidderCodes);
-  }
-
-  const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
-  if (s2sAdapter) {
-    s2sAdapter.setConfig(_s2sConfig);
-    s2sAdapter.queueSync({bidderCodes});
-  }
-
-
-  if (_s2sConfig.enabled) {
-    // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders;
-
-    // don't call these client side
-    bidderCodes = bidderCodes.filter((elm) => {
-      return !adaptersServerSide.includes(elm);
-    });
-    let adUnitsCopy = utils.cloneJson(adUnits);
-
-    // filter out client side bids
-    adUnitsCopy.forEach((adUnit) => {
-      if (adUnit.sizeMapping) {
-        adUnit.sizes = mapSizes(adUnit);
-        delete adUnit.sizeMapping;
-      }
-      adUnit.sizes = transformHeightWidth(adUnit);
-      adUnit.bids = adUnit.bids.filter((bid) => {
-        return adaptersServerSide.includes(bid.bidder);
-      }).map((bid) => {
-        bid.bid_id = utils.getUniqueIdentifierStr();
-        return bid;
-      });
-    });
-
-    // don't send empty requests
-    adUnitsCopy = adUnitsCopy.filter(adUnit => {
-      return adUnit.bids.length !== 0;
-    });
-
-    let tid = utils.generateUUID();
-    adaptersServerSide.forEach(bidderCode => {
-      const bidderRequestId = utils.getUniqueIdentifierStr();
-      const bidderRequest = {
-        bidderCode,
-        requestId,
-        bidderRequestId,
-        tid,
-        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
-        start: new Date().getTime(),
-        auctionStart: auctionStart,
-        timeout: _s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC
-      };
-      if (bidderRequest.bids.length !== 0) {
-        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      }
-    });
-
-    let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
-    utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-    s2sAdapter.callBids(s2sBidRequest);
-  }
-
-  bidderCodes.forEach(bidderCode => {
-    const adapter = _bidderRegistry[bidderCode];
-    if (adapter) {
-      const bidderRequestId = utils.getUniqueIdentifierStr();
-      const bidderRequest = {
-        bidderCode,
-        requestId,
-        bidderRequestId,
-        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
-        start: new Date().getTime(),
-        auctionStart: auctionStart,
-        timeout: cbTimeout
-      };
-      if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
-        utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
-        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-        adapter.callBids(bidderRequest);
-      }
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
-    }
-  });
-};
-
 
 function transformHeightWidth(adUnit) {
   let sizesObj = [];

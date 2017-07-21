@@ -3,6 +3,7 @@ import { NATIVE_TARGETING_KEYS } from './native';
 const bidmanager = require('./bidmanager.js');
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
+import { auctionManager } from './auctionManager';
 
 var targeting = exports;
 var pbTargetingKeys = [];
@@ -10,7 +11,7 @@ var pbTargetingKeys = [];
 targeting.resetPresetTargeting = function(adUnitCode) {
   if (isGptPubadsDefined()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
-    const adUnits = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
+    const adUnits = auctionManager.getAdUnits().filter(adUnit => adUnitCodes.includes(adUnit.code));
     window.googletag.pubads().getSlots().forEach(slot => {
       pbTargetingKeys.forEach(function(key) {
         // reset only registered adunits
@@ -77,7 +78,7 @@ function getAdUnitCodes(adUnitCode) {
   else if (utils.isArray(adUnitCode)) {
     return adUnitCode;
   }
-  return $$PREBID_GLOBAL$$._adUnitCodes || [];
+  return auctionManager.getAdUnitCodes() || [];
 }
 
 /**
@@ -88,20 +89,21 @@ function getAdUnitCodes(adUnitCode) {
 targeting.getWinningBids = function(adUnitCode) {
   const adUnitCodes = getAdUnitCodes(adUnitCode);
 
-  return $$PREBID_GLOBAL$$._bidsReceived
+  return auctionManager.getBidsReceived()
     .filter(bid => adUnitCodes.includes(bid.adUnitCode))
     .filter(bid => bid.cpm > 0)
     .map(bid => bid.adUnitCode)
     .filter(uniques)
-    .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce(getHighestCpm,
-        {
-          adUnitCode: adUnitCode,
-          cpm: 0,
-          adserverTargeting: {},
-          timeToRespond: 0
-        }));
+    .map(adUnitCode =>
+      auctionManager.getBidsReceived()
+        .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+        .reduce(getHighestCpm,
+          {
+            adUnitCode: adUnitCode,
+            cpm: 0,
+            adserverTargeting: {},
+            timeToRespond: 0
+          }));
 };
 
 targeting.setTargetingForAst = function() {
@@ -124,6 +126,7 @@ targeting.setTargetingForAst = function() {
 
 function getWinningBidTargeting(adUnitCodes) {
   let winners = targeting.getWinningBids(adUnitCodes);
+  // TODO : Add losing bids to pool from here ?
   let standardKeys = getStandardKeys();
 
   winners = winners.map(winner => {
@@ -141,7 +144,7 @@ function getWinningBidTargeting(adUnitCodes) {
 }
 
 function getStandardKeys() {
-  return bidmanager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
+  return auctionManager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
     .map(targeting => targeting.key)
     .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
 }
@@ -151,7 +154,8 @@ function getStandardKeys() {
  */
 function getAlwaysUseBidTargeting(adUnitCodes) {
   let standardKeys = getStandardKeys();
-  return $$PREBID_GLOBAL$$._bidsReceived
+
+  return auctionManager.getBidsReceived()
     .filter(adUnitsFilter.bind(this, adUnitCodes))
     .map(bid => {
       if (bid.alwaysUseBid) {
@@ -174,7 +178,7 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 function getBidLandscapeTargeting(adUnitCodes) {
   const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
 
-  return $$PREBID_GLOBAL$$._bidsReceived
+  return auctionManager.getBidsReceived()
     .filter(adUnitsFilter.bind(this, adUnitCodes))
     .map(bid => {
       if (bid.adserverTargeting) {

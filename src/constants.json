@@ -65,5 +65,12 @@
     "SRC" : "s2s",
     "ADAPTER" : "prebidServer",
     "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync"
+  },
+  "AUCTION": {
+    "STATUS": {
+      "STARTED": "started",
+      "IN_PROGRESS": "inProgress",
+      "COMPLETED": "completed"
+    }
   }
 }
