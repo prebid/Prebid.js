@@ -9,6 +9,7 @@ export const auctionManager = (function() {
   var _auctions = [];
   var _customPriceBucket;
   var defaultBidderSettingsMap = {};
+  var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 
   function setPriceGranularity(granularity) {
     var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
@@ -229,6 +230,18 @@ export const auctionManager = (function() {
     this.getAuctionStatus = () => _auctionStatus;
     this.getCallback = () => _callback;
 
+    this.done = function() {
+      var count = 0;
+      return function() {
+        count++
+        if (count === this.getBidderRequests().length) {
+          // when all bidders have called done callback it means auction is complete
+          this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.COMPLETED);
+          executeCallback();
+        }
+      }
+    }
+
     this.addBidResponse = (adUnitCode, bid, auctionId) => {
       let auction = _getAuction(auctionId);
       if (isValid()) {
@@ -320,27 +333,7 @@ export const auctionManager = (function() {
       function addBidToAuction() {
         events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
         auction.setBidsReceived(bid);
-        if (auction.bidsBackAll()) {
-          executeCallback();
-        }
       }
-    }
-
-    this.bidsBackAll = () => {
-      const requested = this.getBidderRequests()
-        .map(request => request.bids)
-        .reduce(flatten, [])
-        .filter(adUnitsFilter.bind(this, this.getAdUnitCodes()))
-        .map(bid => {
-          return bid.bidder === 'indexExchange'
-            ? bid.sizes.length
-            : 1;
-        }).reduce((a, b) => a + b, 0);
-
-      const received = this.getBidsReceived()
-        .filter(adUnitsFilter.bind(this, this.getAdUnitCodes())).length;
-
-      return requested === received;
     }
 
     this.callBids = (cbTimeout) => {

@@ -56,6 +56,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits}) {
 
 exports.callBids = (auction, cbTimeout) => {
   let adUnits = auction.getAdUnits();
+  let done = auction.done();
+  let doneCb = done.bind(auction);
   const auctionStart = auction.getAuctionStart();
   const auctionId = auction.getAuctionId();
   let bidderCodes = getBidderCodes(adUnits);
@@ -141,7 +143,7 @@ exports.callBids = (auction, cbTimeout) => {
         utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
         auction.setBidderRequests(bidderRequest);
         events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-        adapter.callBids(bidderRequest, auction.addBidResponse);
+        adapter.callBids(bidderRequest, auction.addBidResponse, doneCb);
       }
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);

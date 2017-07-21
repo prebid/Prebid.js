@@ -12,7 +12,7 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
   var usersync = false;
 
-  baseAdapter.callBids = function (bidderRequest, addBidResponse) {
+  baseAdapter.callBids = function (bidderRequest, addBidResponse, done) {
     // var bidCode = baseAdapter.getBidderCode();
 
     var anArr = bidderRequest.bids;
@@ -104,6 +104,7 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
       }
+      done();
     };
   };
 

@@ -35,7 +35,7 @@ function AppnexusAstAdapter() {
   let usersync = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest, addBidResponse) {
+  baseAdapter.callBids = function(bidRequest, addBidResponse, done) {
     bidRequests = {};
 
     const bids = bidRequest.bids || [];
@@ -170,6 +170,7 @@ function AppnexusAstAdapter() {
             .map(bidId => bidRequests[bidId].placementCode)
             .forEach(placementCode => {
               addBidResponse(placementCode, createBid(STATUS.NO_BID), auctionId);
+              done();
             });
           return;
         }
@@ -213,6 +214,7 @@ function AppnexusAstAdapter() {
           }
           usersync = true;
         }
+        done();
       }
     }
   };
