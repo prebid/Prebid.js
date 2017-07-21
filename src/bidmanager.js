@@ -130,11 +130,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
   function prepareBidForAuction() {
-    // Let listeners know that now is the time to adjust the bid, if they want to.
-    //
-    // This must be fired first, so that we calculate derived values from the updates
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
     const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
 
     Object.assign(bid, {
@@ -147,6 +142,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+    // Let listeners know that now is the time to adjust the bid, if they want to.
+    //
+    // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
+    // but others to not be set yet (like priceStrings). See #1372 and #1389.
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
     // a publisher-defined renderer can be used to render bids
     const adUnitRenderer =
