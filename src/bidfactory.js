@@ -18,7 +18,7 @@ function Bid(statusCode, bidRequest) {
   var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;
 
-  this.bidderCode = '';
+  this.bidderCode = (bidRequest && bidRequest.bidder) || '';
   this.width = 0;
   this.height = 0;
   this.statusMessage = _getStatus();

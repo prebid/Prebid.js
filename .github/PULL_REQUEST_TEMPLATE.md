@@ -26,6 +26,9 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
   }
 }
 ```
+
+Be sure to test the integration with your adserver using the [Hello World](/integrationExamples/gpt/hello_world.html) sample page.
+
 - contact email of the adapter’s maintainer
 - [ ] official adapter submission
 
