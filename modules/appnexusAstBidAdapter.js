@@ -1,7 +1,6 @@
 import Adapter from 'src/adapter';
 import { Renderer } from 'src/Renderer';
 import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
@@ -170,7 +169,7 @@ function AppnexusAstAdapter() {
           Object.keys(bidRequests)
             .map(bidId => bidRequests[bidId].placementCode)
             .forEach(placementCode => {
-              bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
+              addBidResponse(placementCode, createBid(STATUS.NO_BID), auctionId);
             });
           return;
         }
@@ -191,7 +190,7 @@ function AppnexusAstAdapter() {
             utils.logError(`${type} ad type not supported`);
           }
 
-          tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+          tag.bidId = tag.uuid;// bidfactory looks for bidId on requested bid
           const bid = createBid(status, tag);
           if (type === 'native') bid.mediaType = 'native';
           if (type === 'video') bid.mediaType = 'video';

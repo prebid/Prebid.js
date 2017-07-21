@@ -4,7 +4,6 @@ import adaptermanager from 'src/adaptermanager';
 var CONSTANTS = require('src/constants');
 var utils = require('src/utils');
 var adloader = require('src/adloader');
-// var bidmanager = require('src/bidmanager');
 var bidfactory = require('src/bidfactory');
 var Adapter = require('src/adapter');
 
@@ -13,15 +12,24 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = Adapter.createNew('appnexus');
   var usersync = false;
 
-  baseAdapter.callBids = function (params, addBidResponse) {
+  baseAdapter.callBids = function (bidderRequest, addBidResponse) {
     // var bidCode = baseAdapter.getBidderCode();
 
-    var anArr = params.bids;
+    var anArr = bidderRequest.bids;
 
     // var bidsCount = anArr.length;
 
     // set expected bids count for callback execution
     // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
+
+    for (var i = 0; i < anArr.length; i++) {
+      var bidRequest = anArr[i];
+      var callbackId = bidRequest.bidId;
+      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
+
+      // store a reference to the bidRequest from the callback id
+      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
+    }
 
     // expose the callback to the global object:
     $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
@@ -31,7 +39,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         var responseCPM;
         var id = jptResponseObj.callback_uid;
         var placementCode = '';
-        var bidObj = getBidRequest(id);
+        var bidObj = bidderRequest.bids.find(bid => bid.bidId === id); // getBidRequest(id);
         if (bidObj) {
           bidCode = bidObj.bidder;
 
@@ -66,7 +74,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           bid.height = jptResponseObj.result.height;
           bid.dealId = jptResponseObj.result.deal_id;
 
-          addBidResponse(placementCode, bid, params.auctionId);
+          addBidResponse(placementCode, bid, bidderRequest.auctionId);
         } else {
           // no response data
           // @if NODE_ENV='debug'
@@ -76,7 +84,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           // indicate that there is no bid for this placement
           bid = bidfactory.createBid(2, bidObj);
           bid.bidderCode = bidCode;
-          addBidResponse(placementCode, bid, params.auctionId);
+          addBidResponse(placementCode, bid, bidderRequest.auctionId);
         }
 
         if (!usersync) {
@@ -97,15 +105,6 @@ AppNexusAdapter = function AppNexusAdapter() {
         // @endif
       }
     };
-
-    for (var i = 0; i < anArr.length; i++) {
-      var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
-
-      // store a reference to the bidRequest from the callback id
-      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
-    }
   };
 
   function buildJPTCall(bid, callbackId) {
