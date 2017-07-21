@@ -1,41 +1,34 @@
 const utils = require('./utils');
 
-/**
- * Methods for managing Prebid configuration
- */
+export let config = {
+  _debug: false,
 
-let setConfigApi;
-let debug;
+  get debug() {
+    // this is deprecated but may still be used during deprecation window
+    // `debug` is equivalent to legacy `pbjs.logging` property
+    if ($$PREBID_GLOBAL$$.logging || $$PREBID_GLOBAL$$.logging == false) {
+      return $$PREBID_GLOBAL$$.logging;
+    }
 
-export function getDebugStatus() {
-  // if debug not set, pub might still be using pbjs.logging, which may still
-  // be used until deprecation
-  if (!setConfigApi) { return $$PREBID_GLOBAL$$.logging; }
+    return this._debug;
+  },
 
-  return debug;
-}
-
-export function setDebugStatus(_debug) {
-  debug = _debug;
-}
+  set debug(val) {
+    this._debug = val;
+  },
+};
 
 export function setConfig(options) {
   if (typeof options !== 'object') {
     utils.logError('setConfig options must be an object');
   }
 
-  // while old config properties/methods are in depecration window, set this
-  // to signal to getter/setter methods where to check state
-  setConfigApi = true;
-
-  // TODO: fill out remaning config options
   // if (options.bidderTimeout) {
   //   $$PREBID_GLOBAL$$.bidderTimeout = options.bidderTimeout;
   // }
 
-  // `debug` is equivalent to previous `pbjs.logging` property
   if (options.debug) {
-    setDebugStatus(options.debug);
+    config.debug = options.debug;
   }
 
   // if (options.publisherDomain) {

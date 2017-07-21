@@ -1,5 +1,5 @@
 var CONSTANTS = require('./constants');
-const config = require('./config');
+const { config } = require('./config');
 
 var _loggingChecked = false;
 
@@ -214,13 +214,13 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if (config.getDebugStatus() === false && _loggingChecked === false) {
+  if (config.debug === false && _loggingChecked === false) {
     const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
-    config.setDebugStatus(debug);
+    config.debug = debug;
     _loggingChecked = true;
   }
 
-  return !!config.getDebugStatus();
+  return !!config.debug;
 };
 
 exports.debugTurnedOn = debugTurnedOn;

@@ -6,7 +6,7 @@ import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
 import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
-import { getDebugStatus } from 'src/config';
+import { config } from 'src/config';
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
@@ -91,7 +91,7 @@ function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-    const isDebug = !!getDebugStatus();
+    const isDebug = !!config.debug;
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
