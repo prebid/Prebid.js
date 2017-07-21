@@ -190,11 +190,11 @@ function AppnexusAstAdapter() {
             utils.logError(`${type} ad type not supported`);
           }
 
-          tag.bidId = tag.uuid;// bidfactory looks for bidId on requested bid
+          tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
           const bid = createBid(status, tag);
           if (type === 'native') bid.mediaType = 'native';
           if (type === 'video') bid.mediaType = 'video';
-          if (type === 'video-outstream') bid.mediaType = 'video-outstream';
+          if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
 
           if (bid.adId in bidRequests) {
             const placement = bidRequests[bid.adId].placementCode;

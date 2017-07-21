@@ -2,6 +2,7 @@ import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
+import { Renderer } from 'src/Renderer';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -129,23 +130,33 @@ exports.addBidResponse = function (adUnitCode, bid) {
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
   function prepareBidForAuction() {
-    // Let listeners know that now is the time to adjust the bid, if they want to.
-    //
-    // This must be fired first, so that we calculate derived values from the updates
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
-    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+    const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
 
     Object.assign(bid, {
-      requestId: requestId,
+      requestId: bidRequest.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: start,
+      requestTimestamp: bidRequest.start,
       cpm: parseFloat(bid.cpm) || 0,
       bidder: bid.bidderCode,
       adUnitCode
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+    // Let listeners know that now is the time to adjust the bid, if they want to.
+    //
+    // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
+    // but others to not be set yet (like priceStrings). See #1372 and #1389.
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
+    // a publisher-defined renderer can be used to render bids
+    const adUnitRenderer =
+      bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+
+    if (adUnitRenderer) {
+      bid.renderer = Renderer.install({ url: adUnitRenderer.url });
+      bid.renderer.setRender(adUnitRenderer.render);
+    }
 
     const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
