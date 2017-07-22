@@ -11,7 +11,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
-import { setConfig } from './config';
+import { config, setConfig } from './config';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -48,7 +48,8 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
 // default timeout for all bids
-$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
+/** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> ) */
+$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
 $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
@@ -351,7 +352,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
-  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.bidderTimeout;
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);

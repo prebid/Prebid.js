@@ -24,7 +24,7 @@
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
     var pbjs = pbjs || {};
-    pbjs.bidderTimeout = 3000;
+    pbjs.setConfig({ bidderTimeout: 3000 });
     pbjs.que = pbjs.que || [];
     (function() {
         var pbjsEl = document.createElement("script");
