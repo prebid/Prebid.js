@@ -90,8 +90,8 @@ const mobfoxAdapter = function () {
     ajax.ajax(`${BID_REQUEST_BASE_URL}?${queryString}`, {
       success(resp, xhr) {
         if (xhr.getResponseHeader("Content-Type") == "application/json") {
-          try {resp = JSON.parse(resp);}
-          catch (e) {onBidResponse(bid, [resp])}
+          try { resp = JSON.parse(resp) }
+          catch (e) { resp = {error: resp} }
         }
         onBidResponse({
           data: resp,
@@ -101,7 +101,7 @@ const mobfoxAdapter = function () {
       error(err) {
         if (xhr.getResponseHeader("Content-Type") == "application/json") {
           try {err = JSON.parse(err);}
-          catch (e) {onBidResponse(bid, [err])};
+          catch (e) {};
         }
         onBidResponseError(bid, [err]);
       }
