@@ -16,10 +16,11 @@ const NATIVE_MAPPING = {
   body: 'description',
   image: {
     serverName: 'main_image',
-    serverParams: {
-      required: true,
-      sizes: [{}]
-    }
+    serverParams: { required: true, sizes: [{}] }
+  },
+  icon: {
+    serverName: 'icon',
+    serverParams: { required: true, sizes: [{}] }
   },
   sponsoredBy: 'sponsored_by'
 };
@@ -196,7 +197,7 @@ function AppnexusAstAdapter() {
       const bid = createBid(status, tag);
       if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
-      if (type === 'video-outstream') bid.mediaType = 'video-outstream';
+      if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
 
       if (bid.adId in bidRequests) {
         const placement = bidRequests[bid.adId].placementCode;

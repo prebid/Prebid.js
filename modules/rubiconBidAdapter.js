@@ -150,7 +150,8 @@ function RubiconAdapter() {
     }
     return [
       'dt.id', digiTrustId.id,
-      'dt.keyv', digiTrustId.keyv
+      'dt.keyv', digiTrustId.keyv,
+      'dt.pref', 0
     ];
   }
 

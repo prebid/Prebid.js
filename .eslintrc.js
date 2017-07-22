@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "commonjs": true
@@ -39,4 +39,4 @@
     "standard/object-curly-even-spacing": "off",
     "valid-typeof": "off"
   }
-}
+};

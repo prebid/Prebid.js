@@ -2,7 +2,7 @@ describe('wideorbit adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
 
-    // FYI: querystringify will perform encoding/decoding
+  // FYI: querystringify will perform encoding/decoding
   var querystringify = require('querystringify');
 
   var adapter = require('modules/wideorbitBidAdapter');
@@ -270,228 +270,228 @@ describe('wideorbit adapter tests', function () {
     });
   });
 
-    // describe('handling of the callback response', function () {
-    //
-    //     var placements = [
-    //         {
-    //             ExtPlacementId: 'div-gpt-ad-12345-1',
-    //             Type: 'DirectHTML',
-    //             Bid: 1.3,
-    //             Width: 50,
-    //             Height: 100,
-    //             Source: '<div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
-    //             TrackingCodes: [
-    //                 'https://www.admeta.com/1.gif'
-    //             ]
-    //         },
-    //         {
-    //             ExtPlacementId: 'div-gpt-ad-12345-2',
-    //             Type: 'DirectHTML',
-    //             Bid: 1.5,
-    //             Width: 100,
-    //             Height: 200,
-    //             Source: '<div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
-    //             TrackingCodes: [
-    //                 'http://www.admeta.com/2a.gif',
-    //                 '<img src="http://www.admeta.com/2b.gif"></img>'
-    //             ]
-    //         },
-    //         {
-    //             ExtPlacementId: 'div-gpt-ad-12345-3',
-    //             Type: 'Other',
-    //             Bid: 1.7,
-    //             Width: 150,
-    //             Height: 250,
-    //             Source: '<div data-id="div-gpt-ad-12345-3">The AD 3 itself...</div>',
-    //             TrackingCodes: [
-    //                 'http://www.admeta.com/3.gif'
-    //             ]
-    //         }
-    //     ];
-    //
-    //     it('callback function should exist', function () {
-    //         expect($$PREBID_GLOBAL$$.handleWideOrbitCallback).to.exist.and.to.be.a('function');
-    //     });
-    //
-    //     it('bidmanager.addBidResponse should be called thrice with correct arguments', function () {
-    //
-    //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    //
-    //         var params = {
-    //             bidderCode: 'wideorbit',
-    //             bids: [
-    //                 {
-    //                     bidder: 'wideorbit',
-    //                     params: {
-    //                         pbId: 1,
-    //                         pId: 101
-    //                     },
-    //                     placementCode: 'div-gpt-ad-12345-1'
-    //                 },
-    //                 {
-    //                     bidder: 'wideorbit',
-    //                     params: {
-    //                         pbId: 1,
-    //                         site: 'Site 1',
-    //                         page: 'Page 1',
-    //                         width: 100,
-    //                         height: 200,
-    //                         subPublisher: 'Sub Publisher 1'
-    //                     },
-    //                     placementCode: 'div-gpt-ad-12345-2'
-    //                 },
-    //                 {
-    //                     bidder: 'wideorbit',
-    //                     params: {
-    //                         pbId: 1,
-    //                         pId: 102
-    //                     },
-    //                     placementCode: 'div-gpt-ad-12345-3'
-    //                 },
-    //             ]
-    //         };
-    //
-    //         var response = {
-    //             UserMatchings: [
-    //                 {
-    //                     Type: 'redirect',
-    //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
-    //                 }
-    //             ],
-    //             Placements: placements
-    //         };
-    //
-    //         adapter().callBids(params);
-    //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
-    //
-    //         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-    //         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-    //         var bidPlacementCode2 = stubAddBidResponse.getCall(1).args[0];
-    //         var bidObject2 = stubAddBidResponse.getCall(1).args[1];
-    //         var bidPlacementCode3 = stubAddBidResponse.getCall(2).args[0];
-    //         var bidObject3 = stubAddBidResponse.getCall(2).args[1];
-    //
-    //         expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
-    //         expect(bidObject1.cpm).to.equal(1.3);
-    //         expect(bidObject1.ad).to.equal('<img src="https://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>');
-    //         expect(bidObject1.width).to.equal(50);
-    //         expect(bidObject1.height).to.equal(100);
-    //         expect(bidObject1.getStatusCode()).to.equal(1);
-    //         expect(bidObject1.bidderCode).to.equal('wideorbit');
-    //
-    //         expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
-    //         expect(bidObject2.cpm).to.equal(1.50);
-    //         expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
-    //         expect(bidObject2.width).to.equal(100);
-    //         expect(bidObject2.height).to.equal(200);
-    //         expect(bidObject2.getStatusCode()).to.equal(1);
-    //         expect(bidObject2.bidderCode).to.equal('wideorbit');
-    //
-    //         expect(bidPlacementCode3).to.equal('div-gpt-ad-12345-3');
-    //         expect(bidObject3.getStatusCode()).to.equal(2);
-    //         expect(bidObject3.bidderCode).to.equal('wideorbit');
-    //
-    //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode1, bidObject1);
-    //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode2, bidObject2);
-    //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode3, bidObject3);
-    //
-    //         sinon.assert.calledThrice(stubAddBidResponse);
-    //
-    //         stubAddBidResponse.restore();
-    //
-    //     });
-    //
-    //     it('should append an image to the head when type is set to redirect', function () {
-    //
-    //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    //
-    //         var response = {
-    //             UserMatchings: [
-    //                 {
-    //                     Type: 'redirect',
-    //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
-    //                 }
-    //             ],
-    //             Placements: placements
-    //         };
-    //
-    //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
-    //
-    //         var imgElement = document.querySelectorAll("head img")[0];
-    //
-    //         expect(imgElement).to.exist;
-    //         expect(imgElement.src).to.equal('http://www.admeta.com/1.gif');
-    //
-    //         stubAddBidResponse.restore();
-    //     });
-    //
-    //     it('should append an iframe to the head when type is set to iframe', function () {
-    //
-    //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    //
-    //         var response = {
-    //             UserMatchings: [
-    //                 {
-    //                     Type: 'iframe',
-    //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.ashx'
-    //                 }
-    //             ],
-    //             Placements: placements
-    //         };
-    //
-    //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
-    //
-    //         var iframeElement = document.querySelectorAll("head iframe")[0];
-    //
-    //         expect(iframeElement).to.exist;
-    //         expect(iframeElement.src).to.equal('http://www.admeta.com/1.ashx');
-    //
-    //         stubAddBidResponse.restore();
-    //
-    // });
-    //
-    //     it('should append an script to the head when type is set to js', function () {
-    //
-    //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    //
-    //         var response = {
-    //             UserMatchings: [
-    //                 {
-    //                     Type: 'js',
-    //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
-    //                 }
-    //             ],
-    //             Placements: placements
-    //         };
-    //
-    //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
-    //
-    //         var scriptElement = document.querySelectorAll("head script")[0];
-    //
-    //         expect(scriptElement).to.exist;
-    //         expect(scriptElement.src).to.equal('http://www.admeta.com/1.js');
-    //
-    //         stubAddBidResponse.restore();
-    //     });
-    //
-    //     it('should do nothing when type is set to unrecognized type', function () {
-    //
-    //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    //
-    //         var response = {
-    //             UserMatchings: [
-    //                 {
-    //                     Type: 'unrecognized',
-    //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
-    //                 }
-    //             ],
-    //             Placements: placements
-    //         };
-    //
-    //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
-    //
-    //         stubAddBidResponse.restore();
-    //     });
-    //
-    // });
+  // describe('handling of the callback response', function () {
+  //
+  //     var placements = [
+  //         {
+  //             ExtPlacementId: 'div-gpt-ad-12345-1',
+  //             Type: 'DirectHTML',
+  //             Bid: 1.3,
+  //             Width: 50,
+  //             Height: 100,
+  //             Source: '<div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>',
+  //             TrackingCodes: [
+  //                 'https://www.admeta.com/1.gif'
+  //             ]
+  //         },
+  //         {
+  //             ExtPlacementId: 'div-gpt-ad-12345-2',
+  //             Type: 'DirectHTML',
+  //             Bid: 1.5,
+  //             Width: 100,
+  //             Height: 200,
+  //             Source: '<div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>',
+  //             TrackingCodes: [
+  //                 'http://www.admeta.com/2a.gif',
+  //                 '<img src="http://www.admeta.com/2b.gif"></img>'
+  //             ]
+  //         },
+  //         {
+  //             ExtPlacementId: 'div-gpt-ad-12345-3',
+  //             Type: 'Other',
+  //             Bid: 1.7,
+  //             Width: 150,
+  //             Height: 250,
+  //             Source: '<div data-id="div-gpt-ad-12345-3">The AD 3 itself...</div>',
+  //             TrackingCodes: [
+  //                 'http://www.admeta.com/3.gif'
+  //             ]
+  //         }
+  //     ];
+  //
+  //     it('callback function should exist', function () {
+  //         expect($$PREBID_GLOBAL$$.handleWideOrbitCallback).to.exist.and.to.be.a('function');
+  //     });
+  //
+  //     it('bidmanager.addBidResponse should be called thrice with correct arguments', function () {
+  //
+  //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  //
+  //         var params = {
+  //             bidderCode: 'wideorbit',
+  //             bids: [
+  //                 {
+  //                     bidder: 'wideorbit',
+  //                     params: {
+  //                         pbId: 1,
+  //                         pId: 101
+  //                     },
+  //                     placementCode: 'div-gpt-ad-12345-1'
+  //                 },
+  //                 {
+  //                     bidder: 'wideorbit',
+  //                     params: {
+  //                         pbId: 1,
+  //                         site: 'Site 1',
+  //                         page: 'Page 1',
+  //                         width: 100,
+  //                         height: 200,
+  //                         subPublisher: 'Sub Publisher 1'
+  //                     },
+  //                     placementCode: 'div-gpt-ad-12345-2'
+  //                 },
+  //                 {
+  //                     bidder: 'wideorbit',
+  //                     params: {
+  //                         pbId: 1,
+  //                         pId: 102
+  //                     },
+  //                     placementCode: 'div-gpt-ad-12345-3'
+  //                 },
+  //             ]
+  //         };
+  //
+  //         var response = {
+  //             UserMatchings: [
+  //                 {
+  //                     Type: 'redirect',
+  //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
+  //                 }
+  //             ],
+  //             Placements: placements
+  //         };
+  //
+  //         adapter().callBids(params);
+  //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+  //
+  //         var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
+  //         var bidObject1 = stubAddBidResponse.getCall(0).args[1];
+  //         var bidPlacementCode2 = stubAddBidResponse.getCall(1).args[0];
+  //         var bidObject2 = stubAddBidResponse.getCall(1).args[1];
+  //         var bidPlacementCode3 = stubAddBidResponse.getCall(2).args[0];
+  //         var bidObject3 = stubAddBidResponse.getCall(2).args[1];
+  //
+  //         expect(bidPlacementCode1).to.equal('div-gpt-ad-12345-1');
+  //         expect(bidObject1.cpm).to.equal(1.3);
+  //         expect(bidObject1.ad).to.equal('<img src="https://www.admeta.com/1.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-1">The AD 1 itself...</div>');
+  //         expect(bidObject1.width).to.equal(50);
+  //         expect(bidObject1.height).to.equal(100);
+  //         expect(bidObject1.getStatusCode()).to.equal(1);
+  //         expect(bidObject1.bidderCode).to.equal('wideorbit');
+  //
+  //         expect(bidPlacementCode2).to.equal('div-gpt-ad-12345-2');
+  //         expect(bidObject2.cpm).to.equal(1.50);
+  //         expect(bidObject2.ad).to.equal('<img src="http://www.admeta.com/2b.gif"></img><img src="http://www.admeta.com/2a.gif" width="0" height="0" style="position:absolute"></img><div data-id="div-gpt-ad-12345-2">The AD 2 itself...</div>');
+  //         expect(bidObject2.width).to.equal(100);
+  //         expect(bidObject2.height).to.equal(200);
+  //         expect(bidObject2.getStatusCode()).to.equal(1);
+  //         expect(bidObject2.bidderCode).to.equal('wideorbit');
+  //
+  //         expect(bidPlacementCode3).to.equal('div-gpt-ad-12345-3');
+  //         expect(bidObject3.getStatusCode()).to.equal(2);
+  //         expect(bidObject3.bidderCode).to.equal('wideorbit');
+  //
+  //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode1, bidObject1);
+  //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode2, bidObject2);
+  //         sinon.assert.calledWith(stubAddBidResponse, bidPlacementCode3, bidObject3);
+  //
+  //         sinon.assert.calledThrice(stubAddBidResponse);
+  //
+  //         stubAddBidResponse.restore();
+  //
+  //     });
+  //
+  //     it('should append an image to the head when type is set to redirect', function () {
+  //
+  //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  //
+  //         var response = {
+  //             UserMatchings: [
+  //                 {
+  //                     Type: 'redirect',
+  //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.gif'
+  //                 }
+  //             ],
+  //             Placements: placements
+  //         };
+  //
+  //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+  //
+  //         var imgElement = document.querySelectorAll("head img")[0];
+  //
+  //         expect(imgElement).to.exist;
+  //         expect(imgElement.src).to.equal('http://www.admeta.com/1.gif');
+  //
+  //         stubAddBidResponse.restore();
+  //     });
+  //
+  //     it('should append an iframe to the head when type is set to iframe', function () {
+  //
+  //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  //
+  //         var response = {
+  //             UserMatchings: [
+  //                 {
+  //                     Type: 'iframe',
+  //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.ashx'
+  //                 }
+  //             ],
+  //             Placements: placements
+  //         };
+  //
+  //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+  //
+  //         var iframeElement = document.querySelectorAll("head iframe")[0];
+  //
+  //         expect(iframeElement).to.exist;
+  //         expect(iframeElement.src).to.equal('http://www.admeta.com/1.ashx');
+  //
+  //         stubAddBidResponse.restore();
+  //
+  // });
+  //
+  //     it('should append an script to the head when type is set to js', function () {
+  //
+  //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  //
+  //         var response = {
+  //             UserMatchings: [
+  //                 {
+  //                     Type: 'js',
+  //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+  //                 }
+  //             ],
+  //             Placements: placements
+  //         };
+  //
+  //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+  //
+  //         var scriptElement = document.querySelectorAll("head script")[0];
+  //
+  //         expect(scriptElement).to.exist;
+  //         expect(scriptElement.src).to.equal('http://www.admeta.com/1.js');
+  //
+  //         stubAddBidResponse.restore();
+  //     });
+  //
+  //     it('should do nothing when type is set to unrecognized type', function () {
+  //
+  //         var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  //
+  //         var response = {
+  //             UserMatchings: [
+  //                 {
+  //                     Type: 'unrecognized',
+  //                     Url: 'http%3A%2F%2Fwww.admeta.com%2F1.js'
+  //                 }
+  //             ],
+  //             Placements: placements
+  //         };
+  //
+  //         $$PREBID_GLOBAL$$.handleWideOrbitCallback(response);
+  //
+  //         stubAddBidResponse.restore();
+  //     });
+  //
+  // });
 });

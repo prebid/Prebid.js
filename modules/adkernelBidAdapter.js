@@ -17,6 +17,9 @@ const AdKernelAdapter = function AdKernelAdapter() {
   };
   const EMPTY_BID_RESPONSE = {'seatbid': [{'bid': []}]};
 
+  const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'linearity', 'sequence',
+    'boxingallowed', 'playbackmethod', 'delivery', 'pos', 'api', 'ext'];
+
   let baseAdapter = Adapter.createNew('adkernel');
 
   /**
@@ -26,15 +29,13 @@ const AdKernelAdapter = function AdKernelAdapter() {
   function RtbRequestDispatcher() {
     const _dispatch = {};
     const originalBids = {};
-    const site = createSite();
     const syncedHostZones = {};
+    const site = createSite();
 
     // translate adunit info into rtb impression dispatched by host/zone
     this.addImp = function (bid) {
       let host = bid.params.host;
       let zone = bid.params.zoneId;
-      let size = bid.sizes[0];
-      let bidId = bid.bidId;
 
       if (!(host in _dispatch)) {
         _dispatch[host] = {};
@@ -43,17 +44,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
       if (!(zone in _dispatch[host])) {
         _dispatch[host][zone] = [];
       }
-      let imp = {
-        'id': bidId,
-        'tagid': bid.placementCode,
-        'banner': {'w': size[0], 'h': size[1]}
-      };
-      if (utils.getTopWindowLocation().protocol === 'https:') {
-        imp.secure = 1;
-      }
+      let imp = buildImp(bid);
       // save rtb impression for specified ad-network host and zone
       _dispatch[host][zone].push(imp);
-      originalBids[bidId] = bid;
+      originalBids[bid.bidId] = bid;
       // perform user-sync
       if (!(host in syncedHostZones)) {
         syncedHostZones[host] = [];
@@ -62,6 +56,33 @@ const AdKernelAdapter = function AdKernelAdapter() {
         syncedHostZones[host].push(zone);
       }
     };
+
+    function buildImp(bid) {
+      const size = getBidSize(bid);
+      const imp = { 'id': bid.bidId, 'tagid': bid.placementCode};
+
+      if (bid.mediaType === 'video') {
+        imp.video = {w: size[0], h: size[1]};
+        if (bid.params.video) {
+          Object.keys(bid.params.video)
+            .filter(param => VIDEO_TARGETING.includes(param))
+            .forEach(param => imp.video[param] = bid.params.video[param]);
+        }
+      } else {
+        imp.banner = {w: size[0], h: size[1]};
+      }
+      if (utils.getTopWindowLocation().protocol === 'https:') {
+        imp.secure = 1;
+      }
+      return imp;
+    }
+
+    function getBidSize(bid) {
+      if (bid.mediaType === 'video') {
+        return bid.sizes;
+      }
+      return bid.sizes[0];
+    }
 
     /**
      *  Main function to get bid requests
@@ -171,7 +192,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
       let adUnitId = bid.placementCode;
       if (bidResp) {
         utils.logMessage(`got response for ${adUnitId}`);
-        bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, imp.banner.w, imp.banner.h));
+        let dimensions = getCreativeSize(imp, bidResp);
+        bidmanager.addBidResponse(adUnitId, createBidObject(bidResp, bid, dimensions.w, dimensions.h));
       } else {
         utils.logMessage(`got empty response for ${adUnitId}`);
         bidmanager.addBidResponse(adUnitId, createEmptyBidObject(bid));
@@ -180,16 +202,33 @@ const AdKernelAdapter = function AdKernelAdapter() {
   }
 
   /**
+   * Evaluate creative size from response or from request
+   */
+  function getCreativeSize(imp, bid) {
+    let dimensions = (bid.h && bid.w) ? bid : (imp.banner || imp.video);
+    return {
+      w: dimensions.w,
+      h: dimensions.h
+    };
+  }
+
+  /**
    *  Create bid object for the bid manager
    */
   function createBidObject(resp, bid, width, height) {
-    return Object.assign(bidfactory.createBid(1, bid), {
+    let bidObj = Object.assign(bidfactory.createBid(1, bid), {
       bidderCode: bid.bidder,
-      ad: formatAdMarkup(resp),
       width: width,
       height: height,
       cpm: parseFloat(resp.price)
     });
+    if (bid.mediaType === 'video') {
+      bidObj.vastUrl = resp.nurl;
+      bidObj.mediaType = 'video';
+    } else {
+      bidObj.ad = formatAdMarkup(resp);
+    }
+    return bidObj;
   }
 
   /**
@@ -268,7 +307,9 @@ AdKernelAdapter.createNew = function() {
   return new AdKernelAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AdKernelAdapter, 'adkernel');
+adaptermanager.registerBidAdapter(new AdKernelAdapter, 'adkernel', {
+  supportedMediaTypes: ['video']
+});
 adaptermanager.aliasBidAdapter('adkernel', 'headbidding');
 
 module.exports = AdKernelAdapter;
