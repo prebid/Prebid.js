@@ -14,58 +14,20 @@ var callback_id; //TODO remove this and use it coming back in the responseObj
 
 var YieldmoAdapter = function YieldmoAdapter() {
   function _callBids(params) {
-    
     var bids = params.bids;
-
-    console.log('BIDS', bids);
-
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var callbackId = bidRequest.bidId;
-      callback_id = bidRequest.bidId;
-      adloader.loadScript(buildYieldmoCall(bidRequest, callbackId));
-    }
+    adloader.loadScript(buildYieldmoCall(bids));
   }
 
-  function buildYieldmoCall(bid, callbackId) {
-    // Setting up the 
-    var p = bid.placementCode; // optional placement id (extracted from prebid)
-    var page_url = document.location; // page url
-    var pr = document.referrer || ''; // page's referrer
-    var dnt = (navigator.doNotTrack || false).toString(); // true if user enabled dnt (false by default)
-    var _s = document.location.protocol === 'https:' ? 1 : 0; // 1 if page is secure
-    // TODO: Figure out how to approach the fact that there are multiple ad units
-    // var h = utils.getBidIdParameter('h', bid.params); // height in pixels
-    // var w = utils.getBidIdParameter('w', bid.params); // width in pixels
-    var description = _getPageDescription();
-    var title = document.title || ''; // Value of the title from the publisher's page. 
-    var e = 4; // 0 (COP) or 4 (DFP) for now -- ad server should reject other environments (TODO: validate that it will always be the case)
-    var bust = new Date().getTime().toString(); // cache buster
-    var scrd = window.devicePixelRatio || 0; // screen pixel density
-    var ae = 0; // prebid adapter version
-
-    // TODO: do we want to send empty params?
-
-    console.log('BID', bid);
-
+  function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
     var ymURI = '//ads.yieldmo.com/ads?';
     var ymCall = document.location.protocol + ymURI;
-    ymCall = utils.tryAppendQueryString(ymCall, 'callback', '$$PREBID_GLOBAL$$.YMCB');
-    ymCall = utils.tryAppendQueryString(ymCall, 'page_url', page_url);
-    ymCall = utils.tryAppendQueryString(ymCall, 'pr', pr);
-    ymCall = utils.tryAppendQueryString(ymCall, 'p', p);
-    ymCall = utils.tryAppendQueryString(ymCall, 'bust', bust);
-    ymCall = utils.tryAppendQueryString(ymCall, '_s', _s);
-    ymCall = utils.tryAppendQueryString(ymCall, 'scrd', scrd);
-    // ymCall = utils.tryAppendQueryString(ymCall, 'h', h);
-    // ymCall = utils.tryAppendQueryString(ymCall, 'w', w);
-    ymCall = utils.tryAppendQueryString(ymCall, 'dnt', dnt);
-    ymCall = utils.tryAppendQueryString(ymCall, 'ae', ae);
-    ymCall = utils.tryAppendQueryString(ymCall, 'e', e);
-    ymCall = utils.tryAppendQueryString(ymCall, 'description', description);
-    ymCall = utils.tryAppendQueryString(ymCall, 'title', title);
-    ymCall = utils.tryAppendQueryString(ymCall, 'callback_id', callbackId);
+
+    // Placement specific information
+    ymCall = _appendPlacementInformation(ymCall, bids);
+    
+    // General impression params
+    ymCall = _appendImpressionInformation(ymCall);
 
     // remove the trailing "&"
     if (ymCall.lastIndexOf('&') === ymCall.length - 1) {
@@ -74,7 +36,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
     // @if NODE_ENV='debug'
     console.log('ymCall request built: ' + ymCall);
-
     utils.logMessage('ymCall request built: ' + ymCall);
     // @endif
 
@@ -82,6 +43,53 @@ var YieldmoAdapter = function YieldmoAdapter() {
     bid.startTime = new Date().getTime();
 
     return ymCall;
+  }
+
+  function _appendPlacementInformation (url, bids) {
+    var placements = [];
+    var placement;
+    var bid;
+
+    for (var i = 0; i < bids.length; i++) {
+      bid = bids[i];
+
+      placement = {};
+      placement.callbackId = bid.bidId;
+      placement.placementId = bid.placementCode;
+      placement.sizes = bid.sizes;
+
+      placements.push(placement);
+    }
+
+    url = utils.tryAppendQueryString(url, 'p', JSON.stringify(placements));
+    return url;
+  }
+
+  function _appendImpressionInformation (url) {
+    var page_url = document.location; // page url
+    var pr = document.referrer || ''; // page's referrer
+    var dnt = (navigator.doNotTrack || false).toString(); // true if user enabled dnt (false by default)
+    var _s = document.location.protocol === 'https:' ? 1 : 0; // 1 if page is secure
+    var description = _getPageDescription();
+    var title = document.title || ''; // Value of the title from the publisher's page. 
+    var e = 4; // 0 (COP) or 4 (DFP) for now -- ad server should reject other environments (TODO: validate that it will always be the case)
+    var bust = new Date().getTime().toString(); // cache buster
+    var scrd = window.devicePixelRatio || 0; // screen pixel density
+    var ae = 0; // prebid adapter version
+
+    url = utils.tryAppendQueryString(url, 'callback', '$$PREBID_GLOBAL$$.YMCB');
+    url = utils.tryAppendQueryString(url, 'page_url', page_url);
+    url = utils.tryAppendQueryString(url, 'pr', pr);
+    url = utils.tryAppendQueryString(url, 'bust', bust);
+    url = utils.tryAppendQueryString(url, '_s', _s);
+    url = utils.tryAppendQueryString(url, 'scrd', scrd);
+    url = utils.tryAppendQueryString(url, 'dnt', dnt);
+    url = utils.tryAppendQueryString(url, 'ae', ae);
+    url = utils.tryAppendQueryString(url, 'e', e);
+    url = utils.tryAppendQueryString(url, 'description', description);
+    url = utils.tryAppendQueryString(url, 'title', title);
+
+    return url;
   }
 
   function _getPageDescription () {
