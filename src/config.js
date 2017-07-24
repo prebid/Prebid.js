@@ -12,6 +12,7 @@ const utils = require('./utils');
 const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
+const DEFAULT_COOKIESYNC_DELAY = 100;
 
 let config = {
   // `debug` is equivalent to legacy `pbjs.logging` property
@@ -43,6 +44,15 @@ let config = {
   set publisherDomain(val) {
     this._publisherDomain = val;
   },
+
+  // delay to request cookie sync to stay out of critical path
+  _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
+  get cookieSyncDelay() {
+    return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
+  },
+  set cookieSyncDelay(val) {
+    this._cookieSyncDelay = val;
+  },
 };
 
 export function getConfig(option) {
@@ -58,7 +68,7 @@ export function setConfig(options) {
   // [x] $$PREBID_GLOBAL$$.bidderTimeout
   // [x] $$PREBID_GLOBAL$$.logging (renamed `debug`)
   // [x] $$PREBID_GLOBAL$$.publisherDomain
-  // [ ] $$PREBID_GLOBAL$$.cookieSyncDelay
+  // [x] $$PREBID_GLOBAL$$.cookieSyncDelay
   // [ ] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
   // [ ] $$PREBID_GLOBAL$$.enableSendAllBids (function)
   // [ ] $$PREBID_GLOBAL$$.setBidderSequence (function(order), `bidderSequence`)
