@@ -14,6 +14,7 @@ var callback_id; //TODO remove this and use it coming back in the responseObj
 
 var YieldmoAdapter = function YieldmoAdapter() {
   function _callBids(params) {
+    console.log(params);
     var bids = params.bids;
     adloader.loadScript(buildYieldmoCall(bids));
   }
@@ -40,7 +41,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     // @endif
 
     // append a timer here to track latency
-    bid.startTime = new Date().getTime();
+    // bid.startTime = new Date().getTime();
 
     return ymCall;
   }
@@ -54,8 +55,8 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bid = bids[i];
 
       placement = {};
-      placement.callbackId = bid.bidId;
-      placement.placementId = bid.placementCode;
+      placement.callback_id = bid.bidId;
+      placement.placement_id = bid.placementCode;
       placement.sizes = bid.sizes;
 
       placements.push(placement);
