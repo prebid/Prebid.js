@@ -22,7 +22,7 @@ describe('Yieldmo adapter', () => {
         bidId: 'bidId2',
         bidder: 'yieldmo',
         placementCode: 'bar',
-        sizes: [[300, 600]]
+        sizes: [[300, 600], [300, 250]]
       }
     ]
   };
@@ -42,35 +42,40 @@ describe('Yieldmo adapter', () => {
   });
 
   describe('callBids', () => {
-    let firstBidScriptURL;
-    let secondBidScriptURL;
+    let bidRequestURL;
 
     beforeEach(() => {
       sandbox.stub(adLoader, 'loadScript');
       adapter.callBids(bidderRequest);
 
-      firstBidScriptURL = adLoader.loadScript.firstCall.args[0];
-      secondBidScriptURL = adLoader.loadScript.secondCall.args[0]
+      bidRequestURL = adLoader.loadScript.firstCall.args[0];
     });
 
-    it('should load a script for each bid request', () => {
-      sinon.assert.calledTwice(adLoader.loadScript);
-
+    it('should load a script passed bid params', () => {
       let route = 'http://ads.yieldmo.com/ads?';
-      expect(firstBidScriptURL).to.contain(route);
-      expect(secondBidScriptURL).to.contain(route);
+      let requestParams = parseURL(bidRequestURL).search;
+      let parsedPlacementParams = JSON.parse(decodeURIComponent(requestParams.p));
 
-      let firstScriptParams = parseURL(firstBidScriptURL).search;
-      expect(firstScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
-      expect(firstScriptParams).to.have.property('callback_id', 'bidId1');
-      expect(firstScriptParams).to.have.property('p', 'foo');
-      expect(firstScriptParams).to.have.property('page_url');
+      sinon.assert.calledOnce(adLoader.loadScript);
+      expect(bidRequestURL).to.contain(route);
 
-      let secondScriptParams = parseURL(secondBidScriptURL).search;
-      expect(secondScriptParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
-      expect(secondScriptParams).to.have.property('callback_id', 'bidId2');
-      expect(secondScriptParams).to.have.property('p', 'bar');
-      expect(secondScriptParams).to.have.property('page_url');
+      // placement 1
+      expect(parsedPlacementParams[0]).to.have.property('callback_id', 'bidId1');
+      expect(parsedPlacementParams[0]).to.have.property('placement_id', 'foo');
+      expect(parsedPlacementParams[0].sizes[0][0]).to.equal(728);
+      expect(parsedPlacementParams[0].sizes[0][1]).to.equal(90);
+
+      // placement 2
+      expect(parsedPlacementParams[1]).to.have.property('callback_id', 'bidId2');
+      expect(parsedPlacementParams[1]).to.have.property('placement_id', 'bar');
+      expect(parsedPlacementParams[1].sizes[0][0]).to.equal(300);
+      expect(parsedPlacementParams[1].sizes[0][1]).to.equal(600);
+      expect(parsedPlacementParams[1].sizes[1][0]).to.equal(300);
+      expect(parsedPlacementParams[1].sizes[1][1]).to.equal(250);
+
+      // impression information
+      expect(requestParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
+      expect(requestParams).to.have.property('page_url');
     });
   });
 
