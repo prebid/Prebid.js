@@ -82,7 +82,7 @@ export function ajax(url, callback, data, options = {}) {
     }
 
     x.open(method, url);
-    // IE needs timoeut to be set after open
+    // IE needs timoeut to be set after open - see #1410
     x.timeout = _timeout;
 
     if (!useXDomainRequest) {
