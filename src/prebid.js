@@ -47,7 +47,6 @@ $$PREBID_GLOBAL$$._sendAllBids = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-// default timeout for all bids
 /** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> ) */
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
 
@@ -57,11 +56,11 @@ $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 // timeout buffer to adjust for bidder CDN latency
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
-/** @deprecated */
+/** @deprecated - use pbjs.setConfig({ debug: <true|false> }) */
 $$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging;
 
-// domain where prebid is running for cross domain iframe communication
-$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
+/** @deprecated - use pbjs.setConfig({ publisherDomain: <domain> ) */
+$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;

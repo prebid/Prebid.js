@@ -11,11 +11,12 @@ const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
+const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 
 let config = {
+  // `debug` is equivalent to legacy `pbjs.logging` property
   _debug: DEFAULT_DEBUG,
   get debug() {
-    // `debug` is equivalent to legacy `pbjs.logging` property
     if ($$PREBID_GLOBAL$$.logging || $$PREBID_GLOBAL$$.logging == false) {
       return $$PREBID_GLOBAL$$.logging;
     }
@@ -25,15 +26,22 @@ let config = {
     this._debug = val;
   },
 
+  // default timeout for all bids
   _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
   get bidderTimeout() {
-    if ($$PREBID_GLOBAL$$.bidderTimeout) {
-      return $$PREBID_GLOBAL$$.bidderTimeout;
-    }
-    return this._bidderTimeout;
+    return $$PREBID_GLOBAL$$.bidderTimeout || this._bidderTimeout;
   },
   set bidderTimeout(val) {
     this._bidderTimeout = val;
+  },
+
+  // domain where prebid is running for cross domain iframe communication
+  _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+  get publisherDomain() {
+    return $$PREBID_GLOBAL$$.publisherDomain || this._publisherDomain;
+  },
+  set publisherDomain(val) {
+    this._publisherDomain = val;
   },
 };
 
@@ -49,7 +57,7 @@ export function setConfig(options) {
   // codebase conversion:
   // [x] $$PREBID_GLOBAL$$.bidderTimeout
   // [x] $$PREBID_GLOBAL$$.logging (renamed `debug`)
-  // [ ] $$PREBID_GLOBAL$$.publisherDomain
+  // [x] $$PREBID_GLOBAL$$.publisherDomain
   // [ ] $$PREBID_GLOBAL$$.cookieSyncDelay
   // [ ] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
   // [ ] $$PREBID_GLOBAL$$.enableSendAllBids (function)
