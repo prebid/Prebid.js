@@ -51,7 +51,7 @@ describe('Yieldmo adapter', () => {
       bidRequestURL = adLoader.loadScript.firstCall.args[0];
     });
 
-    it('should load a script passed bid params', () => {
+    it('should load a script with passed bid params', () => {
       let route = 'http://ads.yieldmo.com/ads?';
       let requestParams = parseURL(bidRequestURL).search;
       let parsedPlacementParams = JSON.parse(decodeURIComponent(requestParams.p));
@@ -95,24 +95,21 @@ describe('Yieldmo adapter', () => {
       $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
-      let bidderReponse1 = {
+      let bidderReponse = [{
         'cpm': 3.45455,
         'width': 300,
         'height': 250,
         'callback_id': 'bidId1',
         'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
-      };
-
-      let bidderReponse2 = {
+      }, {
         'cpm': 4.35455,
         'width': 400,
         'height': 350,
         'callback_id': 'bidId2',
         'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
-      };
+      }];
 
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse1);
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
@@ -168,11 +165,15 @@ describe('Yieldmo adapter', () => {
       $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
-      let bidderReponse1 = {'status': 'no_bid', 'callback_id': 'bidId1'};
-      let bidderReponse2 = {'status': 'no_bid', 'callback_id': 'bidId2'};
+      let bidderReponse = [{
+        'status': 'no_bid', 
+        'callback_id': 'bidId1'
+      }, {
+        'status': 'no_bid',
+        'callback_id': 'bidId2'
+      }];
 
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse1);
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse2);
+      $$PREBID_GLOBAL$$.YMCB(bidderReponse);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
       secondBid = bidManager.addBidResponse.secondCall.args[1];
