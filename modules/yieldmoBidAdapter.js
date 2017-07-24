@@ -3,7 +3,7 @@ var adloader = require('src/adloader.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
 var adaptermanager = require('src/adaptermanager');
-var callback_id; //TODO remove this and use it coming back in the responseObj
+var bids; //TODO remove this and use it coming back in the responseObj
 
 /**
  * Adapter for requesting bids from Yieldmo.
@@ -14,8 +14,7 @@ var callback_id; //TODO remove this and use it coming back in the responseObj
 
 var YieldmoAdapter = function YieldmoAdapter() {
   function _callBids(params) {
-    console.log(params);
-    var bids = params.bids;
+    bids = params.bids; // TODO: set as var bids = ; not global
     adloader.loadScript(buildYieldmoCall(bids));
   }
 
@@ -101,52 +100,28 @@ var YieldmoAdapter = function YieldmoAdapter() {
   }
 
   // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.YMCB = function(ymResponseObj) {
+  $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
 
+    // TODO: remove this and verify that production endpoint is working
+    ymResponses = [{
+       "cpm": 3.45455, // bid price
+       "width": 300, // the creative width that we're targeting
+       "height": 250, // the creative height that we're targeting
+       "callback_id": bids[0].bidId, 
+       "ad": "<html><head></head><body>HELLO YIELDMO AD </body></html>" // the actual creative with GEX tag
+    }, {
+       "cpm": 2.31, // bid price
+       "width": 300, // the creative width that we're targeting
+       "height": 250, // the creative height that we're targeting
+       "callback_id": bids[1].bidId, 
+       "ad": "<html><head></head><body>HELLO YIELDMO AD 2</body></html>" // the actual creative with GEX tag
+    }];
 
-    // ymResponseObj = {
-    //    "cpm": 3.45455, // bid price
-    //    "width": 300, // the creative width that we're targeting
-    //    "height": 250, // the creative height that we're targeting
-    //    "callback_id": callback_id, 
-    //    "ad": "<html><head></head><body>HELLO YIELDMO AD <img src='http://i.imgur.com/ZAheYBK.gif' /></body></html>" // the actual creative with GEX tag
-    // };
-
-
-    console.log('CALLED BACK!', ymResponseObj);
-    if (ymResponseObj) {
-      var bidObj = utils.getBidRequest(ymResponseObj.callback_id);
-      var placementCode = bidObj && bidObj.placementCode;
-      // var placementCode = ymResponseObj.placementCode;
-
-
-      // @if NODE_ENV='debug'
-      // if (bidObj) { utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode); }
-      // @endif
-
-
-      var bid = [];
-      if (ymResponseObj && ymResponseObj.cpm && ymResponseObj.cpm !== 0) {
-        bid = bidfactory.createBid(1, bidObj);
-        bid.bidderCode = 'yieldmo';
-        bid.cpm = ymResponseObj.cpm;
-        bid.ad = ymResponseObj.ad;
-        bid.width = ymResponseObj.width;
-        bid.height = ymResponseObj.height;
-        // bid.dealId = ymResponseObj.deal_id;
-        bidmanager.addBidResponse(placementCode, bid);
-        console.log('bid', bid);
-        console.log("BID ADDED");
-      } else {
-        // no response data
-        // @if NODE_ENV='debug'
-        if (bidObj) { utils.logMessage('No prebid response from yieldmo for placementCode: ' + bidObj.placementCode); }
-        // @endif
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = 'yieldmo';
-        bidmanager.addBidResponse(placementCode, bid);
+    if (ymResponses) {
+      for(var i = 0; i < ymResponses.length; i++) {
+        _registerPlacementBid(ymResponses[i]);        
       }
-    } else {
+    }  else {
       // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
@@ -154,9 +129,25 @@ var YieldmoAdapter = function YieldmoAdapter() {
     }
   };
 
+  function _registerPlacementBid(response) {
+    var bidObj = utils.getBidRequest(response.callback_id);
+    var placementCode = bidObj && bidObj.placementCode;
+    var bid = [];
+    
+    if (response && response.cpm && response.cpm !== 0) {
+      bid = bidfactory.createBid(1, bidObj);
+      bid.bidderCode = 'yieldmo';
+      bid.cpm = response.cpm;
+      bid.ad = response.ad;
+      bid.width = response.width;
+      bid.height = response.height;
+      bidmanager.addBidResponse(placementCode, bid);
+      console.log("BID ADDED", bid);
+    }
+  }
+
   return {
     callBids: _callBids
-
   };
 };
 
