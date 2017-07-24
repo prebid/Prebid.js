@@ -3,7 +3,6 @@ var adloader = require('src/adloader.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
 var adaptermanager = require('src/adaptermanager');
-var bids; //TODO remove this and use it coming back in the responseObj
 
 /**
  * Adapter for requesting bids from Yieldmo.
@@ -14,7 +13,7 @@ var bids; //TODO remove this and use it coming back in the responseObj
 
 var YieldmoAdapter = function YieldmoAdapter() {
   function _callBids(params) {
-    bids = params.bids; // TODO: set as var bids = ; not global
+    var bids = params.bids;
     adloader.loadScript(buildYieldmoCall(bids));
   }
 
@@ -35,17 +34,13 @@ var YieldmoAdapter = function YieldmoAdapter() {
     }
 
     // @if NODE_ENV='debug'
-    console.log('ymCall request built: ' + ymCall);
-    utils.logMessage('ymCall request built: ' + ymCall);
+    // utils.logMessage('ymCall request built: ' + ymCall);
     // @endif
-
-    // append a timer here to track latency
-    // bid.startTime = new Date().getTime();
 
     return ymCall;
   }
 
-  function _appendPlacementInformation (url, bids) {
+  function _appendPlacementInformation(url, bids) {
     var placements = [];
     var placement;
     var bid;
@@ -65,7 +60,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     return url;
   }
 
-  function _appendImpressionInformation (url) {
+  function _appendImpressionInformation(url) {
     var page_url = document.location; // page url
     var pr = document.referrer || ''; // page's referrer
     var dnt = (navigator.doNotTrack || false).toString(); // true if user enabled dnt (false by default)
@@ -91,7 +86,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     return url;
   }
 
-  function _getPageDescription () {
+  function _getPageDescription() {
     if (document.querySelector('meta[name="description"]')) {
       return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.  
     } else {
@@ -101,22 +96,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
-
-    // TODO: remove this and verify that production endpoint is working
-    ymResponses = [{
-       "cpm": 3.45455, // bid price
-       "width": 300, // the creative width that we're targeting
-       "height": 250, // the creative height that we're targeting
-       "callback_id": bids[0].bidId, 
-       "ad": "<html><head></head><body>HELLO YIELDMO AD </body></html>" // the actual creative with GEX tag
-    }, {
-       "cpm": 2.31, // bid price
-       "width": 300, // the creative width that we're targeting
-       "height": 250, // the creative height that we're targeting
-       "callback_id": bids[1].bidId, 
-       "ad": "<html><head></head><body>HELLO YIELDMO AD 2</body></html>" // the actual creative with GEX tag
-    }];
-
     if (ymResponses) {
       for(var i = 0; i < ymResponses.length; i++) {
         _registerPlacementBid(ymResponses[i]);        
@@ -143,6 +122,14 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bid.height = response.height;
       bidmanager.addBidResponse(placementCode, bid);
       console.log("BID ADDED", bid);
+    } else {
+      // no response data
+      // @if NODE_ENV='debug'
+      if (bidObj) { utils.logMessage('No prebid response from yieldmo for placementCode: ' + bidObj.placementCode); }
+      // @endif
+      bid = bidfactory.createBid(2, bidObj);
+      bid.bidderCode = 'yieldmo';
+      bidmanager.addBidResponse(placementCode, bid);
     }
   }
 
