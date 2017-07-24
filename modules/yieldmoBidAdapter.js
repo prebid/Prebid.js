@@ -85,7 +85,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
     url = utils.tryAppendQueryString(url, 'scrd', scrd);
     url = utils.tryAppendQueryString(url, 'dnt', dnt);
     url = utils.tryAppendQueryString(url, 'ae', ae);
-    url = utils.tryAppendQueryString(url, 'e', e);
     url = utils.tryAppendQueryString(url, 'description', description);
     url = utils.tryAppendQueryString(url, 'title', title);
 
