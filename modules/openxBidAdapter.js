@@ -4,7 +4,7 @@ const adloader = require('src/adloader');
 const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
 const adaptermanager = require('src/adaptermanager');
-const { config } = require('src/config');
+const { getConfig } = require('src/config');
 
 const OpenxAdapter = function OpenxAdapter() {
   const BIDDER_CODE = 'openx';
@@ -40,7 +40,7 @@ const OpenxAdapter = function OpenxAdapter() {
       let beaconParams = {
         bd: +(new Date()) - startTime,
         br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || config.bidderTimeout, // For the timeout per bid request
+        bt: $$PREBID_GLOBAL$$.cbTimeout || getConfig('bidderTimeout'), // For the timeout per bid request
         bs: window.location.hostname
       };
 
