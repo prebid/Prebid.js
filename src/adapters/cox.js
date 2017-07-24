@@ -4,9 +4,9 @@ var adLoader = require('../adloader.js');
 
 var CoxAdapter = function CoxAdapter() {
   var adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl'],
-      otherKeys = ['siteId', 'wrapper', 'referrerUrl'],
-      placementMap = {},
-      W = window;
+    otherKeys = ['siteId', 'wrapper', 'referrerUrl'],
+    placementMap = {},
+    W = window;
 
   var COX_BIDDER_CODE = 'cox';
 
@@ -19,12 +19,12 @@ var CoxAdapter = function CoxAdapter() {
 
     // Populate the tag with the info from prebid
     var bids = params.bids || [],
-        tag = W.cdsTag,
-        i,
-        j;
+      tag = W.cdsTag,
+      i,
+      j;
     for (i = 0; i < bids.length; i++) {
       var bid = bids[i],
-          cfg = bid.params || {};
+        cfg = bid.params || {};
 
       if (cfg.id) {
         tag.zones = tag.zones || {};
@@ -64,8 +64,8 @@ var CoxAdapter = function CoxAdapter() {
   function _notify() {
     for (var adZoneKey in placementMap) {
       var bid = W.COX.Service.getBidTrue(adZoneKey),
-          bidObj,
-          data = placementMap[adZoneKey];
+        bidObj,
+        data = placementMap[adZoneKey];
 
       if (bid > 0) {
         bidObj = bidfactory.createBid(1);
@@ -102,17 +102,13 @@ var CoxAdapter = function CoxAdapter() {
     var COX = {};
 
     COX.Util = (function () {
-
       return {
-
         getRand: function () {
           return Math.round(Math.random() * 100000000);
         },
-
         encodeUriObject: function (obj) {
           return encodeURIComponent(JSON.stringify(obj));
         },
-
         extractUrlInfo: function () {
           function f2(callback) {
             try {
@@ -121,7 +117,6 @@ var CoxAdapter = function CoxAdapter() {
             } catch (ignore) { }
             return [];
           }
-
           function f1(callback) {
             var oneWindow, infoArray = [];
             do {
@@ -129,11 +124,11 @@ var CoxAdapter = function CoxAdapter() {
                 oneWindow = oneWindow ? oneWindow.parent : W;
                 callback.call(null, oneWindow, infoArray);
               } catch (t) {
-                return infoArray.push({
+                return (infoArray.push({
                   referrer: null,
                   location: null,
                   isTop: !1
-                }), infoArray;
+                }), infoArray);
               }
             }
             while (oneWindow !== W.top);
@@ -142,9 +137,9 @@ var CoxAdapter = function CoxAdapter() {
           var allInfo = f1(
             function (oneWindow, infoArray) {
               try {
-                infoArray.push({referrer: oneWindow.document.referrer || null, location: oneWindow.location.href || null, isTop: oneWindow === W.top});
+                infoArray.push({ referrer: oneWindow.document.referrer || null, location: oneWindow.location.href || null, isTop: oneWindow === W.top });
               } catch (e) {
-                infoArray.push({referrer: null, location: null, isTop: oneWindow === W.top});
+                infoArray.push({ referrer: null, location: null, isTop: oneWindow === W.top });
               }
             }
           );
@@ -153,11 +148,12 @@ var CoxAdapter = function CoxAdapter() {
               allInfo[r].ancestor = n;
             }
           );
-          for (var t = "", e = !1, i = allInfo.length - 1, l = allInfo.length - 1; l >= 0; l--)
-            if (t = allInfo[l].location, !t && l > 0 && (t = allInfo[l - 1].referrer, t || (t = allInfo[l - 1].ancestor)), t) {
+          for (var t = '', e = !1, i = allInfo.length - 1, l = allInfo.length - 1; l >= 0; l--) {
+            if ((t = allInfo[l].location, !t) && l > 0 && ((t = allInfo[l - 1].referrer, t || (t = allInfo[l - 1].ancestor)), t)) {
               e = W.location.ancestorOrigins ? !0 : l === allInfo.length - 1 && allInfo[allInfo.length - 1].isTop;
               break;
             }
+          }
           return { url: t, isTop: e, depth: i };
         },
 
@@ -197,7 +193,6 @@ var CoxAdapter = function CoxAdapter() {
                 version = 'WIN 6,0,21,0';
                 axo.AllowScriptAccess = 'always';
                 version = axo.GetVariable('$version');
-
               }
               catch (ignore) { }
             }
@@ -205,9 +200,9 @@ var CoxAdapter = function CoxAdapter() {
             partialTest2('.3', 'WIN 3,0,18,0');
             partialTest2('', 'WIN 2,0,0,11');
 
-            if (!version)
+            if (!version) {
               version = -1;
-
+            }
             return version;
           }
 
@@ -224,27 +219,27 @@ var CoxAdapter = function CoxAdapter() {
                 flashVer = flashDescription.split(' ')[2].split('.')[0];
               }
             }
-            else if (navigator.userAgent.indexOf("MSIE") !== -1 && navigator.appVersion.indexOf("Win") !== -1) {
+            else if (navigator.userAgent.indexOf('MSIE') !== -1 && navigator.appVersion.indexOf('Win') !== -1) {
               flashVer = srControlVersion();
-              if (flashVer !== -1)
+              if (flashVer !== -1) {
                 flashVer = flashVer.split(' ')[1].split(',')[0];
+              }
             }
             return flashVer;
           }
 
           var flashVer = srGetSwfVer();
-          if (flashVer > 4)
+          if (flashVer > 4) {
             return 15;
-          else
+          } else {
             return 7;
+          }
         },
-
       };
     })();
 
     // Ad calling functionality
     COX.Service = (function () {
-
       // Closure variables shared by the service functions
       var U = COX.Util;
 
@@ -291,7 +286,7 @@ var CoxAdapter = function CoxAdapter() {
         },
 
         setAuctionPrice: function (ad, bid) {
-          return ad ? ad.replace('${AUCTION_PRICE}', bid) : ad;
+          return ad ? ad.replace(`${AUCTION_PRICE}`, bid) : ad;
         },
 
         getBidTrue: function (key) {
