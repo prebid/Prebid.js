@@ -378,7 +378,7 @@ AppnexusAstAdapter.createNew = function() {
   return new AppnexusAstAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AppnexusAstAdapter, 'appnexusAst', {
+adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']
 });
 
