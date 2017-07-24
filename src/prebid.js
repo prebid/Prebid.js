@@ -251,6 +251,8 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
  * Returns a bool if all the bids have returned or timed out
  * @alias module:$$PREBID_GLOBAL$$.allBidsAvailable
  * @return {bool} all bids available
+ *
+ * @deprecated This function will be removed in Prebid 1.0
  */
 $$PREBID_GLOBAL$$.allBidsAvailable = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
@@ -491,6 +493,9 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:$$PREBID_GLOBAL$$.addCallback
  * @returns {String} id for callback
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Please use onEvent instead.
  */
 $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
@@ -510,6 +515,9 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * //@param {string} cbId id of the callback to remove
  * @alias module:$$PREBID_GLOBAL$$.removeCallback
  * @returns {String} id for callback
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Please use onEvent instead.
  */
 $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
   // todo
@@ -573,6 +581,8 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * Wrapper to bidmanager.addBidResponse
  * @param {[type]} adUnitCode [description]
  * @param {[type]} bid        [description]
+ *
+ * @deprecated This function will be removed in Prebid 1.0
  */
 $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
