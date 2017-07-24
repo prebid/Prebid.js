@@ -51,7 +51,7 @@ var CriteoAdapter = function CriteoAdapter() {
             bid.transactionId,
             sizes.map((size) => {
               return { width: size[0], height: size[1] }
-              }
+            }
             )
           )
         );
@@ -144,6 +144,6 @@ var CriteoAdapter = function CriteoAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new CriteoAdapter, 'criteo');
+adaptermanager.registerBidAdapter(new CriteoAdapter(), 'criteo');
 
 module.exports = CriteoAdapter;

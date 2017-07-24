@@ -71,7 +71,7 @@ function PulsePointLiteAdapter() {
         bid.bidderCode = bidRequest.bidderCode;
         bid.cpm = idToBidMap[id].price;
         bid.adId = id;
-        if(isNative(idToSlotMap[id])) {
+        if (isNative(idToSlotMap[id])) {
           bid.native = nativeResponse(idToSlotMap[id], idToBidMap[id]);
           bid.mediaType = 'native';
         } else {
@@ -135,7 +135,7 @@ function PulsePointLiteAdapter() {
    * Helper method to add an asset to the assets list.
    */
   function addAsset(assets, asset) {
-    if(asset) {
+    if (asset) {
       assets.push(asset);
     }
   }
@@ -226,7 +226,7 @@ function PulsePointLiteAdapter() {
    */
   function parse(rawResponse) {
     try {
-      if(rawResponse) {
+      if (rawResponse) {
         return JSON.parse(rawResponse);
       }
     } catch (ex) {
@@ -239,7 +239,7 @@ function PulsePointLiteAdapter() {
    * Determines the AdSize for the slot.
    */
   function adSize(slot) {
-    if(slot.params.cf) {
+    if (slot.params.cf) {
       const size = slot.params.cf.toUpperCase().split('X');
       const width = parseInt(slot.params.cw || size[0], 10);
       const height = parseInt(slot.params.ch || size[1], 10);
@@ -252,10 +252,10 @@ function PulsePointLiteAdapter() {
    * Parses the native response from the Bid given.
    */
   function nativeResponse(slot, bid) {
-    if(slot.nativeParams) {
+    if (slot.nativeParams) {
       const nativeAd = parse(bid.adm);
       const keys = {};
-      if(nativeAd && nativeAd.native && nativeAd.native.assets) {
+      if (nativeAd && nativeAd.native && nativeAd.native.assets) {
         nativeAd.native.assets.forEach((asset) => {
           keys.title = asset.title ? asset.title.text : keys.title;
           keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
@@ -277,7 +277,7 @@ function PulsePointLiteAdapter() {
    * Parses the native response from the Bid given.
    */
   function isNative(slot) {
-    return slot.nativeParams ? true : false;
+    return !!slot.nativeParams;
   }
 
   return {
@@ -296,7 +296,7 @@ PulsePointLiteAdapter.createNew = function() {
  * here https://support.google.com/dfp_premium/answer/1628457?hl=en). Here is an
  * example, where keys got truncated when using the "pulsepointLite" alias - "hb_adid_pulsepointLi=1300bd87d59c4c2"
 */
-adaptermanager.registerBidAdapter(new PulsePointLiteAdapter, 'pulseLite', {
+adaptermanager.registerBidAdapter(new PulsePointLiteAdapter(), 'pulseLite', {
   supportedMediaTypes: [ 'native' ]
 });
 adaptermanager.aliasBidAdapter('pulseLite', 'pulsepointLite');

@@ -97,6 +97,6 @@ var FidelityAdapter = function FidelityAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new FidelityAdapter, 'fidelity');
+adaptermanager.registerBidAdapter(new FidelityAdapter(), 'fidelity');
 
 module.exports = FidelityAdapter;

@@ -107,6 +107,6 @@ function UnderdogMediaAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new UnderdogMediaAdapter, 'underdogmedia');
+adaptermanager.registerBidAdapter(new UnderdogMediaAdapter(), 'underdogmedia');
 
 module.exports = UnderdogMediaAdapter;

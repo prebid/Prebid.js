@@ -191,6 +191,6 @@ function CarambolaAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new CarambolaAdapter, 'carambola');
+adaptermanager.registerBidAdapter(new CarambolaAdapter(), 'carambola');
 
 module.exports = CarambolaAdapter;

@@ -67,7 +67,7 @@ function ucfunnelAdapter() {
     return queryString.reduce(
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
-        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
           : memo,
       '//agent.aralego.com/header?'
     ).slice(0, -1);
@@ -93,6 +93,6 @@ function ucfunnelAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new ucfunnelAdapter, UCFUNNEL_BIDDER_CODE);
+adaptermanager.registerBidAdapter(new ucfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
 
 module.exports = ucfunnelAdapter;

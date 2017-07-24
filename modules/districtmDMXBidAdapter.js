@@ -51,6 +51,6 @@ var DistrictmAdaptor = function districtmAdaptor() {
   };
 };
 
-adaptermanager.registerBidAdapter(new DistrictmAdaptor, 'districtmDMX');
+adaptermanager.registerBidAdapter(new DistrictmAdaptor(), 'districtmDMX');
 
 module.exports = DistrictmAdaptor;

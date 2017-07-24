@@ -223,7 +223,7 @@ const OpenxAdapter = function OpenxAdapter() {
       be: 1,
       bc: BIDDER_CONFIG
     },
-      delDomain);
+    delDomain);
   }
 
   return {
@@ -231,6 +231,6 @@ const OpenxAdapter = function OpenxAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new OpenxAdapter, 'openx');
+adaptermanager.registerBidAdapter(new OpenxAdapter(), 'openx');
 
 module.exports = OpenxAdapter;
