@@ -15,7 +15,8 @@ var conversionCache = {};
 var currencyRatesLoaded = false;
 var adServerCurrency = 'USD';
 
-var oldBidResponse;
+// Used as reference to the original bidmanager.addBidResponse
+var originalBidResponse;
 
 export var currencySupportEnabled = false;
 export var currencyRates = {};
@@ -39,36 +40,36 @@ export function setConfig(config) {
 }
 
 function initCurrency(url) {
-  utils.logInfo('Invoking initCurrency', arguments);
-
   conversionCache = {};
   currencySupportEnabled = true;
 
-  if(!oldBidResponse) {
+  if (!originalBidResponse) {
     utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-    oldBidResponse = bidmanager.addBidResponse;
+    originalBidResponse = bidmanager.addBidResponse;
     bidmanager.addBidResponse = addBidResponseDecorator(bidmanager.addBidResponse);
   }
 
-  ajax(url, function(response) {
-    try {
-      currencyRates = JSON.parse(response);
-      utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
-    } catch (e) {
-      utils.logError('failed to parse currencyRates response: ' + response);
-    }
-    currencyRatesLoaded = true;
-    processBidResponseQueue();
-  });
+  if (!currencyRates.conversions) {
+    ajax(url, function (response) {
+      try {
+        currencyRates = JSON.parse(response);
+        utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+        currencyRatesLoaded = true;
+        processBidResponseQueue();
+      } catch (e) {
+        utils.logError('failed to parse currencyRates response: ' + response);
+      }
+    });
+  }
 }
 
 function resetCurrency() {
-  if(oldBidResponse) {
+  if (originalBidResponse) {
     utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-    bidmanager.addBidResponse = oldBidResponse;
-    oldBidResponse = undefined;
+    bidmanager.addBidResponse = originalBidResponse;
+    originalBidResponse = undefined;
   }
 
   adServerCurrency = 'USD';
@@ -80,31 +81,29 @@ function resetCurrency() {
 
 export function addBidResponseDecorator(fn) {
   return function(adUnitCode, bid) {
-    utils.logInfo('Invoking addBidResponseDecorator function', arguments);
+    if(!bid) {
+      return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+    }
 
     // default to USD if currency not set
-    if(bid && !bid.currency) {
+    if (!bid.currency) {
       utils.logWarn('Currency not specified on bid.  Defaulted to "USD"');
       bid.currency = 'USD';
     }
 
-    if(bid) {
-      // execute immediately if the bid is already in the desired currency
-      if(bid.currency === adServerCurrency) {
-        return fn.apply(this, arguments);
-      }
+    // execute immediately if the bid is already in the desired currency
+    if (bid.currency === adServerCurrency) {
+      return fn.apply(this, arguments);
+    }
 
-      bidResponseQueue.push(wrapFunction(fn, this, arguments));
-      if (!currencySupportEnabled || currencyRatesLoaded) {
-        processBidResponseQueue();
-      }
+    bidResponseQueue.push(wrapFunction(fn, this, arguments));
+    if (!currencySupportEnabled || currencyRatesLoaded) {
+      processBidResponseQueue();
     }
   }
 }
 
 function processBidResponseQueue() {
-  utils.logInfo('Invoking processBidResponseQueue', arguments);
-
   while (bidResponseQueue.length > 0) {
     (bidResponseQueue.shift())();
   }
@@ -112,7 +111,6 @@ function processBidResponseQueue() {
 
 function wrapFunction(fn, context, params) {
   return function() {
-    utils.logInfo('Invoking wrapped function', arguments);
     var bid = params[1];
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
       var fromCurrency = bid.currency;
@@ -126,7 +124,10 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = bidfactory.createBid(STATUS.NO_BID);
+        params[1] = bidfactory.createBid(STATUS.NO_BID, {
+          bidder: bid.bidderCode || bid.bidder,
+          bidId: bid.adId
+        });
       }
     }
     return fn.apply(context, params);
@@ -134,8 +135,6 @@ function wrapFunction(fn, context, params) {
 }
 
 function getCurrencyConversion(fromCurrency) {
-  utils.logInfo('Invoking getCurrencyConversion', arguments);
-
   var conversionRate = null;
 
   if (fromCurrency in conversionCache) {
