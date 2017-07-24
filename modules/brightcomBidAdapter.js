@@ -122,7 +122,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Make sure response is valid
     if (
-        (brightcomResponseObj) && (brightcomResponseObj.id) &&
+      (brightcomResponseObj) && (brightcomResponseObj.id) &&
         (brightcomResponseObj.seatbid) && (brightcomResponseObj.seatbid.length !== 0) &&
         (brightcomResponseObj.seatbid[0].bid) && (brightcomResponseObj.seatbid[0].bid.length !== 0)
     ) {
@@ -200,6 +200,6 @@ var BrightcomAdapter = function BrightcomAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new BrightcomAdapter, 'brightcom');
+adaptermanager.registerBidAdapter(new BrightcomAdapter(), 'brightcom');
 
 module.exports = BrightcomAdapter;

@@ -85,6 +85,6 @@ sekindoUMAdapter = function sekindoUMAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new sekindoUMAdapter, 'sekindoUM');
+adaptermanager.registerBidAdapter(new sekindoUMAdapter(), 'sekindoUM');
 
 module.exports = sekindoUMAdapter;

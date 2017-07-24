@@ -106,6 +106,6 @@ function createUnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new createUnrulyAdapter, 'unruly')
+adaptermanager.registerBidAdapter(new createUnrulyAdapter(), 'unruly')
 
 module.exports = createUnrulyAdapter

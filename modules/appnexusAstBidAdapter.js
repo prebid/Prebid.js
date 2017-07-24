@@ -191,11 +191,19 @@ function AppnexusAstAdapter() {
             utils.logError(`${type} ad type not supported`);
           }
 
+<<<<<<< HEAD
           tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
           const bid = createBid(status, tag);
           if (type === 'native') bid.mediaType = 'native';
           if (type === 'video') bid.mediaType = 'video';
           if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
+=======
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
+      const bid = createBid(status, tag);
+      if (type === 'native') bid.mediaType = 'native';
+      if (type === 'video') bid.mediaType = 'video';
+      if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
+>>>>>>> f8a9778e2236fb19df1dd75b500ea4099a50033c
 
           if (bid.adId in bidRequests) {
             const placement = bidRequests[bid.adId].placementCode;
@@ -382,7 +390,7 @@ AppnexusAstAdapter.createNew = function() {
   return new AppnexusAstAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AppnexusAstAdapter, 'appnexusAst', {
+adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']
 });
 

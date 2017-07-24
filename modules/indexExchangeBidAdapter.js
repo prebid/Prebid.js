@@ -662,6 +662,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new IndexExchangeAdapter, 'indexExchange');
+adaptermanager.registerBidAdapter(new IndexExchangeAdapter(), 'indexExchange');
 
 module.exports = IndexExchangeAdapter;
