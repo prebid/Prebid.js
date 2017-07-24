@@ -166,7 +166,7 @@ describe('Yieldmo adapter', () => {
 
       // respond
       let bidderReponse = [{
-        'status': 'no_bid', 
+        'status': 'no_bid',
         'callback_id': 'bidId1'
       }, {
         'status': 'no_bid',
