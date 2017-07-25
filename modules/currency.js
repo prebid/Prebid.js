@@ -20,6 +20,7 @@ var originalBidResponse;
 
 export var currencySupportEnabled = false;
 export var currencyRates = {};
+var currencyOverrides = {};
 
 export function setConfig(config) {
   var url = DEFAULT_CURRENCY_RATE_URL;
@@ -36,6 +37,9 @@ export function setConfig(config) {
     // currency support is disabled, setting defaults
     utils.logInfo('disabling currency support');
     resetCurrency();
+  }
+  if (typeof config.currencyOverrides === 'object') {
+    currencyOverrides = config.currencyOverrides;
   }
 }
 
@@ -77,12 +81,23 @@ function resetCurrency() {
   currencySupportEnabled = false;
   currencyRatesLoaded = false;
   currencyRates = {};
+  currencyOverrides = {};
 }
 
 export function addBidResponseDecorator(fn) {
   return function(adUnitCode, bid) {
     if(!bid) {
       return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+    }
+
+    let bidder = bid.bidderCode || bid.bidder;
+    if (currencyOverrides[bidder]) {
+      let override = currencyOverrides[bidder];
+      if(bid.currency && override !== bid.currency) {
+        utils.logWarn(`Currency override '${bidder}: ${override}' ignored. adapter specified '${bid.currency}'`);
+      } else {
+        bid.currency = override;
+      }
     }
 
     // default to USD if currency not set

@@ -31,6 +31,52 @@ describe('currency', function () {
     });
   });
 
+  describe('bidder override', () => {
+    it('allows setConfig to set bidder currency', () => {
+      setConfig({});
+
+      var bid = { cpm: 1, bidder: 'rubicon' };
+      var innerBid;
+
+      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      	innerBid = bid;
+      });
+
+      setConfig({
+        adServerCurrency: 'GBP',
+        currencyOverrides: {
+          rubicon: 'GBP'
+        }
+      });
+
+      wrappedAddBidResponseFn('elementId', bid);
+
+      expect(innerBid.currency).to.equal('GBP')
+    });
+
+    it('uses adapter currency over currency override if specified', () => {
+      setConfig({});
+
+      var bid = { cpm: 1, currency: 'JPY', bidder: 'rubicon' };
+      var innerBid;
+
+      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      	innerBid = bid;
+      });
+
+      setConfig({
+        adServerCurrency: 'JPY',
+        currencyOverrides: {
+          rubicon: 'GBP'
+        }
+      });
+
+      wrappedAddBidResponseFn('elementId', bid);
+
+      expect(innerBid.currency).to.equal('JPY')
+    });
+  });
+
   describe('currency.addBidResponseDecorator bidResponseQueue', () => {
     it('not run until currency rates file is loaded', () => {
       setConfig({});
