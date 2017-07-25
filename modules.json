@@ -1,0 +1,23 @@
+[
+    "freestarAnalyticsAdapter",
+    "aolBidAdapter",
+    "appnexusBidAdapter",
+    "appnexusAstBidAdapter",
+    "conversantBidAdapter",
+    "coxBidAdapter",
+    "criteoBidAdapter",
+    "districtmDMXBidAdapter",
+    "gumgumBidAdapter",
+    "indexExchangeBidAdapter",
+    "memeglobalBidAdapter",
+    "openxBidAdapter",
+    "pubgearsBidAdapter",
+    "pubmaticBidAdapter",
+    "pulsepointBidAdapter",
+    "rhythmoneBidAdapter",
+    "rubiconBidAdapter",
+    "smartyadsBidAdapter",
+    "sonobiBidAdapter",
+    "sovrnBidAdapter",
+    "prebidServerBidAdapter"
+]
