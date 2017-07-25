@@ -24,7 +24,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
     // Placement specific information
     ymCall = _appendPlacementInformation(ymCall, bids);
-    
+
     // General impression params
     ymCall = _appendImpressionInformation(ymCall);
 
@@ -97,10 +97,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
     if (ymResponses) {
-      for(var i = 0; i < ymResponses.length; i++) {
-        _registerPlacementBid(ymResponses[i]);        
+      for (var i = 0; i < ymResponses.length; i++) {
+        _registerPlacementBid(ymResponses[i]);
       }
-    }  else {
+    } else {
       // no response data
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
@@ -112,7 +112,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     var bidObj = utils.getBidRequest(response.callback_id);
     var placementCode = bidObj && bidObj.placementCode;
     var bid = [];
-    
+
     if (response && response.cpm && response.cpm !== 0) {
       bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = 'yieldmo';
@@ -121,7 +121,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bid.width = response.width;
       bid.height = response.height;
       bidmanager.addBidResponse(placementCode, bid);
-      console.log("BID ADDED", bid);
     } else {
       // no response data
       // @if NODE_ENV='debug'
@@ -138,6 +137,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new YieldmoAdapter, 'yieldmo');
+adaptermanager.registerBidAdapter(new YieldmoAdapter(), 'yieldmo');
 
 module.exports = YieldmoAdapter;
