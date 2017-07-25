@@ -67,6 +67,10 @@ let config = {
     this._sendAllBids = val;
   },
 
+  set bidderSequence(val) {
+    $$PREBID_GLOBAL$$.setBidderSequence(val);
+  },
+
   set s2sConfig(val) {
     $$PREBID_GLOBAL$$.setS2SConfig(val);
   },
@@ -80,16 +84,6 @@ export function setConfig(options) {
   if (typeof options !== 'object') {
     utils.logError('setConfig options must be an object');
   }
-
-  // codebase conversion:
-  // [x] $$PREBID_GLOBAL$$.bidderTimeout
-  // [x] $$PREBID_GLOBAL$$.logging (renamed `debug`)
-  // [x] $$PREBID_GLOBAL$$.publisherDomain
-  // [x] $$PREBID_GLOBAL$$.cookieSyncDelay
-  // [x] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
-  // [x] $$PREBID_GLOBAL$$.enableSendAllBids (function)
-  // [ ] $$PREBID_GLOBAL$$.setBidderSequence (function(order), `bidderSequence`)
-  // [x] $$PREBID_GLOBAL$$.setS2SConfig (function(options), `s2sConfig`)
 
   Object.assign(config, options);
 }

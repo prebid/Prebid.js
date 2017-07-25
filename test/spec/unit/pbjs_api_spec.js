@@ -1609,7 +1609,7 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('setBidderSequence', () => {
+  describe('bidderSequence', () => {
     it('setting to `random` uses shuffled order of adUnits', () => {
       sinon.spy(utils, 'shuffle');
       const requestObj = {
@@ -1617,7 +1617,7 @@ describe('Unit: Prebid Module', function () {
         timeout: 2000
       };
 
-      $$PREBID_GLOBAL$$.setBidderSequence('random');
+      $$PREBID_GLOBAL$$.setConfig({ bidderSequence: 'random' });
       $$PREBID_GLOBAL$$.requestBids(requestObj);
 
       sinon.assert.calledOnce(utils.shuffle);

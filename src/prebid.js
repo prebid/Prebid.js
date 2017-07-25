@@ -707,11 +707,10 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * the order they are defined within the adUnit.bids array
  * @param {string} order - Order to call bidders in. Currently the only possible value
  * is 'random', which randomly shuffles the order
+ * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
 $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  if (order === CONSTANTS.ORDER.RANDOM) {
-    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
-  }
+  adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
 };
 
 /**
