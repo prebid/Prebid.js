@@ -438,7 +438,7 @@
             };
 
             // Optional: excepted values are `medium` (default), `low` and `high`
-            pbjs.setPriceGranularity('medium');
+            pbjs.setConfig({ priceGranularity: 'medium' });
 
             pbjs.requestBids({
                 bidsBackHandler: function (bidResponses) {

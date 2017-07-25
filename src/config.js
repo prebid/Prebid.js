@@ -53,6 +53,10 @@ let config = {
   set cookieSyncDelay(val) {
     this._cookieSyncDelay = val;
   },
+
+  set priceGranularity(val) {
+    $$PREBID_GLOBAL$$.setPriceGranularity(val);
+  },
 };
 
 export function getConfig(option) {
@@ -69,7 +73,7 @@ export function setConfig(options) {
   // [x] $$PREBID_GLOBAL$$.logging (renamed `debug`)
   // [x] $$PREBID_GLOBAL$$.publisherDomain
   // [x] $$PREBID_GLOBAL$$.cookieSyncDelay
-  // [ ] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
+  // [x] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
   // [ ] $$PREBID_GLOBAL$$.enableSendAllBids (function)
   // [ ] $$PREBID_GLOBAL$$.setBidderSequence (function(order), `bidderSequence`)
   // [ ] $$PREBID_GLOBAL$$.setS2SConfig (function(options), `s2sConfig`)

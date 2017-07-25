@@ -21,6 +21,7 @@ var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
 var adserver = require('src/adserver');
+var { setConfig } = require('src/config');
 var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
@@ -1256,7 +1257,7 @@ describe('Unit: Prebid Module', function () {
       const logErrorSpy = sinon.spy(utils, 'logError');
       const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
 
-      $$PREBID_GLOBAL$$.setPriceGranularity();
+      setConfig({ priceGranularity: null });
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       utils.logError.restore();
     });
@@ -1265,7 +1266,7 @@ describe('Unit: Prebid Module', function () {
       const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
       const granularity = 'low';
 
-      $$PREBID_GLOBAL$$.setPriceGranularity(granularity);
+      setConfig({ priceGranularity: granularity });
       assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
       bidmanager.setPriceGranularity.restore();
     });
@@ -1288,7 +1289,7 @@ describe('Unit: Prebid Module', function () {
         ]
       };
 
-      $$PREBID_GLOBAL$$.setPriceGranularity(badConfig);
+      setConfig({ priceGranularity: badConfig });
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       utils.logError.restore();
     });
@@ -1306,7 +1307,7 @@ describe('Unit: Prebid Module', function () {
         ]
       };
 
-      $$PREBID_GLOBAL$$.setPriceGranularity(goodConfig);
+      setConfig({ priceGranularity: goodConfig });
       assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
       bidmanager.setCustomPriceBucket.restore();
       assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
