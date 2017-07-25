@@ -17,7 +17,6 @@ import { auctionManager } from './auctionManager';
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
-var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var events = require('./events');
@@ -249,16 +248,6 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
 };
 
 /**
- * Returns a bool if all the bids have returned or timed out
- * @alias module:$$PREBID_GLOBAL$$.allBidsAvailable
- * @return {bool} all bids available
- */
-$$PREBID_GLOBAL$$.allBidsAvailable = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
-  return bidmanager.bidsBackAll();
-};
-
-/**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
  * @param  {HTMLDocument} doc document
@@ -476,37 +465,6 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 };
 
 /**
- * Add a callback event
- * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
- * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
- * @alias module:$$PREBID_GLOBAL$$.addCallback
- * @returns {String} id for callback
- */
-$$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
-  var id = null;
-  if (!eventStr || !func || typeof func !== objectType_function) {
-    utils.logError('error registering callback. Check method signature');
-    return id;
-  }
-
-  id = utils.getUniqueIdentifierStr;
-  bidmanager.addCallback(id, func, eventStr);
-  return id;
-};
-
-/**
- * Remove a callback event
- * //@param {string} cbId id of the callback to remove
- * @alias module:$$PREBID_GLOBAL$$.removeCallback
- * @returns {String} id for callback
- */
-$$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
-  // todo
-  return null;
-};
-
-/**
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
  * @param  {[type]} bidderAdaptor [description]
  * @param  {[type]} bidderCode    [description]
@@ -557,17 +515,6 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
   return bidfactory.createBid(statusCode);
-};
-
-/**
- * Wrapper to bidmanager.addBidResponse
- * @param {[type]} adUnitCode [description]
- * @param {[type]} bid        [description]
- */
-$$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
-  // TODO : Do we need this api for 1.0
-  bidmanager.addBidResponse(adUnitCode, bid);
 };
 
 /**
