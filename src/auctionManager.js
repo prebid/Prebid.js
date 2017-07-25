@@ -91,7 +91,7 @@ export const auctionManager = (function() {
         try {
           value = value(custBidObj);
         } catch (e) {
-          utils.logError('bidmanager', 'ERROR', e);
+          utils.logError('auctionManager', 'ERROR', e);
         }
       }
 
