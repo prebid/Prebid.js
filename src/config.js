@@ -15,11 +15,13 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
 
+let listeners = [];
+
 let config = {
   // `debug` is equivalent to legacy `pbjs.logging` property
   _debug: DEFAULT_DEBUG,
   get debug() {
-    if ($$PREBID_GLOBAL$$.logging || $$PREBID_GLOBAL$$.logging == false) {
+    if ($$PREBID_GLOBAL$$.logging || $$PREBID_GLOBAL$$.logging === false) {
       return $$PREBID_GLOBAL$$.logging;
     }
     return this._debug;
@@ -55,6 +57,7 @@ let config = {
     this._cookieSyncDelay = val;
   },
 
+  // calls existing function which may be moved after deprecation
   set priceGranularity(val) {
     $$PREBID_GLOBAL$$.setPriceGranularity(val);
   },
@@ -67,23 +70,51 @@ let config = {
     this._sendAllBids = val;
   },
 
+  // calls existing function which may be moved after deprecation
   set bidderSequence(val) {
     $$PREBID_GLOBAL$$.setBidderSequence(val);
   },
 
+  // calls existing function which may be moved after deprecation
   set s2sConfig(val) {
     $$PREBID_GLOBAL$$.setS2SConfig(val);
   },
 };
 
+/*
+ * Returns configuration object or single configuration property if given
+ * a string matching a configuartion property name
+ */
 export function getConfig(option) {
   return option ? config[option] : config;
 }
 
+/*
+ * Sets configuration given an object containing key-value pairs and calls
+ * listeners that were added by the `subscribe` function
+ */
 export function setConfig(options) {
   if (typeof options !== 'object') {
     utils.logError('setConfig options must be an object');
   }
 
   Object.assign(config, options);
+  listeners.forEach(listener => listener(options));
+}
+
+/*
+ * Adds a function to a set of listeners that are invoked whenever `setConfig`
+ * is called. The subscribed function will be passed the options object that
+ * was used in the `setConfig` call.
+ *
+ * Example use:
+ * subscribe((config) => console.log('config set:', config));
+ * subscribe(({ debug }) => debug ? console.log('debug set:', debug) : '');
+ */
+export function subscribe(listener) {
+  if (typeof listener !== 'function') {
+    utils.logError('listener must be a function');
+    return;
+  }
+  listeners.push(listener);
 }
