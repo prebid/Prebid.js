@@ -2,6 +2,7 @@ import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './uti
 import { NATIVE_TARGETING_KEYS } from './native';
 const bidmanager = require('./bidmanager');
 const utils = require('./utils');
+const { getConfig } = require('./config');
 var CONSTANTS = require('./constants');
 
 var targeting = exports;
@@ -32,7 +33,7 @@ targeting.getAllTargeting = function(adUnitCode) {
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
   var targeting = getWinningBidTargeting(adUnitCodes)
     .concat(getAlwaysUseBidTargeting(adUnitCodes))
-    .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
+    .concat(getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
 
   // store a reference of the targeting keys
   targeting.map(adUnitCode => {

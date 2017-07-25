@@ -22,7 +22,7 @@
 
       googletag.cmd.push(function () {
         pbjs.que.push(function () {
-          pbjs.enableSendAllBids();
+          setConfig({ enableSendAllBids: true });
           pbjs.setTargetingForGPTAsync();
           googletag.pubads().refresh();
         });

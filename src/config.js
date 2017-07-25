@@ -13,6 +13,7 @@ const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
+const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
 
 let config = {
   // `debug` is equivalent to legacy `pbjs.logging` property
@@ -57,6 +58,14 @@ let config = {
   set priceGranularity(val) {
     $$PREBID_GLOBAL$$.setPriceGranularity(val);
   },
+
+  _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
+  get enableSendAllBids() {
+    return this._sendAllBids;
+  },
+  set enableSendAllBids(val) {
+    this._sendAllBids = val;
+  },
 };
 
 export function getConfig(option) {
@@ -74,7 +83,7 @@ export function setConfig(options) {
   // [x] $$PREBID_GLOBAL$$.publisherDomain
   // [x] $$PREBID_GLOBAL$$.cookieSyncDelay
   // [x] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
-  // [ ] $$PREBID_GLOBAL$$.enableSendAllBids (function)
+  // [x] $$PREBID_GLOBAL$$.enableSendAllBids (function)
   // [ ] $$PREBID_GLOBAL$$.setBidderSequence (function(order), `bidderSequence`)
   // [ ] $$PREBID_GLOBAL$$.setS2SConfig (function(options), `s2sConfig`)
 

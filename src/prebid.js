@@ -43,7 +43,6 @@ $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
-$$PREBID_GLOBAL$$._sendAllBids = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
@@ -661,8 +660,9 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   }
 };
 
+/** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
-  $$PREBID_GLOBAL$$._sendAllBids = true;
+  setConfig({ enableSendAllBids: true });
 };
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
