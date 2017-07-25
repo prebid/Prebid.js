@@ -66,6 +66,10 @@ let config = {
   set enableSendAllBids(val) {
     this._sendAllBids = val;
   },
+
+  set s2sConfig(val) {
+    $$PREBID_GLOBAL$$.setS2SConfig(val);
+  },
 };
 
 export function getConfig(option) {
@@ -85,7 +89,7 @@ export function setConfig(options) {
   // [x] $$PREBID_GLOBAL$$.setPriceGranularity (function(granularity), `priceGranularity`)
   // [x] $$PREBID_GLOBAL$$.enableSendAllBids (function)
   // [ ] $$PREBID_GLOBAL$$.setBidderSequence (function(order), `bidderSequence`)
-  // [ ] $$PREBID_GLOBAL$$.setS2SConfig (function(options), `s2sConfig`)
+  // [x] $$PREBID_GLOBAL$$.setS2SConfig (function(options), `s2sConfig`)
 
   Object.assign(config, options);
 }

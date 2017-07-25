@@ -726,6 +726,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 
 /**
  * Set config for server to server header bidding
+ * @deprecated - use pbjs.setConfig({ s2sConfig: <options> })
  * @typedef {Object} options - required
  * @property {boolean} enabled enables S2S bidding
  * @property {string[]} bidders bidders to request S2S

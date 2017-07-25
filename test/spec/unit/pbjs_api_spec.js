@@ -1742,7 +1742,7 @@ describe('Unit: Prebid Module', function () {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
       };
 
-      $$PREBID_GLOBAL$$.setS2SConfig(options);
+      $$PREBID_GLOBAL$$.setConfig({ s2sConfig: {options} });
       assert.ok(logErrorSpy.calledOnce, true);
     });
 
@@ -1755,7 +1755,7 @@ describe('Unit: Prebid Module', function () {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
       };
 
-      $$PREBID_GLOBAL$$.setS2SConfig(options);
+      $$PREBID_GLOBAL$$.setConfig({ s2sConfig: {options} });
       assert.ok(logErrorSpy.calledOnce, true);
     });
   });
