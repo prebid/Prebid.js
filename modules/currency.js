@@ -7,7 +7,7 @@ import bidmanager from 'src/bidmanager';
 
 $$PREBID_GLOBAL$$.currency = setConfig;
 
-const DEFAULT_CURRENCY_RATE_URL = "http://prebid.aws.rubiconproject.com/latest.json";
+const DEFAULT_CURRENCY_RATE_URL = "http://currency.prebid.org/latest.json";
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
