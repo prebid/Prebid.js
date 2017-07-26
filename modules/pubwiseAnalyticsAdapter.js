@@ -14,9 +14,9 @@ const analyticsType = 'endpoint';
 const analyticsName = 'PubWise Analytics: ';
 let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
 let pubwiseVersion = '2.2';
-let configOptions = {site: '',endpoint: 'https://api.pubwise.io/api/v4/event/default/',debug:''};
+let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: ''};
 let pwAnalyticsEnabled = false;
-let utmKeys = {'utm_source': '','utm_medium': '','utm_campaign': '','utm_term': '','utm_content': ''};
+let utmKeys = {'utm_source': '', 'utm_medium': '', 'utm_campaign': '', 'utm_term': '', 'utm_content': ''};
 
 let getParameterByName = function (name) {
   var regexS = '[\\?&]' + name + '=([^&#]*)';
@@ -29,7 +29,7 @@ let getParameterByName = function (name) {
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
-function markEnabled(){
+function markEnabled() {
   utils.logInfo(analyticsName + 'Enabled', configOptions);
   pwAnalyticsEnabled = true;
 }
@@ -39,7 +39,7 @@ function enrichWithMetrics(dataBag) {
     dataBag['pw_version'] = pubwiseVersion;
     dataBag['pbjs_version'] = pbjs.version;
     dataBag['debug'] = configOptions.debug;
-  }catch (e) {
+  } catch (e) {
     dataBag['error_metric'] = 1;
   }
 
@@ -60,17 +60,16 @@ function enrichWithUTM(dataBag) {
 
     if (newUtm === false) {
       for (var prop in utmKeys) {
-        var itemValue = localStorage.getItem('pw-'+prop);
+        var itemValue = localStorage.getItem('pw-' + prop);
         if (itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
-    }else{
+    } else {
       for (var prop in utmKeys) {
         localStorage.setItem('pw-' + prop, utmKeys[prop]);
       }
     }
-
   } catch (e) {
     dataBag['error_utm'] = 1;
   }
@@ -78,7 +77,7 @@ function enrichWithUTM(dataBag) {
 }
 
 function sendEvent(eventType, data) {
-  utils.logInfo(analyticsName+'Event ' + eventType + ' ' + pwAnalyticsEnabled, data);
+  utils.logInfo(analyticsName + 'Event ' + eventType + ' ' + pwAnalyticsEnabled, data);
 
   // put the typical items in the data bag
   let dataBag = {
@@ -89,19 +88,19 @@ function sendEvent(eventType, data) {
   };
 
   // for certain events, track additional info
-  if (eventType == CONSTANTS.EVENTS.AUCTION_INIT){
+  if (eventType == CONSTANTS.EVENTS.AUCTION_INIT) {
     dataBag = enrichWithMetrics(dataBag);
     dataBag = enrichWithUTM(dataBag);
   }
 
-  ajax(configOptions.endpoint, (result) => utils.logInfo(analyticsName+'Result', result), JSON.stringify(dataBag));
+  ajax(configOptions.endpoint, (result) => utils.logInfo(analyticsName + 'Result', result), JSON.stringify(dataBag));
 }
 
 let pubwiseAnalytics = Object.assign(adapter(
-{
-  defaultUrl,
-  analyticsType
-}),
+  {
+    defaultUrl,
+    analyticsType
+  }),
 {
   // Override AnalyticsAdapter functions by supplying custom methods
   track({eventType, args}) {
