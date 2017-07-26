@@ -7,7 +7,7 @@ import bidmanager from 'src/bidmanager';
 
 $$PREBID_GLOBAL$$.currency = setConfig;
 
-const DEFAULT_CURRENCY_RATE_URL = "http://currency.prebid.org/latest.json";
+const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
@@ -86,14 +86,14 @@ function resetCurrency() {
 
 export function addBidResponseDecorator(fn) {
   return function(adUnitCode, bid) {
-    if(!bid) {
+    if (!bid) {
       return fn.apply(this, arguments); // if no bid, call original and let it display warnings
     }
 
     let bidder = bid.bidderCode || bid.bidder;
     if (currencyOverrides[bidder]) {
       let override = currencyOverrides[bidder];
-      if(bid.currency && override !== bid.currency) {
+      if (bid.currency && override !== bid.currency) {
         utils.logWarn(`Currency override '${bidder}: ${override}' ignored. adapter specified '${bid.currency}'`);
       } else {
         bid.currency = override;
