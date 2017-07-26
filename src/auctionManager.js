@@ -175,6 +175,7 @@ export const auctionManager = (function() {
   }
 
   function executeCallback(timedOut) {
+    // TODO clear timer, below will also work in all scenario's since i am setting auction callbacks to noop.
     function callAuctionCallback(auction) {
       let callback = auction.getCallback();
       callback.apply($$PREBID_GLOBAL$$);
@@ -194,7 +195,6 @@ export const auctionManager = (function() {
       .forEach(auction => {
         callAuctionCallback(auction);
       });
-    // TODO : Delete auction instance ? I think should be only done after bids are added to pool.
   }
 
   function Auction() {
