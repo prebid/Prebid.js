@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter.js';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -129,9 +129,8 @@ function HuddledMassesAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(Adapter.createNew(BIDDER_CODE), { // BIDDER_CODE huddledmasses
-    callBids: _callBids,
-    createNew: HuddledMassesAdapter.createNew
+  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE huddledmasses
+    callBids: _callBids
   });
 }
 
@@ -161,10 +160,6 @@ HuddledMassesAdapter.masSizeOrdering = function (sizes) {
 
       return first - second;
     });
-};
-
-HuddledMassesAdapter.createNew = function () {
-  return new HuddledMassesAdapter();
 };
 
 adaptermanager.registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');

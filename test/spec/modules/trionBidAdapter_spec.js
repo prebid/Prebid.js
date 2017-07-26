@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import trionAdapter from 'modules/trionBidAdapter';
+import TrionAdapter from 'modules/trionBidAdapter';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 const CONSTANTS = require('src/constants.json');
@@ -43,7 +43,7 @@ describe('Trion adapter tests', () => {
   let adapter;
 
   beforeEach(() => {
-    adapter = trionAdapter.createNew();
+    adapter = new TrionAdapter();
     sinon.stub(document.body, 'appendChild');
   });
 

@@ -39,7 +39,7 @@ let _cookiesQueued = false;
  * Bidder adapter for Prebid Server
  */
 function PrebidServer() {
-  let baseAdapter = Adapter.createNew('prebidServer');
+  let baseAdapter = new Adapter('prebidServer');
   let config;
 
   baseAdapter.setConfig = function(s2sconfig) {
@@ -201,16 +201,11 @@ function PrebidServer() {
   return {
     queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
-    createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
   };
 }
-
-PrebidServer.createNew = function() {
-  return new PrebidServer();
-};
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
 

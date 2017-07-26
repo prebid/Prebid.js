@@ -250,7 +250,9 @@ const Http = {
  */
 class InnerActiveAdapter {
   constructor() {
-    this.iaAdapter = Adapter.createNew(CONSTANTS.ADAPTER_NAME);
+    this.iaAdapter = new Adapter(CONSTANTS.ADAPTER_NAME);
+    this.setBidderCode = this.iaAdapter.setBidderCode.bind(this);
+
     this.bidByBidId = {};
   }
 
@@ -448,14 +450,6 @@ class InnerActiveAdapter {
    */
   static _getUtils() {
     return {Reporter};
-  }
-
-  /**
-   * Creates new instance of InnerActiveAdapter for prebid auction
-   * @returns {InnerActiveAdapter}
-   */
-  static createNew() {
-    return new InnerActiveAdapter();
   }
 }
 

@@ -118,10 +118,7 @@ describe('Adyoulike Adapter', () => {
   });
 
   describe('adapter public API', () => {
-    const adapter = AdyoulikAdapter.createNew();
-    it('createNew', () => {
-      expect(adapter.createNew).to.be.a('function');
-    });
+    const adapter = new AdyoulikAdapter();
 
     it('setBidderCode', () => {
       expect(adapter.setBidderCode).to.be.a('function');

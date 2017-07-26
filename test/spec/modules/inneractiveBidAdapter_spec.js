@@ -10,7 +10,7 @@ describe('InneractiveAdapter', function () {
     bidRequest;
 
   beforeEach(function () {
-    adapter = InneractiveAdapter.createNew();
+    adapter = new InneractiveAdapter();
     bidRequest = {
       bidderCode: 'inneractive',
       bids: [
@@ -85,13 +85,11 @@ describe('InneractiveAdapter', function () {
     });
   });
 
-  describe('.createNew()', function () {
-    it('should return an instance of this adapter having a "callBids" method', function () {
-      expect(adapter)
-        .to.be.instanceOf(InneractiveAdapter).and
-        .to.have.property('callBids').and
-        .to.be.a('function');
-    });
+  it('should return an instance of this adapter having a "callBids" method', function () {
+    expect(adapter)
+      .to.be.instanceOf(InneractiveAdapter).and
+      .to.have.property('callBids').and
+      .to.be.a('function');
   });
 
   describe('when sending out bid requests to the ad server', function () {

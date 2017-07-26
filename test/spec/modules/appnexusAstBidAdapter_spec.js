@@ -63,7 +63,7 @@ const RESPONSE = {
 describe('AppNexusAdapter', () => {
   let adapter;
 
-  beforeEach(() => adapter = Adapter.createNew());
+  beforeEach(() => adapter = new Adapter());
 
   describe('request function', () => {
     let xhr;

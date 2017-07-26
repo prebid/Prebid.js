@@ -227,8 +227,8 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
 
-  it('Verify createNew', function () {
-    const adapter = PulsePointAdapter.createNew();
+  it('Verify adapter interface', function () {
+    const adapter = new PulsePointAdapter();
     expect(adapter).to.have.property('callBids');
   });
 });
