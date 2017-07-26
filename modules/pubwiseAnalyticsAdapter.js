@@ -28,6 +28,17 @@ let configOptions = {site: ``, endpoint: `https://api.pubwise.io/api/v4/event/de
 let pwAnalyticsEnabled = false;
 let utmKeys = {utm_source: ``, utm_medium: ``, utm_campaign: ``, utm_term: ``, utm_content: ``};
 
+let getPWParameterByName = function (name) {
+  var regexS = `[\\?&]` + name + `=([^&#]*)`;
+  var regex = new RegExp(regexS);
+  var results = regex.exec(window.location.search);
+  if (results === null || results.length === 0) {
+    return ``;
+  }
+
+  return decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
+
 function markEnabled() {
   utils.logInfo(analyticsName + `Enabled`, configOptions);
   pwAnalyticsEnabled = true;
@@ -49,7 +60,7 @@ function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
     for (let prop in utmKeys) {
-      let urlValue = utils.getParameterByName(prop);
+      let urlValue = getPWParameterByName(prop);
       utmKeys[prop] = urlValue;
       if (utmKeys[prop] != ``) {
         newUtm = true;
