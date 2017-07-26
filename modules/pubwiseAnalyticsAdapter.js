@@ -14,9 +14,9 @@ const analyticsType = 'endpoint';
 const analyticsName = 'PubWise Analytics: ';
 let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
 let pubwiseVersion = '2.2';
-let configOptions = {site: '',endpoint:'https://api.pubwise.io/api/v4/event/default/',debug:''};
+let configOptions = {site: '',endpoint: 'https://api.pubwise.io/api/v4/event/default/',debug:''};
 let pwAnalyticsEnabled = false;
-let utmKeys = {'utm_source':'','utm_medium':'','utm_campaign':'','utm_term':'','utm_content':''};
+let utmKeys = {'utm_source': '','utm_medium': '','utm_campaign': '','utm_term': '','utm_content': ''};
 
 let getParameterByName = function (name) {
   var regexS = '[\\?&]' + name + '=([^&#]*)';
@@ -30,7 +30,7 @@ let getParameterByName = function (name) {
 };
 
 function markEnabled(){
-  utils.logInfo(analyticsName+'Enabled', configOptions);
+  utils.logInfo(analyticsName + 'Enabled', configOptions);
   pwAnalyticsEnabled = true;
 }
 
@@ -39,7 +39,7 @@ function enrichWithMetrics(dataBag) {
     dataBag['pw_version'] = pubwiseVersion;
     dataBag['pbjs_version'] = pbjs.version;
     dataBag['debug'] = configOptions.debug;
-  }catch(e) {
+  }catch (e) {
     dataBag['error_metric'] = 1;
   }
 
@@ -67,11 +67,11 @@ function enrichWithUTM(dataBag) {
       }
     }else{
       for (var prop in utmKeys) {
-        localStorage.setItem('pw-'+prop,utmKeys[prop]);
+        localStorage.setItem('pw-' + prop, utmKeys[prop]);
       }
     }
 
-  } catch(e) {
+  } catch (e) {
     dataBag['error_utm'] = 1;
   }
   return dataBag;
@@ -98,16 +98,15 @@ function sendEvent(eventType, data) {
 }
 
 let pubwiseAnalytics = Object.assign(adapter(
-  {
-    defaultUrl,
-    analyticsType
+{
+  defaultUrl,
+  analyticsType
+}),
+{
+  // Override AnalyticsAdapter functions by supplying custom methods
+  track({eventType, args}) {
+    sendEvent(eventType, args);
   }
-  ),
-  {
-    // Override AnalyticsAdapter functions by supplying custom methods
-    track({eventType, args}) {
-      sendEvent(eventType, args);
-    }
 });
 
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
