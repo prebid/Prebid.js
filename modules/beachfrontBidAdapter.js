@@ -133,7 +133,7 @@ BeachfrontAdapter.createNew = function () {
   return new BeachfrontAdapter();
 };
 
-adaptermanager.registerBidAdapter(new BeachfrontAdapter, 'beachfront', {
+adaptermanager.registerBidAdapter(new BeachfrontAdapter(), 'beachfront', {
   supportedMediaTypes: ['video']
 });
 

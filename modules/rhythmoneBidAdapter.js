@@ -1,3 +1,4 @@
+/* eslint indent: 0 */
 import {ajax} from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
@@ -293,7 +294,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
   };
 }
 
-adaptermanager.registerBidAdapter(new RhythmoneAdapter, 'rhythmone', {
+adaptermanager.registerBidAdapter(new RhythmoneAdapter(), 'rhythmone', {
   supportedMediaTypes: ['video']
 });
 

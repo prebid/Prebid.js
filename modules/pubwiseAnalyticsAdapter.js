@@ -12,6 +12,7 @@ const utils = require('src/utils');
 
 const analyticsType = 'endpoint';
 const analyticsName = 'PubWise Analytics: ';
+let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
 let pubwiseVersion = '2.2';
 let configOptions = {site: '',endpoint:'https://api.pubwise.io/api/v4/event/default/',debug:''};
 let pwAnalyticsEnabled = false;
@@ -98,6 +99,7 @@ function sendEvent(eventType, data) {
 
 let pubwiseAnalytics = Object.assign(adapter(
   {
+    defaultUrl,
     analyticsType
   }
   ),
@@ -106,7 +108,7 @@ let pubwiseAnalytics = Object.assign(adapter(
     track({eventType, args}) {
       sendEvent(eventType, args);
     }
-  });
+});
 
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
 

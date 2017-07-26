@@ -133,7 +133,7 @@ function YieldbotAdapter() {
         var adapterConfig;
 
         ybRequest = $$PREBID_GLOBAL$$._bidsRequested
-                      .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot');
+          .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot');
 
         adapterConfig = ybRequest && ybRequest.bids ? ybRequest.bids.find(bid => bid.bidId === v) : null;
 
@@ -152,6 +152,6 @@ function YieldbotAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new YieldbotAdapter, 'yieldbot');
+adaptermanager.registerBidAdapter(new YieldbotAdapter(), 'yieldbot');
 
 module.exports = YieldbotAdapter;

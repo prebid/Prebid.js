@@ -33,7 +33,7 @@ var CREATIVE_TEMPLATE = decodeURIComponent("%3Cscript%3E%0A(function(define)%7B%
 var TAG_URL = '//c.pubgears.com/tags/h';
 var publisher = '';
 
-adaptermanager.registerBidAdapter(new PubGearsAdapter, BIDDER_CODE);
+adaptermanager.registerBidAdapter(new PubGearsAdapter(), BIDDER_CODE);
 
 module.exports = PubGearsAdapter;
 
@@ -48,7 +48,7 @@ function PubGearsAdapter() {
     var bids = params[consts.JSON_MAPPING.PL_BIDS];
     var slots = bids.map(getSlotFromBidParam);
     if (slots.length <= 0)
-      { return; }
+    { return; }
     publisher = bids[0][PARAMS][PUBLISHER_PARAM];
 
     bids.forEach(function(bid) {
@@ -58,7 +58,7 @@ function PubGearsAdapter() {
 
     proxy = proxy || getScript(SCRIPT_ID) || makeScript(slots, publisher, SCRIPT_ID, TAG_URL);
     if (!initialized)
-      { registerEventListeners(proxy); }
+    { registerEventListeners(proxy); }
     initialized = true;
   }
   function loadScript(script) {
@@ -126,7 +126,7 @@ function PubGearsAdapter() {
     response[BIDDER_CODE_RESPONSE_KEY] = BIDDER_CODE;
 
     if (status !== 1)
-      { return response; }
+    { return response; }
 
     response[AD] = getCreative(resource);
 

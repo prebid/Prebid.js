@@ -117,7 +117,7 @@ VertamediaAdapter.createNew = function () {
   return new VertamediaAdapter();
 };
 
-adaptermanager.registerBidAdapter(new VertamediaAdapter, 'vertamedia', {
+adaptermanager.registerBidAdapter(new VertamediaAdapter(), 'vertamedia', {
   supportedMediaTypes: ['video']
 });
 
