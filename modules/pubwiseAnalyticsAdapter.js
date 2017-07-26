@@ -8,39 +8,38 @@ const utils = require('src/utils');
  * PubWise.io Analytics
  * Contact: support@pubwise.io
  * Developer: Stephen Johnston
+ *
+ * For testing:
+ *
+ pbjs.enableAnalytics({
+  provider: 'pubwise',
+  options: {
+    site: 'test-test-test-test',
+    endpoint: 'https://api.pubwise.io/api/v4/event/add/',
+  }
+ });
  */
 
-const analyticsType = 'endpoint';
-const analyticsName = 'PubWise Analytics: ';
-let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
-let pubwiseVersion = '2.2';
-let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: ''};
+const analyticsType = `endpoint`;
+const analyticsName = `PubWise Analytics: `;
+let defaultUrl = `https://api.pubwise.io/api/v4/event/default/`;
+let pubwiseVersion = `2.2`;
+let configOptions = {site: ``, endpoint: `https://api.pubwise.io/api/v4/event/default/`, debug: ``};
 let pwAnalyticsEnabled = false;
-let utmKeys = {'utm_source': '', 'utm_medium': '', 'utm_campaign': '', 'utm_term': '', 'utm_content': ''};
-
-let getParameterByName = function (name) {
-  var regexS = '[\\?&]' + name + '=([^&#]*)';
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.search);
-  if (results === null || results.length === 0) {
-    return '';
-  }
-
-  return decodeURIComponent(results[1].replace(/\+/g, ' '));
-};
+let utmKeys = {utm_source: ``, utm_medium: ``, utm_campaign: ``, utm_term: ``, utm_content: ``};
 
 function markEnabled() {
-  utils.logInfo(analyticsName + 'Enabled', configOptions);
+  utils.logInfo(analyticsName + `Enabled`, configOptions);
   pwAnalyticsEnabled = true;
 }
 
 function enrichWithMetrics(dataBag) {
   try {
-    dataBag['pw_version'] = pubwiseVersion;
-    dataBag['pbjs_version'] = pbjs.version;
-    dataBag['debug'] = configOptions.debug;
+    dataBag[`pw_version`] = pubwiseVersion;
+    dataBag[`pbjs_version`] = $$PREBID_GLOBAL$$.version;
+    dataBag[`debug`] = configOptions.debug;
   } catch (e) {
-    dataBag['error_metric'] = 1;
+    dataBag[`error_metric`] = 1;
   }
 
   return dataBag;
@@ -49,35 +48,35 @@ function enrichWithMetrics(dataBag) {
 function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
-    for (var prop in utmKeys) {
-      var urlValue = getParameterByName(prop);
+    for (let prop in utmKeys) {
+      let urlValue = utils.getParameterByName(prop);
       utmKeys[prop] = urlValue;
-      if (utmKeys[prop] != '') {
+      if (utmKeys[prop] != ``) {
         newUtm = true;
         dataBag[prop] = utmKeys[prop];
       }
     }
 
     if (newUtm === false) {
-      for (var prop in utmKeys) {
-        var itemValue = localStorage.getItem('pw-' + prop);
+      for (let prop in utmKeys) {
+        let itemValue = localStorage.getItem(`pw-` + prop);
         if (itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
-      for (var prop in utmKeys) {
-        localStorage.setItem('pw-' + prop, utmKeys[prop]);
+      for (let prop in utmKeys) {
+        localStorage.setItem(`pw-` + prop, utmKeys[prop]);
       }
     }
   } catch (e) {
-    dataBag['error_utm'] = 1;
+    dataBag[`error_utm`] = 1;
   }
   return dataBag;
 }
 
 function sendEvent(eventType, data) {
-  utils.logInfo(analyticsName + 'Event ' + eventType + ' ' + pwAnalyticsEnabled, data);
+  utils.logInfo(analyticsName + `Event ` + eventType + ` ` + pwAnalyticsEnabled, data);
 
   // put the typical items in the data bag
   let dataBag = {
@@ -93,7 +92,7 @@ function sendEvent(eventType, data) {
     dataBag = enrichWithUTM(dataBag);
   }
 
-  ajax(configOptions.endpoint, (result) => utils.logInfo(analyticsName + 'Result', result), JSON.stringify(dataBag));
+  ajax(configOptions.endpoint, (result) => utils.logInfo(analyticsName + `Result`, result), JSON.stringify(dataBag));
 }
 
 let pubwiseAnalytics = Object.assign(adapter(
@@ -121,7 +120,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
-  code: 'pubwise'
+  code: `pubwise`
 });
 
 export default pubwiseAnalytics;
