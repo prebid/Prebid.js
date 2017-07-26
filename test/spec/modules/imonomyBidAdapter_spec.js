@@ -37,7 +37,7 @@ describe('imonomy adapter test', () => {
   };
 
   let validResponseUM = {
-    um_list: [{type: 'iframe', Url: '#' },{type: 'redirect', Url: '#' },{type: 'js', Url: '#' }],
+    um_list: [{type: 'iframe', Url: '#' }, {type: 'redirect', Url: '#' }, {type: 'js', Url: '#' }],
     ads: [
       {
         impression_id: 'foo',
