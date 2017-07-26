@@ -1,5 +1,3 @@
-/* jshint -W030 */
-
 import Adapter from '../../../modules/imonomyBidAdapter';
 import bidManager from '../../../src/bidmanager';
 import {expect} from 'chai';
@@ -39,7 +37,7 @@ describe('imonomy adapter test', () => {
   };
 
   let validResponseUM = {
-    um_list: [{type: 'iframe', Url: '#' }],
+    um_list: [{type: 'iframe', Url: '#' },{type: 'redirect', Url: '#' },{type: 'js', Url: '#' }],
     ads: [
       {
         impression_id: 'foo',
