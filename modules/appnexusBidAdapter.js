@@ -16,6 +16,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     // var bidCode = baseAdapter.getBidderCode();
 
     var anArr = bidderRequest.bids;
+    var callbackCounter = 0;
 
     // var bidsCount = anArr.length;
 
@@ -34,6 +35,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     // expose the callback to the global object:
     $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
       var bidCode;
+      callbackCounter++;
 
       if (jptResponseObj && jptResponseObj.callback_uid) {
         var responseCPM;
@@ -104,7 +106,9 @@ AppNexusAdapter = function AppNexusAdapter() {
 
         // @endif
       }
-      done();
+      if (callbackCounter === anArr.length) {
+        done();
+      }
     };
   };
 

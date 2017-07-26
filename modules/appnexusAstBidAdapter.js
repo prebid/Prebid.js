@@ -151,6 +151,8 @@ function AppnexusAstAdapter() {
       });
 
       /* Notify Prebid of bid responses so bids can get in the auction */
+      // Disabled lint for no-inner declaration error
+      /*eslint-disable */
       function handleResponse(response) {
         let parsed;
 
@@ -191,19 +193,11 @@ function AppnexusAstAdapter() {
             utils.logError(`${type} ad type not supported`);
           }
 
-<<<<<<< HEAD
           tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
           const bid = createBid(status, tag);
           if (type === 'native') bid.mediaType = 'native';
           if (type === 'video') bid.mediaType = 'video';
           if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
-=======
-      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
-      const bid = createBid(status, tag);
-      if (type === 'native') bid.mediaType = 'native';
-      if (type === 'video') bid.mediaType = 'video';
-      if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
->>>>>>> f8a9778e2236fb19df1dd75b500ea4099a50033c
 
           if (bid.adId in bidRequests) {
             const placement = bidRequests[bid.adId].placementCode;
@@ -224,6 +218,7 @@ function AppnexusAstAdapter() {
         }
         done();
       }
+      /*eslint-enable */
     }
   };
 

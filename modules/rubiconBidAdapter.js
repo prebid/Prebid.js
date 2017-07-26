@@ -71,8 +71,9 @@ var sizeMap = {
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
-  function _callBids(bidderRequest) {
+  function _callBids(bidderRequest, addBidResponse, done) {
     var bids = bidderRequest.bids || [];
+    var callbackCounter = 0;
 
     bids.forEach(bid => {
       try {
@@ -107,10 +108,16 @@ function RubiconAdapter() {
         addErrorBid();
       }
 
+      function callDone() {
+        callbackCounter++;
+        if (callbackCounter === bids.length) done();
+      }
+
       function bidCallback(responseText) {
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
-          handleRpCB(responseText, bid);
+          handleRpCB(responseText, bid, addBidResponse);
+          callDone();
         } catch (err) {
           if (typeof err === 'string') {
             utils.logWarn(`${err} when processing rubicon response for placement code ${bid.placementCode}`);
@@ -124,12 +131,13 @@ function RubiconAdapter() {
       function bidError(err, xhr) {
         utils.logError('Request for rubicon responded with:', xhr.status, err);
         addErrorBid();
+        callDone();
       }
 
       function addErrorBid() {
         let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
         badBid.bidderCode = bid.bidder;
-        bidmanager.addBidResponse(bid.placementCode, badBid);
+        addBidResponse(bid.placementCode, badBid, bidderRequest.auctionId);
       }
     });
   }
@@ -309,7 +317,7 @@ function RubiconAdapter() {
 </body>
 </html>`;
 
-  function handleRpCB(responseText, bidRequest) {
+  function handleRpCB(responseText, bidRequest, addBidResponse) {
     var responseObj = JSON.parse(responseText), // can throw
       ads = responseObj.ads,
       adResponseKey = bidRequest.placementCode;
@@ -363,7 +371,7 @@ function RubiconAdapter() {
         }, {'rpfl_elemid': bidRequest.placementCode});
 
       try {
-        bidmanager.addBidResponse(bidRequest.placementCode, bid);
+        addBidResponse(bidRequest.placementCode, bid, bidRequest.auctionId);
       } catch (err) {
         utils.logError('Error from addBidResponse', null, err);
       }
@@ -422,4 +430,3 @@ adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;
-
