@@ -34,7 +34,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
     }
 
     // @if NODE_ENV='debug'
-    // utils.logMessage('ymCall request built: ' + ymCall);
+    utils.logMessage('ymCall request built: ' + ymCall);
     // @endif
 
     return ymCall;
@@ -70,7 +70,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
     var e = 4; // 0 (COP) or 4 (DFP) for now -- ad server should reject other environments (TODO: validate that it will always be the case)
     var bust = new Date().getTime().toString(); // cache buster
     var scrd = window.devicePixelRatio || 0; // screen pixel density
-    var ae = 0; // prebid adapter version
 
     url = utils.tryAppendQueryString(url, 'callback', '$$PREBID_GLOBAL$$.YMCB');
     url = utils.tryAppendQueryString(url, 'page_url', page_url);
@@ -79,7 +78,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
     url = utils.tryAppendQueryString(url, '_s', _s);
     url = utils.tryAppendQueryString(url, 'scrd', scrd);
     url = utils.tryAppendQueryString(url, 'dnt', dnt);
-    url = utils.tryAppendQueryString(url, 'ae', ae);
     url = utils.tryAppendQueryString(url, 'description', description);
     url = utils.tryAppendQueryString(url, 'title', title);
 
