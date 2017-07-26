@@ -55,51 +55,52 @@ Update your site's hosted copy of Prebid.js to use the new build you just genera
 
 The Prebid Server settings (defined by the `pbjs.setS2SConfig` method) go in the same anonmymous function where you define your ad units.  This method must be called before `pbjs.requestBids`.
 
-The code in your Prebid configuration block should look something like the sample below.
+The code in your Prebid configuration block should look something like the following.  See the table below the code sample for definitions of the keys passed to `setS2SConfig`.
 
 {% highlight js %}
-    var pbjs = pbjs || {};
+var pbjs = pbjs || {};
 
-    // Usual Prebid configuration code goes here, followed by:
+pbjs.que.push(function() {
 
-    pbjs.que.push(function () {
+    pbjs.logging = true;
 
-      pbjs.logging = true;
-
-      pbjs.setS2SConfig({
-
-        // String (required): The account ID obtained in step 1.
+    pbjs.setS2SConfig({
         accountId: '1',
-
-        // Boolean (required): Enables S2S - defaults to `false`.
         enabled: true,
-
-        // Array[String] (required): List of bidder codes to enable for S2S.
-        // Note that these must have been included in the Prebid.js build
-        // from Step 2.
         bidders: ['appnexus', 'pubmatic'],
-
-        // Number (optional): Timeout for bidders called via the S2S
-        // endpoint, in milliseconds. Default value is 1000.
         timeout: 1000,
-
-        // String (optional): Adapter code for S2S. Defaults to 'prebidServer'.
         adapter: 'prebidServer',
-
-        // String (optional): Will override the default endpoint for Prebid Server.
         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
-      });
+    });
 
-      var adUnits = [
-                   {
-                       code: '/19968336/header-bid-tag-1',
-                       sizes: sizes,
-                       bids: [
-                           {
-
-      // Etc.
-
+    var adUnits = [{
+        code: '/19968336/header-bid-tag-1',
+        sizes: sizes,
+        bids: [{
+            /* Etc. */
+        }]
+    }];
+});
 {% endhighlight %}
+
+Fields you can set in `setS2SConfig`:
+
+{: .table .table-bordered .table-striped }
+| Field       | Type          | Required? | Description                                                            |
+|-------------+---------------+-----------+------------------------------------------------------------------------|
+| `accountId` | String        | X         | Prebid Server account ID                                               |
+| `enabled`   | Boolean       | X         | Enables S2S; default: `false`                                          |
+| `bidders`   | Array[String] | X         | List of bidder codes; must have been enabled during Prebid.js build    |
+| `timeout`   | Number        |           | Bidder timeout, in milliseconds; default: `1000`                       |
+| `adapter`   | String        |           | Adapter code; default: `"prebidServer"`                                |
+| `endpoint`  | String        |           | Will override the default endpoint                                     |
+| `cookieSet` | Boolean       |           | Set to `false` to opt out of cookieset/link rewriting; default: `true` |
+
+{: .alert.alert-info :}
+**Additional `cookieSet` details**  
+We recommend that users leave `cookieSet` enabled since it's essential for server-to-server header bidding that we have a persistent cookie for Safari/mobile web.  If set to `false`:  
+&bull; Prebid.js will not overwrite all links on page to redirect through the AppNexus `cookiePersistUrl`  
+&bull; Prebid.js will not display a footer message on Safari indicating that AppNexus will be placing cookies on browsers that block 3rd party cookies  
 
 ## Related Topics
 
