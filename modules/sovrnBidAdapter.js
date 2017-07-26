@@ -91,67 +91,63 @@ var SovrnAdapter = function SovrnAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.sovrnResponse = function (sovrnResponseObj) {
-    // valid object?
-    if (sovrnResponseObj && sovrnResponseObj.id) {
-      // valid object w/ bid responses?
-      if (sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 && sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
-        var impidsWithBidBack = [];
-        sovrnResponseObj.seatbid[0].bid.forEach(function (sovrnBid) {
-          var responseCPM;
-          var placementCode = '';
-          var id = sovrnBid.impid;
-          var bid = {};
+    var impidsWithBidBack = [];
 
-          // try to fetch the bid request we sent Sovrn
-          var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-            .find(bid => bid.bidId === id);
+    // valid response object from sovrn
+    if (sovrnResponseObj && sovrnResponseObj.id && sovrnResponseObj.seatbid && sovrnResponseObj.seatbid.length !== 0 &&
+      sovrnResponseObj.seatbid[0].bid && sovrnResponseObj.seatbid[0].bid.length !== 0) {
+      sovrnResponseObj.seatbid[0].bid.forEach(function (sovrnBid) {
+        var responseCPM;
+        var placementCode = '';
+        var id = sovrnBid.impid;
+        var bid = {};
 
-          if (bidObj) {
-            placementCode = bidObj.placementCode;
-            bidObj.status = CONSTANTS.STATUS.GOOD;
+        // try to fetch the bid request we sent Sovrn
+        var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
+          .find(bid => bid.bidId === id);
 
-            // place ad response on bidmanager._adResponsesByBidderId
-            responseCPM = parseFloat(sovrnBid.price);
+        if (bidObj) {
+          placementCode = bidObj.placementCode;
+          bidObj.status = CONSTANTS.STATUS.GOOD;
 
-            if (responseCPM !== 0) {
-              sovrnBid.placementCode = placementCode;
-              sovrnBid.size = bidObj.sizes;
-              var responseAd = sovrnBid.adm;
+          // place ad response on bidmanager._adResponsesByBidderId
+          responseCPM = parseFloat(sovrnBid.price);
 
-              // build impression url from response
-              var responseNurl = '<img src="' + sovrnBid.nurl + '">';
+          if (responseCPM !== 0) {
+            sovrnBid.placementCode = placementCode;
+            sovrnBid.size = bidObj.sizes;
+            var responseAd = sovrnBid.adm;
 
-              // store bid response
-              // bid status is good (indicating 1)
-              bid = bidfactory.createBid(1, bidObj);
-              bid.creative_id = sovrnBid.id;
-              bid.bidderCode = 'sovrn';
-              bid.cpm = responseCPM;
+            // build impression url from response
+            var responseNurl = '<img src="' + sovrnBid.nurl + '">';
 
-              // set ad content + impression url
-              // sovrn returns <script> block, so use bid.ad, not bid.adurl
-              bid.ad = decodeURIComponent(responseAd + responseNurl);
+            // store bid response
+            // bid status is good (indicating 1)
+            bid = bidfactory.createBid(1, bidObj);
+            bid.creative_id = sovrnBid.id;
+            bid.bidderCode = 'sovrn';
+            bid.cpm = responseCPM;
 
-              // Set width and height from response now
-              bid.width = parseInt(sovrnBid.w);
-              bid.height = parseInt(sovrnBid.h);
+            // set ad content + impression url
+            // sovrn returns <script> block, so use bid.ad, not bid.adurl
+            bid.ad = decodeURIComponent(responseAd + responseNurl);
 
-              bidmanager.addBidResponse(placementCode, bid);
-              impidsWithBidBack.push(id);
+            // Set width and height from response now
+            bid.width = parseInt(sovrnBid.w);
+            bid.height = parseInt(sovrnBid.h);
+
+            if (sovrnBid.dealid) {
+              bid.dealId = sovrnBid.dealid;
             }
-          }
-        });
 
-        addBlankBidResponses(impidsWithBidBack);
-      } else {
-        // no response data for all requests
-        addBlankBidResponses([]);
-      }
-    } else {
-      // no response data for all requests
-      addBlankBidResponses([]);
+            bidmanager.addBidResponse(placementCode, bid);
+            impidsWithBidBack.push(id);
+          }
+        }
+      });
     }
-  }; // sovrnResponse
+    addBlankBidResponses(impidsWithBidBack);
+  };
 
   return {
     callBids: _callBids
