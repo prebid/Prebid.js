@@ -517,7 +517,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * @returns {String} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
- * Please use onEvent instead.
+ * Please use offEvent instead.
  */
 $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
   // todo
