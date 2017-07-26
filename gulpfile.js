@@ -46,23 +46,11 @@ gulp.task('run-tests', ['lint', 'test-coverage']);
 gulp.task('build', ['build-bundle-prod']);
 
 gulp.task('clean', function () {
-  clean('');
+  return gulp.src(['build'], {
+      read: false
+    })
+    .pipe(clean());
 });
-
-gulp.task('clean-dev', function () {
-  clean('/dev');
-});
-
-gulp.task('clean-dist', function () {
-  clean('/dist');
-});
-
-function clean(type) {
-  return gulp.src(['build'+type], {
-    read: false
-  })
-  .pipe(clean());
-}
 
 function bundle(dev) {
   var modules = helpers.getArgModules(),
@@ -114,7 +102,7 @@ gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
 gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
 gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
-gulp.task('devpack', ['clean-dev'], function () {
+gulp.task('devpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
@@ -130,7 +118,7 @@ gulp.task('devpack', ['clean-dev'], function () {
     .pipe(connect.reload());
 });
 
-gulp.task('webpack', ['clean-dist'], function () {
+gulp.task('webpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
 
   // change output filename if argument --tag given
@@ -219,7 +207,7 @@ gulp.task('watch', function () {
 });
 
 gulp.task('lint', () => {
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
+  return gulp.src(['src/**/*.js', 'test/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError());
