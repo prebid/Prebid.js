@@ -161,6 +161,6 @@ const LifestreetAdapter = function LifestreetAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new LifestreetAdapter, 'lifestreet');
+adaptermanager.registerBidAdapter(new LifestreetAdapter(), 'lifestreet');
 
 module.exports = LifestreetAdapter;

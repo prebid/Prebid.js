@@ -104,6 +104,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SharethroughAdapter, 'sharethrough');
+adaptermanager.registerBidAdapter(new SharethroughAdapter(), 'sharethrough');
 
 module.exports = SharethroughAdapter;

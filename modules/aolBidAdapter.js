@@ -332,7 +332,7 @@ const AolAdapter = function AolAdapter() {
   });
 };
 
-adaptermanager.registerBidAdapter(new AolAdapter, AOL_BIDDERS_CODES.aol);
+adaptermanager.registerBidAdapter(new AolAdapter(), AOL_BIDDERS_CODES.aol);
 adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onedisplay);
 adaptermanager.aliasBidAdapter(AOL_BIDDERS_CODES.aol, AOL_BIDDERS_CODES.onemobile);
 

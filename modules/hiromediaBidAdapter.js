@@ -370,6 +370,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    */
 };
 
-adaptermanager.registerBidAdapter(new HiroMediaAdapter, 'hiromedia');
+adaptermanager.registerBidAdapter(new HiroMediaAdapter(), 'hiromedia');
 
 module.exports = HiroMediaAdapter;

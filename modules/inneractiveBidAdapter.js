@@ -459,6 +459,6 @@ class InnerActiveAdapter {
   }
 }
 
-adaptermanager.registerBidAdapter(new InnerActiveAdapter, 'inneractive');
+adaptermanager.registerBidAdapter(new InnerActiveAdapter(), 'inneractive');
 
 module.exports = InnerActiveAdapter;

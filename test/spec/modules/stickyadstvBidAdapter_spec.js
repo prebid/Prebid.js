@@ -124,9 +124,9 @@ describe('StickyAdsTV Adapter', function () {
       delete window.com.stickyadstv;
     });
 
-    it('should have returned a valid bidObject', function () {
+    it('should return a valid bidObject', function () {
       expect(bidResponse).to.have.property('cpm', 4.000);
-      expect(bidResponse).to.have.property('ad', "<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast};topWindow.com.stickyadstv.screenroll.start(config);</script>");
+      expect(bidResponse).to.have.property('ad', "<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache[\"foo\"];var config = {  preloadedVast:vast,  ASLoader:topWindow.stickyadstv_asLoader,domId:\"foo\"};topWindow.com.stickyadstv.screenroll.start(config);</script>");
       expect(bidResponse).to.have.property('bidderCode', 'stickyadstv');
       expect(bidResponse).to.have.property('currencyCode', 'USD');
       expect(bidResponse).to.have.property('width', 300);
@@ -173,24 +173,24 @@ describe('StickyAdsTV Adapter', function () {
     it('should create an inBanner ad format', function () {
       let result = adapter.formatAdHTML({placementCode: 'placementCodeValue', params: {}}, [200, 300]);
 
-      expect(result).to.equal('<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);ad.initAd(200,300,"",0,"","");</script>');
+      expect(result).to.equal('<div id="stickyadstv_prebid_target"></div><script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  autoPlay:true};var ad = new topWindow.com.stickyadstv.vpaid.Ad(document.getElementById("stickyadstv_prebid_target"),config);if(topWindow.stickyadstv_asLoader) topWindow.stickyadstv_asLoader.registerEvents(ad);ad.initAd(200,300,"",0,"","");</script>');
     });
 
     it('should create an intext ad format', function () {
       let result = adapter.formatAdHTML({placementCode: 'placementCodeValue', params: {format: 'intext-roll', auto: 'v2', smartPlay: 'true'}}, [200, 300]);
 
-      expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,auto:"v2",smartPlay:"true"};topWindow.com.stickyadstv.intextroll.start(config);</script>');
+      expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  ASLoader:topWindow.stickyadstv_asLoader,auto:"v2",smartPlay:"true"};topWindow.com.stickyadstv.intextroll.start(config);</script>');
     });
 
     it('should create a screenroll ad format', function () {
       let result = adapter.formatAdHTML({placementCode: 'placementCodeValue', params: {format: 'screen-roll', smartPlay: 'true'}}, [200, 300]);
 
-      expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,smartPlay:"true"};topWindow.com.stickyadstv.screenroll.start(config);</script>');
+      expect(result).to.equal('<script type=\'text/javascript\'>var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();var vast =  topWindow.stickyadstv_cache["placementCodeValue"];var config = {  preloadedVast:vast,  ASLoader:topWindow.stickyadstv_asLoader,smartPlay:"true",domId:"placementCodeValue"};topWindow.com.stickyadstv.screenroll.start(config);</script>');
     });
   });
 
   describe('getBiggerSize', function () {
-    it('should returns the bigger size', function () {
+    it('should return the bigger size', function () {
       let result = adapter.getBiggerSize([[1, 4000], [4000, 1], [200, 300], [0, 0]]);
 
       expect(result[0]).to.equal(200);
@@ -199,10 +199,27 @@ describe('StickyAdsTV Adapter', function () {
   });
 
   describe('top most window', function () {
-    it('should returns the top most window', function () {
+    it('should return the top most window', function () {
       let result = adapter.getTopMostWindow();
 
       expect(result).to.equal(window.top);
+    });
+  });
+
+  describe('get component id', function() {
+    it('should return valid component ids', function() {
+      expect(adapter.getComponentId('inbanner')).to.equal('mustang');
+      expect(adapter.getComponentId('intext-roll')).to.equal('intext-roll');
+      expect(adapter.getComponentId('screen-roll')).to.equal('screen-roll');
+    });
+  });
+
+  describe('get API name', function() {
+    it('should return valid API names', function() {
+      expect(adapter.getAPIName()).to.equal('');
+      expect(adapter.getAPIName('intext-roll')).to.equal('intextroll');
+      expect(adapter.getAPIName('screen-roll')).to.equal('screenroll');
+      expect(adapter.getAPIName('floorad')).to.equal('floorad');
     });
   });
 });
