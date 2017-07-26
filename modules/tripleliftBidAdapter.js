@@ -128,6 +128,6 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new TripleLiftAdapter, 'triplelift');
+adaptermanager.registerBidAdapter(new TripleLiftAdapter(), 'triplelift');
 
 module.exports = TripleLiftAdapter;

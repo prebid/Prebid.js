@@ -112,6 +112,6 @@ function WidespaceAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new WidespaceAdapter, 'widespace');
+adaptermanager.registerBidAdapter(new WidespaceAdapter(), 'widespace');
 
 module.exports = WidespaceAdapter;

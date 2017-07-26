@@ -106,11 +106,11 @@ function HuddledMassesAdapter() {
     ];
 
     return queryString.reduce(
-            (memo, curr, index) =>
-                index % 2 === 0 && queryString[index + 1] !== undefined
-                ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
-                    : memo,
-            '//huddledmassessupply.com/?'
+      (memo, curr, index) =>
+        index % 2 === 0 && queryString[index + 1] !== undefined
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+          : memo,
+      '//huddledmassessupply.com/?'
     ).slice(0, -1);
   }
 
@@ -129,7 +129,7 @@ function HuddledMassesAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(Adapter.createNew(BIDDER_CODE), {      // BIDDER_CODE huddledmasses
+  return Object.assign(Adapter.createNew(BIDDER_CODE), { // BIDDER_CODE huddledmasses
     callBids: _callBids,
     createNew: HuddledMassesAdapter.createNew
   });
@@ -138,35 +138,35 @@ function HuddledMassesAdapter() {
 HuddledMassesAdapter.masSizeOrdering = function (sizes) {
   var MAS_SIZE_PRIORITY = [15, 2, 9];
   return utils.parseSizesInput(sizes)
-        .reduce((result, size) => {
-          var mappedSize = parseInt(sizeObj[size], 10);
-          if (mappedSize) {
-            result.push(mappedSize);
-          }
-          return result;
-        }, [])
-        .sort((first, second) => {
-          var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-          var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    .reduce((result, size) => {
+      var mappedSize = parseInt(sizeObj[size], 10);
+      if (mappedSize) {
+        result.push(mappedSize);
+      }
+      return result;
+    }, [])
+    .sort((first, second) => {
+      var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
-          if (firstPriority > -1 || secondPriority > -1) {
-            if (firstPriority === -1) {
-              return 1;
-            }
-            if (secondPriority === -1) {
-              return -1;
-            }
-            return firstPriority - secondPriority;
-          }
+      if (firstPriority > -1 || secondPriority > -1) {
+        if (firstPriority === -1) {
+          return 1;
+        }
+        if (secondPriority === -1) {
+          return -1;
+        }
+        return firstPriority - secondPriority;
+      }
 
-          return first - second;
-        });
+      return first - second;
+    });
 };
 
 HuddledMassesAdapter.createNew = function () {
   return new HuddledMassesAdapter();
 };
 
-adaptermanager.registerBidAdapter(new HuddledMassesAdapter, 'huddledmasses');
+adaptermanager.registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');
 
 module.exports = HuddledMassesAdapter;
