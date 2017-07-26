@@ -57,4 +57,27 @@ describe('config API', () => {
     sinon.assert.calledOnce(listener);
     sinon.assert.calledWith(listener, { foo: 'bar' });
   });
+
+  it('subscribers can subscribe to topics', () => {
+    const listener = sinon.spy();
+
+    subscribe('logging', listener);
+    setConfig({ logging: true, foo: 'bar' });
+
+    sinon.assert.calledOnce(listener);
+    sinon.assert.calledWithExactly(listener, { logging: true });
+  });
+
+  it('topic subscribers are only called when that topic is changed', () => {
+    const listener = sinon.spy();
+    const wildcard = sinon.spy();
+
+    subscribe('subject', listener);
+    subscribe(wildcard);
+
+    setConfig({ foo: 'bar' });
+
+    sinon.assert.notCalled(listener);
+    sinon.assert.calledOnce(wildcard);
+  });
 });

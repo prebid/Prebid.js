@@ -15,6 +15,8 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
 
+const ALL_TOPICS = '*';
+
 let listeners = [];
 
 let config = {
@@ -99,22 +101,56 @@ export function setConfig(options) {
   }
 
   Object.assign(config, options);
-  listeners.forEach(listener => listener(options));
+  callSubscribers(options);
 }
 
 /*
  * Adds a function to a set of listeners that are invoked whenever `setConfig`
  * is called. The subscribed function will be passed the options object that
- * was used in the `setConfig` call.
+ * was used in the `setConfig` call. Topics can be subscribed to to only get
+ * updates when specific properties are updated by passing a topic string as
+ * the first parameter.
  *
  * Example use:
+ * // subscribe to all configuration changes
  * subscribe((config) => console.log('config set:', config));
- * subscribe(({ debug }) => debug ? console.log('debug set:', debug) : '');
+ *
+ * // subscribe to only 'logging' changes
+ * subscribe('logging', (config) => console.log('logging set:', config));
  */
-export function subscribe(listener) {
-  if (typeof listener !== 'function') {
+export function subscribe(topic, listener) {
+  let callback = listener;
+
+  if (typeof topic !== 'string') {
+    // first param should be callback function in this case,
+    // meaning it gets called for any config change
+    callback = topic;
+    topic = ALL_TOPICS;
+  }
+
+  if (typeof callback !== 'function') {
     utils.logError('listener must be a function');
     return;
   }
-  listeners.push(listener);
+
+  listeners.push({ topic, callback });
+}
+
+/*
+ * Calls listeners that were added by the `subscribe` function
+ */
+function callSubscribers(options) {
+  const TOPICS = Object.keys(options);
+
+  // call subscribers of a specific topic, passing only that configuration
+  listeners
+    .filter(listener => TOPICS.includes(listener.topic))
+    .forEach(listener => {
+      listener.callback({ [listener.topic]: options[listener.topic] });
+    });
+
+  // call subscribers that didn't give a topic, passing everything that was set
+  listeners
+    .filter(listener => listener.topic === ALL_TOPICS)
+    .forEach(listener => listener.callback(options));
 }
