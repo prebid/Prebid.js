@@ -140,7 +140,7 @@ function RubiconAdapter() {
 
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
-      let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
+      let digiTrustUser = window.DigiTrust && (pbjs.digiTrustId || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
       return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
     }
     let digiTrustId = getDigiTrustId();
@@ -340,7 +340,8 @@ function RubiconAdapter() {
       // store bid response
       // bid status is good (indicating 1)
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-      bid.creative_id = ad.ad_id;
+      bid.currency = 'USD';
+      bid.creative_id = ad.creative_id;
       bid.bidderCode = bidRequest.bidder;
       bid.cpm = ad.cpm || 0;
       bid.dealId = ad.deal;
