@@ -22,6 +22,34 @@ let getDefaultBidResponse = () => {
   };
 };
 
+let getMarketplaceBidParams = () => {
+  return {
+    placement: 1234567,
+    network: '9599.1'
+  };
+};
+
+let getNexageGetBidParams = () => {
+  return {
+    dcn: '2c9d2b50015c5ce9db6aeeed8b9500d6',
+    pos: 'header'
+  };
+};
+
+let getNexagePostBidParams = () => {
+  return {
+    id: 'id-1',
+    imp: [{
+      id: 'id-2',
+      banner: {
+        w: '100',
+        h: '100'
+      },
+      tagid: 'header1'
+    }]
+  };
+};
+
 let getDefaultBidRequest = () => {
   return {
     bidderCode: 'aol',
@@ -34,15 +62,15 @@ let getDefaultBidRequest = () => {
       bidderRequestId: '7101db09af0db2',
       requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
       placementCode: 'foo',
-      params: {
-        placement: 1234567,
-        network: '9599.1'
-      }
+      params: getMarketplaceBidParams()
     }]
   };
 };
 
 describe('AolAdapter', () => {
+  const MARKETPLACE_URL = 'adserver-us.adtech.advertising.com/pubapi/3.0/';
+  const NEXAGE_URL = 'hb.nexage.com/bidRequest?';
+
   let adapter;
 
   beforeEach(() => adapter = new AolAdapter());
@@ -83,7 +111,57 @@ describe('AolAdapter', () => {
 
         it('should hit the Marketplace api endpoint with the Marketplace config', () => {
           adapter.callBids(getDefaultBidRequest());
-          expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+          expect(requests[0].url).to.contain(MARKETPLACE_URL);
+        });
+
+        it('should hit the Marketplace via onedisplay bidder code', () => {
+          let bidRequest = createBidderRequest({
+            bids: [{
+              bidder: 'onedisplay'
+            }],
+            params: getMarketplaceBidParams()
+          });
+
+          adapter.callBids(bidRequest);
+          expect(requests[0].url).to.contain(MARKETPLACE_URL);
+        });
+
+        it('should hit the Marketplace via onedisplay bidder code when Marketplace and Nexage params are present', () => {
+          let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams());
+          let bidRequest = createBidderRequest({
+            bids: [{
+              bidder: 'onedisplay'
+            }],
+            params: bidParams
+          });
+
+          adapter.callBids(bidRequest);
+          expect(requests[0].url).to.contain(MARKETPLACE_URL);
+        });
+
+        it('should hit the Marketplace via onedisplay bidder code when Nexage params are present', () => {
+          let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams(), getNexagePostBidParams());
+          let bidRequest = createBidderRequest({
+            bids: [{
+              bidder: 'onedisplay'
+            }],
+            params: bidParams
+          });
+
+          adapter.callBids(bidRequest);
+          expect(requests[0].url).to.contain(MARKETPLACE_URL);
+        });
+
+        it('should not resolve endpoint for onedisplay bidder code when only Nexage params are present', () => {
+          let bidParams = Object.assign(getNexageGetBidParams(), getNexagePostBidParams());
+
+          adapter.callBids(createBidderRequest({
+            bids: [{
+              bidder: 'onedisplay'
+            }],
+            params: bidParams
+          }));
+          expect(requests.length).to.equal(0);
         });
 
         it('should hit endpoint based on the region config option', () => {
@@ -105,7 +183,7 @@ describe('AolAdapter', () => {
               region: 'an'
             }
           }));
-          expect(requests[0].url).to.contain('adserver-us.adtech.advertising.com/pubapi/3.0/');
+          expect(requests[0].url).to.contain(MARKETPLACE_URL);
         });
 
         it('should hit endpoint based on the server config option', () => {
@@ -238,33 +316,61 @@ describe('AolAdapter', () => {
 
         it('should hit the nexage api endpoint with the nexage config', () => {
           adapter.callBids(createBidderRequest({
-            params: {
-              dcn: '11223344',
-              pos: 'header-2324'
-            }
+            params: getNexageGetBidParams()
           }));
-          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?');
+
+          expect(requests[0].url).to.contain(NEXAGE_URL);
         });
 
         it('should hit the nexage api custom endpoint if specified in the nexage config', () => {
+          let bidParams = Object.assign({
+            host: 'qa-hb.nexage.com'
+          }, getNexageGetBidParams());
+
           adapter.callBids(createBidderRequest({
-            params: {
-              host: 'qa-hb.nexage.com',
-              dcn: '11223344',
-              pos: 'header-2324'
-            }
+            params: bidParams
           }));
           expect(requests[0].url).to.contain('qa-hb.nexage.com/bidRequest?');
         });
 
+        it('should hit nexage api when nexage and marketplace params are present', () => {
+          let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+
+          adapter.callBids(createBidderRequest({
+            params: bidParams
+          }));
+          expect(requests[0].url).to.contain(NEXAGE_URL);
+        });
+
+        it('should hit nexage api via onemobile bidder code when nexage and marketplace params are present', () => {
+          let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+
+          adapter.callBids(createBidderRequest({
+            bids: [{
+              bidder: 'onemobile'
+            }],
+            params: bidParams
+          }));
+          expect(requests[0].url).to.contain(NEXAGE_URL);
+        });
+
+        it('should not resolve endpoint for onemobile bidder code when only Marketplace params are present', () => {
+          adapter.callBids(createBidderRequest({
+            bids: [{
+              bidder: 'onemobile'
+            }],
+            params: getMarketplaceBidParams()
+          }));
+
+          expect(requests.length).to.equal(0);
+        });
+
         it('should contain required params - dcn & pos', () => {
           adapter.callBids(createBidderRequest({
-            params: {
-              dcn: '54321123',
-              pos: 'footer-2324'
-            }
+            params: getNexageGetBidParams()
           }));
-          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324');
+
+          expect(requests[0].url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
         });
 
         it('should contain cmd=bid by default', () => {
@@ -295,38 +401,21 @@ describe('AolAdapter', () => {
         });
 
         it('should hit the nexage api endpoint with post data with the openrtb config', () => {
-          let bidConfig = {
-            id: 'id-1',
-            imp: [{
-              id: 'id-2',
-              banner: {
-                w: '100',
-                h: '100'
-              },
-              tagid: 'header1'
-            }]
-          };
+          let bidConfig = getNexagePostBidParams();
+
           adapter.callBids(createBidderRequest({
             params: bidConfig
           }));
-          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?');
+          expect(requests[0].url).to.contain(NEXAGE_URL);
           expect(requests[0].requestBody).to.deep.equal(bidConfig);
           expect(requests[0].requestHeaders).to.have.property('x-openrtb-version');
         });
 
         it('should not hit the nexage api endpoint with post data with the openrtb config' +
           ' if a required parameter is missing', () => {
-          let bidConfig = {
-            id: 'id-1',
-            imp: [{
-              // id: 'id-2',
-              banner: {
-                w: '100',
-                h: '100'
-              },
-              tagid: 'header1'
-            }]
-          };
+          let bidConfig = getNexagePostBidParams();
+
+          bidConfig.imp[0].id = null;
           adapter.callBids(createBidderRequest({
             params: bidConfig
           }));

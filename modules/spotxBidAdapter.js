@@ -17,9 +17,9 @@ function Spotx() {
     }
     bidReq = bidRequest.bids[0] || [];
 
-    if(!validateParams(bidReq))
+    if (!validateParams(bidReq))
     {
-      console.log("Bid Request does not contain valid parameters.");
+      console.log('Bid Request does not contain valid parameters.');
       return;
     }
 
@@ -99,7 +99,7 @@ function Spotx() {
     return bid;
   }
 
-    /* Notify Prebid of bid responses so bids can get in the auction */
+  /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response) {
     if (!response || !response.bids || !response.bids.length) {
       bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.NO_BID));
@@ -109,14 +109,14 @@ function Spotx() {
     }
   }
 
-  function validateParams(request){
-    if(typeof request.params !== "object" && typeof request.params.video !== "object")
+  function validateParams(request) {
+    if (typeof request.params !== 'object' && typeof request.params.video !== 'object')
     {
       return false;
     }
 
     // Check that all of our required parameters are defined.
-    if(bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined)
+    if (bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined)
     {
       return false;
     }
@@ -134,7 +134,7 @@ Spotx.createNew = function() {
   return new Spotx();
 };
 
-adaptermanager.registerBidAdapter(new Spotx, 'spotx', {
+adaptermanager.registerBidAdapter(new Spotx(), 'spotx', {
   supportedMediaTypes: ['video']
 });
 

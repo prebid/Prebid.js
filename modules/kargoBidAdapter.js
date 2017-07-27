@@ -164,6 +164,6 @@ const KargoAdapter = function KargoAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new KargoAdapter, 'kargo');
+adaptermanager.registerBidAdapter(new KargoAdapter(), 'kargo');
 
 module.exports = KargoAdapter;

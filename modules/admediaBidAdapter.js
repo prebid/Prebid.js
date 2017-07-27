@@ -57,6 +57,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       request_obj.siteRef = document.referrer;
       request_obj.topUrl = utils.getTopWindowUrl();
 
+      request_obj.callback = '$$PREBID_GLOBAL$$';
       request_obj.callbackId = bid.bidId;
 
       var endpoint = bidderUrl + utils.parseQueryStringParameters(request_obj);
@@ -100,6 +101,6 @@ var AdmediaAdapter = function AdmediaAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdmediaAdapter, 'admedia');
+adaptermanager.registerBidAdapter(new AdmediaAdapter(), 'admedia');
 
 module.exports = AdmediaAdapter;

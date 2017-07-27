@@ -162,6 +162,6 @@ function AdformAdapter() {
   }
 }
 
-adaptermanager.registerBidAdapter(new AdformAdapter, 'adform');
+adaptermanager.registerBidAdapter(new AdformAdapter(), 'adform');
 
 module.exports = AdformAdapter;
