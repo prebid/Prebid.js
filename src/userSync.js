@@ -48,7 +48,9 @@ function fireSyncs() {
     if (!userSyncConfig.pixelEnabled) {
       return;
     }
-    // Fire image pixels
+    // Randomize the order of the pixels before firing
+    // This is to avoid giving any bidder who has registered multiple syncs
+    // any preferential treatment and balancing them out
     utils.shuffle(queue.image).forEach((sync) => {
       let bidderName = sync[0];
       let trackingPixelUrl = sync[1];
