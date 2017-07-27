@@ -64,6 +64,6 @@ var adBundAdapter = function adBundAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new adBundAdapter, 'adbund');
+adaptermanager.registerBidAdapter(new adBundAdapter(), 'adbund');
 
 module.exports = adBundAdapter;

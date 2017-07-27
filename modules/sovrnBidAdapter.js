@@ -104,7 +104,7 @@ var SovrnAdapter = function SovrnAdapter() {
 
           // try to fetch the bid request we sent Sovrn
           var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-          .find(bid => bid.bidId === id);
+            .find(bid => bid.bidId === id);
 
           if (bidObj) {
             placementCode = bidObj.placementCode;
@@ -158,6 +158,6 @@ var SovrnAdapter = function SovrnAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SovrnAdapter, 'sovrn');
+adaptermanager.registerBidAdapter(new SovrnAdapter(), 'sovrn');
 
 module.exports = SovrnAdapter;

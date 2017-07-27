@@ -104,12 +104,12 @@ describe('memeglobal adapter tests', function () {
       $$PREBID_GLOBAL$$.mgres(response);
 
       expect(stubAddBidResponse.getCall(0)).to.equal(null);
-//      var bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
-//      expect(bidPlacementCode).to.equal('test-1');
-//
-//      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-//      expect(bidObject1.getStatusCode()).to.equal(2);
-//      expect(bidObject1.bidderCode).to.equal('memeglobal');
+      //      var bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
+      //      expect(bidPlacementCode).to.equal('test-1');
+      //
+      //      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
+      //      expect(bidObject1.getStatusCode()).to.equal(2);
+      //      expect(bidObject1.bidderCode).to.equal('memeglobal');
 
       stubAddBidResponse.calledThrice;
       stubAddBidResponse.restore();

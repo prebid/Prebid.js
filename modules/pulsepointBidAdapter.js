@@ -80,6 +80,6 @@ var PulsePointAdapter = function PulsePointAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new PulsePointAdapter, 'pulsepoint');
+adaptermanager.registerBidAdapter(new PulsePointAdapter(), 'pulsepoint');
 
 module.exports = PulsePointAdapter;

@@ -150,7 +150,8 @@ function RubiconAdapter() {
     }
     return [
       'dt.id', digiTrustId.id,
-      'dt.keyv', digiTrustId.keyv
+      'dt.keyv', digiTrustId.keyv,
+      'dt.pref', 0
     ];
   }
 
@@ -170,7 +171,7 @@ function RubiconAdapter() {
         params.video.playerHeight
       ];
     } else if (
-        Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
+      Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
         Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
     ) {
       size = bid.sizes[0];
@@ -293,7 +294,7 @@ function RubiconAdapter() {
     return queryString.reduce(
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
-        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
       FASTLANE_ENDPOINT + '?'
     ).slice(0, -1); // remove trailing &
   }
@@ -415,7 +416,7 @@ RubiconAdapter.createNew = function() {
   return new RubiconAdapter();
 };
 
-adaptermanager.registerBidAdapter(new RubiconAdapter, RUBICON_BIDDER_CODE, {
+adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
   supportedMediaTypes: ['video']
 });
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');

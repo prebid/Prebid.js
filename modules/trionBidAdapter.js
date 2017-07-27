@@ -130,6 +130,6 @@ TrionAdapter.createNew = function () {
   return new TrionAdapter();
 };
 
-adaptermanager.registerBidAdapter(new TrionAdapter, 'trion');
+adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');
 
 module.exports = TrionAdapter;
