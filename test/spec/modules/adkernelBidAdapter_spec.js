@@ -36,31 +36,60 @@ describe('Adkernel adapter', () => {
       params: {zoneId: 1},
       placementCode: 'ad-unit-1',
       sizes: [[728, 90]]
+    }, bid_video = {
+      bidder: 'adkernel',
+      bidId: 'Bid_Video',
+      sizes: [640, 480],
+      mediaType: 'video',
+      params: {
+        zoneId: 1,
+        host: 'rtb.adkernel.com',
+        video: {
+          mimes: ['video/mp4', 'video/webm', 'video/x-flv']
+        }
+      },
+      placementCode: 'ad-unit-1'
     };
 
   const bidResponse1 = {
-      'id': 'bid1',
-      'seatbid': [{
-        'bid': [{
-          'id': '1',
-          'impid': 'Bid_01',
-          'price': 3.01,
-          'nurl': 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
-          'adm': '<!-- admarkup here -->'
+      id: 'bid1',
+      seatbid: [{
+        bid: [{
+          id: '1',
+          impid: 'Bid_01',
+          price: 3.01,
+          nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
+          adm: '<!-- admarkup here -->'
         }]
       }],
-      'cur': 'USD'
+      cur: 'USD'
     }, bidResponse2 = {
-      'id': 'bid2',
-      'seatbid': [{
-        'bid': [{
-          'id': '2',
-          'impid': 'Bid_02',
-          'price': 1.31,
-          'adm': '<!-- admarkup here -->'
+      id: 'bid2',
+      seatbid: [{
+        bid: [{
+          id: '2',
+          impid: 'Bid_02',
+          price: 1.31,
+          adm: '<!-- admarkup here -->'
         }]
       }],
-      'cur': 'USD'
+      cur: 'USD'
+    }, videoBidResponse = {
+      id: '47ce4badcf7482',
+      seatbid: [{
+        bid: [{
+          id: 'sZSYq5zYMxo_0',
+          impid: 'Bid_Video',
+          price: 0.00145,
+          adid: '158801',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
+          cid: '16855',
+          crid: '158801',
+          w: 600,
+          h: 400
+        }]
+      }],
+      cur: 'USD'
     };
 
   let adapter,
@@ -113,7 +142,7 @@ describe('Adkernel adapter', () => {
     });
   });
 
-  describe('request building', () => {
+  describe('banner request building', () => {
     let bidRequest;
 
     beforeEach(() => {
@@ -150,7 +179,6 @@ describe('Adkernel adapter', () => {
     });
 
     it('should have tagid', () => {
-      // console.warn(bidRequest.imp[0]);
       expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
 
@@ -164,6 +192,38 @@ describe('Adkernel adapter', () => {
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
     })
+  });
+
+  describe('video request building', () => {
+    let bidRequest;
+
+    beforeEach(() => {
+      sandbox.stub(utils, 'getTopWindowLocation', () => {
+        return {
+          protocol: 'https:',
+          hostname: 'example.com',
+          host: 'example.com',
+          pathname: '/index.html',
+          href: 'http://example.com/index.html'
+        };
+      });
+      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(videoBidResponse));
+      doRequest([bid_video]);
+      bidRequest = JSON.parse(decodeURIComponent(ajaxStub.getCall(0).args[2].r));
+    });
+
+    it('should have video object', () => {
+      expect(bidRequest.imp[0]).to.have.property('video');
+    });
+
+    it('should have h/w', () => {
+      expect(bidRequest.imp[0].video).to.have.property('w', 640);
+      expect(bidRequest.imp[0].video).to.have.property('h', 480);
+    });
+
+    it('should have tagid', () => {
+      expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
+    });
   });
 
   describe('requests routing', () => {
@@ -210,6 +270,20 @@ describe('Adkernel adapter', () => {
       expect(bidResponse.height).to.equal(250);
     });
 
+    it('should return fully-initialized video bid-response', () => {
+      ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(videoBidResponse));
+      doRequest([bid_video]);
+      let bidResponse = bidmanager.addBidResponse.firstCall.args[1];
+      expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('ad-unit-1');
+      expect(bidResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+      expect(bidResponse.mediaType).to.equal('video');
+      expect(bidResponse.bidderCode).to.equal('adkernel');
+      expect(bidResponse.cpm).to.equal(0.00145);
+      expect(bidResponse.vastUrl).to.equal('https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl');
+      expect(bidResponse.width).to.equal(600);
+      expect(bidResponse.height).to.equal(400);
+    });
+
     it('should map responses to proper ad units', () => {
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
       ajaxStub.onCall(1).callsArgWith(1, JSON.stringify(bidResponse2));
@@ -234,7 +308,7 @@ describe('Adkernel adapter', () => {
       expect(bidmanager.addBidResponse.secondCall.args[0]).to.equal('ad-unit-2');
     });
 
-    it('should add nurl as pixel', () => {
+    it('should add nurl as pixel for banner response', () => {
       sandbox.spy(utils, 'createTrackPixelHtml');
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
       doRequest([bid1_zone1]);

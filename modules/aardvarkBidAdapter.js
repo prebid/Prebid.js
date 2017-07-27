@@ -42,7 +42,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
 
       bidIds.push(_sc + '=' + bid.bidId);
 
-        // Create the bidIdsMap for easier mapping back later
+      // Create the bidIdsMap for easier mapping back later
       $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bid.bidId] = bid;
     }
 
@@ -124,6 +124,6 @@ exports.createNew = function() {
   return new AardvarkAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AardvarkAdapter, 'aardvark');
+adaptermanager.registerBidAdapter(new AardvarkAdapter(), 'aardvark');
 
 module.exports = AardvarkAdapter;

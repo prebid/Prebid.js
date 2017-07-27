@@ -216,6 +216,6 @@ function WideOrbitAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new WideOrbitAdapter, 'wideorbit');
+adaptermanager.registerBidAdapter(new WideOrbitAdapter(), 'wideorbit');
 
 module.exports = WideOrbitAdapter;

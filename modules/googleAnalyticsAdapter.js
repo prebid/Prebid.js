@@ -22,11 +22,6 @@ var _enableDistribution = false;
 var _trackerSend = null;
 var _sampled = true;
 
-adaptermanager.registerAnalyticsAdapter({
-  adapter: exports,
-  code: 'ga'
-});
-
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
  * @param  {object} provider use to set GA global (if renamed);
@@ -256,3 +251,8 @@ function sendBidWonToGa(bid) {
 
   checkAnalytics();
 }
+
+adaptermanager.registerAnalyticsAdapter({
+  adapter: exports,
+  code: 'ga'
+});

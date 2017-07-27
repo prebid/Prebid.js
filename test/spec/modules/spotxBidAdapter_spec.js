@@ -139,48 +139,89 @@ describe('spotx adapter tests', () => {
       adLoader.loadScript.restore();
     });
 
-    it('should add bid response on success', (done) => {
-      sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
-        expect(placementCode).to.equal('video1');
-        expect(bid.bidderCode).to.equal('spotx');
-        expect(bid.cpm).to.equal(20);
-        expect(bid.mediaType).to.equal('video');
-        expect(bid.statusMessage).to.equal('Bid available');
-        expect(bid.vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=' + CACHE_KEY);
+    describe('bid response tests', () => {
+      let loadScriptStub;
+      let getAdServerKVPsStub;
 
-        bidManager.addBidResponse.restore();
-        done();
+      before(() => {
+        let response = {
+          spotx_bid: 20,
+          spotx_ad_key: CACHE_KEY
+        };
+
+        getAdServerKVPsStub = sinon.stub();
+        getAdServerKVPsStub.onCall(0).returns({
+          then: function (successCb) {
+            return successCb(response);
+          }
+        });
+
+        getAdServerKVPsStub.onCall(1).returns({
+          then: function (successCb, failureCb) {
+            return failureCb();
+          }
+        });
+
+        window.SpotX = {
+          DirectAdOS: function(options) {
+            return {
+              getAdServerKVPs: getAdServerKVPsStub
+            }
+          }
+        };
+
+        loadScriptStub = sinon.stub(adLoader, 'loadScript', function(url, callback) {
+          callback();
+        });
       });
 
-      server.respondWith((request) => {
-        if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
-          request.respond(200, {}, xhrResponse);
-        }
+      after(() => {
+        loadScriptStub.restore();
       });
 
-      adapter.callBids(bidRequest);
-    });
+      it('should add bid response on success', (done) => {
+        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
+          expect(placementCode).to.equal('video1');
+          expect(bid.bidderCode).to.equal('spotx');
+          expect(bid.cpm).to.equal(20);
+          expect(bid.mediaType).to.equal('video');
+          expect(bid.statusMessage).to.equal('Bid available');
+          expect(bid.vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=' + CACHE_KEY);
 
-    it('should add failed bid response on error', (done) => {
-      sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
-        expect(placementCode).to.equal('video1');
-        expect(bid.bidderCode).to.equal('spotx');
-        expect(bid.statusMessage).to.equal('Bid returned empty or error response');
-        expect(bid.cpm).to.be.undefined;
-        expect(bid.mediaType).to.be.undefined;
-        expect(bid.vastUrl).to.be.undefined;
+          bidManager.addBidResponse.restore();
+          done();
+        });
 
-        bidManager.addBidResponse.restore();
-        done();
+        server.respondWith((request) => {
+          if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
+            request.respond(200, {}, xhrResponse);
+          }
+        });
+
+        adapter.callBids(bidRequest);
       });
 
-      server.respondWith((request) => {
-        if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
-          request.respond(204, {}, '');
-        }
-      });
+      it('should add failed bid response on error', (done) => {
+        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
+          expect(placementCode).to.equal('video1');
+          expect(bid.bidderCode).to.equal('spotx');
+          expect(bid.statusMessage).to.equal('Bid returned empty or error response');
+          expect(bid.cpm).to.be.undefined;
+          expect(bid.mediaType).to.be.undefined;
+          expect(bid.vastUrl).to.be.undefined;
 
-      adapter.callBids(bidRequest);
+          bidManager.addBidResponse.restore();
+          done();
+        });
+
+        server.respondWith((request) => {
+          if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
+            request.respond(204, {}, '');
+          }
+        });
+
+        adapter.callBids(bidRequest);
+      });
     });
   });
 });

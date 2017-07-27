@@ -199,6 +199,6 @@ AdyoulikeAdapter.createNew = function () {
   return new AdyoulikeAdapter();
 };
 
-adaptermanager.registerBidAdapter(new AdyoulikeAdapter, 'adyoulike');
+adaptermanager.registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');
 
 module.exports = AdyoulikeAdapter;

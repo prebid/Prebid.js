@@ -64,6 +64,6 @@ var JCMAdapter = function JCMAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new JCMAdapter, 'jcm');
+adaptermanager.registerBidAdapter(new JCMAdapter(), 'jcm');
 
 module.exports = JCMAdapter;

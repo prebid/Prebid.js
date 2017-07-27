@@ -14,7 +14,8 @@ const CONFIG = {
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
   callBids: sinon.stub(),
-  setConfig: sinon.stub()
+  setConfig: sinon.stub(),
+  queueSync: sinon.stub()
 };
 
 describe('adapterManager tests', () => {

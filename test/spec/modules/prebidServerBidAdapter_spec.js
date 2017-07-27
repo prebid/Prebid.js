@@ -343,13 +343,25 @@ describe('S2S Adapter', () => {
       sinon.assert.calledTwice(userSync.registerSync);
     });
 
-    it('persist cookie sync when no_cookie response', () => {
+    it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledOnce(cookie.persist);
+      sinon.assert.notCalled(cookie.cookieSet);
+    });
+
+    it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
+      let config = Object.assign({
+        cookieSet: true
+      }, CONFIG);
+
+      adapter.setConfig(config);
+      adapter.callBids(REQUEST);
+      server.respond();
+      sinon.assert.calledOnce(cookie.cookieSet);
     });
   });
 });
