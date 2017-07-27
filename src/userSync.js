@@ -1,6 +1,12 @@
 import * as utils from 'src/utils';
 
 const userSync = exports;
+// Set user sync config default values which can be overridden by the publisher
+const userSyncDefaultConfig = {
+  pixelEnabled: true,
+  syncsPerBidder: 5
+}
+
 // A queue of user syncs for each adapter
 // Let setQueue() set the defaults
 let queue;
@@ -12,14 +18,10 @@ let cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
 let hasFired = false;
 // How many bids for each adapter
 let numAdapterBids = {};
-// Set user sync config default values which can be overridden by the publisher
-const userSyncDefaultConfig = {
-  pixelEnabled: true,
-  syncDelay: 3000,
-  syncsPerBidder: 5
-}
+
 // Merge the defaults with the user-defined config
-$$PREBID_GLOBAL$$.userSync = Object.assign($$PREBID_GLOBAL$$.userSync || {}, userSyncDefaultConfig);
+let userSyncConfig = Object.assign($$PREBID_GLOBAL$$.userSync || {},
+  userSyncDefaultConfig);
 
 /**
  * @function setQueue
@@ -33,17 +35,6 @@ function setQueue() {
 }
 
 /**
- * @function getConfig
- * @summary Get the config value on the PBJS userSync object as proviced by the publisher
- * @private
- * @param {string} configKey The key on the userSync object for which you want a value
- * @return {multi} The value in the user sync config
- */
-function getConfig(configKey) {
-  return ($$PREBID_GLOBAL$$.userSync && $$PREBID_GLOBAL$$.userSync[configKey]) || null;
-}
-
-/**
  * @function fireSyncs
  * @summary Trigger all user syncs in the queue
  * @private
@@ -54,11 +45,11 @@ function fireSyncs() {
   }
 
   try {
-    if (!getConfig('pixelEnabled')) {
+    if (!userSyncConfig.pixelEnabled) {
       return;
     }
     // Fire image pixels
-    queue.image.forEach((sync) => {
+    utils.shuffle(queue.image).forEach((sync) => {
       let bidderName = sync[0];
       let trackingPixelUrl = sync[1];
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
@@ -147,7 +138,7 @@ userSync.registerSync = (type, bidder, ...data) => {
   if (!utils.isArray(queue[type])) {
     return utils.logWarn(`User sync type "{$type}" not supported`);
   }
-  if (Number(numAdapterBids[bidder]) >= getConfig('syncsPerBidder')) {
+  if (Number(numAdapterBids[bidder]) >= userSyncConfig.syncsPerBidder) {
     return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
   }
   queue[type].push([bidder, ...data]);
@@ -188,4 +179,6 @@ userSync.resetQueue = () => {
   hasFired = false;
   setQueue();
   numAdapterBids = {};
+  // Reset the userSyncConfig in case there are any changes, like with tests
+  userSyncConfig = Object.assign($$PREBID_GLOBAL$$.userSync || {}, userSyncDefaultConfig);
 };

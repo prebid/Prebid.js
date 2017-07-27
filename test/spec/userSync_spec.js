@@ -1,28 +1,30 @@
 import { expect } from 'chai';
 import userSync from '../../src/userSync';
 // Use require since we need to be able to write to these vars
-let utils = require('../../src/utils');
+const utils = require('../../src/utils');
 
-describe('user sync', () => {
+describe.only('user sync', () => {
   let createImgObjectStub;
   let logWarnStub;
   let timeoutStub;
+  let shuffleStub;
 
   beforeEach(() => {
     createImgObjectStub = sinon.stub(userSync, 'createImgObject');
     logWarnStub = sinon.stub(utils, 'logWarn');
-    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc, to) => { callbackFunc(); });
+    shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
+    timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
   });
 
   afterEach(() => {
     createImgObjectStub.restore();
     logWarnStub.restore();
+    shuffleStub.restore();
     timeoutStub.restore();
     userSync.resetQueue();
   });
 
   it('should register and fires a pixel URL', () => {
-    $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.not.be.null;
@@ -46,9 +48,10 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
     expect(createImgObjectStub.getCall(1)).to.not.be.null;
-    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/2');
+    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.include('http://example.com/');
+    expect(createImgObjectStub.getCall(2)).to.be.null;
   });
 
   it('should not register pixel URL since it is not supported', () => {
@@ -103,9 +106,24 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
     expect(createImgObjectStub.getCall(1)).to.not.be.null;
-    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/2');
+    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
     expect(createImgObjectStub.getCall(2)).to.be.null;
+  });
+
+  it('should balance out bidder requests', () => {
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
+    userSync.registerSync('image', 'atestBidder', 'http://example.com/3');
+    userSync.registerSync('image', 'btestBidder', 'http://example.com/2');
+    userSync.syncUsers();
+    // The stubbed shuffle function should just reverse the order
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/2');
+    expect(createImgObjectStub.getCall(1)).to.not.be.null;
+    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/3');
+    expect(createImgObjectStub.getCall(2)).to.not.be.null;
+    expect(createImgObjectStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(createImgObjectStub.getCall(3)).to.be.null;
   });
 });

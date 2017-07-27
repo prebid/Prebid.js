@@ -337,7 +337,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
   // Automatically trigger the user syncs if configured by the publisher
   if (!$$PREBID_GLOBAL$$.userSync.enableOverride) {
     // Delay the auto sync by the config delay
-    syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay);
+    syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay || 3000);
   }
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {

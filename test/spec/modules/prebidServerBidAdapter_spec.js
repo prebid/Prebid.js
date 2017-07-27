@@ -4,6 +4,7 @@ import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
+import userSync from 'src/userSync';
 
 let CONFIG = {
   accountId: '1',
@@ -183,7 +184,7 @@ describe('S2S Adapter', () => {
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
-      sinon.stub(cookie, 'queueSync');
+      sinon.stub(userSync, 'registerSync');
       sinon.stub(cookie, 'persist');
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
@@ -202,7 +203,7 @@ describe('S2S Adapter', () => {
       bidmanager.addBidResponse.restore();
       utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
-      cookie.queueSync.restore();
+      userSync.registerSync.restore();
       cookie.persist.restore();
     });
 
@@ -339,7 +340,7 @@ describe('S2S Adapter', () => {
       adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledTwice(cookie.queueSync);
+      sinon.assert.calledTwice(userSync.registerSync);
     });
 
     it('persist cookie sync when no_cookie response', () => {
