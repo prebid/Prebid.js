@@ -1,4 +1,5 @@
 ---
+redirect_to: "/index.html"
 layout: page
 title: Add me!
 description: 
