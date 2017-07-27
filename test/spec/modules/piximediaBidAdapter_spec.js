@@ -2,7 +2,7 @@ describe('Piximedia adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
 
-    // var querystringify = require('querystringify');
+  // var querystringify = require('querystringify');
 
   var adapter = require('modules/piximediaBidAdapter');
   var adLoader = require('src/adloader');
@@ -268,7 +268,7 @@ describe('Piximedia adapter tests', function () {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
 
-            // this time, we do not provide dealId
+      // this time, we do not provide dealId
       var response = {
         foundbypm: true,
         cpm: 1.23,

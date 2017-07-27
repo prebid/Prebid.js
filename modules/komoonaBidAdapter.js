@@ -73,7 +73,7 @@ function KomoonaAdapter() {
         status = STATUS.NO_BID;
       }
 
-      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       const placement = bidRequests[bid.adId].placementCode;
 
@@ -117,6 +117,6 @@ KomoonaAdapter.createNew = function() {
   return new KomoonaAdapter();
 };
 
-adaptermanager.registerBidAdapter(new KomoonaAdapter, 'komoona');
+adaptermanager.registerBidAdapter(new KomoonaAdapter(), 'komoona');
 
 module.exports = KomoonaAdapter;

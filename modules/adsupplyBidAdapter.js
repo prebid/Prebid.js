@@ -85,6 +85,6 @@ var AdSupplyAdapter = function AdSupplyAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdSupplyAdapter, 'adsupply');
+adaptermanager.registerBidAdapter(new AdSupplyAdapter(), 'adsupply');
 
 module.exports = AdSupplyAdapter;
