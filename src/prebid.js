@@ -255,6 +255,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
  * @deprecated This function will be removed in Prebid 1.0
  */
 $$PREBID_GLOBAL$$.allBidsAvailable = function () {
+  utils.logWarn('$$PREBID_GLOBAL$$.allBidsAvailable will be removed in Prebid 1.0');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
   return bidmanager.bidsBackAll();
 };
@@ -498,6 +499,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * Please use onEvent instead.
  */
 $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
+  utils.logWarn('$$PREBID_GLOBAL$$.addCallback will be removed in Prebid 1.0');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
   var id = null;
   if (!eventStr || !func || typeof func !== objectType_function) {
@@ -521,6 +523,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  */
 $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
   // todo
+  utils.logWarn('$$PREBID_GLOBAL$$.removeCallback will be removed in Prebid 1.0');
   return null;
 };
 
@@ -585,6 +588,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * @deprecated This function will be removed in Prebid 1.0
  */
 $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
+  utils.logWarn('$$PREBID_GLOBAL$$.addBidResponse will be removed in Prebid 1.0');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
   bidmanager.addBidResponse(adUnitCode, bid);
 };
@@ -674,6 +678,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  *   function instead. This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logWarn('$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag will be removed in Prebid 1.0');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
   var urlComponents = parseURL(adserverTag);
 
