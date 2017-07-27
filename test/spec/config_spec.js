@@ -1,5 +1,5 @@
 import { excpet } from 'chai';
-import { getConfig, setConfig, subscribe } from 'src/config';
+import { getConfig, setConfig } from 'src/config';
 
 describe('config API', () => {
   it('setConfig is a function', () => {
@@ -48,20 +48,23 @@ describe('config API', () => {
     expect(getConfig('publisherDomain')).to.equal('ad.example.com');
   });
 
-  it('has a subscribe function for adding listeners to config updates', () => {
+  it('has subscribe functionality for adding listeners to config updates', () => {
     const listener = sinon.spy();
 
-    subscribe(listener);
+    const unsubscribe = getConfig(listener);
     setConfig({ foo: 'bar' });
 
     sinon.assert.calledOnce(listener);
     sinon.assert.calledWith(listener, { foo: 'bar' });
+
+    unsubscribe();
   });
 
   it('subscribers can subscribe to topics', () => {
     const listener = sinon.spy();
 
-    subscribe('logging', listener);
+    const unsubscribe = getConfig('logging', listener);
+    console.log('setConfig test', JSON.stringify(getConfig(), null, 4));
     setConfig({ logging: true, foo: 'bar' });
 
     sinon.assert.calledOnce(listener);
@@ -72,12 +75,15 @@ describe('config API', () => {
     const listener = sinon.spy();
     const wildcard = sinon.spy();
 
-    subscribe('subject', listener);
-    subscribe(wildcard);
+    const subjectUnsubscribe = getConfig('subject', listener);
+    const wildcardUnsubscribe = getConfig(wildcard);
 
     setConfig({ foo: 'bar' });
 
     sinon.assert.notCalled(listener);
     sinon.assert.calledOnce(wildcard);
+
+    subjectUnsubscribe();
+    wildcardUnsubscribe();
   });
 });

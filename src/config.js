@@ -87,8 +87,13 @@ let config = {
  * Returns configuration object or single configuration property if given
  * a string matching a configuartion property name
  */
-export function getConfig(option) {
-  return option ? config[option] : config;
+export function getConfig(...args) {
+  if (args.length <= 1 && typeof args[0] !== 'function') {
+    const option = args[0];
+    return option ? config[option] : config;
+  }
+
+  return subscribe(...args);
 }
 
 /*
@@ -118,7 +123,7 @@ export function setConfig(options) {
  * // subscribe to only 'logging' changes
  * subscribe('logging', (config) => console.log('logging set:', config));
  */
-export function subscribe(topic, listener) {
+function subscribe(topic, listener) {
   let callback = listener;
 
   if (typeof topic !== 'string') {
@@ -134,6 +139,11 @@ export function subscribe(topic, listener) {
   }
 
   listeners.push({ topic, callback });
+
+  // save and call this function to remove the listener
+  return function unsubscribe() {
+    listeners.splice(listeners.indexOf(listener), 1);
+  };
 }
 
 /*
