@@ -18,7 +18,7 @@ var getParameterByName = function (name) {
 // Prebid adapter for Pollux header bidding client
 function polluxBidAdapter() {
   function _callBids(params) {
-    var bids, bidderUrl = (window.location.protocol) + '//adn.polluxnetwork.com/prebid';
+    var bids, bidderUrl = (window.location.protocol) + '//adn.plxnt.com/prebid';
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
