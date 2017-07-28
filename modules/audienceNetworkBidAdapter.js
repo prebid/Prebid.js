@@ -3,11 +3,11 @@
  */
 
 
-let events = require('../events');
-let bidmanager = require('../bidmanager');
-let bidfactory = require('../bidfactory');
-let utils = require('../utils');
-let CONSTANTS = require('../constants.json');
+let events = require('src/events');
+let bidmanager = require('src/bidmanager');
+let bidfactory = require('src/bidfactory');
+let utils = require('src/utils');
+let CONSTANTS = require('src/constants.json');
 
 let AudienceNetworkAdapter = function AudienceNetworkAdapter() {
   "use strict";

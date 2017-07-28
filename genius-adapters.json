@@ -1,9 +1,9 @@
 [
-  "aol",
-  "appnexus",
-  "audienceNetwork",
-  "districtmDMX",
-  "indexExchange",
-  "rubicon",
-  "triplelift"
+  "aolBidAdapter",
+  "appnexusBidAdapter",
+  "audienceNetworkBidAdapter",
+  "districtmDMXBidAdapter",
+  "indexExchangeBidAdapter",
+  "rubiconBidAdapter",
+  "tripleliftBidAdapter"
 ]
