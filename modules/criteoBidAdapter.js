@@ -168,8 +168,7 @@ var CriteoAdapter = function CriteoAdapter() {
         bidObject.height = bidResponse.height;
         bidObject.ad = bidResponse.creative;
       }
-    }
-    else {
+    } else {
       bidObject = _invalidBidResponse();
     }
     return bidObject;

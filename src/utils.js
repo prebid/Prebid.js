@@ -14,8 +14,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
+} catch (e) {
 }
 
 /*
@@ -89,8 +88,7 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
-    if (queryObj.hasOwnProperty(k))
-    { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -440,8 +438,7 @@ exports.insertElement = function(elm, doc, target) {
   let elToAppend;
   if (target) {
     elToAppend = doc.getElementsByTagName(target);
-  }
-  else {
+  } else {
     elToAppend = doc.getElementsByTagName('head');
   }
   try {
@@ -534,8 +531,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 

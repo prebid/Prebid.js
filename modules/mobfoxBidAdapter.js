@@ -93,8 +93,7 @@ const mobfoxAdapter = function () {
         if (xhr.getResponseHeader('Content-Type') == 'application/json') {
           try {
             resp = JSON.parse(resp)
-          }
-          catch (e) {
+          } catch (e) {
             resp = {error: resp}
           }
         }
@@ -107,8 +106,7 @@ const mobfoxAdapter = function () {
         if (xhr.getResponseHeader('Content-Type') == 'application/json') {
           try {
             err = JSON.parse(err);
-          }
-          catch (e) {
+          } catch (e) {
           }
           ;
         }
