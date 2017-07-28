@@ -41,7 +41,9 @@ function AdequantAdapter() {
   }
 
   function process_bids(replies, placements) {
-    var placement_code, bid, adequant_creatives = window.adequant_creatives;
+    var placement_code;
+    var bid;
+    const adequant_creatives = window.adequant_creatives;
     if (adequant_creatives && adequant_creatives.seatbid) {
       for (var i = 0; i < adequant_creatives.seatbid.length; i++) {
         var bid_response = adequant_creatives.seatbid[i].bid[0];

@@ -7,18 +7,18 @@ const adaptermanager = require('src/adaptermanager');
 const WS_ADAPTER_VERSION = '1.0.2';
 
 function WidespaceAdapter() {
-  let useSSL = document.location.protocol === 'https:',
-    baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-    callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+  const useSSL = document.location.protocol === 'https:';
+  const baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?';
+  const callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
     let bids = params && params.bids || [];
 
     for (var i = 0; i < bids.length; i++) {
-      const bid = bids[i],
-        callbackUid = bid.bidId,
-        sid = bid.params.sid,
-        currency = bid.params.cur || bid.params.currency;
+      const bid = bids[i];
+      const callbackUid = bid.bidId;
+      const sid = bid.params.sid;
+      const currency = bid.params.cur || bid.params.currency;
 
       // Handle Sizes string
       let sizeQueryString = '';
@@ -61,13 +61,13 @@ function WidespaceAdapter() {
   var handleCallback = function handleCallback(bidsArray) {
     if (!bidsArray) { return; }
 
-    var bidObject,
-      bidCode = 'widespace';
+    let bidObject;
+    let bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
-      var bid = bidsArray[i],
-        placementCode = '',
-        validSizes = [];
+      const bid = bidsArray[i];
+      let placementCode = '';
+      let validSizes = [];
 
       bid.sizes = {height: bid.height, width: bid.width};
 
