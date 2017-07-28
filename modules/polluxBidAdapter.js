@@ -5,16 +5,6 @@ import adloader from 'src/adloader';
 import adaptermanager from 'src/adaptermanager';
 import { STATUS } from 'src/constants';
 
-// get parameters
-var getParameterByName = function (name) {
-  var regexS = '[\\?&]' + name + '=([^&#]*)';
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.search);
-  if (results === null) {
-    return '';
-  }
-  return decodeURIComponent(results[1].replace(/\+/g, ' '));
-};
 // Prebid adapter for Pollux header bidding client
 function polluxBidAdapter() {
   function _callBids(params) {
@@ -25,8 +15,8 @@ function polluxBidAdapter() {
       var bid = bids[i];
       // check params
       if (bid.params.zone) {
-        var domain = getParameterByName('domain');
-        var tracker2 = getParameterByName('tracker2');
+        var domain = utils.getParameterByName('domain');
+        var tracker2 = utils.getParameterByName('tracker2');
         if (domain) {
           request_obj.domain = domain;
         } else {
