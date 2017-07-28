@@ -25,9 +25,6 @@ var targeting = require('./targeting.js');
 
 /* private variables */
 
-var objectType_function = 'function';
-var objectType_undefined = 'undefined';
-var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
@@ -399,7 +396,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === objectType_function) {
+    if (typeof bidsBackHandler === 'function') {
       bidmanager.addOneTimeCallback(bidsBackHandler, false);
     }
     bidmanager.executeCallback();
@@ -411,7 +408,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
   setAjaxTimeout(cbTimeout);
-  if (typeof bidsBackHandler === objectType_function) {
+  if (typeof bidsBackHandler === 'function') {
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
 
@@ -434,7 +431,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     // Append array to existing
     adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === objectType_object) {
+  } else if (typeof adUnitArr === 'object') {
     // Generate the transaction id for the adunit
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
@@ -495,7 +492,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
   var id = null;
-  if (!eventStr || !func || typeof func !== objectType_function) {
+  if (!eventStr || !func || typeof func !== 'function') {
     utils.logError('error registering callback. Check method signature');
     return id;
   }
@@ -767,7 +764,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
 $$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === objectType_function) {
+  if (typeof cmd === 'function') {
     try {
       cmd.call();
     } catch (e) {
@@ -782,7 +779,7 @@ $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
   queue.forEach(function(cmd) {
-    if (typeof cmd.called === objectType_undefined) {
+    if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
         cmd.called = true;
