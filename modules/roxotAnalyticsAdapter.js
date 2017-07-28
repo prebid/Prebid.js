@@ -18,7 +18,7 @@ let eventStack = {options: {}, events: []};
 
 let auctionStatus = 'not_started';
 
-var localStoragePrefix = 'roxot_analytics_';
+let localStoragePrefix = 'roxot_analytics_';
 
 let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
