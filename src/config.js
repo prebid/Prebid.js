@@ -84,8 +84,12 @@ let config = {
 };
 
 /*
- * Returns configuration object or single configuration property if given
- * a string matching a configuartion property name
+ * Returns configuration object if called without parameters,
+ * or single configuration property if given a string matching a configuartion
+ * property name.
+ *
+ * If called with callback parameter, or a string and a callback parameter,
+ * subscribes to configuration updates. See `subscribe` function for usage.
  */
 export function getConfig(...args) {
   if (args.length <= 1 && typeof args[0] !== 'function') {
@@ -116,12 +120,19 @@ export function setConfig(options) {
  * updates when specific properties are updated by passing a topic string as
  * the first parameter.
  *
+ * Returns an `unsubscribe` function for removing the subscriber from the
+ * set of listeners
+ *
  * Example use:
  * // subscribe to all configuration changes
  * subscribe((config) => console.log('config set:', config));
  *
  * // subscribe to only 'logging' changes
  * subscribe('logging', (config) => console.log('logging set:', config));
+ *
+ * // unsubscribe
+ * const unsubscribe = subscribe(...);
+ * unsubscribe(); // no longer listening
  */
 function subscribe(topic, listener) {
   let callback = listener;

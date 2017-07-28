@@ -1,7 +1,17 @@
 import { excpet } from 'chai';
 import { getConfig, setConfig } from 'src/config';
 
+let subscribers = [];
+function resetConfig() {
+  setConfig({});
+  subscribers.forEach(unsubscribe => unsubscribe());
+  subscribers = [];
+}
+
 describe('config API', () => {
+  beforeEach(() => resetConfig());
+  afterEach(() => resetConfig());
+
   it('setConfig is a function', () => {
     expect(setConfig).to.be.a('function');
   });
@@ -52,19 +62,22 @@ describe('config API', () => {
     const listener = sinon.spy();
 
     const unsubscribe = getConfig(listener);
+
+    // done to automatically unsubscriber after each test
+    subscribers.push(unsubscribe);
+
     setConfig({ foo: 'bar' });
 
     sinon.assert.calledOnce(listener);
     sinon.assert.calledWith(listener, { foo: 'bar' });
-
-    unsubscribe();
   });
 
   it('subscribers can subscribe to topics', () => {
     const listener = sinon.spy();
 
     const unsubscribe = getConfig('logging', listener);
-    console.log('setConfig test', JSON.stringify(getConfig(), null, 4));
+    subscribers.push(unsubscribe);
+
     setConfig({ logging: true, foo: 'bar' });
 
     sinon.assert.calledOnce(listener);
@@ -77,13 +90,11 @@ describe('config API', () => {
 
     const subjectUnsubscribe = getConfig('subject', listener);
     const wildcardUnsubscribe = getConfig(wildcard);
+    subscribers.push(subjectUnsubscribe, wildcardUnsubscribe);
 
     setConfig({ foo: 'bar' });
 
     sinon.assert.notCalled(listener);
     sinon.assert.calledOnce(wildcard);
-
-    subjectUnsubscribe();
-    wildcardUnsubscribe();
   });
 });
