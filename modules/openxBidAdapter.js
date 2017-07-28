@@ -152,7 +152,7 @@ const OpenxAdapter = function OpenxAdapter() {
 
   function adUnitHasValidSizeFromBid(adUnit, bid) {
     let sizes = utils.parseSizesInput(bid.sizes);
-    let sizeLength = sizes && sizes.length || 0;
+    let sizeLength = (sizes && sizes.length) || 0;
     let found = false;
     let creative = adUnit.creative && adUnit.creative[0];
     let creative_size = String(creative.width) + 'x' + String(creative.height);
