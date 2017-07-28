@@ -1,4 +1,4 @@
-var r1 = require('../../../modules/rhythmoneBidAdapter');
+var Adapter = require('../../../modules/rhythmoneBidAdapter');
 var assert = require('assert');
 
 describe('rhythmone adapter tests', function () {
@@ -31,7 +31,7 @@ describe('rhythmone adapter tests', function () {
     var endEvent = function() {},
       wonEvent = function() {}; ;
 
-    var z = new r1(
+    var z = new Adapter(
       {
         addBidResponse: function(placementcode, adResponse) {
           it('should echo placementcode div-gpt-ad-1438287399331-0', function() {
