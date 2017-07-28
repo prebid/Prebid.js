@@ -33,7 +33,6 @@ module.exports = {
     "no-undef": "off",
     "no-unused-vars": "off",
     "no-use-before-define": "off",
-    "no-useless-call": "off",
     "no-useless-escape": "off",
     "one-var": "off",
     "standard/no-callback-literal": "off",
