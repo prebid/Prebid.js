@@ -22,7 +22,6 @@ module.exports = {
     "brace-style": "off",
     "camelcase": "off",
     "eqeqeq": "off",
-    "import/first": "off",
     "new-cap": "off",
     "no-control-regex": "off",
     "no-mixed-operators": "off",
