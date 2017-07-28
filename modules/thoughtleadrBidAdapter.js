@@ -73,12 +73,34 @@ function writeFriendlyFrame(html, container) {
   container.appendChild(iframe);
 
   const doc = iframe.contentWindow.document;
-  doc.open().write(`<html><head></head><body>${html}</body></html>`);
-  doc.close();
+  doc.body.innerHTML = html;
+
+  const scripts = doc.body.getElementsByTagName("script");
+
+  for (let i = 0; i < scripts.length; i++) {
+    const scriptEl = scripts.item(i);
+    if (scriptEl.nodeName === 'SCRIPT') {
+      executeScript(scriptEl);
+    }
+  }
 
   return iframe;
 }
 
+function executeScript(scriptEl) {
+  const newEl = document.createElement('script');
+  newEl.innerText = scriptEl.text || scriptEl.textContent || scriptEl.innerHTML || "";
+
+  // ie-compatible copy-paste attributes
+  const attrs = scriptEl.attributes;
+  for (let i = attrs.length; i--; ) {
+    newEl.setAttribute(attrs[i].name, attrs[i].value);
+  }
+
+  if (scriptEl.parentNode) {
+    scriptEl.parentNode.replaceChild(newEl, scriptEl);
+  }
+}
 
 const ThoughtleadrAdapter = (function () {
   function ThoughtleadrAdapter() {
