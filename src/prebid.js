@@ -766,6 +766,12 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
  */
 $$PREBID_GLOBAL$$.setConfig = setConfig;
 
+/**
+ * Get Prebid config options
+ * @param {object} options
+ */
+$$PREBID_GLOBAL$$.getConfig = getConfig;
+
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 
 /**
