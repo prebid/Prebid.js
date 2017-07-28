@@ -5,7 +5,6 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 
-var defaultPlacementForBadBid = null;
 var bidderName = 'memeglobal';
 /**
  * Adapter for requesting bids from Meme Global Media Group
@@ -18,9 +17,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     var bids = params.bids;
 
     if (!bids) return;
-
-    // assign the first adUnit (placement) for bad bids;
-    defaultPlacementForBadBid = bids[0].placementCode;
 
     for (var i = 0; i < bids.length; i++) {
       _requestBid(bids[i]);
