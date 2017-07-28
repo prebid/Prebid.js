@@ -603,7 +603,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             }
           // No bids for expected bid, pass bid
           } else {
-            var bid = bidfactory.createBid(2);
+            bid = bidfactory.createBid(2);
             bid.bidderCode = ADAPTER_CODE;
             currentBid = bid;
             bidmanager.addBidResponse(adUnitCode, currentBid);

@@ -27,7 +27,6 @@ module.exports = {
     "no-control-regex": "off",
     "no-mixed-operators": "off",
     "no-multiple-empty-lines": "off",
-    "no-redeclare": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
