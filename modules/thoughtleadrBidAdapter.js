@@ -19,9 +19,9 @@ function storageAvailable(type) {
     storage.removeItem(x);
     return true;
   }
-  catch(e) {
+  catch (e) {
     return e instanceof DOMException && (
-        // everything except Firefox
+      // everything except Firefox
       e.code === 22 ||
       // Firefox
       e.code === 1014 ||
@@ -64,18 +64,18 @@ function getUid() {
 }
 
 function writeFriendlyFrame(html, container) {
-  const iframe = document.createElement("iframe");
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
+  const iframe = document.createElement('iframe');
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
 
-  iframe.src = "javascript:false";
+  iframe.src = 'javascript:false';
   container.appendChild(iframe);
 
   const doc = iframe.contentWindow.document;
   doc.body.innerHTML = html;
 
-  const scripts = doc.body.getElementsByTagName("script");
+  const scripts = doc.body.getElementsByTagName('script');
 
   for (let i = 0; i < scripts.length; i++) {
     const scriptEl = scripts.item(i);
@@ -89,11 +89,11 @@ function writeFriendlyFrame(html, container) {
 
 function executeScript(scriptEl) {
   const newEl = document.createElement('script');
-  newEl.innerText = scriptEl.text || scriptEl.textContent || scriptEl.innerHTML || "";
+  newEl.innerText = scriptEl.text || scriptEl.textContent || scriptEl.innerHTML || '';
 
   // ie-compatible copy-paste attributes
   const attrs = scriptEl.attributes;
-  for (let i = attrs.length; i--; ) {
+  for (let i = attrs.length; i--;) {
     newEl.setAttribute(attrs[i].name, attrs[i].value);
   }
 
