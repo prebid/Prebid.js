@@ -253,6 +253,6 @@ function CoxAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new CoxAdapter, 'cox');
+adaptermanager.registerBidAdapter(new CoxAdapter(), 'cox');
 
 module.exports = CoxAdapter;

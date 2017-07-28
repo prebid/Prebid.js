@@ -149,6 +149,6 @@ function PubmaticAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new PubmaticAdapter, 'pubmatic');
+adaptermanager.registerBidAdapter(new PubmaticAdapter(), 'pubmatic');
 
 module.exports = PubmaticAdapter;

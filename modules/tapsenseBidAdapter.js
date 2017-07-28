@@ -84,6 +84,6 @@ const TapSenseAdapter = function TapSenseAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new TapSenseAdapter, 'tapsense');
+adaptermanager.registerBidAdapter(new TapSenseAdapter(), 'tapsense');
 
 module.exports = TapSenseAdapter;

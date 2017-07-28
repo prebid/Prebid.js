@@ -4,12 +4,11 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { queueSync, persist } from 'src/cookie';
+import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 
 const TYPE = S2S.SRC;
-const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
-const cookiePersistUrl = 'https://ib.adnxs.com/seg?add=1&redir=';
+const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 
 const paramTypes = {
   'appnexus': {
@@ -163,7 +162,7 @@ function PrebidServer() {
       }
       if (result.status === 'no_cookie' && config.cookieSet) {
         // cookie sync
-        persist(cookiePersistUrl, cookiePersistMessage);
+        cookieSet(cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);

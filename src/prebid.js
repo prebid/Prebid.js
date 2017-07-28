@@ -8,7 +8,7 @@ import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from 'src/cookie.js';
+import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
@@ -739,7 +739,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     maxBids: 1,
     adapter: CONSTANTS.S2S.ADAPTER,
     syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
-    cookieSet: false,
+    cookieSet: true,
     bidders: []
   }, options);
   adaptermanager.setS2SConfig(config);

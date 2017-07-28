@@ -136,6 +136,6 @@ TwengaAdapter.createNew = function () {
   return new TwengaAdapter();
 };
 
-adaptermanager.registerBidAdapter(new TwengaAdapter, 'twenga');
+adaptermanager.registerBidAdapter(new TwengaAdapter(), 'twenga');
 
 module.exports = TwengaAdapter;

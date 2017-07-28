@@ -77,7 +77,7 @@ export function nativeBidIsValid(bid) {
   const requiredAssets = Object.keys(requestedAssets).filter(
     key => requestedAssets[key].required
   );
-  const returnedAssets = Object.keys(bid.native);
+  const returnedAssets = Object.keys(bid.native).filter(key => bid.native[key]);
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
 }

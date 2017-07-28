@@ -166,6 +166,6 @@ XhbAdapter.createNew = function () {
   return new XhbAdapter();
 };
 
-adaptermanager.registerBidAdapter(new XhbAdapter, 'xhb');
+adaptermanager.registerBidAdapter(new XhbAdapter(), 'xhb');
 
 module.exports = XhbAdapter;

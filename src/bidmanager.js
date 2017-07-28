@@ -2,6 +2,7 @@ import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
+import { Renderer } from 'src/Renderer';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -108,7 +109,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
     }
 
     if (!adUnitCode) {
-      utils.logWarn(errorMessage('No adUnitCode was supplied to addBidResponse.'));
+      utils.logWarn('No adUnitCode was supplied to addBidResponse.');
+      return false;
+    }
+    if (!bid) {
+      utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
       return false;
     }
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
@@ -125,11 +130,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
   function prepareBidForAuction() {
-    const { requestId, start } = getBidderRequest(bid.bidderCode, adUnitCode);
+    const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
+
     Object.assign(bid, {
-      requestId: requestId,
+      requestId: bidRequest.requestId,
       responseTimestamp: timestamp(),
-      requestTimestamp: start,
+      requestTimestamp: bidRequest.start,
       cpm: parseFloat(bid.cpm) || 0,
       bidder: bid.bidderCode,
       adUnitCode
@@ -137,7 +143,21 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
-    // append price strings
+    // Let listeners know that now is the time to adjust the bid, if they want to.
+    //
+    // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
+    // but others to not be set yet (like priceStrings). See #1372 and #1389.
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
+
+    // a publisher-defined renderer can be used to render bids
+    const adUnitRenderer =
+      bidRequest.bids && bidRequest.bids[0] && bidRequest.bids[0].renderer;
+
+    if (adUnitRenderer) {
+      bid.renderer = Renderer.install({ url: adUnitRenderer.url });
+      bid.renderer.setRender(adUnitRenderer.render);
+    }
+
     const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
@@ -164,9 +184,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   // Add a bid to the auction.
   function addBidToAuction() {
-    // Make sure that the bidAdjustment event fires before bidResponse, so that the bid response
-    // has the adjusted bid value
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
 
     $$PREBID_GLOBAL$$._bidsReceived.push(bid);

@@ -150,6 +150,6 @@ var PiximediaAdapter = function PiximediaAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new PiximediaAdapter, 'piximedia');
+adaptermanager.registerBidAdapter(new PiximediaAdapter(), 'piximedia');
 
 module.exports = PiximediaAdapter;

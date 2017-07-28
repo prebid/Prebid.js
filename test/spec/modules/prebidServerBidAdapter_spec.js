@@ -184,7 +184,7 @@ describe('S2S Adapter', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create();
       sinon.stub(cookie, 'queueSync');
-      sinon.stub(cookie, 'persist');
+      sinon.stub(cookie, 'cookieSet');
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
         bids: [{
@@ -203,7 +203,7 @@ describe('S2S Adapter', () => {
       utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
       cookie.queueSync.restore();
-      cookie.persist.restore();
+      cookie.cookieSet.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
@@ -342,16 +342,16 @@ describe('S2S Adapter', () => {
       sinon.assert.calledTwice(cookie.queueSync);
     });
 
-    it('does not call persist cookie sync when no_cookie response && not opted in', () => {
+    it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.notCalled(cookie.persist);
+      sinon.assert.notCalled(cookie.cookieSet);
     });
 
-    it('calls persist cookie sync when no_cookie response && opted in', () => {
+    it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
       let config = Object.assign({
         cookieSet: true
@@ -360,7 +360,7 @@ describe('S2S Adapter', () => {
       adapter.setConfig(config);
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledOnce(cookie.persist);
+      sinon.assert.calledOnce(cookie.cookieSet);
     });
   });
 });

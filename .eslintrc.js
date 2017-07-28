@@ -23,6 +23,7 @@ module.exports = {
     "camelcase": "off",
     "eqeqeq": "off",
     "import/first": "off",
+    "new-cap": "off",
     "no-control-regex": "off",
     "no-mixed-operators": "off",
     "no-multiple-empty-lines": "off",

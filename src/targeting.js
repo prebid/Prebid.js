@@ -1,8 +1,8 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
 import { NATIVE_TARGETING_KEYS } from './native';
-const bidmanager = require('./bidmanager.js');
-const utils = require('./utils.js');
-var CONSTANTS = require('./constants.json');
+const bidmanager = require('./bidmanager');
+const utils = require('./utils');
+var CONSTANTS = require('./constants');
 
 var targeting = exports;
 var pbTargetingKeys = [];
