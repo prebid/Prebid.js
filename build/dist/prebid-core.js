@@ -1266,8 +1266,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
 
     var currentRequestId = getCurrentRequestId();
-    if (requestId !== currentRequestId) {
-      utils.logWarn('Got bid response for request ID ' + requestId + ', which does not match current request ID ' + currentRequestId + '. Response discarded.');
+    if (bidRequest.requestId !== currentRequestId) {
+      utils.logWarn('Got bid response for request ID ' + bidRequest.requestId + ', which does not match current request ID ' + currentRequestId + '. Response discarded.');
       return;
     }
 
