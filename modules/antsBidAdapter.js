@@ -70,4 +70,4 @@ var AntsAdapter = function AntsAdapter() {
 
 module.exports = AntsAdapter;
 
-adaptermanager.registerBidAdapter(new AntsAdapter, 'ants');
+adaptermanager.registerBidAdapter(new AntsAdapter(), 'ants');
