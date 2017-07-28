@@ -223,7 +223,7 @@ OrbitsoftAdapter = function OrbitsoftAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new OrbitsoftAdapter, 'orbitsoft');
+adaptermanager.registerBidAdapter(new OrbitsoftAdapter(), 'orbitsoft');
 adaptermanager.aliasBidAdapter('orbitsoft', 'orbitadserving');
 adaptermanager.aliasBidAdapter('orbitsoft', 'orbitscripts');
 adaptermanager.aliasBidAdapter('orbitsoft', 'orbitsoftcom');
