@@ -2,93 +2,6 @@ import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
-import base64 from 'base-64';
-import avro from 'avsc/etc/browser/avsc-types';
-
-// Initialize avro schema
-const parseOpt = {
-  namespace: 'com.adomik.hdb.avro',
-  registry: avroRegistry
-};
-
-const avroRegistry = {}
-
-avroRegistry.Size = avro.parse({
-  type: 'record',
-  name: 'Size',
-  fields: [
-    {name: 'width', type: 'int'},
-    {name: 'height', type: 'int'}
-  ]
-}, parseOpt);
-
-avroRegistry.Request = avro.parse({
-  type: 'record',
-  name: 'Request',
-  fields: [
-    {name: 'bidder', type: 'string'}
-  ]
-}, parseOpt);
-
-avroRegistry.ResponseStatus = avro.parse({
-  type: 'enum',
-  name: 'ResponseStatus',
-  symbols: ['VALID', 'EMPTY_OR_ERROR']
-}, parseOpt);
-
-avroRegistry.Response = avro.parse({
-  type: 'record',
-  name: 'Response',
-  fields: [
-    {name: 'id', type: 'string'},
-    {name: 'bidder', type: 'string'},
-    {name: 'cpm', type: 'float'},
-    {name: 'size', type: 'Size'},
-    {name: 'timeToRespond', type: 'int'},
-    {name: 'status', type: 'ResponseStatus'},
-    {name: 'afterTimeout', type: 'boolean'}
-  ]
-}, parseOpt);
-
-avroRegistry.Winner = avro.parse({
-  type: 'record',
-  name: 'Winner',
-  fields: [
-    {name: 'id', type: 'string'}
-  ]
-}, parseOpt);
-
-avroRegistry.Events = avro.parse({
-  type: 'record',
-  name: 'Events',
-  fields: [
-    {name: 'requests', type: {type: 'array', items: 'Request'}},
-    {name: 'responses', type: {type: 'array', items: 'Response'}},
-    {name: 'winners', type: {type: 'array', items: 'Winner'}}
-  ]
-}, parseOpt);
-
-avroRegistry.EventsByPlacementCode = avro.parse({
-  type: 'record',
-  name: 'EventsByPlacementCode',
-  fields: [
-    {name: 'placementCode', type: 'string'},
-    {name: 'sizes', type: {type: 'array', items: 'Size'}},
-    {name: 'events', type: 'Events'}
-  ]
-}, parseOpt);
-
-avroRegistry.BulkEvents = avro.parse({
-  type: 'record',
-  name: 'BulkEvents',
-  fields: [
-    {name: 'uid', type: 'string'},
-    {name: 'ahbaid', type: 'string'},
-    {name: 'timeout', type: 'int'},
-    {name: 'hostname', type: 'string'},
-    {name: 'eventsByPlacementCode', type: {type: 'array', items: 'EventsByPlacementCode'}}
-  ]
-}, parseOpt);
 
 // Events used in adomik analytics adapter
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -203,10 +116,8 @@ function sendTypedEvent() {
     })
   };
 
-  // Check if object matchs with schema
-  const buffer = avroRegistry.BulkEvents.toBuffer(bulkEvents);
   // Encode object in base64
-  const encodedBuf = base64.encode(String.fromCharCode.apply(null, buffer));
+  const encodedBuf = window.btoa(JSON.stringify(bulkEvents));
   // Create final url
   const encodedUri = 'http://' + currentContext.url + '/?q=' + encodeURIComponent(encodedBuf);
   // Hack to send data
