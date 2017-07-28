@@ -36,15 +36,18 @@ OrbitsoftAdapter = function OrbitsoftAdapter() {
   baseAdapter.callBids = function (params) {
     let bids = params.bids || [];
 
-    if (bids.length === 0) {
-      return;
-    }
-
     for (let i = 0; i < bids.length; i++) {
       let bidRequest = bids[i];
       let callbackId = bidRequest.bidId;
       let jptCall = buildJPTCall(bidRequest, callbackId);
-      if (jptCall) {adloader.loadScript(jptCall);}
+
+      if (jptCall) { adloader.loadScript(jptCall); }
+      else {
+        // indicate that there is no bid for this placement
+        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
+        bid.bidderCode = params.bidderCode;
+        bidmanager.addBidResponse(bidRequest.placementCode, bid);
+      }
     }
   };
 
