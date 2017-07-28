@@ -14,14 +14,13 @@ const MODULE_NAME = 'express';
  * @param {Object[]} [adUnits = pbjs.adUnits] - an array of adUnits for express to operate on.
  */
 $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
-
   utils.logMessage('loading ' + MODULE_NAME);
 
   if (adUnits.length === 0) {
     utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
-// put adUnits in a more performant hash lookup by code.
+  // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
       cache[adUnit.code] = adUnit;
@@ -59,9 +58,9 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
 
     // a helper function to verify slots or get slots if not present
     function defaultSlots(slots) {
-      return Array.isArray(slots) ?
-        slots.slice() :
-        googletag.pubads().getSlots().slice();
+      return Array.isArray(slots)
+        ? slots.slice()
+        : googletag.pubads().getSlots().slice();
     }
 
     // maps gpt slots to adUnits, matches are copied to new array and removed from passed array.
@@ -150,7 +149,6 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
           });
         }
       }
-
     };
 
     // override gpt refresh() function
@@ -205,5 +203,4 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       return fGptEnableSingleRequest.apply(window.googletag.pubads(), arguments);
     };
   });
-
 };

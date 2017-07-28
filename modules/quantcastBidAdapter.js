@@ -129,6 +129,6 @@ exports.createNew = function() {
   return new QuantcastAdapter();
 };
 
-adaptermanager.registerBidAdapter(new QuantcastAdapter, 'quantcast');
+adaptermanager.registerBidAdapter(new QuantcastAdapter(), 'quantcast');
 
 module.exports = QuantcastAdapter;

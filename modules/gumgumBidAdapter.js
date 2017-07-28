@@ -58,9 +58,9 @@ const GumgumAdapter = function GumgumAdapter() {
 
     utils._each(bids, bidRequest => {
       const { bidId
-            , params = {}
-            , placementCode
-            } = bidRequest;
+        , params = {}
+        , placementCode
+      } = bidRequest;
       const timestamp = _getTimeStamp();
       const trackingId = params.inScreen;
       const nativeId = params.native;
@@ -118,11 +118,11 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const _handleGumGumResponse = cachedBidRequest => (bidResponse = {}) => {
     const { pi: productId
-          } = cachedBidRequest;
+    } = cachedBidRequest;
     const { ad = {}
-          , pag = {}
-          , thms: throttle
-          } = bidResponse;
+      , pag = {}
+      , thms: throttle
+    } = bidResponse;
     /* cache the pageViewId */
     if (pag && pag.pvid) pageViewId = pag.pvid;
     if (ad && ad.id) {
@@ -131,7 +131,7 @@ const GumgumAdapter = function GumgumAdapter() {
       /* create the bid */
       const bid = bidfactory.createBid(1);
       const { t: trackingId
-            } = pag;
+      } = pag;
       bidResponse.request = cachedBidRequest;
       const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
       const gumgumAdLoader = `<script>
@@ -171,6 +171,6 @@ const GumgumAdapter = function GumgumAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new GumgumAdapter, 'gumgum');
+adaptermanager.registerBidAdapter(new GumgumAdapter(), 'gumgum');
 
 module.exports = GumgumAdapter;

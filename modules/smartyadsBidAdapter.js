@@ -118,7 +118,7 @@ function SmartyadsAdapter() {
     return queryString.reduce(
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
-        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
           : memo,
       '//ssp-nj.webtradehub.com/?'
     ).slice(0, -1);
@@ -139,7 +139,7 @@ function SmartyadsAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(Adapter.createNew(SMARTYADS_BIDDER_CODE), {      // SMARTYADS_BIDDER_CODE smartyads
+  return Object.assign(Adapter.createNew(SMARTYADS_BIDDER_CODE), { // SMARTYADS_BIDDER_CODE smartyads
     callBids: _callBids,
     createNew: SmartyadsAdapter.createNew
   });
@@ -180,6 +180,6 @@ SmartyadsAdapter.createNew = function () {
   return new SmartyadsAdapter();
 };
 
-adaptermanager.registerBidAdapter(new SmartyadsAdapter, 'smartyads');
+adaptermanager.registerBidAdapter(new SmartyadsAdapter(), 'smartyads');
 
 module.exports = SmartyadsAdapter;

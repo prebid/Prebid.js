@@ -139,6 +139,6 @@ var AdButlerAdapter = function AdButlerAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdButlerAdapter, 'adbutler');
+adaptermanager.registerBidAdapter(new AdButlerAdapter(), 'adbutler');
 
 module.exports = AdButlerAdapter;

@@ -53,6 +53,6 @@ var InnityAdapter = function InnityAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new InnityAdapter, 'innity');
+adaptermanager.registerBidAdapter(new InnityAdapter(), 'innity');
 
 module.exports = InnityAdapter;

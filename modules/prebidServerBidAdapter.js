@@ -4,12 +4,11 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { queueSync, persist } from 'src/cookie';
+import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 
 const TYPE = S2S.SRC;
-const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
-const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
+const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 
 const paramTypes = {
   'appnexus': {
@@ -33,6 +32,8 @@ const paramTypes = {
     'adSlot': 'string'
   }
 };
+
+let _cookiesQueued = false;
 
 /**
  * Bidder adapter for Prebid Server
@@ -109,7 +110,7 @@ function PrebidServer() {
       if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_cookie) {
+            if (bidder.no_cookie && !_cookiesQueued) {
               queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
             }
           });
@@ -159,9 +160,9 @@ function PrebidServer() {
             });
         });
       }
-      if (result.status === 'no_cookie') {
+      if (result.status === 'no_cookie' && config.cookieSet) {
         // cookie sync
-        persist(cookiePersistUrl, cookiePersistMessage);
+        cookieSet(cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);
@@ -171,8 +172,34 @@ function PrebidServer() {
       utils.logError('error parsing response: ', result.status);
     }
   }
+  /**
+   * @param  {} {bidders} list of bidders to request user syncs for.
+   */
+  baseAdapter.queueSync = function({bidderCodes}) {
+    if (!_cookiesQueued) {
+      _cookiesQueued = true;
+      const payload = JSON.stringify({
+        uuid: utils.generateUUID(),
+        bidders: bidderCodes
+      });
+      ajax(config.syncEndpoint, (response) => {
+        try {
+          response = JSON.parse(response);
+          response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+        }
+        catch (e) {
+          utils.logError(e);
+        }
+      },
+      payload, {
+        contentType: 'text/plain',
+        withCredentials: true
+      });
+    }
+  }
 
   return {
+    queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
     createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,

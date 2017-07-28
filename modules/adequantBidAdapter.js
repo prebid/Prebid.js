@@ -73,6 +73,6 @@ function AdequantAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new AdequantAdapter, 'adequant');
+adaptermanager.registerBidAdapter(new AdequantAdapter(), 'adequant');
 
 module.exports = AdequantAdapter;

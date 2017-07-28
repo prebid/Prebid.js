@@ -188,6 +188,6 @@ const ThoughtleadrAdapter = (function () {
   return ThoughtleadrAdapter;
 }());
 
-adaptermanager.registerBidAdapter(new ThoughtleadrAdapter, 'thoughtleadr');
+adaptermanager.registerBidAdapter(new ThoughtleadrAdapter(), 'thoughtleadr');
 
 module.exports = ThoughtleadrAdapter;

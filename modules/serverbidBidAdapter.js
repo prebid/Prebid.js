@@ -151,6 +151,6 @@ ServerBidAdapter.createNew = function() {
   return new ServerBidAdapter();
 };
 
-adaptermanager.registerBidAdapter(new ServerBidAdapter, 'serverbid');
+adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 
 module.exports = ServerBidAdapter;

@@ -12,7 +12,11 @@ var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
 // create s2s settings objectType_function
-let _s2sConfig = {};
+let _s2sConfig = {
+  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+  adapter: CONSTANTS.S2S.ADAPTER,
+  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
+};
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
@@ -38,6 +42,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
+          renderer: adUnit.renderer,
           transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
@@ -64,6 +69,13 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
+
+  const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
+  if (s2sAdapter) {
+    s2sAdapter.setConfig(_s2sConfig);
+    s2sAdapter.queueSync({bidderCodes});
+  }
+
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
@@ -115,9 +127,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
-    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-    s2sAdapter.setConfig(_s2sConfig);
     s2sAdapter.callBids(s2sBidRequest);
   }
 

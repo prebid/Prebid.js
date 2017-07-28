@@ -37,12 +37,16 @@ function buildEventStack() {
 
 function send(eventType, data, sendDataType) {
   let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
+  let xhr = new XMLHttpRequest();
+  xhr.open('POST', fullUrl, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.withCredentials = true;
+  xhr.onreadystatechange = function(result) {
+    if (this.readyState != 4) return;
 
-  ajax(
-    fullUrl,
-    (result) => utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result),
-    JSON.stringify(data)
-  );
+    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
+  }
+  xhr.send(JSON.stringify(data));
 }
 
 function pushEvent(eventType, args) {
