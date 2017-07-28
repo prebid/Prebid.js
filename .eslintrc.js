@@ -37,7 +37,6 @@ module.exports = {
     "no-useless-escape": "off",
     "one-var": "off",
     "standard/no-callback-literal": "off",
-    "standard/object-curly-even-spacing": "off",
     "valid-typeof": "off"
   }
 };

@@ -59,7 +59,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
 
     function buildImp(bid) {
       const size = getBidSize(bid);
-      const imp = { 'id': bid.bidId, 'tagid': bid.placementCode};
+      const imp = {
+        'id': bid.bidId,
+        'tagid': bid.placementCode
+      };
 
       if (bid.mediaType === 'video') {
         imp.video = {w: size[0], h: size[1]};
