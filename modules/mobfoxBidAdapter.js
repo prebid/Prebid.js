@@ -180,6 +180,5 @@ const mobfoxAdapter = function () {
   };
 };
 
-
 adaptermanager.registerBidAdapter(new mobfoxAdapter(), 'mobfox');
 module.exports = mobfoxAdapter;

@@ -101,7 +101,6 @@ function UnderdogMediaAdapter() {
     return vars;
   }
 
-
   return {
     callBids: _callBids
   };

@@ -21,7 +21,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
     }
   };
 
-
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
     if (utils.isEmpty(responseText)) {
@@ -115,7 +114,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
       });
     });
   }
-
 
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.

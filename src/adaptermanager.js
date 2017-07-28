@@ -76,7 +76,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     s2sAdapter.queueSync({bidderCodes});
   }
 
-
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
@@ -155,7 +154,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     }
   });
 };
-
 
 function transformHeightWidth(adUnit) {
   let sizesObj = [];
