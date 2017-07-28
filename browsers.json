@@ -95,14 +95,6 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_ie_9_windows_7": {
-    "base": "BrowserStack",
-    "os_version": "7",
-    "browser": "ie",
-    "browser_version": "9.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_firefox_46_windows_7": {
     "base": "BrowserStack",
     "os_version": "7",
@@ -222,9 +214,5 @@
     "browser": "iphone",
     "device": "iPhone 6S",
     "browser_version": null
-  },
-  "Chrome_travis_ci": {
-    "base": "Chrome",
-    "flags": ["--no-sandbox"]
   }
 }

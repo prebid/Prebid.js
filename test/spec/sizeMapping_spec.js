@@ -27,7 +27,7 @@ var invalidAdUnit = {
 var invalidAdUnit2 = {
   'sizes': [300, 250],
   'sizeMapping': [{
-    foo: 'bar'  // bad
+    foo: 'bar' // bad
   }]
 };
 

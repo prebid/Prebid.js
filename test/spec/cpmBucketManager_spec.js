@@ -43,7 +43,7 @@ describe('cpmBucketManager', () => {
         'increment': 0.01,
       },
       {
-          // missing min prop
+        // missing min prop
         'max': 18,
         'increment': 0.05,
         'cap': true

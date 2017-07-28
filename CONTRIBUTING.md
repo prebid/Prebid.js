@@ -31,6 +31,8 @@ Before a Pull Request will be considered for merge:
 - All new and existing tests must pass
 - Added or modified code must have greater than 80% coverage
 
+If you are submitting an adapter, you can also use the [Hello World](integrationExamples/gpt/hello_world.html) example page to test integration with your server.
+
 ### Test Guidelines
 When you are adding code to Prebid.js, or modifying code that isn't covered by an existing test, test the code according to these guidelines:
 
