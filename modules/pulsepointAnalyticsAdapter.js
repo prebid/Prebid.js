@@ -11,7 +11,7 @@ var pulsepointAdapterFactory = adapter({
   analyticsType: 'bundle'
 });
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: pulsepointAdapterFactory,
   code: 'pulsepoint'
 });

@@ -102,7 +102,7 @@ const adapterFactory = function(analyticsAdapterDependencies) {
   return roxotAdapter;
 }
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: adapterFactory,
   code: 'roxot'
 });

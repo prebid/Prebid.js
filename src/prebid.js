@@ -540,7 +540,10 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
-    analyticsRegistry.registerAnalyticsAdapter(options);
+    analyticsRegistry.registerAnalyticsAdapterFactory({
+      factory: function() { return options.adapter; },
+      code: options.code,
+    });
   }
   catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);

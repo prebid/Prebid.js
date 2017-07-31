@@ -49,7 +49,7 @@ export default function adapterFactory(adapterDependencies) {
 }
 
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: adapterFactory,
   code: 'pubwise'
 });

@@ -257,7 +257,7 @@ export default function googleAnalyticsFactory(analyticsAdapterDependencies) {
   }
 }
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   adapter: googleAnalyticsFactory,
   code: 'ga'
 });

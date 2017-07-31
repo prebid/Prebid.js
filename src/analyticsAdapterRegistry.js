@@ -2,7 +2,7 @@ import { logError, logMessage } from './utils';
 
 // This module serves to manage analytics adapters which are present in the build.
 // Each Analytics Adapter module should register itself here, by importing the global
-// `analyticsRegistry` and calling `registerInjectableAnalyticsAdapter`.
+// `analyticsRegistry` and calling `registerAnalyticsAdapterFactory`.
 //
 // See modules/appnexusAnalyticsAdapter.js for an example.
 
@@ -10,14 +10,7 @@ import { logError, logMessage } from './utils';
 export function newAnalyticsRegistry() {
   const _analyticsRegistry = {};
 
-  function registerAnalyticsAdapter({adapter, code}) {
-    registerInjectableAnalyticsAdapter({
-      factory: function() { return adapter },
-      code: code
-    });
-  }
-
-  function registerInjectableAnalyticsAdapter({factory, code}) {
+  function registerAnalyticsAdapterFactory({factory, code}) {
     if (factory && code) {
       _analyticsRegistry[code] = factory;
     } else {
@@ -27,12 +20,16 @@ export function newAnalyticsRegistry() {
 
   function newAnalyticsAdapter(code, dependencies = {}) {
     if (_analyticsRegistry[code]) {
-      const analyticsAdapter = _analyticsRegistry[code](dependencies)
-      if (typeof analyticsAdapter.enableAnalytics === 'function') {
-        analyticsAdapter.code = code;
-        return analyticsAdapter;
-      } else {
-        logError(`Analytics adaptor for "${code}" must implement an enableAnalytics() function`);
+      try {
+        const analyticsAdapter = _analyticsRegistry[code](dependencies)
+        if (typeof analyticsAdapter.enableAnalytics === 'function') {
+          analyticsAdapter.code = code;
+          return analyticsAdapter;
+        } else {
+          logError(`Analytics adaptor for "${code}" must implement an enableAnalytics() function`);
+        }
+      } catch (e) {
+        logError(`Error while instantiating analytics adapter: ${code}.`);
       }
     } else {
       logError(`Missing analytics adapter for "${code}". No bids will be fetched.`);
@@ -47,8 +44,7 @@ export function newAnalyticsRegistry() {
   }
 
   return {
-    registerAnalyticsAdapter: registerAnalyticsAdapter,
-    registerInjectableAnalyticsAdapter: registerInjectableAnalyticsAdapter,
+    registerAnalyticsAdapterFactory: registerAnalyticsAdapterFactory,
     newAnalyticsAdapter: newAnalyticsAdapter,
   };
 }

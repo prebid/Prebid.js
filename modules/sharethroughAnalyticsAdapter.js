@@ -66,7 +66,7 @@ function sharethroughAdapterFactory(analyticsAdapterDependencies) {
   });
 }
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: sharethroughAdapterFactory,
   code: 'sharethrough'
 });

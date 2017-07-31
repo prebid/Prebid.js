@@ -11,7 +11,7 @@ const appnexusAdapterFactory = adapter({
   analyticsType: 'bundle'
 });
 
-analyticsRegistry.registerInjectableAnalyticsAdapter({
+analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: appnexusAdapterFactory,
   code: 'appnexus'
 });
