@@ -1,5 +1,5 @@
 const assert = require('chai').assert;
-const adapter = require('src/adapters/stroeerCore');
+const adapter = require('modules/stroeercoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 
 

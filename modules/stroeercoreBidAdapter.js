@@ -1,8 +1,8 @@
-const bidmanager = require('../bidmanager');
-const bidfactory = require('../bidfactory');
-const utils = require('../utils');
-const ajax = require('../ajax').ajax;
-const url = require('../url');
+const bidmanager = require('../src/bidmanager');
+const bidfactory = require('../src/bidfactory');
+const utils = require('../src/utils');
+const ajax = require('../src/ajax').ajax;
+const url = require('../src/url');
 
 module.exports = function (win = window) {
   const defaultHost = "dsh.adscale.de";
