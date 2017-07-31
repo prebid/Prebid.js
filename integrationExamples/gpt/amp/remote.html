@@ -115,11 +115,16 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
 
         var ad = adObject.ad;
         var adUrl = adObject.adUrl;
+        var width = adObject.width;
+        var height = adObject.height;
         var message = JSON.stringify({
           message: 'Prebid creative sent: ' + data.adId,
           ad: ad,
-          adUrl: adUrl
+          adUrl: adUrl,
+          width: width,
+          height: height
         });
+
         ev.source.postMessage(message, '*');
       }
     }
