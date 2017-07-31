@@ -31,7 +31,6 @@ module.exports = {
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
-    "no-unused-vars": "off",
     "no-use-before-define": "off",
     "no-useless-call": "off",
     "no-useless-escape": "off",

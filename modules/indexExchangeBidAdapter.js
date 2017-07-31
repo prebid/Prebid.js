@@ -425,14 +425,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     // Our standard is to always bid for all known slots.
     cygnus_index_args.slots = [];
 
-    var expectedBids = 0;
-
     // Grab the slot level data for cygnus_index_args
     for (var i = 0; i < bidArr.length; i++) {
       var bid = bidArr[i];
       var sizeID = 0;
-
-      expectedBids++;
 
       // Expecting nested arrays for sizes
       if (!(bid.sizes[0] instanceof Array)) {
@@ -551,7 +547,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
       try {
         var indexObj = _IndexRequestData.targetIDToBid;
-        var lookupObj = cygnus_index_args;
 
         // Grab all the bids for each slot
         for (var adSlotId in slotIdMap) {

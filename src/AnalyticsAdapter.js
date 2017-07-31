@@ -17,7 +17,6 @@ const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
@@ -91,9 +90,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
         const { eventType, args } = event;
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType, args });
         }
       });
