@@ -4,7 +4,7 @@ const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
 const constants = require('src/constants.json');
 const adaptermanager = require('src/adaptermanager');
-const BaseAdapter = require('src/adapter');
+const BaseAdapter = require('src/adapter').default;
 
 const AOL_BIDDERS_CODES = {
   aol: 'aol',
@@ -324,11 +324,8 @@ const AolAdapter = function AolAdapter() {
     });
   }
 
-  return Object.assign(BaseAdapter.createNew(AOL_BIDDERS_CODES.aol), {
-    callBids: _callBids,
-    createNew: function () {
-      return new AolAdapter();
-    }
+  return Object.assign(new BaseAdapter(AOL_BIDDERS_CODES.aol), {
+    callBids: _callBids
   });
 };
 

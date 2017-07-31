@@ -6,7 +6,7 @@ import { ajax } from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
 const ServerBidAdapter = function ServerBidAdapter() {
-  const baseAdapter = Adapter.createNew('serverbid');
+  const baseAdapter = new Adapter('serverbid');
 
   const BASE_URI = '//e.serverbid.com/api/v2';
 
@@ -145,10 +145,6 @@ const ServerBidAdapter = function ServerBidAdapter() {
   return {
     callBids: baseAdapter.callBids
   };
-};
-
-ServerBidAdapter.createNew = function() {
-  return new ServerBidAdapter();
 };
 
 adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');

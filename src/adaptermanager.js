@@ -202,8 +202,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        let newAdapter = null;
-        newAdapter = bidAdaptor.createNew();
+        let newAdapter = new bidAdaptor.constructor();
         newAdapter.setBidderCode(alias);
         this.registerBidAdapter(newAdapter, alias);
       } catch (e) {
