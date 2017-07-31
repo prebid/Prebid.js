@@ -12,11 +12,69 @@ let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
 let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
 let bidWonConst = CONSTANTS.EVENTS.BID_WON;
 
-let initOptions = {publisherIds: []};
+let initOptions = {publisherIds: [], utmMarks: []};
 let bidWon = {options: {}, events: []};
 let eventStack = {options: {}, events: []};
 
 let auctionStatus = 'not_started';
+
+let localStoragePrefix = 'roxot_analytics_';
+let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+let utmTimeoutKey = 'utm_timeout';
+let utmTimeout = 60 * 60 * 1000;
+
+function getParameterByName(param) {
+  let vars = {};
+  window.location.href.replace(location.hash, '').replace(
+    /[?&]+([^=&]+)=?([^&]*)?/gi,
+    function(m, key, value) {
+      vars[key] = value !== undefined ? value : '';
+    }
+  );
+
+  return vars[param] ? vars[param] : '';
+}
+
+function buildUtmTagData() {
+  let utmTagData = {};
+  let utmTagsDetected = false;
+  utmTags.forEach(function(utmTagKey) {
+    let utmTagValue = getParameterByName(utmTagKey);
+    if (utmTagValue !== '') {
+      utmTagsDetected = true;
+    }
+    utmTagData[utmTagKey] = utmTagValue;
+  });
+  utmTags.forEach(function(utmTagKey) {
+    if (utmTagsDetected) {
+      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      updateUtmTimeout();
+    } else {
+      if (!isUtmTimeoutExpired()) {
+        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        updateUtmTimeout();
+      }
+    }
+  });
+  return utmTagData;
+}
+
+function updateUtmTimeout() {
+  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+}
+
+function isUtmTimeoutExpired() {
+  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  return (Date.now() - utmTimestamp) > utmTimeout;
+}
+
+function buildUtmLocalStorageTimeoutKey() {
+  return localStoragePrefix.concat(utmTimeoutKey);
+}
+
+function buildUtmLocalStorageKey(utmMarkKey) {
+  return localStoragePrefix.concat(utmMarkKey);
+}
 
 function checkOptions() {
   if (typeof initOptions.publisherIds === 'undefined') {
@@ -96,6 +154,7 @@ roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
+  initOptions.utmTagData = buildUtmTagData();
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
 };
