@@ -140,7 +140,7 @@ function RubiconAdapter() {
 
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
-      let digiTrustUser = window.DigiTrust && (pbjs.digiTrustId || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+      let digiTrustUser = window.DigiTrust && ($$PREBID_GLOBAL$$.digiTrustId || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
       return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
     }
     let digiTrustId = getDigiTrustId();
