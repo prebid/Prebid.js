@@ -5,10 +5,10 @@ const ajax = require('../src/ajax').ajax;
 const url = require('../src/url');
 
 module.exports = function (win = window) {
-  const defaultHost = "dsh.adscale.de";
-  const defaultPath = "/dsh";
-  const defaultPort = "";
-  const bidderCode = "stroeerCore";
+  const defaultHost = 'dsh.adscale.de';
+  const defaultPath = '/dsh';
+  const defaultPort = '';
+  const bidderCode = 'stroeerCore';
 
   const validBidRequest = bid => bid.params && utils.isStr(bid.params.sid);
 
@@ -16,8 +16,7 @@ module.exports = function (win = window) {
 
   const getPageReferer = () => getMostAccessibleTopWindow().document.referrer || undefined;
 
-  const isSecureWindow = () => win.location.protocol === "https:";
-
+  const isSecureWindow = () => win.location.protocol === 'https:';
 
   function buildUrl({host: hostname = defaultHost, port = defaultPort, securePort, path: pathname = defaultPath}) {
     const secure = isSecureWindow();
@@ -29,21 +28,18 @@ module.exports = function (win = window) {
     return `${url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname})}`;
   }
 
-
   function getMostAccessibleTopWindow() {
     let res = win;
 
     try {
-      while (win.top !== res) {
-        if (res.parent.location.href.length)
-          res = res.parent;
+      while (win.top !== res && res.parent.location.href.length) {
+        res = res.parent;
       }
     }
-    catch(ignore){}
+    catch (ignore) {}
 
     return res;
   }
-
 
   function elementInView(elementId) {
     const visibleInWindow = (el, win) => {
@@ -60,12 +56,11 @@ module.exports = function (win = window) {
     try {
       return visibleInWindow(win.document.getElementById(elementId), win);
     }
-    catch(e) {
+    catch (e) {
       // old browser, element not found, cross-origin etc.
     }
     return undefined;
   }
-
 
   function ajaxResponseFn(validBidRequestById) {
     return function(rawResponse) {
@@ -75,7 +70,7 @@ module.exports = function (win = window) {
         response = JSON.parse(rawResponse);
       }
       catch (e) {
-        response = {bids:[]};
+        response = {bids: []};
         utils.logError('unable to parse bid response', 'ERROR', e);
       }
 
@@ -108,7 +103,7 @@ module.exports = function (win = window) {
     callBids: function (params) {
       const requestBody = {
         id: params.bidderRequestId,
-        bids:[],
+        bids: [],
         ref: getPageReferer(),
         ssl: isSecureWindow(),
         mpa: isMainPageAccessible(),

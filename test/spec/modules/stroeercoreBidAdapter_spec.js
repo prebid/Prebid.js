@@ -2,7 +2,6 @@ const assert = require('chai').assert;
 const adapter = require('modules/stroeercoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 
-
 function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
   assert.propertyVal(bidObject, 'ad', ad);
@@ -48,24 +47,23 @@ const buildBidderRequest = () => ({
 });
 
 const buildBidderResponse = () => ({
-  "bids": [{
-    "bidId": "bid1",
-    "cpm": 4.0,
-    "width": 300,
-    "height": 600,
-    "ad": "<div>tag1</div>"
+  'bids': [{
+    'bidId': 'bid1',
+    'cpm': 4.0,
+    'width': 300,
+    'height': 600,
+    'ad': '<div>tag1</div>'
   }, {
-    "bidId": "bid2",
-    "cpm": 4.0,
-    "width": 728,
-    "height": 90,
-    "ad": "<div>tag2</div>"
+    'bidId': 'bid2',
+    'cpm': 4.0,
+    'width': 728,
+    'height': 90,
+    'ad': '<div>tag2</div>'
   }]
 });
 
-
 const createWindow = (href, params = {}) => {
-  let {parent, referrer, top, frameElement, placementElements=[]} = params;
+  let {parent, referrer, top, frameElement, placementElements = []} = params;
   const protocol = href.startsWith('https') ? 'https:' : 'http:';
   const win = {
     frameElement,
@@ -110,16 +108,16 @@ describe('stroeerssp adapter', function () {
     sandbox.restore();
   });
 
-
-  const topWin = createWindow('http://www.abc.org/', {referrer:'http://www.google.com/?query=monkey'});
+  const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
   topWin.innerHeight = 800;
 
   const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
   midWin.innerHeight = 400;
 
+  const win = createWindow('http://www.xyz.com/', {
+    parent: midWin, top: topWin, frameElement: createElement(304), placementElements: [createElement(17, 'div-1'), createElement(54, 'div-2')]
+  });
 
-  const win = createWindow('http://www.xyz.com/', {parent: midWin, top: topWin, frameElement: createElement(304),
-    placementElements: [createElement(17, 'div-1'), createElement(54, 'div-2')]});
   win.innerHeight = 200;
 
   function createElement(offsetTop = 0, id) {
@@ -134,15 +132,13 @@ describe('stroeerssp adapter', function () {
     }
   }
 
-
   it('should have `callBids` function', () => {
     assert.isFunction(adapter().callBids);
   });
 
-
   describe('bid request', () => {
     it('send bids as a POST request to default endpoint', function () {
-      fakeServer.respondWith("");
+      fakeServer.respondWith('');
       adapter(win).callBids(bidderRequest);
       fakeServer.respond();
 
@@ -153,9 +149,7 @@ describe('stroeerssp adapter', function () {
       assert.equal(request.url, 'http://dsh.adscale.de/dsh');
     });
 
-
     describe('send bids as a POST request to custom endpoint', function () {
-
       const tests = [
         {protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'http://other.com:234/xyz'},
         {protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'},
@@ -168,10 +162,9 @@ describe('stroeerssp adapter', function () {
           win.location.protocol = test.protocol;
           bidderRequest.bids[0].params = test.params;
 
-          fakeServer.respondWith("");
+          fakeServer.respondWith('');
           adapter(win).callBids(bidderRequest);
           fakeServer.respond();
-
 
           assert.equal(fakeServer.requests.length, 1);
           const request = fakeServer.requests[0];
@@ -180,9 +173,7 @@ describe('stroeerssp adapter', function () {
           assert.equal(request.url, test.expected);
         });
       });
-
     });
-
 
     it('sends bids in the expected JSON structure', function () {
       clock.tick(13500);
@@ -202,30 +193,29 @@ describe('stroeerssp adapter', function () {
       assert.equal(expectedTimeout, 1500);
 
       const expectedJson = {
-        "id": "bidder-request-id-123",
-        "timeout": expectedTimeout,
-        "ref": "http://www.google.com/?query=monkey",
-        "mpa": true,
-        "ssl": false,
-        "bids": [
+        'id': 'bidder-request-id-123',
+        'timeout': expectedTimeout,
+        'ref': 'http://www.google.com/?query=monkey',
+        'mpa': true,
+        'ssl': false,
+        'bids': [
           {
-            "sid": "NDA=",
-            "bid": "bid1",
-            "siz": [[300,600],[160,60]],
-            "viz": true
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'siz': [[300, 600], [160, 60]],
+            'viz': true
           },
           {
-            "sid": "ODA=",
-            "bid": "bid2",
-            "siz": [[728,90]],
-            "viz": true
+            'sid': 'ODA=',
+            'bid': 'bid2',
+            'siz': [[728, 90]],
+            'viz': true
           }
         ]
       };
 
       assert.deepEqual(bidRequest, expectedJson);
     });
-
 
     describe('optional fields', () => {
       it('skip viz field when unable to determine visibility of placement', () => {
@@ -234,38 +224,35 @@ describe('stroeerssp adapter', function () {
           placementElements: []
         });
 
-        fakeServer.respondWith("");
+        fakeServer.respondWith('');
         adapter(win).callBids(bidderRequest);
         fakeServer.respond();
 
         const bids = JSON.parse(fakeServer.requests[0].requestBody).bids;
         assert.lengthOf(bids, 2);
         for (let bid of bids) {
-          assert.notProperty(bid, "viz");
+          assert.notProperty(bid, 'viz');
         }
       });
 
-
       it('skip ref field when unable to determine document referrer', () => {
         const win = createWindow('http://www.xyz.com/', {
-          referrer: "",
+          referrer: '',
           placementElements: [createElement(17, 'div-1'), createElement(54, 'div-2')]
         });
 
-        fakeServer.respondWith("");
+        fakeServer.respondWith('');
         adapter(win).callBids(bidderRequest);
         fakeServer.respond();
 
         const payload = JSON.parse(fakeServer.requests[0].requestBody);
-        assert.notProperty(payload, "ref");
+        assert.notProperty(payload, 'ref');
       });
     });
   });
 
-
   describe('bid response', () => {
     it('should add bids', function () {
-
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 
       adapter(win).callBids(bidderRequest);
@@ -284,9 +271,7 @@ describe('stroeerssp adapter', function () {
       assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
     });
 
-
     it('should add unfulfilled bids', function() {
-
       const result = buildBidderResponse();
 
       result.bids[0].bidId = 'bidX';
@@ -300,9 +285,7 @@ describe('stroeerssp adapter', function () {
       assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1');
 
       assertBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2', '<div>tag2</div>', 728, 90);
-
     });
-
 
     it('should exclude bids without slot id param', () => {
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
@@ -323,6 +306,5 @@ describe('stroeerssp adapter', function () {
 
       assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });
-
   });
 });
