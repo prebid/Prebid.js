@@ -20,3 +20,4 @@ The Vertoz adapter currently doesn't support multiple sizes per ad placement and
 | Name | Scope    | Description        | Example  |
 | :--- | :----    | :----------        | :------  |
 | placementId   | required | vertoz placement id    | `'VH-HB-123'` |
+| cpmFloor      | optional | cpm floor price        | `0.1` |
