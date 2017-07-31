@@ -12,6 +12,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
+import { events } from 'src/events';
 
 
 var $$PREBID_GLOBAL$$ = getGlobal();
@@ -20,7 +21,6 @@ var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
-var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
 

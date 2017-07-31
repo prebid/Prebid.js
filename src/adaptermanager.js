@@ -1,5 +1,6 @@
 /** @module adaptermanger */
 
+import { events } from 'src/events';
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
@@ -7,7 +8,6 @@ import { analyticsRegistry } from './analyticsAdapterRegistry'
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;

@@ -3,11 +3,12 @@ import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
+import { events } from 'src/events';
+
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
-var events = require('./events');
 
 var objectType_function = 'function';
 

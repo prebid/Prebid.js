@@ -7,6 +7,7 @@ import {
   getTargetingKeysBidLandscape,
   getAdUnits
 } from 'test/fixtures/fixtures';
+import { events } from 'src/events';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -19,7 +20,6 @@ var bidmanager = require('src/bidmanager');
 var bidfactory = require('src/bidfactory');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
-var events = require('src/events');
 var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 

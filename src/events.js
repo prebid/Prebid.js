@@ -1,25 +1,25 @@
 /**
  * events.js
  */
-var utils = require('./utils');
-var CONSTANTS = require('./constants');
-var slice = Array.prototype.slice;
-var push = Array.prototype.push;
+const utils = require('./utils');
+const CONSTANTS = require('./constants');
+const slice = Array.prototype.slice;
+const push = Array.prototype.push;
 
 // define entire events
 // var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
-var allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
+const allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
   return v;
 });
 
-var idPaths = CONSTANTS.EVENT_ID_PATHS;
+const idPaths = CONSTANTS.EVENT_ID_PATHS;
 
-// keep a record of all events fired
-var eventsFired = [];
+export function newEvents() {
+  const _handlers = {};
+  const _public = {};
 
-module.exports = (function () {
-  var _handlers = {};
-  var _public = {};
+  // keep a record of all events fired
+  const eventsFired = [];
 
   /**
    *
@@ -30,15 +30,15 @@ module.exports = (function () {
   function _dispatch(eventString, args) {
     utils.logMessage('Emitting event for: ' + eventString);
 
-    var eventPayload = args[0] || {};
-    var idPath = idPaths[eventString];
-    var key = eventPayload[idPath];
-    var event = _handlers[eventString] || { que: [] };
-    var eventKeys = utils._map(event, function (v, k) {
+    const eventPayload = args[0] || {};
+    const idPath = idPaths[eventString];
+    const key = eventPayload[idPath];
+    const event = _handlers[eventString] || { que: [] };
+    const eventKeys = utils._map(event, function (v, k) {
       return k;
     });
 
-    var callbacks = [];
+    const callbacks = [];
 
     // record the event:
     eventsFired.push({
@@ -78,7 +78,7 @@ module.exports = (function () {
   _public.on = function (eventString, handler, id) {
     // check whether available event or not
     if (_checkAvailableEvent(eventString)) {
-      var event = _handlers[eventString] || { que: [] };
+      const event = _handlers[eventString] || { que: [] };
 
       if (id) {
         event[id] = event[id] || { que: [] };
@@ -94,12 +94,12 @@ module.exports = (function () {
   };
 
   _public.emit = function (event) {
-    var args = slice.call(arguments, 1);
+    const args = slice.call(arguments, 1);
     _dispatch(event, args);
   };
 
   _public.off = function (eventString, handler, id) {
-    var event = _handlers[eventString];
+    const event = _handlers[eventString];
 
     if (utils.isEmpty(event) || utils.isEmpty(event.que) && utils.isEmpty(event[id])) {
       return;
@@ -111,14 +111,14 @@ module.exports = (function () {
 
     if (id) {
       utils._each(event[id].que, function (_handler) {
-        var que = event[id].que;
+        const que = event[id].que;
         if (_handler === handler) {
           que.splice(utils.indexOf.call(que, _handler), 1);
         }
       });
     } else {
       utils._each(event.que, function (_handler) {
-        var que = event.que;
+        const que = event.que;
         if (_handler === handler) {
           que.splice(utils.indexOf.call(que, _handler), 1);
         }
@@ -137,9 +137,9 @@ module.exports = (function () {
    * @return {Array} array of events fired
    */
   _public.getEvents = function () {
-    var arrayCopy = [];
+    const arrayCopy = [];
     utils._each(eventsFired, function (value) {
-      var newProp = Object.assign({}, value);
+      const newProp = Object.assign({}, value);
       arrayCopy.push(newProp);
     });
 
@@ -147,4 +147,6 @@ module.exports = (function () {
   };
 
   return _public;
-}());
+}
+
+export const events = newEvents();

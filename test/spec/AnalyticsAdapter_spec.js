@@ -1,5 +1,5 @@
 import { assert } from 'chai';
-import events from 'src/events';
+import { newEvents } from 'src/events';
 import CONSTANTS from 'src/constants.json';
 
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
@@ -22,6 +22,7 @@ FEATURE: Analytics Adapters API
     GIVEN a global object \`window['testGlobal']\`
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
     describe(`WHEN an event occurs that is to be tracked\n`, () => {
+      const events = newEvents();
       const eventType = BID_REQUESTED;
       const args = { some: 'data' };
       const adapterFactory = new AnalyticsAdapter(config);
@@ -43,6 +44,7 @@ FEATURE: Analytics Adapters API
       const eventType = BID_RESPONSE;
       const args = { wat: 'wot' };
       const adapterFactory = new AnalyticsAdapter(config);
+      const events = newEvents();
       const adapter = adapterFactory({
         events: events,
       });
@@ -68,9 +70,11 @@ FEATURE: Analytics Adapters API
 
     describe(`WHEN an event occurs after enable analytics\n`, () => {
       var spyTestGlobal,
-        adapter;
+        adapter,
+        events;
 
       beforeEach(() => {
+        events = newEvents();
         const adapterFactory = new AnalyticsAdapter(config);
         adapter = adapterFactory({
           events: events,

@@ -1,10 +1,12 @@
 import roxotAnalyticFactory from 'modules/roxotAnalyticsAdapter';
-let events = require('src/events');
+import { newEvents } from 'src/events';
+
 let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
   describe('enableAnalytics', function () {
     it('should catch all events', function () {
+      const events = newEvents();
       const roxotAnalytic = roxotAnalyticFactory({
         events: events,
       });
