@@ -118,7 +118,7 @@ window.index_render = function(doc, targetID) {
     if (ad != null) {
       doc.write(ad);
     } else {
-      var url = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+      var url = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
       url += '/headerstats?type=RT&s=' + cygnus_index_args.siteID + '&u=' + encodeURIComponent(location.href) + '&r=' + _IndexRequestData.lastRequestID;
       var px_call = new Image();
       px_call.src = url + '&blank=' + targetID;
@@ -346,10 +346,10 @@ var cygnus_index_start = function () {
     var scriptSrc;
     if (getIndexDebugMode() == CONSTANTS.INDEX_DEBUG_MODE.mode.sandbox.queryValue.toUpperCase()) {
       this.siteID = CONSTANTS.INDEX_DEBUG_MODE.mode.sandbox.siteID;
-      scriptSrc = window.location.protocol === 'https:' ? 'https://sandbox.ht.indexexchange.com' : 'http://sandbox.ht.indexexchange.com';
+      scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://sandbox.ht.indexexchange.com' : 'https://sandbox.ht.indexexchange.com';
       utils.logMessage('IX DEBUG: Sandbox mode activated');
     } else {
-      scriptSrc = window.location.protocol === 'https:' ? 'https://as-sec.casalemedia.com' : 'http://as.casalemedia.com';
+      scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
     }
     var prebidVersion = encodeURIComponent('$prebid.version$');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
@@ -407,6 +407,13 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
   ];
   var firstAdUnitCode = '';
 
+  function passOnBid(adUnitCode) {
+    var bid = bidfactory.createBid(2);
+    bid.bidderCode = ADAPTER_CODE;
+    bidmanager.addBidResponse(adUnitCode, bid);
+    return bid;
+  }
+
   function _callBids(request) {
     var bidArr = request.bids;
 
@@ -419,6 +426,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     _IndexRequestData.targetAggregate = {'open': {}, 'private': {}};
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
+      for (var i = 0; i < bidArr.length; i++) {
+        passOnBid(bidArr[i].placementCode);
+      }
       return;
     }
 
@@ -450,13 +460,17 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
         if (!validSize) {
           utils.logMessage(ADAPTER_NAME + ' slot excluded from request due to no valid sizes');
+          passOnBid(bid.placementCode);
           continue;
         }
 
         var usingSizeSpecificSiteID = false;
         // Check for size defined in bidder params
         if (bid.params.size && bid.params.size instanceof Array) {
-          if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) { continue; }
+          if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) {
+            passOnBid(bid.placementCode);
+            continue;
+          }
           usingSizeSpecificSiteID = true;
         }
 
@@ -467,6 +481,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         var siteID = Number(bid.params.siteID);
         if (typeof siteID !== 'number' || siteID % 1 != 0 || siteID <= 0) {
           utils.logMessage(ADAPTER_NAME + ' slot excluded from request due to invalid siteID');
+          passOnBid(bid.placementCode);
           continue;
         }
         if (siteID && typeof cygnus_index_args.siteID === 'undefined') {
@@ -478,6 +493,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           var slotID = bid.params[requiredParams[0]];
           if (typeof slotID !== 'string' && typeof slotID !== 'number') {
             utils.logError(ADAPTER_NAME + ' bid contains invalid slot ID from ' + bid.placementCode + '. Discarding slot');
+            passOnBid(bid.placementCode);
             continue
           }
 
@@ -598,10 +614,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             }
           // No bids for expected bid, pass bid
           } else {
-            var bid = bidfactory.createBid(2);
-            bid.bidderCode = ADAPTER_CODE;
-            currentBid = bid;
-            bidmanager.addBidResponse(adUnitCode, currentBid);
+            currentBid = passOnBid(adUnitCode);
           }
         }
       } catch (e) {
