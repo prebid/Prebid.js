@@ -1,19 +1,17 @@
-import pubwiseAnalytics from 'modules/pubwiseAnalyticsAdapter';
+import pubwiseAnalyticsFactory from 'modules/pubwiseAnalyticsAdapter';
 let events = require('src/events');
-let adaptermanager = require('src/adaptermanager');
 let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
+  const pubwiseAnalytics = pubwiseAnalyticsFactory({
+    events: events,
+  });
+
   describe('enableAnalytics', function () {
     it('should catch all events', function () {
       sinon.spy(pubwiseAnalytics, 'track');
 
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'pubwiseanalytics',
-        adapter: pubwiseAnalytics
-      });
-
-      adaptermanager.enableAnalytics({
+      pubwiseAnalytics.enableAnalytics({
         provider: 'pubwiseanalytics',
         options: {
           site: ['test-test-test-test']

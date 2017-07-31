@@ -24,7 +24,10 @@ FEATURE: Analytics Adapters API
     describe(`WHEN an event occurs that is to be tracked\n`, () => {
       const eventType = BID_REQUESTED;
       const args = { some: 'data' };
-      const adapter = new AnalyticsAdapter(config);
+      const adapterFactory = new AnalyticsAdapter(config);
+      const adapter = adapterFactory({
+        events: events,
+      });
       var spyTestGlobal = sinon.spy(window, config.global);
 
       adapter.track({ eventType, args });
@@ -39,8 +42,10 @@ FEATURE: Analytics Adapters API
     describe(`WHEN an event occurs before tracking library is available\n`, () => {
       const eventType = BID_RESPONSE;
       const args = { wat: 'wot' };
-      const adapter = new AnalyticsAdapter(config);
-
+      const adapterFactory = new AnalyticsAdapter(config);
+      const adapter = adapterFactory({
+        events: events,
+      });
       window[config.global] = null;
       events.emit(BID_RESPONSE, args);
 
@@ -66,7 +71,10 @@ FEATURE: Analytics Adapters API
         adapter;
 
       beforeEach(() => {
-        adapter = new AnalyticsAdapter(config);
+        const adapterFactory = new AnalyticsAdapter(config);
+        adapter = adapterFactory({
+          events: events,
+        });
         spyTestGlobal = sinon.spy(window, config.global);
 
         sinon.stub(events, 'getEvents', () => []); // these tests shouldn't be affected by previous tests

@@ -1,9 +1,14 @@
+import events from 'src/events';
+import gaFactory from 'modules/googleAnalyticsAdapter';
+
 var assert = require('assert');
-var ga = require('modules/googleAnalyticsAdapter');
 
 describe('Ga', function () {
   describe('enableAnalytics', function () {
     it('should accept a tracker name option and output prefixed send string', function () {
+      const ga = gaFactory({
+        events: events,
+      });
       var config = { options: { trackerName: 'foo' } };
       ga.enableAnalytics(config);
 
