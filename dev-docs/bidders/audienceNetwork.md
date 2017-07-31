@@ -21,7 +21,7 @@ biddercode_longer_than_12: true
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name          | Scope    | Description                            | Example                           |
-| :------------ | :------- | :------------------------------------- | :-------------------------------- |
-| `placementId` | required | The Placement ID from Audience Network | "555555555555555_555555555555555" |
-| `format`      | optional | Format, one of "native" or "fullwidth" | "native"                          |
+| Name          | Scope    | Description                                     | Example                           |
+| :------------ | :------- | :---------------------------------------------- | :--------------------------------- |
+| `placementId` | required | The Placement ID from Audience Network          | "555555555555555\_555555555555555" |
+| `format`      | optional | Format, one of "native", "fullwidth" or "video" | "native"                           |
