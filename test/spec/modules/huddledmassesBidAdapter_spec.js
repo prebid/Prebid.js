@@ -61,26 +61,26 @@ describe('HuddledMasses adapter tests', function () {
       let bidderRequest = adapter.callBids.getCall(0).args[0];
 
       expect(bidderRequest).to.have.property('bids')
-                .that.is.an('array')
-                .with.lengthOf(1);
+        .that.is.an('array')
+        .with.lengthOf(1);
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .to.have.property('bidder', 'huddledmasses');
+        .to.have.property('bidder', 'huddledmasses');
 
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('sizes')
-                .that.is.an('array')
-                .with.lengthOf(2)
-                .that.deep.equals(adUnit.sizes);
+        .with.property('sizes')
+        .that.is.an('array')
+        .with.lengthOf(2)
+        .that.deep.equals(adUnit.sizes);
       expect(bidderRequest).to.have.deep.property('bids[0]')
-                .with.property('params')
-                .to.have.property('placement_id', 0);
+        .with.property('params')
+        .to.have.property('placement_id', 0);
     });
 
     it('Valid bid-response', () => {
       server.respondWith(JSON.stringify(
-                response
-            ));
+        response
+      ));
       adapterManager.callBids({
         adUnits: [clone(adUnit)]
       });

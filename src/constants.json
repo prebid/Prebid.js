@@ -62,6 +62,8 @@
   ],
   "S2S" : {
     "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/auction",
-    "SRC" : "s2s"
+    "SRC" : "s2s",
+    "ADAPTER" : "prebidServer",
+    "SYNC_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/cookie_sync"
   }
 }

@@ -130,6 +130,6 @@ var AdbladeAdapter = function AdbladeAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdbladeAdapter, 'adblade');
+adaptermanager.registerBidAdapter(new AdbladeAdapter(), 'adblade');
 
 module.exports = AdbladeAdapter;

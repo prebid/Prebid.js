@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "commonjs": true
@@ -23,6 +23,7 @@
     "camelcase": "off",
     "eqeqeq": "off",
     "import/first": "off",
+    "new-cap": "off",
     "no-control-regex": "off",
     "no-mixed-operators": "off",
     "no-multiple-empty-lines": "off",
@@ -39,4 +40,4 @@
     "standard/object-curly-even-spacing": "off",
     "valid-typeof": "off"
   }
-}
+};

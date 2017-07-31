@@ -17,7 +17,7 @@ const REQUEST = {
       },
       'placementCode': 'div-gpt-ad-1438287399331-0',
       'sizes': [
-                [300, 250]
+        [300, 250]
       ],
       'bidId': '30e5e911c00703',
       'bidderRequestId': '25392d757fad47',

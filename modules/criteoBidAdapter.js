@@ -16,7 +16,7 @@ var CriteoAdapter = function CriteoAdapter() {
       _pushBidRequestEvent(params);
       adloader.loadScript(
         _publisherTagUrl,
-        function () {},
+        function () { },
         true
       );
     } else {
@@ -42,14 +42,21 @@ var CriteoAdapter = function CriteoAdapter() {
       // build slots before sending one multi-slots bid request
       for (var i = 0; i < bids.length; i++) {
         var bid = bids[i];
+        var sizes = bid.sizes || [];
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
             bid.params.zoneId,
             undefined,
-            bid.transactionId
+            bid.transactionId,
+            sizes.map((size) => {
+              return { width: size[0], height: size[1] }
+            }
+            )
           )
         );
+
+        var networkid = bid.params.networkId;
 
         isAudit |= bid.params.audit !== undefined;
       }
@@ -60,7 +67,9 @@ var CriteoAdapter = function CriteoAdapter() {
         slots,
         _callbackSuccess(slots),
         _callbackError(slots),
-        _callbackError(slots) // timeout handled as error
+        _callbackError(slots), // timeout handled as error
+        undefined,
+        networkid
       );
 
       // process the event as soon as possible
@@ -135,6 +144,6 @@ var CriteoAdapter = function CriteoAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new CriteoAdapter, 'criteo');
+adaptermanager.registerBidAdapter(new CriteoAdapter(), 'criteo');
 
 module.exports = CriteoAdapter;

@@ -4,7 +4,7 @@
  */
 
 import events from './events';
-import fireNativeImpressions from './native';
+import { fireNativeImpressions } from './native';
 import { EVENTS } from './constants';
 
 const BID_WON = EVENTS.BID_WON;

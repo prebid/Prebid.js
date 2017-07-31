@@ -123,6 +123,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new MemeGlobalAdapter, 'memeglobal');
+adaptermanager.registerBidAdapter(new MemeGlobalAdapter(), 'memeglobal');
 
 module.exports = MemeGlobalAdapter;

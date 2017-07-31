@@ -303,6 +303,6 @@ const AolAdapter = function AolAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AolAdapter, 'aol');
+adaptermanager.registerBidAdapter(new AolAdapter(), 'aol');
 
 module.exports = AolAdapter;

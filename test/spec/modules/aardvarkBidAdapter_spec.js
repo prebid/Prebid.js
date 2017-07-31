@@ -67,7 +67,7 @@ describe('aardvark adapter tests', function () {
       ]
     },
 
-        // respond
+    // respond
     bidderResponse = [
       {
         'adm': '<div></div>',

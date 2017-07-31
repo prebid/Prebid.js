@@ -100,6 +100,6 @@ var AdmediaAdapter = function AdmediaAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdmediaAdapter, 'admedia');
+adaptermanager.registerBidAdapter(new AdmediaAdapter(), 'admedia');
 
 module.exports = AdmediaAdapter;

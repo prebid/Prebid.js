@@ -236,17 +236,17 @@ describe('adsupply adapter tests', function () {
   it('Response handler invalid data', function () {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
 
-		// adapter needs to be called, in order for the stub to register.
+    // adapter needs to be called, in order for the stub to register.
     new AdSupplyAdapter();
 
-		// bidId is not valid
+    // bidId is not valid
     pbjs.adSupplyResponseHandler(null);
 
-		// bidRequest object is not found
+    // bidRequest object is not found
     pbjs.adSupplyResponseHandler('bidId1');
 
     let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
-		// Zone property is not found
+    // Zone property is not found
     let bidderRequest = {
       bidderCode: 'adsupply',
       bids: [{
@@ -264,7 +264,7 @@ describe('adsupply adapter tests', function () {
     pbjs._bidsRequested.push(bidderRequest);
     pbjs.adSupplyResponseHandler('bidId1');
 
-		// Media is not found
+    // Media is not found
     window[clientId] = window[clientId] || {};
     window[clientId]['b111'] = window[clientId]['b111'] || {};
     pbjs.adSupplyResponseHandler('bidId1');
@@ -277,11 +277,11 @@ describe('adsupply adapter tests', function () {
 
   it('No Fill response', function () {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-		// adapter needs to be called, in order for the stub to register.
+    // adapter needs to be called, in order for the stub to register.
     new AdSupplyAdapter();
 
     let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
-		// Zone property is not found
+    // Zone property is not found
     let bidderRequest = {
       bidderCode: 'adsupply',
       bids: [{
@@ -318,11 +318,11 @@ describe('adsupply adapter tests', function () {
 
   it('Fill response', function () {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-		// adapter needs to be called, in order for the stub to register.
+    // adapter needs to be called, in order for the stub to register.
     new AdSupplyAdapter();
 
     let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
-		// Zone property is not found
+    // Zone property is not found
     let bidderRequest = {
       bidderCode: 'adsupply',
       bids: [{
