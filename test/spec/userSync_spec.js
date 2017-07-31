@@ -3,7 +3,7 @@ import userSync from '../../src/userSync';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 
-describe.only('user sync', () => {
+describe('user sync', () => {
   let createImgObjectStub;
   let logWarnStub;
   let timeoutStub;
