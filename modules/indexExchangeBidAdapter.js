@@ -605,8 +605,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             }
           }
 
-          var currentBid;
-
           if (bids.length > 0) {
             // Add all bid responses
             for (var i = 0; i < bids.length; i++) {
@@ -614,7 +612,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
             }
           // No bids for expected bid, pass bid
           } else {
-            currentBid = passOnBid(adUnitCode);
+            passOnBid(adUnitCode);
           }
         }
       } catch (e) {
