@@ -43,7 +43,7 @@ gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 
 gulp.task('run-tests', ['lint', 'test-coverage']);
 
-gulp.task('build', ['build-bundle-prod']);
+gulp.task('build', ['clean','build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -207,7 +207,7 @@ gulp.task('watch', function () {
 });
 
 gulp.task('lint', () => {
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
+  return gulp.src(['src/**/*.js', 'test/**/*.js'])
     .pipe(eslint())
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError());

@@ -19,7 +19,7 @@ function PubmaticAdapter() {
   let iframe;
 
   function _callBids(params) {
-    bids = params.bids;
+    bids = params.bids || [];
     _pm_optimize_adslots = [];
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
@@ -61,6 +61,7 @@ function PubmaticAdapter() {
       'window.kaddctr = "%%PM_ADDCTR%%";' +
       'window.kadgender = "%%PM_GENDER%%";' +
       'window.kadage = "%%PM_AGE%%";' +
+      'window.kadpageurl  = window.document.referrer;' +
       'window.pm_async_callback_fn = "window.parent.$$PREBID_GLOBAL$$.handlePubmaticCallback";';
 
     content += '</scr' + 'ipt>';
