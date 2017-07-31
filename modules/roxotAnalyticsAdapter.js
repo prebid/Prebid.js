@@ -19,8 +19,9 @@ let eventStack = {options: {}, events: []};
 let auctionStatus = 'not_started';
 
 let localStoragePrefix = 'roxot_analytics_';
-
 let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+let utmTimeoutKey = 'utm_timeout';
+let utmTimeout = 60 * 60 * 1000;
 
 function getParameterByName(param) {
   let vars = {};
@@ -47,11 +48,27 @@ function buildUtmTagData() {
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
       localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      updateUtmTimeout()
     } else {
-      utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+      if (!isUtmTimeoutExpired()) {
+        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+      }
     }
   });
   return utmTagData;
+}
+
+function updateUtmTimeout() {
+  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+}
+
+function isUtmTimeoutExpired() {
+  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  return (Date.now() - utmTimestamp) > utmTimeout;
+}
+
+function buildUtmLocalStorageTimeoutKey() {
+  return localStoragePrefix.concat(utmTimeoutKey);
 }
 
 function buildUtmLocalStorageKey(utmMarkKey) {
