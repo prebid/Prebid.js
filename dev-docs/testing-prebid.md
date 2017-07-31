@@ -1,12 +1,12 @@
 ---
+redirect_to: https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md
 layout: page
 title: Testing Prebid.js
 description: How to write tests for the Prebid.js library
 pid: 199
 
 top_nav_section: dev_docs
-nav_section: hacking
-hide: false
+hide: true
 ---
 
 <div class="bs-docs-section" markdown="1">
