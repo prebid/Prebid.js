@@ -99,7 +99,7 @@ Fields you can set in `setS2SConfig`:
 {: .alert.alert-info :}
 **Additional `cookieSet` details**  
 We recommend that users leave `cookieSet` enabled since it's essential for server-to-server header bidding that we have a persistent cookie for improved cookie match rates.  If set to `false`:  
-&bull; Prebid.js will not overwrite all links on page to redirect through the AppNexus `cookiePersistUrl`  
+&bull; Prebid.js will not overwrite all links on page to redirect through an AppNexus persistent cookie URL  
 &bull; Prebid.js will not display a footer message on Safari indicating that AppNexus will be placing cookies on browsers that block 3rd party cookies  
 
 ## Related Topics
