@@ -4,11 +4,11 @@ import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
-import 'polyfill';
+import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from 'src/cookie.js';
+import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
@@ -25,9 +25,6 @@ var targeting = require('./targeting.js');
 
 /* private variables */
 
-var objectType_function = 'function';
-var objectType_undefined = 'undefined';
-var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
@@ -76,54 +73,6 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 // delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
-
-
-/**
- * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
- * before or after their script executes. For example, given the code:
- *
- * <script src="url/to/Prebid.js" async></script>
- * <script>
- *   var pbjs = pbjs || {};
- *   pbjs.cmd = pbjs.cmd || [];
- *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
- * </script>
- *
- * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
- * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
- * function to execute immediately.
- *
- * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
- *                        the Prebid script has been fully loaded.
- * @alias module:$$PREBID_GLOBAL$$.cmd.push
- */
-$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === objectType_function) {
-    try {
-      cmd.call();
-    } catch (e) {
-      utils.logError('Error processing command :' + e.message);
-    }
-  } else {
-    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
-  }
-};
-
-$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
-
-function processQueue(queue) {
-  queue.forEach(function(cmd) {
-    if (typeof cmd.called === objectType_undefined) {
-      try {
-        cmd.call();
-        cmd.called = true;
-      }
-      catch (e) {
-        utils.logError('Error processing command :', 'prebid.js', e);
-      }
-    }
-  });
-}
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -344,6 +293,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           iframe.height = height;
           iframe.width = width;
           iframe.style.display = 'inline';
+          iframe.style.overflow = 'hidden';
           iframe.src = url;
 
           utils.insertElement(iframe, doc, 'body');
@@ -446,7 +396,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === objectType_function) {
+    if (typeof bidsBackHandler === 'function') {
       bidmanager.addOneTimeCallback(bidsBackHandler, false);
     }
     bidmanager.executeCallback();
@@ -458,7 +408,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
   setAjaxTimeout(cbTimeout);
-  if (typeof bidsBackHandler === objectType_function) {
+  if (typeof bidsBackHandler === 'function') {
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
 
@@ -471,7 +421,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 /**
  *
  * Add adunit(s)
- * @param {Array|String} adUnitArr Array of adUnits or single adUnit Object.
+ * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
  * @alias module:$$PREBID_GLOBAL$$.addAdUnits
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
@@ -481,7 +431,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     // Append array to existing
     adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === objectType_object) {
+  } else if (typeof adUnitArr === 'object') {
     // Generate the transaction id for the adunit
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
@@ -542,7 +492,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
   var id = null;
-  if (!eventStr || !func || typeof func !== objectType_function) {
+  if (!eventStr || !func || typeof func !== 'function') {
     utils.logError('error registering callback. Check method signature');
     return id;
   }
@@ -704,6 +654,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
  * @param {object} options options for video tag
+ *
+ * @deprecated Include the dfpVideoSupport module in your build, and use the
+ *   $$PREBID_GLOBAL$$.adserver.buildVideoAdUrl (if DFP is your only Ad Server) or
+ *   $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl (if you use other Ad Servers too)
+ *   function instead. This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
@@ -753,7 +708,15 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 
 /**
  * Set config for server to server header bidding
- * @param {object} options - config object for s2s
+ * @typedef {Object} options - required
+ * @property {boolean} enabled enables S2S bidding
+ * @property {string[]} bidders bidders to request S2S
+ *  === optional params below ===
+ * @property {string} [endpoint] endpoint to contact
+ * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {string} [adapter] adapter code to use for S2S
+ * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {boolean} [cookieSet] enables cookieSet functionality
  */
 $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   if (!utils.contains(Object.keys(options), 'accountId')) {
@@ -771,11 +734,64 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
     endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
     timeout: 1000,
     maxBids: 1,
-    adapter: 'prebidServer'
+    adapter: CONSTANTS.S2S.ADAPTER,
+    syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
+    cookieSet: true,
+    bidders: []
   }, options);
   adaptermanager.setS2SConfig(config);
 };
 
-$$PREBID_GLOBAL$$.cmd.push(() => listenMessagesFromCreative());
-processQueue($$PREBID_GLOBAL$$.cmd);
-processQueue($$PREBID_GLOBAL$$.que);
+$$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
+
+/**
+ * This queue lets users load Prebid asynchronously, but run functions the same way regardless of whether it gets loaded
+ * before or after their script executes. For example, given the code:
+ *
+ * <script src="url/to/Prebid.js" async></script>
+ * <script>
+ *   var pbjs = pbjs || {};
+ *   pbjs.cmd = pbjs.cmd || [];
+ *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
+ * </script>
+ *
+ * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
+ * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
+ * function to execute immediately.
+ *
+ * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                        the Prebid script has been fully loaded.
+ * @alias module:$$PREBID_GLOBAL$$.cmd.push
+ */
+$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
+  if (typeof cmd === 'function') {
+    try {
+      cmd.call();
+    } catch (e) {
+      utils.logError('Error processing command :' + e.message);
+    }
+  } else {
+    utils.logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
+  }
+};
+
+$$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
+
+function processQueue(queue) {
+  queue.forEach(function(cmd) {
+    if (typeof cmd.called === 'undefined') {
+      try {
+        cmd.call();
+        cmd.called = true;
+      }
+      catch (e) {
+        utils.logError('Error processing command :', 'prebid.js', e);
+      }
+    }
+  });
+}
+
+$$PREBID_GLOBAL$$.processQueue = function() {
+  processQueue($$PREBID_GLOBAL$$.que);
+  processQueue($$PREBID_GLOBAL$$.cmd);
+};

@@ -1,0 +1,17 @@
+{
+  "code": "video1",
+  "sizes": [640,480],
+  "mediaType": "video",
+  "bids": [
+    {
+      "bidder": "appnexusAst",
+      "params": {
+        "placementId": "9333431",
+        "video": {
+          "skipppable": false,
+          "playback_methods": ["auto_play_sound_off"]
+        }
+      }
+    }
+  ]
+}
