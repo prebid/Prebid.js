@@ -6,19 +6,18 @@ var CONSTANTS = require('./constants');
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 
-//define entire events
-//var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
+// define entire events
+// var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
 var allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
   return v;
 });
 
 var idPaths = CONSTANTS.EVENT_ID_PATHS;
 
-//keep a record of all events fired
+// keep a record of all events fired
 var eventsFired = [];
 
 module.exports = (function () {
-
   var _handlers = {};
   var _public = {};
 
@@ -41,7 +40,7 @@ module.exports = (function () {
 
     var callbacks = [];
 
-    //record the event:
+    // record the event:
     eventsFired.push({
       eventType: eventString,
       args: eventPayload,
@@ -66,8 +65,7 @@ module.exports = (function () {
       if (!fn) return;
       try {
         fn.apply(null, args);
-      }
-      catch (e) {
+      } catch (e) {
         utils.logError('Error executing handler:', 'events.js', e);
       }
     });
@@ -78,8 +76,7 @@ module.exports = (function () {
   }
 
   _public.on = function (eventString, handler, id) {
-
-    //check whether available event or not
+    // check whether available event or not
     if (_checkAvailableEvent(eventString)) {
       var event = _handlers[eventString] || { que: [] };
 

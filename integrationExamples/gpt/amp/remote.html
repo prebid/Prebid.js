@@ -25,7 +25,7 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
 <!-- start Prebid.js AMP integration -->
 
 <script>
-    // The Prebid global must match Prebid.js setting
+    // The Prebid global must match Prebid.js setting. This example file is not preprocessed so below we refer to global as `pbjs`.
     var $$PREBID_GLOBAL$$ = pbjs;
     var prebidSrc = 'https://publisher.com:9999/build/dev/prebid.js';
     var adUnits;
@@ -71,22 +71,26 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
     }
 
     function getTargeting(slot) {
-        var targeting = window.context.master.pbjs.getAdserverTargeting()[slot];
+        var targeting = window.context.master.pbjs.getAdserverTargeting()[slot] || {};
         for (var key in targeting) {
             if (targeting.hasOwnProperty(key)) {
                 targeting[key] = [targeting[key]];
             }
         }
-        targeting['prebid_amp'] = ['true'];
+
+        if (Object.keys(targeting).length) {
+          // only set this key if prebid targeting is present
+          targeting['prebid_amp'] = ['true'];
+        }
         return targeting;
     }
 
-    function initAdserver() {
+  function initAdserver() {
       var i;
-      var adCalls = window.context.master.adCalls;
-      var adCallsLength = adCalls.length;
-      for (i = 0; i < adCallsLength; i++) {
-        adCalls.pop()();
+      var prebidAdCalls = window.context.master.prebidAdCalls;
+      var len = prebidAdCalls.length;
+      for (i = 0; i < len; i++) {
+        prebidAdCalls.pop()();
       }
     }
 
@@ -128,18 +132,23 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
         * iframes. For more info see: https://github.com/ampproject/amphtml/blob/e5501a30adf15c8fef049729f5e0e3137dbb18ca/3p/integration.js#L252
         */
     draw3p(function(config, done) {
-      if (typeof window.context.master.adCalls === 'undefined') {
-        window.context.master.adCalls = [];
-      }
-        if (window.context && window.context.isMaster && config.prebid) {
-            var prebid = config.prebid;
-            adUnits = prebid.adUnits;
-            requestBidsDuration = prebid.requestBidsDuration;
-            loadPrebidJS();
+      if (config.prebid) {
+        if (typeof window.context.master.prebidAdCalls === 'undefined') {
+          window.context.master.prebidAdCalls = [];
         }
-        window.context.master.adCalls.push(setTargeting.bind(null, config, done));
-    }, ['doubleclick'], ['publisher.com']);
-// the first array contains ad networks used, the second domains allows to load this file in an iframe
+        if (window.context && window.context.isMaster) {
+          var prebid = config.prebid;
+          adUnits = prebid.adUnits;
+          requestBidsDuration = prebid.requestBidsDuration;
+          loadPrebidJS();
+        }
+        window.context.master.prebidAdCalls.push(setTargeting.bind(null, config, done));
+      } else {
+        // if the slot doesn't have prebid config then fire callback
+        done(config);
+      }
+    }, ['doubleclick', 'taboola'], ['publisher.com']);
+// the first array contains ad networks used, the second contains domains allowed to load this file in an iframe
 
     listenAdRequestFromCreative();
   </script>

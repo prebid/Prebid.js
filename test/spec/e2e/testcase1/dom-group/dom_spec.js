@@ -1,14 +1,13 @@
-//var assert = require('assert');
+// var assert = require('assert');
 
 module.exports = {
 
-  'Test rendering ad div-2' : function (browser) {
-
+  'Test rendering ad div-2': function (browser) {
     var checkAdRendering2 = function() {
       var div = document.getElementById('div-2');
       var iframes = div.getElementsByTagName('iframe');
       try {
-        if(iframes.length == 1 && iframes[0].contentWindow.document.body.innerHTML == "") {
+        if (iframes.length == 1 && iframes[0].contentWindow.document.body.innerHTML == '') {
           return false;
         } else {
           return true;
@@ -26,13 +25,12 @@ module.exports = {
         this.assert.equal(result.value, true, 'Ad of div-2 not rendered');
       });
   },
-  'Test rendering ad div-1' : function (browser) {
-
+  'Test rendering ad div-1': function (browser) {
     var checkAdRendering = function() {
       var div = document.getElementById('div-1');
       var iframes = div.getElementsByTagName('iframe');
       try {
-        if(iframes.length == 1 && iframes[0].contentWindow.document.body.innerHTML == "") {
+        if (iframes.length == 1 && iframes[0].contentWindow.document.body.innerHTML == '') {
           return false;
         } else {
           return true;
@@ -47,7 +45,7 @@ module.exports = {
         this.assert.equal(result.value, true, 'Ad of div-1 not rendered');
       });
   },
-  after : function(browser) {
+  after: function(browser) {
     browser.end();
   }
 };
