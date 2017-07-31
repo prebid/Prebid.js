@@ -48,10 +48,11 @@ function buildUtmTagData() {
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
       localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
-      updateUtmTimeout()
+      updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
         utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        updateUtmTimeout();
       }
     }
   });
