@@ -419,4 +419,3 @@ adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;
-

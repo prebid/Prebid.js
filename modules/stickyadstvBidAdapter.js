@@ -178,7 +178,6 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return script;
   };
 
-
   function formatAdHTML(bid, size) {
     var integrationType = bid.params.format;
 
