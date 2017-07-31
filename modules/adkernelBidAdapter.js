@@ -20,7 +20,7 @@ const AdKernelAdapter = function AdKernelAdapter() {
   const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'linearity', 'sequence',
     'boxingallowed', 'playbackmethod', 'delivery', 'pos', 'api', 'ext'];
 
-  let baseAdapter = Adapter.createNew('adkernel');
+  let baseAdapter = new Adapter('adkernel');
 
   /**
    * Helper object to build multiple bid requests in case of multiple zones/ad-networks
@@ -295,16 +295,8 @@ const AdKernelAdapter = function AdKernelAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode: baseAdapter.getBidderCode,
-    createNew: AdKernelAdapter.createNew
+    getBidderCode: baseAdapter.getBidderCode
   };
-};
-
-/**
- * Creates new instance of AdKernel bidder adapter
- */
-AdKernelAdapter.createNew = function() {
-  return new AdKernelAdapter();
 };
 
 adaptermanager.registerBidAdapter(new AdKernelAdapter(), 'adkernel', {

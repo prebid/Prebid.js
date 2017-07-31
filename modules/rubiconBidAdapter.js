@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adaptermanager from 'src/adaptermanager';
@@ -71,6 +71,8 @@ var sizeMap = {
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
+  var baseAdapter = new Adapter(RUBICON_BIDDER_CODE);
+
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -128,7 +130,7 @@ function RubiconAdapter() {
 
       function addErrorBid() {
         let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-        badBid.bidderCode = bid.bidder;
+        badBid.bidderCode = baseAdapter.getBidderCode();
         bidmanager.addBidResponse(bid.placementCode, badBid);
       }
     });
@@ -341,7 +343,7 @@ function RubiconAdapter() {
       // bid status is good (indicating 1)
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
       bid.creative_id = ad.ad_id;
-      bid.bidderCode = bidRequest.bidder;
+      bid.bidderCode = baseAdapter.getBidderCode();
       bid.cpm = ad.cpm || 0;
       bid.dealId = ad.deal;
       if (bidRequest.mediaType === 'video') {
@@ -374,9 +376,8 @@ function RubiconAdapter() {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return Object.assign(Adapter.createNew(RUBICON_BIDDER_CODE), {
-    callBids: _callBids,
-    createNew: RubiconAdapter.createNew
+  return Object.assign(baseAdapter, {
+    callBids: _callBids
   });
 }
 
@@ -410,10 +411,6 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
       // and finally ascending order
       return first - second;
     });
-};
-
-RubiconAdapter.createNew = function() {
-  return new RubiconAdapter();
 };
 
 adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {

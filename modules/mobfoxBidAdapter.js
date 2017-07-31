@@ -1,6 +1,5 @@
 const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
-const adloader = require('src/adloader');
 const ajax = require('src/ajax.js');
 const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
