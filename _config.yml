@@ -129,6 +129,10 @@ nav_sections:
     code: download
     name: DOWNLOAD
 
+  - top_nav: modules
+    code: modules
+    name: MODULES
+
   - top_nav: prebid-mobile
     code: prebid-mobile
     name: PREBID MOBILE
