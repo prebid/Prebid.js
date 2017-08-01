@@ -98,7 +98,7 @@ describe('Adkernel adapter', () => {
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    adapter = Adapter.createNew();
+    adapter = new Adapter();
     ajaxStub = sandbox.stub(ajax, 'ajax');
   });
 
