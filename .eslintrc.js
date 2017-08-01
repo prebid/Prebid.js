@@ -31,7 +31,6 @@ module.exports = {
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-use-before-define": "off",
-    "no-useless-call": "off",
     "no-useless-escape": "off",
     "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off",

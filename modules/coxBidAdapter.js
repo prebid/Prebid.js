@@ -108,7 +108,7 @@ function CoxAdapter() {
             try {
               if (!W.location.ancestorOrigins) return;
               for (var i = 0, len = W.location.ancestorOrigins.length; len > i; i++) {
-                callback.call(null, W.location.ancestorOrigins[i], i);
+                callback(W.location.ancestorOrigins[i], i);
               }
             } catch (ignore) { }
             return [];
@@ -120,7 +120,7 @@ function CoxAdapter() {
             do {
               try {
                 oneWindow = oneWindow ? oneWindow.parent : W;
-                callback.call(null, oneWindow, infoArray);
+                callback(oneWindow, infoArray);
               } catch (t) {
                 infoArray.push({
                   referrer: null,
