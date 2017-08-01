@@ -141,8 +141,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
   /* Get parsed size from request size */
   function getSize(requestSizes) {
-    const parsed = {},
-      size = utils.parseSizesInput(requestSizes)[0];
+    const parsed = {};
+    const size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
