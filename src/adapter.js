@@ -1,4 +1,4 @@
-function Adapter(code) {
+export default function Adapter(code) {
   var bidderCode = code;
 
   function setBidderCode(code) {
@@ -18,7 +18,3 @@ function Adapter(code) {
     getBidderCode: getBidderCode
   };
 }
-
-exports.createNew = function (bidderCode) {
-  return new Adapter(bidderCode);
-};

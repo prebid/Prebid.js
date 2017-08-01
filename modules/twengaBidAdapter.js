@@ -3,11 +3,11 @@ var utils = require('src/utils.js');
 var adloader = require('src/adloader.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
-var Adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var adaptermanager = require('src/adaptermanager');
 
 function TwengaAdapter() {
-  var baseAdapter = Adapter.createNew('twenga');
+  var baseAdapter = new Adapter('twenga');
 
   baseAdapter.callBids = function (params) {
     for (var i = 0; i < params.bids.length; i++) {
@@ -127,14 +127,9 @@ function TwengaAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: TwengaAdapter.createNew,
     buildBidCall: buildBidCall
   };
-};
-
-TwengaAdapter.createNew = function () {
-  return new TwengaAdapter();
-};
+}
 
 adaptermanager.registerBidAdapter(new TwengaAdapter(), 'twenga');
 

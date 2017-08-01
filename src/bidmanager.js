@@ -10,8 +10,6 @@ var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 
-var objectType_function = 'function';
-
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 let _customPriceBucket;
@@ -274,7 +272,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     }
 
     if (
-      (typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true ||
+      ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
       key === 'hb_deal') && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
@@ -405,7 +403,7 @@ function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
+    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
       try {
         bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       } catch (e) {

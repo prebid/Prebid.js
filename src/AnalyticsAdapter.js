@@ -16,12 +16,10 @@ const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
-var _sampled = true;
-
-export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
-  return function(adapterDependencies) {
-    const events = adapterDependencies.events;
+export default function analyticsAdapterFactory({ url, analyticsType, global, handler }) {
+  return function newAdapter(analyticsAdapterDependencies) {
+    const events = analyticsAdapterDependencies.events;
+    var _sampled = true;
     var _queue = [];
     var _eventCount = 0;
     var _enableCheck = true;
@@ -82,7 +80,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         _sampled = true;
       }
 
-
       if (_sampled) {
         // first send all events fired before enableAnalytics called
         events.getEvents().forEach(event => {
@@ -92,9 +89,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
           const { eventType, args } = event;
 
-          if (eventType === BID_TIMEOUT) {
-            _timedOutBidders = args.bidderCode;
-          } else {
+          if (eventType !== BID_TIMEOUT) {
             _enqueue.call(_this, { eventType, args });
           }
         });
@@ -120,7 +115,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       } else {
         utils.logMessage(`Analytics adapter for "${global}" disabled by sampling`);
       }
-
 
       // finally set this function to return log message, prevents multiple adapter listeners
       this.enableAnalytics = function _enable() {
@@ -150,5 +144,5 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
       utils.logMessage(`event count sent to ${global}: ${_eventCount}`);
     }
-  }
+  };
 }

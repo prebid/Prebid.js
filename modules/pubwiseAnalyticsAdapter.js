@@ -48,7 +48,6 @@ export default function adapterFactory(adapterDependencies) {
   });
 }
 
-
 analyticsRegistry.registerAnalyticsAdapterFactory({
   factory: adapterFactory,
   code: 'pubwise'

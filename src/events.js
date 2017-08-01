@@ -101,7 +101,7 @@ export function newEvents() {
   _public.off = function (eventString, handler, id) {
     const event = _handlers[eventString];
 
-    if (utils.isEmpty(event) || utils.isEmpty(event.que) && utils.isEmpty(event[id])) {
+    if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
       return;
     }
 
