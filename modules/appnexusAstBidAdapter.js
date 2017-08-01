@@ -31,7 +31,7 @@ const NATIVE_MAPPING = {
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-  let baseAdapter = Adapter.createNew('appnexusAst');
+  let baseAdapter = new Adapter('appnexusAst');
   let bidRequests = {};
   let usersync = false;
 
@@ -193,11 +193,11 @@ function AppnexusAstAdapter() {
         utils.logError(`${type} ad type not supported`);
       }
 
-      tag.bidId = tag.uuid;  // bidfactory looks for bidId on requested bid
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
       const bid = createBid(status, tag);
       if (type === 'native') bid.mediaType = 'native';
       if (type === 'video') bid.mediaType = 'video';
-      if (type === 'video-outstream') bid.mediaType = 'video-outstream';
+      if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
 
       if (bid.adId in bidRequests) {
         const placement = bidRequests[bid.adId].placementCode;
@@ -368,17 +368,12 @@ function AppnexusAstAdapter() {
   }
 
   return {
-    createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 }
 
-AppnexusAstAdapter.createNew = function() {
-  return new AppnexusAstAdapter();
-};
-
-adaptermanager.registerBidAdapter(new AppnexusAstAdapter, 'appnexusAst', {
+adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']
 });
 

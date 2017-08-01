@@ -46,7 +46,6 @@ export function ajax(url, callback, data, options = {}) {
       }
     }
 
-    x.timeout = _timeout;
     if (useXDomainRequest) {
       x = new window.XDomainRequest();
       x.onload = function () {
@@ -83,6 +82,8 @@ export function ajax(url, callback, data, options = {}) {
     }
 
     x.open(method, url);
+    // IE needs timoeut to be set after open - see #1410
+    x.timeout = _timeout;
 
     if (!useXDomainRequest) {
       if (options.withCredentials) {

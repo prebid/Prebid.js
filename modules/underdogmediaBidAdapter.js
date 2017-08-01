@@ -101,12 +101,11 @@ function UnderdogMediaAdapter() {
     return vars;
   }
 
-
   return {
     callBids: _callBids
   };
 }
 
-adaptermanager.registerBidAdapter(new UnderdogMediaAdapter, 'underdogmedia');
+adaptermanager.registerBidAdapter(new UnderdogMediaAdapter(), 'underdogmedia');
 
 module.exports = UnderdogMediaAdapter;

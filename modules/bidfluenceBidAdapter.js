@@ -53,6 +53,6 @@ var BidfluenceAdapter = function BidfluenceAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new BidfluenceAdapter, 'bidfluence');
+adaptermanager.registerBidAdapter(new BidfluenceAdapter(), 'bidfluence');
 
 module.exports = BidfluenceAdapter;

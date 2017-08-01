@@ -271,7 +271,7 @@ var ConversantAdapter = function () {
   };
 };
 
-adaptermanager.registerBidAdapter(new ConversantAdapter, 'conversant', {
+adaptermanager.registerBidAdapter(new ConversantAdapter(), 'conversant', {
   supportedMediaTypes: ['video']
 });
 

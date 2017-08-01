@@ -8,7 +8,7 @@ var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
-var adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var constants = require('src/constants.json');
 var adaptermanager = require('src/adaptermanager');
 
@@ -42,7 +42,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
 
       bidIds.push(_sc + '=' + bid.bidId);
 
-        // Create the bidIdsMap for easier mapping back later
+      // Create the bidIdsMap for easier mapping back later
       $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bid.bidId] = bid;
     }
 
@@ -96,7 +96,7 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
   },
 
   AardvarkAdapter = function() {
-    var baseAdapter = adapter.createNew(AARDVARK_BIDDER_CODE);
+    var baseAdapter = new Adapter(AARDVARK_BIDDER_CODE);
 
     $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] || {};
 
@@ -115,15 +115,10 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
 
     return {
       callBids: baseAdapter.callBids,
-      setBidderCode: baseAdapter.setBidderCode,
-      createNew: exports.createNew
+      setBidderCode: baseAdapter.setBidderCode
     };
   };
 
-exports.createNew = function() {
-  return new AardvarkAdapter();
-};
-
-adaptermanager.registerBidAdapter(new AardvarkAdapter, 'aardvark');
+adaptermanager.registerBidAdapter(new AardvarkAdapter(), 'aardvark');
 
 module.exports = AardvarkAdapter;

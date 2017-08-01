@@ -1,6 +1,6 @@
 const cookie = exports;
-import * as utils from 'utils';
-import adLoader from 'adloader';
+import * as utils from './utils';
+import adLoader from './adloader';
 
 const queue = [];
 

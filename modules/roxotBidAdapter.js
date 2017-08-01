@@ -58,8 +58,8 @@ var RoxotAdapter = function RoxotAdapter() {
       var placementCode = '';
 
       var bidReq = $$PREBID_GLOBAL$$
-          ._bidsRequested.find(bidSet => bidSet.bidderCode === 'roxot')
-          .bids.find(bid => bid.bidId === roxotBid.bidId);
+        ._bidsRequested.find(bidSet => bidSet.bidderCode === 'roxot')
+        .bids.find(bid => bid.bidId === roxotBid.bidId);
 
       if (!bidReq) {
         return pushErrorBid(placementCode);
@@ -111,6 +111,6 @@ var RoxotAdapter = function RoxotAdapter() {
   }
 };
 
-adaptermanager.registerBidAdapter(new RoxotAdapter, 'roxot');
+adaptermanager.registerBidAdapter(new RoxotAdapter(), 'roxot');
 
 module.exports = RoxotAdapter;

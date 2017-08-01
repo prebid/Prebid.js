@@ -1,3 +1,4 @@
+/* eslint indent: 0 */
 import {ajax} from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
@@ -10,7 +11,6 @@ function RhythmoneAdapter (bidManager, global, loader) {
     defaultZone = '1r',
     defaultPath = 'mvo',
     debug = false,
-    requestCompleted = false,
     placementCodes = {},
     loadStart,
     configuredPlacements = [],
@@ -244,8 +244,6 @@ function RhythmoneAdapter (bidManager, global, loader) {
       // send quality control beacon here
       sendAuditBeacon(bidParams.placementId);
 
-      requestCompleted = true;
-
       logToConsole('response text: ' + txt);
 
       if (code !== -1) {
@@ -293,7 +291,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
   };
 }
 
-adaptermanager.registerBidAdapter(new RhythmoneAdapter, 'rhythmone', {
+adaptermanager.registerBidAdapter(new RhythmoneAdapter(), 'rhythmone', {
   supportedMediaTypes: ['video']
 });
 

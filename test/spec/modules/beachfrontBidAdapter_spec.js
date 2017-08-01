@@ -44,7 +44,7 @@ var RESPONSE = {
 describe('BeachfrontAdapter', () => {
   let adapter;
 
-  beforeEach(() => adapter = BeachfrontAdapter.createNew());
+  beforeEach(() => adapter = new BeachfrontAdapter());
 
   describe('request function', () => {
     let xhr;

@@ -117,6 +117,6 @@ var CentroAdapter = function CentroAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new CentroAdapter, 'centro');
+adaptermanager.registerBidAdapter(new CentroAdapter(), 'centro');
 
 module.exports = CentroAdapter;
