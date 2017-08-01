@@ -185,7 +185,7 @@ describe('S2S Adapter', () => {
     beforeEach(() => {
       server = sinon.fakeServer.create();
       sinon.stub(userSync, 'registerSync');
-      sinon.stub(cookie, 'persist');
+      sinon.stub(cookie, 'cookieSet');
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
         bids: [{
@@ -204,7 +204,7 @@ describe('S2S Adapter', () => {
       utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
       userSync.registerSync.restore();
-      cookie.persist.restore();
+      cookie.cookieSet.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated

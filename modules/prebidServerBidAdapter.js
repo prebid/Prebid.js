@@ -5,7 +5,7 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
 import { registerSync } from 'src/userSync.js';
-import { persist } from 'src/cookie.js';
+import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 
 const TYPE = S2S.SRC;
