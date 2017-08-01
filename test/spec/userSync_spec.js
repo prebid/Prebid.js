@@ -3,7 +3,7 @@ import userSync from '../../src/userSync';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 
-describe.only('user sync', () => {
+describe('user sync', () => {
   let createImgObjectStub;
   let logWarnStub;
   let timeoutStub;
@@ -133,5 +133,15 @@ describe.only('user sync', () => {
     expect(logWarnStub.getCall(0).args[0]).to.exist;
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.be.null;
+  });
+
+  it('should only sync enabled bidders', () => {
+    $$PREBID_GLOBAL$$.userSync.enabledBidders = ['testBidderA'];
+    userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
+    userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
+    userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.not.be.null;
+    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
+    expect(createImgObjectStub.getCall(1)).to.be.null;
   });
 });

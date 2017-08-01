@@ -144,6 +144,11 @@ userSync.registerSync = (type, bidder, ...data) => {
   if (Number(numAdapterBids[bidder]) >= userSyncConfig.syncsPerBidder) {
     return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
   }
+  // All bidders are enabled by default. If specified only register for enabled bidders.
+  let hasEnabledBidders = userSyncConfig.enabledBidders && userSyncConfig.enabledBidders.length;
+  if (hasEnabledBidders && userSyncConfig.enabledBidders.indexOf(bidder) < 0) {
+    return utils.logWarn(`Bidder "{$bidder}" not supported`);
+  }
   queue[type].push([bidder, ...data]);
   numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
 };
