@@ -143,11 +143,11 @@ function RubiconAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
       let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
     }
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return [];
     }
     return [

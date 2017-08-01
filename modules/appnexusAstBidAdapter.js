@@ -219,7 +219,7 @@ function AppnexusAstAdapter() {
 
   /* Check that a bid has required paramters */
   function valid(bid) {
-    if (bid.params.placementId || bid.params.member && bid.params.invCode) {
+    if (bid.params.placementId || (bid.params.member && bid.params.invCode)) {
       return bid;
     } else {
       utils.logError('bid requires placementId or (member and invCode) params');

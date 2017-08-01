@@ -25,7 +25,6 @@ module.exports = {
     "import/first": "off",
     "new-cap": "off",
     "no-control-regex": "off",
-    "no-mixed-operators": "off",
     "no-redeclare": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
