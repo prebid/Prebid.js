@@ -416,6 +416,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
   function _callBids(request) {
     var bidArr = request.bids;
+    var i;
 
     if (typeof window._IndexRequestData === 'undefined') {
       window._IndexRequestData = {};
@@ -426,7 +427,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     _IndexRequestData.targetAggregate = {'open': {}, 'private': {}};
 
     if (!utils.hasValidBidRequest(bidArr[0].params, requiredParams, ADAPTER_NAME)) {
-      for (var i = 0; i < bidArr.length; i++) {
+      for (i = 0; i < bidArr.length; i++) {
         passOnBid(bidArr[i].placementCode);
       }
       return;
@@ -436,7 +437,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     cygnus_index_args.slots = [];
 
     // Grab the slot level data for cygnus_index_args
-    for (var i = 0; i < bidArr.length; i++) {
+    for (i = 0; i < bidArr.length; i++) {
       var bid = bidArr[i];
       var sizeID = 0;
 
