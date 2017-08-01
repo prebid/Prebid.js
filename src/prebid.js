@@ -11,9 +11,10 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
-import { getConfig, setConfig } from './config';
+import { config } from './config';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
+
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
@@ -334,7 +335,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncCookies(getConfig('cookieSyncDelay'));
+  syncCookies(config.getConfig('cookieSyncDelay'));
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -350,7 +351,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
-  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || getConfig('bidderTimeout');
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -662,7 +663,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
 
 /** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
-  setConfig({ enableSendAllBids: true });
+  config.setConfig({ enableSendAllBids: true });
 };
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
@@ -761,16 +762,16 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
 };
 
 /**
- * Set Prebid config options
- * @param {object} options
- */
-$$PREBID_GLOBAL$$.setConfig = setConfig;
-
-/**
  * Get Prebid config options
  * @param {object} options
  */
-$$PREBID_GLOBAL$$.getConfig = getConfig;
+$$PREBID_GLOBAL$$.getConfig = config.getConfig;
+
+/**
+ * Set Prebid config options
+ * @param {object} options
+ */
+$$PREBID_GLOBAL$$.setConfig = config.setConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

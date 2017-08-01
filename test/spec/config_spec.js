@@ -1,16 +1,15 @@
 import { excpet } from 'chai';
-import { getConfig, setConfig } from 'src/config';
+import { newConfig } from 'src/config';
 
-let subscribers = [];
-function resetConfig() {
-  setConfig({});
-  subscribers.forEach(unsubscribe => unsubscribe());
-  subscribers = [];
-}
+let getConfig;
+let setConfig;
 
 describe('config API', () => {
-  beforeEach(() => resetConfig());
-  afterEach(() => resetConfig());
+  beforeEach(() => {
+    const config = newConfig();
+    getConfig = config.getConfig;
+    setConfig = config.setConfig;
+  });
 
   it('setConfig is a function', () => {
     expect(setConfig).to.be.a('function');
@@ -61,10 +60,7 @@ describe('config API', () => {
   it('has subscribe functionality for adding listeners to config updates', () => {
     const listener = sinon.spy();
 
-    const unsubscribe = getConfig(listener);
-
-    // done to automatically unsubscriber after each test
-    subscribers.push(unsubscribe);
+    getConfig(listener);
 
     setConfig({ foo: 'bar' });
 
@@ -72,11 +68,22 @@ describe('config API', () => {
     sinon.assert.calledWith(listener, { foo: 'bar' });
   });
 
+  it('subscribers can unsubscribe', () => {
+    const listener = sinon.spy();
+
+    const unsubscribe = getConfig(listener);
+
+    unsubscribe();
+
+    setConfig({ logging: true });
+
+    sinon.assert.notCalled(listener);
+  });
+
   it('subscribers can subscribe to topics', () => {
     const listener = sinon.spy();
 
-    const unsubscribe = getConfig('logging', listener);
-    subscribers.push(unsubscribe);
+    getConfig('logging', listener);
 
     setConfig({ logging: true, foo: 'bar' });
 
@@ -88,9 +95,8 @@ describe('config API', () => {
     const listener = sinon.spy();
     const wildcard = sinon.spy();
 
-    const subjectUnsubscribe = getConfig('subject', listener);
-    const wildcardUnsubscribe = getConfig(wildcard);
-    subscribers.push(subjectUnsubscribe, wildcardUnsubscribe);
+    getConfig('subject', listener);
+    getConfig(wildcard);
 
     setConfig({ foo: 'bar' });
 

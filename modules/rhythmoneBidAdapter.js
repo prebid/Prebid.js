@@ -1,6 +1,6 @@
 import {ajax} from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
-import { getConfig } from 'src/config';
+import { config } from 'src/config';
 
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
@@ -216,7 +216,7 @@ function RhythmoneAdapter (bidManager, global, loader) {
     data.response_ms = (new Date()).getTime() - loadStart;
     data.placement_codes = configuredPlacements.join(',');
     data.bidder_version = version;
-    data.prebid_timeout = prebid_instance.cbTimeout || getConfig('bidderTimeout');
+    data.prebid_timeout = prebid_instance.cbTimeout || config.getConfig('bidderTimeout');
 
     for (var k in data) {
       q.push(encodeURIComponent(k) + '=' + encodeURIComponent((typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k])));
