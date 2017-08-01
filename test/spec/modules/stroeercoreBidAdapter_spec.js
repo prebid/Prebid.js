@@ -1,6 +1,7 @@
 const assert = require('chai').assert;
 const adapter = require('modules/stroeercoreBidAdapter');
 const bidmanager = require('src/bidmanager');
+const utils = require('src/utils');
 
 function assertBid(bidObject, bidId, ad, width, height) {
   assert.propertyVal(bidObject, 'adId', bidId);
@@ -74,6 +75,8 @@ const createWindow = (href, params = {}) => {
       href
     },
     document: {
+      createElement: function(){return {setAttribute:function(){}}},
+
       referrer,
       getElementById: id => placementElements.find(el => el.id === id)
     }
@@ -306,5 +309,41 @@ describe('stroeerssp adapter', function () {
 
       assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });
+
+    it('should perform user connect when have valid bids', ()=> {
+      runUserConnect();
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assert.isString(element.tagName, 'script');
+      assert.isString(element.src, 'http://js.adscale.de/userconnect.js');
+
+      const config = JSON.parse(element.getAttribute('data-container-config'));
+      assert.equal(config.slotId, "NDA=");
+
+    });
+
+    it('should perform user connect when have invalid bids', ()=> {
+      bidderRequest.bids.forEach(b => delete b.params.sid);
+      runUserConnect();
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assert.isString(element.tagName, 'script');
+      assert.isString(element.src, 'http://js.adscale.de/userconnect.js');
+      assert.isFalse(element.hasAttribute('data-container-config'));
+    });
+
+    function runUserConnect() {
+      fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
+
+      sandbox.stub(utils, 'insertElement');
+
+      adapter().callBids(bidderRequest);
+
+      fakeServer.respond();
+    }
   });
 });

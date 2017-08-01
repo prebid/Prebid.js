@@ -41,6 +41,18 @@ module.exports = function (win = window) {
     return res;
   }
 
+  function find(arr, fn) {
+    // not all browsers support Array.find
+    let res;
+    for (let i=0; i < arr.length; i++) {
+      if (fn(arr[i])) {
+        res = arr[i];
+        break;
+      }
+    }
+    return res;
+  }
+
   function elementInView(elementId) {
     const visibleInWindow = (el, win) => {
       const rect = el.getBoundingClientRect();
@@ -60,6 +72,18 @@ module.exports = function (win = window) {
       // old browser, element not found, cross-origin etc.
     }
     return undefined;
+  }
+
+  function insertUserConnect(params) {
+    const scriptElement =  win.document.createElement("script");
+    scriptElement.src = (isSecureWindow() ? 'https:' : 'http:') + '//js.adscale.de/userconnect.js';
+
+    let anyValidBid = find(params.bids, validBidRequest);
+    if (anyValidBid) {
+      const config = {slotId: anyValidBid.params.sid};
+      scriptElement.setAttribute("data-container-config", JSON.stringify(config));
+    }
+    utils.insertElement(scriptElement);
   }
 
   function ajaxResponseFn(validBidRequestById) {
@@ -133,6 +157,8 @@ module.exports = function (win = window) {
           contentType: 'text/plain'
         });
       }
+
+      insertUserConnect(params);
     }
   };
 };
