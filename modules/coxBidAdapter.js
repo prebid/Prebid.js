@@ -108,7 +108,7 @@ function CoxAdapter() {
             try {
               if (!W.location.ancestorOrigins) return;
               for (var i = 0, len = W.location.ancestorOrigins.length; len > i; i++) {
-                callback(null, W.location.ancestorOrigins[i], i);
+                callback(W.location.ancestorOrigins[i], i);
               }
             } catch (ignore) { }
             return [];
