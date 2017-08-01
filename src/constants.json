@@ -37,10 +37,6 @@
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
   },
-  "ORDER": {
-    "fixed": "fixed",
-    "random": "random"
-  },
   "GRANULARITY_OPTIONS": {
     "LOW": "low",
     "MEDIUM": "medium",

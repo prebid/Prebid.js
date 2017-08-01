@@ -709,11 +709,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  *
  * @param {string} order One of the valid orders, described above.
  */
-$$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  if (CONSTANTS.ORDER[order]) {
-    adaptermanager.setBidderSequence(order);
-  }
-};
+$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid

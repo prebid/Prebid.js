@@ -17,8 +17,16 @@ let _s2sConfig = {
   adapter: CONSTANTS.S2S.ADAPTER,
   syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
 };
+
+const RANDOM = 'random';
+const FIXED = 'fixed';
+
+const VALID_ORDERS = {};
+VALID_ORDERS[RANDOM] = true;
+VALID_ORDERS[FIXED] = true;
+
 var _analyticsRegistry = {};
-let _bidderSequence = CONSTANTS.ORDER.random;
+let _bidderSequence = RANDOM;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
@@ -66,7 +74,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  if (_bidderSequence === CONSTANTS.ORDER.random) {
+  if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
 
@@ -243,7 +251,11 @@ exports.enableAnalytics = function (config) {
 };
 
 exports.setBidderSequence = function (order) {
-  _bidderSequence = order;
+  if (VALID_ORDERS[order]) {
+    _bidderSequence = order;
+  } else {
+    utils.logWarn(`Invalid order: ${order}. Bidder Sequence was not set.`);
+  }
 };
 
 exports.setS2SConfig = function (config) {
