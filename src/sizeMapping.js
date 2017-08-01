@@ -21,7 +21,7 @@ function mapSizes(adUnit) {
   }
   let sizes = '';
   const mapping = adUnit.sizeMapping.find(sizeMapping => {
-    return width > sizeMapping.minWidth;
+    return width >= sizeMapping.minWidth;
   });
   if (mapping && mapping.sizes && mapping.sizes.length) {
     sizes = mapping.sizes;
