@@ -121,7 +121,6 @@ targeting.setTargetingForAst = function() {
   );
 };
 
-
 function getWinningBidTargeting(adUnitCodes) {
   let winners = targeting.getWinningBids(adUnitCodes);
   let standardKeys = getStandardKeys();

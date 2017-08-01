@@ -31,7 +31,7 @@ const NATIVE_MAPPING = {
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-  let baseAdapter = Adapter.createNew('appnexusAst');
+  let baseAdapter = new Adapter('appnexusAst');
   let bidRequests = {};
   let usersync = false;
 
@@ -368,15 +368,10 @@ function AppnexusAstAdapter() {
   }
 
   return {
-    createNew: AppnexusAstAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 }
-
-AppnexusAstAdapter.createNew = function() {
-  return new AppnexusAstAdapter();
-};
 
 adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']

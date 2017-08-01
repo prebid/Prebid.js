@@ -11,7 +11,6 @@ function RhythmoneAdapter (bidManager, global, loader) {
     defaultZone = '1r',
     defaultPath = 'mvo',
     debug = false,
-    requestCompleted = false,
     placementCodes = {},
     loadStart,
     configuredPlacements = [],
@@ -244,8 +243,6 @@ function RhythmoneAdapter (bidManager, global, loader) {
     load(bidParams, getRMPURL(bidParams, params.bids), function(code, msg, txt) {
       // send quality control beacon here
       sendAuditBeacon(bidParams.placementId);
-
-      requestCompleted = true;
 
       logToConsole('response text: ' + txt);
 

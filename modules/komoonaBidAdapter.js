@@ -9,7 +9,7 @@ import adaptermanager from 'src/adaptermanager';
 const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 function KomoonaAdapter() {
-  let baseAdapter = Adapter.createNew('komoona');
+  let baseAdapter = new Adapter('komoona');
   let bidRequests = {};
 
   /* Prebid executes this function when the page asks to send out bid requests */
@@ -107,15 +107,10 @@ function KomoonaAdapter() {
   }
 
   return {
-    createNew: KomoonaAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 }
-
-KomoonaAdapter.createNew = function() {
-  return new KomoonaAdapter();
-};
 
 adaptermanager.registerBidAdapter(new KomoonaAdapter(), 'komoona');
 
