@@ -280,9 +280,9 @@ function PulsePointLiteAdapter() {
     return !!slot.nativeParams;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: _callBids
-  };
+  });
 }
 
 /**
