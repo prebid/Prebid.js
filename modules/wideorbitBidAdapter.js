@@ -1,25 +1,25 @@
-var bidfactory = require('src/bidfactory.js'),
-  bidmanager = require('src/bidmanager.js'),
-  utils = require('src/utils.js'),
-  adloader = require('src/adloader'),
-  adaptermanager = require('src/adaptermanager');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const utils = require('src/utils.js');
+const adloader = require('src/adloader');
+const adaptermanager = require('src/adaptermanager');
 
 function WideOrbitAdapter() {
-  var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
-    pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
-    pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
-    pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
-    base = (window.location.protocol) + '//p{pbId}.atemda.com/',
-    bids,
-    adapterName = 'wideorbit';
+  const pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.$$PREBID_GLOBAL$$.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1';
+  const pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=';
+  const pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}';
+  const pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}';
+  const base = (window.location.protocol) + '//p{pbId}.atemda.com/';
+  let bids;
+  const adapterName = 'wideorbit';
 
   function _fixParamNames(param) {
     if (!param) {
       return;
     }
 
-    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'],
-      prop;
+    const properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'];
+    let prop;
 
     utils._each(properties, function (correctName) {
       for (prop in param) {
@@ -104,9 +104,10 @@ function WideOrbitAdapter() {
   }
 
   function _callBids(params) {
-    var publisherId,
-      bidUrl = '',
-      i, referrer;
+    let publisherId;
+    let bidUrl = '';
+    let i;
+    let referrer;
 
     bids = params.bids || [];
 
@@ -130,8 +131,8 @@ function WideOrbitAdapter() {
   }
 
   function _processUserMatchings(userMatchings) {
-    var headElem = document.getElementsByTagName('head')[0],
-      createdElem;
+    const headElem = document.getElementsByTagName('head')[0];
+    let createdElem;
 
     utils._each(userMatchings, function (userMatching) {
       createdElem = undefined;
@@ -170,7 +171,8 @@ function WideOrbitAdapter() {
   }
 
   function _buildAdCode(placement) {
-    var adCode = placement.Source, pixelTag;
+    let adCode = placement.Source;
+    let pixelTag;
 
     utils._each(placement.TrackingCodes, function (trackingCode) {
       if (_isUrl(trackingCode)) {

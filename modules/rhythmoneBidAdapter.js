@@ -1,20 +1,19 @@
-/* eslint indent: 0 */
 import {ajax} from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
-var bidmanager = require('src/bidmanager.js'),
-  bidfactory = require('src/bidfactory.js'),
-  CONSTANTS = require('src/constants.json');
+const bidmanager = require('src/bidmanager.js');
+const bidfactory = require('src/bidfactory.js');
+const CONSTANTS = require('src/constants.json');
 
 function RhythmoneAdapter (bidManager, global, loader) {
-  var version = '0.9.0.0',
-    defaultZone = '1r',
-    defaultPath = 'mvo',
-    debug = false,
-    placementCodes = {},
-    loadStart,
-    configuredPlacements = [],
-    fat = /(^v|(\.0)+$)/gi;
+  const version = '0.9.0.0';
+  let defaultZone = '1r';
+  let defaultPath = 'mvo';
+  let debug = false;
+  const placementCodes = {};
+  let loadStart;
+  let configuredPlacements = [];
+  const fat = /(^v|(\.0)+$)/gi;
 
   if (typeof global === 'undefined') { global = window; }
 
@@ -37,11 +36,11 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function flashInstalled() {
-    var n = global.navigator,
-      p = n.plugins,
-      m = n.mimeTypes,
-      t = 'application/x-shockwave-flash',
-      x = global.ActiveXObject;
+    const n = global.navigator;
+    const p = n.plugins;
+    const m = n.mimeTypes;
+    const t = 'application/x-shockwave-flash';
+    const x = global.ActiveXObject;
 
     if (p &&
       p['Shockwave Flash'] &&
@@ -71,8 +70,8 @@ function RhythmoneAdapter (bidManager, global, loader) {
 
   function getBidParameters(bids) {
     for (var i = 0; i < bids.length; i++) {
- if (typeof bids[i].params === 'object' && bids[i].params.placementId) { return bids[i].params; }
-}
+      if (typeof bids[i].params === 'object' && bids[i].params.placementId) { return bids[i].params; }
+    }
     return null;
   }
 
@@ -88,8 +87,8 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function getRMPURL(bidParams, bids) {
-    var endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}',
-      query = [];
+    let endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    const query = [];
 
     if (typeof bidParams.endpoint === 'string') { endpoint = bidParams.endpoint; }
 
@@ -119,12 +118,14 @@ function RhythmoneAdapter (bidManager, global, loader) {
     }, ''));
     p('title', attempt(function() { return global.top.document.title; }, '')); // try/catch is in the attempt function
     p('url', attempt(function() {
+      var l;
       // try/catch is in the attempt function
       try {
-        return global.top.document.location.href.toString();
+        l = global.top.document.location.href.toString();
       } catch (ex) {
-        return global.document.location.href.toString();
+        l = global.document.location.href.toString();
       }
+      return l;
     }, ''));
     p('dsh', (global.screen ? global.screen.height : ''));
     p('dsw', (global.screen ? global.screen.width : ''));
@@ -132,18 +133,19 @@ function RhythmoneAdapter (bidManager, global, loader) {
     p('dtype', ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 3 : 2)));
     p('flash', (flashInstalled() ? 1 : 0));
 
-    var heights = [],
-      widths = [],
-      floors = [],
-      mediaTypes = [],
-      i = 0;
+    const heights = [];
+    const widths = [];
+    const floors = [];
+    const mediaTypes = [];
+    let i = 0;
 
     configuredPlacements = [];
 
     p('hbv', global.$$PREBID_GLOBAL$$.version.replace(fat, '') + ',' + version.replace(fat, ''));
 
     for (; i < bids.length; i++) {
-      var th = [], tw = [];
+      const th = [];
+      const tw = [];
 
       if (bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === 'number') { bids[i].sizes = [bids[i].sizes]; }
 
@@ -170,15 +172,15 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function sendAuditBeacon(placementId) {
-    var data = {
-        doc_version: 1,
-        doc_type: 'Prebid Audit',
-        placement_id: placementId
-      },
-      ao = document.location.ancestorOrigins,
-      q = [],
-      u = '//hbevents.1rx.io/audit?',
-      i = new Image();
+    const data = {
+      doc_version: 1,
+      doc_type: 'Prebid Audit',
+      placement_id: placementId
+    };
+    const ao = document.location.ancestorOrigins;
+    const q = [];
+    const u = '//hbevents.1rx.io/audit?';
+    const i = new Image();
 
     if (ao && ao.length > 0) {
       data.ancestor_origins = ao[ao.length - 1];
@@ -210,8 +212,8 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   this.callBids = function(params) {
-    var slotMap = {},
-      bidParams = getBidParameters(params.bids);
+    const slotMap = {};
+    const bidParams = getBidParameters(params.bids);
 
     debug = (bidParams !== null && bidParams.debug === true);
 
@@ -231,36 +233,36 @@ function RhythmoneAdapter (bidManager, global, loader) {
 
       if (code !== -1) {
         try {
-          var result = JSON.parse(txt),
-            registerBid = function(bid) {
-              slotMap[bid.impid].success = 1;
+          const result = JSON.parse(txt);
+          const registerBid = function registerBid(bid) {
+            slotMap[bid.impid].success = 1;
 
-              var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
-                placementCode = slotMap[bid.impid].placementCode;
+            const pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+            const placementCode = slotMap[bid.impid].placementCode;
 
-              placementCodes[placementCode] = false;
+            placementCodes[placementCode] = false;
 
-              pbResponse.bidderCode = bidderCode;
-              pbResponse.cpm = parseFloat(bid.price);
-              pbResponse.width = bid.w;
-              pbResponse.height = bid.h;
+            pbResponse.bidderCode = bidderCode;
+            pbResponse.cpm = parseFloat(bid.price);
+            pbResponse.width = bid.w;
+            pbResponse.height = bid.h;
 
-              if ((/video/i).test(slotMap[bid.impid].mediaType)) {
-                pbResponse.mediaType = 'video';
-                pbResponse.vastUrl = bid.nurl;
-                pbResponse.descriptionUrl = bid.nurl;
-              } else { pbResponse.ad = bid.adm; }
+            if ((/video/i).test(slotMap[bid.impid].mediaType)) {
+              pbResponse.mediaType = 'video';
+              pbResponse.vastUrl = bid.nurl;
+              pbResponse.descriptionUrl = bid.nurl;
+            } else { pbResponse.ad = bid.adm; }
 
-              logToConsole('registering bid ' + placementCode + ' ' + JSON.stringify(pbResponse));
+            logToConsole('registering bid ' + placementCode + ' ' + JSON.stringify(pbResponse));
 
-              bidManager.addBidResponse(placementCode, pbResponse);
-            };
+            bidManager.addBidResponse(placementCode, pbResponse);
+          };
 
           for (i = 0; result.seatbid && i < result.seatbid.length; i++) {
- for (var j = 0; result.seatbid[i].bid && j < result.seatbid[i].bid.length; j++) {
+            for (var j = 0; result.seatbid[i].bid && j < result.seatbid[i].bid.length; j++) {
               registerBid(result.seatbid[i].bid[j]);
             }
-}
+          }
         } catch (ex) {}
       }
 

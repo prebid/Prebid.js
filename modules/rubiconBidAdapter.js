@@ -143,11 +143,11 @@ function RubiconAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
       let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
     }
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return [];
     }
     return [
@@ -312,9 +312,9 @@ function RubiconAdapter() {
 </html>`;
 
   function handleRpCB(responseText, bidRequest) {
-    var responseObj = JSON.parse(responseText), // can throw
-      ads = responseObj.ads,
-      adResponseKey = bidRequest.placementCode;
+    const responseObj = JSON.parse(responseText); // can throw
+    let ads = responseObj.ads;
+    const adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
@@ -395,8 +395,8 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
     }, [])
     .sort((first, second) => {
       // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
       if (firstPriority > -1 || secondPriority > -1) {
         if (firstPriority === -1) {
@@ -419,4 +419,3 @@ adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;
-

@@ -12,7 +12,6 @@ import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
-
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -225,7 +224,6 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
 
   // now set new targeting keys
   targeting.setTargeting(targetingSet);
-
 
   // emit event
   events.emit(SET_TARGETING);
