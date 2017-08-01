@@ -16,7 +16,7 @@ const XhbAdapter = function XhbAdapter() {
       {
         key: 'hb_xhb_deal',
         val: function (bidResponse) {
-          return bidResponse.adId;
+          return bidResponse.dealId;
         }
       },
       {
@@ -107,7 +107,7 @@ const XhbAdapter = function XhbAdapter() {
       let responseCPM;
       const id = jptResponseObj.callback_uid;
       let placementCode = '';
-      const bidObj = getBidRequest(id);
+      const bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
