@@ -3,6 +3,7 @@ import * as utils from 'src/utils';
 const userSync = exports;
 // Set user sync config default values which can be overridden by the publisher
 const userSyncDefaultConfig = {
+  syncEnabled: true,
   pixelEnabled: true,
   syncsPerBidder: 5
 }
@@ -40,7 +41,7 @@ function setQueue() {
  * @private
  */
 function fireSyncs() {
-  if (!cookiesAreSupported || hasFired) {
+  if (!userSyncConfig.syncEnabled || !cookiesAreSupported || hasFired) {
     return;
   }
 
@@ -137,7 +138,7 @@ userSync.createImgObject = (url) => {
  * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
  */
 userSync.registerSync = (type, bidder, ...data) => {
-  if (!utils.isArray(queue[type])) {
+  if (!userSyncConfig.syncEnabled || !utils.isArray(queue[type])) {
     return utils.logWarn(`User sync type "{$type}" not supported`);
   }
   if (Number(numAdapterBids[bidder]) >= userSyncConfig.syncsPerBidder) {

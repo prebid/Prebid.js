@@ -126,4 +126,12 @@ describe.only('user sync', () => {
     expect(createImgObjectStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(createImgObjectStub.getCall(3)).to.be.null;
   });
+
+  it('should disable user sync', () => {
+    $$PREBID_GLOBAL$$.userSync.syncEnabled = false;
+    userSync.registerSync('pixel', 'testBidder', 'http://example.com');
+    expect(logWarnStub.getCall(0).args[0]).to.exist;
+    userSync.syncUsers();
+    expect(createImgObjectStub.getCall(0)).to.be.null;
+  });
 });
