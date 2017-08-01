@@ -3,7 +3,6 @@ layout: page
 title: Integrate with the Prebid Analytics API
 description: Integrate with the Prebid Analytics API
 pid: 28
-
 top_nav_section: dev_docs
 nav_section: adapters
 hide: false
@@ -21,6 +20,9 @@ The Prebid Analytics API provides a way to get analytics data from `Prebid.js` a
 + You can selectively build the `Prebid.js` library to include only the analytics adapters for the provider(s) you want.  This keeps the library small and minimizes page load time.
 
 + Since this API separates your analytics provider's code from `Prebid.js`, the upgrade and maintenance of the two systems are separate.  If you want to upgrade your analytics library, there is no need to upgrade or test the core of `Prebid.js`.
+
+* TOC
+{:toc }
 
 ## Architecture of the Analytics API
 
@@ -110,7 +112,7 @@ In your PR to add the new adapter, please provide the following information:
 3. There are several types of analytics adapters. The example here focuses on the 'endpoint' type. See [AnalyticsAdapter.js](https://github.com/prebid/Prebid.js/blob/master/src/AnalyticsAdapter.js) for more info on the 'library' and 'bundle' types.
 
     * endpoint - Calls the specified URL on analytics events. Doesn't require a global context.
-    * library - The URL is considered to be a library to load. Exepects a global context.
+    * library - The URL is considered to be a library to load. Expects a global context.
     * bundle - An advanced option expecting a global context.
 
 4. In order to get access to the configuration passed in from the page, the analytics
@@ -161,5 +163,10 @@ To add the new analyticsAdapter into a prebid package, use a command like this:
 {% highlight js %}
 gulp bundle --modules=abcAnalyticsAdapter,xyzBidAdapter
 {% endhighlight %}
+
+## Further Reading
+
+- [Analytics for Prebid]({{site.baseurl}}/overview/analytics.html) (Overview and list of analytics providers)
+- [Integrate with the Prebid Analytics API]({{site.baseurl}}/dev-docs/integrate-with-the-prebid-analytics-api.html) (For developers)
 
 </div>
