@@ -74,7 +74,7 @@ var CentroAdapter = function CentroAdapter() {
    */
   function _responseProcessing(resp, unit, requestedBid) {
     var bidObject;
-    var bid = resp && resp.bid || resp;
+    var bid = (resp && resp.bid) || resp;
 
     if (bid && (bid.adTag || bid.statusMessage === 'No bid') && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
       if (bid.adTag) {

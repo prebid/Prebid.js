@@ -12,7 +12,7 @@ function WidespaceAdapter() {
   const callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
-    let bids = params && params.bids || [];
+    let bids = (params && params.bids) || [];
 
     for (var i = 0; i < bids.length; i++) {
       const bid = bids[i];
