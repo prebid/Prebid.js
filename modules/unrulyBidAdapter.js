@@ -77,7 +77,7 @@ function createBidResponseHandler(bidRequestBids) {
   }
 }
 
-function createUnrulyAdapter() {
+function UnrulyAdapter() {
   const adapter = {
     exchangeUrl: 'https://targeting.unrulymedia.com/prebid',
     callBids({ bids: bidRequestBids }) {
@@ -106,6 +106,6 @@ function createUnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new createUnrulyAdapter(), 'unruly')
+adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly')
 
-module.exports = createUnrulyAdapter
+module.exports = UnrulyAdapter

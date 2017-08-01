@@ -1,4 +1,5 @@
 import { getBidRequest } from 'src/utils.js';
+
 var CONSTANTS = require('src/constants.json');
 var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
@@ -6,8 +7,7 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
 var adaptermanager = require('src/adaptermanager');
 
-var sekindoUMAdapter;
-sekindoUMAdapter = function sekindoUMAdapter() {
+function SekindoUMAdapter() {
   function _callBids(params) {
     var bids = params.bids;
     var bidsCount = bids.length;
@@ -83,8 +83,8 @@ sekindoUMAdapter = function sekindoUMAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new sekindoUMAdapter(), 'sekindoUM');
+adaptermanager.registerBidAdapter(new SekindoUMAdapter(), 'sekindoUM');
 
-module.exports = sekindoUMAdapter;
+module.exports = SekindoUMAdapter;
