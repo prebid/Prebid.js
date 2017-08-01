@@ -76,7 +76,7 @@ function registerBidResponse(bidderCode, rawBidResponse) {
   $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid].responded = true;
 }
 
-registerAardvarkCallback = function(bidderCode, callbackName) {
+function registerAardvarkCallback(bidderCode, callbackName) {
   $$PREBID_GLOBAL$$[callbackName] = function(rtkResponseObj) {
     rtkResponseObj.forEach(function(bidResponse) {
       registerBidResponse(bidderCode, bidResponse);
