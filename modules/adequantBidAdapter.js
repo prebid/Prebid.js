@@ -25,7 +25,7 @@ function AdequantAdapter() {
       publisher_id = br_params.publisher_id.toString() || publisher_id;
       var bidfloor = br_params.bidfloor || 0.01;
       cats = br_params.cats || cats;
-      if (typeof (cats) === utils.objectType_string) { cats = cats.split(' '); }
+      if (typeof (cats) === 'string') { cats = cats.split(' '); }
       var br_sizes = utils.parseSizesInput(bid_request.sizes);
       for (var j = 0; j < br_sizes.length; j++) {
         sizes.push(br_sizes[j] + '_' + bidfloor);

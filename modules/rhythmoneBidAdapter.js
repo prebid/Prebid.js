@@ -2,20 +2,19 @@
 import {ajax} from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
-const bidmanager = require('src/bidmanager.js');
-const bidfactory = require('src/bidfactory.js');
-const CONSTANTS = require('src/constants.json');
+var bidmanager = require('src/bidmanager.js'),
+  bidfactory = require('src/bidfactory.js'),
+  CONSTANTS = require('src/constants.json');
 
 function RhythmoneAdapter (bidManager, global, loader) {
-  const version = '0.9.0.0';
-  let defaultZone = '1r';
-  let defaultPath = 'mvo';
-  let debug = false;
-  let requestCompleted = false;
-  const placementCodes = {};
-  let loadStart;
-  let configuredPlacements = [];
-  const fat = /(^v|(\.0)+$)/gi;
+  var version = '0.9.0.0',
+    defaultZone = '1r',
+    defaultPath = 'mvo',
+    debug = false,
+    placementCodes = {},
+    loadStart,
+    configuredPlacements = [],
+    fat = /(^v|(\.0)+$)/gi;
 
   if (typeof global === 'undefined')
     { global = window; }
@@ -44,11 +43,11 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function flashInstalled() {
-    const n = global.navigator;
-    const p = n.plugins;
-    const m = n.mimeTypes;
-    const t = 'application/x-shockwave-flash';
-    const x = global.ActiveXObject;
+    var n = global.navigator,
+      p = n.plugins,
+      m = n.mimeTypes,
+      t = 'application/x-shockwave-flash',
+      x = global.ActiveXObject;
 
     if (p &&
       p['Shockwave Flash'] &&
@@ -98,8 +97,8 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function getRMPURL(bidParams, bids) {
-    let endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
-    const query = [];
+    var endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}',
+      query = [];
 
     if (typeof bidParams.endpoint === 'string')
       { endpoint = bidParams.endpoint; }
@@ -148,19 +147,18 @@ function RhythmoneAdapter (bidManager, global, loader) {
     p('dtype', ((/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent) ? 3 : 2)));
     p('flash', (flashInstalled() ? 1 : 0));
 
-    const heights = [];
-    const widths = [];
-    const floors = [];
-    const mediaTypes = [];
-    let i = 0;
+    var heights = [],
+      widths = [],
+      floors = [],
+      mediaTypes = [],
+      i = 0;
 
     configuredPlacements = [];
 
     p('hbv', global.$$PREBID_GLOBAL$$.version.replace(fat, '') + ',' + version.replace(fat, ''));
 
     for (; i < bids.length; i++) {
-      const th = [];
-      const tw = [];
+      var th = [], tw = [];
 
       if (bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === 'number')
         { bids[i].sizes = [bids[i].sizes]; }
@@ -188,15 +186,15 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   function sendAuditBeacon(placementId) {
-    const data = {
-      doc_version: 1,
-      doc_type: 'Prebid Audit',
-      placement_id: placementId
-    };
-    const ao = document.location.ancestorOrigins;
-    const q = [];
-    const u = '//hbevents.1rx.io/audit?';
-    const i = new Image();
+    var data = {
+        doc_version: 1,
+        doc_type: 'Prebid Audit',
+        placement_id: placementId
+      },
+      ao = document.location.ancestorOrigins,
+      q = [],
+      u = '//hbevents.1rx.io/audit?',
+      i = new Image();
 
     if (ao && ao.length > 0) {
       data.ancestor_origins = ao[ao.length - 1];
@@ -228,8 +226,8 @@ function RhythmoneAdapter (bidManager, global, loader) {
   }
 
   this.callBids = function(params) {
-    const slotMap = {};
-    const bidParams = getBidParameters(params.bids);
+    var slotMap = {},
+      bidParams = getBidParameters(params.bids);
 
     debug = (bidParams !== null && bidParams.debug === true);
 
@@ -246,18 +244,16 @@ function RhythmoneAdapter (bidManager, global, loader) {
       // send quality control beacon here
       sendAuditBeacon(bidParams.placementId);
 
-      requestCompleted = true;
-
       logToConsole('response text: ' + txt);
 
       if (code !== -1) {
         try {
-          const result = JSON.parse(txt);
-          const registerBid = function registerBid(bid) {
+          var result = JSON.parse(txt),
+            registerBid = function(bid) {
               slotMap[bid.impid].success = 1;
 
-            const pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
-              const placementCode = slotMap[bid.impid].placementCode;
+              var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
+                placementCode = slotMap[bid.impid].placementCode;
 
               placementCodes[placementCode] = false;
 

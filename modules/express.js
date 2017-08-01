@@ -42,7 +42,6 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     }
     utils.logMessage('running');
 
-
     // function to convert google tag slot sizes to [[w,h],...]
     function mapGptSlotSizes(aGPTSlotSizes) {
       var aSlotSizes = [];
