@@ -3,7 +3,7 @@ import userSync from '../../src/userSync';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 
-describe('user sync', () => {
+describe.only('user sync', () => {
   let createImgObjectStub;
   let logWarnStub;
   let timeoutStub;
@@ -17,8 +17,7 @@ describe('user sync', () => {
     createImgObjectStub = sinon.stub(userSync, 'createImgObject');
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
-    // insertElementStub = sinon.stub(utils, 'insertElement');
-    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => {console.log('getUniqueIdentifierStr', lastId); return idPrefix + (lastId += 1)});
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
     timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
     utils.getUniqueIdentifierStr
   });
@@ -27,7 +26,6 @@ describe('user sync', () => {
     createImgObjectStub.restore();
     logWarnStub.restore();
     shuffleStub.restore();
-    // insertElementStub.restore();
     getUniqueIdentifierStrStub.restore();
     timeoutStub.restore();
     userSync.resetQueue();

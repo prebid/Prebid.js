@@ -45,54 +45,57 @@ function fireSyncs() {
     return;
   }
 
-  // Image pixels
-  fireImagePixels();
-  // Iframe syncs
-  loadIframes();
+  try {
+    // Image pixels
+    fireImagePixels();
+    // Iframe syncs
+    loadIframes();
+  }
+  catch (e) {
+    return utils.logError('Error firing user syncs', e);
+  }
   // Reset the user sync queue
   userSync.resetQueue();
   hasFired = true;
 }
 
+/**
+ * @function fireImagePixels
+ * @summary Loops through user sync pixels and fires each one
+ * @private
+ */
 function fireImagePixels() {
-  try {
-    if (!userSyncConfig.pixelEnabled) {
-      return;
-    }
-    // Randomize the order of the pixels before firing
-    // This is to avoid giving any bidder who has registered multiple syncs
-    // any preferential treatment and balancing them out
-    utils.shuffle(queue.image).forEach((sync) => {
-      let bidderName = sync[0];
-      let trackingPixelUrl = sync[1];
-      utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      userSync.createImgObject(trackingPixelUrl);
-    });
+  if (!userSyncConfig.pixelEnabled) {
+    return;
   }
-  catch (e) {
-    return utils.logError('Error firing user syncs', e);
-  }
+  // Randomize the order of the pixels before firing
+  // This is to avoid giving any bidder who has registered multiple syncs
+  // any preferential treatment and balancing them out
+  utils.shuffle(queue.image).forEach((sync) => {
+    let [bidderName, trackingPixelUrl] = sync;
+    utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
+    // Create image object and add the src url
+    userSync.createImgObject(trackingPixelUrl);
+  });
 }
 
+/**
+ * @function loadIframes
+ * @summary Loops through iframe syncs and loads an iframe element into the page
+ * @private
+ */
 function loadIframes() {
-  try {
-    if (!userSyncConfig.iframeEnabled) {
-      return;
-    }
-    // Randomize the order of these syncs just like the pixels above
-    utils.shuffle(queue.iframe).forEach((sync) => {
-      let bidderName = sync[0];
-      let iframeUrl = sync[1];
-      utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      let iframe = userSync.createIframeObject(iframeUrl);
-      utils.insertElement(iframe);
-    });
+  if (!userSyncConfig.iframeEnabled) {
+    return;
   }
-  catch (e) {
-    return utils.logError('Error firing user syncs', e);
-  }
+  // Randomize the order of these syncs just like the pixels above
+  utils.shuffle(queue.iframe).forEach((sync) => {
+    let [bidderName, iframeUrl] = sync;
+    utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
+    // Create image object and add the src url
+    let iframe = userSync.createIframeObject(iframeUrl);
+    utils.insertElement(iframe);
+  });
 }
 
 /**
