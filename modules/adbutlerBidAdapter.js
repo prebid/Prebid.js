@@ -13,16 +13,16 @@ var adaptermanager = require('src/adaptermanager');
 
 var AdButlerAdapter = function AdButlerAdapter() {
   function _callBids(params) {
-    var bids = params.bids || [],
-      callbackData = {},
-      zoneCount = {},
-      pageID = Math.floor(Math.random() * 10e6);
+    var bids = params.bids || [];
+    var callbackData = {};
+    var zoneCount = {};
+    var pageID = Math.floor(Math.random() * 10e6);
 
     // Build and send bid requests
     for (var i = 0; i < bids.length; i++) {
-      var bid = bids[i],
-        zoneID = utils.getBidIdParameter('zoneID', bid.params),
-        callbackID;
+      var bid = bids[i];
+      var zoneID = utils.getBidIdParameter('zoneID', bid.params);
+      var callbackID;
 
       if (!(zoneID in zoneCount)) {
         zoneCount[zoneID] = 0;
@@ -42,14 +42,16 @@ var AdButlerAdapter = function AdButlerAdapter() {
 
     // Define callback function for bid responses
     $$PREBID_GLOBAL$$.adbutlerCB = function(aBResponseObject) {
-      var bidResponse = {},
-        callbackID = aBResponseObject.zone_id + '_' + aBResponseObject.place,
-        width = parseInt(aBResponseObject.width),
-        height = parseInt(aBResponseObject.height),
-        isCorrectSize = false,
-        isCorrectCPM = true,
-        CPM, minCPM, maxCPM,
-        bidObj = callbackData[callbackID] ? utils.getBidRequest(callbackData[callbackID].bidId) : null;
+      var bidResponse = {};
+      var callbackID = aBResponseObject.zone_id + '_' + aBResponseObject.place;
+      var width = parseInt(aBResponseObject.width);
+      var height = parseInt(aBResponseObject.height);
+      var isCorrectSize = false;
+      var isCorrectCPM = true;
+      var CPM;
+      var minCPM;
+      var maxCPM;
+      var bidObj = callbackData[callbackID] ? utils.getBidRequest(callbackData[callbackID].bidId) : null;
 
       if (bidObj) {
         if (aBResponseObject.status === 'SUCCESS') {
@@ -95,10 +97,10 @@ var AdButlerAdapter = function AdButlerAdapter() {
   }
 
   function buildRequest(bid, adIndex, pageID) {
-    var accountID = utils.getBidIdParameter('accountID', bid.params),
-      zoneID = utils.getBidIdParameter('zoneID', bid.params),
-      keyword = utils.getBidIdParameter('keyword', bid.params),
-      domain = utils.getBidIdParameter('domain', bid.params);
+    var accountID = utils.getBidIdParameter('accountID', bid.params);
+    var zoneID = utils.getBidIdParameter('zoneID', bid.params);
+    var keyword = utils.getBidIdParameter('keyword', bid.params);
+    var domain = utils.getBidIdParameter('domain', bid.params);
 
     if (typeof domain === 'undefined' || domain.length === 0) {
       domain = 'servedbyadbutler.com';

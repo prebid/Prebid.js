@@ -23,17 +23,12 @@ module.exports = {
     "camelcase": "off",
     "eqeqeq": "off",
     "import/first": "off",
-    "new-cap": "off",
     "no-control-regex": "off",
-    "no-mixed-operators": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-use-before-define": "off",
-    "no-useless-call": "off",
     "no-useless-escape": "off",
-    "one-var": "off",
     "standard/no-callback-literal": "off",
-    "standard/object-curly-even-spacing": "off",
   }
 };

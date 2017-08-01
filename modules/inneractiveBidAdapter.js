@@ -301,7 +301,7 @@ class InnerActiveAdapter {
   _setBidCpm(bid, bidId) {
     const storedBid = this.bidByBidId[bidId];
     if (storedBid) {
-      bid.cpm = storedBid.params && storedBid.params.qa && storedBid.params.qa.cpm || bid.cpm;
+      bid.cpm = (storedBid.params && storedBid.params.qa && storedBid.params.qa.cpm) || bid.cpm;
       bid.cpm = (bid.cpm !== null && !isNaN(bid.cpm)) ? parseFloat(bid.cpm) : 0.0;
     }
   }
@@ -430,7 +430,7 @@ class InnerActiveAdapter {
   }
 
   _getEndpointUrl(params) {
-    return params && params.qa && params.qa.url || Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL;
+    return (params && params.qa && params.qa.url) || Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL;
   }
 
   _getStoredBids() {
