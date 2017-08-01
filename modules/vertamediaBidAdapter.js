@@ -9,7 +9,7 @@ import adaptermanager from 'src/adaptermanager';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = Adapter.createNew('vertamedia'),
+  var baseAdapter = new Adapter('vertamedia'),
     bidRequest;
 
   baseAdapter.callBids = function (bidRequests) {
@@ -107,15 +107,10 @@ function VertamediaAdapter() {
   }
 
   return {
-    createNew: VertamediaAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
   };
 }
-
-VertamediaAdapter.createNew = function () {
-  return new VertamediaAdapter();
-};
 
 adaptermanager.registerBidAdapter(new VertamediaAdapter(), 'vertamedia', {
   supportedMediaTypes: ['video']

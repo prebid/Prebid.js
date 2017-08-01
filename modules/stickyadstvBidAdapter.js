@@ -1,4 +1,4 @@
-var Adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
@@ -178,7 +178,6 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     return script;
   };
 
-
   function formatAdHTML(bid, size) {
     var integrationType = bid.params.format;
 
@@ -252,7 +251,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     };
   };
 
-  return Object.assign(Adapter.createNew(STICKYADS_BIDDERCODE), {
+  return Object.assign(new Adapter(STICKYADS_BIDDERCODE), {
     callBids: _callBids,
     formatBidObject: formatBidObject,
     formatAdHTML: formatAdHTML,
@@ -260,13 +259,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     getBid: getBid,
     getTopMostWindow: getTopMostWindow,
     getComponentId: getComponentId,
-    getAPIName: getAPIName,
-    createNew: StickyAdsTVAdapter.createNew // enable alias feature (to be used for freewheel-ssp alias)
+    getAPIName: getAPIName
   });
-};
-
-StickyAdsTVAdapter.createNew = function() {
-  return new StickyAdsTVAdapter();
 };
 
 adaptermanager.registerBidAdapter(new StickyAdsTVAdapter(), 'stickyadstv');
