@@ -50,4 +50,3 @@ adaptermanager.registerAnalyticsAdapter({
 });
 
 export default pubwiseAnalytics;
-

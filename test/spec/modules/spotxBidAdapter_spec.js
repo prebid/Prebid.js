@@ -87,7 +87,7 @@ describe('spotx adapter tests', () => {
     let adapter;
 
     beforeEach(() => {
-      adapter = Adapter.createNew();
+      adapter = new Adapter();
 
       var slot = document.createElement('div');
       slot.setAttribute('id', 'contentSpotx');

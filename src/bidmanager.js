@@ -9,8 +9,6 @@ var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
 
-var objectType_function = 'function';
-
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 let _customPriceBucket;
@@ -404,7 +402,7 @@ function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
+    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
       try {
         bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       } catch (e) {
