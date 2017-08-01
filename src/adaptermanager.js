@@ -18,7 +18,7 @@ let _s2sConfig = {
   syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
 };
 var _analyticsRegistry = {};
-let _bidderSequence = null;
+let _bidderSequence = CONSTANTS.ORDER.random;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
@@ -66,7 +66,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
+  if (_bidderSequence === CONSTANTS.ORDER.random) {
     bidderCodes = shuffle(bidderCodes);
   }
 

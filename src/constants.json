@@ -38,7 +38,8 @@
     "bidWon": "adUnitCode"
   },
   "ORDER": {
-    "RANDOM": "random"
+    "fixed": "fixed",
+    "random": "random"
   },
   "GRANULARITY_OPTIONS": {
     "LOW": "low",

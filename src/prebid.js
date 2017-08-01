@@ -700,14 +700,18 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
 };
 
 /**
- * Set the order bidders are called in. If not set, the bidders are called in
- * the order they are defined within the adUnit.bids array
- * @param {string} order - Order to call bidders in. Currently the only possible value
- * is 'random', which randomly shuffles the order
+ * Set the order bidders are called in. Valid values are:
+ *
+ * "fixed": Bidders will be called in the order in which they were defined within the adUnit.bids array.
+ * "random": Bidders will be called in random order.
+ *
+ * If never called, Prebid will use "random" as the default.
+ *
+ * @param {string} order One of the valid orders, described above.
  */
 $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  if (order === CONSTANTS.ORDER.RANDOM) {
-    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
+  if (CONSTANTS.ORDER[order]) {
+    adaptermanager.setBidderSequence(order);
   }
 };
 
