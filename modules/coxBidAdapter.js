@@ -4,10 +4,10 @@ var adLoader = require('src/adloader.js');
 var adaptermanager = require('src/adaptermanager');
 
 function CoxAdapter() {
-  var adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl'],
-    otherKeys = ['siteId', 'wrapper', 'referrerUrl'],
-    placementMap = {},
-    W = window;
+  const adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl'];
+  const otherKeys = ['siteId', 'wrapper', 'referrerUrl'];
+  const placementMap = {};
+  const W = window;
 
   var COX_BIDDER_CODE = 'cox';
 
@@ -19,13 +19,13 @@ function CoxAdapter() {
     if (!W.CMT) W.CMT = _getCoxLite();
 
     // Populate the tag with the info from prebid
-    var bids = params.bids || [],
-      tag = W.cdsTag,
-      i,
-      j;
+    const bids = params.bids || [];
+    const tag = W.cdsTag;
+    var i;
+    var j;
     for (i = 0; i < bids.length; i++) {
-      var bid = bids[i],
-        cfg = bid.params || {};
+      const bid = bids[i];
+      const cfg = bid.params || {};
 
       if (cfg.id) {
         tag.zones = tag.zones || {};
@@ -69,9 +69,9 @@ function CoxAdapter() {
     // }
 
     for (var adZoneKey in placementMap) {
-      var bid = W.CMT.Service.getBidTrue(adZoneKey),
-        bidObj,
-        data = placementMap[adZoneKey];
+      var bid = W.CMT.Service.getBidTrue(adZoneKey);
+      var bidObj;
+      var data = placementMap[adZoneKey];
 
       if (bid > 0) {
         bidObj = bidfactory.createBid(1);
@@ -115,8 +115,8 @@ function CoxAdapter() {
           }
 
           function f1(callback) {
-            var oneWindow,
-              infoArray = [];
+            var oneWindow;
+            const infoArray = [];
             do {
               try {
                 oneWindow = oneWindow ? oneWindow.parent : W;
@@ -156,9 +156,9 @@ function CoxAdapter() {
         },
 
         srTestCapabilities: function srTestCapabilities() {
-          var plugins = navigator.plugins,
-            flashVer = -1,
-            sf = 'Shockwave Flash';
+          var plugins = navigator.plugins;
+          var flashVer = -1;
+          var sf = 'Shockwave Flash';
 
           if (plugins && plugins.length > 0) {
             if (plugins[sf + ' 2.0'] || plugins[sf]) {
@@ -230,8 +230,8 @@ function CoxAdapter() {
         },
 
         _getData: function (zoneKey, field) {
-          var response = this._getResponse(),
-            zoneResponseData = response.zones ? response.zones[zoneKey] : {};
+          const response = this._getResponse();
+          const zoneResponseData = response.zones ? response.zones[zoneKey] : {};
 
           return (zoneResponseData || {})[field] || null;
         },

@@ -5,19 +5,19 @@ var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 
 var CentroAdapter = function CentroAdapter() {
-  var baseUrl = '//t.brand-server.com/hb',
-    devUrl = '//staging.brand-server.com/hb',
-    bidderCode = 'centro',
-    handlerPrefix = 'adCentroHandler_',
+  const baseUrl = '//t.brand-server.com/hb';
+  const devUrl = '//staging.brand-server.com/hb';
+  const bidderCode = 'centro';
+  const handlerPrefix = 'adCentroHandler_';
 
-    LOG_ERROR_MESS = {
-      noUnit: 'Bid has no unit',
-      noAdTag: 'Bid has missmatch format.',
-      noBid: 'Response has no bid.',
-      anotherCode: 'Bid has another bidderCode - ',
-      undefBid: 'Bid is undefined',
-      unitNum: 'Requested unit is '
-    };
+  const LOG_ERROR_MESS = {
+    noUnit: 'Bid has no unit',
+    noAdTag: 'Bid has missmatch format.',
+    noBid: 'Response has no bid.',
+    anotherCode: 'Bid has another bidderCode - ',
+    undefBid: 'Bid is undefined',
+    unitNum: 'Requested unit is '
+  };
 
   function _makeHandler(handlerName, unit, requestedBid) {
     return function(response) {
@@ -31,7 +31,8 @@ var CentroAdapter = function CentroAdapter() {
   }
 
   function _sendBidRequest(requestedBid) {
-    var bid, size = requestedBid.sizes && requestedBid.sizes[0];
+    var bid;
+    const size = requestedBid.sizes && requestedBid.sizes[0];
 
     bid = requestedBid.params;
     if (!bid.unit) {
@@ -103,7 +104,8 @@ var CentroAdapter = function CentroAdapter() {
    size: [300, 250]
    */
   function _callBids(params) {
-    var bid, bids = params.bids || [];
+    var bid;
+    const bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       bid = bids[i];
       if (bid && bid.bidder === bidderCode) {

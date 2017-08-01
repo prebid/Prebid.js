@@ -59,12 +59,12 @@ const OpenxAdapter = function OpenxAdapter() {
   };
 
   function getViewportDimensions(isIfr) {
-    let width,
-      height,
-      tWin = window,
-      tDoc = document,
-      docEl = tDoc.documentElement,
-      body;
+    let width;
+    let height;
+    let tWin = window;
+    let tDoc = document;
+    let docEl = tDoc.documentElement;
+    let body;
 
     if (isIfr) {
       try {
@@ -194,9 +194,9 @@ const OpenxAdapter = function OpenxAdapter() {
   }
 
   function callBids(params) {
-    let isIfr,
-      bids = params.bids || [],
-      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+    let isIfr;
+    const bids = params.bids || [];
+    let currentURL = (window.parent !== window) ? document.referrer : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;

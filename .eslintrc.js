@@ -33,7 +33,6 @@ module.exports = {
     "no-use-before-define": "off",
     "no-useless-call": "off",
     "no-useless-escape": "off",
-    "one-var": "off",
     "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off",
   }

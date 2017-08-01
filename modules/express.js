@@ -67,9 +67,9 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       var adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
       for (var i = gptSlots.length - 1; i > -1; i--) {
-        var gptSlot = gptSlots[i],
-          elemId = gptSlot.getSlotElementId(),
-          adUnit = adUnitsCache[elemId];
+        const gptSlot = gptSlots[i];
+        const elemId = gptSlot.getSlotElementId();
+        const adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
           adUnit._gptSlot = gptSlot;
