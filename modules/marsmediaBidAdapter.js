@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter.js';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import { ajax } from 'src/ajax';
@@ -10,7 +10,6 @@ const MARS_BIDDER_CODE = 'marsmedia';
 const MARS_BIDDER_URL = '//load3-real12.srv-analytics.info:8080/bidder/?bid=3mhdom';
 
 var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
-
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -42,8 +41,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
 
       function addBid(res, bid) {
         var obj;
-        
-        try{
+        try {
           obj = JSON.parse(res);
         } catch (err) {
           throw 'Faild to parse bid response';
@@ -56,7 +54,6 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
         var ad = obj.seatbid[0].bid[0];
         var bid_params = bidfactory.createBid(STATUS.GOOD, bid);
         var sizes = bid.sizes[0];
-        
         bid_params.un_id = obj.id;
         bid_params.bidderCode = bid.bidder;
         bid_params.cpm = Number(ad.price);
@@ -153,7 +150,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
-  return Object.assign(Adapter.createNew(MARS_BIDDER_CODE), {
+  return Object.assign(new Adapter(MARS_BIDDER_CODE), {
     callBids: _callBids,
     createNew: MarsmediaBidAdapter.createNew,
     buildCallParams: buildCallParams
@@ -164,6 +161,6 @@ MarsmediaBidAdapter.createNew = function() {
   return new MarsmediaBidAdapter();
 };
 
-adaptermanager.registerBidAdapter(new MarsmediaBidAdapter, MARS_BIDDER_CODE);
+adaptermanager.registerBidAdapter(new MarsmediaBidAdapter(), MARS_BIDDER_CODE);
 
 module.exports = MarsmediaBidAdapter;
