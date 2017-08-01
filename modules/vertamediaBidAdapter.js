@@ -9,8 +9,8 @@ import adaptermanager from 'src/adaptermanager';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = new Adapter('vertamedia'),
-    bidRequest;
+  const baseAdapter = new Adapter('vertamedia');
+  let bidRequest;
 
   baseAdapter.callBids = function (bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
@@ -51,8 +51,8 @@ function VertamediaAdapter() {
   }
 
   function getSize(requestSizes) {
-    var parsed = {},
-      size = utils.parseSizesInput(requestSizes)[0];
+    const parsed = {};
+    const size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
