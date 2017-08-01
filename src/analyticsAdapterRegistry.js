@@ -1,4 +1,4 @@
-import { logError, logMessage } from './utils';
+import { logError } from './utils';
 
 // This module serves to manage analytics adapters which are present in the build.
 // Each Analytics Adapter module should register itself here, by importing the global
