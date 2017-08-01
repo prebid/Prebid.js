@@ -5,7 +5,7 @@ const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
 const adaptermanager = require('src/adaptermanager');
 
-const mobfoxAdapter = function () {
+function MobfoxAdapter() {
   const BIDDER_CODE = 'mobfox';
   const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 
@@ -178,7 +178,7 @@ const mobfoxAdapter = function () {
   return {
     callBids: callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new mobfoxAdapter(), 'mobfox');
-module.exports = mobfoxAdapter;
+adaptermanager.registerBidAdapter(new MobfoxAdapter(), 'mobfox');
+module.exports = MobfoxAdapter;
