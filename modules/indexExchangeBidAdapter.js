@@ -642,7 +642,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
         cygnus_index_args.timeout = bid.params.timeout;
       }
 
-
       var siteID = Number(bid.params.siteID);
       if (typeof siteID !== 'number' || siteID % 1 != 0 || siteID <= 0) {
         utils.logMessage(ADAPTER_NAME + ' slot excluded from request due to invalid siteID');
