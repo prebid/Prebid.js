@@ -125,17 +125,4 @@ describe('The video cache', () => {
       return callback;
     }
   });
-
-  describe('when the cache server breaks its contract', () => {
-    let xhr;
-    let requests;
-
-    beforeEach(() => {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
-    });
-
-    afterEach(() => xhr.restore());
-  })
 });
