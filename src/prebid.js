@@ -1,6 +1,7 @@
 /** @module $$PREBID_GLOBAL$$ */
 
 import { getGlobal } from './prebidGlobal';
+import { analyticsRegistry } from './analyticsAdapterRegistry'
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
@@ -11,6 +12,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
+import { events } from 'src/events';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -18,7 +20,6 @@ var utils = require('./utils.js');
 var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
-var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
 
@@ -541,13 +542,16 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 };
 
 /**
- * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
+ * Wrapper to register analyticsAdapter externally (adapterregistry.registerAnalyticsAdapter())
  * @param  {[type]} options [description]
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
-    adaptermanager.registerAnalyticsAdapter(options);
+    analyticsRegistry.registerAnalyticsAdapterFactory({
+      factory: function() { return options.adapter; },
+      code: options.code,
+    });
   }
   catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
@@ -610,7 +614,9 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
-    adaptermanager.enableAnalytics(config);
+    adaptermanager.enableAnalytics(config, {
+      events: events
+    });
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }

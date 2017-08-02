@@ -3,17 +3,15 @@
  */
 
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import { analyticsRegistry } from 'src/analyticsAdapterRegistry';
 
-var pulsepointAdapter = adapter({
+var pulsepointAdapterFactory = adapter({
   global: 'PulsePointPrebidAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
 });
 
-adaptermanager.registerAnalyticsAdapter({
-  adapter: pulsepointAdapter,
+analyticsRegistry.registerAnalyticsAdapterFactory({
+  factory: pulsepointAdapterFactory,
   code: 'pulsepoint'
 });
-
-export default pulsepointAdapter;

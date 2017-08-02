@@ -1,11 +1,16 @@
-import sharethroughAnalytics from 'modules/sharethroughAnalyticsAdapter';
+import sharethroughAnalyticsFactory from 'modules/sharethroughAnalyticsAdapter';
+import { newEvents } from 'src/events'
 import { expect } from 'chai';
 
 describe('sharethrough analytics adapter', () => {
+  let sharethroughAnalytics;
   let sandbox;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+    sharethroughAnalytics = sharethroughAnalyticsFactory({
+      events: newEvents()
+    });
   });
 
   afterEach(() => {

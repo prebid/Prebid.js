@@ -1,19 +1,18 @@
-import roxotAnalytic from 'modules/roxotAnalyticsAdapter';
-let events = require('src/events');
-let adaptermanager = require('src/adaptermanager');
+import roxotAnalyticFactory from 'modules/roxotAnalyticsAdapter';
+import { newEvents } from 'src/events';
+
 let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
   describe('enableAnalytics', function () {
     it('should catch all events', function () {
+      const events = newEvents();
+      const roxotAnalytic = roxotAnalyticFactory({
+        events: events,
+      });
       sinon.spy(roxotAnalytic, 'track');
 
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
-
-      adaptermanager.enableAnalytics({
+      roxotAnalytic.enableAnalytics({
         provider: 'roxot',
         options: {
           publisherIds: ['test_roxot_prebid_analytid_publisher_id']

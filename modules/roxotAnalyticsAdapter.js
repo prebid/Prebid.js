@@ -1,6 +1,6 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import { analyticsRegistry } from 'src/analyticsAdapterRegistry';
 
 const utils = require('src/utils');
 
@@ -56,8 +56,10 @@ function flushEvents() {
   eventStack.events = [];
 }
 
-let roxotAdapter = Object.assign(adapter({url, analyticsType}),
-  {
+const baseAdapterFactory = adapter({url, analyticsType})
+
+const adapterFactory = function(analyticsAdapterDependencies) {
+  const roxotAdapter = Object.assign(baseAdapterFactory(analyticsAdapterDependencies), {
     track({eventType, args}) {
       if (!checkOptions()) {
         return;
@@ -90,18 +92,18 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       }
     }
   });
+  roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
+  roxotAdapter.enableAnalytics = function (config) {
+    initOptions = config.options;
+    utils.logInfo('Roxot Analytics enabled with config', initOptions);
+    roxotAdapter.originEnableAnalytics(config);
+  };
+  return roxotAdapter;
+}
 
-roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
-
-roxotAdapter.enableAnalytics = function (config) {
-  initOptions = config.options;
-  utils.logInfo('Roxot Analytics enabled with config', initOptions);
-  roxotAdapter.originEnableAnalytics(config);
-};
-
-adaptermanager.registerAnalyticsAdapter({
-  adapter: roxotAdapter,
+analyticsRegistry.registerAnalyticsAdapterFactory({
+  factory: adapterFactory,
   code: 'roxot'
 });
 
-export default roxotAdapter;
+export default adapterFactory;

@@ -3,7 +3,7 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events';
+import { events } from 'src/events';
 import { fireNativeImpressions } from './native';
 import { EVENTS } from './constants';
 

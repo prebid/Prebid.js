@@ -1,12 +1,13 @@
 /** @module adaptermanger */
 
+import { events } from 'src/events';
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { analyticsRegistry } from './analyticsAdapterRegistry'
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -17,7 +18,6 @@ let _s2sConfig = {
   adapter: CONSTANTS.S2S.ADAPTER,
   syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
 };
-var _analyticsRegistry = {};
 let _bidderSequence = null;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
@@ -212,33 +212,14 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({adapter, code}) {
-  if (adapter && code) {
-    if (typeof adapter.enableAnalytics === 'function') {
-      adapter.code = code;
-      _analyticsRegistry[code] = adapter;
-    } else {
-      utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
-        analytics adapter must implement an enableAnalytics() function`);
-    }
-  } else {
-    utils.logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
-  }
-};
-
-exports.enableAnalytics = function (config) {
+exports.enableAnalytics = function (config, adapterDependencies) {
   if (!utils.isArray(config)) {
     config = [config];
   }
 
   utils._each(config, adapterConfig => {
-    var adapter = _analyticsRegistry[adapterConfig.provider];
-    if (adapter) {
-      adapter.enableAnalytics(adapterConfig);
-    } else {
-      utils.logError(`Prebid Error: no analytics adapter found in registry for
-        ${adapterConfig.provider}.`);
-    }
+    const adapter = analyticsRegistry.newAnalyticsAdapter(adapterConfig.provider, adapterDependencies);
+    adapter.enableAnalytics(adapterConfig);
   });
 };
 

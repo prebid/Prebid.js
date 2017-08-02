@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import constants from 'src/constants';
-import events from 'src/events';
+import { events } from 'src/events';
 
 import * as bidManager from 'src/bidmanager';
 import useVideoCacheStubs from 'test/mocks/videoCacheStub';

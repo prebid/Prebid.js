@@ -1,6 +1,11 @@
-import appnexusAnalytics from 'modules/appnexusAnalyticsAdapter';
+import appnexusAnalyticsFactory from 'modules/appnexusAnalyticsAdapter';
+import { newEvents } from 'src/events'
 import { assert } from 'chai';
 import { getBidRequestedPayload } from 'test/fixtures/fixtures';
+
+const appnexusAnalytics = appnexusAnalyticsFactory({
+  events: newEvents(),
+});
 
 const spyEnqueue = sinon.spy(appnexusAnalytics, 'enqueue');
 const spyTrack = sinon.spy(appnexusAnalytics, 'track');

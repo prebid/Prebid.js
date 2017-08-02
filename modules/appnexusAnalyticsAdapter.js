@@ -3,17 +3,17 @@
  */
 
 import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import { analyticsRegistry } from 'src/analyticsAdapterRegistry';
 
-var appnexusAdapter = adapter({
+const appnexusAdapterFactory = adapter({
   global: 'AppNexusPrebidAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
 });
 
-adaptermanager.registerAnalyticsAdapter({
-  adapter: appnexusAdapter,
+analyticsRegistry.registerAnalyticsAdapterFactory({
+  factory: appnexusAdapterFactory,
   code: 'appnexus'
 });
 
-export default appnexusAdapter;
+export default appnexusAdapterFactory;
