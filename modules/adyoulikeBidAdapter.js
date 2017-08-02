@@ -10,7 +10,7 @@ import adaptermanager from 'src/adaptermanager';
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
   const _VERSION = '0.1';
 
-  const baseAdapter = Adapter.createNew('adyoulike');
+  const baseAdapter = new Adapter('adyoulike');
 
   baseAdapter.callBids = function (bidRequest) {
     const bidRequests = {};
@@ -141,8 +141,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
   /* Get parsed size from request size */
   function getSize(requestSizes) {
-    const parsed = {},
-      size = utils.parseSizesInput(requestSizes)[0];
+    const parsed = {};
+    const size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -189,16 +189,11 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   }
 
   return {
-    createNew: AdyoulikeAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
   };
 };
 
-AdyoulikeAdapter.createNew = function () {
-  return new AdyoulikeAdapter();
-};
-
-adaptermanager.registerBidAdapter(new AdyoulikeAdapter, 'adyoulike');
+adaptermanager.registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');
 
 module.exports = AdyoulikeAdapter;

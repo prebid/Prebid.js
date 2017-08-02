@@ -94,8 +94,8 @@ function YieldbotAdapter() {
           var bid = v;
           // bidder params config: http://prebid.org/dev-docs/bidders/yieldbot.html
           // - last psn wins
-          psn = bid.params && bid.params.psn || psn;
-          var slotName = bid.params && bid.params.slot || 'ERROR_PREBID_DEFINE_YB_SLOT';
+          psn = (bid.params && bid.params.psn) || psn;
+          var slotName = (bid.params && bid.params.slot) || 'ERROR_PREBID_DEFINE_YB_SLOT';
 
           slots[slotName] = bid.sizes || [];
           ybotlib.definedSlots.push(bid.bidId);
@@ -133,7 +133,7 @@ function YieldbotAdapter() {
         var adapterConfig;
 
         ybRequest = $$PREBID_GLOBAL$$._bidsRequested
-                      .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot');
+          .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot');
 
         adapterConfig = ybRequest && ybRequest.bids ? ybRequest.bids.find(bid => bid.bidId === v) : null;
 
@@ -152,6 +152,6 @@ function YieldbotAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new YieldbotAdapter, 'yieldbot');
+adaptermanager.registerBidAdapter(new YieldbotAdapter(), 'yieldbot');
 
 module.exports = YieldbotAdapter;

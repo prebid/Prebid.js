@@ -66,6 +66,6 @@ function VertozAdapter() {
   return { callBids: _callBids };
 }
 
-adaptermanager.registerBidAdapter(new VertozAdapter, 'vertoz');
+adaptermanager.registerBidAdapter(new VertozAdapter(), 'vertoz');
 
 module.exports = VertozAdapter;

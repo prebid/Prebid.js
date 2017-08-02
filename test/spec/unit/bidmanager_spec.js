@@ -70,6 +70,21 @@ describe('The Bid Manager', () => {
      */
     function prepAuction(adUnits, bidRequestTweaker) {
       function bidAdjuster(bid) {
+        if (bid.hasOwnProperty('cpm')) {
+          bid.hadCpmDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('adUnitCode')) {
+          bid.hadAdUnitCodeDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('timeToRespond')) {
+          bid.hadTimeToRespondDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('requestTimestamp')) {
+          bid.hadRequestTimestampDuringBidAdjustment = true;
+        }
+        if (bid.hasOwnProperty('responseTimestamp')) {
+          bid.hadResponseTimestampDuringBidAdjustment = true;
+        }
         bid.cpm = adjustCpm(bid.cpm);
       }
       beforeEach(() => {
@@ -141,6 +156,20 @@ describe('The Bid Manager', () => {
         it('should gracefully do nothing when bid is undefined', () => {
           bidManager.addBidResponse('mock/code');
           expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
+        });
+
+        it('should attach properties for analytics *before* the BID_ADJUSTMENT event listeners are called', () => {
+          const copy = Object.assign({}, bidResponse);
+          copy.getSize = function() {
+            return `${this.height}x${this.width}`;
+          };
+          delete copy.cpm;
+          bidManager.addBidResponse('mock/code', copy);
+          expect(copy).to.have.property('hadCpmDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadAdUnitCodeDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadTimeToRespondDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadRequestTimestampDuringBidAdjustment', true);
+          expect(copy).to.have.property('hadResponseTimestampDuringBidAdjustment', true);
         });
       });
 
