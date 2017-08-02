@@ -264,6 +264,6 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new JustpremiumAdapter, 'justpremium');
+adaptermanager.registerBidAdapter(new JustpremiumAdapter(), 'justpremium');
 
 module.exports = JustpremiumAdapter;
