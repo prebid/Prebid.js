@@ -44,7 +44,7 @@ module.exports = function (win = window) {
   function find(arr, fn) {
     // not all browsers support Array.find
     let res;
-    for (let i=0; i < arr.length; i++) {
+    for (let i = 0; i < arr.length; i++) {
       if (fn(arr[i])) {
         res = arr[i];
         break;
@@ -75,13 +75,13 @@ module.exports = function (win = window) {
   }
 
   function insertUserConnect(params) {
-    const scriptElement =  win.document.createElement("script");
+    const scriptElement = win.document.createElement('script');
     scriptElement.src = (isSecureWindow() ? 'https:' : 'http:') + '//js.adscale.de/userconnect.js';
 
     let anyValidBid = find(params.bids, validBidRequest);
     if (anyValidBid) {
       const config = {slotId: anyValidBid.params.sid};
-      scriptElement.setAttribute("data-container-config", JSON.stringify(config));
+      scriptElement.setAttribute('data-container-config', JSON.stringify(config));
     }
     utils.insertElement(scriptElement);
   }

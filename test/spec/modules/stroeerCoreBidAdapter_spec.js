@@ -1,5 +1,5 @@
 const assert = require('chai').assert;
-const adapter = require('modules/stroeercoreBidAdapter');
+const adapter = require('modules/stroeerCoreBidAdapter');
 const bidmanager = require('src/bidmanager');
 const utils = require('src/utils');
 
@@ -75,7 +75,7 @@ const createWindow = (href, params = {}) => {
       href
     },
     document: {
-      createElement: function(){return {setAttribute:function(){}}},
+      createElement: function() { return { setAttribute: function() {} } },
 
       referrer,
       getElementById: id => placementElements.find(el => el.id === id)
@@ -310,7 +310,7 @@ describe('stroeerssp adapter', function () {
       assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid2');
     });
 
-    it('should perform user connect when have valid bids', ()=> {
+    it('should perform user connect when have valid bids', () => {
       runUserConnect();
 
       assert.isTrue(utils.insertElement.calledOnce);
@@ -320,11 +320,10 @@ describe('stroeerssp adapter', function () {
       assert.isString(element.src, 'http://js.adscale.de/userconnect.js');
 
       const config = JSON.parse(element.getAttribute('data-container-config'));
-      assert.equal(config.slotId, "NDA=");
-
+      assert.equal(config.slotId, 'NDA=');
     });
 
-    it('should perform user connect when have invalid bids', ()=> {
+    it('should perform user connect when have invalid bids', () => {
       bidderRequest.bids.forEach(b => delete b.params.sid);
       runUserConnect();
 
