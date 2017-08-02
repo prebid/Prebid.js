@@ -74,10 +74,10 @@ module.exports = function (win = window) {
     return undefined;
   }
 
-  function insertUserConnect(params) {
+  function insertUserConnect(bids) {
     const scriptElement = win.document.createElement('script');
-    const anyBidWithSlotId = find(params.bids, validBidRequest);
-    const anyBidWithConnectJsUrl = find(params.bids, b => b.params && b.params.connectjsurl);
+    const anyBidWithSlotId = find(bids, validBidRequest);
+    const anyBidWithConnectJsUrl = find(bids, b => b.params && b.params.connectjsurl);
 
     if (anyBidWithSlotId) {
       scriptElement.setAttribute('data-container-config', JSON.stringify({slotId: anyBidWithSlotId.params.sid}));
@@ -138,9 +138,10 @@ module.exports = function (win = window) {
         timeout: params.timeout - (Date.now() - params.auctionStart)
       };
 
+      const allBids = params.bids;
       const validBidRequestById = {};
 
-      params.bids.forEach(bidRequest => {
+      allBids.forEach(bidRequest => {
         if (validBidRequest(bidRequest)) {
           requestBody.bids.push({
             bid: bidRequest.bidId,
@@ -156,13 +157,26 @@ module.exports = function (win = window) {
       });
 
       if (requestBody.bids.length > 0) {
-        ajax(buildUrl(params.bids[0].params), ajaxResponseFn(validBidRequestById), JSON.stringify(requestBody), {
+        const successFn = ajaxResponseFn(validBidRequestById);
+
+        const callback = {
+          success: function() {
+            successFn.apply(this, arguments);
+            insertUserConnect(allBids);
+          },
+          error: function() {
+            insertUserConnect(allBids);
+          }
+        };
+
+        ajax(buildUrl(allBids[0].params), callback, JSON.stringify(requestBody), {
           withCredentials: true,
           contentType: 'text/plain'
         });
       }
-
-      insertUserConnect(params);
+      else {
+        insertUserConnect(allBids);
+      }
     }
   };
 };
