@@ -31,7 +31,7 @@ describe('platformio adapter tests', function () {
           sizes: [[300, 250]],
           bidId: 'bid1111',
           bidder: 'platformio',
-          params: { pubId: '37054', siteId: '123', placementId: '1234' }
+          params: { pubId: '37054', siteId: '123' }
         }]
       };
 
@@ -45,7 +45,6 @@ describe('platformio adapter tests', function () {
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
       expect(parsedBidUrlQueryString).to.have.property('pub_id').and.to.equal('37054');
       expect(parsedBidUrlQueryString).to.have.property('site_id').and.to.equal('123');
-      expect(parsedBidUrlQueryString).to.have.property('placement_id').and.to.equal('1234');
       expect(parsedBidUrlQueryString).to.have.property('width').and.to.equal('300');
       expect(parsedBidUrlQueryString).to.have.property('height').and.to.equal('250');
     });
@@ -61,7 +60,7 @@ describe('platformio adapter tests', function () {
           sizes: [[300, 250]],
           bidId: 'bid1111',
           bidder: 'platformio',
-          params: { pubId: '37054', siteId: '123', placementId: '1234' }
+          params: { pubId: '37054', siteId: '123' }
         }]
       };
 
@@ -114,7 +113,7 @@ describe('platformio adapter tests', function () {
           sizes: [[300, 250]],
           bidId: 'b12345',
           bidder: 'platformio',
-          params: { pubId: '37054', siteId: '123', placementId: '1234' }
+          params: { pubId: '37054', siteId: '123' }
         }]
       };
 
