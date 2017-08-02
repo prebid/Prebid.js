@@ -1,10 +1,11 @@
-const bidmanager = require('../src/bidmanager');
-const bidfactory = require('../src/bidfactory');
-const utils = require('../src/utils');
-const ajax = require('../src/ajax').ajax;
-const url = require('../src/url');
+const bidmanager = require('src/bidmanager');
+const bidfactory = require('src/bidfactory');
+const utils = require('src/utils');
+const ajax = require('src/ajax').ajax;
+const url = require('src/url');
+const adaptermanager = require('src/adaptermanager');
 
-module.exports = function (win = window) {
+const StroeerCoreAdapter = function (win = window) {
   const defaultHost = 'dsh.adscale.de';
   const defaultPath = '/dsh';
   const defaultPort = '';
@@ -180,3 +181,7 @@ module.exports = function (win = window) {
     }
   };
 };
+
+adaptermanager.registerBidAdapter(new StroeerCoreAdapter(), 'stroeerCore');
+
+module.exports = StroeerCoreAdapter;
