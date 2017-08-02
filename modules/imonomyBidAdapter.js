@@ -24,7 +24,7 @@ function ImonomyAdapter() {
     var connectiontype = '';
     var domain = '';
     var page = '';
-    var bid, _value, _key, i, j, l;
+    var bid, i, l;
     var bids = params.bids;
     var imonomy_domain = 'b.imonomy.com';
     var callbackName = '_hb_' + utils.getUniqueIdentifierStr();
@@ -144,8 +144,8 @@ function ImonomyAdapter() {
   }
 
   function _processUserMatchings(userMatchings) {
-    var headElem = document.getElementsByTagName('head')[0],
-      createdElem;
+    var headElem = document.getElementsByTagName('head')[0];
+    var createdElem;
 
     utils._each(userMatchings, function (userMatching) {
       createdElem = undefined;

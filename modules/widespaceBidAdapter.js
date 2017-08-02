@@ -42,15 +42,13 @@ function WidespaceAdapter() {
       };
 
       if (bid.params.demo) {
-          let demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-
-          for (let i = 0; i < demoFields.length; i++) {
-              if (!bid.params.demo[demoFields[i]]) {
-                  continue;
-              }
-
-              params['hb.demo.' + demoFields[i]] = bid.params.demo[demoFields[i]];
+        let demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+        for (let i = 0; i < demoFields.length; i++) {
+          if (!bid.params.demo[demoFields[i]]) {
+            continue;
           }
+          params['hb.demo.' + demoFields[i]] = bid.params.demo[demoFields[i]];
+        }
       }
 
       requestURL += '#';
