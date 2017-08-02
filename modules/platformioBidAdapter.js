@@ -16,7 +16,6 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
       var bid = bids[i];
 
       requestParams.pub_id = bid.params.pubId;
-      requestParams.placement_id = bid.params.placementId;
       requestParams.site_id = bid.params.siteId;
 
       var parseSized = utils.parseSizesInput(bid.sizes);
