@@ -264,8 +264,8 @@ describe('stroeerssp adapter', function () {
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
-      assert.isString(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
-      assert.isString(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
+      assert.strictEqual(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
+      assert.strictEqual(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
 
       const firstBid = bidmanager.addBidResponse.firstCall.args[1];
       const secondBid = bidmanager.addBidResponse.secondCall.args[1];
@@ -301,9 +301,10 @@ describe('stroeerssp adapter', function () {
 
       sinon.assert.calledTwice(bidmanager.addBidResponse);
 
-      assert.isString(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
+      assert.strictEqual(bidmanager.addBidResponse.firstCall.args[0], 'div-2');
 
-      assert.isString(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
+      // invalid bids are added last
+      assert.strictEqual(bidmanager.addBidResponse.secondCall.args[0], 'div-1');
 
       assertBid(bidmanager.addBidResponse.secondCall.args[1], 'bid1', '<div>tag1</div>', 300, 600);
 
@@ -316,8 +317,8 @@ describe('stroeerssp adapter', function () {
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assert.isString(element.tagName, 'script');
-      assert.isString(element.src, 'http://js.adscale.de/userconnect.js');
+      assert.strictEqual(element.tagName, 'SCRIPT');
+      assert.strictEqual(element.src, 'http://js.adscale.de/userconnect.js');
 
       const config = JSON.parse(element.getAttribute('data-container-config'));
       assert.equal(config.slotId, 'NDA=');
@@ -330,9 +331,25 @@ describe('stroeerssp adapter', function () {
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assert.isString(element.tagName, 'script');
-      assert.isString(element.src, 'http://js.adscale.de/userconnect.js');
+      assert.strictEqual(element.tagName, 'SCRIPT');
+      assert.strictEqual(element.src, 'http://js.adscale.de/userconnect.js');
       assert.isFalse(element.hasAttribute('data-container-config'));
+    });
+
+    it('should perform user connect using custom url', () => {
+      const connectjsurl = 'https://other.com/connect.js';
+      bidderRequest.bids[0].params.connectjsurl = connectjsurl;
+
+      runUserConnect();
+
+      assert.isTrue(utils.insertElement.calledOnce);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assert.strictEqual(element.tagName, 'SCRIPT');
+      assert.strictEqual(element.src, connectjsurl);
+
+      const config = JSON.parse(element.getAttribute('data-container-config'));
+      assert.equal(config.slotId, 'NDA=');
     });
 
     function runUserConnect() {

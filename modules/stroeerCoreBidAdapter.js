@@ -76,13 +76,17 @@ module.exports = function (win = window) {
 
   function insertUserConnect(params) {
     const scriptElement = win.document.createElement('script');
-    scriptElement.src = (isSecureWindow() ? 'https:' : 'http:') + '//js.adscale.de/userconnect.js';
+    const anyBidWithSlotId = find(params.bids, validBidRequest);
+    const anyBidWithConnectJsUrl = find(params.bids, b => b.params && b.params.connectjsurl);
 
-    let anyValidBid = find(params.bids, validBidRequest);
-    if (anyValidBid) {
-      const config = {slotId: anyValidBid.params.sid};
-      scriptElement.setAttribute('data-container-config', JSON.stringify(config));
+    if (anyBidWithSlotId) {
+      scriptElement.setAttribute('data-container-config', JSON.stringify({slotId: anyBidWithSlotId.params.sid}));
     }
+
+    const userConnectUrl = anyBidWithConnectJsUrl && anyBidWithConnectJsUrl.params.connectjsurl;
+
+    scriptElement.src = userConnectUrl || ((isSecureWindow() ? 'https:' : 'http:') + '//js.adscale.de/userconnect.js');
+
     utils.insertElement(scriptElement);
   }
 
