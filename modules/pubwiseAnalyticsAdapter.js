@@ -1,48 +1,123 @@
 import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import adaptermanager from 'src/adaptermanager';
+import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 /****
  * PubWise.io Analytics
  * Contact: support@pubwise.io
  * Developer: Stephen Johnston
+ *
+ * For testing:
+ *
+ pbjs.enableAnalytics({
+  provider: 'pubwise',
+  options: {
+    site: 'test-test-test-test',
+    endpoint: 'https://api.pubwise.io/api/v4/event/add/',
+  }
+ });
  */
 
 const analyticsType = 'endpoint';
-let target_site = 'unknown';
-let target_url = 'https://staging.api.pubwise.io';
-let pw_version = '2.1.3';
+const analyticsName = 'PubWise Analytics: ';
+let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
+let pubwiseVersion = '2.2';
+let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: ''};
+let pwAnalyticsEnabled = false;
+let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
+
+function markEnabled() {
+  utils.logInfo(`${analyticsName}Enabled`, configOptions);
+  pwAnalyticsEnabled = true;
+}
+
+function enrichWithMetrics(dataBag) {
+  try {
+    dataBag['pw_version'] = pubwiseVersion;
+    dataBag['pbjs_version'] = $$PREBID_GLOBAL$$.version;
+    dataBag['debug'] = configOptions.debug;
+  } catch (e) {
+    dataBag['error_metric'] = 1;
+  }
+
+  return dataBag;
+}
+
+function enrichWithUTM(dataBag) {
+  let newUtm = false;
+  try {
+    for (var prop in utmKeys) {
+      let urlValue = utils.getParameterByName(prop);
+      utmKeys[prop] = urlValue;
+      if (utmKeys[prop] != '') {
+        newUtm = true;
+        dataBag[prop] = utmKeys[prop];
+      }
+    }
+
+    if (newUtm === false) {
+      for (var prop in utmKeys) {
+        let itemValue = localStorage.getItem(`pw-${prop}`);
+        if (itemValue.length !== 0) {
+          dataBag[prop] = itemValue;
+        }
+      }
+    } else {
+      for (var prop in utmKeys) {
+        localStorage.setItem(`pw-${prop}`, utmKeys[prop]);
+      }
+    }
+  } catch (e) {
+    utils.logInfo(`${analyticsName}Error`, e);
+    dataBag['error_utm'] = 1;
+  }
+  return dataBag;
+}
+
+function sendEvent(eventType, data) {
+  utils.logInfo(`${analyticsName}Event ${eventType} ${pwAnalyticsEnabled}`, data);
+
+  // put the typical items in the data bag
+  let dataBag = {
+    eventType: eventType,
+    args: data,
+    target_site: configOptions.site,
+    debug: configOptions.debug ? 1 : 0,
+  };
+
+  // for certain events, track additional info
+  if (eventType == CONSTANTS.EVENTS.AUCTION_INIT) {
+    dataBag = enrichWithMetrics(dataBag);
+    dataBag = enrichWithUTM(dataBag);
+  }
+
+  ajax(configOptions.endpoint, (result) => utils.logInfo(`${analyticsName}Result`, result), JSON.stringify(dataBag));
+}
 
 let pubwiseAnalytics = Object.assign(adapter(
   {
-    target_url,
+    defaultUrl,
     analyticsType
-  }
-),
+  }),
 {
   // Override AnalyticsAdapter functions by supplying custom methods
   track({eventType, args}) {
-    /*
-       The args object is not always available, in addition neither is the config object
-       it is available on the first call and we can setup our config. Potential additional
-       PR for later, but this solves this for now.
-       */
-    if (args !== undefined && args.config !== undefined && args.config.site !== undefined && args.config.endpoint !== undefined) {
-      target_site = args.config.site;
-      target_url = args.config.endpoint;
-    }
-    utils.logInfo('Sending PubWise Analytics Event ' + eventType, args);
-    ajax(target_url,
-      (result) => utils.logInfo('PubWise Analytics Result', result), JSON.stringify({
-        eventType,
-        args,
-        target_site,
-        pw_version
-      })
-    );
+    sendEvent(eventType, args);
   }
 });
+
+pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
+
+pubwiseAnalytics.enableAnalytics = function (config) {
+  if (config.options.debug === undefined) {
+    config.options.debug = utils.debugTurnedOn();
+  }
+  configOptions = config.options;
+  markEnabled();
+  pubwiseAnalytics.adapterEnableAnalytics(config);
+};
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,

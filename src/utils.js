@@ -263,6 +263,8 @@ var getParameterByName = function (name) {
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
+exports.getParameterByName = getParameterByName;
+
 /**
  * This function validates paramaters.
  * @param  {object[string]} paramObj          [description]
