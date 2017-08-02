@@ -4,7 +4,7 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const adaptermanager = require('src/adaptermanager');
-const WS_ADAPTER_VERSION = '1.0.2';
+const WS_ADAPTER_VERSION = '1.0.3';
 
 function WidespaceAdapter() {
   const useSSL = document.location.protocol === 'https:';
@@ -40,6 +40,18 @@ function WidespaceAdapter() {
         'hb.currency': currency,
         'sid': sid
       };
+
+      if (bid.params.demo) {
+          let demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+
+          for (let i = 0; i < demoFields.length; i++) {
+              if (!bid.params.demo[demoFields[i]]) {
+                  continue;
+              }
+
+              params['hb.demo.' + demoFields[i]] = bid.params.demo[demoFields[i]];
+          }
+      }
 
       requestURL += '#';
 
