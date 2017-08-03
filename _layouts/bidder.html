@@ -1,56 +1,48 @@
 {% include head.html %}
-
 {% include main_nav.html %}
 
-  <div class="container bs-docs-container">
+<div class="container bs-docs-container">
 
   {% if page.is_full_screen %}
-
     {{content}}
-
   {% else %}
 
-    <div class="row">
+  <div class="row">
 
+    {% include left_nav.html %}
 
-      {% include left_nav.html %}
+    <div class="col-md-9" role="main">
+      <div class="bs-docs-section">
 
-      <div class="col-md-9" role="main">
+        <h3>{{ page.title }}</h3>
 
-        <div class="bs-docs-section">
+        <h4>Bidder Code</h4>
 
-          <h1>{{ page.title }}</h1>
+        <code>{{ page.biddercode }}</code>
 
-          <h3>bidder code:</h3>
+        {% if page.biddercode_longer_than_12 != true %}
 
-          <code>{{ page.biddercode }}</code>
+        <h4>Send All Bids Ad Server Keys</h4>
 
-          {% if page.biddercode_longer_than_12 != true %}
+        <code>hb_pb_{{ page.biddercode }}</code>
+        <code>hb_adid_{{ page.biddercode }}</code>
+        <code>hb_size_{{ page.biddercode }}</code>
 
-          <h4> Send All Bids Ad Server Keys: </h4>
-
-          <code>hb_pb_{{ page.biddercode }}</code>
-          <code>hb_adid_{{ page.biddercode }}</code>
-          <code>hb_size_{{ page.biddercode }}</code>
-
-          {% endif %}
-
-          {{content}}
-        </div>
-
-        {% if page.show_disqus %}
-          {% include disqus_addon.html %}
         {% endif %}
+
+        {{content}}
 
       </div>
 
+      {% if page.show_disqus %}
+        {% include disqus_addon.html %}
+      {% endif %}
 
     </div>
-
-   {% endif %}
-
-
   </div>
 
+  {% endif %}
+
+</div>
 
 {% include foot.html %}
