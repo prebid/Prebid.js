@@ -48,7 +48,7 @@ function enrichWithMetrics(dataBag) {
 function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
-    for (var prop in utmKeys) {
+    for (let prop in utmKeys) {
       let urlValue = utils.getParameterByName(prop);
       utmKeys[prop] = urlValue;
       if (utmKeys[prop] != '') {
@@ -58,14 +58,14 @@ function enrichWithUTM(dataBag) {
     }
 
     if (newUtm === false) {
-      for (var prop in utmKeys) {
+      for (let prop in utmKeys) {
         let itemValue = localStorage.getItem(`pw-${prop}`);
         if (itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
-      for (var prop in utmKeys) {
+      for (let prop in utmKeys) {
         localStorage.setItem(`pw-${prop}`, utmKeys[prop]);
       }
     }
