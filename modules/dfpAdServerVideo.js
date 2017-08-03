@@ -73,7 +73,7 @@ export default function buildDfpVideoUrl(options) {
     defaultParamConstants,
     derivedParams,
     options.params,
-    { cust_params: encodeURIComponent(formatQS(customParams))});
+    { cust_params: encodeURIComponent(formatQS(customParams)) });
 
   return buildUrl({
     protocol: 'https',

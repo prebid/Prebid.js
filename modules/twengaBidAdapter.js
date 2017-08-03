@@ -124,11 +124,11 @@ function TwengaAdapter() {
     }
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildBidCall: buildBidCall
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new TwengaAdapter(), 'twenga');

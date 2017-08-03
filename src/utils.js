@@ -263,6 +263,8 @@ var getParameterByName = function (name) {
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
+exports.getParameterByName = getParameterByName;
+
 /**
  * This function validates paramaters.
  * @param  {object[string]} paramObj          [description]
@@ -618,7 +620,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
 }
 
 /**

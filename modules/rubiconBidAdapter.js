@@ -29,6 +29,7 @@ var sizeMap = {
   8: '120x600',
   9: '160x600',
   10: '300x600',
+  13: '200x200',
   14: '250x250',
   15: '300x250',
   16: '336x280',
@@ -66,7 +67,8 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600'
+  126: '200x600',
+  195: '600x300'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -143,11 +145,11 @@ function RubiconAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
       let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
     }
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return [];
     }
     return [
@@ -312,9 +314,9 @@ function RubiconAdapter() {
 </html>`;
 
   function handleRpCB(responseText, bidRequest) {
-    var responseObj = JSON.parse(responseText), // can throw
-      ads = responseObj.ads,
-      adResponseKey = bidRequest.placementCode;
+    const responseObj = JSON.parse(responseText); // can throw
+    let ads = responseObj.ads;
+    const adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
@@ -376,7 +378,7 @@ function RubiconAdapter() {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return Object.assign(baseAdapter, {
+  return Object.assign(this, baseAdapter, {
     callBids: _callBids
   });
 }
@@ -395,8 +397,8 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
     }, [])
     .sort((first, second) => {
       // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
       if (firstPriority > -1 || secondPriority > -1) {
         if (firstPriority === -1) {
@@ -419,4 +421,3 @@ adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;
-

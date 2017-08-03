@@ -182,7 +182,7 @@ function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || result.status && result.status.includes('Error')) {
+    if (!result || (result.status && result.status.includes('Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
   }
@@ -212,13 +212,13 @@ function PrebidServer() {
     }
   }
 
-  return {
+  return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
