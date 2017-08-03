@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import userSync from '../../src/userSync';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
+let { userSync, newUserSync } = require('../../src/userSync');
 
 describe('user sync', () => {
   let createImgObjectStub;
@@ -28,7 +28,7 @@ describe('user sync', () => {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     timeoutStub.restore();
-    userSync.resetQueue();
+    userSync = newUserSync();
   });
 
   it('should register and fire a pixel URL', () => {

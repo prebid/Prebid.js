@@ -4,7 +4,7 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { registerSync } from 'src/userSync.js';
+import { userSync } from 'src/userSync.js';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 
@@ -112,7 +112,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
+              userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
             }
           });
         }

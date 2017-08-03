@@ -8,7 +8,7 @@ import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncUsers, overrideSync } from 'src/userSync.js';
+import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 
@@ -21,6 +21,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
+const { syncUsers, overrideSync } = userSync;
 
 /* private variables */
 

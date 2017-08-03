@@ -4,7 +4,7 @@ import bidmanager from 'src/bidmanager';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
-import userSync from 'src/userSync';
+import { userSync } from 'src/userSync';
 
 let CONFIG = {
   accountId: '1',
