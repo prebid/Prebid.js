@@ -8,23 +8,30 @@ describe('user sync', () => {
   let logWarnStub;
   let timeoutStub;
   let shuffleStub;
+  let insertElementStub;
+  let getUniqueIdentifierStrStub;
+  let idPrefix = 'test-generated-id-';
+  let lastId = 0;
 
   beforeEach(() => {
     createImgObjectStub = sinon.stub(userSync, 'createImgObject');
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
     timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    utils.getUniqueIdentifierStr
   });
 
   afterEach(() => {
     createImgObjectStub.restore();
     logWarnStub.restore();
     shuffleStub.restore();
+    getUniqueIdentifierStrStub.restore();
     timeoutStub.restore();
     userSync.resetQueue();
   });
 
-  it('should register and fires a pixel URL', () => {
+  it('should register and fire a pixel URL', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.not.be.null;
@@ -59,6 +66,15 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(createImgObjectStub.getCall(0)).to.be.null;
+  });
+
+  it('should register and load an iframe', () => {
+    $$PREBID_GLOBAL$$.userSync.iframeEnabled = true;
+    userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
+    userSync.syncUsers();
+    let iframe = window.document.getElementById(idPrefix + lastId);
+    expect(iframe).to.exist;
+    expect(iframe.src).to.equal('http://example.com/iframe');
   });
 
   it('should only trigger syncs once per page', () => {

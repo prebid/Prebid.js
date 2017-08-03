@@ -9,9 +9,8 @@ const userSyncDefaultConfig = {
 }
 
 // A queue of user syncs for each adapter
-// Let setQueue() set the defaults
-let queue;
-setQueue();
+// Let getDefaultQueue() set the defaults
+let queue = getDefaultQueue();
 
 // Since user syncs require cookie access we want to prevent sending syncs if cookies are not supported
 let cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
@@ -25,13 +24,15 @@ let userSyncConfig = Object.assign($$PREBID_GLOBAL$$.userSync || {},
   userSyncDefaultConfig);
 
 /**
- * @function setQueue
- * @summary Sets the default empty queue
+ * @function getDefaultQueue
+ * @summary Returns the default empty queue
  * @private
+ * @return {object} A queue with no syncs
  */
-function setQueue() {
-  queue = {
-    image: []
+function getDefaultQueue() {
+  return {
+    image: [],
+    iframe: []
   }
 }
 
@@ -46,26 +47,56 @@ function fireSyncs() {
   }
 
   try {
-    if (!userSyncConfig.pixelEnabled) {
-      return;
-    }
-    // Randomize the order of the pixels before firing
-    // This is to avoid giving any bidder who has registered multiple syncs
-    // any preferential treatment and balancing them out
-    utils.shuffle(queue.image).forEach((sync) => {
-      let bidderName = sync[0];
-      let trackingPixelUrl = sync[1];
-      utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
-      userSync.createImgObject(trackingPixelUrl);
-    });
-    // Reset the user sync queue
-    userSync.resetQueue();
-    hasFired = true;
+    // Image pixels
+    fireImagePixels();
+    // Iframe syncs
+    loadIframes();
   }
   catch (e) {
-    utils.logError('Error firing user syncs', e);
+    return utils.logError('Error firing user syncs', e);
   }
+  // Reset the user sync queue
+  userSync.resetQueue();
+  hasFired = true;
+}
+
+/**
+ * @function fireImagePixels
+ * @summary Loops through user sync pixels and fires each one
+ * @private
+ */
+function fireImagePixels() {
+  if (!userSyncConfig.pixelEnabled) {
+    return;
+  }
+  // Randomize the order of the pixels before firing
+  // This is to avoid giving any bidder who has registered multiple syncs
+  // any preferential treatment and balancing them out
+  utils.shuffle(queue.image).forEach((sync) => {
+    let [bidderName, trackingPixelUrl] = sync;
+    utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
+    // Create image object and add the src url
+    userSync.createImgObject(trackingPixelUrl);
+  });
+}
+
+/**
+ * @function loadIframes
+ * @summary Loops through iframe syncs and loads an iframe element into the page
+ * @private
+ */
+function loadIframes() {
+  if (!userSyncConfig.iframeEnabled) {
+    return;
+  }
+  // Randomize the order of these syncs just like the pixels above
+  utils.shuffle(queue.iframe).forEach((sync) => {
+    let [bidderName, iframeUrl] = sync;
+    utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
+    // Create image object and add the src url
+    let iframe = userSync.createIframeObject(iframeUrl);
+    utils.insertElement(iframe);
+  });
 }
 
 /**
@@ -103,8 +134,9 @@ function incrementAdapterBids(numAdapterBids, bidder) {
 
 /**
  * @function createImgObject
- * @summary Create an img DOM element for sending a pixel. Made public for test purposes
- * @private
+ * @summary Create an img DOM element for sending a pixel.
+ *          Made public for test purposes
+ * @public
  * @params {string} url The URL for the image pixel
  * @returns {object} A valid DOM element
  */
@@ -124,6 +156,24 @@ userSync.createImgObject = (url) => {
   };
   return img;
 };
+
+/**
+ * @function createIframeObject
+ * @summary Create an iframe DOM element for loading HTML to sync
+ *          Made public for test purposes
+ * @public
+ * @params {string} url The URL of the iframe
+ * @returns {object} A valid iframe DOM element
+ */
+userSync.createIframeObject = (url) => {
+  if (!url) {
+    return;
+  }
+  let iframe = hideAndIdElem(document.createElement('iframe'));
+  iframe.sandbox = 'allow-scripts';
+  iframe.src = encodeURI(url);
+  return iframe;
+}
 
 /**
  * @function registerSync
@@ -185,7 +235,7 @@ userSync.overrideSync = (enableOverride) => {
  */
 userSync.resetQueue = () => {
   hasFired = false;
-  setQueue();
+  queue = getDefaultQueue();
   numAdapterBids = {};
   // Reset the userSyncConfig in case there are any changes, like with tests
   userSyncConfig = Object.assign($$PREBID_GLOBAL$$.userSync || {}, userSyncDefaultConfig);
