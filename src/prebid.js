@@ -138,7 +138,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * @param adUnitCode {string} adUnitCode to get the bid responses for
  * @returns {object}  returnObj return bids
  */
-$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
+$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   return $$PREBID_GLOBAL$$.getAdserverTargeting(adUnitCode)[adUnitCode];
 };
 
@@ -234,7 +234,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   events.emit(SET_TARGETING);
 };
 
-$$PREBID_GLOBAL$$.setTargetingForAst = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
@@ -256,6 +256,8 @@ $$PREBID_GLOBAL$$.allBidsAvailable = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
   return bidmanager.bidsBackAll();
 };
+
+function confiantWrap(a, b, c, d, e, f) { function g(a) { return (l(a) || "")[r]("/", "_")[r]("+", "-") } function h(b, c, d) { var e = v + m(b) + "&d=" + c, f = "err__" + 1 * new Date; j[f] = d; var g = "<" + p + " on" + s + '="void(' + f + '())" ' + q + '="' + e + '" type="text/java' + p + '" ></' + p + ">"; a[u](g) } function i() { var c = g(f + "/" + w.k.hb_bidder[0] + ":" + w.k.hb_size[0]), d = { wh: c, wd: k.parse(k[t](w)), wr: 0 }; h(c, g(k[t](d)), function () { a[u](b) }); var e = { d: d, t: b }; j[f] = {}, j[f][c] = e } var j = a.parentWindow || a.defaultView, k = j.JSON, l = j.btoa, m = j.encodeURIComponent; if (!k || !l) return !1; var n = "t", o = "i", p = "script", q = "src", r = "replace", s = "error", t = "stringify", u = "wr" + o + n + "e", v = "https://" + e + "/?wrapper=" + m(f) + "&tpid=", w = { k: { hb_bidder: [c], hb_size: [d] } }; return i(), a.close(), !0 }
 
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
@@ -288,8 +290,15 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
-          doc.write(ad);
-          doc.close();
+
+          // calling confiantWrap()
+          if (!ConfiantWrap(doc, ad, bid.bidder, (height + 'x' + width),
+            'clarium.global.ssl.fastly.net',
+            'dvS98IKwDukcG6gPDYBBcCk9sKY')) {
+            // If confiant can't wrap the ad, add it the old school way.
+            doc.write(ad);
+            doc.close();
+          }
           setRenderSize(doc, width, height);
         } else if (url) {
           const iframe = utils.createInvisibleIframe();
@@ -331,7 +340,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 };
 
-$$PREBID_GLOBAL$$.clearAuction = function() {
+$$PREBID_GLOBAL$$.clearAuction = function () {
   auctionRunning = false;
   syncCookies($$PREBID_GLOBAL$$.cookieSyncDelay);
   utils.logMessage('Prebid auction cleared');
@@ -721,7 +730,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {boolean} [cookieSet] enables cookieSet functionality
  */
-$$PREBID_GLOBAL$$.setS2SConfig = function(options) {
+$$PREBID_GLOBAL$$.setS2SConfig = function (options) {
   if (!utils.contains(Object.keys(options), 'accountId')) {
     utils.logError('accountId missing in Server to Server config');
     return;
@@ -766,7 +775,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  *                        the Prebid script has been fully loaded.
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
+$$PREBID_GLOBAL$$.cmd.push = function (cmd) {
   if (typeof cmd === objectType_function) {
     try {
       cmd.call();
@@ -781,7 +790,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(cmd) {
 $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
-  queue.forEach(function(cmd) {
+  queue.forEach(function (cmd) {
     if (typeof cmd.called === objectType_undefined) {
       try {
         cmd.call();
@@ -794,7 +803,7 @@ function processQueue(queue) {
   });
 }
 
-$$PREBID_GLOBAL$$.processQueue = function() {
+$$PREBID_GLOBAL$$.processQueue = function () {
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };
