@@ -18,7 +18,7 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
-const callNumber = 0;
+let callNumber = 0;
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 const FASTLANE_ENDPOINT1 = '//flapi1.rubiconproject.com/a/api/fastlane.json';
 const FASTLANE_ENDPOINT2 = '//flapi2.rubiconproject.com//a/api/fastlane.json';
