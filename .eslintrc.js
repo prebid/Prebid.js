@@ -23,7 +23,6 @@ module.exports = {
     "camelcase": "off",
     "eqeqeq": "off",
     "no-control-regex": "off",
-    "no-redeclare": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
