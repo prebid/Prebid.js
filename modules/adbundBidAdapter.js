@@ -5,7 +5,7 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 
-var adBundAdapter = function adBundAdapter() {
+function AdBundAdapter() {
   var timezone = (new Date()).getTimezoneOffset();
   var bidAPIs = [
     'http://us-east-engine.adbund.xyz/prebid/ad/get',
@@ -62,8 +62,8 @@ var adBundAdapter = function adBundAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new adBundAdapter(), 'adbund');
+adaptermanager.registerBidAdapter(new AdBundAdapter(), 'adbund');
 
-module.exports = adBundAdapter;
+module.exports = AdBundAdapter;

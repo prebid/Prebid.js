@@ -3,12 +3,12 @@ var utils = require('src/utils.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
 var adloader = require('src/adloader.js');
-var Adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var adaptermanager = require('src/adaptermanager');
 
 var PiximediaAdapter = function PiximediaAdapter() {
   var PREBID_URL = '//static.adserver.pm/prebid';
-  var baseAdapter = Adapter.createNew('piximedia');
+  var baseAdapter = new Adapter('piximedia');
   var bidStash = {};
 
   var tryAppendPixiQueryString = function(url, name, value) {

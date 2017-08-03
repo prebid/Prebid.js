@@ -5,11 +5,11 @@ var CONSTANTS = require('src/constants');
 var utils = require('src/utils');
 var adloader = require('src/adloader');
 var bidfactory = require('src/bidfactory');
-var Adapter = require('src/adapter');
+var Adapter = require('src/adapter').default;
 
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
-  var baseAdapter = Adapter.createNew('appnexus');
+  var baseAdapter = new Adapter('appnexus');
   var usersync = false;
 
   baseAdapter.callBids = function (bidderRequest, addBidResponse, done) {
@@ -223,13 +223,8 @@ AppNexusAdapter = function AppNexusAdapter() {
   return {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: AppNexusAdapter.createNew,
     buildJPTCall: buildJPTCall
   };
-};
-
-AppNexusAdapter.createNew = function () {
-  return new AppNexusAdapter();
 };
 
 adaptermanager.registerBidAdapter(new AppNexusAdapter(), 'appnexus');

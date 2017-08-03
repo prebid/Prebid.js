@@ -13,7 +13,6 @@ import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 import { auctionManager } from './auctionManager';
 
-
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
@@ -25,9 +24,6 @@ var targeting = require('./targeting.js');
 
 /* private variables */
 
-var objectType_function = 'function';
-var objectType_undefined = 'undefined';
-var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
@@ -88,18 +84,6 @@ function checkDefinedPlacement(id) {
   }
 
   return true;
-}
-
-/**
- * When a request for bids is made any stale bids remaining will be cleared for
- * a placement included in the outgoing bid request.
- */
-function clearPlacements() {
-  $$PREBID_GLOBAL$$._bidsRequested = [];
-
-  // leave bids received for ad slots not in this bid request
-  $$PREBID_GLOBAL$$._bidsReceived = $$PREBID_GLOBAL$$._bidsReceived
-    .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode));
 }
 
 function setRenderSize(doc, width, height) {
@@ -228,7 +212,6 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
 
   // now set new targeting keys
   targeting.setTargeting(targetingSet);
-
 
   // emit event
   events.emit(SET_TARGETING);
@@ -375,7 +358,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === objectType_function) {
+    if (typeof bidsBackHandler === 'function') {
       // executeCallback, this will only be called in case of first request
       bidsBackHandler();
     }
@@ -386,7 +369,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   auction.setAdUnits(adUnits);
   auction.setAdUnitCodes(adUnitCodes);
 
-  if (typeof bidsBackHandler === objectType_function) {
+  if (typeof bidsBackHandler === 'function') {
     auction.setCallback(bidsBackHandler);
   }
   // set timeout for all bids
@@ -413,7 +396,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     // Append array to existing
     adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === objectType_object) {
+  } else if (typeof adUnitArr === 'object') {
     // Generate the transaction id for the adunit
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
@@ -596,12 +579,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @param {string} adserverTag default url
  * @param {object} options options for video tag
  *
- * @deprecated Include the dfpVideoSupport module in your build, and use the
- *   $$PREBID_GLOBAL$$.adserver.buildVideoAdUrl (if DFP is your only Ad Server) or
- *   $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl (if you use other Ad Servers too)
- *   function instead. This function will be removed in Prebid 1.0.
+ * @deprecated Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead.
+ * This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logWarn('$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag will be removed in Prebid 1.0. Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
   var urlComponents = parseURL(adserverTag);
 
@@ -705,7 +687,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
 $$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === objectType_function) {
+  if (typeof cmd === 'function') {
     try {
       cmd.call();
     } catch (e) {
@@ -720,7 +702,7 @@ $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
   queue.forEach(function(cmd) {
-    if (typeof cmd.called === objectType_undefined) {
+    if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
         cmd.called = true;

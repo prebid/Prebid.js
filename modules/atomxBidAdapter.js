@@ -73,7 +73,6 @@ var AtomxAdapter = function AtomxAdapter() {
   };
 };
 
-
 adaptermanager.registerBidAdapter(new AtomxAdapter(), 'atomx');
 
 module.exports = AtomxAdapter;

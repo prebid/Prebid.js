@@ -23,11 +23,6 @@
       "REQUEST_BIDS": "requestBids"
     }
   },
-  "objectType_function": "function",
-  "objectType_undefined": "undefined",
-  "objectType_object": "object",
-  "objectType_string": "string",
-  "objectType_number": "number",
   "EVENTS": {
     "AUCTION_INIT": "auctionInit",
     "AUCTION_END": "auctionEnd",

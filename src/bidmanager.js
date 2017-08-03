@@ -1,21 +1,12 @@
-import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
-import {getPriceBucketString} from './cpmBucketManager';
-import {NATIVE_KEYS, nativeBidIsValid} from './native';
-import { store } from './videoCache';
-import { Renderer } from 'src/Renderer';
+import { uniques, adUnitsFilter } from './utils';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
 
-var objectType_function = 'function';
-
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
-var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
-let _customPriceBucket;
 var defaultBidderSettingsMap = {};
-
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -37,27 +28,6 @@ function getBidderCode(bidSet) {
 
 function getBidders(bid) {
   return bid.bidder;
-}
-
-function add(a, b) {
-  return a + b;
-}
-
-function bidsBackAll() {
-  const requested = $$PREBID_GLOBAL$$._bidsRequested
-    .map(request => request.bids)
-    .reduce(flatten, [])
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce((a, b) => a + b, 0);
-
-  const received = $$PREBID_GLOBAL$$._bidsReceived
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
-
-  return requested === received;
 }
 
 exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
@@ -102,12 +72,6 @@ exports.externalCallbackReset = function () {
   externalCallbacks.all.called = false;
 };
 
-function triggerAdUnitCallbacks(adUnitCode) {
-  // todo : get bid responses and send in args
-  var singleAdUnitCode = [adUnitCode];
-  processCallbacks(externalCallbacks.byAdUnit, singleAdUnitCode);
-}
-
 function processCallbacks(callbackQueue, singleAdUnitCode) {
   if (utils.isArray(callbackQueue)) {
     callbackQueue.forEach(callback => {
@@ -145,7 +109,6 @@ exports.addOneTimeCallback = function (callback, timer) {
   externalCallbacks.timer = timer;
 };
 
-
 // register event for bid adjustment
 events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
@@ -155,7 +118,7 @@ function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
+    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
       try {
         bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       } catch (e) {

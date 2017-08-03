@@ -122,7 +122,6 @@ targeting.setTargetingForAst = function() {
   );
 };
 
-
 function getWinningBidTargeting(adUnitCodes) {
   let winners = targeting.getWinningBids(adUnitCodes);
   // TODO : Add losing bids to pool from here ?

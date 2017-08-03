@@ -190,7 +190,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
 ### Unit Testing with Karma
 
-        $ gulp test --watch
+        $ gulp test --watch --browsers=chrome
 
 This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
 

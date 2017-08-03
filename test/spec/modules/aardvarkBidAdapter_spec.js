@@ -1,6 +1,6 @@
 describe('aardvark adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('modules/aardvarkBidAdapter');
+  const Adapter = require('modules/aardvarkBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const constants = require('src/constants.json');
@@ -92,7 +92,7 @@ describe('aardvark adapter tests', function () {
     ];
 
   beforeEach(() => {
-    aardvark = new adapter();
+    aardvark = new Adapter();
     sandbox = sinon.sandbox.create();
     bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
     $$PREBID_GLOBAL$$._bidsRequested = [];
