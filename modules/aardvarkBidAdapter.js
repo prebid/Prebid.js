@@ -113,10 +113,10 @@ const AardvarkAdapter = function() {
     return requestBids(bidderCode, callbackName, params.bids || []);
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AardvarkAdapter(), 'aardvark');

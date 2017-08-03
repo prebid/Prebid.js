@@ -212,13 +212,13 @@ function PrebidServer() {
     }
   }
 
-  return {
+  return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
