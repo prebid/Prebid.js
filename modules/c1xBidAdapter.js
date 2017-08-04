@@ -16,16 +16,16 @@ var adaptermanager = require('src/adaptermanager.js');
  */
 function C1XAdapter() {
   // default endpoint. Can be overridden by adding an "endpoint" property to the first param in bidder config.
-  var ENDPOINT = 'http://ht-integration.c1exchange.com:9000/ht',
-    PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/',
-    PIXEL_FIRE_DELAY = 3000,
-    LOG_MSG = {
-      invalidBid: 'C1X: ERROR bidder returns an invalid bid',
-      noSite: 'C1X: ERROR no site id supplied',
-      noBid: 'C1X: INFO creating a NO bid for Adunit: ',
-      bidWin: 'C1X: INFO creating a bid for Adunit: '
-    },
-    BIDDER_CODE = 'c1x';
+  var ENDPOINT = 'http://ht-integration.c1exchange.com:9000/ht';
+  var PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
+  var PIXEL_FIRE_DELAY = 3000;
+  var LOG_MSG = {
+    invalidBid: 'C1X: ERROR bidder returns an invalid bid',
+    noSite: 'C1X: ERROR no site id supplied',
+    noBid: 'C1X: INFO creating a NO bid for Adunit: ',
+    bidWin: 'C1X: INFO creating a bid for Adunit: '
+  };
+  var BIDDER_CODE = 'c1x';
 
   var pbjs = window.$$PREBID_GLOBAL$$;
 
@@ -42,8 +42,8 @@ function C1XAdapter() {
 
     if (response && !response.error) {
       for (var i = 0; i < response.length; i++) {
-        var data = response[i],
-          bidObject = null;
+        var data = response[i];
+        var bidObject = null;
         if (data.bid) {
           bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
           bidObject.bidderCode = BIDDER_CODE;
@@ -63,7 +63,7 @@ function C1XAdapter() {
       // invalid bid
       var slots = pbjs.adUnits;
       utils.logWarn(LOG_MSG.invalidBid);
-      for (var i = 0; i < slots.length; i++) {
+      for (i = 0; i < slots.length; i++) {
         bidmanager.addBidResponse(slots[i].code, noBidResponse());
       }
     }
@@ -75,7 +75,7 @@ function C1XAdapter() {
     return bidObject;
   }
 
-  // inject the audience pixel only if pbjs.bidderSettings['c1x'].pixelId is set.
+  // inject the audience pixel only if bids.params.pixelId is set.
   function injectAudiencePixel(pixel) {
     var pixelId = pixel;
     window.setTimeout(function() {
@@ -109,9 +109,9 @@ function C1XAdapter() {
 
     for (var i = 0; i < bids.length; i++) {
       options.push('a' + (i + 1) + '=' + bids[i].placementCode);
-      var sizes = bids[i].sizes,
-        sizeStr = sizes.reduce(function(prev, current) { return prev + (prev === '' ? '' : ',') + current.join('x') }, '');
-// send floor price if the setting is available.
+      var sizes = bids[i].sizes;
+      var sizeStr = sizes.reduce(function(prev, current) { return prev + (prev === '' ? '' : ',') + current.join('x') }, '');
+      // send floor price if the setting is available.
       var floorPriceMap = c1xParams.floorPriceMap;
       if (floorPriceMap) {
         var adUnitSize = sizes[0].join('x');
@@ -121,7 +121,7 @@ function C1XAdapter() {
       }
       options.push('a' + (i + 1) + 's=[' + sizeStr + ']');
     }
-    options.push('rid=' + new Date().getTime());  // cache busting
+    options.push('rid=' + new Date().getTime()); // cache busting
     var c1xEndpoint = ENDPOINT;
     if (c1xParams.endpoint) {
       c1xEndpoint = c1xParams.endpoint;
@@ -143,5 +143,5 @@ function C1XAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new C1XAdapter, 'c1x');
+adaptermanager.registerBidAdapter(new C1XAdapter(), 'c1x');
 module.exports = C1XAdapter;
