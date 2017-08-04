@@ -67,7 +67,7 @@ function polluxBidAdapter() {
       placementCode = bidObj.placementCode;
     }
     if (bidObj && response.cpm > 0 && !!response.ad) {
-      bidObject = bidfactory.createBid(STATUS.GOOD);
+      bidObject = bidfactory.createBid(STATUS.GOOD, bidObj);
       bidObject.bidderCode = bidObj.bidder;
       bidObject.mediaType = response.mediaType;
       bidObject.cpm = parseFloat(response.cpm);
@@ -79,7 +79,7 @@ function polluxBidAdapter() {
       bidObject.width = response.width;
       bidObject.height = response.height;
     } else {
-      bidObject = bidfactory.createBid(STATUS.NO_BID);
+      bidObject = bidfactory.createBid(STATUS.NO_BID, bidObj);
       bidObject.bidderCode = 'pollux';
       utils.logMessage('No prebid response from polluxHandler for placement code ' + placementCode);
     }
