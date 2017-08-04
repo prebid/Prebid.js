@@ -55,7 +55,6 @@ function toStorageRequest(bid) {
   };
 }
 
-
 /**
  * A function which should be called with the results of the storage operation.
  *

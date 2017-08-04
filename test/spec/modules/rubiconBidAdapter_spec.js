@@ -329,7 +329,8 @@ describe('the rubicon adapter', () => {
 
           let expectedQuery = {
             'dt.id': 'testId',
-            'dt.keyv': 'testKeyV'
+            'dt.keyv': 'testKeyV',
+            'dt.pref': '0'
           };
 
           // test that all values above are both present and correct

@@ -8,10 +8,9 @@ import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from 'src/cookie.js';
+import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
-
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 var CONSTANTS = require('./constants.json');
@@ -25,9 +24,6 @@ var targeting = require('./targeting.js');
 
 /* private variables */
 
-var objectType_function = 'function';
-var objectType_undefined = 'undefined';
-var objectType_object = 'object';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
@@ -229,7 +225,6 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   // now set new targeting keys
   targeting.setTargeting(targetingSet);
 
-
   // emit event
   events.emit(SET_TARGETING);
 };
@@ -251,8 +246,13 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
  * Returns a bool if all the bids have returned or timed out
  * @alias module:$$PREBID_GLOBAL$$.allBidsAvailable
  * @return {bool} all bids available
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Alternative solution is in progress.
+ * See https://github.com/prebid/Prebid.js/issues/1087 for more details.
  */
 $$PREBID_GLOBAL$$.allBidsAvailable = function () {
+  utils.logWarn('$$PREBID_GLOBAL$$.allBidsAvailable will be removed in Prebid 1.0. Alternative solution is in progress. See https://github.com/prebid/Prebid.js/issues/1087 for more details.');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
   return bidmanager.bidsBackAll();
 };
@@ -399,7 +399,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === objectType_function) {
+    if (typeof bidsBackHandler === 'function') {
       bidmanager.addOneTimeCallback(bidsBackHandler, false);
     }
     bidmanager.executeCallback();
@@ -411,7 +411,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
   const timer = setTimeout(timeoutCallback, cbTimeout);
   setAjaxTimeout(cbTimeout);
-  if (typeof bidsBackHandler === objectType_function) {
+  if (typeof bidsBackHandler === 'function') {
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
 
@@ -434,7 +434,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     // Append array to existing
     adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === objectType_object) {
+  } else if (typeof adUnitArr === 'object') {
     // Generate the transaction id for the adunit
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
@@ -491,11 +491,15 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:$$PREBID_GLOBAL$$.addCallback
  * @returns {String} id for callback
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Please use onEvent instead.
  */
 $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
+  utils.logWarn('$$PREBID_GLOBAL$$.addCallback will be removed in Prebid 1.0. Please use onEvent instead');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
   var id = null;
-  if (!eventStr || !func || typeof func !== objectType_function) {
+  if (!eventStr || !func || typeof func !== 'function') {
     utils.logError('error registering callback. Check method signature');
     return id;
   }
@@ -510,9 +514,13 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * //@param {string} cbId id of the callback to remove
  * @alias module:$$PREBID_GLOBAL$$.removeCallback
  * @returns {String} id for callback
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Please use offEvent instead.
  */
 $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
   // todo
+  utils.logWarn('$$PREBID_GLOBAL$$.removeCallback will be removed in Prebid 1.0. Please use offEvent instead.');
   return null;
 };
 
@@ -573,8 +581,13 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * Wrapper to bidmanager.addBidResponse
  * @param {[type]} adUnitCode [description]
  * @param {[type]} bid        [description]
+ *
+ * @deprecated This function will be removed in Prebid 1.0
+ * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
+ * See https://github.com/prebid/Prebid.js/issues/1087 for more details.
  */
 $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
+  utils.logWarn('$$PREBID_GLOBAL$$.addBidResponse will be removed in Prebid 1.0. Each bidder will be passed a reference to addBidResponse function in callBids as an argument. See https://github.com/prebid/Prebid.js/issues/1087 for more details.');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
   bidmanager.addBidResponse(adUnitCode, bid);
 };
@@ -658,12 +671,11 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @param {string} adserverTag default url
  * @param {object} options options for video tag
  *
- * @deprecated Include the dfpVideoSupport module in your build, and use the
- *   $$PREBID_GLOBAL$$.adserver.buildVideoAdUrl (if DFP is your only Ad Server) or
- *   $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl (if you use other Ad Servers too)
- *   function instead. This function will be removed in Prebid 1.0.
+ * @deprecated Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead.
+ * This function will be removed in Prebid 1.0.
  */
 $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
+  utils.logWarn('$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag will be removed in Prebid 1.0. Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead');
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
   var urlComponents = parseURL(adserverTag);
 
@@ -767,7 +779,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
 $$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === objectType_function) {
+  if (typeof cmd === 'function') {
     try {
       cmd.call();
     } catch (e) {
@@ -782,7 +794,7 @@ $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
   queue.forEach(function(cmd) {
-    if (typeof cmd.called === objectType_undefined) {
+    if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
         cmd.called = true;

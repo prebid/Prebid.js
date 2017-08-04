@@ -223,6 +223,6 @@ function MantisAdapter () {
   return new Prebid(bidfactory, bidmanager, adloader, constants);
 }
 
-adaptermanager.registerBidAdapter(new MantisAdapter, 'mantis');
+adaptermanager.registerBidAdapter(new MantisAdapter(), 'mantis');
 
 module.exports = MantisAdapter;

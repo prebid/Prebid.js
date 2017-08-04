@@ -533,5 +533,27 @@ describe('bidmanager.js', function () {
 
       utils.getBidRequest.restore();
     });
+
+    it('installs publisher-defined renderers on bids', () => {
+      sinon.stub(utils, 'getBidderRequest', () => ({
+        bids: [{
+          renderer: {
+            url: 'renderer.js',
+            render: (bid) => bid
+          }
+        }]
+      }));
+
+      const bid = Object.assign({}, bidfactory.createBid(1), {
+        bidderCode: 'appnexusAst',
+        mediaType: 'video-outstream',
+      });
+
+      bidmanager.addBidResponse('adUnit-code', bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid.renderer.url, 'renderer.js');
+
+      utils.getBidderRequest.restore();
+    });
   });
 });

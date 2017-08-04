@@ -12,7 +12,8 @@ var adaptermanager = require('src/adaptermanager');
  */
 var AdmediaAdapter = function AdmediaAdapter() {
   function _callBids(params) {
-    var bids, bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
+    var bids;
+    const bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
@@ -57,6 +58,7 @@ var AdmediaAdapter = function AdmediaAdapter() {
       request_obj.siteRef = document.referrer;
       request_obj.topUrl = utils.getTopWindowUrl();
 
+      request_obj.callback = '$$PREBID_GLOBAL$$';
       request_obj.callbackId = bid.bidId;
 
       var endpoint = bidderUrl + utils.parseQueryStringParameters(request_obj);
@@ -100,6 +102,6 @@ var AdmediaAdapter = function AdmediaAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdmediaAdapter, 'admedia');
+adaptermanager.registerBidAdapter(new AdmediaAdapter(), 'admedia');
 
 module.exports = AdmediaAdapter;

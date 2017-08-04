@@ -176,7 +176,7 @@ describe('centro adapter tests', function () {
       $$PREBID_GLOBAL$$.adUnits = adUnits;
 
       var response = {'adTag': '<div>test content</div>', 'statusMessage': 'Bid available', 'height': 250, '_comment': '', 'value': 0.2, 'width': 300, 'sectionID': 28136};
-      var response2 = {'adTag': '', 'statusMessage': 'No bid.', 'height': 0, 'value': 0, 'width': 0, 'sectionID': 111111};
+      var response2 = {'adTag': '', 'statusMessage': 'No bid', 'height': 0, 'value': 0, 'width': 0, 'sectionID': 111111};
       var response3 = {'adTag': '', 'height': 0, 'value': 0, 'width': 0, 'sectionID': 222222};
       var response4 = '';
 
@@ -194,9 +194,8 @@ describe('centro adapter tests', function () {
       var bidPlacementCode4 = stubAddBidResponse.getCall(3).args[0];
       var bidObject4 = stubAddBidResponse.getCall(3).args[1];
 
-      expect(logErrorSpy.getCall(0).args[0]).to.equal('Requested unit is 111111. No bid.');
-      expect(logErrorSpy.getCall(1).args[0]).to.equal('Requested unit is 222222. Bid has missmatch format.');
-      expect(logErrorSpy.getCall(2).args[0]).to.equal('Requested unit is 333333. Response has no bid.');
+      expect(logErrorSpy.getCall(0).args[0]).to.equal('Requested unit is 222222. Bid has missmatch format.');
+      expect(logErrorSpy.getCall(1).args[0]).to.equal('Requested unit is 333333. Response has no bid.');
 
       expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');
       expect(bidObject1.cpm).to.equal(0.2);
