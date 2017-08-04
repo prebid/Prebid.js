@@ -6,10 +6,10 @@ import adaptermanager from 'src/adaptermanager';
 import { STATUS } from 'src/constants';
 
 // Prebid adapter for Pollux header bidding client
-function polluxBidAdapter() {
+function PolluxBidAdapter() {
   function _callBids(params) {
-    var bids, bidderUrl = (window.location.protocol) + '//adn.plxnt.com/prebid';
-    bids = params.bids || [];
+    var bidderUrl = (window.location.protocol) + '//adn.plxnt.com/prebid';
+    var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
       var bid = bids[i];
@@ -91,5 +91,5 @@ function polluxBidAdapter() {
     callBids: _callBids
   };
 };
-adaptermanager.registerBidAdapter(new polluxBidAdapter(), 'pollux');
-module.exports = polluxBidAdapter;
+adaptermanager.registerBidAdapter(new PolluxBidAdapter(), 'pollux');
+module.exports = PolluxBidAdapter;
