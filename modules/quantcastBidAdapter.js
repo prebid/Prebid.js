@@ -105,12 +105,12 @@ var QuantcastAdapter = function QuantcastAdapter() {
           'bidFloor': bid.params.bidFloor || DEFAULT_BID_FLOOR,
         }]
       };
+    });
 
-      utils._each(bidRequests, function (bidRequest) {
-        ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
-          method: 'POST',
-          withCredentials: true
-        });
+    utils._each(bidRequests, function (bidRequest) {
+      ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
+        method: 'POST',
+        withCredentials: true
       });
     });
   }
