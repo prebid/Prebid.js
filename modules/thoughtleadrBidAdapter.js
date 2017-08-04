@@ -13,8 +13,8 @@ const BID_UNAVAILABLE = 2;
 
 function storageAvailable(type) {
   try {
-    const storage = window[type],
-      x = '__storage_test__';
+    const storage = window[type];
+    const x = '__storage_test__';
     storage.setItem(x, x);
     storage.removeItem(x);
     return true;
