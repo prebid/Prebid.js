@@ -52,7 +52,7 @@ document.write('<script'+' src="'+encodeURI(u)+'"><'+'/script>');
      * */
      function loadPrebidJS() {
         pbjs.que.push(function () {
-            pbjs.logging = true;
+            pbjs.setConfig({ debug: true });
             pbjs.addAdUnits(adUnits);
 
             pbjs.requestBids({
