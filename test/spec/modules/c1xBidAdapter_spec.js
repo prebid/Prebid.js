@@ -31,7 +31,7 @@ let getDefaultBidResponse = () => {
 };
 
 describe('c1x adapter tests: ', () => {
-  let pbjs = window.pbjs || {};
+  let pbjs = window.$$PREBID_GLOBAL$$ || {};
   let stubLoadScript;
   let adapter;
 
