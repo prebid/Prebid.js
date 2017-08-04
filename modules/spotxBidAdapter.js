@@ -7,7 +7,7 @@ import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
 function Spotx() {
-  let baseAdapter = Adapter.createNew('Spotx');
+  let baseAdapter = new Adapter('Spotx');
   let bidReq;
   let KVP_Object;
 
@@ -123,16 +123,11 @@ function Spotx() {
     return true;
   }
 
-  return {
-    createNew: Spotx.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-Spotx.createNew = function() {
-  return new Spotx();
-};
 
 adaptermanager.registerBidAdapter(new Spotx(), 'spotx', {
   supportedMediaTypes: ['video']
