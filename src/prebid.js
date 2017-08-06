@@ -11,10 +11,7 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
-<<<<<<< HEAD
-=======
 import { config } from './config';
->>>>>>> 127c320c13c224b1ba2b5bdc3600c3491ba6e187
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 
@@ -76,15 +73,10 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-<<<<<<< HEAD
 // Set the default userSync object if it was not set by the publisher
 $$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
 // Delay to request cookie sync to stay out of critical path
 $$PREBID_GLOBAL$$.userSync.syncDelay = $$PREBID_GLOBAL$$.userSync.syncDelay || 3000;
-=======
-/** @deprecated - use pbjs.setConfig({ cookieSyncDelay: <domain> ) */
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
->>>>>>> 127c320c13c224b1ba2b5bdc3600c3491ba6e187
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -346,15 +338,11 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-<<<<<<< HEAD
   // Automatically trigger the user syncs if configured by the publisher
   if (!$$PREBID_GLOBAL$$.userSync.enableOverride) {
     // Delay the auto sync by the config delay
     syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay);
   }
-=======
-  syncCookies(config.getConfig('cookieSyncDelay'));
->>>>>>> 127c320c13c224b1ba2b5bdc3600c3491ba6e187
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -780,10 +768,9 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   adaptermanager.setS2SConfig(config);
 };
 
-<<<<<<< HEAD
 // Expose user syncing to the public API based on config "userSync.enableOverride"
 overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
-=======
+
 /**
  * Get Prebid config options
  * @param {object} options
@@ -795,7 +782,6 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * @param {object} options
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
->>>>>>> 127c320c13c224b1ba2b5bdc3600c3491ba6e187
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 
