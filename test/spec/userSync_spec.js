@@ -4,7 +4,7 @@ const utils = require('../../src/utils');
 let { userSync, newUserSync } = require('../../src/userSync');
 
 describe('user sync', () => {
-  let createImgObjectStub;
+  let triggerPixelStub;
   let logWarnStub;
   let timeoutStub;
   let shuffleStub;
@@ -14,16 +14,15 @@ describe('user sync', () => {
   let lastId = 0;
 
   beforeEach(() => {
-    createImgObjectStub = sinon.stub(userSync, 'createImgObject');
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
     timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
-    utils.getUniqueIdentifierStr
   });
 
   afterEach(() => {
-    createImgObjectStub.restore();
+    triggerPixelStub.restore();
     logWarnStub.restore();
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
@@ -34,13 +33,13 @@ describe('user sync', () => {
   it('should register and fire a pixel URL', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 
   it('should clear queue after sync', () => {
     userSync.syncUsers();
-    expect(createImgObjectStub.callCount).to.equal(0);
+    expect(triggerPixelStub.callCount).to.equal(0);
   });
 
   it('should delay firing a pixel by the expected amount', () => {
@@ -54,18 +53,18 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
-    expect(createImgObjectStub.getCall(1)).to.not.be.null;
-    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.include('http://example.com/');
-    expect(createImgObjectStub.getCall(2)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.include('http://example.com/');
+    expect(triggerPixelStub.getCall(2)).to.be.null;
   });
 
   it('should not register pixel URL since it is not supported', () => {
     $$PREBID_GLOBAL$$.userSync.pixelEnabled = false;
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', () => {
@@ -83,9 +82,9 @@ describe('user sync', () => {
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
-    expect(createImgObjectStub.getCall(1)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(triggerPixelStub.getCall(1)).to.be.null;
   });
 
   // Since cookie support is only checked when the module is loaded this test will not work, but a test that covers
@@ -95,12 +94,12 @@ describe('user sync', () => {
   //   $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
   //   userSync.registerSync('image', 'testBidder', 'http://example.com');
   //   userSync.syncUsers();
-  //   expect(createImgObjectStub.getCall(0)).to.be.null;
+  //   expect(triggerPixelStub.getCall(0)).to.be.null;
   //   isSafariBrowserStub.restore();
   //   let cookiesAreEnabledStub = sinon.stub(utils, 'cookiesAreEnabled', () => false);
   //   userSync.registerSync('image', 'testBidder', 'http://example.com');
   //   userSync.syncUsers();
-  //   expect(createImgObjectStub.getCall(0)).to.be.null;
+  //   expect(triggerPixelStub.getCall(0)).to.be.null;
   // });
 
   it('should prevent registering invalid type', () => {
@@ -121,11 +120,11 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
-    expect(createImgObjectStub.getCall(1)).to.not.be.null;
-    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
-    expect(createImgObjectStub.getCall(2)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
+    expect(triggerPixelStub.getCall(2)).to.be.null;
   });
 
   it('should balance out bidder requests', () => {
@@ -134,13 +133,13 @@ describe('user sync', () => {
     userSync.registerSync('image', 'btestBidder', 'http://example.com/2');
     userSync.syncUsers();
     // The stubbed shuffle function should just reverse the order
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/2');
-    expect(createImgObjectStub.getCall(1)).to.not.be.null;
-    expect(createImgObjectStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/3');
-    expect(createImgObjectStub.getCall(2)).to.not.be.null;
-    expect(createImgObjectStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
-    expect(createImgObjectStub.getCall(3)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/2');
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/3');
+    expect(triggerPixelStub.getCall(2)).to.not.be.null;
+    expect(triggerPixelStub.getCall(2).args[0]).to.exist.and.to.equal('http://example.com/1');
+    expect(triggerPixelStub.getCall(3)).to.be.null;
   });
 
   it('should disable user sync', () => {
@@ -148,7 +147,7 @@ describe('user sync', () => {
     userSync.registerSync('pixel', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should only sync enabled bidders', () => {
@@ -156,8 +155,8 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();
-    expect(createImgObjectStub.getCall(0)).to.not.be.null;
-    expect(createImgObjectStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
-    expect(createImgObjectStub.getCall(1)).to.be.null;
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
+    expect(triggerPixelStub.getCall(1)).to.be.null;
   });
 });

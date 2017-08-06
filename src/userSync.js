@@ -77,7 +77,7 @@ export function newUserSync() {
       let [bidderName, trackingPixelUrl] = sync;
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
-      publicApi.createImgObject(trackingPixelUrl);
+      utils.triggerPixel(trackingPixelUrl);
     });
   }
 
@@ -95,25 +95,8 @@ export function newUserSync() {
       let [bidderName, iframeUrl] = sync;
       utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
-      let iframe = publicApi.createIframeObject(iframeUrl);
-      utils.insertElement(iframe);
+      utils.insertUserSyncIframe(iframeUrl);
     });
-  }
-
-  /**
-   * @function hideAndIdElem
-   * @summary Modifies a DOM element to be hidden from user sight and adds a unique ID
-   * @private
-   * @params {object} elementNode A valid DOM element
-   * @returns {object} A valid DOM element
-   */
-  function hideAndIdElem(elementNode) {
-    elementNode = elementNode.cloneNode();
-    elementNode.height = 0;
-    elementNode.width = 0;
-    elementNode.style.display = 'none';
-    elementNode.id = utils.getUniqueIdentifierStr();
-    return elementNode;
   }
 
   /**
@@ -131,49 +114,6 @@ export function newUserSync() {
       numAdapterBids[bidder] += 1;
     }
     return numAdapterBids;
-  }
-
-  /**
-   * @function createImgObject
-   * @summary Create an img DOM element for sending a pixel.
-   *          Made public for test purposes
-   * @public
-   * @params {string} url The URL for the image pixel
-   * @returns {object} A valid DOM element
-   */
-  publicApi.createImgObject = (url) => {
-    if (!url) {
-      return;
-    }
-    let img = hideAndIdElem(new Image());
-    img.src = encodeURI(url);
-    img.onload = function() {
-      // Once the sync is done remove the element
-      try {
-        let thisImg = document.getElementById(this.id);
-        thisImg.parentNode.removeChild(thisImg);
-      }
-      catch (e) {}
-    };
-    return img;
-  };
-
-  /**
-   * @function createIframeObject
-   * @summary Create an iframe DOM element for loading HTML to sync
-   *          Made public for test purposes
-   * @public
-   * @params {string} url The URL of the iframe
-   * @returns {object} A valid iframe DOM element
-   */
-  publicApi.createIframeObject = (url) => {
-    if (!url) {
-      return;
-    }
-    let iframe = hideAndIdElem(document.createElement('iframe'));
-    iframe.sandbox = 'allow-scripts';
-    iframe.src = encodeURI(url);
-    return iframe;
   }
 
   /**
