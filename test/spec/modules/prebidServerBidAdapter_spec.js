@@ -152,7 +152,7 @@ const RESPONSE_NO_PBS_COOKIE = {
 describe('S2S Adapter', () => {
   let adapter;
 
-  beforeEach(() => adapter = Adapter.createNew());
+  beforeEach(() => adapter = new Adapter());
 
   describe('request function', () => {
     let xhr;

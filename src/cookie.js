@@ -1,4 +1,3 @@
-const cookie = exports;
 import * as utils from './utils';
 import adLoader from './adloader';
 

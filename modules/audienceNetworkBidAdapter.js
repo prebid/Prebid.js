@@ -7,10 +7,10 @@ import { addBidResponse } from 'src/bidmanager';
 import { STATUS } from 'src/constants.json';
 import { format } from 'src/url';
 import { logError } from 'src/utils';
-import { createNew } from 'src/adapter';
+import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
 
-const { setBidderCode, getBidderCode } = createNew('audienceNetwork');
+const { setBidderCode, getBidderCode } = new Adapter('audienceNetwork');
 
 /**
  * Does this bid request contain valid parameters?
@@ -242,7 +242,13 @@ const callBids = bidRequest => {
  * @property {Function} setBidderCode - used for bidder aliasing
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
-const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
+function AudienceNetwork() {
+  return Object.assign(this, {
+    callBids,
+    setBidderCode,
+    getBidderCode
+  });
+}
 
 adaptermanager.registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
   supportedMediaTypes: ['video']
