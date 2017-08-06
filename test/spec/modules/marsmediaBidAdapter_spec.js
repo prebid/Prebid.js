@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import * as ajax from 'src/ajax';
 import bidManager from 'src/bidmanager';
-import marsmediaBidAdapter from '../../../modules/marsmediaBidAdapter';
+import MarsmediaBidAdapter from '../../../modules/marsmediaBidAdapter';
 import CONSTANTS from 'src/constants.json';
 import adLoader from 'src/adloader';
 
 describe('MarsMedia adapter implementation', () => {
   let sandbox,
     server,
-    marsmediaAdapter = new marsmediaBidAdapter(),
+    marsmediaAdapter = new MarsmediaBidAdapter(),
     BIDDER_REQUEST,
     EMPTY_RESPONSE,
     VALID_RESPONSE;

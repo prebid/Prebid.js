@@ -33,7 +33,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
             success: function() {},
             error: function() {}
           },
-          JSON.stringify({ act: 'prebid_analytics', params: events, 'pbjs': pbjs.getBidResponses(), 'ver': MARS_VERSION}),
+          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': pbjs.getBidResponses(), ver: MARS_VERSION}),
           {
             method: 'POST'
           }
@@ -43,12 +43,6 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
   }
 }
 );
-
-marsmediaAnalyticsAdapter.originEnableAnalytics = marsmediaAnalyticsAdapter.enableAnalytics;
-
-marsmediaAnalyticsAdapter.enableAnalytics = function (config) {
-  marsmediaAnalyticsAdapter.originEnableAnalytics(config);
-};
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: marsmediaAnalyticsAdapter,

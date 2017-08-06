@@ -96,7 +96,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
     var protocol = (window.location.protocol === 'https') ? 1 : 0;
     var publisher_id = (typeof bidRequest.params.publisherID !== 'undefined') ? bidRequest.params.publisherID : '';
     var params = {};
-    params.id = getid();
+    params.id = utils.generateUUID();
 
     params.cur = ['USD'];
 
@@ -143,11 +143,6 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
     };
 
     return JSON.stringify(params);
-  }
-
-  function getid() {
-    function s4() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); }
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
   return Object.assign(new Adapter(MARS_BIDDER_CODE), {
