@@ -6,6 +6,8 @@ import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
 import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
+const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
@@ -90,7 +92,7 @@ function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-    const isDebug = !!$$PREBID_GLOBAL$$.logging;
+    const isDebug = !!getConfig('debug');
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
@@ -182,7 +184,7 @@ function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || result.status && result.status.includes('Error')) {
+    if (!result || (result.status && result.status.includes('Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
   }
@@ -212,13 +214,13 @@ function PrebidServer() {
     }
   }
 
-  return {
+  return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');

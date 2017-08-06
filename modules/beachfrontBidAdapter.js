@@ -122,10 +122,10 @@ function BeachfrontAdapter() {
     return bid;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new BeachfrontAdapter(), 'beachfront', {
