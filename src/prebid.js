@@ -292,7 +292,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if (ad) {
 
           // calling confiantWrap()
-          if (!ConfiantWrap(doc, ad, bid.bidder, (height + 'x' + width),
+          if (!confiantWrap(doc, ad, bid.bidder, (height + 'x' + width),
             'clarium.global.ssl.fastly.net',
             'dvS98IKwDukcG6gPDYBBcCk9sKY')) {
             // If confiant can't wrap the ad, add it the old school way.
