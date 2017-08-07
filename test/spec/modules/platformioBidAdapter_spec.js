@@ -111,7 +111,7 @@ describe('platformio adapter tests', function () {
         bids: [{
           placementCode: '/19968336/header-bid-tag-0',
           sizes: [[300, 250]],
-          bidId: 'b12345',
+          bidId: 'bid1111',
           bidder: 'platformio',
           params: { pubId: '37054', siteId: '123' }
         }]
