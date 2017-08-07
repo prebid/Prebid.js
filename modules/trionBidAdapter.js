@@ -118,11 +118,11 @@ function TrionAdapter() {
     bidmanager.addBidResponse(placementCode, bid);
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildTrionUrl: buildTrionUrl
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');

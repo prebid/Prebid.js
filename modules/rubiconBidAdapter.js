@@ -29,6 +29,7 @@ var sizeMap = {
   8: '120x600',
   9: '160x600',
   10: '300x600',
+  13: '200x200',
   14: '250x250',
   15: '300x250',
   16: '336x280',
@@ -66,7 +67,8 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600'
+  126: '200x600',
+  195: '600x300'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -376,7 +378,7 @@ function RubiconAdapter() {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return Object.assign(baseAdapter, {
+  return Object.assign(this, baseAdapter, {
     callBids: _callBids
   });
 }

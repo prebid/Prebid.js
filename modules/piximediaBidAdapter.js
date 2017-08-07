@@ -143,11 +143,11 @@ var PiximediaAdapter = function PiximediaAdapter() {
   };
 
   // return an object with PiximediaAdapter methods
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new PiximediaAdapter(), 'piximedia');

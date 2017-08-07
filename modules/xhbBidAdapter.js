@@ -154,11 +154,11 @@ const XhbAdapter = function XhbAdapter() {
     }
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildJPTCall: buildJPTCall
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new XhbAdapter(), 'xhb');

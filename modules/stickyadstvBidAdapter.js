@@ -251,7 +251,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     };
   };
 
-  return Object.assign(new Adapter(STICKYADS_BIDDERCODE), {
+  return Object.assign(this, new Adapter(STICKYADS_BIDDERCODE), {
     callBids: _callBids,
     formatBidObject: formatBidObject,
     formatAdHTML: formatAdHTML,
