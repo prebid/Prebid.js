@@ -1,12 +1,11 @@
 const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
-const adloader = require('src/adloader');
 const ajax = require('src/ajax.js');
 const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
 const adaptermanager = require('src/adaptermanager');
 
-const mobfoxAdapter = function () {
+function MobfoxAdapter() {
   const BIDDER_CODE = 'mobfox';
   const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 
@@ -149,7 +148,8 @@ const mobfoxAdapter = function () {
       throw [`htmlString is missing`, responseBody];
     }
 
-    let cpm, cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
+    let cpm;
+    const cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
     try {
       cpm = Number(cpmHeader);
     } catch (e) {
@@ -178,8 +178,7 @@ const mobfoxAdapter = function () {
   return {
     callBids: callBids
   };
-};
+}
 
-
-adaptermanager.registerBidAdapter(new mobfoxAdapter(), 'mobfox');
-module.exports = mobfoxAdapter;
+adaptermanager.registerBidAdapter(new MobfoxAdapter(), 'mobfox');
+module.exports = MobfoxAdapter;

@@ -38,6 +38,7 @@ var CriteoAdapter = function CriteoAdapter() {
       var slots = [];
       var isAudit = false;
       var networkid;
+      var integrationMode;
 
       // build slots before sending one multi-slots bid request
       for (var i = 0; i < bids.length; i++) {
@@ -57,6 +58,9 @@ var CriteoAdapter = function CriteoAdapter() {
         );
 
         networkid = bid.params.networkId || networkid;
+        if (bid.params.integrationMode !== undefined) {
+          integrationMode = bid.params.integrationMode.toLowerCase() == 'amp' ? 1 : 0;
+        }
 
         isAudit |= bid.params.audit !== undefined;
       }
@@ -69,7 +73,8 @@ var CriteoAdapter = function CriteoAdapter() {
         _callbackError(slots),
         _callbackError(slots), // timeout handled as error
         undefined,
-        networkid
+        networkid,
+        integrationMode
       );
 
       // process the event as soon as possible

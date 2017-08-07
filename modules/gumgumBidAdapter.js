@@ -32,12 +32,12 @@ const GumgumAdapter = function GumgumAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId () {
       var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(dtCredentials) : {};
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || '';
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
     };
 
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return {};
     }
     return {

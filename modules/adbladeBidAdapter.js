@@ -18,12 +18,12 @@ var AdbladeAdapter = function AdbladeAdapter() {
   const DEFAULT_BID_FLOOR = 0.0000000001;
 
   function _callBids(params) {
-    var bids = params.bids || [],
-      referrer = utils.getTopWindowUrl(),
-      loc = utils.getTopWindowLocation(),
-      domain = loc.hostname,
-      partnerId = 0,
-      bidRequests = {};
+    var bids = params.bids || [];
+    var referrer = utils.getTopWindowUrl();
+    var loc = utils.getTopWindowLocation();
+    var domain = loc.hostname;
+    var partnerId = 0;
+    var bidRequests = {};
 
     if (bids.length > 0) {
       partnerId = '' + bids[0].params.partnerId;
@@ -88,9 +88,9 @@ var AdbladeAdapter = function AdbladeAdapter() {
   }
 
   $$PREBID_GLOBAL$$.adbladeResponse = function (response) {
-    var auctionIdRe = /\$(%7B|\{)AUCTION_ID(%7D|\})/gi,
-      auctionPriceRe = /\$(%7B|\{)AUCTION_PRICE(%7D|\})/gi,
-      clickUrlRe = /\$(%7B|\{)CLICK_URL(%7D|\})/gi;
+    var auctionIdRe = /\$(%7B|\{)AUCTION_ID(%7D|\})/gi;
+    var auctionPriceRe = /\$(%7B|\{)AUCTION_PRICE(%7D|\})/gi;
+    var clickUrlRe = /\$(%7B|\{)CLICK_URL(%7D|\})/gi;
 
     if (typeof (response) === 'undefined' || !response.hasOwnProperty('seatbid') || utils.isEmpty(response.seatbid)) {
       // handle empty bids
@@ -106,8 +106,8 @@ var AdbladeAdapter = function AdbladeAdapter() {
 
     utils._each(response.seatbid, function(seatbid) {
       utils._each(seatbid.bid, function(seatbidBid) {
-        var bidRequest = utils.getBidRequest(seatbidBid.impid),
-          ad = seatbidBid.adm + utils.createTrackPixelHtml(seatbidBid.nurl);
+        var bidRequest = utils.getBidRequest(seatbidBid.impid);
+        var ad = seatbidBid.adm + utils.createTrackPixelHtml(seatbidBid.nurl);
 
         ad = ad.replace(auctionIdRe, seatbidBid.impid);
         ad = ad.replace(clickUrlRe, '');
