@@ -18,7 +18,11 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
+let callNumber = 0;
+let endpointFastlane;
 const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
+const FASTLANE_ENDPOINT1 = '//flapi1.rubiconproject.com/a/api/fastlane.json';
+const FASTLANE_ENDPOINT2 = '//flapi2.rubiconproject.com//a/api/fastlane.json';
 const VIDEO_ENDPOINT = '//fastlane-adv.rubiconproject.com/v1/auction/video';
 
 const TIMEOUT_BUFFER = 500;
@@ -94,8 +98,18 @@ function RubiconAdapter() {
             }
           );
         } else {
+          if (callNumber > 11) {
+              endpointFastlane = FASTLANE_ENDPOINT2;
+            }
+            else if (callNumber > 5){
+              endpointFastlane = FASTLANE_ENDPOINT1;
+            }
+            else {
+              endpointFastlane = FASTLANE_ENDPOINT;
+            }; 
+            callNumber++;
           ajax(
-            buildOptimizedCall(bid),
+            buildOptimizedCall(bid, endpointFastlane),
             {
               success: bidCallback,
               error: bidError
@@ -112,6 +126,7 @@ function RubiconAdapter() {
       }
 
       function bidCallback(responseText) {
+        callNumber--;
         try {
           utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
           handleRpCB(responseText, bid);
@@ -126,6 +141,7 @@ function RubiconAdapter() {
       }
 
       function bidError(err, xhr) {
+        callNumber--;
         utils.logError('Request for rubicon responded with:', xhr.status, err);
         addErrorBid();
       }
@@ -231,7 +247,7 @@ function RubiconAdapter() {
     return (JSON.stringify(postData));
   }
 
-  function buildOptimizedCall(bid) {
+  function buildOptimizedCall(bid, endpointF) {
     bid.startTime = new Date().getTime();
 
     var {
@@ -299,7 +315,7 @@ function RubiconAdapter() {
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
           ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
-      FASTLANE_ENDPOINT + '?'
+      endpointF + '?'
     ).slice(0, -1); // remove trailing &
   }
 
