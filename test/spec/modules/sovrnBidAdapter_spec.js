@@ -96,7 +96,6 @@ describe('sovrn adapter tests', function () {
     });
 
     it('should add empty bid responses if no bids returned', function () {
-
       let response = {
         'id': '54321',
         'seatbid': []
@@ -127,7 +126,6 @@ describe('sovrn adapter tests', function () {
     });
 
     it('should add a bid response for bids returned and empty bid responses for the rest', function () {
-      
       let response = {
         'id': '54321111',
         'seatbid': [ {
