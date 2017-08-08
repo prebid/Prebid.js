@@ -25,7 +25,7 @@ function AdequantAdapter() {
       publisher_id = br_params.publisher_id.toString() || publisher_id;
       var bidfloor = br_params.bidfloor || 0.01;
       cats = br_params.cats || cats;
-      if (typeof (cats) === utils.objectType_string) { cats = cats.split(' '); }
+      if (typeof (cats) === 'string') { cats = cats.split(' '); }
       var br_sizes = utils.parseSizesInput(bid_request.sizes);
       for (var j = 0; j < br_sizes.length; j++) {
         sizes.push(br_sizes[j] + '_' + bidfloor);
@@ -41,7 +41,9 @@ function AdequantAdapter() {
   }
 
   function process_bids(replies, placements) {
-    var placement_code, bid, adequant_creatives = window.adequant_creatives;
+    var placement_code;
+    var bid;
+    const adequant_creatives = window.adequant_creatives;
     if (adequant_creatives && adequant_creatives.seatbid) {
       for (var i = 0; i < adequant_creatives.seatbid.length; i++) {
         var bid_response = adequant_creatives.seatbid[i].bid[0];
@@ -73,6 +75,6 @@ function AdequantAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new AdequantAdapter, 'adequant');
+adaptermanager.registerBidAdapter(new AdequantAdapter(), 'adequant');
 
 module.exports = AdequantAdapter;

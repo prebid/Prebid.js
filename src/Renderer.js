@@ -1,5 +1,5 @@
-import { loadScript } from 'src/adloader';
-import * as utils from 'src/utils';
+import { loadScript } from './adloader';
+import * as utils from './utils';
 
 export function Renderer(options) {
   const { url, config, id, callback, loaded } = options;

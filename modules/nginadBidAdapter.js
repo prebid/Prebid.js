@@ -181,6 +181,6 @@ var NginAdAdapter = function NginAdAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new NginAdAdapter, 'nginad');
+adaptermanager.registerBidAdapter(new NginAdAdapter(), 'nginad');
 
 module.exports = NginAdAdapter;

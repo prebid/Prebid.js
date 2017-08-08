@@ -85,6 +85,6 @@ function KruxAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new KruxAdapter, 'kruxlink');
+adaptermanager.registerBidAdapter(new KruxAdapter(), 'kruxlink');
 
 module.exports = KruxAdapter;

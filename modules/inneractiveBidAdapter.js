@@ -6,6 +6,7 @@ import bidFactory from 'src/bidfactory';
 import {STATUS} from 'src/constants';
 import {formatQS} from 'src/url';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
 
 /**
  * @type {{IA_JS: string, ADAPTER_NAME: string, V: string, RECTANGLE_SIZE: {W: number, H: number}, SPOT_TYPES: {INTERSTITIAL: string, RECTANGLE: string, FLOATING: string, BANNER: string}, DISPLAY_AD: number, ENDPOINT_URL: string, EVENTS_ENDPOINT_URL: string, RESPONSE_HEADERS_NAME: {PRICING_VALUE: string, AD_H: string, AD_W: string}}}
@@ -212,7 +213,7 @@ const Url = {
     }
 
     if (typeof $$PREBID_GLOBAL$$ !== 'undefined') {
-      toQueryString.bco = $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout;
+      toQueryString.bco = $$PREBID_GLOBAL$$.cbTimeout || config.getConfig('bidderTimeout');
     }
 
     toQueryString.timestamp = Date.now();
@@ -250,7 +251,9 @@ const Http = {
  */
 class InnerActiveAdapter {
   constructor() {
-    this.iaAdapter = Adapter.createNew(CONSTANTS.ADAPTER_NAME);
+    this.iaAdapter = new Adapter(CONSTANTS.ADAPTER_NAME);
+    this.setBidderCode = this.iaAdapter.setBidderCode.bind(this);
+
     this.bidByBidId = {};
   }
 
@@ -299,7 +302,7 @@ class InnerActiveAdapter {
   _setBidCpm(bid, bidId) {
     const storedBid = this.bidByBidId[bidId];
     if (storedBid) {
-      bid.cpm = storedBid.params && storedBid.params.qa && storedBid.params.qa.cpm || bid.cpm;
+      bid.cpm = (storedBid.params && storedBid.params.qa && storedBid.params.qa.cpm) || bid.cpm;
       bid.cpm = (bid.cpm !== null && !isNaN(bid.cpm)) ? parseFloat(bid.cpm) : 0.0;
     }
   }
@@ -428,7 +431,7 @@ class InnerActiveAdapter {
   }
 
   _getEndpointUrl(params) {
-    return params && params.qa && params.qa.url || Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL;
+    return (params && params.qa && params.qa.url) || Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL;
   }
 
   _getStoredBids() {
@@ -449,16 +452,8 @@ class InnerActiveAdapter {
   static _getUtils() {
     return {Reporter};
   }
-
-  /**
-   * Creates new instance of InnerActiveAdapter for prebid auction
-   * @returns {InnerActiveAdapter}
-   */
-  static createNew() {
-    return new InnerActiveAdapter();
-  }
 }
 
-adaptermanager.registerBidAdapter(new InnerActiveAdapter, 'inneractive');
+adaptermanager.registerBidAdapter(new InnerActiveAdapter(), 'inneractive');
 
 module.exports = InnerActiveAdapter;

@@ -1,4 +1,6 @@
 import { getBidRequest } from 'src/utils.js';
+import { config } from 'src/config';
+
 var CONSTANTS = require('src/constants.json');
 var utils = require('src/utils.js');
 var bidfactory = require('src/bidfactory.js');
@@ -6,8 +8,7 @@ var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader.js');
 var adaptermanager = require('src/adaptermanager');
 
-var sekindoUMAdapter;
-sekindoUMAdapter = function sekindoUMAdapter() {
+function SekindoUMAdapter() {
   function _callBids(params) {
     var bids = params.bids;
     var bidsCount = bids.length;
@@ -74,7 +75,7 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '3');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', '$$PREBID_GLOBAL$$');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
-    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', config.getConfig('bidderTimeout'));
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
     adloader.loadScript(scriptSrc);
@@ -83,8 +84,8 @@ sekindoUMAdapter = function sekindoUMAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new sekindoUMAdapter, 'sekindoUM');
+adaptermanager.registerBidAdapter(new SekindoUMAdapter(), 'sekindoUM');
 
-module.exports = sekindoUMAdapter;
+module.exports = SekindoUMAdapter;
