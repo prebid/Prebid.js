@@ -160,8 +160,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = $$PREBID_GLOBAL$$._bidsReceived
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes));
+  const responses = auctionManager.getBidsReceived()
+    .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last requested id to get responses for most recent auction only
   const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
@@ -186,7 +186,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
  */
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
   return {
     bids: bids
   };

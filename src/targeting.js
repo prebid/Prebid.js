@@ -1,8 +1,9 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
 import { NATIVE_TARGETING_KEYS } from './native';
+import { auctionManager } from './auctionManager';
+
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-import { auctionManager } from './auctionManager';
 
 var targeting = exports;
 var pbTargetingKeys = [];

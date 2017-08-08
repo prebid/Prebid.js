@@ -1,18 +1,21 @@
+import { uniques, flatten, timestamp } from './utils';
+import { getPriceBucketString } from './cpmBucketManager';
+
 const adaptermanager = require('./adaptermanager');
 const utils = require('./utils');
 const events = require('./events');
 const CONSTANTS = require('./constants.json');
-import { uniques, flatten, adUnitsFilter, getBidderRequest, timestamp } from './utils';
-import { getPriceBucketString } from './cpmBucketManager';
 
-export const auctionManager = (function() {
-  var _auctions = [];
-  var _customPriceBucket;
-  var defaultBidderSettingsMap = {};
-  var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
+export function newAuctionManager() {
+  let _auctions = [];
+  let _customPriceBucket;
+  let defaultBidderSettingsMap = {};
+  let _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
 
-  function setPriceGranularity(granularity) {
-    var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
+  let _public = {};
+
+  _public.setPriceGranularity = function(granularity) {
+    let granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
     if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
       _granularity = granularity;
     } else {
@@ -20,6 +23,39 @@ export const auctionManager = (function() {
         ' `medium` as default.');
       _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
     }
+  };
+
+  _public.setCustomPriceBucket = function(customConfig) {
+    _customPriceBucket = customConfig;
+  };
+
+  _public.getBidsReceived = function() {
+    return _auctions.map(auction => auction.getBidsReceived())
+      .reduce(flatten, []);
+  };
+
+  _public.getAdUnits = function() {
+    return _auctions.map(auction => auction.getAdUnits())
+      .reduce(flatten, []);
+  };
+
+  _public.getAdUnitCodes = function() {
+    return _auctions.map(auction => auction.getAdUnitCodes())
+      .reduce(flatten, [])
+      .filter(uniques);
+  };
+
+  _public.getStandardBidderAdServerTargeting = function() {
+    return getStandardBidderAdServerTargeting();
+  };
+
+  _public.createAuction = function() {
+    return _createAuction();
+  };
+
+  _public.findBidByAdId = function(adId) {
+    return _auctions.map(auction => auction.getBidsReceived()
+      .find(bid => bid.adId === adId))[0];
   };
 
   function getStandardBidderAdServerTargeting() {
@@ -96,7 +132,7 @@ export const auctionManager = (function() {
       }
 
       if (
-        (typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true ||
+        ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
         key === 'hb_deal') && // hb_deal is suppressed automatically if not set
         (
           utils.isEmptyStr(value) ||
@@ -164,17 +200,7 @@ export const auctionManager = (function() {
     _auctions.push(auction);
   }
 
-  function _removeAuction(auction) {
-    _auctions.splice(_auctions.indexOf(auction), 1);
-  }
-
-  function _findAuctionsByBidderCode(bidderCode) {
-    var _bidderCode = bidderCode;
-    return _auctions.filter(_auction => _auction.getBidderRequests()
-      .filter(bidderRequest => bidderRequest.bidderCode === _bidderCode));
-  }
-
-  function executeCallback(timedOut) {
+  _public.executeCallback = function(timedOut) {
     // TODO clear timer, below will also work in all scenario's since i am setting auction callbacks to noop.
     function callAuctionCallback(auction) {
       let callback = auction.getCallback();
@@ -237,7 +263,7 @@ export const auctionManager = (function() {
         if (count === this.getBidderRequests().length) {
           // when all bidders have called done callback it means auction is complete
           this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.COMPLETED);
-          executeCallback();
+          _public.executeCallback();
         }
       }
     }
@@ -340,6 +366,7 @@ export const auctionManager = (function() {
       this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.STARTED);
       this.setAuctionId(utils.generateUUID());
       this.setAuctionStart(Date.now());
+
       const auctionInit = {
         timestamp: this.getAuctionStart(),
         auctionId: this.getAuctionId(),
@@ -347,87 +374,18 @@ export const auctionManager = (function() {
       };
       events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-      adaptermanager.callBids(this, cbTimeout);
+      let bidRequests = adaptermanager.makeBidRequests(this.getAdUnits(), this.getAuctionStart(), this.getAuctionId(), cbTimeout);
+      bidRequests.forEach(bidRequest => {
+        this.setBidderRequests(bidRequest);
+      });
+      let done = this.done();
+      let doneCb = done.bind(this);
+      this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.IN_PROGRESS);
+      adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, doneCb);
     };
   }
 
-  return {
-    createAuction() {
-      return _createAuction();
-    },
+  return _public;
+}
 
-    getAuction() {
-      return _getAuction(...arguments);
-    },
-
-    getSingleAuction() {
-      return _auctions[0] || _createAuction();
-    },
-
-    findAuctionByBidderCode() {
-      return _findAuctionsByBidderCode(...arguments);
-    },
-
-    findBidderRequestByBidId({ bidId }) {
-      return _auctions.map(auction => auction.getBidderRequests()
-        .find(request => request.bids
-          .find(bid => bid.bidId === bidId)))[0] || { start: null };
-    },
-
-    findBidderRequestByBidParamImpId({ impId }) {
-      return _auctions.map(auction => auction.getBidderRequests()
-        .find(request => request.bids
-          .find(bid => bid.params && bid.params.impId === impId)));
-    },
-
-    findAuctionByBidId(bidId) {
-      return _auctions.find(auction => auction.getBidderRequests()
-        .find(request => request.bids
-          .find(bid => bid.bidId === bidId)));
-    },
-
-    findBidRequest({ bidId }) {
-      return _auctions.map(auction => auction.getBidderRequests()
-        .map(request => request.bids
-          .find(bid => bid.bidId === bidId)))[0]
-        .filter(bid => bid !== undefined)[0];
-    },
-
-    findBidByAdId(adId) {
-      return _auctions.map(auction => auction.getBidsReceived()
-        .find(bid => bid.adId = adId))[0];
-    },
-
-    getAdUnitCodes() {
-      return _auctions.map(auction => auction.getAdUnitCodes())
-        .reduce(flatten, [])
-        .filter(uniques);
-    },
-
-    getStandardBidderAdServerTargeting() {
-      return getStandardBidderAdServerTargeting();
-    },
-
-    getBidsReceived() {
-      return _auctions.map(auction => auction.getBidsReceived())
-        .reduce(flatten, []);
-    },
-
-    getAdUnits() {
-      return _auctions.map(auction => auction.getAdUnits())
-        .reduce(flatten, []);
-    },
-
-    setPriceGranularity(granularity) {
-      return setPriceGranularity(granularity);
-    },
-
-    setCustomPriceBucket(customConfig) {
-      _customPriceBucket = customConfig;
-    },
-
-    executeCallback() {
-      return executeCallback(...arguments);
-    }
-  };
-}());
+export const auctionManager = newAuctionManager();
