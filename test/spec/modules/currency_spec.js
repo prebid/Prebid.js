@@ -44,7 +44,7 @@ describe('currency', function () {
 
       setConfig({
         adServerCurrency: 'GBP',
-        currencyOverrides: {
+        bidderCurrencyDefault: {
           rubicon: 'GBP'
         }
       });
@@ -66,7 +66,7 @@ describe('currency', function () {
 
       setConfig({
         adServerCurrency: 'JPY',
-        currencyOverrides: {
+        bidderCurrencyDefault: {
           rubicon: 'GBP'
         }
       });

@@ -4,6 +4,7 @@ import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
 import bidmanager from 'src/bidmanager';
+import { config } from 'src/config';
 
 $$PREBID_GLOBAL$$.currency = setConfig;
 
@@ -20,10 +21,10 @@ var originalBidResponse;
 
 export var currencySupportEnabled = false;
 export var currencyRates = {};
-var currencyOverrides = {};
+var bidderCurrencyDefault = {};
 
 export function setConfig(config) {
-  var url = DEFAULT_CURRENCY_RATE_URL;
+  let url = DEFAULT_CURRENCY_RATE_URL;
   if (typeof config.adServerCurrency === 'string') {
     utils.logInfo('enabling currency support', arguments);
 
@@ -38,10 +39,11 @@ export function setConfig(config) {
     utils.logInfo('disabling currency support');
     resetCurrency();
   }
-  if (typeof config.currencyOverrides === 'object') {
-    currencyOverrides = config.currencyOverrides;
+  if (typeof config.bidderCurrencyDefault === 'object') {
+    bidderCurrencyDefault = config.bidderCurrencyDefault;
   }
 }
+config.getConfig('currency', config => setConfig(config.currency));
 
 function initCurrency(url) {
   conversionCache = {};
@@ -81,7 +83,7 @@ function resetCurrency() {
   currencySupportEnabled = false;
   currencyRatesLoaded = false;
   currencyRates = {};
-  currencyOverrides = {};
+  bidderCurrencyDefault = {};
 }
 
 export function addBidResponseDecorator(fn) {
@@ -91,8 +93,8 @@ export function addBidResponseDecorator(fn) {
     }
 
     let bidder = bid.bidderCode || bid.bidder;
-    if (currencyOverrides[bidder]) {
-      let override = currencyOverrides[bidder];
+    if (bidderCurrencyDefault[bidder]) {
+      let override = bidderCurrencyDefault[bidder];
       if (bid.currency && override !== bid.currency) {
         utils.logWarn(`Currency override '${bidder}: ${override}' ignored. adapter specified '${bid.currency}'`);
       } else {
@@ -151,6 +153,7 @@ function wrapFunction(fn, context, params) {
 
 function getCurrencyConversion(fromCurrency) {
   var conversionRate = null;
+  var rates;
 
   if (fromCurrency in conversionCache) {
     conversionRate = conversionCache[fromCurrency];
@@ -168,7 +171,7 @@ function getCurrencyConversion(fromCurrency) {
 
     if (fromCurrency in currencyRates.conversions) {
       // using direct conversion rate from fromCurrency to toCurrency
-      var rates = currencyRates.conversions[fromCurrency];
+      rates = currencyRates.conversions[fromCurrency];
       if (!(toCurrency in rates)) {
         // bid should fail, currency is not supported
         throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
@@ -177,7 +180,7 @@ function getCurrencyConversion(fromCurrency) {
       utils.logInfo('getCurrencyConversion using direct ' + fromCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     } else if (toCurrency in currencyRates.conversions) {
       // using reciprocal of conversion rate from toCurrency to fromCurrency
-      var rates = currencyRates.conversions[toCurrency];
+      rates = currencyRates.conversions[toCurrency];
       if (!(fromCurrency in rates)) {
         // bid should fail, currency is not supported
         throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');

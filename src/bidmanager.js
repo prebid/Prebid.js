@@ -3,6 +3,7 @@ import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
+import { config } from './config';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -11,13 +12,20 @@ var events = require('./events');
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
-var _currencyMultiplier = 1;
 let _customPriceBucket;
+let _granularityMultiplier = 1;
 var defaultBidderSettingsMap = {};
 
 exports.setCustomPriceBucket = function(customConfig) {
   _customPriceBucket = customConfig;
 };
+
+config.getConfig('currency', config => {
+  const value = parseFloat(typeof config === 'object' && config.granularityMultiplier);
+  if (value) {
+    _granularityMultiplier = value;
+  }
+});
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -157,7 +165,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket, _currencyMultiplier);
+    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket, _granularityMultiplier);
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -289,7 +297,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   return keyValues;
 }
 
-exports.setPriceGranularity = function setPriceGranularity(granularity, currencyMultiplier) {
+exports.setPriceGranularity = function setPriceGranularity(granularity, granularityMultiplier) {
   var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
   if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
     _granularity = granularity;
@@ -299,8 +307,8 @@ exports.setPriceGranularity = function setPriceGranularity(granularity, currency
     _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
   }
 
-  if (typeof currencyMultiplier !== 'undefined') {
-    _currencyMultiplier = currencyMultiplier;
+  if (typeof granularityMultiplier !== 'undefined') {
+    _granularityMultiplier = granularityMultiplier;
   }
 };
 

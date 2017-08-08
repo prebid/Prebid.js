@@ -641,14 +641,14 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
-$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplier) {
+$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, granularityMultiplier) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   if (!granularity) {
     utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
     return;
   }
   if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity, currencyMultiplier);
+    bidmanager.setPriceGranularity(granularity, granularityMultiplier);
   }
   else if (typeof granularity === 'object') {
     if (!isValidPriceConfig(granularity)) {
@@ -656,7 +656,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity, currencyMultiplie
       return;
     }
     bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM, currencyMultiplier);
+    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM, granularityMultiplier);
     utils.logMessage('Using custom price granularity');
   }
 };
