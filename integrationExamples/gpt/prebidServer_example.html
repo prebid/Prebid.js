@@ -24,7 +24,6 @@
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
     var pbjs = pbjs || {};
-    pbjs.setConfig({ bidderTimeout: 3000 });
     pbjs.que = pbjs.que || [];
     (function() {
         var pbjsEl = document.createElement("script");
@@ -50,6 +49,7 @@
           }];
 
         pbjs.setConfig({
+          bidderTimeout: 3000,
           s2sConfig : {
             accountId : '1',
             enabled : true, //default value set to false
