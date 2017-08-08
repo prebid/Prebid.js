@@ -31,7 +31,11 @@ function RhythmoneAdapter (bidManager, global, loader) {
 
   function load(bidParams, url, callback) {
     loader(url, function(responseText, response) {
-      if (response.status === 200) { callback(200, 'success', response.responseText); } else { callback(-1, 'http error ' + response.status, response.responseText); }
+      if (response.status === 200) {
+        callback(200, 'success', response.responseText);
+      } else {
+        callback(-1, 'http error ' + response.status, response.responseText);
+      }
     }, false, {method: 'GET', withCredentials: true});
   }
 
