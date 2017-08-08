@@ -13,7 +13,8 @@ describe('sovrn adapter tests', function () {
         bidId: 'bidId1',
         bidder: 'sovrn',
         params: {
-          tagid: '315045'
+          tagid: '315045',
+          bidfloor: 1.25
         },
         sizes: [[320, 50]],
         placementCode: 'div-gpt-ad-12345-1'
@@ -60,7 +61,7 @@ describe('sovrn adapter tests', function () {
       adapter.callBids(bidderRequest);
 
       let sovrnScript = decodeURIComponent(stubLoadScript.getCall(0).args[0]);
-      let firstExpectedImpObj = '{"id":"bidId1","banner":{"w":320,"h":50},"tagid":"315045","bidfloor":""}';
+      let firstExpectedImpObj = '{"id":"bidId1","banner":{"w":320,"h":50},"tagid":"315045","bidfloor":1.25}';
       let secondExpectedImpObj = '{"id":"bidId2","banner":{"w":320,"h":50},"tagid":"315046","bidfloor":""}';
 
       expect(sovrnScript).to.contain(firstExpectedImpObj);
