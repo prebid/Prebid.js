@@ -10,7 +10,7 @@ describe('InneractiveAdapter', function () {
     bidRequest;
 
   beforeEach(function () {
-    adapter = InneractiveAdapter.createNew();
+    adapter = new InneractiveAdapter();
     bidRequest = {
       bidderCode: 'inneractive',
       bids: [
@@ -85,13 +85,11 @@ describe('InneractiveAdapter', function () {
     });
   });
 
-  describe('.createNew()', function () {
-    it('should return an instance of this adapter having a "callBids" method', function () {
-      expect(adapter)
+  it('should return an instance of this adapter having a "callBids" method', function () {
+    expect(adapter)
       .to.be.instanceOf(InneractiveAdapter).and
       .to.have.property('callBids').and
       .to.be.a('function');
-    });
   });
 
   describe('when sending out bid requests to the ad server', function () {
@@ -212,7 +210,7 @@ describe('InneractiveAdapter', function () {
 
         let firstRegisteredBidResponse = bidmanager.addBidResponse.firstCall.args[BID_DETAILS_ARG_INDEX];
         expect(firstRegisteredBidResponse)
-        .to.have.property('statusMessage', 'Bid available');
+          .to.have.property('statusMessage', 'Bid available');
       });
 
       it('should use the first element inside the bid request size array when no (width,height) is returned within the headers', function () {
@@ -264,7 +262,7 @@ describe('InneractiveAdapter', function () {
 
         let firstRegisteredBidResponse = bidmanager.addBidResponse.firstCall.args[BID_DETAILS_ARG_INDEX];
         expect(firstRegisteredBidResponse)
-        .to.have.property('statusMessage', 'Bid returned empty or error response');
+          .to.have.property('statusMessage', 'Bid returned empty or error response');
       });
 
       it('should handle responses from our server in case we had no ad to offer', function () {
@@ -276,7 +274,7 @@ describe('InneractiveAdapter', function () {
 
         let secondRegisteredBidResponse = bidmanager.addBidResponse.secondCall.args[BID_DETAILS_ARG_INDEX];
         expect(secondRegisteredBidResponse)
-        .to.have.property('statusMessage', 'Bid returned empty or error response');
+          .to.have.property('statusMessage', 'Bid returned empty or error response');
       });
 
       it('should handle JSON.parse errors', function () {
@@ -286,7 +284,7 @@ describe('InneractiveAdapter', function () {
 
         const firstRegisteredBidResponse = bidmanager.addBidResponse.firstCall.args[BID_DETAILS_ARG_INDEX];
         expect(firstRegisteredBidResponse)
-        .to.have.property('statusMessage', 'Bid returned empty or error response');
+          .to.have.property('statusMessage', 'Bid returned empty or error response');
       });
     });
   });

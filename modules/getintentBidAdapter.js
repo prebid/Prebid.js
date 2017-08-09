@@ -70,7 +70,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new GetIntentAdapter, 'getintent', {
+adaptermanager.registerBidAdapter(new GetIntentAdapter(), 'getintent', {
   supportedMediaTypes: ['video']
 });
 

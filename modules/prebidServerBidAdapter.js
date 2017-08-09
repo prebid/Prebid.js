@@ -3,42 +3,65 @@ import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import { queueSync, persist } from 'src/cookie';
+import { STATUS, S2S } from 'src/constants';
+import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
+const getConfig = config.getConfig;
 
-const TYPE = 's2s';
-const cookiePersistMessage = `Your browser may be blocking 3rd party cookies. By clicking on this page you allow Prebid Server and other advertising partners to place cookies to help us advertise. You can opt out of their cookies <a href="https://www.appnexus.com/en/company/platform-privacy-policy#choices" target="_blank">here</a>.`;
-const cookiePersistUrl = '//ib.adnxs.com/seg?add=1&redir=';
+const TYPE = S2S.SRC;
+const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
+
+/**
+ * Try to convert a value to a type.
+ * If it can't be done, the value will be returned.
+ *
+ * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
+ * @param {*} value The value to be converted into typeToConvert.
+ */
+function tryConvertType(typeToConvert, value) {
+  if (typeToConvert === 'string') {
+    return value && value.toString();
+  } else if (typeToConvert === 'number') {
+    return Number(value);
+  } else {
+    return value;
+  }
+}
+
+const tryConvertString = tryConvertType.bind(null, 'string');
+const tryConvertNumber = tryConvertType.bind(null, 'number');
 
 const paramTypes = {
   'appnexus': {
-    'member': 'string',
-    'invCode': 'string',
-    'placementId': 'number'
+    'member': tryConvertString,
+    'invCode': tryConvertString,
+    'placementId': tryConvertNumber
   },
   'rubicon': {
-    'accountId': 'number',
-    'siteId': 'number',
-    'zoneId': 'number'
+    'accountId': tryConvertNumber,
+    'siteId': tryConvertNumber,
+    'zoneId': tryConvertNumber
   },
   'indexExchange': {
-    'siteID': 'number'
+    'siteID': tryConvertNumber
   },
   'audienceNetwork': {
-    'placementId': 'string'
+    'placementId': tryConvertString
   },
   'pubmatic': {
-    'publisherId': 'string',
-    'adSlot': 'string'
+    'publisherId': tryConvertString,
+    'adSlot': tryConvertString
   }
 };
+
+let _cookiesQueued = false;
 
 /**
  * Bidder adapter for Prebid Server
  */
 function PrebidServer() {
-  let baseAdapter = Adapter.createNew('prebidServer');
+  let baseAdapter = new Adapter('prebidServer');
   let config;
 
   baseAdapter.setConfig = function(s2sconfig) {
@@ -50,10 +73,13 @@ function PrebidServer() {
       adUnit.bids.forEach(bid => {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
-          if (bid.params[key] && typeof bid.params[key] !== types[key]) {
-            // mismatch type. Try to fix
-            utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
-            bid.params[key] = tryConvertType(types[key], bid.params[key]);
+          if (bid.params[key]) {
+            const converted = types[key](bid.params[key]);
+            if (converted !== bid.params[key]) {
+              utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
+            }
+            bid.params[key] = converted;
+
             // don't send invalid values
             if (isNaN(bid.params[key])) {
               delete bid.params.key;
@@ -64,18 +90,9 @@ function PrebidServer() {
     });
   }
 
-  function tryConvertType(typeToConvert, value) {
-    if (typeToConvert === 'string') {
-      return value && value.toString();
-    }
-    if (typeToConvert === 'number') {
-      return Number(value);
-    }
-  }
-
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-    const isDebug = !!$$PREBID_GLOBAL$$.logging;
+    const isDebug = !!getConfig('debug');
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
@@ -109,7 +126,7 @@ function PrebidServer() {
       if (result.status === 'OK' || result.status === 'no_cookie') {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
-            if (bidder.no_cookie) {
+            if (bidder.no_cookie && !_cookiesQueued) {
               queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
             }
           });
@@ -159,32 +176,53 @@ function PrebidServer() {
             });
         });
       }
-      if (result.status === 'no_cookie') {
+      if (result.status === 'no_cookie' && config.cookieSet) {
         // cookie sync
-        persist(cookiePersistUrl, cookiePersistMessage);
+        cookieSet(cookieSetUrl);
       }
     } catch (error) {
       utils.logError(error);
     }
 
-    if (!result || result.status && result.status.includes('Error')) {
+    if (!result || (result.status && result.status.includes('Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
   }
+  /**
+   * @param  {} {bidders} list of bidders to request user syncs for.
+   */
+  baseAdapter.queueSync = function({bidderCodes}) {
+    if (!_cookiesQueued) {
+      _cookiesQueued = true;
+      const payload = JSON.stringify({
+        uuid: utils.generateUUID(),
+        bidders: bidderCodes
+      });
+      ajax(config.syncEndpoint, (response) => {
+        try {
+          response = JSON.parse(response);
+          response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+        }
+        catch (e) {
+          utils.logError(e);
+        }
+      },
+      payload, {
+        contentType: 'text/plain',
+        withCredentials: true
+      });
+    }
+  }
 
-  return {
+  return Object.assign(this, {
+    queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
-    createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
-  };
+  });
 }
 
-PrebidServer.createNew = function() {
-  return new PrebidServer();
-};
-
-adaptermanager.registerBidAdapter(new PrebidServer, 'prebidServer');
+adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
 
 module.exports = PrebidServer;

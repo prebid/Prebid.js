@@ -67,7 +67,7 @@ module.exports = {
       internalModules = fs.readdirSync(MODULE_PATH)
         .filter(file => !(/(^|\/)\.[^\/\.]/g).test(file))
         .reduce((memo, file) => {
-          var moduleName = file.split(new RegExp('[.' + path.sep + ']'))[0];
+          var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var filePath = path.join(MODULE_PATH, file);
           var modulePath = path.join(__dirname, filePath)
           if (fs.lstatSync(filePath).isDirectory()) {

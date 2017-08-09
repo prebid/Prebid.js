@@ -5,36 +5,36 @@ var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
 
 var CentroAdapter = function CentroAdapter() {
-  var baseUrl = '//t.brand-server.com/hb',
-    devUrl = '//staging.brand-server.com/hb',
-    bidderCode = 'centro',
-    handlerPrefix = 'adCentroHandler_',
+  const baseUrl = '//t.brand-server.com/hb';
+  const devUrl = '//staging.brand-server.com/hb';
+  const bidderCode = 'centro';
+  const handlerPrefix = 'adCentroHandler_';
 
-    LOG_ERROR_MESS = {
-      noUnit: 'Bid has no unit',
-      noAdTag: 'Bid has missmatch format.',
-      noBid: 'Response has no bid.',
-      anotherCode: 'Bid has another bidderCode - ',
-      undefBid: 'Bid is undefined',
-      unitNum: 'Requested unit is '
-    };
+  const LOG_ERROR_MESS = {
+    noUnit: 'Bid has no unit',
+    noAdTag: 'Bid has missmatch format.',
+    noBid: 'Response has no bid.',
+    anotherCode: 'Bid has another bidderCode - ',
+    undefBid: 'Bid is undefined',
+    unitNum: 'Requested unit is '
+  };
 
-  function _makeHandler(handlerName, unit, placementCode) {
+  function _makeHandler(handlerName, unit, requestedBid) {
     return function(response) {
       try {
         delete window[handlerName];
       } catch (err) { // catching for old IE
         window[handlerName] = undefined;
       }
-      _responseProcessing(response, unit, placementCode);
+      _responseProcessing(response, unit, requestedBid);
     };
   }
 
-  function _sendBidRequest(bid) {
-    var placementCode = bid.placementCode,
-      size = bid.sizes && bid.sizes[0];
+  function _sendBidRequest(requestedBid) {
+    var bid;
+    const size = requestedBid.sizes && requestedBid.sizes[0];
 
-    bid = bid.params;
+    bid = requestedBid.params;
     if (!bid.unit) {
       // throw exception, or call utils.logError
       utils.logError(LOG_ERROR_MESS.noUnit, bidderCode);
@@ -54,13 +54,13 @@ var CentroAdapter = function CentroAdapter() {
       query.push('sz=' + size.join('x'));
     }
     // make handler name for JSONP request
-    var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(placementCode);
+    var handlerName = handlerPrefix + bid.unit + size.join('x') + encodeURIComponent(requestedBid.placementCode);
     query.push('callback=' + encodeURIComponent('window["' + handlerName + '"]'));
 
     // maybe is needed add some random parameter to disable cache
     // query.push('r='+Math.round(Math.random() * 1e5));
 
-    window[handlerName] = _makeHandler(handlerName, bid.unit, placementCode);
+    window[handlerName] = _makeHandler(handlerName, bid.unit, requestedBid);
 
     adloader.loadScript((document.location.protocol === 'https:' ? 'https:' : 'http:') + (isDev ? devUrl : baseUrl) + '?' + query.join('&'));
   }
@@ -72,23 +72,26 @@ var CentroAdapter = function CentroAdapter() {
    "value": 3.2,
    "adTag":''
    */
-  function _responseProcessing(resp, unit, placementCode) {
+  function _responseProcessing(resp, unit, requestedBid) {
     var bidObject;
-    var bid = resp && resp.bid || resp;
+    var bid = (resp && resp.bid) || resp;
 
-    if (bid && bid.adTag && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
-      bidObject = bidfactory.createBid(1);
-      bidObject.cpm = bid.value;
-      bidObject.ad = bid.adTag;
-      bidObject.width = bid.width;
-      bidObject.height = bid.height;
+    if (bid && (bid.adTag || bid.statusMessage === 'No bid') && bid.sectionID && bid.sectionID.toString() === unit.toString()) {
+      if (bid.adTag) {
+        bidObject = bidfactory.createBid(1, requestedBid);
+        bidObject.cpm = bid.value;
+        bidObject.ad = bid.adTag;
+        bidObject.width = bid.width;
+        bidObject.height = bid.height;
+      } else {
+        bidObject = bidfactory.createBid(2, requestedBid);
+      }
     } else {
       // throw exception, or call utils.logError with resp.statusMessage
       utils.logError(LOG_ERROR_MESS.unitNum + unit + '. ' + (bid ? bid.statusMessage || LOG_ERROR_MESS.noAdTag : LOG_ERROR_MESS.noBid), bidderCode);
-      bidObject = bidfactory.createBid(2);
+      bidObject = bidfactory.createBid(2, requestedBid);
     }
-    bidObject.bidderCode = bidderCode;
-    bidmanager.addBidResponse(placementCode, bidObject);
+    bidmanager.addBidResponse(requestedBid.placementCode, bidObject);
   }
 
   /*
@@ -101,7 +104,8 @@ var CentroAdapter = function CentroAdapter() {
    size: [300, 250]
    */
   function _callBids(params) {
-    var bid, bids = params.bids || [];
+    var bid;
+    const bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       bid = bids[i];
       if (bid && bid.bidder === bidderCode) {
@@ -115,6 +119,6 @@ var CentroAdapter = function CentroAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new CentroAdapter, 'centro');
+adaptermanager.registerBidAdapter(new CentroAdapter(), 'centro');
 
 module.exports = CentroAdapter;

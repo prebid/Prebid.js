@@ -9,8 +9,8 @@ import adaptermanager from 'src/adaptermanager';
 const ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = Adapter.createNew('vertamedia'),
-    bidRequest;
+  const baseAdapter = new Adapter('vertamedia');
+  let bidRequest;
 
   baseAdapter.callBids = function (bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
@@ -51,8 +51,8 @@ function VertamediaAdapter() {
   }
 
   function getSize(requestSizes) {
-    var parsed = {},
-      size = utils.parseSizesInput(requestSizes)[0];
+    const parsed = {};
+    const size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -106,18 +106,13 @@ function VertamediaAdapter() {
     return bid;
   }
 
-  return {
-    createNew: VertamediaAdapter.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
 
-VertamediaAdapter.createNew = function () {
-  return new VertamediaAdapter();
-};
-
-adaptermanager.registerBidAdapter(new VertamediaAdapter, 'vertamedia', {
+adaptermanager.registerBidAdapter(new VertamediaAdapter(), 'vertamedia', {
   supportedMediaTypes: ['video']
 });
 

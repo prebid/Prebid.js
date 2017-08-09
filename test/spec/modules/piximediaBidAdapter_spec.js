@@ -2,9 +2,9 @@ describe('Piximedia adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
 
-    // var querystringify = require('querystringify');
+  // var querystringify = require('querystringify');
 
-  var adapter = require('modules/piximediaBidAdapter');
+  var Adapter = require('modules/piximediaBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
   var utils = require('src/utils');
@@ -47,7 +47,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       sinon.assert.calledOnce(stubLoadScript);
     });
 
@@ -67,7 +67,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       sinon.assert.notCalled(stubLoadScript);
     });
 
@@ -87,7 +87,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -115,7 +115,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -143,7 +143,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -171,7 +171,7 @@ describe('Piximedia adapter tests', function () {
         ]
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
       sinon.assert.calledWith(stubLoadScript, bidUrl);
@@ -228,7 +228,7 @@ describe('Piximedia adapter tests', function () {
         html: '<div>ad</div>'
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -268,7 +268,7 @@ describe('Piximedia adapter tests', function () {
       var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
 
-            // this time, we do not provide dealId
+      // this time, we do not provide dealId
       var response = {
         foundbypm: true,
         cpm: 1.23,
@@ -278,7 +278,7 @@ describe('Piximedia adapter tests', function () {
         html: '<div>ad</div>'
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -321,7 +321,7 @@ describe('Piximedia adapter tests', function () {
         foundbypm: false
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -360,7 +360,7 @@ describe('Piximedia adapter tests', function () {
         foundbypm: false
       };
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};
@@ -390,7 +390,7 @@ describe('Piximedia adapter tests', function () {
 
       var response = null; // this is bogus: we expect an object
 
-      adapter().callBids(params);
+      new Adapter().callBids(params);
 
       var adUnits = [];
       var unit = {};

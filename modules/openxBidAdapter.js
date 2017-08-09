@@ -1,3 +1,4 @@
+import { config } from 'src/config';
 const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
 const adloader = require('src/adloader');
@@ -39,7 +40,7 @@ const OpenxAdapter = function OpenxAdapter() {
       let beaconParams = {
         bd: +(new Date()) - startTime,
         br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout, // For the timeout per bid request
+        bt: $$PREBID_GLOBAL$$.cbTimeout || config.getConfig('bidderTimeout'), // For the timeout per bid request
         bs: window.location.hostname
       };
 
@@ -59,12 +60,12 @@ const OpenxAdapter = function OpenxAdapter() {
   };
 
   function getViewportDimensions(isIfr) {
-    let width,
-      height,
-      tWin = window,
-      tDoc = document,
-      docEl = tDoc.documentElement,
-      body;
+    let width;
+    let height;
+    let tWin = window;
+    let tDoc = document;
+    let docEl = tDoc.documentElement;
+    let body;
 
     if (isIfr) {
       try {
@@ -152,7 +153,7 @@ const OpenxAdapter = function OpenxAdapter() {
 
   function adUnitHasValidSizeFromBid(adUnit, bid) {
     let sizes = utils.parseSizesInput(bid.sizes);
-    let sizeLength = sizes && sizes.length || 0;
+    let sizeLength = (sizes && sizes.length) || 0;
     let found = false;
     let creative = adUnit.creative && adUnit.creative[0];
     let creative_size = String(creative.width) + 'x' + String(creative.height);
@@ -194,9 +195,9 @@ const OpenxAdapter = function OpenxAdapter() {
   }
 
   function callBids(params) {
-    let isIfr,
-      bids = params.bids || [],
-      currentURL = (window.parent !== window) ? document.referrer : window.location.href;
+    let isIfr;
+    const bids = params.bids || [];
+    let currentURL = (window.parent !== window) ? document.referrer : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
@@ -223,7 +224,7 @@ const OpenxAdapter = function OpenxAdapter() {
       be: 1,
       bc: BIDDER_CONFIG
     },
-      delDomain);
+    delDomain);
   }
 
   return {
@@ -231,6 +232,6 @@ const OpenxAdapter = function OpenxAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new OpenxAdapter, 'openx');
+adaptermanager.registerBidAdapter(new OpenxAdapter(), 'openx');
 
 module.exports = OpenxAdapter;

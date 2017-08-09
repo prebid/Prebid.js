@@ -1,4 +1,4 @@
-{
+module.exports = {
   "env": {
     "browser": true,
     "mocha": true
@@ -26,7 +26,6 @@
     "no-unused-expressions": "off",
     "import/no-duplicates": "off",
     "no-template-curly-in-string": "off",
-    "new-cap": "off",
     "no-global-assign": "off",
     "no-path-concat": "off",
     "no-redeclare": "off",
@@ -47,4 +46,4 @@
     "standard/no-callback-literal": "off",
     "standard/object-curly-even-spacing": "off"
   }
-}
+};

@@ -9,7 +9,7 @@ import adaptermanager from 'src/adaptermanager';
 const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
 function BeachfrontAdapter() {
-  var baseAdapter = Adapter.createNew('beachfront');
+  var baseAdapter = new Adapter('beachfront');
 
   baseAdapter.callBids = function (bidRequests) {
     const bids = bidRequests.bids || [];
@@ -122,18 +122,13 @@ function BeachfrontAdapter() {
     return bid;
   }
 
-  return {
-    createNew: BeachfrontAdapter.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
 
-BeachfrontAdapter.createNew = function () {
-  return new BeachfrontAdapter();
-};
-
-adaptermanager.registerBidAdapter(new BeachfrontAdapter, 'beachfront', {
+adaptermanager.registerBidAdapter(new BeachfrontAdapter(), 'beachfront', {
   supportedMediaTypes: ['video']
 });
 

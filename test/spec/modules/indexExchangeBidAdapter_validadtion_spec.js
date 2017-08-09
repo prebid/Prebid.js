@@ -1,4 +1,5 @@
 import Adapter from '../../../modules/indexExchangeBidAdapter';
+import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 var assert = require('chai').assert;
@@ -20,6 +21,7 @@ describe('indexExchange adapter - Validation', function () {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
+    sandbox.stub(bidManager, 'addBidResponse');
   });
 
   afterEach(function() {
@@ -27,7 +29,7 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_1: request slot has supported and unsupported size -> unsupported size ignored in IX demand request', function () {
-		// create 2 sizes for 1 slot, 1 for supported size, the other is not supported
+    // create 2 sizes for 1 slot, 1 for supported size, the other is not supported
     var unsupportedSize = IndexUtils.unsupportedSizes[0];
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix, 'slot_1', [ IndexUtils.supportedSizes[0], unsupportedSize ])
@@ -57,10 +59,26 @@ describe('indexExchange adapter - Validation', function () {
 
     assert.equal(sidMatched.unmatched.configured.length, 1, '1 configured bid is not in impression Obj');
     assert.equal(sidMatched.unmatched.configured[0].size, unsupportedSize, 'configured bid not in impression obj size width is' + JSON.stringify(unsupportedSize));
+
+    // checking bid manager responses. Only one bid back into bidmanager because one size is unsupported
+    var adapterResponse = {};
+    for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+      var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+      var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+      if (typeof adapterResponse[adUnitCode] === 'undefined') {
+        adapterResponse[adUnitCode] = [];
+      };
+      adapterResponse[adUnitCode].push(bid);
+    };
+    assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
   });
 
   it('test_prebid_indexAdapter_sizeValidation_2_1: some slot has unsupported size -> unsupported slot ignored in IX demand request', function () {
-		// create 2 slot, 1 for supported size, the other is not supported
+    // create 2 slot, 1 for supported size, the other is not supported
     var unsupportedSize = IndexUtils.unsupportedSizes[0];
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'supported', 'slot_1', [ IndexUtils.supportedSizes[0], ], { siteID: IndexUtils.DefaultSiteID }),
@@ -96,7 +114,7 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_2_2: multiple slots with sinle size, all slot has supported size -> all slots are sent to IX demand', function () {
-		// create 2 slot, 1 for supported size, the other is not supported
+    // create 2 slot, 1 for supported size, the other is not supported
     var unsupportedSize = IndexUtils.unsupportedSizes[0];
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'supported1', 'slot_1', [ IndexUtils.supportedSizes[0] ], { siteID: IndexUtils.DefaultSiteID }),
@@ -128,7 +146,7 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_2_3: multiple slots with sinle size, all slot has unsupported size -> all slots are ignored', function () {
-		// create 2 slot, 1 for supported size, the other is not supported
+    // create 2 slot, 1 for supported size, the other is not supported
     var unsupportedSize = IndexUtils.unsupportedSizes[0];
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'unsupported1', 'slot_1', [ IndexUtils.unsupportedSizes[0] ], { siteID: IndexUtils.DefaultSiteID }),
@@ -140,7 +158,7 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_3_1: one slot has supported, unsupported, supported size -> unsupported slot ignored in IX demand request', function () {
-		// create 2 slot, 1 for supported size, the other is not supported
+    // create 2 slot, 1 for supported size, the other is not supported
     var unsupportedSize = IndexUtils.unsupportedSizes[0];
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'somesupported', 'slot_1', [ IndexUtils.supportedSizes[0], unsupportedSize, IndexUtils.supportedSizes[1] ], { siteID: IndexUtils.DefaultSiteID }),
@@ -176,7 +194,7 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_3_2: one slot has unsupported, supported, unsupported size -> unsupported slot ignored in IX demand request', function () {
-		// create 2 slot, 1 for supported size, the other is not supported
+    // create 2 slot, 1 for supported size, the other is not supported
     var unsupportedSize1 = IndexUtils.unsupportedSizes[0];
     var unsupportedSize2 = IndexUtils.unsupportedSizes[1];
     var configuredBids = [
@@ -249,13 +267,38 @@ describe('indexExchange adapter - Validation', function () {
   });
 
   it('test_prebid_indexAdapter_sizeValidation_3_4: multiple slots, all slots have unsupported size -> no slots are sent to IX demand', function () {
+    var firstPlacement = IndexUtils.DefaultPlacementCodePrefix + 'allsupported1';
+    var secondPlacement = IndexUtils.DefaultPlacementCodePrefix + 'allsupported2';
     var configuredBids = [
-      IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'allsupported1', 'slot_1', [ IndexUtils.unsupportedSizes[0], IndexUtils.unsupportedSizes[1] ], { siteID: IndexUtils.DefaultSiteID }),
-      IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + 'allsupported2', 'slot_2', [ IndexUtils.unsupportedSizes[2], IndexUtils.unsupportedSizes[3] ], { siteID: IndexUtils.DefaultSiteID + 1})
+      IndexUtils.createBidSlot(firstPlacement, 'slot_1', [ IndexUtils.unsupportedSizes[0], IndexUtils.unsupportedSizes[1] ], { siteID: IndexUtils.DefaultSiteID }),
+      IndexUtils.createBidSlot(secondPlacement, 'slot_2', [ IndexUtils.unsupportedSizes[2], IndexUtils.unsupportedSizes[3] ], { siteID: IndexUtils.DefaultSiteID + 1})
     ];
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'No request to IX demand');
+
+    // checking bid manager responses. Only one bid back into bidmanager because one size is unsupported
+    var adapterResponse = {};
+    for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+      var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+      var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+      if (typeof adapterResponse[adUnitCode] === 'undefined') {
+        adapterResponse[adUnitCode] = [];
+      };
+      adapterResponse[adUnitCode].push(bid);
+    };
+    assert.deepEqual(Object.keys(adapterResponse), [firstPlacement, secondPlacement], 'bid response from placement code that is configured');
+    assert.equal(adapterResponse[firstPlacement].length, 2, 'two response back returned for placement ' + firstPlacement);
+    assert.equal(adapterResponse[firstPlacement][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+    assert.equal(adapterResponse[firstPlacement][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
+    assert.equal(adapterResponse[firstPlacement][1].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+    assert.equal(adapterResponse[firstPlacement][1].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
+    assert.equal(adapterResponse[secondPlacement].length, 2, 'two response back returned for placement ' + secondPlacement);
+    assert.equal(adapterResponse[secondPlacement][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+    assert.equal(adapterResponse[secondPlacement][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
+    assert.equal(adapterResponse[secondPlacement][1].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+    assert.equal(adapterResponse[secondPlacement][1].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
   });
 
   it('test_prebid_indexAdapter_param_timeout_integer: timeout is integer -> t parameter that matches with the integer', function () {
@@ -484,6 +527,16 @@ describe('indexExchange adapter - Validation', function () {
         IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix, slotID, [ IndexUtils.supportedSizes[0] ], param),
       ];
       adapter.callBids({ bids: configuredBids });
+      var adapterResponse = {};
+      for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+        var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+        var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+        if (typeof adapterResponse[adUnitCode] === 'undefined') {
+          adapterResponse[adUnitCode] = [];
+        };
+        adapterResponse[adUnitCode].push(bid);
+      };
       if (expected == 'pass') {
         assert.isTrue(adLoader.loadScript.called, 'loadScript get request');
         assert.include(adLoader.loadScript.firstCall.args[0], HeaderTagRequest, 'request is headertag request');
@@ -506,11 +559,20 @@ describe('indexExchange adapter - Validation', function () {
 
         assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       } else if (expected == 'invalid') {
-				// case where callBids throws out request due to missing params
+        // case where callBids throws out request due to missing params
         assert.isFalse(adLoader.loadScript.called, 'No request to AS')
+        assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
       } else {
         assert.strictEqual(typeof indexBidRequest, 'undefined', 'No request to AS');
+        assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
       }
     });
   };
@@ -649,6 +711,16 @@ describe('indexExchange adapter - Validation', function () {
       ];
 
       adapter.callBids({ bids: configuredBids });
+      var adapterResponse = {};
+      for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+        var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+        var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+        if (typeof adapterResponse[adUnitCode] === 'undefined') {
+          adapterResponse[adUnitCode] = [];
+        };
+        adapterResponse[adUnitCode].push(bid);
+      };
       if (expected == 'pass') {
         assert.isTrue(adLoader.loadScript.called, 'loadScript get request');
         assert.include(adLoader.loadScript.firstCall.args[0], HeaderTagRequest, 'request is headertag request');
@@ -671,11 +743,20 @@ describe('indexExchange adapter - Validation', function () {
 
         assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       } else if (expected == 'invalid') {
-				// case where callBids throws out request due to missing params
+        // case where callBids throws out request due to missing params
         assert.isFalse(adLoader.loadScript.called, 'No request to AS');
+        assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
       } else {
         assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'No request to AS');
+        assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
+        assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
       }
     });
   };
@@ -685,7 +766,7 @@ describe('indexExchange adapter - Validation', function () {
     base_prebid_indexAdapter_siteid(test.testname, test.param, test.expected);
   }
 
-	// TS: case created by PBA-12
+  // TS: case created by PBA-12
   it('test_prebid_indexAdapter_second_siteid_float: site ID is float -> slot is ignored', function() {
     var configuredBids = [
       IndexUtils.createBidSlot(IndexUtils.DefaultPlacementCodePrefix + '1', 'slot_1', [ IndexUtils.supportedSizes[0] ]),
@@ -783,10 +864,20 @@ describe('indexExchange adapter - Validation', function () {
       var expandedBids = configuredBids.map(bid => IndexUtils.expandSizes(bid))
       var sidMatched = IndexUtils.matchBidsOnSID(expandedBids, impressionObj);
 
+      var adapterResponse = {};
+      for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+        var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+        var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+        if (typeof adapterResponse[adUnitCode] === 'undefined') {
+          adapterResponse[adUnitCode] = [];
+        };
+        adapterResponse[adUnitCode].push(bid);
+      };
       if (expected == 'pass') {
         assert.equal(sidMatched.matched.length, 2, 'Two slots are configured and sent to AS');
 
-				// check normal site id
+        // check normal site id
         var normalSitePair = sidMatched.matched[0];
 
         var expectedSlotID = normalSitePair.configured.params.id + '_1';
@@ -797,7 +888,7 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(normalSitePair.sent.ext.siteID, expectedSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID);
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check tier site id
+        // check tier site id
         var tier2SitePair = sidMatched.matched[1];
         var expectedTierSlotID = 'T1_' + tier2SitePair.configured.params.id + '_1';
         assert.equal(tier2SitePair.sent.ext.sid, expectedTierSlotID, 'request ' + tier2SitePair.name + ' site ID is set to ' + expectedTierSlotID);
@@ -807,13 +898,15 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(tier2SitePair.sent.ext.siteID, expectedTierSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedTierSiteID);
         assert.isNumber(tier2SitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check unsent bids
+        // check unsent bids
         assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       } else {
         assert.equal(sidMatched.matched.length, 1, 'one slot is configured and sent to AS');
 
-				// check normal site id
+        // check normal site id
         var normalSitePair = sidMatched.matched[0];
 
         var expectedSlotID = normalSitePair.configured.params.id + '_1';
@@ -824,13 +917,15 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(normalSitePair.sent.ext.siteID, expectedSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID);
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check unsent bids
+        // check unsent bids
         if (param.missingtier2SiteID) {
           assert.equal(sidMatched.unmatched.configured.length, 0, 'one configured bid is missing in impression Obj');
         } else {
           assert.equal(sidMatched.unmatched.configured.length, 1, 'one configured bid is missing in impression Obj');
         }
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       }
     });
   };
@@ -904,10 +999,20 @@ describe('indexExchange adapter - Validation', function () {
       var expandedBids = configuredBids.map(bid => IndexUtils.expandSizes(bid))
       var sidMatched = IndexUtils.matchBidsOnSID(expandedBids, impressionObj);
 
+      var adapterResponse = {};
+      for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+        var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+        var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+        if (typeof adapterResponse[adUnitCode] === 'undefined') {
+          adapterResponse[adUnitCode] = [];
+        };
+        adapterResponse[adUnitCode].push(bid);
+      };
       if (expected == 'pass') {
         assert.equal(sidMatched.matched.length, 2, 'Two slots are configured and sent to AS');
 
-				// check normal site id
+        // check normal site id
         var normalSitePair = sidMatched.matched[0];
 
         var expectedSlotID = normalSitePair.configured.params.id + '_1';
@@ -918,7 +1023,7 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(normalSitePair.sent.ext.siteID, expectedSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID);
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check tier site id
+        // check tier site id
         var tier3SitePair = sidMatched.matched[1];
         var expectedTierSlotID = 'T2_' + tier3SitePair.configured.params.id + '_1';
         assert.equal(tier3SitePair.sent.ext.sid, expectedTierSlotID, 'request ' + tier3SitePair.name + ' site ID is set to ' + expectedTierSlotID);
@@ -928,13 +1033,15 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(tier3SitePair.sent.ext.siteID, expectedTierSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedTierSiteID);
         assert.isNumber(tier3SitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check unsent bids
+        // check unsent bids
         assert.equal(sidMatched.unmatched.configured.length, 0, 'All configured bids are in impression Obj');
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       } else {
         assert.equal(sidMatched.matched.length, 1, 'one slot is configured and sent to AS');
 
-				// check normal site id
+        // check normal site id
         var normalSitePair = sidMatched.matched[0];
 
         var expectedSlotID = normalSitePair.configured.params.id + '_1';
@@ -945,13 +1052,15 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(normalSitePair.sent.ext.siteID, expectedSiteID, 'request ' + normalSitePair.name + ' site ID is set to ' + expectedSiteID);
         assert.isNumber(normalSitePair.sent.ext.siteID, 'site ID is integer');
 
-				// check unsent bids
+        // check unsent bids
         if (param.missingtier3SiteID) {
           assert.equal(sidMatched.unmatched.configured.length, 0, 'one configured bid is missing in impression Obj');
         } else {
           assert.equal(sidMatched.unmatched.configured.length, 1, 'one configured bid is missing in impression Obj');
         }
         assert.equal(sidMatched.unmatched.sent.length, 0, 'All bids in impression object are from configured bids');
+
+        assert.deepEqual(Object.keys(adapterResponse), [], 'no explicit pass on bid');
       }
     });
   };

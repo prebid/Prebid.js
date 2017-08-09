@@ -1,9 +1,9 @@
-import CONSTANTS from 'src/constants.json';
-import { loadScript } from 'src/adloader';
-import { ajax } from 'src/ajax';
+import CONSTANTS from './constants';
+import { loadScript } from './adloader';
+import { ajax } from './ajax';
 
-const events = require('src/events');
-const utils = require('src/utils');
+const events = require('./events');
+const utils = require('./utils');
 
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -17,7 +17,6 @@ const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
@@ -81,7 +80,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       _sampled = true;
     }
 
-
     if (_sampled) {
       // first send all events fired before enableAnalytics called
       events.getEvents().forEach(event => {
@@ -91,9 +89,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
         const { eventType, args } = event;
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType, args });
         }
       });
@@ -108,7 +104,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AUCTION_INIT]: args => {
-          args.config = config.options;  // enableAnaltyics configuration object
+          args.config = config.options; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });
         }
       };
@@ -119,7 +115,6 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     } else {
       utils.logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
-
 
     // finally set this function to return log message, prevents multiple adapter listeners
     this.enableAnalytics = function _enable() {

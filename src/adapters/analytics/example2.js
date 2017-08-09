@@ -15,10 +15,10 @@ export default Object.assign(adapter(
     analyticsType
   }
 ),
-  {
+{
   // Override AnalyticsAdapter functions by supplying custom methods
-    track({ eventType, args }) {
-      console.log('track function override for Example2 Analytics');
-      ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }));
-    }
-  });
+  track({ eventType, args }) {
+    console.log('track function override for Example2 Analytics');
+    ajax(url, (result) => console.log('Analytics Endpoint Example2: result = ' + result), JSON.stringify({ eventType, args }));
+  }
+});

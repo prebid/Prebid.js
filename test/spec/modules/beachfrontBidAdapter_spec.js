@@ -44,7 +44,7 @@ var RESPONSE = {
 describe('BeachfrontAdapter', () => {
   let adapter;
 
-  beforeEach(() => adapter = BeachfrontAdapter.createNew());
+  beforeEach(() => adapter = new BeachfrontAdapter());
 
   describe('request function', () => {
     let xhr;
@@ -109,9 +109,9 @@ describe('BeachfrontAdapter', () => {
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
-                'statusMessage',
-                'Bid returned empty or error response'
-            );
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
     });
 
     it('handles JSON.parse errors', () => {
@@ -123,9 +123,9 @@ describe('BeachfrontAdapter', () => {
 
       const response = bidmanager.addBidResponse.firstCall.args[1];
       expect(response).to.have.property(
-                'statusMessage',
-                'Bid returned empty or error response'
-            );
+        'statusMessage',
+        'Bid returned empty or error response'
+      );
     });
   });
 });

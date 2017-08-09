@@ -12,7 +12,11 @@ var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
 // create s2s settings objectType_function
-let _s2sConfig = {};
+let _s2sConfig = {
+  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+  adapter: CONSTANTS.S2S.ADAPTER,
+  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
+};
 var _analyticsRegistry = {};
 let _bidderSequence = null;
 
@@ -38,6 +42,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
           mediaType: adUnit.mediaType,
+          renderer: adUnit.renderer,
           transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
@@ -65,6 +70,12 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     bidderCodes = shuffle(bidderCodes);
   }
 
+  const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
+  if (s2sAdapter) {
+    s2sAdapter.setConfig(_s2sConfig);
+    s2sAdapter.queueSync({bidderCodes});
+  }
+
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
@@ -90,6 +101,11 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       });
     });
 
+    // don't send empty requests
+    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+      return adUnit.bids.length !== 0;
+    });
+
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -101,16 +117,16 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
-        timeout: _s2sConfig.timeout
+        timeout: _s2sConfig.timeout,
+        src: CONSTANTS.S2S.SRC
       };
-      // Pushing server side bidder
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      if (bidderRequest.bids.length !== 0) {
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+      }
     });
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
-    let s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-    s2sAdapter.setConfig(_s2sConfig);
     s2sAdapter.callBids(s2sBidRequest);
   }
 
@@ -139,7 +155,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   });
 };
 
-
 function transformHeightWidth(adUnit) {
   let sizesObj = [];
   let sizes = utils.parseSizesInput(adUnit.sizes);
@@ -154,11 +169,11 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
-exports.videoAdapters = [];  // added by adapterLoader for now
+exports.videoAdapters = []; // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
-    if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
+    if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
 
       if (supportedMediaTypes.includes('video')) {
@@ -178,15 +193,14 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 exports.aliasBidAdapter = function (bidderCode, alias) {
   var existingAlias = _bidderRegistry[alias];
 
-  if (typeof existingAlias === CONSTANTS.objectType_undefined) {
+  if (typeof existingAlias === 'undefined') {
     var bidAdaptor = _bidderRegistry[bidderCode];
 
-    if (typeof bidAdaptor === CONSTANTS.objectType_undefined) {
+    if (typeof bidAdaptor === 'undefined') {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        let newAdapter = null;
-        newAdapter = bidAdaptor.createNew();
+        let newAdapter = new bidAdaptor.constructor();
         newAdapter.setBidderCode(alias);
         this.registerBidAdapter(newAdapter, alias);
       } catch (e) {
@@ -200,7 +214,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
 exports.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
-    if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
+    if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
       _analyticsRegistry[code] = adapter;
     } else {
@@ -229,7 +243,9 @@ exports.enableAnalytics = function (config) {
 };
 
 exports.setBidderSequence = function (order) {
-  _bidderSequence = order;
+  if (order === CONSTANTS.ORDER.RANDOM) {
+    _bidderSequence = order;
+  }
 };
 
 exports.setS2SConfig = function (config) {

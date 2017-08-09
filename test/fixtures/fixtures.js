@@ -1106,7 +1106,7 @@ export function getBidResponsesFromAPI() {
   };
 }
 
-// Ad server targeting when `$$PREBID_GLOBAL$$.enableSendAllBids()` is called.
+// Ad server targeting when `setConfig({ enableSendAllBids: true })` is set.
 export function getAdServerTargeting() {
   return {
     '/19968336/header-bid-tag-0': {
