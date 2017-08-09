@@ -494,8 +494,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     var videoImpressions = [];
 
     // Grab the slot level data for cygnus_index_args
-    for (var i = 0; i < bidArr.length; i++) {
-      let bid = bidArr[i];
+    bidArr.forEach(bid => {
       if (bid.mediaType === 'video') {
         var impression = buildVideoImpressions(bid, bidRequests);
         if (typeof impression !== 'undefined') {
@@ -504,7 +503,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       } else {
         cygnus_index_init(bid);
       }
-    }
+    });
 
     if (videoImpressions.length > 0) {
       sendVideoRequest(request.bidderRequestId, videoImpressions);
@@ -605,7 +604,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     var sizeID = 0;
 
     // Expecting nested arrays for sizes
-    if (!(bid.sizes[0] instanceof Array)) {
+    if (!utils.isArray(bid.sizes[0])) {
       bid.sizes = [bid.sizes];
     }
 
@@ -630,7 +629,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
       var usingSizeSpecificSiteID = false;
       // Check for size defined in bidder params 
-      if (bid.params.size && bid.params.size instanceof Array) {
+      if (bid.params.size && utils.isArray(bid.params.size)) {
         if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) {
           passOnBid(bid.placementCode);
           continue;
@@ -901,6 +900,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
           bidmanager.addBidResponse(prebidRequest.placementCode, bid);
         });
       });
+
+    bidRequests = {};
   };
 
   function createBidObj(status, request) {
@@ -1107,9 +1108,9 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
     return sizes;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: _callBids
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new IndexExchangeAdapter(), 'indexExchange', {
