@@ -95,11 +95,11 @@ function SmartyadsAdapter() {
       secure = 0;
     }
 
-    var host = window.location.host,
-      page = window.location.pathname,
-      language = navigator.language,
-      deviceWidth = window.screen.width,
-      deviceHeight = window.screen.height;
+    const host = window.location.host;
+    const page = window.location.pathname;
+    const language = navigator.language;
+    const deviceWidth = window.screen.width;
+    const deviceHeight = window.screen.height;
 
     var queryString = [
       'banner_id', bid.params.banner_id,
@@ -158,8 +158,8 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
     }, [])
     .sort((first, second) => {
       // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
       if (firstPriority > -1 || secondPriority > -1) {
         if (firstPriority === -1) {

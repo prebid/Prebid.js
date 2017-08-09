@@ -59,7 +59,10 @@ const AdKernelAdapter = function AdKernelAdapter() {
 
     function buildImp(bid) {
       const size = getBidSize(bid);
-      const imp = { 'id': bid.bidId, 'tagid': bid.placementCode};
+      const imp = {
+        'id': bid.bidId,
+        'tagid': bid.placementCode
+      };
 
       if (bid.mediaType === 'video') {
         imp.video = {w: size[0], h: size[1]};
@@ -292,11 +295,11 @@ const AdKernelAdapter = function AdKernelAdapter() {
     }
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AdKernelAdapter(), 'adkernel', {

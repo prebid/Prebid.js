@@ -214,11 +214,11 @@ AppNexusAdapter = function AppNexusAdapter() {
     }
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildJPTCall: buildJPTCall
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AppNexusAdapter(), 'appnexus');
