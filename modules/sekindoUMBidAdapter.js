@@ -1,4 +1,5 @@
 import { getBidRequest } from 'src/utils.js';
+import { config } from 'src/config';
 
 var CONSTANTS = require('src/constants.json');
 var utils = require('src/utils.js');
@@ -74,7 +75,7 @@ function SekindoUMAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '3');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', '$$PREBID_GLOBAL$$');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
-    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', $$PREBID_GLOBAL$$.bidderTimeout);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', config.getConfig('bidderTimeout'));
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
     adloader.loadScript(scriptSrc);
