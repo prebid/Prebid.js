@@ -425,12 +425,12 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
  * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
  * @example
  *  // Config example for Rubicon user sync
- *  $$PREBID_GLOBAL$$.rubiconGlobals = {
+ *  $$PREBID_GLOBAL$$.setConfig({ rubicon: {
  *    userSync: {
  *      enabled: true,
  *      delay: 1000
  *    }
- *  }
+ *  }});
  * @return {boolean} Whether or not Emily synced
  */
 function syncEmily(hasSynced) {
@@ -445,7 +445,9 @@ function syncEmily(hasSynced) {
   };
   const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
-  let publisherUserSyncConfig = $$PREBID_GLOBAL$$.rubiconGlobals && $$PREBID_GLOBAL$$.rubiconGlobals.userSync;
+  let rubiConfig = $$PREBID_GLOBAL$$.getConfig('rubicon');
+  let publisherUserSyncConfig = rubiConfig && rubiConfig.userSync;
+
   // Merge publisher user sync config with the defaults
   let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
 

@@ -859,6 +859,7 @@ describe('the rubicon adapter', () => {
     let addBidResponseAction;
     let rubiconAdapter;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    let origGetConfig = window.pbjs.getConfig;
 
     beforeEach(() => {
       bids = [];
@@ -923,12 +924,17 @@ describe('the rubicon adapter', () => {
     afterEach(() => {
       server.restore();
       window.setTimeout.restore();
+      window.pbjs.getConfig = origGetConfig;
     });
 
     it('should add the Emily iframe by default', (done) => {
-      window.pbjs.rubiconGlobals = {
-        userSync: {delay: 0} // Use 0 so we don't have to wait in our tests
-      };
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {delay: 0} // Use 0 so we don't have to wait in our tests
+        }};
+        return config[key];
+      });
+
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
 
@@ -940,9 +946,12 @@ describe('the rubicon adapter', () => {
     });
 
     it('should add the Emily iframe when enabled', (done) => {
-      window.pbjs.rubiconGlobals = {
-        userSync: {enabled: true, delay: 0}
-      };
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: true, delay: 0}
+        }};
+        return config[key];
+      });
       rubiconAdapter.callBids(bidderRequest);
 
       server.respond();
@@ -954,10 +963,14 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not fire more than once', (done) => {
-      window.pbjs.rubiconGlobals = {
-        userSync: {enabled: true, delay: 0}
-      };
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: true, delay: 0}
+        }};
+        return config[key];
+      });
       rubiconAdapter.callBids(bidderRequest);
+
       server.respond();
       // Fire again
       rubiconAdapter.callBids(bidderRequest);
@@ -971,9 +984,12 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not add the Emily iframe when disabled', (done) => {
-      window.pbjs.rubiconGlobals = {
-        userSync: {enabled: false, delay: 0}
-      };
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: false, delay: 0}
+        }};
+        return config[key];
+      });
       rubiconAdapter.callBids(bidderRequest);
 
       server.respond();
@@ -986,12 +1002,15 @@ describe('the rubicon adapter', () => {
     });
 
     it('should delay adding Emily based on config', () => {
-      window.pbjs.rubiconGlobals = {
-        userSync: {
-          enabled: true,
-          delay: 999
-        }
-      };
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {
+            enabled: true,
+            delay: 999
+          }
+        }};
+        return config[key];
+      });
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
       expect(window.setTimeout.getCall(0).args[1]).to.equal(999);
