@@ -168,7 +168,7 @@ export function newConfig() {
     listeners
       .filter(listener => TOPICS.includes(listener.topic))
       .forEach(listener => {
-        listener.callback({ [listener.topic]: options[listener.topic] });
+        listener.callback(options[listener.topic]);
       });
 
     // call subscribers that didn't give a topic, passing everything that was set

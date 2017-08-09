@@ -88,7 +88,7 @@ describe('config API', () => {
     setConfig({ logging: true, foo: 'bar' });
 
     sinon.assert.calledOnce(listener);
-    sinon.assert.calledWithExactly(listener, { logging: true });
+    sinon.assert.calledWithExactly(listener, true);
   });
 
   it('topic subscribers are only called when that topic is changed', () => {
