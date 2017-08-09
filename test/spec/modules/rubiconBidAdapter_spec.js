@@ -422,31 +422,34 @@ describe('the rubicon adapter', () => {
           delete window.DigiTrust;
         });
 
-        describe('pbjs.digiTrustId', () => {
-          var origPbjs;
+        describe('digiTrustId config', () => {
+          var origGetConfig;
           beforeEach(() => {
             window.DigiTrust = {
               getUser: sinon.spy()
             };
-            origPbjs = window.pbjs;
-            window.pbjs = window.pbjs || {}
+            origGetConfig = window.pbjs.getConfig;
           });
 
           afterEach(() => {
             delete window.DigiTrust;
-            delete window.pbjs.digiTrustId;
-            window.pbjs = origPbjs;
+            window.pbjs.getConfig = origGetConfig;
           });
 
-          it('should send pbjs.digitrustId params', () => {
-            window.pbjs.digiTrustId = {
-              success: true,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            };
+          it('should send digiTrustId config params', () => {
+            sinon.stub(window.pbjs, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: true,
+                  identity: {
+                    privacy: {optout: false},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
+              };
+              return config[key];
+            });
 
             rubiconAdapter.callBids(bidderRequest);
 
@@ -470,15 +473,20 @@ describe('the rubicon adapter', () => {
             expect(window.DigiTrust.getUser.notCalled).to.equal(true);
           });
 
-          it('should not send pbjs.digitrust params due to optout', () => {
-            window.pbjs.digiTrustId = {
-              success: true,
-              identity: {
-                privacy: {optout: true},
-                id: 'testId',
-                keyv: 'testKeyV'
+          it('should not send digiTrustId config params due to optout', () => {
+            sinon.stub(window.pbjs, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: true,
+                  identity: {
+                    privacy: {optout: true},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
               }
-            };
+              return config[key];
+            });
 
             rubiconAdapter.callBids(bidderRequest);
 
@@ -498,15 +506,20 @@ describe('the rubicon adapter', () => {
             expect(window.DigiTrust.getUser.notCalled).to.equal(true);
           });
 
-          it('should not send digitrust params due to failure', () => {
-            window.pbjs.digiTrustId = {
-              success: false,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
+          it('should not send digiTrustId config params due to failure', () => {
+            sinon.stub(window.pbjs, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: false,
+                  identity: {
+                    privacy: {optout: false},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
               }
-            };
+              return config[key];
+            });
 
             rubiconAdapter.callBids(bidderRequest);
 
@@ -524,6 +537,30 @@ describe('the rubicon adapter', () => {
 
             // should not have called DigiTrust.getUser()
             expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          });
+
+          it('should not send digiTrustId config params if they do not exist', () => {
+            sinon.stub(window.pbjs, 'getConfig', (key) => {
+              var config = {};
+              return config[key];
+            });
+
+            rubiconAdapter.callBids(bidderRequest);
+
+            let request = xhr.requests[0];
+
+            let query = request.url.split('?')[1];
+            query = parseQuery(query);
+
+            let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+            // Test that none of the DigiTrust keys are part of the query
+            undefinedKeys.forEach(key => {
+              expect(typeof query[key]).to.equal('undefined');
+            });
+
+            // should have called DigiTrust.getUser() once
+            expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
           });
         });
       });
