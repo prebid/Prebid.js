@@ -188,10 +188,10 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     bidmanager.addBidResponse(placement, bid);
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');

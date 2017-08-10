@@ -372,10 +372,10 @@ function AppnexusAstAdapter() {
     return bid;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {

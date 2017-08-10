@@ -217,11 +217,86 @@ AppNexusAdapter = function AppNexusAdapter() {
     return jptCall;
   }
 
-  return {
+  // expose the callback to the global object:
+  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
+    var bidCode;
+
+    if (jptResponseObj && jptResponseObj.callback_uid) {
+      var responseCPM;
+      var id = jptResponseObj.callback_uid;
+      var placementCode = '';
+      var bidObj = getBidRequest(id);
+      if (bidObj) {
+        bidCode = bidObj.bidder;
+
+        placementCode = bidObj.placementCode;
+
+        // set the status
+        bidObj.status = CONSTANTS.STATUS.GOOD;
+      }
+
+      // @if NODE_ENV='debug'
+      utils.logMessage('JSONP callback function called for ad ID: ' + id);
+
+      // @endif
+      var bid = [];
+      if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
+        responseCPM = parseInt(jptResponseObj.result.cpm, 10);
+
+        // CPM response from /jpt is dollar/cent multiplied by 10000
+        // in order to avoid using floats
+        // switch CPM to "dollar/cent"
+        responseCPM = responseCPM / 10000;
+
+        // store bid response
+        // bid status is good (indicating 1)
+        var adId = jptResponseObj.result.creative_id;
+        bid = bidfactory.createBid(1, bidObj);
+        bid.creative_id = adId;
+        bid.bidderCode = bidCode;
+        bid.cpm = responseCPM;
+        bid.adUrl = jptResponseObj.result.ad;
+        bid.width = jptResponseObj.result.width;
+        bid.height = jptResponseObj.result.height;
+        bid.dealId = jptResponseObj.result.deal_id;
+
+        bidmanager.addBidResponse(placementCode, bid);
+      } else {
+        // no response data
+        // @if NODE_ENV='debug'
+        utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
+
+        // @endif
+        // indicate that there is no bid for this placement
+        bid = bidfactory.createBid(2, bidObj);
+        bid.bidderCode = bidCode;
+        bidmanager.addBidResponse(placementCode, bid);
+      }
+
+      if (!usersync) {
+        var iframe = utils.createInvisibleIframe();
+        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
+      }
+    } else {
+      // no response data
+      // @if NODE_ENV='debug'
+      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
+
+      // @endif
+    }
+  };
+
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildJPTCall: buildJPTCall
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AppNexusAdapter(), 'appnexus');

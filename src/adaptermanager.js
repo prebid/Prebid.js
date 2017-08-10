@@ -257,7 +257,9 @@ exports.enableAnalytics = function (config) {
 };
 
 exports.setBidderSequence = function (order) {
-  _bidderSequence = order;
+  if (order === CONSTANTS.ORDER.RANDOM) {
+    _bidderSequence = order;
+  }
 };
 
 exports.setS2SConfig = function (config) {

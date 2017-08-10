@@ -11,9 +11,11 @@ import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
+import { config } from './config';
 import { auctionManager } from './auctionManager';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
+
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
@@ -41,12 +43,11 @@ $$PREBID_GLOBAL$$._bidsReceived = [];
 $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
-$$PREBID_GLOBAL$$._sendAllBids = false;
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-// default timeout for all bids
-$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout || 3000;
+/** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> }) */
+$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
 
 // current timeout set in `requestBids` or to default `bidderTimeout`
 $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
@@ -54,10 +55,11 @@ $$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 // timeout buffer to adjust for bidder CDN latency
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
-$$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging || false;
+/** @deprecated - use pbjs.setConfig({ debug: <true|false> }) */
+$$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging;
 
-// domain where prebid is running for cross domain iframe communication
-$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain || window.location.origin;
+/** @deprecated - use pbjs.setConfig({ publisherDomain: <domain> ) */
+$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -69,8 +71,8 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-// delay to request cookie sync to stay out of critical path
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
+/** @deprecated - use pbjs.setConfig({ cookieSyncDelay: <domain> ) */
+$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
 
 function checkDefinedPlacement(id) {
   var placementCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -306,7 +308,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncCookies($$PREBID_GLOBAL$$.cookieSyncDelay);
+  syncCookies(config.getConfig('cookieSyncDelay'));
   utils.logMessage('Prebid auction cleared');
 };
 
@@ -319,7 +321,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
-  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || $$PREBID_GLOBAL$$.bidderTimeout;
+  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -519,6 +521,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 /**
  * Sets a default price granularity scheme.
  * @param {String|Object} granularity - the granularity scheme.
+ * @deprecated - use pbjs.setConfig({ priceGranularity: <granularity> })
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
  * "high": $0.01 increments, capped at $20 CPM
@@ -549,8 +552,9 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   }
 };
 
+/** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
 $$PREBID_GLOBAL$$.enableSendAllBids = function () {
-  $$PREBID_GLOBAL$$._sendAllBids = true;
+  config.setConfig({ enableSendAllBids: true });
 };
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
@@ -595,11 +599,10 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * the order they are defined within the adUnit.bids array
  * @param {string} order - Order to call bidders in. Currently the only possible value
  * is 'random', which randomly shuffles the order
+ * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
 $$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  if (order === CONSTANTS.ORDER.RANDOM) {
-    adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
-  }
+  adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
 };
 
 /**
@@ -614,6 +617,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
 
 /**
  * Set config for server to server header bidding
+ * @deprecated - use pbjs.setConfig({ s2sConfig: <options> })
  * @typedef {Object} options - required
  * @property {boolean} enabled enables S2S bidding
  * @property {string[]} bidders bidders to request S2S
@@ -647,6 +651,18 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }, options);
   adaptermanager.setS2SConfig(config);
 };
+
+/**
+ * Get Prebid config options
+ * @param {object} options
+ */
+$$PREBID_GLOBAL$$.getConfig = config.getConfig;
+
+/**
+ * Set Prebid config options
+ * @param {object} options
+ */
+$$PREBID_GLOBAL$$.setConfig = config.setConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

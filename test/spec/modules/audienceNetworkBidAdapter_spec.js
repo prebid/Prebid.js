@@ -28,7 +28,7 @@ const expectToContain = (haystack, needle, n = 1) =>
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
-    const adapter = AudienceNetwork();
+    const adapter = new AudienceNetwork();
     it('getBidderCode', () => {
       expect(adapter.getBidderCode).to.be.a('function');
       expect(adapter.getBidderCode()).to.equal(bidderCode);
@@ -71,7 +71,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify no attempt to add a response as no placement was provided
@@ -91,7 +91,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify attempt to log error
@@ -109,7 +109,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -136,7 +136,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -163,7 +163,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -189,7 +189,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -215,7 +215,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -253,7 +253,7 @@ describe('AudienceNetwork adapter', () => {
         errors: [error]
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -287,7 +287,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -339,7 +339,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -383,7 +383,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -439,7 +439,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -499,7 +499,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -562,7 +562,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
