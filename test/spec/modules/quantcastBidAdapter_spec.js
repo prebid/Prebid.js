@@ -110,6 +110,48 @@ describe('quantcast adapter', () => {
     });
   });
 
+  describe('multiple requests', () => {
+    let bidderRequest = {
+      bidderCode: 'quantcast',
+      requestId: '595ffa73-d78a-46c9-b18e-f99548a5be6b',
+      bidderRequestId: '1cc026909c24c8',
+      bids: [
+        {
+          bidId: '2f7b179d443f14',
+          bidder: 'quantcast',
+          placementCode: 'div-gpt-ad-1438287399331-0',
+          sizes: [[300, 250]],
+          params: {
+            publisherId: 'test-publisher',
+            battr: [1, 2],
+          }
+        }, {
+          bidId: '2f7b179d443f15',
+          bidder: 'quantcast',
+          placementCode: 'div-gpt-ad-1438287399331-1',
+          sizes: [[300, 600]],
+          params: {
+            publisherId: 'test-publisher',
+            battr: [1, 2],
+          }
+        }
+      ]
+    };
+
+    it('request is fired twice for two bids', () => {
+      adapter.callBids(bidderRequest);
+      sinon.assert.calledTwice(ajaxStub);
+
+      let firstReq = JSON.parse(ajaxStub.firstCall.args[2]);
+      expect(firstReq.requestId).to.eql('2f7b179d443f14');
+      expect(firstReq.imp[0].placementCode).to.eql('div-gpt-ad-1438287399331-0');
+
+      let secondReq = JSON.parse(ajaxStub.secondCall.args[2]);
+      expect(secondReq.requestId).to.eql('2f7b179d443f15');
+      expect(secondReq.imp[0].placementCode).to.eql('div-gpt-ad-1438287399331-1');
+    });
+  });
+
   describe('handleQuantcastCB add bids to the manager', () => {
     let firstBid;
     let addBidReponseStub;

@@ -1,3 +1,4 @@
+import { config } from 'src/config';
 const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
 const adloader = require('src/adloader');
@@ -39,7 +40,7 @@ const OpenxAdapter = function OpenxAdapter() {
       let beaconParams = {
         bd: +(new Date()) - startTime,
         br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout, // For the timeout per bid request
+        bt: $$PREBID_GLOBAL$$.cbTimeout || config.getConfig('bidderTimeout'), // For the timeout per bid request
         bs: window.location.hostname
       };
 

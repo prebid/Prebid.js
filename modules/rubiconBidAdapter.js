@@ -378,7 +378,7 @@ function RubiconAdapter() {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return Object.assign(baseAdapter, {
+  return Object.assign(this, baseAdapter, {
     callBids: _callBids
   });
 }

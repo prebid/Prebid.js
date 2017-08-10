@@ -324,7 +324,7 @@ const AolAdapter = function AolAdapter() {
     });
   }
 
-  return Object.assign(new BaseAdapter(AOL_BIDDERS_CODES.aol), {
+  return Object.assign(this, new BaseAdapter(AOL_BIDDERS_CODES.aol), {
     callBids: _callBids
   });
 };

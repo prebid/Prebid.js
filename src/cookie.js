@@ -1,7 +1,7 @@
-const cookie = exports;
 import * as utils from './utils';
 import adLoader from './adloader';
 
+const cookie = exports;
 const queue = [];
 
 function fireSyncs() {

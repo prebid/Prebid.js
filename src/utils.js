@@ -1,3 +1,4 @@
+import { config } from './config';
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -211,12 +212,13 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
-    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if (config.getConfig('debug') === false && _loggingChecked === false) {
+    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    config.setConfig({ debug });
     _loggingChecked = true;
   }
 
-  return !!$$PREBID_GLOBAL$$.logging;
+  return !!config.getConfig('debug');
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -260,6 +262,8 @@ var getParameterByName = function (name) {
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
+
+exports.getParameterByName = getParameterByName;
 
 /**
  * This function validates paramaters.

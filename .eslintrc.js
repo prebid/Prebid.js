@@ -21,9 +21,7 @@ module.exports = {
     // See Issue #1111.
     "camelcase": "off",
     "eqeqeq": "off",
-    "import/first": "off",
     "no-control-regex": "off",
-    "no-redeclare": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
