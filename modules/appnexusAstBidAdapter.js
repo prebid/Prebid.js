@@ -222,8 +222,6 @@ function AppnexusAstAdapter() {
     }
   };
 
-
-
   /* Check that a bid has required paramters */
   function valid(bid) {
     if (bid.params.placementId || (bid.params.member && bid.params.invCode)) {

@@ -1,4 +1,3 @@
-import { getBidRequest } from 'src/utils';
 import adaptermanager from 'src/adaptermanager';
 
 var CONSTANTS = require('src/constants');
@@ -217,8 +216,6 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     return jptCall;
   }
-
-
 
   return {
     callBids: baseAdapter.callBids,
