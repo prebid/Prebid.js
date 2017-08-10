@@ -319,12 +319,13 @@ export function newAuctionManager() {
 
     this.done = function() {
       var count = 0;
+      var auctionObj = this;
       return function() {
         count++
-        if (count === this.getBidderRequests().length) {
+        if (count === auctionObj.getBidderRequests().length) {
           // when all bidders have called done callback it means auction is complete
-          this.setAuctionStatus(AUCTION_COMPLETED);
-          this.executeCallback(false, true);
+          auctionObj.setAuctionStatus(AUCTION_COMPLETED);
+          auctionObj.executeCallback(false, true);
         }
       }
     }
@@ -439,8 +440,7 @@ export function newAuctionManager() {
       bidRequests.forEach(bidRequest => {
         this.setBidderRequests(bidRequest);
       });
-      let done = this.done();
-      let doneCb = done.bind(this);
+      let doneCb = this.done();
       this.setAuctionStatus(AUCTION_IN_PROGRESS);
       adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, doneCb);
     };
