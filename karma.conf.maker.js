@@ -109,11 +109,17 @@ module.exports = function(codeCoverage, browserstack, watchMode) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
+    // TODO: This will be removed once we decide about modules
+    exclude: [
+      'test/spec/modules/*.js',
+      'test/**/bidmanager_spec.js'
+    ],
+
     // list of files / patterns to load in the browser
     files: [
       'test/helpers/prebidGlobal.js',
       'test/**/*_spec.js',
-      'test/helpers/karma-init.js'
+      'test/helpers/karma-init.js',
     ],
 
     // preprocess matching files before serving them to the browser
