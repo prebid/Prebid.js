@@ -3,6 +3,7 @@ import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
+import { config } from 'src/config';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -224,15 +225,20 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
   function tryAddVideoBid(bid) {
-    store([bid], function(error, cacheIds) {
-      if (error) {
-        utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-      } else {
-        bid.videoCacheKey = cacheIds[0].uuid;
-        addBidToAuction(bid);
-      }
+    if (config.getConfig('usePrebidCache')) {
+      store([bid], function(error, cacheIds) {
+        if (error) {
+          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+        } else {
+          bid.videoCacheKey = cacheIds[0].uuid;
+          addBidToAuction(bid);
+        }
+        doCallbacksIfNeeded();
+      });
+    } else {
+      addBidToAuction(bid);
       doCallbacksIfNeeded();
-    });
+    }
   }
 };
 
