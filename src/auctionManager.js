@@ -29,6 +29,11 @@ export function newAuctionManager() {
     _customPriceBucket = customConfig;
   };
 
+  _public.getBidsRequested = function() {
+    return _auctions.map(auction => auction.getBidderRequests())
+      .reduce(flatten, []);
+  };
+
   _public.getBidsReceived = function() {
     return _auctions.map(auction => auction.getBidsReceived())
       .reduce(flatten, []);
@@ -202,11 +207,13 @@ export function newAuctionManager() {
 
   _public.executeCallback = function(timedOut) {
     // TODO clear timer, below will also work in all scenario's since i am setting auction callbacks to noop.
+
     function callAuctionCallback(auction) {
       let callback = auction.getCallback();
       callback.apply($$PREBID_GLOBAL$$);
       // set auction callback to noop
       auction.setCallback(function() {});
+      $$PREBID_GLOBAL$$.clearAuction();
     }
 
     if (timedOut) {
@@ -220,6 +227,7 @@ export function newAuctionManager() {
     _auctions.filter(auction => auction.getAuctionStatus() === CONSTANTS.AUCTION.STATUS.COMPLETED)
       .forEach(auction => {
         callAuctionCallback(auction);
+        events.emit(AUCTION_END);
       });
   }
 
@@ -351,7 +359,7 @@ export function newAuctionManager() {
 
       function doCallbacksIfNeeded() {
         if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-          executeCallback();
+          _public.executeCallback();
         }
       }
 
