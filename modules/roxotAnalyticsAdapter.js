@@ -11,11 +11,8 @@ const analyticsType = 'endpoint';
 let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
 let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
 let bidWonConst = CONSTANTS.EVENTS.BID_WON;
-let bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
-let bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
-let bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
 
-let initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
+let initOptions = {publisherIds: [], utmMarks: []};
 let bidWon = {options: {}, events: []};
 let eventStack = {options: {}, events: []};
 
@@ -87,23 +84,9 @@ function checkOptions() {
   return initOptions.publisherIds.length > 0;
 }
 
-function checkAdUnitConfig() {
-  if (typeof initOptions.adUnits === 'undefined') {
-    return false;
-  }
-
-  return initOptions.adUnits.length > 0;
-}
-
 function buildBidWon(eventType, args) {
   bidWon.options = initOptions;
-  if (checkAdUnitConfig()) {
-    if (initOptions.adUnits.includes(args.adUnitCode)) {
-      bidWon.events = [{ args: args, eventType: eventType }];
-    }
-  } else {
-    bidWon.events = [{ args: args, eventType: eventType }];
-  }
+  bidWon.events = [{args: args, eventType: eventType}];
 }
 
 function buildEventStack() {
@@ -125,59 +108,11 @@ function send(eventType, data, sendDataType) {
 }
 
 function pushEvent(eventType, args) {
-  if (eventType === bidRequestConst) {
-    if (checkAdUnitConfig()) {
-      args.bids = filterBidsByAdUnit(args.bids);
-    }
-    if (args.bids.length > 0) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  } else {
-    if (isValidEvent(eventType, args.adUnitCode)) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  }
+  eventStack.events.push({eventType, args});
 }
 
-function filterBidsByAdUnit(bids) {
-  var filteredBids = [];
-  bids.forEach(function (bid) {
-    if (initOptions.adUnits.includes(bid.placementCode)) {
-      filteredBids.push(bid);
-    }
-  });
-  return filteredBids;
-}
-
-function isValidEvent(eventType, adUnitCode) {
-  if (checkAdUnitConfig()) {
-    let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWon];
-    if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isValidEventStack() {
-  if (eventStack.events.length > 0) {
-    return eventStack.events.some(function(event) {
-      return bidRequestConst === event.eventType || bidWon === event.eventType;
-    });
-  }
-  return false;
-}
-
-function isValidBidWon() {
-  return bidWon.events.length > 0;
-}
-
-function flushEventStack() {
+function flushEvents() {
   eventStack.events = [];
-}
-
-function flushBidWon() {
-  bidWon.events = [];
 }
 
 let roxotAdapter = Object.assign(adapter({url, analyticsType}),
@@ -195,24 +130,19 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
 
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
-        flushEventStack();
+        flushEvents();
       }
 
-      if (eventType === bidWonConst && auctionStatus === 'not_started') {
+      if ((eventType === bidWonConst) && auctionStatus === 'not_started') {
         buildBidWon(eventType, info);
-        if (isValidBidWon()) {
-          send(eventType, bidWon, 'bidWon');
-        }
-        flushBidWon();
+        send(eventType, bidWon, 'bidWon');
         return;
       }
 
       if (eventType === auctionEndConst) {
         buildEventStack(eventType);
-        if (isValidEventStack()) {
-          send(eventType, eventStack, 'eventStack');
-        }
-        flushEventStack();
+        send(eventType, eventStack, 'eventStack');
+        flushEvents();
         auctionStatus = 'not_started';
       } else {
         pushEvent(eventType, info);
