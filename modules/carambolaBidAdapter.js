@@ -89,7 +89,7 @@ function CarambolaAdapter() {
         }
       }
 
-      let server = bid.params.server || 'hb.route.carambo.la';
+      let server = bid.params.server || 'hb.carambo.la';
       let cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
       //  the responses of the bid requests

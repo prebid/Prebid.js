@@ -30,7 +30,9 @@ before(() => {
               ajax('//bidder.criteo.com/cdb', callbacks)
             }
           }
-        }
+        },
+
+        Size: function Size(width, height) { return {width: width, height: height} }
       }
     }
   };

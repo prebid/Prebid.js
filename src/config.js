@@ -17,6 +17,14 @@ const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
 
 const ALL_TOPICS = '*';
 
+/**
+ * @typedef {object} PrebidConfig
+ *
+ * @property {bool} usePrebidCache True if we should use prebid-cache to store video bids before adding
+ *   bids to the auction, and false otherwise. **NOTE** This must be true if you want to use the
+ *   dfpAdServerVideo module.
+ */
+
 export function newConfig() {
   let listeners = [];
 
@@ -82,6 +90,7 @@ export function newConfig() {
     set s2sConfig(val) {
       $$PREBID_GLOBAL$$.setS2SConfig(val);
     },
+
   };
 
   /*
