@@ -28,7 +28,6 @@ var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
 var auctionRunning = false;
-var bidRequestQueue = [];
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
@@ -74,7 +73,7 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay || 100;
 
 function checkDefinedPlacement(id) {
-  var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+  var placementCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.placementCode))
     .reduce(flatten)
     .filter(uniques);
 
@@ -309,9 +308,6 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
   syncCookies($$PREBID_GLOBAL$$.cookieSyncDelay);
   utils.logMessage('Prebid auction cleared');
-  if (bidRequestQueue.length) {
-    bidRequestQueue.shift()();
-  }
 };
 
 /**
@@ -475,19 +471,6 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
-};
-
-$$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.bidsAvailableForAdapter', arguments);
-
-  $$PREBID_GLOBAL$$._bidsRequested.find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
-    .map(bid => {
-      return Object.assign(bid, bidfactory.createBid(1), {
-        bidderCode,
-        adUnitCode: bid.placementCode
-      });
-    })
-    .map(bid => $$PREBID_GLOBAL$$._bidsReceived.push(bid));
 };
 
 /**
