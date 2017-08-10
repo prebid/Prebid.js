@@ -2,30 +2,37 @@ describe('Pollux Bid Adapter tests', function () {
   var expect = require('chai').expect;
   var urlParse = require('url-parse');
   var querystringify = require('querystringify');
-  var adapter = require('modules/polluxBidAdapter');
+  var Adapter = require('modules/polluxBidAdapter');
   var adLoader = require('src/adloader');
   var bidmanager = require('src/bidmanager');
+  var utils = require('src/utils');
 
   var stubLoadScript;
+  var stubAddBidResponse;
+  var polluxAdapter;
+
+  // mock golbal _bidsRequested var
+  var bidsRequested = [];
+  utils.getBidRequest = function (id) {
+    return bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+  };
 
   beforeEach(function () {
+    polluxAdapter = new Adapter();
+    bidsRequested = [];
     stubLoadScript = sinon.stub(adLoader, 'loadScript');
+    stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
   });
 
   afterEach(function () {
     stubLoadScript.restore();
+    stubAddBidResponse.restore();
   });
 
   describe('creation of bid url', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-
     it('bid request for single placement', function () {
       var params = {
+        bidderCode: 'pollux',
         bids: [{
           placementCode: 'div-gpt-ad-1460505661639-0',
           bidId: '21fe992ca48d55',
@@ -35,7 +42,7 @@ describe('Pollux Bid Adapter tests', function () {
         }]
       };
 
-      adapter().callBids(params);
+      polluxAdapter.callBids(params);
 
       var bidUrl = stubLoadScript.getCall(0).args[0];
 
@@ -51,9 +58,8 @@ describe('Pollux Bid Adapter tests', function () {
 
   describe('handling bid response', function () {
     it('should return complete bid response adUrl', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
       var params = {
+        bidderCode: 'pollux',
         bids: [{
           placementCode: 'div-gpt-ad-1460505661639-0',
           sizes: [[300, 250]],
@@ -73,23 +79,11 @@ describe('Pollux Bid Adapter tests', function () {
         zone: 1806
       };
 
-      adapter().callBids(params);
-      var adUnits = [];
-      var unit = {};
-      unit.bids = params.bids;
-      unit.code = 'div-gpt-ad-1460505661639-0';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
+      polluxAdapter.callBids(params);
+      bidsRequested.push(params);
+      polluxAdapter.polluxHandler(response);
 
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.polluxHandler(response);
+      sinon.assert.calledOnce(stubAddBidResponse);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -100,14 +94,11 @@ describe('Pollux Bid Adapter tests', function () {
       expect(bidObject1.width).to.equal(300);
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.adUrl).to.have.length.above(1);
-
-      stubAddBidResponse.restore();
     });
 
     it('should return complete bid response ad (html)', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
       var params = {
+        bidderCode: 'pollux',
         bids: [{
           placementCode: 'div-gpt-ad-1460505661639-0',
           sizes: [[300, 250]],
@@ -127,23 +118,11 @@ describe('Pollux Bid Adapter tests', function () {
         zone: 1806
       };
 
-      adapter().callBids(params);
-      var adUnits = [];
-      var unit = {};
-      unit.bids = params.bids;
-      unit.code = 'div-gpt-ad-1460505661639-0';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
+      polluxAdapter.callBids(params);
+      bidsRequested.push(params);
+      polluxAdapter.polluxHandler(response);
 
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.polluxHandler(response);
+      sinon.assert.calledOnce(stubAddBidResponse);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -154,14 +133,11 @@ describe('Pollux Bid Adapter tests', function () {
       expect(bidObject1.width).to.equal(300);
       expect(bidObject1.height).to.equal(250);
       expect(bidObject1.ad).to.have.length.above(1);
-
-      stubAddBidResponse.restore();
     });
 
     it('should return no bid response', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
       var params = {
+        bidderCode: 'pollux',
         bids: [{
           placementCode: 'div-gpt-ad-1460505661639-0',
           sizes: [[300, 250]],
@@ -180,31 +156,17 @@ describe('Pollux Bid Adapter tests', function () {
         zone: null
       };
 
-      adapter().callBids(params);
+      polluxAdapter.callBids(params);
+      bidsRequested.push(params);
+      polluxAdapter.polluxHandler(response);
 
-      var adUnits = [];
-      var unit = {};
-      unit.bids = params.bids;
-      unit.code = 'div-gpt-ad-1460505661639-0';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
+      sinon.assert.calledOnce(stubAddBidResponse);
 
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.polluxHandler(response);
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
 
       expect(bidPlacementCode1).to.equal('');
       expect(bidObject1.bidderCode).to.equal('pollux');
-
-      stubAddBidResponse.restore();
     });
   });
 });

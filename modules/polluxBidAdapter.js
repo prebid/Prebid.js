@@ -57,7 +57,7 @@ function PolluxBidAdapter() {
   }
 
   // expose the callback to global object
-  $$PREBID_GLOBAL$$.polluxHandler = function (response) {
+  function _polluxHandler (response) {
     // pollux handler
     var bidObject = {};
     var callback_id = response.callback_id;
@@ -85,10 +85,12 @@ function PolluxBidAdapter() {
     }
     bidmanager.addBidResponse(placementCode, bidObject);
   };
+  $$PREBID_GLOBAL$$.polluxHandler = _polluxHandler;
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
   return {
-    callBids: _callBids
+    callBids: _callBids,
+    polluxHandler: _polluxHandler
   };
 };
 adaptermanager.registerBidAdapter(new PolluxBidAdapter(), 'pollux');
