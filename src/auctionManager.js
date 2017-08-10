@@ -6,6 +6,10 @@ const utils = require('./utils');
 const events = require('./events');
 const CONSTANTS = require('./constants.json');
 
+const AUCTION_STARTED = 'started';
+const AUCTION_IN_PROGRESS = 'inProgress';
+const AUCTION_COMPLETED = 'completed';
+
 // register event for bid adjustment
 events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   auctionManager.adjustBids(bid);
@@ -319,7 +323,7 @@ export function newAuctionManager() {
         count++
         if (count === this.getBidderRequests().length) {
           // when all bidders have called done callback it means auction is complete
-          this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.COMPLETED);
+          this.setAuctionStatus(AUCTION_COMPLETED);
           this.executeCallback(false, true);
         }
       }
@@ -420,7 +424,7 @@ export function newAuctionManager() {
     }
 
     this.callBids = (cbTimeout) => {
-      this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.STARTED);
+      this.setAuctionStatus(AUCTION_STARTED);
       this.setAuctionId(utils.generateUUID());
       this.setAuctionStart(Date.now());
 
@@ -437,7 +441,7 @@ export function newAuctionManager() {
       });
       let done = this.done();
       let doneCb = done.bind(this);
-      this.setAuctionStatus(CONSTANTS.AUCTION.STATUS.IN_PROGRESS);
+      this.setAuctionStatus(AUCTION_IN_PROGRESS);
       adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, doneCb);
     };
   }
