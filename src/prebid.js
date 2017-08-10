@@ -29,8 +29,6 @@ var targeting = require('./targeting.js');
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
-var auctionRunning = false;
-
 var eventValidators = {
   bidWon: checkDefinedPlacement
 };
@@ -307,7 +305,6 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 };
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
-  auctionRunning = false;
   syncCookies(config.getConfig('cookieSyncDelay'));
   utils.logMessage('Prebid auction cleared');
 };
@@ -358,7 +355,13 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     utils.logMessage('No adUnits configured. No bids requested.');
     if (typeof bidsBackHandler === 'function') {
       // executeCallback, this will only be called in case of first request
-      bidsBackHandler();
+      try {
+        bidsBackHandler();
+      } catch (e) {
+        utils.logError('Error executing bidsBackHandler', null, e);
+      } finally {
+        $$PREBID_GLOBAL$$.clearAuction();
+      }
     }
     return;
   }
@@ -368,14 +371,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   auction.setAdUnitCodes(adUnitCodes);
 
   if (typeof bidsBackHandler === 'function') {
-    auction.setCallback(bidsBackHandler);
-  }
-  // set timeout for all bids
-  const timedOut = true;
-  const timeoutCallback = auctionManager.executeCallback.bind(null, timedOut);
-  if (!auctionRunning) {
-    setTimeout(timeoutCallback, cbTimeout);
-    auctionRunning = true;
+    auction.startAuctionTimer(bidsBackHandler, cbTimeout);
   }
   auction.callBids(cbTimeout);
   setAjaxTimeout(cbTimeout);

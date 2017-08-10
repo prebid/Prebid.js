@@ -708,7 +708,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       it('should execute callback after timeout', () => {
-        var spyExecuteCallback = sinon.spy(auctionManager, 'executeCallback');
+        var spyExecuteCallback = sinon.spy(auction, 'executeCallback');
         var clock = sinon.useFakeTimers();
         var requestObj = {
           bidsBackHandler: function bidsBackHandlerCallback() {},
@@ -719,12 +719,12 @@ describe('Unit: Prebid Module', function () {
         $$PREBID_GLOBAL$$.requestBids(requestObj);
 
         clock.tick(requestObj.timeout - 1);
-        assert.ok(spyExecuteCallback.notCalled, 'bidmanager.executeCallback not called');
+        assert.ok(spyExecuteCallback.notCalled, 'auction.executeCallback not called');
 
         clock.tick(1);
-        assert.ok(spyExecuteCallback.called, 'called bidmanager.executeCallback');
+        assert.ok(spyExecuteCallback.called, 'called auction.executeCallback');
 
-        auctionManager.executeCallback.restore();
+        auction.executeCallback.restore();
         clock.restore();
       });
 
@@ -741,7 +741,7 @@ describe('Unit: Prebid Module', function () {
           ' empty');
       });
 
-      it.skip('should not propagate exceptions from bidsBackHandler', () => {
+      it('should not propagate exceptions from bidsBackHandler', () => {
         $$PREBID_GLOBAL$$.adUnits = [];
 
         var requestObj = {
