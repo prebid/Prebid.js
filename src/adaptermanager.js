@@ -141,7 +141,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
 
 exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   let serverBidRequests = bidRequests.filter(bidRequest => {
-    return bidRequest.tid;
+    return bidRequest.src && bidRequest.src === CONSTANTS.S2S.SRC;
   });
 
   if (serverBidRequests.length) {
