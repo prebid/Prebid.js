@@ -1026,6 +1026,170 @@ describe('the rubicon adapter', () => {
       });
     });
   });
+
+  describe('user sync', () => {
+    let bids;
+    let server;
+    let addBidResponseAction;
+    let rubiconAdapter;
+    const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    let origGetConfig = window.pbjs.getConfig;
+
+    beforeEach(() => {
+      bids = [];
+
+      server = sinon.fakeServer.create();
+
+      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
+        bids.push(bid);
+        if (addBidResponseAction) {
+          addBidResponseAction();
+          addBidResponseAction = undefined;
+        }
+      });
+
+      sinon.spy(window, 'setTimeout');
+
+      server.respondWith(JSON.stringify({
+        'status': 'ok',
+        'account_id': 14062,
+        'site_id': 70608,
+        'zone_id': 530022,
+        'size_id': 15,
+        'alt_size_ids': [
+          43
+        ],
+        'tracking': '',
+        'inventory': {},
+        'ads': [
+          {
+            'status': 'ok',
+            'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+            'size_id': '15',
+            'ad_id': '6',
+            'advertiser': 7,
+            'network': 8,
+            'creative_id': 9,
+            'type': 'script',
+            'script': 'alert(\'foo\')',
+            'campaign_id': 10,
+            'cpm': 0.811,
+            'targeting': [
+              {
+                'key': 'rpfl_14062',
+                'values': [
+                  '15_tier_all_test'
+                ]
+              }
+            ]
+          }
+        ]
+      }));
+
+      // Remove all Emily iframes for a fresh start
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      for (let i = 0; i < iframes.length; i += 1) {
+        iframes[i].outerHTML = '';
+      }
+
+      rubiconAdapter = new RubiconAdapter();
+    });
+
+    afterEach(() => {
+      server.restore();
+      window.setTimeout.restore();
+      window.pbjs.getConfig = origGetConfig;
+    });
+
+    it('should add the Emily iframe by default', (done) => {
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {delay: 0} // Use 0 so we don't have to wait in our tests
+        }};
+        return config[key];
+      });
+
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+
+      setTimeout(() => {
+        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+        expect(iframes.length).to.equal(1);
+        done();
+      }, 0);
+    });
+
+    it('should add the Emily iframe when enabled', (done) => {
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: true, delay: 0}
+        }};
+        return config[key];
+      });
+      rubiconAdapter.callBids(bidderRequest);
+
+      server.respond();
+      setTimeout(() => {
+        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+        expect(iframes.length).to.equal(1);
+        done();
+      }, 0);
+    });
+
+    it('should not fire more than once', (done) => {
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: true, delay: 0}
+        }};
+        return config[key];
+      });
+      rubiconAdapter.callBids(bidderRequest);
+
+      server.respond();
+      // Fire again
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+
+      setTimeout(() => {
+        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+        expect(iframes.length).to.equal(1);
+        done();
+      }, 0);
+    });
+
+    it('should not add the Emily iframe when disabled', (done) => {
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: false, delay: 0}
+        }};
+        return config[key];
+      });
+      rubiconAdapter.callBids(bidderRequest);
+
+      server.respond();
+
+      setTimeout(() => {
+        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+        expect(iframes.length).to.equal(0);
+        done();
+      }, 0);
+    });
+
+    it('should delay adding Emily based on config', () => {
+      sinon.stub(window.pbjs, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {
+            enabled: true,
+            delay: 999
+          }
+        }};
+        return config[key];
+      });
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(window.setTimeout.getCall(0).args[1]).to.equal(999);
+    });
+  });
 });
 
 function clone(obj) {

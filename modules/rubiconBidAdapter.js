@@ -74,6 +74,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
   var baseAdapter = new Adapter(RUBICON_BIDDER_CODE);
+  var hasUserSyncFired = false;
 
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
@@ -373,6 +374,8 @@ function RubiconAdapter() {
         utils.logError('Error from addBidResponse', null, err);
       }
     });
+    // Run the Emily user sync
+    hasUserSyncFired = syncEmily(hasUserSyncFired);
   }
 
   function _adCpmSort(adA, adB) {
@@ -415,6 +418,49 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
       return first - second;
     });
 };
+
+/**
+ * syncEmily
+ * @summary A user sync dependency for the Rubicon Project adapter
+ * When enabled, creates an user sync iframe after a delay once the first auction is complete.
+ * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
+ * @example
+ *  // Config example for Rubicon user sync
+ *  $$PREBID_GLOBAL$$.setConfig({ rubicon: {
+ *    userSync: {
+ *      enabled: true,
+ *      delay: 1000
+ *    }
+ *  }});
+ * @return {boolean} Whether or not Emily synced
+ */
+function syncEmily(hasSynced) {
+  // Check that it has not already been triggered - only meant to fire once
+  if (hasSynced) {
+    return true;
+  }
+
+  const defaultUserSyncConfig = {
+    enabled: true,
+    delay: 5000
+  };
+  const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+
+  let rubiConfig = $$PREBID_GLOBAL$$.getConfig('rubicon');
+  let publisherUserSyncConfig = rubiConfig && rubiConfig.userSync;
+
+  // Merge publisher user sync config with the defaults
+  let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
+
+  // Check that user sync is enabled
+  if (!userSyncConfig.enabled) {
+    return false;
+  }
+
+  // Delay inserting the Emily iframe
+  setTimeout(() => utils.insertCookieSyncIframe(iframeUrl), Number(userSyncConfig.delay));
+  return true;
+}
 
 adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
   supportedMediaTypes: ['video']
