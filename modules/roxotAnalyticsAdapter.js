@@ -172,8 +172,12 @@ function isValidBidWon() {
   return bidWon.events.length > 0;
 }
 
-function flushEvents() {
+function flushEventStack() {
   eventStack.events = [];
+}
+
+function flushBidWon() {
+  bidWon.events = [];
 }
 
 let roxotAdapter = Object.assign(adapter({url, analyticsType}),
@@ -191,7 +195,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
 
       if (eventType === auctionInitConst) {
         auctionStatus = 'started';
-        flushEvents();
+        flushEventStack();
       }
 
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
@@ -199,6 +203,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidBidWon()) {
           send(eventType, bidWon, 'bidWon');
         }
+        flushBidWon();
         return;
       }
 
@@ -207,7 +212,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
         if (isValidEventStack()) {
           send(eventType, eventStack, 'eventStack');
         }
-        flushEvents();
+        flushEventStack();
         auctionStatus = 'not_started';
       } else {
         pushEvent(eventType, info);
