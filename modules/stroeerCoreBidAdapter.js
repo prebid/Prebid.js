@@ -91,41 +91,42 @@ const StroeerCoreAdapter = function (win = window) {
     utils.insertElement(scriptElement);
   }
 
-  function ajaxResponseFn(validBidRequestById) {
-    return function(rawResponse) {
-      let response;
+  function handleBidResponse(response, validBidRequestById) {
+    response.bids.forEach(bidResponse => {
+      const bidRequest = validBidRequestById[bidResponse.bidId];
 
-      try {
-        response = JSON.parse(rawResponse);
+      if (bidRequest) {
+        const bidObject = Object.assign(bidfactory.createBid(1, bidRequest), {
+          bidderCode,
+          cpm: bidResponse.cpm,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          ad: bidResponse.ad
+        });
+        bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
       }
-      catch (e) {
-        response = {bids: []};
-        utils.logError('unable to parse bid response', 'ERROR', e);
-      }
+    });
 
-      response.bids.forEach(bidResponse => {
-        const bidRequest = validBidRequestById[bidResponse.bidId];
+    const unfulfilledBidRequests = Object.keys(validBidRequestById)
+      .filter(id => response.bids.find(bid => bid.bidId === id) === undefined)
+      .map(id => validBidRequestById[id]);
 
-        if (bidRequest) {
-          const bidObject = Object.assign(bidfactory.createBid(1, bidRequest), {
-            bidderCode,
-            cpm: bidResponse.cpm,
-            width: bidResponse.width,
-            height: bidResponse.height,
-            ad: bidResponse.ad
-          });
-          bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
-        }
-      });
+    unfulfilledBidRequests.forEach(bidRequest => {
+      bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
+    });
+  }
 
-      const unfulfilledBidRequests = Object.keys(validBidRequestById)
-        .filter(id => response.bids.find(bid => bid.bidId === id) === undefined)
-        .map(id => validBidRequestById[id]);
+  function parseResponse(rawResponse) {
+    let response = {};
 
-      unfulfilledBidRequests.forEach(bidRequest => {
-        bidmanager.addBidResponse(bidRequest.placementCode, Object.assign(bidfactory.createBid(2, bidRequest), {bidderCode}));
-      });
-    };
+    try {
+      response = JSON.parse(rawResponse);
+    }
+    catch (e) {
+      utils.logError('unable to parse bid response', 'ERROR', e);
+    }
+
+    return response;
   }
 
   return {
@@ -157,23 +158,40 @@ const StroeerCoreAdapter = function (win = window) {
         }
       });
 
-      if (requestBody.bids.length > 0) {
-        const successFn = ajaxResponseFn(validBidRequestById);
-
+      function sendBidRequest(url) {
         const callback = {
-          success: function() {
-            successFn.apply(this, arguments);
-            insertUserConnect(allBids);
+          success: function (responseText /*, status code */) {
+            const response = parseResponse(responseText);
+
+            if (response.redirect) {
+              // Workaround for IE 10 & 11.
+              // These browsers don't send the original body on the ajax post redirect.
+              sendBidRequest(response.redirect)
+            }
+            else {
+              if (response.bids) {
+                handleBidResponse(response, validBidRequestById);
+              }
+              else {
+                utils.logError('invalid response ' + JSON.stringify(response), 'ERROR');
+                handleBidResponse({bids: []}, validBidRequestById);
+              }
+              insertUserConnect(allBids);
+            }
           },
-          error: function() {
+          error: function () {
             insertUserConnect(allBids);
           }
         };
 
-        ajax(buildUrl(allBids[0].params), callback, JSON.stringify(requestBody), {
+        ajax(url, callback, JSON.stringify(requestBody), {
           withCredentials: true,
           contentType: 'text/plain'
         });
+      }
+
+      if (requestBody.bids.length > 0) {
+        sendBidRequest(buildUrl(allBids[0].params));
       }
       else {
         insertUserConnect(allBids);

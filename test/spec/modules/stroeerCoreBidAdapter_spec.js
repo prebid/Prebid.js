@@ -255,6 +255,38 @@ describe('stroeerssp adapter', function () {
   });
 
   describe('bid response', () => {
+    it('should redirect when told', function() {
+      fakeServer.respondWith('POST', /\/dsh.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/there'}));
+      fakeServer.respondWith('POST', /\/somewhere.com\//, JSON.stringify(buildBidderResponse()));
+
+      sandbox.stub(utils, 'insertElement');
+
+      adapter().callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      sinon.assert.notCalled(utils.insertElement);
+      sinon.assert.notCalled(bidmanager.addBidResponse);
+
+      fakeServer.respond();
+
+      sinon.assert.calledOnce(utils.insertElement);
+      const element = utils.insertElement.lastCall.args[0];
+
+      assertConnectJs(element, 'http://js.adscale.de/userconnect.js', 'NDA=');
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      assert.strictEqual(bidmanager.addBidResponse.firstCall.args[0], 'div-1');
+      assert.strictEqual(bidmanager.addBidResponse.secondCall.args[0], 'div-2');
+
+      const firstBid = bidmanager.addBidResponse.firstCall.args[1];
+      const secondBid = bidmanager.addBidResponse.secondCall.args[1];
+
+      assertBid(firstBid, 'bid1', '<div>tag1</div>', 300, 600);
+      assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
+    });
+
     it('should add bids', function () {
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 
@@ -331,26 +363,32 @@ describe('stroeerssp adapter', function () {
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assert.strictEqual(element.tagName, 'SCRIPT');
-      assert.strictEqual(element.src, 'http://js.adscale.de/userconnect.js');
-      assert.isFalse(element.hasAttribute('data-container-config'));
+      assertConnectJs(element, 'http://js.adscale.de/userconnect.js')
     });
 
     it('should perform user connect using custom url', () => {
-      const connectjsurl = 'https://other.com/connect.js';
-      bidderRequest.bids[0].params.connectjsurl = connectjsurl;
+      const customtUserConnectJsUrl = 'https://other.com/connect.js';
+      bidderRequest.bids[0].params.connectjsurl = customtUserConnectJsUrl;
 
       runUserConnect();
 
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assert.strictEqual(element.tagName, 'SCRIPT');
-      assert.strictEqual(element.src, connectjsurl);
-
-      const config = JSON.parse(element.getAttribute('data-container-config'));
-      assert.equal(config.slotId, 'NDA=');
+      assertConnectJs(element, customtUserConnectJsUrl, 'NDA=')
     });
+
+    function assertConnectJs(actualElement, expectedUrl, expectedSlotId) {
+      assert.strictEqual(actualElement.tagName, 'SCRIPT');
+      assert.strictEqual(actualElement.src, expectedUrl);
+
+      if (expectedSlotId) {
+        const config = JSON.parse(actualElement.getAttribute('data-container-config'));
+        assert.equal(config.slotId, expectedSlotId);
+      } else {
+        assert.isFalse(actualElement.hasAttribute('data-container-config'));
+      }
+    }
 
     function runUserConnect() {
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
