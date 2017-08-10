@@ -446,8 +446,13 @@ exports.insertElement = function(elm, doc, target) {
     if (elToAppend.length) {
       elToAppend = elToAppend[0];
       elToAppend.insertBefore(elm, elToAppend.firstChild);
+      return true;
+    } else {
+      return false;
     }
-  } catch (e) {}
+  } catch (e) {
+    return false;
+  }
 };
 
 exports.insertPixel = function (url) {
@@ -463,7 +468,7 @@ exports.insertPixel = function (url) {
     } catch (e) {
     }
   };
-  exports.insertElement(img);
+  return exports.insertElement(img);
 };
 
 /**
@@ -476,7 +481,7 @@ exports.insertCookieSyncIframe = function(url, encodeUri) {
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
-  exports.insertElement(iframe);
+  return exports.insertElement(iframe);
 };
 
 /**

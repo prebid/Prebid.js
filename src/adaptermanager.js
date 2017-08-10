@@ -3,6 +3,7 @@
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { getStorageItem, setStorageItem } from './storagemanager';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -74,6 +75,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
+  const syncedBidders = getStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY) || [];
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
@@ -86,7 +88,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders;
+    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.contains(bidder));
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {

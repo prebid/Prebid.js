@@ -1,5 +1,7 @@
 import * as utils from './utils';
 import adLoader from './adloader';
+import { getStorageItem, setStorageItem } from './storagemanager';
+import { S2S } from './constants.json';
 
 const cookie = exports;
 const queue = [];
@@ -7,10 +9,17 @@ const queue = [];
 function fireSyncs() {
   queue.forEach(obj => {
     utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
+    let synced = false;
     if (obj.type === 'iframe') {
-      utils.insertCookieSyncIframe(obj.url, false);
+      synced = utils.insertCookieSyncIframe(obj.url, false);
     } else {
-      utils.insertPixel(obj.url);
+      synced = utils.insertPixel(obj.url);
+    }
+    if (synced) {
+      setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).push(obj.bidder).filter(utils.uniques));
+
+    } else {
+      // remove bidder
     }
   });
   // empty queue.
