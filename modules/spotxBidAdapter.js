@@ -123,10 +123,10 @@ function Spotx() {
     return true;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new Spotx(), 'spotx', {

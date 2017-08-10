@@ -6,6 +6,7 @@ import bidFactory from 'src/bidfactory';
 import {STATUS} from 'src/constants';
 import {formatQS} from 'src/url';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
 
 /**
  * @type {{IA_JS: string, ADAPTER_NAME: string, V: string, RECTANGLE_SIZE: {W: number, H: number}, SPOT_TYPES: {INTERSTITIAL: string, RECTANGLE: string, FLOATING: string, BANNER: string}, DISPLAY_AD: number, ENDPOINT_URL: string, EVENTS_ENDPOINT_URL: string, RESPONSE_HEADERS_NAME: {PRICING_VALUE: string, AD_H: string, AD_W: string}}}
@@ -212,7 +213,7 @@ const Url = {
     }
 
     if (typeof $$PREBID_GLOBAL$$ !== 'undefined') {
-      toQueryString.bco = $$PREBID_GLOBAL$$.cbTimeout || $$PREBID_GLOBAL$$.bidderTimeout;
+      toQueryString.bco = $$PREBID_GLOBAL$$.cbTimeout || config.getConfig('bidderTimeout');
     }
 
     toQueryString.timestamp = Date.now();

@@ -38,6 +38,8 @@ const BID_REQUEST = {
   'timeout': 5000
 };
 
+let bidRequestWithDemoData = BID_REQUEST;
+
 const BID_RESPONSE = [{
   	'status': 'ok',
   	'reqId': '140590112507',
@@ -101,6 +103,49 @@ describe('WidespaceAdapter', () => {
         endpointRequest.to.include('hb.callback');
         endpointRequest.to.include('hb.sizes');
         endpointRequest.to.include('hb.name');
+      });
+    });
+
+    describe('with valid request parameters (demo data)', () => {
+      beforeEach(() => {
+        sandbox.stub(adLoader, 'loadScript');
+        bidRequestWithDemoData = BID_REQUEST;
+      });
+
+      it('should include required request parameters', () => {
+        bidRequestWithDemoData.bids[0].params.demo = {
+          gender: 'F',
+          country: 'UK',
+          region: 'Greater London',
+          postal: 'W1U 8EW',
+          city: 'London',
+          yob: 1981
+        };
+
+        adapter.callBids(bidRequestWithDemoData);
+
+        const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
+        endpointRequest.to.include('hb.demo.gender');
+        endpointRequest.to.include('hb.demo.country');
+        endpointRequest.to.include('hb.demo.region');
+        endpointRequest.to.include('hb.demo.postal');
+        endpointRequest.to.include('hb.demo.city');
+        endpointRequest.to.include('hb.demo.yob');
+      });
+
+      it('should not include "hb.demo.gender" as a request parameter, if it hasn\'t been specified', () => {
+        bidRequestWithDemoData.bids[0].params.demo = {
+          country: 'UK',
+          region: 'Greater London',
+          postal: 'W1U 8EW',
+          city: 'London',
+          yob: 1981
+        };
+
+        adapter.callBids(bidRequestWithDemoData);
+
+        const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
+        endpointRequest.to.not.include('hb.demo.gender');
       });
     });
 

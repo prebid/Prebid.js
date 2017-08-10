@@ -242,7 +242,13 @@ const callBids = bidRequest => {
  * @property {Function} setBidderCode - used for bidder aliasing
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
-const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
+function AudienceNetwork() {
+  return Object.assign(this, {
+    callBids,
+    setBidderCode,
+    getBidderCode
+  });
+}
 
 adaptermanager.registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
   supportedMediaTypes: ['video']
