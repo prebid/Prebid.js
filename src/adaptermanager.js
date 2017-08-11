@@ -75,7 +75,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  const syncedBidders = getStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY) || [];
+  const syncedBidders = getStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY) || getStorageItem(setStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY, []));
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
