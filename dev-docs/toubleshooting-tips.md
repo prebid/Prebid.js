@@ -136,7 +136,7 @@ Right-click to add a **New** snippet:
 Paste in the following code using Control-V (or Command-V on Mac), and give the snippet a name, such as 'show-all-winning-bids':
 
 ```javascript
-var bids = pbjs._winningBids;
+var bids = pbjs.getHighestCpmBids();
 var output = [];
 for (var i = 0; i < bids.length; i++) {
     var b = bids[i];
