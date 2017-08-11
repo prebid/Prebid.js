@@ -1116,7 +1116,7 @@ describe('the rubicon adapter', () => {
         let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
         expect(iframes.length).to.equal(1);
         done();
-      }, 0);
+      }, 10);
     });
 
     it('should add the Emily iframe when enabled', (done) => {
@@ -1133,7 +1133,7 @@ describe('the rubicon adapter', () => {
         let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
         expect(iframes.length).to.equal(1);
         done();
-      }, 0);
+      }, 10);
     });
 
     it('should not fire more than once', (done) => {
@@ -1154,7 +1154,7 @@ describe('the rubicon adapter', () => {
         let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
         expect(iframes.length).to.equal(1);
         done();
-      }, 0);
+      }, 10);
     });
 
     it('should not add the Emily iframe when disabled', (done) => {
@@ -1172,7 +1172,7 @@ describe('the rubicon adapter', () => {
         let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
         expect(iframes.length).to.equal(0);
         done();
-      }, 0);
+      }, 10);
     });
 
     it('should delay adding Emily based on config', () => {
