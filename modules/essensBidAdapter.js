@@ -3,21 +3,20 @@ const utils = require('src/utils.js')
 const bidfactory = require('src/bidfactory.js')
 const bidmanager = require('src/bidmanager.js')
 const adloader = require('src/adloader')
-const Adapter = require('src/adapter.js')
-const adaptermanager = require('src/adaptermanager');
+const Adapter = require('src/adapter.js').default
+const adaptermanager = require('src/adaptermanager')
 
 // Essens Prebid Adapter
 function EssensAdapter () {
-  let baseAdapter = Adapter.createNew('essens')
+  let baseAdapter = new Adapter('essens')
 
   const ENDPOINT = 'bid.essrtb.com/bid/prebid_call'
 
   let receivedBidRequests = {}
 
   baseAdapter.callBids = function (bidRequest) {
-
-    if(!bidRequest){
-      utils.logError("empty bid request received")
+    if (!bidRequest) {
+      utils.logError('empty bid request received')
       return
     }
     receivedBidRequests = bidRequest
@@ -54,7 +53,7 @@ function EssensAdapter () {
       const scriptUrl = '//' + ENDPOINT + '?callback=$$PREBID_GLOBAL$$.essensResponseHandler' +
         '&bid=' + encodeURIComponent(JSON.stringify(payloadJson))
       adloader.loadScript(scriptUrl)
-    }else{
+    } else {
       sendEmptyResponseForAllPlacement()
     }
 
@@ -71,14 +70,8 @@ function EssensAdapter () {
     }
   }
 
-
-
-
-
-
   function sendEmptyResponseForAllPlacement () {
-
-    if(receivedBidRequests && receivedBidRequests.bids) {
+    if (receivedBidRequests && receivedBidRequests.bids) {
       receivedBidRequests.bids.forEach(registerEmptyResponse)
     }
   }
@@ -93,10 +86,10 @@ function EssensAdapter () {
     utils.logInfo('received bid request from Essens')
     if (!isValidResponse(essensResponse)) {
       sendEmptyResponseForAllPlacement()
-      return;
+      return
     }
 
-    registerBids(essensResponse);
+    registerBids(essensResponse)
 
     function isValidResponse (essensResponse) {
       return !!(essensResponse && essensResponse.id && essensResponse.seatbid)
@@ -116,7 +109,7 @@ function EssensAdapter () {
       function sendResponse (bidCandidate) {
         const bidRequest = getBidRequest(bidCandidate.impid)
 
-        const bidsToBeRegister = getBid(bidRequest, bidCandidate);
+        const bidsToBeRegister = getBid(bidRequest, bidCandidate)
 
         if (bidsToBeRegister) {
           requestHasResponse.push(bidRequest)
@@ -132,7 +125,7 @@ function EssensAdapter () {
         return ((seatbid.bid && seatbid.bid.length !== 0))
       }
 
-      function getBidRequest(id) {
+      function getBidRequest (id) {
         return receivedBidRequests.bids.find(bid => bid.bidId === id)
       }
     }
@@ -153,7 +146,7 @@ function EssensAdapter () {
       if (bidCandidate.dealid) {
         bid.dealId = bidCandidate.dealid
       }
-      return bid;
+      return bid
     }
 
     function validBid (bid) {
@@ -165,18 +158,18 @@ function EssensAdapter () {
     }
   }
 
-  return {
+  return Object.assign(this, {
     createNew: EssensAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  }
+    getBidderCode: baseAdapter.getBidderCode
+  })
 }
 
 EssensAdapter.createNew = function () {
   return new EssensAdapter()
 }
 
-adaptermanager.registerBidAdapter(new EssensAdapter(), 'essens');
+adaptermanager.registerBidAdapter(new EssensAdapter(), 'essens')
 
 module.exports = EssensAdapter
-
