@@ -159,15 +159,10 @@ function EssensAdapter () {
   }
 
   return Object.assign(this, {
-    createNew: EssensAdapter.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode
   })
-}
-
-EssensAdapter.createNew = function () {
-  return new EssensAdapter()
 }
 
 adaptermanager.registerBidAdapter(new EssensAdapter(), 'essens')

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import adapter from 'modules/essensBidAdapter'
+import Adapter from 'modules/essensBidAdapter'
 import bidmanager from 'src/bidmanager'
 import adLoader from 'src/adloader'
 describe('Essens adapter tests', function () {
@@ -14,7 +14,7 @@ describe('Essens adapter tests', function () {
     )
 
     it('bid request without bid', () => {
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids()
       sinon.assert.notCalled(stubLoadScript)
     })
@@ -25,7 +25,7 @@ describe('Essens adapter tests', function () {
         requestId: 'impression-1',
         bidderRequestId: 'impression-for-essens-1'
       }
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
       sinon.assert.notCalled(stubLoadScript)
     })
@@ -52,7 +52,7 @@ describe('Essens adapter tests', function () {
           }
         ]
       }
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
       sinon.assert.notCalled(stubLoadScript)
     })
@@ -80,7 +80,7 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       const url = stubLoadScript.getCall(0).args[0]
@@ -148,7 +148,7 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       const url = stubLoadScript.getCall(0).args[0]
@@ -202,7 +202,7 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       const url = stubLoadScript.getCall(0).args[0]
@@ -241,7 +241,7 @@ describe('Essens adapter tests', function () {
         ]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       sinon.assert.notCalled(stubLoadScript)
@@ -289,7 +289,7 @@ describe('Essens adapter tests', function () {
         'id': '1234'
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -360,7 +360,7 @@ describe('Essens adapter tests', function () {
         'seatbid': []
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -455,7 +455,7 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -529,7 +529,7 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -592,7 +592,7 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -682,7 +682,7 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
@@ -785,7 +785,7 @@ describe('Essens adapter tests', function () {
         }]
       }
 
-      const essensAdapter = adapter.createNew()
+      const essensAdapter = new Adapter()
       essensAdapter.callBids(bidderRequest)
 
       $$PREBID_GLOBAL$$.essensResponseHandler(response)
