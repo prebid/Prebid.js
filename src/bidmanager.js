@@ -3,6 +3,7 @@ import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
+import { config } from 'src/config';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -122,7 +123,34 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
       return false;
     }
+    if (bid.mediaType === 'banner' && !validBidSize(bid)) {
+      utils.logError(errorMessage(`Banner bids require a width and height`));
+      return false;
+    }
+
     return true;
+  }
+
+  // check that the bid has a width and height set
+  function validBidSize(bid) {
+    if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+      return true;
+    }
+
+    const adUnit = getBidderRequest(bid.bidderCode, adUnitCode);
+    const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+    const parsedSizes = utils.parseSizesInput(sizes);
+
+    // if a banner impression has one valid size, we assign that size to any bid
+    // response that does not explicitly set width or height
+    if (parsedSizes.length === 1) {
+      const [ width, height ] = parsedSizes[0].split('x');
+      bid.width = width;
+      bid.height = height;
+      return true;
+    }
+
+    return false;
   }
 
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
@@ -197,15 +225,20 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
   function tryAddVideoBid(bid) {
-    store([bid], function(error, cacheIds) {
-      if (error) {
-        utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-      } else {
-        bid.videoCacheKey = cacheIds[0].uuid;
-        addBidToAuction(bid);
-      }
+    if (config.getConfig('usePrebidCache')) {
+      store([bid], function(error, cacheIds) {
+        if (error) {
+          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+        } else {
+          bid.videoCacheKey = cacheIds[0].uuid;
+          addBidToAuction(bid);
+        }
+        doCallbacksIfNeeded();
+      });
+    } else {
+      addBidToAuction(bid);
       doCallbacksIfNeeded();
-    });
+    }
   }
 };
 

@@ -43,15 +43,18 @@ var CriteoAdapter = function CriteoAdapter() {
       // build slots before sending one multi-slots bid request
       for (var i = 0; i < bids.length; i++) {
         var bid = bids[i];
-        var sizes = bid.sizes || [];
+        var sizes = utils.parseSizesInput(bid.sizes);
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
             bid.params.zoneId,
             bid.params.nativeCallback ? bid.params.nativeCallback : undefined,
             bid.transactionId,
-            sizes.map((size) => {
-              return { width: size[0], height: size[1] }
+            sizes.map((sizeString) => {
+              var xIndex = sizeString.indexOf('x');
+              var w = parseInt(sizeString.substring(0, xIndex));
+              var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length))
+              return new Criteo.PubTag.DirectBidding.Size(w, h);
             }
             )
           )
