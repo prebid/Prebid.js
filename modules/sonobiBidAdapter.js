@@ -5,8 +5,8 @@ var utils = require('src/utils');
 var adaptermanager = require('src/adaptermanager');
 
 var SonobiAdapter = function SonobiAdapter() {
-  var keymakerAssoc = {};   //  Remember placement codes for callback mapping
-  var bidReqAssoc = {};     //  Remember bids for bid complete reporting
+  var keymakerAssoc = {}; //  Remember placement codes for callback mapping
+  var bidReqAssoc = {}; //  Remember bids for bid complete reporting
 
   function _phone_in(request) {
     var trinity = 'https://apex.go.sonobi.com/trinity.js?key_maker=';
@@ -113,6 +113,6 @@ var SonobiAdapter = function SonobiAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SonobiAdapter, 'sonobi');
+adaptermanager.registerBidAdapter(new SonobiAdapter(), 'sonobi');
 
 module.exports = SonobiAdapter;

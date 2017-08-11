@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 const CONFIG = {
   enabled: true,
@@ -14,7 +15,8 @@ const CONFIG = {
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
   callBids: sinon.stub(),
-  setConfig: sinon.stub()
+  setConfig: sinon.stub(),
+  queueSync: sinon.stub()
 };
 
 describe('adapterManager tests', () => {
@@ -52,4 +54,27 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
   }); // end s2s tests
+
+  describe('The setBidderSequence() function', () => {
+    let spy;
+
+    beforeEach(() => {
+      spy = sinon.spy(utils, 'logWarn')
+    });
+
+    afterEach(() => {
+      utils.logWarn.restore();
+    });
+
+    it('should log a warning on invalid values', () => {
+      AdapterManager.setBidderSequence('unrecognized sequence');
+      expect(spy.calledOnce).to.equal(true);
+    });
+
+    it('should not log warnings when given recognized values', () => {
+      AdapterManager.setBidderSequence('fixed');
+      AdapterManager.setBidderSequence('random');
+      expect(spy.called).to.equal(false);
+    });
+  })
 });

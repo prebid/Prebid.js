@@ -12,6 +12,8 @@ import AudienceNetwork from 'modules/audienceNetworkBidAdapter';
 const bidderCode = 'audienceNetwork';
 const placementId = 'test-placement-id';
 const placementCode = '/test/placement/code';
+const playerwidth = 320;
+const playerheight = 180;
 
 /**
  * Expect haystack string to contain needle n times.
@@ -26,7 +28,7 @@ const expectToContain = (haystack, needle, n = 1) =>
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
-    const adapter = AudienceNetwork();
+    const adapter = new AudienceNetwork();
     it('getBidderCode', () => {
       expect(adapter.getBidderCode).to.be.a('function');
       expect(adapter.getBidderCode()).to.equal(bidderCode);
@@ -69,7 +71,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify no attempt to add a response as no placement was provided
@@ -89,7 +91,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify attempt to log error
@@ -107,7 +109,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -134,7 +136,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -161,7 +163,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -187,7 +189,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -195,6 +197,33 @@ describe('AudienceNetwork adapter', () => {
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
         .and.to.contain('adformats[]=native');
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false);
+    });
+
+    it('video', () => {
+      // Valid parameters
+      const params = {
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          params: {
+            placementId,
+            format: 'video'
+          },
+          sizes: [[playerwidth, playerheight]]
+        }]
+      };
+      // Request bids
+      new AudienceNetwork().callBids(params);
+      // Verify attempt to fetch response
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].url)
+        .to.contain('https://an.facebook.com/v2/placementbid.json?')
+        .and.to.contain('placementids[]=test-placement-id')
+        .and.to.contain('adformats[]=video')
+        .and.to.contain('sdk[]=');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -224,7 +253,7 @@ describe('AudienceNetwork adapter', () => {
         errors: [error]
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -258,7 +287,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -310,7 +339,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -354,7 +383,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -410,7 +439,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -450,6 +479,141 @@ describe('AudienceNetwork adapter', () => {
       expect(addBidResponseIabCall[1].width).to.equal(300);
       expect(addBidResponseIabCall[1].height).to.equal(250);
       expect(addBidResponseIabCall[1].ad).to.contain(`placementid:'${placementIdIab}',format:'300x250',bidid:'test-bid-id-iab'`, 'ad missing parameters');
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false, 'logError called');
+    });
+
+    it('valid video bid in response', () => {
+      const bidId = 'test-bid-id-video';
+      // Valid response
+      server.respondWith(JSON.stringify({
+        errors: [],
+        bids: {
+          [placementId]: [{
+            placement_id: placementId,
+            bid_id: bidId,
+            bid_price_cents: 123,
+            bid_price_currency: 'usd',
+            bid_price_model: 'cpm'
+          }]
+        }
+      }));
+      // Request bids
+      new AudienceNetwork().callBids({
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          placementCode,
+          params: {
+            placementId,
+            format: 'video'
+          },
+          sizes: [[playerwidth, playerheight]]
+        }]
+      });
+      server.respond();
+      // Verify addBidResponse call
+      expect(addBidResponse.calledOnce).to.equal(true);
+      const addBidResponseArgs = addBidResponse.args[0];
+      expect(addBidResponseArgs).to.have.lengthOf(2);
+      expect(addBidResponseArgs[0]).to.equal(placementCode);
+      expect(addBidResponseArgs[1].getStatusCode()).to.equal(STATUS.GOOD);
+      expect(addBidResponseArgs[1].cpm).to.equal(1.23);
+      expect(addBidResponseArgs[1].bidderCode).to.equal(bidderCode);
+      // Video-specific properties
+      expect(addBidResponseArgs[1].mediaType).to.equal('video');
+      expect(addBidResponseArgs[1].vastUrl)
+        .to.equal(addBidResponseArgs[1].descriptionUrl)
+        .and.to.contain('https://an.facebook.com/v1/instream/vast.xml?')
+        .and.to.contain(`placementid=${placementId}`)
+        .and.to.contain('pageurl=http%3A%2F%2F')
+        .and.to.contain(`playerwidth=${playerwidth}`)
+        .and.to.contain(`playerheight=${playerheight}`)
+        .and.to.contain(`bidid=${bidId}`);
+      expect(addBidResponseArgs[1].width).to.equal(playerwidth);
+      expect(addBidResponseArgs[1].height).to.equal(playerheight);
+      // Verify no attempt to log error
+      expect(logError.called).to.equal(false, 'logError called');
+    });
+
+    it('mixed video and native bids', () => {
+      const videoPlacementId = 'test-video-placement-id';
+      const videoBidId = 'test-video-bid-id';
+      const nativePlacementId = 'test-native-placement-id';
+      const nativeBidId = 'test-native-bid-id';
+      // Valid response
+      server.respondWith(JSON.stringify({
+        errors: [],
+        bids: {
+          [videoPlacementId]: [{
+            placement_id: videoPlacementId,
+            bid_id: videoBidId,
+            bid_price_cents: 123,
+            bid_price_currency: 'usd',
+            bid_price_model: 'cpm'
+          }],
+          [nativePlacementId]: [{
+            placement_id: nativePlacementId,
+            bid_id: nativeBidId,
+            bid_price_cents: 456,
+            bid_price_currency: 'usd',
+            bid_price_model: 'cpm'
+          }]
+        }
+      }));
+      // Request bids
+      new AudienceNetwork().callBids({
+        bidderCode,
+        bids: [{
+          bidder: bidderCode,
+          placementCode,
+          params: {
+            placementId: videoPlacementId,
+            format: 'video'
+          },
+          sizes: [[playerwidth, playerheight]]
+        }, {
+          bidder: bidderCode,
+          placementCode,
+          params: {
+            placementId: nativePlacementId,
+            format: 'native'
+          },
+          sizes: [[300, 250]]
+        }]
+      });
+      server.respond();
+      // Verify multiple attempts to call addBidResponse
+      expect(addBidResponse.calledTwice).to.equal(true);
+      // Verify video
+      const addBidResponseVideoCall = addBidResponse.args[0];
+      expect(addBidResponseVideoCall).to.have.lengthOf(2);
+      expect(addBidResponseVideoCall[0]).to.equal(placementCode);
+      expect(addBidResponseVideoCall[1].getStatusCode()).to.equal(STATUS.GOOD);
+      expect(addBidResponseVideoCall[1].cpm).to.equal(1.23);
+      expect(addBidResponseVideoCall[1].bidderCode).to.equal(bidderCode);
+      // Video-specific properties
+      expect(addBidResponseVideoCall[1].mediaType).to.equal('video');
+      expect(addBidResponseVideoCall[1].vastUrl)
+        .to.equal(addBidResponseVideoCall[1].descriptionUrl)
+        .and.to.contain('https://an.facebook.com/v1/instream/vast.xml?')
+        .and.to.contain(`placementid=${videoPlacementId}`)
+        .and.to.contain('pageurl=http%3A%2F%2F')
+        .and.to.contain(`playerwidth=${playerwidth}`)
+        .and.to.contain(`playerheight=${playerheight}`)
+        .and.to.contain(`bidid=${videoBidId}`);
+      expect(addBidResponseVideoCall[1].width).to.equal(playerwidth);
+      expect(addBidResponseVideoCall[1].height).to.equal(playerheight);
+      // Verify native
+      const addBidResponseNativeCall = addBidResponse.args[1];
+      expect(addBidResponseNativeCall).to.have.lengthOf(2);
+      expect(addBidResponseNativeCall[0]).to.equal(placementCode);
+      expect(addBidResponseNativeCall[1].getStatusCode()).to.equal(STATUS.GOOD);
+      expect(addBidResponseNativeCall[1].cpm).to.equal(4.56);
+      expect(addBidResponseNativeCall[1].bidderCode).to.equal(bidderCode);
+      expect(addBidResponseNativeCall[1].width).to.equal(300);
+      expect(addBidResponseNativeCall[1].height).to.equal(250);
+      expect(addBidResponseNativeCall[1].ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
       // Verify no attempt to log error
       expect(logError.called).to.equal(false, 'logError called');
     });

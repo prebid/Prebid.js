@@ -55,6 +55,6 @@ var SmartAdServer = function SmartAdServer() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SmartAdServer, 'smartadserver');
+adaptermanager.registerBidAdapter(new SmartAdServer(), 'smartadserver');
 
 module.exports = SmartAdServer;

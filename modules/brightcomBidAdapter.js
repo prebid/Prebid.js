@@ -19,8 +19,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
   var brightcomCallbackFunction = 'window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$||window.parent.$$PREBID_GLOBAL$$||window.top.$$PREBID_GLOBAL$$;window.$$PREBID_GLOBAL$$.brightcomResponse';
 
   // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
-  var reqAdUnitsCode = [],
-    resAdUnitsCode = [];
+  const reqAdUnitsCode = [];
+  const resAdUnitsCode = [];
 
   function _callBids(params) {
     var bidRequests = params.bids || [];
@@ -122,7 +122,7 @@ var BrightcomAdapter = function BrightcomAdapter() {
 
     // Make sure response is valid
     if (
-        (brightcomResponseObj) && (brightcomResponseObj.id) &&
+      (brightcomResponseObj) && (brightcomResponseObj.id) &&
         (brightcomResponseObj.seatbid) && (brightcomResponseObj.seatbid.length !== 0) &&
         (brightcomResponseObj.seatbid[0].bid) && (brightcomResponseObj.seatbid[0].bid.length !== 0)
     ) {
@@ -200,6 +200,6 @@ var BrightcomAdapter = function BrightcomAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new BrightcomAdapter, 'brightcom');
+adaptermanager.registerBidAdapter(new BrightcomAdapter(), 'brightcom');
 
 module.exports = BrightcomAdapter;
