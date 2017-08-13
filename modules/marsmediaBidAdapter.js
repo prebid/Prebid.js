@@ -7,7 +7,7 @@ import * as utils from 'src/utils';
 import adaptermanager from 'src/adaptermanager';
 
 const MARS_BIDDER_CODE = 'marsmedia';
-const MARS_BIDDER_URL = '//load3-real12.srv-analytics.info:8080/bidder/?bid=3mhdom';
+const MARS_BIDDER_URL = '//bid306.rtbsrv.com:9306/bidder/?bid=3mhdom';
 
 var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
   function _callBids(bidderRequest) {
