@@ -88,7 +88,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.contains(bidder));
+    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
