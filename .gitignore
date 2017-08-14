@@ -6,6 +6,7 @@ build
 test/app
 gpt.html
 gpt-each-bidder3.html
+nate_dev
 
 # Selenium files
 bin
