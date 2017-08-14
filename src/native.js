@@ -1,4 +1,5 @@
 import { getBidRequest, logError, insertPixel } from './utils';
+import { auctionManager } from './auctionManager';
 
 export const nativeAdapters = [];
 
@@ -68,7 +69,7 @@ export const hasNonNativeBidder = adUnit =>
  * marked as required in the adUnit configuration.
  */
 export function nativeBidIsValid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
+  const bidRequest = getBidRequest(bid.adId, auctionManager.getBidsRequested());
   if (!bidRequest) { return false; }
 
   const requestedAssets = bidRequest.nativeParams;
