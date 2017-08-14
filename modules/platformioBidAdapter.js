@@ -23,7 +23,7 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
 
       requestParams.width = arrSize[0];
       requestParams.height = arrSize[1];
-      requestParams.callback = 'pbjs._doPlatformIOCallback';
+      requestParams.callback = '$$PREBID_GLOBAL$$._doPlatformIOCallback';
       requestParams.callback_uid = bid.bidId;
       bidURL = requestURL + utils.parseQueryStringParameters(requestParams);
 
@@ -32,7 +32,7 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
     }
   }
 
-  pbjs._doPlatformIOCallback = function (response) {
+  $$PREBID_GLOBAL$$._doPlatformIOCallback = function (response) {
     var bidObject;
     var bidRequest;
     var callbackID;
