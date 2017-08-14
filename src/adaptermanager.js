@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, shuffle } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { StorageManager, pbjsSyncsKey } from './storagemanager';
@@ -48,10 +48,14 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           });
         }
 
+        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+          'mediaType',
+          'context',
+          'renderer'
+        ]));
+
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
-          mediaType: adUnit.mediaType,
-          renderer: adUnit.renderer,
           transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
