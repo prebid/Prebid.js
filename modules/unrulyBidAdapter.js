@@ -106,6 +106,8 @@ function UnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly')
+adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = UnrulyAdapter
