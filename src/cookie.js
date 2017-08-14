@@ -8,22 +8,26 @@ const queue = [];
 
 function fireSyncs() {
   queue.forEach(obj => {
-    utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
-    let synced = false;
-    if (obj.type === 'iframe') {
-      synced = utils.insertCookieSyncIframe(obj.url, false);
-    } else {
-      synced = utils.insertPixel(obj.url);
-    }
-    if (synced) {
-      setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).push(obj.bidder).filter(utils.uniques));
+    const bnSetBidderSynced = setBidderSynced.bind(null, obj.bidder);
+    const bnUnsetBidderSynced = unsetBidderSynced.bind(null, obj.bidder);
 
+    utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
+    if (obj.type === 'iframe') {
+      utils.insertCookieSyncIframe(obj.url, false, bnSetBidderSynced, bnUnsetBidderSynced);
     } else {
-      // remove bidder
+      utils.insertPixel(obj.url, bnSetBidderSynced, bnUnsetBidderSynced);
     }
   });
   // empty queue.
   queue.length = 0;
+}
+
+function setBidderSynced(bidder) {
+  setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).push(bidder).filter(utils.uniques));
+}
+
+function unsetBidderSynced(bidder) {
+  setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).filter(item => item != bidder));
 }
 
 /**

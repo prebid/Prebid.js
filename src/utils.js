@@ -1,4 +1,6 @@
 import { config } from './config';
+import { logWarn } from './utils';
+
 var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -446,16 +448,12 @@ exports.insertElement = function(elm, doc, target) {
     if (elToAppend.length) {
       elToAppend = elToAppend[0];
       elToAppend.insertBefore(elm, elToAppend.firstChild);
-      return true;
-    } else {
-      return false;
     }
   } catch (e) {
-    return false;
   }
 };
 
-exports.insertPixel = function (url) {
+exports.insertPixel = function (url, cbResolve, cbReject) {
   const img = new Image();
   img.id = _getUniqueIdentifierStr();
   img.src = url;
@@ -467,8 +465,13 @@ exports.insertPixel = function (url) {
       this.parentNode.removeChild(this);
     } catch (e) {
     }
+    cbResolve();
   };
-  return exports.insertElement(img);
+  img.onerror = function() {
+    logWarn('insert pixel error');
+    cbReject();
+  };
+  exports.insertElement(img);
 };
 
 /**
@@ -476,11 +479,18 @@ exports.insertPixel = function (url) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertCookieSyncIframe = function(url, encodeUri) {
+exports.insertCookieSyncIframe = function(url, encodeUri, cbResolve, cbReject) {
   let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
+  iframe.onload = function () {
+    cbResolve();
+  };
+  iframe.onerror = function () {
+    cbReject();
+  };
+
   return exports.insertElement(iframe);
 };
 
