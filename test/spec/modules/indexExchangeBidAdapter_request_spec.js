@@ -1,4 +1,5 @@
 import Adapter from '../../../modules/indexExchangeBidAdapter';
+import bidManager from '../../../src/bidmanager';
 import adLoader from '../../../src/adloader';
 
 var assert = require('chai').assert;
@@ -21,6 +22,7 @@ describe('indexExchange adapter - Request', function () {
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
+    sandbox.stub(bidManager, 'addBidResponse');
   });
 
   afterEach(function() {
@@ -96,6 +98,21 @@ describe('indexExchange adapter - Request', function () {
     adapter.callBids({ bids: configuredBids });
 
     assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+
+    var adapterResponse = {};
+    for (var i = 0; i < bidManager.addBidResponse.callCount; i++) {
+      var adUnitCode = bidManager.addBidResponse.getCall(i).args[0];
+      var bid = bidManager.addBidResponse.getCall(i).args[1];
+
+      if (typeof adapterResponse[adUnitCode] === 'undefined') {
+        adapterResponse[adUnitCode] = [];
+      };
+      adapterResponse[adUnitCode].push(bid);
+    };
+    assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, "bidder code match with adapter's name");
+    assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
   });
 
   it('test_prebid_indexAdapter_request_2_1: single slot with all supported multiple sizes -> multiple request objects for the slot', function () {
