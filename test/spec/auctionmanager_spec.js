@@ -404,7 +404,6 @@ describe('auctionmanager.js', function () {
     });
 
     it('should return proper price bucket increments for dense mode', () => {
-      debugger; //eslint-disable-line
       sinon.stub(auction, 'getBidderRequests', () => ([{
         bids: [{
           requestId: '1863e370099523',
