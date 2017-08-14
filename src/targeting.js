@@ -180,8 +180,7 @@ function getBidLandscapeTargeting(adUnitCodes) {
     if (bid.adserverTargeting) {
       return {
         [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
-          key => typeof bid.adserverTargeting[key] !== 'undefined') // mainly for possibly
-          // unset hb_deal
+          key => typeof bid.adserverTargeting[key] !== 'undefined')
         )
       };
     }
