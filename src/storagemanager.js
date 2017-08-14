@@ -7,10 +7,22 @@
  * @param key
  * @param item
  */
+import { logWarn } from './utils';
+
 export function setStorageItem(key, item) {
-  localStorage.setItem(key, item);
+  try {
+    localStorage.setItem(key, JSON.stringify(item));
+  } catch (e) {
+    logWarn('could not set storage item: ', e);
+  }
 }
 
 export function getStorageItem(key) {
-  localStorage.getItem(key)
+  try {
+    const item = JSON.parse(localStorage.getItem(key));
+    return item.length ? item : null;
+  } catch (e) {
+    logWarn('could not get storage item: ', e);
+    return null;
+  }
 }
