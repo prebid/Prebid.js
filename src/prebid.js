@@ -536,8 +536,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
     adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
-  }
-  catch (e) {
+  } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
 };
@@ -550,8 +549,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
     adaptermanager.registerAnalyticsAdapter(options);
-  }
-  catch (e) {
+  } catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
 };
@@ -649,8 +647,7 @@ $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
   }
   if (typeof granularity === 'string') {
     bidmanager.setPriceGranularity(granularity);
-  }
-  else if (typeof granularity === 'object') {
+  } else if (typeof granularity === 'object') {
     if (!isValidePriceConfig(granularity)) {
       utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
       return;
@@ -816,8 +813,7 @@ function processQueue(queue) {
       try {
         cmd.call();
         cmd.called = true;
-      }
-      catch (e) {
+      } catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }

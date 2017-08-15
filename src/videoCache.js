@@ -80,8 +80,7 @@ function shimStorageCallback(done) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
-      }
-      catch (e) {
+      } catch (e) {
         done(e, []);
         return;
       }
