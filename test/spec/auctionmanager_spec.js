@@ -1,4 +1,6 @@
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
+import CONSTANTS from 'src/constants.json';
+import { adjustBids } from 'src/auction';
 
 var assert = require('assert');
 
@@ -47,7 +49,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -89,7 +91,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbHg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -173,7 +175,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -378,17 +380,17 @@ describe('auctionmanager.js', function () {
 
       // negative
       bid.adUnitCode = 'negative';
-      auctionManager.adjustBids(bid)
+      adjustBids(bid)
       assert.equal(bid.cpm, 0.5);
 
       // positive
       bid.adUnitCode = 'normal';
-      auctionManager.adjustBids(bid)
+      adjustBids(bid)
       assert.equal(bid.cpm, 0.25);
 
       // zero
       bid.adUnitCode = 'zero';
-      auctionManager.adjustBids(bid)
+      adjustBids(bid)
       assert.equal(bid.cpm, 0);
 
       // reset bidderSettings so we don't mess up further tests
