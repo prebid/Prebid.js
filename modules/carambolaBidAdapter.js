@@ -102,8 +102,7 @@ function CarambolaAdapter() {
         }
         try {
           response = JSON.parse(response);
-          if (response && response.cpm <= 0)
-          {
+          if (response && response.cpm <= 0) {
             utils.logError('Bid response returned 0', BIDDER_CODE, bid);
             _addErrorBidResponse(bid, response, 'Bid response returned 0');
             return;
@@ -126,8 +125,7 @@ function CarambolaAdapter() {
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
-    }
-    catch (e) {
+    } catch (e) {
       isIfr = false;
     }
     if (bids.length === 0) {
@@ -160,8 +158,7 @@ function CarambolaAdapter() {
       try {
         tWin = window.top;
         tDoc = window.top.document;
-      }
-      catch (e) {
+      } catch (e) {
         return;
       }
       docEl = tDoc.documentElement;
