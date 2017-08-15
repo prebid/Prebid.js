@@ -287,6 +287,29 @@ describe('stroeerssp adapter', function () {
       assertBid(secondBid, 'bid2', '<div>tag2</div>', 728, 90);
     });
 
+    it('should never to more than one redirect', () => {
+      fakeServer.respondWith('POST', /\/dsh.adscale.de\//, JSON.stringify({redirect: 'http://somewhere.com/over'}));
+      fakeServer.respondWith('POST', /\/somewhere.com\//, JSON.stringify({redirect: 'http://somewhere.com/there'}));
+
+      sandbox.stub(utils, 'insertElement');
+
+      adapter().callBids(bidderRequest);
+
+      fakeServer.respond();
+
+      sinon.assert.notCalled(utils.insertElement);
+      sinon.assert.notCalled(bidmanager.addBidResponse);
+
+      fakeServer.respond();
+
+      assert.strictEqual(fakeServer.requests.length, 2);
+
+      sinon.assert.calledTwice(bidmanager.addBidResponse);
+
+      assertNoFillBid(bidmanager.addBidResponse.firstCall.args[1], 'bid1');
+      assertNoFillBid(bidmanager.addBidResponse.secondCall.args[1], 'bid2');
+    });
+
     it('should add bids', function () {
       fakeServer.respondWith(JSON.stringify(buildBidderResponse()));
 

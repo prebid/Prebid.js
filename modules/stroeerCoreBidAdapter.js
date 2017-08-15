@@ -158,15 +158,21 @@ const StroeerCoreAdapter = function (win = window) {
         }
       });
 
+      // Safeguard against the unexpected - an infinite request loop.
+      let redirectCount = 0;
+
       function sendBidRequest(url) {
         const callback = {
           success: function (responseText /*, status code */) {
             const response = parseResponse(responseText);
 
-            if (response.redirect) {
-              // Workaround for IE 10 & 11.
-              // These browsers don't send the original body on the ajax post redirect.
-              sendBidRequest(response.redirect)
+            if (response.redirect && redirectCount === 0) {
+              // Workaround for IE 10/11. These browsers don't send the body on the ajax post redirect.
+              // Also as a workaround for Safari on iPad/iPhone. These browsers always do pre-flight CORS request when
+              // it should do simple CORS request as Ajax content-type is text/plain. Therefore, like the Safari on
+              // desktop when content type is json/application, they don't send the body on subsequent requests.
+              redirectCount++;
+              sendBidRequest(response.redirect);
             }
             else {
               if (response.bids) {
