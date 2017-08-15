@@ -3,7 +3,7 @@
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { getStorageItem, setStorageItem } from './storagemanager';
+import { getStorageItem } from './storagemanager';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -75,7 +75,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  const syncedBidders = getStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY) || getStorageItem(setStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY, []));
+  const syncedBidders = getStorageItem(CONSTANTS.S2S.SYNCED_BIDDERS_KEY) || [];
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
