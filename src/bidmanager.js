@@ -46,33 +46,18 @@ function getBidders(bid) {
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids
-      .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten, [])
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce(add, 0);
+    .reduce(flatten, []).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
-}
-
-function add(a, b) {
-  return a + b;
 }
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
     .reduce(flatten, [])
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce((a, b) => a + b, 0);
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
