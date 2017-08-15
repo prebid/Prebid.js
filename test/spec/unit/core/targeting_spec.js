@@ -62,16 +62,35 @@ describe('targeting tests', () => {
     beforeEach(() => {
       $$PREBID_GLOBAL$$._sendAllBids = false;
       $$PREBID_GLOBAL$$._bidsReceived = [];
+      $$PREBID_GLOBAL$$._adUnitCodes = [];
+      $$PREBID_GLOBAL$$.adUnits = [];
     });
 
     it('selects the top bid when _sendAllBids true', () => {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: '/123456/header-bid-tag-0',
+        sizes: [300, 250],
+        bids: [
+          {
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 10617,
+              'siteId': 23635,
+              'zoneId': 453908
+            }
+          }
+        ]
+      }];
       $$PREBID_GLOBAL$$._sendAllBids = true;
       $$PREBID_GLOBAL$$._bidsReceived.push(bid1, bid2);
+      $$PREBID_GLOBAL$$._adUnitCodes = ['/123456/header-bid-tag-0'];
       let targeting = Targeting.getAllTargeting(['/123456/header-bid-tag-0']);
       let flattened = [];
       targeting.filter(obj => obj['/123456/header-bid-tag-0'] !== undefined).forEach(item => flattened = flattened.concat(item['/123456/header-bid-tag-0']));
       let sendAllBidCpm = flattened.filter(obj => obj.hb_pb_rubicon !== undefined);
       let winningBidCpm = flattened.filter(obj => obj.hb_pb !== undefined);
+      console.log(JSON.stringify(flattened));
+      console.log(JSON.stringify(targeting));
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
       // expect the winning CPM to be equal to the sendAllBidCPM
