@@ -8,7 +8,7 @@ import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from './cookie';
+import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 import { config } from './config';
@@ -23,6 +23,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
+const { syncUsers, overrideSync } = userSync;
 
 /* private variables */
 
@@ -72,8 +73,10 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-/** @deprecated - use pbjs.setConfig({ cookieSyncDelay: <domain> ) */
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
+// Set the default userSync object if it was not set by the publisher
+$$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
+// Delay to request cookie sync to stay out of critical path
+$$PREBID_GLOBAL$$.userSync.syncDelay = $$PREBID_GLOBAL$$.userSync.syncDelay || 3000;
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -335,7 +338,11 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncCookies(config.getConfig('cookieSyncDelay'));
+  // Automatically trigger the user syncs if configured by the publisher
+  if (!$$PREBID_GLOBAL$$.userSync.enableOverride) {
+    // Delay the auto sync by the config delay
+    syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay);
+  }
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -762,6 +769,9 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }, options);
   adaptermanager.setS2SConfig(config);
 };
+
+// Expose user syncing to the public API based on config "userSync.enableOverride"
+overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
 
 /**
  * Get Prebid config options
