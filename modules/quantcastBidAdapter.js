@@ -21,7 +21,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
     }
   };
 
-
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
     if (utils.isEmpty(responseText)) {
@@ -106,16 +105,15 @@ var QuantcastAdapter = function QuantcastAdapter() {
           'bidFloor': bid.params.bidFloor || DEFAULT_BID_FLOOR,
         }]
       };
+    });
 
-      utils._each(bidRequests, function (bidRequest) {
-        ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
-          method: 'POST',
-          withCredentials: true
-        });
+    utils._each(bidRequests, function (bidRequest) {
+      ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
+        method: 'POST',
+        withCredentials: true
       });
     });
   }
-
 
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
@@ -125,10 +123,6 @@ var QuantcastAdapter = function QuantcastAdapter() {
   };
 };
 
-exports.createNew = function() {
-  return new QuantcastAdapter();
-};
-
-adaptermanager.registerBidAdapter(new QuantcastAdapter, 'quantcast');
+adaptermanager.registerBidAdapter(new QuantcastAdapter(), 'quantcast');
 
 module.exports = QuantcastAdapter;

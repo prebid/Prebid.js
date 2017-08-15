@@ -3,13 +3,12 @@ import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
+import { config } from 'src/config';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = require('./utils.js');
 var events = require('./events');
-
-var objectType_function = 'function';
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
 var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
@@ -47,33 +46,18 @@ function getBidders(bid) {
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids
-      .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten, [])
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce(add, 0);
+    .reduce(flatten, []).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
-}
-
-function add(a, b) {
-  return a + b;
 }
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
     .reduce(flatten, [])
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce((a, b) => a + b, 0);
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
@@ -124,17 +108,39 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
       return false;
     }
+    if (bid.mediaType === 'banner' && !validBidSize(bid)) {
+      utils.logError(errorMessage(`Banner bids require a width and height`));
+      return false;
+    }
+
     return true;
+  }
+
+  // check that the bid has a width and height set
+  function validBidSize(bid) {
+    if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+      return true;
+    }
+
+    const adUnit = getBidderRequest(bid.bidderCode, adUnitCode);
+    const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+    const parsedSizes = utils.parseSizesInput(sizes);
+
+    // if a banner impression has one valid size, we assign that size to any bid
+    // response that does not explicitly set width or height
+    if (parsedSizes.length === 1) {
+      const [ width, height ] = parsedSizes[0].split('x');
+      bid.width = width;
+      bid.height = height;
+      return true;
+    }
+
+    return false;
   }
 
   // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
   // This should be called before addBidToAuction().
   function prepareBidForAuction() {
-    // Let listeners know that now is the time to adjust the bid, if they want to.
-    //
-    // This must be fired first, so that we calculate derived values from the updates
-    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
-
     const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
 
     Object.assign(bid, {
@@ -147,6 +153,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
     });
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
+
+    // Let listeners know that now is the time to adjust the bid, if they want to.
+    //
+    // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
+    // but others to not be set yet (like priceStrings). See #1372 and #1389.
+    events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
     // a publisher-defined renderer can be used to render bids
     const adUnitRenderer =
@@ -198,15 +210,20 @@ exports.addBidResponse = function (adUnitCode, bid) {
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
   function tryAddVideoBid(bid) {
-    store([bid], function(error, cacheIds) {
-      if (error) {
-        utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-      } else {
-        bid.videoCacheKey = cacheIds[0].uuid;
-        addBidToAuction(bid);
-      }
+    if (config.getConfig('usePrebidCache')) {
+      store([bid], function(error, cacheIds) {
+        if (error) {
+          utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+        } else {
+          bid.videoCacheKey = cacheIds[0].uuid;
+          addBidToAuction(bid);
+        }
+        doCallbacksIfNeeded();
+      });
+    } else {
+      addBidToAuction(bid);
       doCallbacksIfNeeded();
-    });
+    }
   }
 };
 
@@ -272,7 +289,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
     }
 
     if (
-      (typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true ||
+      ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
       key === 'hb_deal') && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
@@ -403,7 +420,7 @@ function adjustBids(bid) {
   var code = bid.bidderCode;
   var bidPriceAdjusted = bid.cpm;
   if (code && $$PREBID_GLOBAL$$.bidderSettings && $$PREBID_GLOBAL$$.bidderSettings[code]) {
-    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === objectType_function) {
+    if (typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
       try {
         bidPriceAdjusted = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment.call(null, bid.cpm, Object.assign({}, bid));
       } catch (e) {

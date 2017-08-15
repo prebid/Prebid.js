@@ -81,7 +81,7 @@ var AdmixerAdapter = function AdmixerAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new AdmixerAdapter, 'admixer', {
+adaptermanager.registerBidAdapter(new AdmixerAdapter(), 'admixer', {
   supportedMediaTypes: ['video']
 });
 
