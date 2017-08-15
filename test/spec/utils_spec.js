@@ -526,35 +526,61 @@ describe('Utils', function () {
   });
 
   describe('cookie support', function () {
+    // store original cookie getter and setter so we can reset later
+    var origCookieSetter = document.__lookupSetter__('cookie');
+    var origCookieGetter = document.__lookupGetter__('cookie');
+
+    // store original cookieEnabled getter and setter so we can reset later
+    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
+    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
+
     // Replace the document cookie set function with the output of a custom function for testing
-    let setCookie;
-    // Reset the setCookie cookie function after each test
+    let setCookie = (v) => v;
+
     beforeEach(() => {
+      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
+      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = v;
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
+
+      // Reset the setCookie cookie function before each test
       setCookie = (v) => v;
+      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
+      Object.defineProperty(window.document, 'cookie', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = setCookie(v);
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
     });
 
-    // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
-    Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
-      return {
-        get: function _get() {
-          return _value;
-        },
-        set: function _set(v) {
-          _value = v;
-        }
-      };
-    })(window.navigator.cookieEnabled));
-    // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
-    Object.defineProperty(window.document, 'cookie', (function (_value) {
-      return {
-        get: function _get() {
-          return _value;
-        },
-        set: function _set(v) {
-          _value = setCookie(v);
-        }
-      };
-    })(window.navigator.cookieEnabled));
+    afterEach(() => {
+      // redefine window.navigator.cookieEnabled to original getter and setter
+      Object.defineProperty(window.navigator, 'cookieEnabled', {
+        get: origCookieEnabledGetter,
+        set: origCookieEnabledSetter,
+        configurable: true
+      });
+      // redefine document.cookie to original getter and setter
+      Object.defineProperty(document, 'cookie', {
+        get: origCookieGetter,
+        set: origCookieSetter,
+        configurable: true
+      });
+    });
 
     it('should be detected', function() {
       assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
