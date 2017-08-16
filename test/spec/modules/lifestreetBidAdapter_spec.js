@@ -45,7 +45,7 @@ describe('LifestreetAdapter', () => {
       beforeEach(() => {
         tagRequests = [];
         request = cloneJson(BIDDER_REQUEST);
-        sinon.stub(adloader, 'loadScript', (url, callback) => {
+        sinon.stub(adloader, 'loadScript').callsFake((url, callback) => {
           tagRequests.push(url);
           callback();
         });
@@ -145,7 +145,7 @@ describe('LifestreetAdapter', () => {
 
       beforeEach(() => {
         sinon.stub(bidmanager, 'addBidResponse');
-        sinon.stub(adloader, 'loadScript', (url, callback) => {
+        sinon.stub(adloader, 'loadScript').callsFake((url, callback) => {
           callback();
         });
         slot = {};

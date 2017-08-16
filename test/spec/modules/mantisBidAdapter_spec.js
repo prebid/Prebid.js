@@ -52,7 +52,7 @@ describe('mantis adapter tests', function () {
   describe('callBids', () => {
     it('should create appropriate bid responses', () => {
       sandbox.stub(bidmanager, 'addBidResponse');
-      sandbox.stub(adloader, 'loadScript', function (url) {
+      sandbox.stub(adloader, 'loadScript').callsFake(function (url) {
         var jsonp = eval(decodeURIComponent(url.match(/jsonp=(.*)&property/)[1]));
 
         jsonp({

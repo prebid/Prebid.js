@@ -297,7 +297,7 @@ describe('hiromedia adapter', function () {
       let randomIndex = 0;
 
       server.respondWith((request) => {
-        const mathRandomStub = sandbox.stub(Math, 'random', function () {
+        const mathRandomStub = sandbox.stub(Math, 'random').callsFake(function () {
           const randomValue = randomValues[randomIndex];
 
           randomIndex += 1;

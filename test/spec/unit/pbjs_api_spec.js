@@ -551,7 +551,7 @@ describe('Unit: Prebid Module', function () {
       spyLogMessage = sinon.spy(utils, 'logMessage');
 
       inIframe = true;
-      sinon.stub(utils, 'inIframe', () => inIframe);
+      sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
     });
 
     afterEach(function () {
