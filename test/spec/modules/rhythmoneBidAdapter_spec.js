@@ -48,7 +48,7 @@ describe('rhythmone adapter tests', function () {
       },
       {
         'navigator': {},
-        'pbjs': {
+        '$$PREBID_GLOBAL$$': {
           'onEvent': function(e, f) {
             if (e.toLowerCase() === 'auctionend') endEvent = f;
             if (e.toLowerCase() === 'bidwon') wonEvent = f;
