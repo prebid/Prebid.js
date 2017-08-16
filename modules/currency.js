@@ -1,4 +1,3 @@
-
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
