@@ -501,11 +501,13 @@ describe('bidmanager.js', function () {
     });
 
     it('should add banner bids that have no width or height but single adunit size', () => {
-      sinon.stub(utils, 'getBidderRequest', () => ({
-        bids: [{
-          sizes: [[300, 250]],
-        }]
-      }));
+      sinon.stub(utils, 'getBidderRequest').callsFake(() => {
+        return {
+          bids: [{
+            sizes: [[300, 250]],
+          }]
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -527,13 +529,15 @@ describe('bidmanager.js', function () {
     });
 
     it('should not add native bids that do not have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
-        bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
-        },
-        mediaType: 'native',
-      }));
+      sinon.stub(utils, 'getBidRequest').callsFake(() => {
+        return {
+          bidder: 'appnexusAst',
+          nativeParams: {
+            title: {'required': true},
+          },
+          mediaType: 'native',
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -552,13 +556,15 @@ describe('bidmanager.js', function () {
     });
 
     it('should add native bids that do have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
-        bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
-        },
-        mediaType: 'native',
-      }));
+      sinon.stub(utils, 'getBidRequest').callsFake(() => {
+        return {
+          bidder: 'appnexusAst',
+          nativeParams: {
+            title: {'required': true},
+          },
+          mediaType: 'native',
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -577,14 +583,14 @@ describe('bidmanager.js', function () {
     });
 
     it('installs publisher-defined renderers on bids', () => {
-      sinon.stub(utils, 'getBidderRequest', () => ({
+      sinon.stub(utils, 'getBidderRequest').value({
         bids: [{
           renderer: {
             url: 'renderer.js',
             render: (bid) => bid
           }
         }]
-      }));
+      });
 
       const bid = Object.assign({}, bidfactory.createBid(1), {
         bidderCode: 'appnexusAst',

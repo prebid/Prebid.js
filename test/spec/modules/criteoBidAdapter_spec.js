@@ -132,7 +132,7 @@ describe('criteo adapter test', () => {
     });
 
     it('adds bid for valid request', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.GOOD });
         done();
       });
@@ -142,7 +142,7 @@ describe('criteo adapter test', () => {
 
     it('adds bid for multibid valid request', (done) => {
       let callCount = 0;
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         callCount++;
 
         if (callCount == 2) { done(); }
@@ -152,7 +152,7 @@ describe('criteo adapter test', () => {
     });
 
     it('adds bidderCode to the response of a valid request', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.have.property('bidderCode', 'criteo');
         done();
       });
@@ -161,7 +161,7 @@ describe('criteo adapter test', () => {
     });
 
     it('adds cpm to the response of a valid request', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.have.property('cpm', 1.12);
         done();
       });
@@ -169,7 +169,7 @@ describe('criteo adapter test', () => {
     });
 
     it('adds creative to the response of a valid request', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.have.property('ad', "<iframe src=\"fakeIframeSrc\" height=\"250\" width='350'></iframe>");
         done();
       });
@@ -187,7 +187,7 @@ describe('criteo adapter test', () => {
 
     it('adds creative to the response of a native valid request', (done) => {
       stubAddBidResponse = sinon.stub(
-        bidManager, 'addBidResponse',
+        bidManager, 'addBidResponse').callsFake(
         function (adUnitCode, bid) {
           let expectedAdProperty = `<script type=\"text/javascript\">
   let win = window;
@@ -218,7 +218,7 @@ describe('criteo adapter test', () => {
     it('no bid if cdb handler responds with no bid empty string response', (done) => {
       server.respondWith('');
 
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID });
         done();
       });
@@ -229,7 +229,7 @@ describe('criteo adapter test', () => {
     it('no bid if cdb handler responds with no bid empty object response', (done) => {
       server.respondWith('{ }');
 
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID });
         done();
       });
@@ -240,7 +240,7 @@ describe('criteo adapter test', () => {
     it('no bid if cdb handler responds with HTTP error', (done) => {
       server.respondWith([500, {}, 'Internal Server Error']);
 
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID });
         done();
       });
@@ -251,7 +251,7 @@ describe('criteo adapter test', () => {
     it('no bid if response is invalid because response slots don\'t match input slots', (done) => {
       server.respondWith(JSON.stringify(invalidResponse));
 
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID });
         done();
       });
