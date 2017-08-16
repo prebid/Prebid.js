@@ -39,7 +39,7 @@ describe('justpremium adapter', () => {
           callback();
         }
       });
-      sandbox.stub(factory.JAM, 'instance').value({});
+      sandbox.stub(factory.JAM, 'instance').returns({});
     });
 
     afterEach(() => {
