@@ -151,7 +151,7 @@ function filterBidsByAdUnit(bids) {
 
 function isValidEvent(eventType, adUnitCode) {
   if (checkAdUnitConfig()) {
-    let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWon];
+    let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
     if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
       return false;
     }
@@ -162,7 +162,7 @@ function isValidEvent(eventType, adUnitCode) {
 function isValidEventStack() {
   if (eventStack.events.length > 0) {
     return eventStack.events.some(function(event) {
-      return bidRequestConst === event.eventType || bidWon === event.eventType;
+      return bidRequestConst === event.eventType || bidWonConst === event.eventType;
     });
   }
   return false;
