@@ -203,9 +203,9 @@ describe('the rubicon adapter', () => {
         requests = [];
 
         xhr = sandbox.useFakeXMLHttpRequest();
-        xhr.onCreate = function(request) {
+        xhr.onCreate = (request) => {
           requests.push(request);
-        }
+        };
 
         sandbox.stub(bidManager, 'addBidResponse').callsFake((elemId, bid) => {
           bids.push(bid);
@@ -314,7 +314,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').value({
+          sandbox.stub(window.DigiTrust, 'getUser').returns({
             success: true,
             identity: {
               privacy: {optout: false},
@@ -365,7 +365,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').value({
+          sandbox.stub(window.DigiTrust, 'getUser').returns({
             success: true,
             identity: {
               privacy: {optout: true},
@@ -395,7 +395,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').value({
+          sandbox.stub(window.DigiTrust, 'getUser').returns({
             success: false,
             identity: {
               privacy: {optout: false},
@@ -641,7 +641,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(floorBidderRequest);
 
-          let request = xhr.requests[0];
+          let request = requests[0];
           let post = JSON.parse(request.requestBody);
 
           let floor = post.slots[0].floor;

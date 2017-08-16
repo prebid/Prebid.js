@@ -1,3 +1,5 @@
+import useSandbox from 'test/mocks/sandbox';
+
 var chai = require('chai');
 var Adapter = require('modules/admixerBidAdapter')();
 var Ajax = require('src/ajax');
@@ -136,105 +138,109 @@ describe('Admixer adapter', function () {
     sizes: '300x250-300x600',
     skippable: true
   };
-  describe('bid request with valid data', function () {
-    var stubAjax;
-    beforeEach(function () {
-      stubAjax = sinon.stub(Ajax, 'ajax');
-    });
 
-    afterEach(function () {
-      stubAjax.restore();
-    });
+  const getSandbox = useSandbox();
+
+  describe('bid request with valid data', function () {
     it('display: bid request should be called. sizes style -> [[],[]]', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validData_1);
       sinon.assert.calledOnce(stubAjax);
     });
     it('video: bid request should be called. sizes style -> [[],[]]', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validVideoData_1);
       sinon.assert.calledOnce(stubAjax);
     });
     it('display: bid request should be called. sizes style -> []', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validData_2);
       sinon.assert.calledOnce(stubAjax);
     });
     it('video: bid request should be called. sizes style -> []', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validVideoData_2);
       sinon.assert.calledOnce(stubAjax);
     });
     it('display: ajax params should be matched', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validData_1);
-      sinon.assert.calledWith(stubAjax, sinon.match(invUrl, function () {
-      }, validJsonParams, {method: 'GET'}));
+      stubAjax.calledWith
+      sinon.assert.calledWithMatch(stubAjax,
+        invUrl,
+        function () {},
+        validJsonParams,
+        {method: 'GET'});
     });
     it('video: ajax params should be matched', function () {
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validVideoData_3);
-      sinon.assert.calledWith(stubAjax, sinon.match(invVastUrl, function () {
-      }, validJsonVideoParams, {method: 'GET'}));
+      sinon.assert.calledWithMatch(stubAjax,
+        invVastUrl,
+        function () {},
+        validJsonVideoParams,
+        {method: 'GET'});
     });
   });
   describe('bid request with invalid data', function () {
-    var addBidResponse, stubAjax;
-    beforeEach(function () {
-      addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      stubAjax = sinon.stub(Ajax, 'ajax');
-    });
-
-    afterEach(function () {
-      addBidResponse.restore();
-      stubAjax.restore();
-    });
     it('display: ajax shouldn\'t be called', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(invalidData);
       sinon.assert.notCalled(stubAjax);
     });
     it('video: ajax shouldn\'t be called', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
+      const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(invalidVideoData);
       sinon.assert.notCalled(stubAjax);
     });
     it('display: bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID + '"', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
+      getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(invalidData);
       expect(addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(addBidResponse.firstCall.args[1].bidderCode).to.equal('admixer');
     });
     it('video: bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID + '"', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
+      getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(invalidVideoData);
       expect(addBidResponse.firstCall.args[1].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(addBidResponse.firstCall.args[1].bidderCode).to.equal('admixer');
     });
   });
   describe('bid response', function () {
-    var addBidResponse;
-    beforeEach(function () {
-      addBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    });
-    afterEach(function () {
-      addBidResponse.restore();
-    });
     it('display: response with ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.GOOD + '"', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
       Adapter.responseCallback(responseWithAd);
       var arg = addBidResponse.firstCall.args[1];
       expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       expect(arg.bidderCode).to.equal('admixer');
     });
     it('video: response with ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.GOOD + '"', function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
       Adapter.responseCallback(responseWithVideoAd);
       var arg = addBidResponse.firstCall.args[1];
       expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
       expect(arg.bidderCode).to.equal('admixer');
     });
     it('display: response without ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
       Adapter.responseCallback(responseWithoutAd);
       var arg = addBidResponse.firstCall.args[1];
       expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(arg.bidderCode).to.equal('admixer');
     });
     it('video: response without ad. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
       Adapter.responseCallback(responseWithoutVideoAd);
       var arg = addBidResponse.firstCall.args[1];
       expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       expect(arg.bidderCode).to.equal('admixer');
     });
     it('display/video: response empty. bidmanager.addBidResponse status code must to be equal "' + CONSTANTS.STATUS.NO_BID, function () {
+      const addBidResponse = getSandbox().stub(bidmanager, 'addBidResponse');
       Adapter.responseCallback(responseEmpty);
       var arg = addBidResponse.firstCall.args[1];
       expect(arg.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
