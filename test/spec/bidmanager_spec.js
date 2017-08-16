@@ -417,6 +417,17 @@ describe('bidmanager.js', function () {
     before(() => {
       $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
+
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
     it('should return proper price bucket increments for dense mode', () => {
       const bid = Object.assign({},
         bidfactory.createBid(2),
@@ -501,7 +512,7 @@ describe('bidmanager.js', function () {
     });
 
     it('should add banner bids that have no width or height but single adunit size', () => {
-      sinon.stub(utils, 'getBidderRequest').callsFake(() => {
+      sandbox.stub(utils, 'getBidderRequest').callsFake(() => {
         return {
           bids: [{
             sizes: [[300, 250]],
@@ -524,12 +535,10 @@ describe('bidmanager.js', function () {
       assert.equal(bid.adId, addedBid.adId);
       assert.equal(addedBid.width, 300);
       assert.equal(addedBid.height, 250);
-
-      utils.getBidderRequest.restore();
     });
 
     it('should not add native bids that do not have required assets', () => {
-      sinon.stub(utils, 'getBidRequest').callsFake(() => {
+      sandbox.stub(utils, 'getBidRequest').callsFake(() => {
         return {
           bidder: 'appnexusAst',
           nativeParams: {
@@ -551,12 +560,10 @@ describe('bidmanager.js', function () {
       const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
       bidmanager.addBidResponse('adUnit-code', bid);
       assert.equal(bidsRecCount, $$PREBID_GLOBAL$$._bidsReceived.length);
-
-      utils.getBidRequest.restore();
     });
 
     it('should add native bids that do have required assets', () => {
-      sinon.stub(utils, 'getBidRequest').callsFake(() => {
+      sandbox.stub(utils, 'getBidRequest').callsFake(() => {
         return {
           bidder: 'appnexusAst',
           nativeParams: {
@@ -578,18 +585,18 @@ describe('bidmanager.js', function () {
       const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
       bidmanager.addBidResponse('adUnit-code', bid);
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
-
-      utils.getBidRequest.restore();
     });
 
     it('installs publisher-defined renderers on bids', () => {
-      sinon.stub(utils, 'getBidderRequest').value({
-        bids: [{
-          renderer: {
-            url: 'renderer.js',
-            render: (bid) => bid
-          }
-        }]
+      sandbox.stub(utils, 'getBidderRequest').callsFake(() => {
+        return {
+          bids: [{
+            renderer: {
+              url: 'renderer.js',
+              render: (bid) => bid
+            }
+          }]
+        };
       });
 
       const bid = Object.assign({}, bidfactory.createBid(1), {
@@ -600,8 +607,6 @@ describe('bidmanager.js', function () {
       bidmanager.addBidResponse('adUnit-code', bid);
       const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
-
-      utils.getBidderRequest.restore();
     });
   });
 });

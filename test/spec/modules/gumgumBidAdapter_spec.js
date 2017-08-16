@@ -101,7 +101,7 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser').value({
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
         success: true,
         identity: {
           privacy: {optout: false},
@@ -123,7 +123,7 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser').value({
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
         success: true,
         identity: {
           privacy: {optout: true},
@@ -140,7 +140,7 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser').value({
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
         success: false,
         identity: {
           privacy: {optout: false},
