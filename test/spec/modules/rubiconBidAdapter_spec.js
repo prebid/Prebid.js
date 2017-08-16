@@ -428,16 +428,16 @@ describe('the rubicon adapter', () => {
             window.DigiTrust = {
               getUser: sinon.spy()
             };
-            origGetConfig = window.pbjs.getConfig;
+            origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
           });
 
           afterEach(() => {
             delete window.DigiTrust;
-            window.pbjs.getConfig = origGetConfig;
+            window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
           });
 
           it('should send digiTrustId config params', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -474,7 +474,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -507,7 +507,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -540,7 +540,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {};
               return config[key];
             });
