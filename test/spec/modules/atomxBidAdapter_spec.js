@@ -95,7 +95,7 @@ describe('Atomx adapter', function () {
     it('ajax params should be matched', function () {
       const stubAjax = getSandbox().stub(Ajax, 'ajax');
       Adapter.callBids(validData_1);
-      sinon.assert.calledWith(stubAjax, sinon.match('/placement', function () {
+      sinon.assert.calledWithMatch(stubAjax, sinon.match('/placement', function () {
       }, validJsonParams, {method: 'GET'}));
     });
   });
