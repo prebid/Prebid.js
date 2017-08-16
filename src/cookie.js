@@ -33,8 +33,7 @@ cookie.queueSync = function ({bidder, url, type}) {
 cookie.syncCookies = function(timeout) {
   if (timeout) {
     setTimeout(fireSyncs, timeout);
-  }
-  else {
+  } else {
     fireSyncs();
   }
 };

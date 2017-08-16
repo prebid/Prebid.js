@@ -74,8 +74,7 @@ targeting.setTargeting = function(targetingConfig) {
 function getAdUnitCodes(adUnitCode) {
   if (typeof adUnitCode === 'string') {
     return [adUnitCode];
-  }
-  else if (utils.isArray(adUnitCode)) {
+  } else if (utils.isArray(adUnitCode)) {
     return adUnitCode;
   }
   return $$PREBID_GLOBAL$$._adUnitCodes || [];

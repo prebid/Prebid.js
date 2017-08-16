@@ -73,7 +73,7 @@ var SovrnAdapter = function SovrnAdapter() {
   }
 
   function addBlankBidResponses(impidsWithBidBack) {
-    var missing = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn');
+    var missing = utils.getBidderRequestAllAdUnits('sovrn');
     if (missing) {
       missing = missing.bids.filter(bid => impidsWithBidBack.indexOf(bid.bidId) < 0);
     } else {
@@ -102,15 +102,12 @@ var SovrnAdapter = function SovrnAdapter() {
         var id = sovrnBid.impid;
         var bid = {};
 
-        // try to fetch the bid request we sent Sovrn
-        var bidObj = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'sovrn').bids
-          .find(bid => bid.bidId === id);
+        var bidObj = utils.getBidRequest(id);
 
         if (bidObj) {
           placementCode = bidObj.placementCode;
           bidObj.status = CONSTANTS.STATUS.GOOD;
 
-          // place ad response on bidmanager._adResponsesByBidderId
           responseCPM = parseFloat(sovrnBid.price);
 
           if (responseCPM !== 0) {
