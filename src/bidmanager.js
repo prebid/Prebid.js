@@ -46,33 +46,18 @@ function getBidders(bid) {
 function bidsBackAdUnit(adUnitCode) {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids
-      .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
       .filter(bid => bid.placementCode === adUnitCode))
-    .reduce(flatten, [])
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce(add, 0);
+    .reduce(flatten, []).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode).length;
   return requested === received;
-}
-
-function add(a, b) {
-  return a + b;
 }
 
 function bidsBackAll() {
   const requested = $$PREBID_GLOBAL$$._bidsRequested
     .map(request => request.bids)
     .reduce(flatten, [])
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes))
-    .map(bid => {
-      return bid.bidder === 'indexExchange'
-        ? bid.sizes.length
-        : 1;
-    }).reduce((a, b) => a + b, 0);
+    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
 
   const received = $$PREBID_GLOBAL$$._bidsReceived
     .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes)).length;
@@ -253,15 +238,13 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
     setKeys(keyValues, standardSettings, custBidObj);
   }
 
-  // 2) set keys from specific bidder setting override if they exist
   if (bidderCode && custBidObj && bidder_settings && bidder_settings[bidderCode] && bidder_settings[bidderCode][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
+    // 2) set keys from specific bidder setting override if they exist
     setKeys(keyValues, bidder_settings[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = bidder_settings[bidderCode].alwaysUseBid;
     custBidObj.sendStandardTargeting = bidder_settings[bidderCode].sendStandardTargeting;
-  }
-
-  // 2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
-  else if (defaultBidderSettingsMap[bidderCode]) {
+  } else if (defaultBidderSettingsMap[bidderCode]) {
+    // 2) set keys from standard setting. NOTE: this API doesn't seem to be in use by any Adapter
     setKeys(keyValues, defaultBidderSettingsMap[bidderCode], custBidObj);
     custBidObj.alwaysUseBid = defaultBidderSettingsMap[bidderCode].alwaysUseBid;
     custBidObj.sendStandardTargeting = defaultBidderSettingsMap[bidderCode].sendStandardTargeting;

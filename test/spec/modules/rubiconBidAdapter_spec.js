@@ -1030,6 +1030,7 @@ describe('the rubicon adapter', () => {
   describe('user sync', () => {
     let bids;
     let server;
+    let clock;
     let addBidResponseAction;
     let rubiconAdapter;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
@@ -1039,6 +1040,7 @@ describe('the rubicon adapter', () => {
       bids = [];
 
       server = sinon.fakeServer.create();
+      clock = sinon.useFakeTimers();
 
       sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
         bids.push(bid);
@@ -1047,8 +1049,6 @@ describe('the rubicon adapter', () => {
           addBidResponseAction = undefined;
         }
       });
-
-      sinon.spy(window, 'setTimeout');
 
       server.respondWith(JSON.stringify({
         'status': 'ok',
@@ -1097,14 +1097,14 @@ describe('the rubicon adapter', () => {
 
     afterEach(() => {
       server.restore();
-      window.setTimeout.restore();
+      clock.restore();
       window.pbjs.getConfig = origGetConfig;
     });
 
-    it('should add the Emily iframe by default', (done) => {
+    it('should add the Emily iframe by default', () => {
       sinon.stub(window.pbjs, 'getConfig', (key) => {
         var config = { rubicon: {
-          userSync: {delay: 0} // Use 0 so we don't have to wait in our tests
+          userSync: {delay: 10}
         }};
         return config[key];
       });
@@ -1112,55 +1112,69 @@ describe('the rubicon adapter', () => {
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
 
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
+      // move clock to just before the usersync delay, should be no iframe
+      clock.tick(9);
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
+      // move clock to usersync delay, iframe should have been added
+      clock.tick(1);
+      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(1);
     });
 
-    it('should add the Emily iframe when enabled', (done) => {
+    it('should add the Emily iframe when enabled', () => {
       sinon.stub(window.pbjs, 'getConfig', (key) => {
         var config = { rubicon: {
-          userSync: {enabled: true, delay: 0}
+          userSync: {enabled: true, delay: 20}
         }};
         return config[key];
       });
       rubiconAdapter.callBids(bidderRequest);
 
       server.respond();
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
+
+      // move clock to just before the usersync delay, should be no iframe
+      clock.tick(19);
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
+      // move clock to usersync delay, iframe should have been added
+      clock.tick(1);
+      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(1);
     });
 
-    it('should not fire more than once', (done) => {
+    it('should not fire more than once', () => {
       sinon.stub(window.pbjs, 'getConfig', (key) => {
         var config = { rubicon: {
-          userSync: {enabled: true, delay: 0}
+          userSync: {enabled: true, delay: 100}
         }};
         return config[key];
       });
       rubiconAdapter.callBids(bidderRequest);
 
       server.respond();
+      // move clock to just before the usersync delay, should be no iframe
+      clock.tick(99);
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
+      // move clock to usersync delay, iframe should have been added
+      clock.tick(1);
+      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(1);
+
       // Fire again
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
+      // move clock to usersync delay, new iframe should not have been added
+      clock.tick(100);
+      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(1);
     });
 
-    it('should not add the Emily iframe when disabled', (done) => {
+    it('should not add the Emily iframe when disabled', () => {
       sinon.stub(window.pbjs, 'getConfig', (key) => {
         var config = { rubicon: {
-          userSync: {enabled: false, delay: 0}
+          userSync: {enabled: false, delay: 50}
         }};
         return config[key];
       });
@@ -1168,26 +1182,10 @@ describe('the rubicon adapter', () => {
 
       server.respond();
 
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(0);
-        done();
-      }, 0);
-    });
-
-    it('should delay adding Emily based on config', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {
-            enabled: true,
-            delay: 999
-          }
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-      server.respond();
-      expect(window.setTimeout.getCall(0).args[1]).to.equal(999);
+      // move clock to usersync delay, iframe should have been added
+      clock.tick(50);
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
     });
   });
 });
