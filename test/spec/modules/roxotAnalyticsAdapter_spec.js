@@ -27,6 +27,31 @@ describe('Roxot Prebid Analytic', function () {
       events.emit(constants.EVENTS.BID_WON, {});
 
       sinon.assert.callCount(roxotAnalytic.track, 5);
+      roxotAnalytic.track.restore();
+    });
+    it('should catch all events with ad unit config', function () {
+      sinon.spy(roxotAnalytic, 'track');
+
+      adaptermanager.registerAnalyticsAdapter({
+        code: 'roxot',
+        adapter: roxotAnalytic
+      });
+
+      adaptermanager.enableAnalytics({
+        provider: 'roxot',
+        options: {
+          publisherIds: ['test_roxot_prebid_analytid_publisher_id'],
+          adUnits: ['div-ad-1']
+        }
+      });
+
+      events.emit(constants.EVENTS.AUCTION_INIT, {});
+      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.BID_REQUESTED, {});
+      events.emit(constants.EVENTS.BID_RESPONSE, {});
+      events.emit(constants.EVENTS.BID_WON, {});
+
+      sinon.assert.callCount(roxotAnalytic.track, 5);
     });
   });
 });
