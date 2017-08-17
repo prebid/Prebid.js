@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { config } from 'src/config';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 let { userSync, newUserSync } = require('../../src/userSync');
@@ -12,6 +13,10 @@ describe('user sync', () => {
   let getUniqueIdentifierStrStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
+  let origUserSyncConfig = config.getConfig('userSync');
+  function setUserSyncConfig(userSyncConfig) {
+    config.setConfig({ userSync: Object.assign({}, origUserSyncConfig, userSyncConfig) });
+  }
 
   beforeEach(() => {
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
@@ -27,6 +32,7 @@ describe('user sync', () => {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     timeoutStub.restore();
+    config.setConfig({ userSync: origUserSyncConfig });
     userSync = newUserSync();
   });
 
@@ -61,14 +67,14 @@ describe('user sync', () => {
   });
 
   it('should not register pixel URL since it is not supported', () => {
-    $$PREBID_GLOBAL$$.userSync.pixelEnabled = false;
+    setUserSyncConfig({pixelEnabled: false});
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', () => {
-    $$PREBID_GLOBAL$$.userSync.iframeEnabled = true;
+    setUserSyncConfig({iframeEnabled: true});
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     let iframe = window.document.getElementById(idPrefix + lastId);
@@ -77,7 +83,7 @@ describe('user sync', () => {
   });
 
   it('should only trigger syncs once per page', () => {
-    $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
+    setUserSyncConfig({pixelEnabled: true});
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
@@ -91,7 +97,7 @@ describe('user sync', () => {
   // this scenario is important and this should be revisited.
   // it('should not fire syncs since cookies are not supported', () => {
   //   let isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser', () => true);
-  //   $$PREBID_GLOBAL$$.userSync.pixelEnabled = true;
+  //   setUserSyncConfig({pixelEnabled: true});
   //   userSync.registerSync('image', 'testBidder', 'http://example.com');
   //   userSync.syncUsers();
   //   expect(triggerPixelStub.getCall(0)).to.be.null;
@@ -108,14 +114,14 @@ describe('user sync', () => {
   });
 
   it('should expose the syncUsers method for the publisher to manually trigger syncs', () => {
-    expect(typeof $$PREBID_GLOBAL$$.userSync.syncAll).to.equal('undefined');
-    $$PREBID_GLOBAL$$.userSync.enableOverride = true;
-    userSync.overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
-    expect(typeof $$PREBID_GLOBAL$$.userSync.syncAll).to.equal('function');
+    expect($$PREBID_GLOBAL$$.syncUsers).to.be.undefined;
+    setUserSyncConfig({enableOverride: true});
+    userSync.overrideSync((config.getConfig('userSync').enableOverride));
+    expect($$PREBID_GLOBAL$$.syncUsers).to.be.a('function');
   });
 
   it('should limit the sync per bidder', () => {
-    $$PREBID_GLOBAL$$.userSync.syncsPerBidder = 2;
+    setUserSyncConfig({syncsPerBidder: 2});
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
@@ -143,7 +149,7 @@ describe('user sync', () => {
   });
 
   it('should disable user sync', () => {
-    $$PREBID_GLOBAL$$.userSync.syncEnabled = false;
+    setUserSyncConfig({syncEnabled: false});
     userSync.registerSync('pixel', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
     userSync.syncUsers();
@@ -151,7 +157,7 @@ describe('user sync', () => {
   });
 
   it('should only sync enabled bidders', () => {
-    $$PREBID_GLOBAL$$.userSync.enabledBidders = ['testBidderA'];
+    setUserSyncConfig({enabledBidders: ['testBidderA']});
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();

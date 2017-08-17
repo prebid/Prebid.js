@@ -73,11 +73,6 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-// Set the default userSync object if it was not set by the publisher
-$$PREBID_GLOBAL$$.userSync = $$PREBID_GLOBAL$$.userSync || {};
-// Delay to request cookie sync to stay out of critical path
-$$PREBID_GLOBAL$$.userSync.syncDelay = $$PREBID_GLOBAL$$.userSync.syncDelay || 3000;
-
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
     .reduce(flatten)
@@ -338,10 +333,11 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
+  let userSyncConfig = config.getConfig('userSync') || {}
   // Automatically trigger the user syncs if configured by the publisher
-  if (!$$PREBID_GLOBAL$$.userSync.enableOverride) {
+  if (!userSyncConfig.enableOverride) {
     // Delay the auto sync by the config delay
-    syncUsers($$PREBID_GLOBAL$$.userSync.syncDelay);
+    syncUsers(userSyncConfig.syncDelay);
   }
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
@@ -771,7 +767,7 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
 };
 
 // Expose user syncing to the public API based on config "userSync.enableOverride"
-overrideSync($$PREBID_GLOBAL$$.userSync.enableOverride);
+overrideSync((config.getConfig('userSync') || {}).enableOverride);
 
 /**
  * Get Prebid config options

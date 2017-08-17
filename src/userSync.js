@@ -1,13 +1,7 @@
 import * as utils from 'src/utils';
+import { config } from 'src/config';
 
 export function newUserSync() {
-  // Set user sync config default values which can be overridden by the publisher
-  const userSyncDefaultConfig = {
-    syncEnabled: true,
-    pixelEnabled: true,
-    syncsPerBidder: 5
-  }
-
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
@@ -20,9 +14,12 @@ export function newUserSync() {
   // How many bids for each adapter
   let numAdapterBids = {};
 
-  // Merge the defaults with the user-defined config
-  let userSyncConfig = Object.assign($$PREBID_GLOBAL$$.userSync || {},
-    userSyncDefaultConfig);
+  // Get userSync configuration
+  let userSyncConfig = config.getConfig('userSync') || {};
+  // reset if it's set later
+  config.getConfig('userSync', (conf) => {
+    userSyncConfig = conf['userSync'] || {};
+  });
 
   /**
    * @function getDefaultQueue
@@ -120,7 +117,7 @@ export function newUserSync() {
    * @function registerSync
    * @summary Add sync for this bidder to a queue to be fired later
    * @public
-   * @params {string} type The type of the sync including image, iframe, and ajax
+   * @params {string} type The type of the sync including image, iframe
    * @params {string} bidder The name of the adapter. e.g. "rubicon"
    * @params {string|object} data A series of arguments
 
@@ -160,12 +157,12 @@ export function newUserSync() {
   /**
    * @function overrideSync
    * @summary Expose syncUsers method to the publisher for manual syncing when enabled
-   * @param {boolean} enableOverride Tells this module to expose the syncAll method to the public
+   * @param {boolean} enableOverride Tells this module to expose the syncUsers method to the public
    * @public
    */
   publicApi.overrideSync = (enableOverride) => {
     if (enableOverride) {
-      $$PREBID_GLOBAL$$.userSync.syncAll = userSync.syncUsers;
+      $$PREBID_GLOBAL$$.syncUsers = userSync.syncUsers;
     }
   };
 
