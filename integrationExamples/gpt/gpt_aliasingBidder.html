@@ -18,7 +18,7 @@
         if ($$PREBID_GLOBAL$$.initAdserverSet) return;
 
         googletag.cmd.push(function () {
-            $$PREBID_GLOBAL$$.que.push(function () {
+            $$PREBID_GLOBAL$$.cmd.push(function () {
                 $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
                 googletag.pubads().refresh();
             });
@@ -30,7 +30,7 @@
     setTimeout(initAdserver, PREBID_TIMEOUT);
 
     var $$PREBID_GLOBAL$$ = $$PREBID_GLOBAL$$ || {};
-    $$PREBID_GLOBAL$$.que = $$PREBID_GLOBAL$$.que || [];
+    $$PREBID_GLOBAL$$.cmd = $$PREBID_GLOBAL$$.cmd || [];
 
     // Load the Prebid Javascript Library Async. We recommend loading it immediately after
     // the initAdserver() and setTimeout functions.
@@ -54,7 +54,7 @@
         node.parentNode.insertBefore(gads, node);
     })();
 
-    $$PREBID_GLOBAL$$.que.push(function () {
+    $$PREBID_GLOBAL$$.cmd.push(function () {
         var adUnits = [
             {
                 code: 'div-gpt-ad-12345678-0',
@@ -177,7 +177,7 @@
 
     ga('create', 'XXXXXX', 'auto');
     //Send data from prebid.js automatically
-    $$PREBID_GLOBAL$$.que.push(function () {
+    $$PREBID_GLOBAL$$.cmd.push(function () {
         $$PREBID_GLOBAL$$.enableAnalytics({
             provider: 'ga',
             options: {
