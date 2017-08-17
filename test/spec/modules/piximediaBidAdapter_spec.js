@@ -96,7 +96,7 @@ describe('Piximedia adapter tests', function () {
 
       expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
       expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=pbjs.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
+      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
     });
 
     it('should call the correct Prebid URL when using the default URL with a deal and custom data', function () {
