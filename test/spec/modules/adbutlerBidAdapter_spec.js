@@ -15,14 +15,14 @@ describe('adbutler adapter tests', function () {
       stubLoadScript.restore();
     });
 
-    if (typeof (pbjs._bidsReceived) === 'undefined') {
-      pbjs._bidsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
     }
-    if (typeof (pbjs._bidsRequested) === 'undefined') {
-      pbjs._bidsRequested = [];
+    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+      $$PREBID_GLOBAL$$._bidsRequested = [];
     }
-    if (typeof (pbjs._adsReceived) === 'undefined') {
-      pbjs._adsReceived = [];
+    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
+      $$PREBID_GLOBAL$$._adsReceived = [];
     }
 
     it('should be called', function () {
@@ -144,15 +144,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -204,15 +204,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
@@ -263,15 +263,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(2);
@@ -319,15 +319,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(2);
@@ -376,15 +376,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(2);
@@ -435,15 +435,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(1);
@@ -496,15 +496,15 @@ describe('adbutler adapter tests', function () {
       unit.sizes = [[300, 250]];
       adUnits.push(unit);
 
-      if (typeof (pbjs._bidsRequested) === 'undefined') {
-        pbjs._bidsRequested = [params];
+      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
+        $$PREBID_GLOBAL$$._bidsRequested = [params];
       } else {
-        pbjs._bidsRequested.push(params);
+        $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
 
-      pbjs.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
 
-      pbjs.adbutlerCB(response);
+      $$PREBID_GLOBAL$$.adbutlerCB(response);
 
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];
       expect(bidObject1.getStatusCode()).to.equal(1);

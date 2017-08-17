@@ -1,8 +1,5 @@
+import { config } from './config';
 var CONSTANTS = require('./constants');
-
-var objectType_object = 'object';
-var objectType_string = 'string';
-var objectType_number = 'number';
 
 var _loggingChecked = false;
 
@@ -14,8 +11,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
+} catch (e) {
 }
 
 /*
@@ -89,8 +85,7 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
-    if (queryObj.hasOwnProperty(k))
-    { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -116,7 +111,7 @@ export function parseSizesInput(sizeObj) {
   var parsedSizes = [];
 
   // if a string for now we can assume it is a single size, like "300x250"
-  if (typeof sizeObj === objectType_string) {
+  if (typeof sizeObj === 'string') {
     // multiple sizes will be comma-separated
     var sizes = sizeObj.split(',');
 
@@ -130,13 +125,13 @@ export function parseSizesInput(sizeObj) {
         }
       }
     }
-  } else if (typeof sizeObj === objectType_object) {
+  } else if (typeof sizeObj === 'object') {
     var sizeArrayLength = sizeObj.length;
 
     // don't process empty array
     if (sizeArrayLength > 0) {
       // if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
+      if (sizeArrayLength === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
         parsedSizes.push(parseGPTSingleSizeArray(sizeObj));
       } else {
         // otherwise, we must be a MultiSize array
@@ -217,12 +212,13 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
-    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if (config.getConfig('debug') === false && _loggingChecked === false) {
+    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    config.setConfig({ debug });
     _loggingChecked = true;
   }
 
-  return !!$$PREBID_GLOBAL$$.logging;
+  return !!config.getConfig('debug');
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -266,6 +262,8 @@ var getParameterByName = function (name) {
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
+
+exports.getParameterByName = getParameterByName;
 
 /**
  * This function validates paramaters.
@@ -440,8 +438,7 @@ exports.insertElement = function(elm, doc, target) {
   let elToAppend;
   if (target) {
     elToAppend = doc.getElementsByTagName(target);
-  }
-  else {
+  } else {
     elToAppend = doc.getElementsByTagName('head');
   }
   try {
@@ -534,8 +531,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 
@@ -622,7 +618,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
 }
 
 /**
