@@ -639,6 +639,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
 $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+  utils.logWarn('$$PREBID_GLOBAL$$.setPriceGranularity will be removed in Prebid 1.0. Use $$PREBID_GLOBAL$$.setConfig({ priceGranularity: <granularity> }) instead.')
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
   config.setConfig({ priceGranularity: granularity });
 };

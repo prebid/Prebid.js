@@ -121,7 +121,7 @@ export function newConfig() {
   };
 
   function hasGranularity(val) {
-    return Object.keys(GRANULARITY_OPTIONS).filter(option => val === GRANULARITY_OPTIONS[option]).length;
+    return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
   }
 
   function validatePriceGranularity(val) {

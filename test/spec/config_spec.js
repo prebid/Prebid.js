@@ -119,7 +119,6 @@ describe('config API', () => {
   });
 
   it('sets priceGranularity and customPriceBucket', () => {
-    debugger; // eslint-disable-line
     const goodConfig = {
       'buckets': [{
         'min': 0,
