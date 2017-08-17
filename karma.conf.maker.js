@@ -111,16 +111,13 @@ module.exports = function(codeCoverage, browserstack, watchMode) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/helpers/prebidGlobal.js',
-      'test/**/*_spec.js',
-      'test/helpers/karma-init.js'
+      'test/test_index.js'
     ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/**/*_spec.js': ['webpack', 'sourcemap'],
-      'test/helpers/prebidGlobal.js': ['webpack', 'sourcemap']
+      'test/test_index.js': ['webpack', 'sourcemap']
     },
 
     // web server port
