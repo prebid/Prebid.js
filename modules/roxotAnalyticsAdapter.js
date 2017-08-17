@@ -38,30 +38,6 @@ function getParameterByName(param) {
   return vars[param] ? vars[param] : '';
 }
 
-function buildUtmTagData() {
-  let utmTagData = {};
-  let utmTagsDetected = false;
-  utmTags.forEach(function(utmTagKey) {
-    let utmTagValue = getParameterByName(utmTagKey);
-    if (utmTagValue !== '') {
-      utmTagsDetected = true;
-    }
-    utmTagData[utmTagKey] = utmTagValue;
-  });
-  utmTags.forEach(function(utmTagKey) {
-    if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
-      updateUtmTimeout();
-    } else {
-      if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
-        updateUtmTimeout();
-      }
-    }
-  });
-  return utmTagData;
-}
-
 function updateUtmTimeout() {
   localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
 }
@@ -108,35 +84,6 @@ function buildBidWon(eventType, args) {
 
 function buildEventStack() {
   eventStack.options = initOptions;
-}
-
-function send(eventType, data, sendDataType) {
-  let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
-  let xhr = new XMLHttpRequest();
-  xhr.open('POST', fullUrl, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.withCredentials = true;
-  xhr.onreadystatechange = function(result) {
-    if (this.readyState != 4) return;
-
-    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
-  }
-  xhr.send(JSON.stringify(data));
-}
-
-function pushEvent(eventType, args) {
-  if (eventType === bidRequestConst) {
-    if (checkAdUnitConfig()) {
-      args.bids = filterBidsByAdUnit(args.bids);
-    }
-    if (args.bids.length > 0) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  } else {
-    if (isValidEvent(eventType, args.adUnitCode)) {
-      eventStack.events.push({ eventType: eventType, args: args });
-    }
-  }
 }
 
 function filterBidsByAdUnit(bids) {
@@ -201,7 +148,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
         buildBidWon(eventType, info);
         if (isValidBidWon()) {
-          send(eventType, bidWon, 'bidWon');
+          roxotAdapter.send(eventType, bidWon, 'bidWon');
         }
         flushBidWon();
         return;
@@ -210,24 +157,78 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       if (eventType === auctionEndConst) {
         buildEventStack(eventType);
         if (isValidEventStack()) {
-          send(eventType, eventStack, 'eventStack');
+          roxotAdapter.send(eventType, eventStack, 'eventStack');
         }
         flushEventStack();
         auctionStatus = 'not_started';
       } else {
-        pushEvent(eventType, info);
+        roxotAdapter.pushEvent(eventType, info);
       }
-    }
+    },
+
   });
 
 roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
-  initOptions.utmTagData = buildUtmTagData();
+  initOptions.utmTagData = this.buildUtmTagData();
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
 };
+
+roxotAdapter.buildUtmTagData = function () {
+  let utmTagData = {};
+  let utmTagsDetected = false;
+  utmTags.forEach(function(utmTagKey) {
+    let utmTagValue = getParameterByName(utmTagKey);
+    if (utmTagValue !== '') {
+      utmTagsDetected = true;
+    }
+    utmTagData[utmTagKey] = utmTagValue;
+  });
+  utmTags.forEach(function(utmTagKey) {
+    if (utmTagsDetected) {
+      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      updateUtmTimeout();
+    } else {
+      if (!isUtmTimeoutExpired()) {
+        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        updateUtmTimeout();
+      }
+    }
+  });
+  return utmTagData;
+};
+
+roxotAdapter.send = function (eventType, data, sendDataType) {
+  let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
+  let xhr = new XMLHttpRequest();
+  xhr.open('POST', fullUrl, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.withCredentials = true;
+  xhr.onreadystatechange = function(result) {
+    if (this.readyState != 4) return;
+
+    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
+  }
+  xhr.send(JSON.stringify(data));
+};
+
+roxotAdapter.pushEvent = function (eventType, args) {
+  if (eventType === bidRequestConst) {
+    if (checkAdUnitConfig()) {
+      args.bids = filterBidsByAdUnit(args.bids);
+    }
+    if (args.bids.length > 0) {
+      eventStack.events.push({ eventType: eventType, args: args });
+    }
+  } else {
+    if (isValidEvent(eventType, args.adUnitCode)) {
+      eventStack.events.push({ eventType: eventType, args: args });
+    }
+  }
+}
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
