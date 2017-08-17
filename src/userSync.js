@@ -49,8 +49,7 @@ export function newUserSync() {
       fireImagePixels();
       // Iframe syncs
       loadIframes();
-    }
-    catch (e) {
+    } catch (e) {
       return utils.logError('Error firing user syncs', e);
     }
     // Reset the user sync queue
