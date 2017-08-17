@@ -144,7 +144,7 @@ const GumgumAdapter = function GumgumAdapter() {
           if (G) {
             loadAd();
           } else {
-            topWindow.$$PREBID_GLOBAL$$.loadScript("https://g2.gumgum.com/javascripts/ggv2.js", loadAd);
+            topWindow.$$PREBID_GLOBAL$$.loadScript("https://js.gumgum.com/services.js", loadAd);
           }
         }(window, top));
       </script>`;
