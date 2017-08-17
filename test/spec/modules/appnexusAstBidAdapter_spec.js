@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Adapter from 'modules/appnexusAstBidAdapter';
+import { adapter } from 'modules/appnexusAstBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
@@ -61,10 +61,6 @@ const RESPONSE = {
 };
 
 describe('AppNexusAdapter', () => {
-  let adapter;
-
-  beforeEach(() => adapter = new Adapter());
-
   describe('request function', () => {
     let xhr;
     let requests;
