@@ -1,7 +1,7 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
 import adaptermanager from 'src/adaptermanager';
-import { newBidder } from 'src/adapters/singleRequestBidder';
+import { newBidder } from 'src/adapters/bidderFactory';
 import { POST } from '../src/ajax';
 
 const BIDDER_CODE = 'appnexusAst';
@@ -42,7 +42,7 @@ const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequest: function(bidRequests) {
+  buildRequests: function(bidRequests) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = bidRequests.find(hasUserInfo);
     let userObj;
