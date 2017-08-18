@@ -148,7 +148,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
         buildBidWon(eventType, info);
         if (isValidBidWon()) {
-          roxotAdapter.send(eventType, bidWon, 'bidWon');
+          send(eventType, bidWon, 'bidWon');
         }
         flushBidWon();
         return;
@@ -157,12 +157,12 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       if (eventType === auctionEndConst) {
         buildEventStack(eventType);
         if (isValidEventStack()) {
-          roxotAdapter.send(eventType, eventStack, 'eventStack');
+          send(eventType, eventStack, 'eventStack');
         }
         flushEventStack();
         auctionStatus = 'not_started';
       } else {
-        roxotAdapter.pushEvent(eventType, info);
+        pushEvent(eventType, info);
       }
     },
 
@@ -201,7 +201,7 @@ roxotAdapter.buildUtmTagData = function () {
   return utmTagData;
 };
 
-roxotAdapter.send = function (eventType, data, sendDataType) {
+function send(eventType, data, sendDataType) {
   let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
   let xhr = new XMLHttpRequest();
   xhr.open('POST', fullUrl, true);
@@ -215,7 +215,7 @@ roxotAdapter.send = function (eventType, data, sendDataType) {
   xhr.send(JSON.stringify(data));
 };
 
-roxotAdapter.pushEvent = function (eventType, args) {
+function pushEvent(eventType, args) {
   if (eventType === bidRequestConst) {
     if (checkAdUnitConfig()) {
       args.bids = filterBidsByAdUnit(args.bids);
