@@ -92,7 +92,7 @@
             };
 
             pbjs.registerBidAdapter(A9Adaptor, 'amazon');
-            //pbjs.logging = true;
+            // pbjs.setConfig({ debug: true });
 
             var adUnits = [
                 {
@@ -438,7 +438,7 @@
             };
 
             // Optional: excepted values are `medium` (default), `low` and `high`
-            pbjs.setPriceGranularity('medium');
+            pbjs.setConfig({ priceGranularity: 'medium' });
 
             pbjs.requestBids({
                 bidsBackHandler: function (bidResponses) {
