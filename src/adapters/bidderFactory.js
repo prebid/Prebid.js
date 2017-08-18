@@ -31,7 +31,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
-export function newBidder(spec) {
+export default function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
     callBids: function(bidsRequest) {
       if (!bidsRequest.bids || !bidsRequest.bids.filter) {

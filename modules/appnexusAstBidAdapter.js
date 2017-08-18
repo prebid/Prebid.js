@@ -1,7 +1,7 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
 import adaptermanager from 'src/adaptermanager';
-import { newBidder } from 'src/adapters/bidderFactory';
+import newBidder from 'src/adapters/bidderFactory';
 import { POST } from '../src/ajax';
 
 const BIDDER_CODE = 'appnexusAst';
