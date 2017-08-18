@@ -202,8 +202,7 @@ function PrebidServer() {
         try {
           response = JSON.parse(response);
           response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
-        }
-        catch (e) {
+        } catch (e) {
           utils.logError(e);
         }
       },
