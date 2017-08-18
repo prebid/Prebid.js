@@ -365,9 +365,9 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  const auction = auctionManager.createAuction();
-  auction.setAdUnits(adUnits);
-  auction.setAdUnitCodes(adUnitCodes);
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes});
+  // auction.setAdUnits(adUnits);
+  // auction.setAdUnitCodes(adUnitCodes);
 
   if (typeof bidsBackHandler === 'function') {
     auction.startAuctionTimer(bidsBackHandler, cbTimeout);

@@ -402,8 +402,10 @@ describe('auctionmanager.js', function () {
   describe('addBidResponse', () => {
     let auction;
     before(() => {
-      auction = auctionManager.createAuction();
-      $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
+      let adUnits = fixtures.getAdUnits();
+      let adUnitCodes = fixtures.getAdUnits().map(unit => unit.code);
+      auction = auctionManager.createAuction({adUnits, adUnitCodes});
+      // $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
 
     it('should return proper price bucket increments for dense mode', () => {

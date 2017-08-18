@@ -20,10 +20,10 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-function Auction() {
+function Auction({adUnits, adUnitCodes}) {
   var _id = utils.getUniqueIdentifierStr();
-  var _adUnits = [];
-  var _adUnitCodes = [];
+  var _adUnits = adUnits;
+  var _adUnitCodes = adUnitCodes;
   var _targeting = [];
   var _bidderRequests = [];
   var _bidsReceived = [];
@@ -33,8 +33,6 @@ function Auction() {
   var _callback;
   var _timer;
 
-  this.setAdUnits = (adUnits) => _adUnits = adUnits;
-  this.setAdUnitCodes = (adUnitcodes) => _adUnitCodes = adUnitcodes;
   this.setTargeting = (targeting) => _targeting = targeting;
   this.setBidderRequests = (bidderRequests) => _bidderRequests = _bidderRequests.concat(bidderRequests);
   this.setBidsReceived = (bidsReceived) => _bidsReceived = _bidsReceived.concat(bidsReceived);

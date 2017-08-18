@@ -28,8 +28,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  _public.createAuction = function() {
-    return _createAuction();
+  _public.createAuction = function({ adUnits, adUnitCodes }) {
+    return _createAuction({ adUnits, adUnitCodes });
   };
 
   _public.findBidByAdId = function(adId) {
@@ -41,8 +41,8 @@ export function newAuctionManager() {
     return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   };
 
-  function _createAuction() {
-    const auction = createAuction()
+  function _createAuction({ adUnits, adUnitCodes }) {
+    const auction = createAuction({ adUnits, adUnitCodes })
     _addAuction(auction);
     return auction;
   }
