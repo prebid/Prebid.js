@@ -11,13 +11,7 @@ var utils = require('./utils.js');
 var events = require('./events');
 
 var externalCallbacks = {byAdUnit: [], all: [], oneTime: null, timer: false};
-var _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
-let _customPriceBucket;
 var defaultBidderSettingsMap = {};
-
-exports.setCustomPriceBucket = function(customConfig) {
-  _customPriceBucket = customConfig;
-};
 
 /**
  * Returns a list of bidders that we haven't received a response yet
@@ -169,7 +163,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, _customPriceBucket);
+    const priceStringsObj = getPriceBucketString(bid.cpm, config.getConfig('customPriceBucket'));
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -304,17 +298,6 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
   return keyValues;
 }
 
-exports.setPriceGranularity = function setPriceGranularity(granularity) {
-  var granularityOptions = CONSTANTS.GRANULARITY_OPTIONS;
-  if (Object.keys(granularityOptions).filter(option => granularity === granularityOptions[option])) {
-    _granularity = granularity;
-  } else {
-    utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using' +
-      ' `medium` as default.');
-    _granularity = CONSTANTS.GRANULARITY_OPTIONS.MEDIUM;
-  }
-};
-
 exports.registerDefaultBidderSetting = function (bidderCode, defaultSetting) {
   defaultBidderSettingsMap[bidderCode] = defaultSetting;
 };
@@ -437,6 +420,7 @@ exports.adjustBids = function() {
 };
 
 function getStandardBidderSettings() {
+  let granularity = config.getConfig('priceGranularity');
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
@@ -454,17 +438,17 @@ function getStandardBidderSettings() {
         }, {
           key: 'hb_pb',
           val: function (bidResponse) {
-            if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+            if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
               return bidResponse.pbAg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
               return bidResponse.pbDg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
               return bidResponse.pbLg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
               return bidResponse.pbMg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
               return bidResponse.pbHg;
-            } else if (_granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+            } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
               return bidResponse.pbCg;
             }
           }

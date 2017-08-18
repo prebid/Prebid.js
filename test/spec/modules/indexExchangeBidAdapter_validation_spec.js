@@ -7,6 +7,8 @@ var IndexUtils = require('../../helpers/index_adapter_utils.js');
 var HeaderTagRequest = '/cygnus';
 var ADAPTER_CODE = 'indexExchange';
 
+window.pbjs = window.pbjs || {};
+
 describe('indexExchange adapter - Validation', function () {
   let adapter;
   let sandbox;
@@ -154,7 +156,7 @@ describe('indexExchange adapter - Validation', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to IX demand');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to IX demand');
   });
 
   it('test_prebid_indexAdapter_sizeValidation_3_1: one slot has supported, unsupported, supported size -> unsupported slot ignored in IX demand request', function () {
@@ -275,7 +277,7 @@ describe('indexExchange adapter - Validation', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'No request to IX demand');
+    assert.isFalse(adLoader.loadScript.called, 'No request to IX demand');
 
     // checking bid manager responses. Only one bid back into bidmanager because one size is unsupported
     var adapterResponse = {};
@@ -752,7 +754,7 @@ describe('indexExchange adapter - Validation', function () {
         assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
         assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].statusMessage, 'Bid returned empty or error response', 'pass on bid message');
       } else {
-        assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'No request to AS');
+        assert.isFalse(adLoader.loadScript.called, 'No request to AS');
         assert.deepEqual(Object.keys(adapterResponse), [IndexUtils.DefaultPlacementCodePrefix], 'bid response from placement code that is configured');
         assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix].length, 1, 'one response back returned for placement ' + IndexUtils.DefaultPlacementCodePrefix);
         assert.equal(adapterResponse[IndexUtils.DefaultPlacementCodePrefix][0].bidderCode, ADAPTER_CODE, 'bidder code match with adapter\'s name');
@@ -1208,7 +1210,7 @@ describe('indexExchange adapter - Validation', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
   });
 
   it('test_prebid_indexAdapter_size_negativeWidth: negative width -> size is ignored, no ad server request for bad size', function () {
@@ -1401,7 +1403,7 @@ describe('indexExchange adapter - Validation', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
   });
 
   it('test_prebid_indexAdapter_size_hash_1: height or width hash -> invalid size, no ad server request for invalid size ', function () {
@@ -1472,7 +1474,7 @@ describe('indexExchange adapter - Validation', function () {
     ];
     adapter.callBids({ bids: configuredBids });
 
-    assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no request made to AS');
+    assert.isFalse(adLoader.loadScript.called, 'no request made to AS');
   });
 
   it('test_prebid_indexAdapter_size_swap: swap size and width for valid so now its invalid -> unsupportedsize, no ad server request for unsupported size ', function () {
