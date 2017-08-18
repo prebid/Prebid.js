@@ -48,6 +48,7 @@ describe('adapterManager tests', () => {
           }
         ]
       });
+      localStorage.setItem('pbjsSyncs', JSON.stringify(['appnexus']));
       AdapterManager.callBids({adUnits: adUnits});
       const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(2);
