@@ -147,7 +147,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
   return bidRequests;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, done) => {
   let serverBidRequests = bidRequests.filter(bidRequest => {
     return bidRequest.src && bidRequest.src === CONSTANTS.S2S.SRC;
   });
@@ -170,6 +170,8 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     if (adapter) {
       utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      bidRequest.doneCbCallCount = 0;
+      let doneCb = done(bidRequest.bidderRequestId);
       adapter.callBids(bidRequest, addBidResponse, doneCb);
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);

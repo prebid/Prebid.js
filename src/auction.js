@@ -1,4 +1,4 @@
-import { uniques, timestamp } from './utils';
+import { uniques, timestamp, delayExecution } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { nativeBidIsValid } from './native';
 import { store } from './videoCache';
@@ -102,17 +102,20 @@ function Auction({adUnits, adUnitCodes}) {
         .indexOf(bidder) < 0);
   };
 
-  this.done = function() {
-    var count = 0;
+  this.done = function(bidRequestId) {
     var auctionObj = this;
-    return function() {
-      count++
-      if (count === auctionObj.getBidderRequests().length) {
-        // when all bidders have called done callback it means auction is complete
+    var innerBidRequestId = bidRequestId;
+    return delayExecution(function() {
+      let request = auctionObj.getBidderRequests().find((bidRequest) => {
+        return innerBidRequestId === bidRequest.bidderRequestId;
+      });
+      request.doneCbCallCount += 1;
+      if (auctionObj.getBidderRequests().every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
+        // when all bidders have called done callback atleast once it means auction is complete
         auctionObj.setAuctionStatus(AUCTION_COMPLETED);
         auctionObj.executeCallback(false, true);
       }
-    }
+    }, 1);
   }
 
   this.addBidResponse = (adUnitCode, bid, auctionId) => {
@@ -285,9 +288,9 @@ function Auction({adUnits, adUnitCodes}) {
     bidRequests.forEach(bidRequest => {
       this.setBidderRequests(bidRequest);
     });
-    let doneCb = this.done();
+    // let doneCb = this.done();
     this.setAuctionStatus(AUCTION_IN_PROGRESS);
-    adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, doneCb);
+    adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, this.done.bind(this));
   };
 }
 
