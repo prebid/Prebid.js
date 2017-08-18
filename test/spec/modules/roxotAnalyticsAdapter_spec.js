@@ -6,25 +6,14 @@ let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
   describe('enableAnalytics', function () {
-    it('should enable roxot analytics', () => {
-      sinon.spy(roxotAnalytic, 'enableAnalytics');
-      adaptermanager.registerAnalyticsAdapter({
-        code: 'roxot',
-        adapter: roxotAnalytic
-      });
+    beforeEach(() => {
+      sinon.spy(roxotAnalytic, 'track');
+    });
 
-      adaptermanager.enableAnalytics({
-        provider: 'roxot',
-        options: {
-          publisherIds: ['test_roxot_prebid_analytid_publisher_id']
-        }
-      });
-      sinon.assert.calledOnce(roxotAnalytic.enableAnalytics);
-      roxotAnalytic.enableAnalytics.restore();
+    afterEach(() => {
+      roxotAnalytic.track.restore();
     });
     it('should catch all events', function () {
-      sinon.spy(roxotAnalytic, 'track');
-
       adaptermanager.registerAnalyticsAdapter({
         code: 'roxot',
         adapter: roxotAnalytic
@@ -44,7 +33,6 @@ describe('Roxot Prebid Analytic', function () {
       events.emit(constants.EVENTS.BID_WON, {});
 
       sinon.assert.callCount(roxotAnalytic.track, 5);
-      roxotAnalytic.track.restore();
     });
   });
   describe('build utm tag data', () => {
@@ -64,50 +52,5 @@ describe('Roxot Prebid Analytic', function () {
       expect(utmTagData.utm_term).to.equal('');
       expect(utmTagData.utm_content).to.equal('');
     });
-  });
-  describe('push bid response event', () => {
-    let pushEvent = sinon.stub(roxotAnalytic, 'pushEvent');
-
-    adaptermanager.registerAnalyticsAdapter({
-      code: 'roxot',
-      adapter: roxotAnalytic
-    });
-
-    adaptermanager.enableAnalytics({
-      provider: 'roxot',
-      options: {
-        publisherIds: ['test_roxot_prebid_analytid_publisher_id'],
-
-      }
-    });
-
-    events.emit(constants.EVENTS.AUCTION_INIT, {});
-    events.emit(constants.EVENTS.AUCTION_END, {});
-    events.emit(constants.EVENTS.BID_RESPONSE, {});
-
-    sinon.assert.calledWith(pushEvent, constants.EVENTS.BID_RESPONSE, {});
-    roxotAnalytic.pushEvent.restore();
-  });
-  describe('send bid won', function () {
-    let send = sinon.spy(roxotAnalytic, 'send');
-
-    adaptermanager.registerAnalyticsAdapter({
-      code: 'roxot',
-      adapter: roxotAnalytic
-    });
-
-    adaptermanager.enableAnalytics({
-      provider: 'roxot',
-      options: {
-        publisherIds: ['test_roxot_prebid_analytid_publisher_id']
-      }
-    });
-
-    events.emit(constants.EVENTS.AUCTION_INIT, {});
-    events.emit(constants.EVENTS.AUCTION_END, {});
-    events.emit(constants.EVENTS.BID_WON, {});
-
-    sinon.assert.callCount(send, 1);
-    send.restore();
   });
 });
