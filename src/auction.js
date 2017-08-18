@@ -20,7 +20,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-function Auction(customPriceBucket, granularity) {
+function Auction() {
   var _id = utils.getUniqueIdentifierStr();
   var _adUnits = [];
   var _adUnitCodes = [];
@@ -224,7 +224,7 @@ function Auction(customPriceBucket, granularity) {
         bid.renderer.setRender(adUnitRenderer.render);
       }
 
-      const priceStringsObj = getPriceBucketString(bid.cpm, customPriceBucket);
+      const priceStringsObj = getPriceBucketString(bid.cpm, config.getConfig('customPriceBucket'));
       bid.pbLg = priceStringsObj.low;
       bid.pbMg = priceStringsObj.med;
       bid.pbHg = priceStringsObj.high;
@@ -235,7 +235,7 @@ function Auction(customPriceBucket, granularity) {
       // if there is any key value pairs to map do here
       var keyValues = {};
       if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
-        keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid, granularity);
+        keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
       }
 
       bid.adserverTargeting = keyValues;
@@ -293,7 +293,8 @@ function Auction(customPriceBucket, granularity) {
   };
 }
 
-export function getStandardBidderSettings(granularity) {
+export function getStandardBidderSettings() {
+  let granularity = config.getConfig('priceGranularity');
   let bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
     bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {
@@ -342,14 +343,14 @@ export function getStandardBidderSettings(granularity) {
   return bidder_settings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
 
-export function getKeyValueTargetingPairs(bidderCode, custBidObj, granularity) {
+export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
   var bidder_settings = $$PREBID_GLOBAL$$.bidderSettings;
 
   // 1) set the keys from "standard" setting or from prebid defaults
   if (custBidObj && bidder_settings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings(granularity);
+    const standardSettings = getStandardBidderSettings();
     setKeys(keyValues, standardSettings, custBidObj);
   }
 

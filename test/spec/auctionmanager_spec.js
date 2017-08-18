@@ -1,4 +1,5 @@
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
+import { getKeyValueTargetingPairs } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 
@@ -49,7 +50,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -91,7 +92,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbHg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -133,7 +134,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbHg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -175,7 +176,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': bidPbMg,
         'hb_size': size
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      var response = getKeyValueTargetingPairs(bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
       assert.deepEqual(response, expected);
     });
 
@@ -212,7 +213,7 @@ describe('auctionmanager.js', function () {
       };
 
       var expected = { 'hb_bidder': bidderCode, 'hb_adid': adId, 'hb_pb': 10.0 };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -279,7 +280,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': 15.0,
         'hb_size': '300x250'
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -316,7 +317,7 @@ describe('auctionmanager.js', function () {
         'hb_pb': 5.57,
         'hb_size': '300x250'
       };
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
       assert.equal(bid.alwaysUseBid, true);
       assert.equal(bid.sendStandardTargeting, false);
@@ -344,7 +345,7 @@ describe('auctionmanager.js', function () {
         'aKeyWithAValue': 42
       };
 
-      var response = auctionManager.getKeyValueTargetingPairs(bidderCode, bid);
+      var response = getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
     });
   });
