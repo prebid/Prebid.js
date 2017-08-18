@@ -85,7 +85,7 @@ describe('Atomx adapter', function () {
     });
     it('bid request should be called. sizes style -> [[],[]]', function () {
       Adapter.callBids(validData_1);
-      sinon.assert.calledOnce(stubAjax);
+      sinon.assert.calledTwice(stubAjax);
     });
     it('bid request should be called. sizes style -> []', function () {
       Adapter.callBids(validData_2);

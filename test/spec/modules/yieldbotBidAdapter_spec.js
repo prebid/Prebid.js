@@ -203,7 +203,7 @@ describe('Yieldbot adapter tests', function() {
     });
 
     it('should call yieldbot.nextPageview with slot config of requested bids', function() {
-      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+      window.$$PREBID_GLOBAL$$._bidsRequested = window.$$PREBID_GLOBAL$$._bidsRequested.filter(o => {
         return o.bidderCode !== 'yieldbot';
       });
 
@@ -215,7 +215,7 @@ describe('Yieldbot adapter tests', function() {
       sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'medrec');
       sinon.assert.calledWith(yieldbotLibStub.defineSlot, 'leaderboard');
 
-      window.pbjs._bidsRequested = window.pbjs._bidsRequested.filter(o => {
+      window.$$PREBID_GLOBAL$$._bidsRequested = window.$$PREBID_GLOBAL$$._bidsRequested.filter(o => {
         return o.bidderCode !== 'yieldbot';
       });
 

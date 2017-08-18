@@ -484,6 +484,48 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid1.adId, bid1.adId);
     });
 
+    it('should not add banner bids that have no width or height', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(1),
+        {
+          width: undefined,
+          height: undefined
+        }
+      );
+
+      bidmanager.addBidResponse('adUnitCode', bid);
+
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived[$$PREBID_GLOBAL$$._bidsReceived.length - 1];
+
+      assert.notEqual(bid.adId, addedBid.adId);
+    });
+
+    it('should add banner bids that have no width or height but single adunit size', () => {
+      sinon.stub(utils, 'getBidderRequest', () => ({
+        bids: [{
+          sizes: [[300, 250]],
+        }]
+      }));
+
+      const bid = Object.assign({},
+        bidfactory.createBid(1),
+        {
+          width: undefined,
+          height: undefined
+        }
+      );
+
+      bidmanager.addBidResponse('adUnitCode', bid);
+
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived[$$PREBID_GLOBAL$$._bidsReceived.length - 1];
+
+      assert.equal(bid.adId, addedBid.adId);
+      assert.equal(addedBid.width, 300);
+      assert.equal(addedBid.height, 250);
+
+      utils.getBidderRequest.restore();
+    });
+
     it('should not add native bids that do not have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
         bidder: 'appnexusAst',

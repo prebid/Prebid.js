@@ -1,4 +1,3 @@
-import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
