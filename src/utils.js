@@ -680,10 +680,24 @@ export function delayExecution(func, numRequiredCalls) {
     throw new Error(`numRequiredCalls must be a positive number. Got ${numRequiredCalls}`);
   }
   let numCalls = 0;
-  return function() {
+  return function () {
     numCalls++;
     if (numCalls === numRequiredCalls) {
       func.apply(null, arguments);
     }
   }
+}
+
+/**
+ * https://stackoverflow.com/a/34890276/428704
+ * @export
+ * @param {array} xs
+ * @param {string} key
+ * @returns {${key_value}: ${groupByArray}, key_value: {groupByArray}}
+ */
+export function groupBy(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
 }
