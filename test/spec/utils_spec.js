@@ -524,4 +524,18 @@ describe('Utils', function () {
       assert.equal(arr.length, count, 'Polyfill test fails')
     });
   });
+
+  describe('delayExecution', function () {
+    it('should execute the core function after the correct number of calls', function () {
+      const callback = sinon.spy();
+      const delayed = utils.delayExecution(callback, 5);
+      for (let i = 0; i < 4; i++) {
+        delayed();
+      }
+      assert(callback.notCalled);
+      delayed(3);
+      assert(callback.called)
+      assert.equal(callback.firstCall.args[0], 3);
+    });
+  });
 });
