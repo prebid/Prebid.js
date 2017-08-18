@@ -59,6 +59,13 @@ function bidsBackAll() {
   return requested === received;
 }
 
+function getCurrentRequestId() {
+  const requested = $$PREBID_GLOBAL$$._bidsRequested;
+  if (requested.length > 0) {
+    return requested[0].requestId;
+  }
+}
+
 exports.bidsBackAll = function () {
   return bidsBackAll();
 };
@@ -145,6 +152,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bidder: bid.bidderCode,
       adUnitCode
     });
+
+    const currentRequestId = getCurrentRequestId();
+    if (bidRequest.requestId !== currentRequestId) {
+      utils.logWarn(`Got bid response for request ID ${bidRequest.requestId}, which does not match current request ID ${currentRequestId}. Response discarded.`);
+      return;
+    }
 
     bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
