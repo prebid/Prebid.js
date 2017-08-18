@@ -8,26 +8,22 @@ const queue = [];
 
 function fireSyncs() {
   queue.forEach(obj => {
-    const bnSetBidderSynced = setBidderSynced.bind(null, obj.bidder);
-    const bnUnsetBidderSynced = unsetBidderSynced.bind(null, obj.bidder);
-
     utils.logMessage(`Invoking cookie sync for bidder: ${obj.bidder}`);
     if (obj.type === 'iframe') {
-      utils.insertCookieSyncIframe(obj.url, false, bnSetBidderSynced, bnUnsetBidderSynced);
+      utils.insertCookieSyncIframe(obj.url, false);
     } else {
-      utils.insertPixel(obj.url, bnSetBidderSynced, bnUnsetBidderSynced);
+      utils.insertPixel(obj.url);
     }
+    setBidderSynced(obj.bidder);
   });
   // empty queue.
   queue.length = 0;
 }
 
 function setBidderSynced(bidder) {
-  setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).push(bidder).filter(utils.uniques));
-}
-
-function unsetBidderSynced(bidder) {
-  setStorageItem(S2S.SYNCED_BIDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY).filter(item => item != bidder));
+  setStorageItem(S2S.SYNCED_BIDDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY)
+    .concat([bidder])
+    .filter(utils.uniques));
 }
 
 /**

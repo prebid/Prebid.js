@@ -20,9 +20,9 @@ export function setStorageItem(key, item) {
 export function getStorageItem(key) {
   try {
     const item = JSON.parse(localStorage.getItem(key));
-    return item.length ? item : null;
+    return item.length ? item : [];
   } catch (e) {
     logWarn('could not get storage item: ', e);
-    return null;
+    return [];
   }
 }
