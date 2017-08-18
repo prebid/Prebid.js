@@ -6,7 +6,6 @@ import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
-import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
@@ -536,8 +535,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
     adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
-  }
-  catch (e) {
+  } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
 };
@@ -550,8 +548,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
     adaptermanager.registerAnalyticsAdapter(options);
-  }
-  catch (e) {
+  } catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
 };
@@ -642,23 +639,9 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
 $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+  utils.logWarn('$$PREBID_GLOBAL$$.setPriceGranularity will be removed in Prebid 1.0. Use $$PREBID_GLOBAL$$.setConfig({ priceGranularity: <granularity> }) instead.')
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
-  if (!granularity) {
-    utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-    return;
-  }
-  if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
-  }
-  else if (typeof granularity === 'object') {
-    if (!isValidePriceConfig(granularity)) {
-      utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
-      return;
-    }
-    bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
-    utils.logMessage('Using custom price granularity');
-  }
+  config.setConfig({ priceGranularity: granularity });
 };
 
 /** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
@@ -704,15 +687,17 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
 };
 
 /**
- * Set the order bidders are called in. If not set, the bidders are called in
- * the order they are defined within the adUnit.bids array
- * @param {string} order - Order to call bidders in. Currently the only possible value
- * is 'random', which randomly shuffles the order
+ * Set the order bidders are called in. Valid values are:
+ *
+ * "fixed": Bidders will be called in the order in which they were defined within the adUnit.bids array.
+ * "random": Bidders will be called in random order.
+ *
+ * If never called, Prebid will use "random" as the default.
+ *
+ * @param {string} order One of the valid orders, described above.
  * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
-$$PREBID_GLOBAL$$.setBidderSequence = function (order) {
-  adaptermanager.setBidderSequence(CONSTANTS.ORDER.RANDOM);
-};
+$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
@@ -814,8 +799,7 @@ function processQueue(queue) {
       try {
         cmd.call();
         cmd.called = true;
-      }
-      catch (e) {
+      } catch (e) {
         utils.logError('Error processing command :', 'prebid.js', e);
       }
     }

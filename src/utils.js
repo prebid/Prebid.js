@@ -11,8 +11,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
+} catch (e) {
 }
 
 /*
@@ -86,8 +85,7 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
-    if (queryObj.hasOwnProperty(k))
-    { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -440,8 +438,7 @@ exports.insertElement = function(elm, doc, target) {
   let elToAppend;
   if (target) {
     elToAppend = doc.getElementsByTagName(target);
-  }
-  else {
+  } else {
     elToAppend = doc.getElementsByTagName('head');
   }
   try {
@@ -534,8 +531,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 
@@ -665,4 +661,19 @@ export function getBidderRequest(bidder, adUnitCode) {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
+}
+
+/**
+ *
+ * https://stackoverflow.com/a/34890276/428704
+ * @export
+ * @param {array} xs
+ * @param {string} key
+ * @returns {${key_value}: ${groupByArray}, key_value: {groupByArray}}
+ */
+export function groupBy(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
 }
