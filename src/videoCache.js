@@ -11,7 +11,7 @@
 
 import { ajax } from './ajax';
 
-const PUT_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
+const ENDPOINT = 'https://prebid.adnxs.com/pbc/v1/cache'
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -119,12 +119,12 @@ export function store(bids, done) {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(PUT_URL, shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(ENDPOINT, shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
 }
 
 export function getCacheUrl(id) {
-  return `${PUT_URL}?uuid=${id}`;
+  return `${ENDPOINT}?uuid=${id}`;
 }
