@@ -24,6 +24,9 @@ let localStoragePrefix = 'roxot_analytics_';
 let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 let utmTimeoutKey = 'utm_timeout';
 let utmTimeout = 60 * 60 * 1000;
+let sessionTimeout = 60 * 60 * 1000;
+let sessionIdStorageKey = 'session_id';
+let sessionTimeoutKey = 'session_timeout';
 
 function getParameterByName(param) {
   let vars = {};
@@ -35,6 +38,36 @@ function getParameterByName(param) {
   );
 
   return vars[param] ? vars[param] : '';
+}
+
+function buildSessionIdLocalStorageKey() {
+  return localStoragePrefix.concat(sessionIdStorageKey);
+}
+
+function buildSessionIdTimeoutLocalStorageKey() {
+  return localStoragePrefix.concat(sessionTimeoutKey);
+}
+
+function updateSessionId() {
+  if (isSessionIdTimeoutExpired()) {
+    let newSessionId = utils.generateUUID();
+    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
+  }
+  initOptions.sessionId = getSessionId();
+  updateSessionIdTimeout();
+}
+
+function updateSessionIdTimeout() {
+  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+}
+
+function isSessionIdTimeoutExpired() {
+  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+  return Date.now() - cpmSessionTimestamp > sessionTimeout;
+}
+
+function getSessionId() {
+  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
 }
 
 function updateUtmTimeout() {
@@ -145,6 +178,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       }
 
       if (eventType === bidWonConst && auctionStatus === 'not_started') {
+        updateSessionId();
         buildBidWon(eventType, info);
         if (isValidBidWon()) {
           send(eventType, bidWon, 'bidWon');
@@ -154,6 +188,7 @@ let roxotAdapter = Object.assign(adapter({url, analyticsType}),
       }
 
       if (eventType === auctionEndConst) {
+        updateSessionId();
         buildEventStack(eventType);
         if (isValidEventStack()) {
           send(eventType, eventStack, 'eventStack');
