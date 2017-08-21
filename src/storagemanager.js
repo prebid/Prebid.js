@@ -10,7 +10,7 @@ import { logWarn } from './utils';
 
 export function newStorageManager() {
   return {
-    setStorageItem(key, item) {
+    set(key, item) {
       try {
         localStorage.setItem(key, JSON.stringify(item));
       } catch (e) {
@@ -18,7 +18,7 @@ export function newStorageManager() {
       }
     },
 
-    getStorageItem(key) {
+    get(key) {
       try {
         const item = JSON.parse(localStorage.getItem(key));
         return item.length ? item : [];

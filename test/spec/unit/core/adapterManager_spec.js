@@ -20,11 +20,6 @@ var prebidServerAdapterMock = {
   queueSync: sinon.stub()
 };
 
-var storageManagerMock = {
-  setStorageItem: sinon.stub(),
-  getStorageItem: sinon.stub()
-};
-
 describe('adapterManager tests', () => {
   describe('S2S tests', () => {
     var stubGetStorageItem;
@@ -34,16 +29,16 @@ describe('adapterManager tests', () => {
       AdapterManager.setS2SConfig(CONFIG);
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
 
-      stubGetStorageItem = sinon.stub(StorageManager, 'getStorageItem');
-      stubSetStorageItem = sinon.stub(StorageManager, 'setStorageItem');
+      stubGetStorageItem = sinon.stub(StorageManager, 'get');
+      stubSetStorageItem = sinon.stub(StorageManager, 'set');
       stubGetStorageItem.returns(['appnexus']);
 
       prebidServerAdapterMock.callBids.reset();
     });
 
     afterEach(() => {
-      StorageManager.getStorageItem.restore();
-      StorageManager.setStorageItem.restore();
+      StorageManager.get.restore();
+      StorageManager.set.restore();
     });
 
     it('invokes callBids on the S2S adapter', () => {

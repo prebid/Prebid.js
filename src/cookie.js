@@ -21,7 +21,7 @@ function fireSyncs() {
 }
 
 function setBidderSynced(bidder) {
-  StorageManager.setStorageItem(S2S.SYNCED_BIDDERS_KEY, StorageManager.getStorageItem(S2S.SYNCED_BIDDERS_KEY)
+  StorageManager.set(S2S.SYNCED_BIDDERS_KEY, StorageManager.get(S2S.SYNCED_BIDDERS_KEY)
     .concat([bidder])
     .filter(utils.uniques));
 }
