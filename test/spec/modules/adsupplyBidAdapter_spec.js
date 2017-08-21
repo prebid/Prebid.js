@@ -8,11 +8,11 @@ describe('adsupply adapter tests', function () {
   let adsupplyAdapter = new AdSupplyAdapter();
 
   beforeEach(() => {
-    pbjs._bidsRequested = [];
+    $$PREBID_GLOBAL$$._bidsRequested = [];
   });
 
   it('adsupply response handler should exist and be a function', function () {
-    expect(pbjs.adSupplyResponseHandler).to.exist.and.to.be.a('function');
+    expect($$PREBID_GLOBAL$$.adSupplyResponseHandler).to.exist.and.to.be.a('function');
   });
 
   it('two requests are sent to adsupply engine', function () {
@@ -240,10 +240,10 @@ describe('adsupply adapter tests', function () {
     new AdSupplyAdapter();
 
     // bidId is not valid
-    pbjs.adSupplyResponseHandler(null);
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler(null);
 
     // bidRequest object is not found
-    pbjs.adSupplyResponseHandler('bidId1');
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler('bidId1');
 
     let clientId = 'g5d384afa-c050-4bac-b202-dab8fb06e381';
     // Zone property is not found
@@ -261,17 +261,17 @@ describe('adsupply adapter tests', function () {
         }
       }]
     };
-    pbjs._bidsRequested.push(bidderRequest);
-    pbjs.adSupplyResponseHandler('bidId1');
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler('bidId1');
 
     // Media is not found
     window[clientId] = window[clientId] || {};
     window[clientId]['b111'] = window[clientId]['b111'] || {};
-    pbjs.adSupplyResponseHandler('bidId1');
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler('bidId1');
 
     sinon.assert.notCalled(stubAddBidResponse);
 
-    pbjs._bidsRequested.pop();
+    $$PREBID_GLOBAL$$._bidsRequested.pop();
     bidmanager.addBidResponse.restore();
   });
 
@@ -297,12 +297,12 @@ describe('adsupply adapter tests', function () {
       }]
     };
 
-    pbjs._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
     window[clientId] = window[clientId] || {};
     window[clientId]['b111'] = window[clientId]['b111'] || {};
     window[clientId]['b111'].Media = { width: 300 };
-    pbjs.adSupplyResponseHandler('bidId1');
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler('bidId1');
 
     sinon.assert.calledOnce(stubAddBidResponse);
 
@@ -312,7 +312,7 @@ describe('adsupply adapter tests', function () {
     expect(bidResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
     expect(bidResponse.bidderCode).to.equal('adsupply');
 
-    pbjs._bidsRequested.pop();
+    $$PREBID_GLOBAL$$._bidsRequested.pop();
     bidmanager.addBidResponse.restore();
   });
 
@@ -338,12 +338,12 @@ describe('adsupply adapter tests', function () {
       }]
     };
 
-    pbjs._bidsRequested.push(bidderRequest);
+    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
     window[clientId] = window[clientId] || {};
     window[clientId]['b111'] = window[clientId]['b111'] || {};
     window[clientId]['b111'].Media = { Width: 300, Height: 250, Url: '/Redirect.engine', Ecpm: 0.0012 };
-    pbjs.adSupplyResponseHandler('bidId1');
+    $$PREBID_GLOBAL$$.adSupplyResponseHandler('bidId1');
 
     sinon.assert.calledOnce(stubAddBidResponse);
 
@@ -353,7 +353,7 @@ describe('adsupply adapter tests', function () {
     expect(bidResponse.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
     expect(bidResponse.bidderCode).to.equal('adsupply');
 
-    pbjs._bidsRequested.pop();
+    $$PREBID_GLOBAL$$._bidsRequested.pop();
     bidmanager.addBidResponse.restore();
   });
 });

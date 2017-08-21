@@ -94,8 +94,8 @@ function YieldbotAdapter() {
           var bid = v;
           // bidder params config: http://prebid.org/dev-docs/bidders/yieldbot.html
           // - last psn wins
-          psn = bid.params && bid.params.psn || psn;
-          var slotName = bid.params && bid.params.slot || 'ERROR_PREBID_DEFINE_YB_SLOT';
+          psn = (bid.params && bid.params.psn) || psn;
+          var slotName = (bid.params && bid.params.slot) || 'ERROR_PREBID_DEFINE_YB_SLOT';
 
           slots[slotName] = bid.sizes || [];
           ybotlib.definedSlots.push(bid.bidId);

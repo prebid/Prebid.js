@@ -15,7 +15,7 @@ var utils = require('./utils.js');
  priceKeyString;
  */
 function Bid(statusCode, bidRequest) {
-  var _bidId = bidRequest && bidRequest.bidId || utils.getUniqueIdentifierStr();
+  var _bidId = (bidRequest && bidRequest.bidId) || utils.getUniqueIdentifierStr();
   var _statusCode = statusCode || 0;
 
   this.bidderCode = (bidRequest && bidRequest.bidder) || '';
@@ -23,6 +23,7 @@ function Bid(statusCode, bidRequest) {
   this.height = 0;
   this.statusMessage = _getStatus();
   this.adId = _bidId;
+  this.mediaType = 'banner';
 
   function _getStatus() {
     switch (_statusCode) {

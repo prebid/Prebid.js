@@ -1,7 +1,7 @@
-const cookie = exports;
 import * as utils from './utils';
 import adLoader from './adloader';
 
+const cookie = exports;
 const queue = [];
 
 function fireSyncs() {
@@ -33,8 +33,7 @@ cookie.queueSync = function ({bidder, url, type}) {
 cookie.syncCookies = function(timeout) {
   if (timeout) {
     setTimeout(fireSyncs, timeout);
-  }
-  else {
+  } else {
     fireSyncs();
   }
 };

@@ -2,7 +2,7 @@
 
 describe('mantis adapter tests', function () {
   const expect = require('chai').expect;
-  const adapter = require('modules/mantisBidAdapter');
+  const Adapter = require('modules/mantisBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const constants = require('src/constants.json');
@@ -10,7 +10,7 @@ describe('mantis adapter tests', function () {
   var mantis, sandbox;
 
   beforeEach(() => {
-    mantis = new adapter();
+    mantis = new Adapter();
     sandbox = sinon.sandbox.create();
   });
 

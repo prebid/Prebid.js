@@ -280,14 +280,11 @@ function PulsePointLiteAdapter() {
     return !!slot.nativeParams;
   }
 
-  return {
+  return Object.assign(this, {
     callBids: _callBids
-  };
+  });
 }
 
-PulsePointLiteAdapter.createNew = function() {
-  return new PulsePointLiteAdapter();
-}
 /**
  * "pulseLite" will be the adapter name going forward. "pulsepointLite" to be
  * deprecated, but kept here for backwards compatibility.

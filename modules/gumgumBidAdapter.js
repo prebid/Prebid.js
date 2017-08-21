@@ -32,12 +32,12 @@ const GumgumAdapter = function GumgumAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId () {
       var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(dtCredentials) : {};
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || '';
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
     };
 
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return {};
     }
     return {
@@ -144,7 +144,7 @@ const GumgumAdapter = function GumgumAdapter() {
           if (G) {
             loadAd();
           } else {
-            topWindow.$$PREBID_GLOBAL$$.loadScript("https://g2.gumgum.com/javascripts/ggv2.js", loadAd);
+            topWindow.$$PREBID_GLOBAL$$.loadScript("https://js.gumgum.com/services.js", loadAd);
           }
         }(window, top));
       </script>`;
