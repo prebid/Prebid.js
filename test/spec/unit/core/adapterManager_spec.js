@@ -31,6 +31,9 @@ describe('adapterManager tests', () => {
 
       stubGetStorageItem = sinon.stub(StorageManager, 'get');
       stubSetStorageItem = sinon.stub(StorageManager, 'set');
+      stubSetStorageItem = sinon.stub(StorageManager, 'add');
+      stubSetStorageItem = sinon.stub(StorageManager, 'remove');
+
       stubGetStorageItem.returns(['appnexus']);
 
       prebidServerAdapterMock.callBids.reset();
@@ -39,6 +42,8 @@ describe('adapterManager tests', () => {
     afterEach(() => {
       StorageManager.get.restore();
       StorageManager.set.restore();
+      StorageManager.add.restore();
+      StorageManager.remove.restore();
     });
 
     it('invokes callBids on the S2S adapter', () => {

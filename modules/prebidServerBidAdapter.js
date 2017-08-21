@@ -7,6 +7,8 @@ import { STATUS, S2S } from 'src/constants';
 import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
+
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
@@ -127,7 +129,10 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
+              StorageManager.remove(pbjsSyncsKey, bidder.bidder);
               queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
+            } else {
+              StorageManager.add(pbjsSyncsKey, bidder.bidder, true);
             }
           });
         }
