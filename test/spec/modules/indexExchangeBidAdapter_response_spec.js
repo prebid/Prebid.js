@@ -1,6 +1,6 @@
-import Adapter from '../../../modules/indexExchangeBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import adLoader from '../../../src/adloader';
+import Adapter from 'modules/indexExchangeBidAdapter';
+import bidManager from 'src/bidmanager';
+import adLoader from 'src/adloader';
 
 var assert = require('chai').assert;
 var IndexUtils = require('../../helpers/index_adapter_utils.js');
@@ -10,7 +10,7 @@ var ADAPTER_CODE = 'indexExchange';
 var DefaultValue = {
   dealID: 'IXDeal'
 };
-
+window.pbjs = window.pbjs || {};
 var ResponseStatus = {
   noBid: 'Bid returned empty or error response'
 };
@@ -561,7 +561,7 @@ describe('indexExchange adapter - Response', function () {
       var requestParams = refreshSetup[i];
 
       adapter.callBids({ bids: configuredBids });
-      assert.isUndefined(adLoader.loadScript.firstCall.args[0], 'no ad server request for ' + requestParams.request)
+      assert.isFalse(adLoader.loadScript.called, 'no ad server request for ' + requestParams.request)
     }
   });
 

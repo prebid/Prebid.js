@@ -1,14 +1,23 @@
 import { excpet } from 'chai';
+import { assert } from 'chai';
 import { newConfig } from 'src/config';
+
+const utils = require('src/utils');
 
 let getConfig;
 let setConfig;
 
 describe('config API', () => {
+  let logErrorSpy;
   beforeEach(() => {
     const config = newConfig();
     getConfig = config.getConfig;
     setConfig = config.setConfig;
+    logErrorSpy = sinon.spy(utils, 'logError');
+  });
+
+  afterEach(() => {
+    utils.logError.restore();
   });
 
   it('setConfig is a function', () => {
@@ -102,5 +111,30 @@ describe('config API', () => {
 
     sinon.assert.notCalled(listener);
     sinon.assert.calledOnce(wildcard);
+  });
+
+  it('sets priceGranularity', () => {
+    setConfig({ priceGranularity: 'low' });
+    expect(getConfig('priceGranularity')).to.be.equal('low');
+  });
+
+  it('sets priceGranularity and customPriceBucket', () => {
+    const goodConfig = {
+      'buckets': [{
+        'min': 0,
+        'max': 3,
+        'increment': 0.01,
+        'cap': true
+      }]
+    };
+    setConfig({ priceGranularity: goodConfig });
+    expect(getConfig('priceGranularity')).to.be.equal('medium');
+    expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  });
+
+  it('should log error for invalid priceGranularity', () => {
+    setConfig({ priceGranularity: '' });
+    const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
+    assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
 });
