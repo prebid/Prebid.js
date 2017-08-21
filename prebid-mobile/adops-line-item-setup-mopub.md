@@ -47,7 +47,7 @@ The **hb_cache_id** variable stands for the cache id that will load the ad marku
 <script type="text/javascript" src = "//acdn.adnxs.com/mobile/prebid/pbm.js"></script>
 <script type="text/javascript">
     pbm.showAdFromCacheId({
-        admCacheID: '%%KEYWORD:hb_cache_id%%’  
+        admCacheID: '%%KEYWORD:hb_cache_id%%'  
     });
 </script>
 ```
