@@ -117,8 +117,8 @@ function YieldbotAdapter() {
           var bid = v;
           // bidder params config: http://prebid.org/dev-docs/bidders/yieldbot.html
           // - last psn wins
-          psn = bid.params && bid.params.psn || psn;
-          var slotName = bid.params && bid.params.slot || 'ERROR_PREBID_DEFINE_YB_SLOT';
+          psn = bid.params && bid.params.psn ? bid.params.psn : psn;
+          var slotName = bid.params && bid.params.slot ? bid.params.slot : 'ERROR_PREBID_DEFINE_YB_SLOT';
           var parsedSizes = utils.parseSizesInput(bid.sizes) || [];
           slots[slotName] = slots[slotName] || [];
           slots[slotName] = slots[slotName].concat(parsedSizes);
@@ -138,12 +138,12 @@ function YieldbotAdapter() {
           yieldbot.pub(psn);
           for (var slotName in slots) {
             if (slots.hasOwnProperty(slotName)) {
-              yieldbot.defineSlot(slotName, { sizes: slots[slotName]});
+              yieldbot.defineSlot(slotName, { sizes: slots[slotName] });
             }
           }
           yieldbot.enableAsync();
           yieldbot.go();
-        } else {
+        } else if (!utils.isEmpty(slots)) {
           yieldbot.nextPageview(slots);
         }
       });
