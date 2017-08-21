@@ -4,25 +4,30 @@
  *
  * Only html5 localStorage implemented currently.
  *
- * @param key
- * @param item
- */
+*/
+
 import { logWarn } from './utils';
 
-export function setStorageItem(key, item) {
-  try {
-    localStorage.setItem(key, JSON.stringify(item));
-  } catch (e) {
-    logWarn('could not set storage item: ', e);
+export function newStorageManager() {
+  return {
+    setStorageItem(key, item) {
+      try {
+        localStorage.setItem(key, JSON.stringify(item));
+      } catch (e) {
+        logWarn('could not set storage item: ', e);
+      }
+    },
+
+    getStorageItem(key) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        return item.length ? item : [];
+      } catch (e) {
+        logWarn('could not get storage item: ', e);
+        return [];
+      }
+    }
   }
 }
 
-export function getStorageItem(key) {
-  try {
-    const item = JSON.parse(localStorage.getItem(key));
-    return item.length ? item : [];
-  } catch (e) {
-    logWarn('could not get storage item: ', e);
-    return [];
-  }
-}
+export const StorageManager = newStorageManager();

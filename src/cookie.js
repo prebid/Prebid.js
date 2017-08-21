@@ -1,6 +1,6 @@
 import * as utils from './utils';
 import adLoader from './adloader';
-import { getStorageItem, setStorageItem } from './storagemanager';
+import { StorageManager } from './storagemanager';
 import { S2S } from './constants.json';
 
 const cookie = exports;
@@ -21,7 +21,7 @@ function fireSyncs() {
 }
 
 function setBidderSynced(bidder) {
-  setStorageItem(S2S.SYNCED_BIDDERS_KEY, getStorageItem(S2S.SYNCED_BIDDERS_KEY)
+  StorageManager.setStorageItem(S2S.SYNCED_BIDDERS_KEY, StorageManager.getStorageItem(S2S.SYNCED_BIDDERS_KEY)
     .concat([bidder])
     .filter(utils.uniques));
 }
