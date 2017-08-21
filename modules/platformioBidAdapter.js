@@ -9,7 +9,7 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
   function _callBids(params) {
     var bidURL;
     var bids = params.bids || [];
-    var requestURL = window.location.protocol + '//adx1js.s3.amazonaws.com/pb_ortb.js?cb=' + new Date().getTime() + '&ver=1&';
+    var requestURL = window.location.protocol + '//js.adx1.com/pb_ortb.js?cb=' + new Date().getTime() + '&ver=1&';
 
     for (var i = 0; i < bids.length; i++) {
       var requestParams = {};
@@ -17,6 +17,7 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
 
       requestParams.pub_id = bid.params.pubId;
       requestParams.site_id = bid.params.siteId;
+      requestParams.placement_id = bid.placementCode;
 
       var parseSized = utils.parseSizesInput(bid.sizes);
       var arrSize = parseSized[0].split('x');
