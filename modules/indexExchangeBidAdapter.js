@@ -273,15 +273,15 @@ var cygnus_index_start = function () {
     // Get page URL
     this.sitePage = undefined;
     try {
-        this.sitePage = utils.getTopWindowUrl();
+      this.sitePage = utils.getTopWindowUrl();
     } catch (e) {}
     // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
-    if (typeof this.sitePage === 'undefined' || this.sitePage === "") {
-        if (top === self) {
-          this.sitePage = location.href;
-        } else {
-          this.sitePage = document.referrer;
-        }
+    if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
+      if (top === self) {
+        this.sitePage = location.href;
+      } else {
+        this.sitePage = document.referrer;
+      }
     }
 
     if (top === self) {
