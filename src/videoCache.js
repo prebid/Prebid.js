@@ -124,3 +124,7 @@ export function store(bids, done) {
     withCredentials: true
   });
 }
+
+export function getCacheUrl(id) {
+  return `${PUT_URL}?uuid=${id}`;
+}

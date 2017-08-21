@@ -1,7 +1,7 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import {getPriceBucketString} from './cpmBucketManager';
 import {NATIVE_KEYS, nativeBidIsValid} from './native';
-import { store } from './videoCache';
+import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 
@@ -210,6 +210,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
         } else {
           bid.videoCacheKey = cacheIds[0].uuid;
+          if (!bid.vastUrl) {
+            bid.vastUrl = getCacheUrl(bid.videoCacheKey);
+          }
           addBidToAuction(bid);
         }
         doCallbacksIfNeeded();
