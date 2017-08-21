@@ -1,8 +1,9 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter, groupBy } from './utils';
+import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
-const bidmanager = require('./bidmanager.js');
-const utils = require('./utils.js');
-var CONSTANTS = require('./constants.json');
+const bidmanager = require('./bidmanager');
+const utils = require('./utils');
+var CONSTANTS = require('./constants');
 
 var targeting = exports;
 var pbTargetingKeys = [];
@@ -31,8 +32,8 @@ targeting.getAllTargeting = function(adUnitCode) {
   // Get targeting for the winning bid. Add targeting for any bids that have
   // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
   var targeting = getWinningBidTargeting(adUnitCodes)
-      .concat(getAlwaysUseBidTargeting(adUnitCodes))
-      .concat($$PREBID_GLOBAL$$._sendAllBids ? getBidLandscapeTargeting(adUnitCodes) : []);
+    .concat(getAlwaysUseBidTargeting(adUnitCodes))
+    .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
 
   // store a reference of the targeting keys
   targeting.map(adUnitCode => {
@@ -73,8 +74,7 @@ targeting.setTargeting = function(targetingConfig) {
 function getAdUnitCodes(adUnitCode) {
   if (typeof adUnitCode === 'string') {
     return [adUnitCode];
-  }
-  else if (utils.isArray(adUnitCode)) {
+  } else if (utils.isArray(adUnitCode)) {
     return adUnitCode;
   }
   return $$PREBID_GLOBAL$$._adUnitCodes || [];
@@ -95,13 +95,7 @@ targeting.getWinningBids = function(adUnitCode) {
     .filter(uniques)
     .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
       .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce(getHighestCpm,
-      {
-        adUnitCode: adUnitCode,
-        cpm: 0,
-        adserverTargeting: {},
-        timeToRespond: 0
-      }));
+      .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
 };
 
 targeting.setTargetingForAst = function() {
@@ -120,7 +114,6 @@ targeting.setTargetingForAst = function() {
     })
   );
 };
-
 
 function getWinningBidTargeting(adUnitCodes) {
   let winners = targeting.getWinningBids(adUnitCodes);
@@ -141,9 +134,9 @@ function getWinningBidTargeting(adUnitCodes) {
 }
 
 function getStandardKeys() {
-  return bidmanager.getStandardBidderAdServerTargeting()        // in case using a custom standard key set
-                   .map(targeting => targeting.key)
-                   .concat(CONSTANTS.TARGETING_KEYS).filter(uniques);     // standard keys defined in the library.
+  return bidmanager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
+    .map(targeting => targeting.key)
+    .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
 }
 
 /**
@@ -173,19 +166,24 @@ function getAlwaysUseBidTargeting(adUnitCodes) {
 
 function getBidLandscapeTargeting(adUnitCodes) {
   const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
-
-  return $$PREBID_GLOBAL$$._bidsReceived
-    .filter(adUnitsFilter.bind(this, adUnitCodes))
-    .map(bid => {
-      if (bid.adserverTargeting) {
-        return {
-          [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
-            key => typeof bid.adserverTargeting[key] !== 'undefined') // mainly for possibly
-            // unset hb_deal
-          )
-        };
-      }
-    }).filter(bid => bid); // removes empty elements in array
+  const bids = [];
+  // bucket by adUnitcode
+  let buckets = groupBy($$PREBID_GLOBAL$$._bidsReceived, 'adUnitCode');
+  // filter top bid for each bucket by bidder
+  Object.keys(buckets).forEach(bucketKey => {
+    let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
+    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(getHighestCpm, getEmptyBid())));
+  });
+  // populate targeting keys for the remaining bids
+  return bids.map(bid => {
+    if (bid.adserverTargeting) {
+      return {
+        [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
+          key => typeof bid.adserverTargeting[key] !== 'undefined')
+        )
+      };
+    }
+  }).filter(bid => bid); // removes empty elements in array
 }
 
 function getTargetingMap(bid, keys) {
@@ -201,3 +199,12 @@ targeting.isApntagDefined = function() {
     return true;
   }
 };
+
+function getEmptyBid(adUnitCode) {
+  return {
+    adUnitCode: adUnitCode,
+    cpm: 0,
+    adserverTargeting: {},
+    timeToRespond: 0
+  };
+}

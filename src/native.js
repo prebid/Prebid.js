@@ -1,8 +1,6 @@
 import { getBidRequest, logError, insertPixel } from './utils';
 
-/** INSERT NATIVE ADAPTERS - DO NOT EDIT OR REMOVE */
-const nativeAdapters = [];
-/** END INSERT NATIVE ADAPTERS */
+export const nativeAdapters = [];
 
 export const NATIVE_KEYS = {
   title: 'hb_native_title',
@@ -35,7 +33,7 @@ const SUPPORTED_TYPES = {
  * passes them on directly. If they were of type 'type', translate
  * them into the predefined specific asset requests for that type of native ad.
  */
-export default function processNativeAdUnitParams(params) {
+export function processNativeAdUnitParams(params) {
   if (params && params.type && typeIsSupported(params.type)) {
     return SUPPORTED_TYPES[params.type];
   }
@@ -79,7 +77,7 @@ export function nativeBidIsValid(bid) {
   const requiredAssets = Object.keys(requestedAssets).filter(
     key => requestedAssets[key].required
   );
-  const returnedAssets = Object.keys(bid.native);
+  const returnedAssets = Object.keys(bid.native).filter(key => bid.native[key]);
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
 }
