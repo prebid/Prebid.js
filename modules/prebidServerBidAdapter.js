@@ -105,8 +105,13 @@ function PrebidServer() {
       is_debug: isDebug
     };
 
+    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
+    const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
+    function processResponse(response) {
+      handleResponse(response, requestedBidders);
+    }
     const payload = JSON.stringify(requestJson);
-    ajax(config.endpoint, handleResponse, payload, {
+    ajax(config.endpoint, processResponse, payload, {
       contentType: 'text/plain',
       withCredentials: true
     });
@@ -118,7 +123,7 @@ function PrebidServer() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
+  function handleResponse(response, requestedBidders) {
     let result;
     try {
       result = JSON.parse(response);
@@ -162,7 +167,7 @@ function PrebidServer() {
         const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
 
         // issue a no-bid response for every bid request that can not be matched with received bids
-        config.bidders.forEach(bidder => {
+        requestedBidders.forEach(bidder => {
           utils
             .getBidderRequestAllAdUnits(bidder)
             .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
