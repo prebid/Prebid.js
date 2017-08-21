@@ -7,7 +7,8 @@ import * as bidManager from 'src/bidmanager';
 import useVideoCacheStubs from 'test/mocks/videoCacheStub';
 import adUnit from 'test/fixtures/video/adUnit';
 import bidRequest from 'test/fixtures/video/bidRequest';
-import bidResponse from 'test/fixtures/video/bidResponse';
+import urlBidResponse from 'test/fixtures/video/vastUrlResponse';
+import payloadBidResponse from 'test/fixtures/video/vastPayloadResponse';
 
 function adjustCpm(cpm) {
   return cpm + 1;
@@ -27,10 +28,11 @@ describe('The Bid Manager', () => {
      * 1. Whether or not that bid got added.
      * 2. Whether or not the "end of auction" callbacks got called.
      */
-    function testAddVideoBid(expectBidAdded, expectCallbackCalled, videoCacheStubProvider) {
+    function testAddVideoBid(expectBidAdded, expectCallbackCalled, videoCacheStubProvider, usePayloadResponse) {
       return function() {
-        const usePrebidCache = config.getConfig('usePrebidCache')
-        const mockResponse = Object.assign({}, bidResponse);
+        const usePrebidCache = config.getConfig('usePrebidCache');
+        const bidToUse = usePayloadResponse ? payloadBidResponse : urlBidResponse;
+        const mockResponse = Object.assign({}, bidToUse);
         const callback = sinon.spy();
         bidManager.addOneTimeCallback(callback);
 
@@ -56,8 +58,11 @@ describe('The Bid Manager', () => {
           // Ensures that the BidAdjustment listeners execute before the bid goes into the auction.
           expect(bid.cpm).to.equal(adjustCpm(0.1));
 
-          expect(bid.vastUrl).to.equal('www.myVastUrl.com');
-
+          if (usePayloadResponse) {
+            expect(bid.vastPayload).to.equal('<VAST version="3.0"></VAST>');
+          } else {
+            expect(bid.vastUrl).to.equal('www.myVastUrl.com');
+          }
           if (usePrebidCache) {
             expect(bid.videoCacheKey).to.equal('FAKE_UUID');
           }
@@ -135,7 +140,7 @@ describe('The Bid Manager', () => {
           });
 
         it("should add video bids, but shouldn't call the end-of-auction callbacks yet",
-          testAddVideoBid(true, false, stubProvider));
+          testAddVideoBid(true, false, stubProvider, false));
       };
     }
 
@@ -165,8 +170,11 @@ describe('The Bid Manager', () => {
             expect($$PREBID_GLOBAL$$._bidsReceived.length).to.equal(0);
           });
 
-          it('should add valid video bids and then execute the callbacks signaling the end of the auction',
-            testAddVideoBid(true, true, stubProvider));
+          it('should add bids with a vastUrl and then execute the callbacks signaling the end of the auction',
+            testAddVideoBid(true, true, stubProvider, false));
+
+          it('should add bids with a vastPayload and then execute the callbacks signaling the end of the auction',
+            testAddVideoBid(true, true, stubProvider, true));
 
           it('should gracefully do nothing when adUnitCode is undefined', () => {
             bidManager.addBidResponse(undefined, {});
@@ -179,7 +187,7 @@ describe('The Bid Manager', () => {
           });
 
           it('should attach properties for analytics *before* the BID_ADJUSTMENT event listeners are called', () => {
-            const copy = Object.assign({}, bidResponse);
+            const copy = Object.assign({}, urlBidResponse);
             copy.getSize = function() {
               return `${this.height}x${this.width}`;
             };
@@ -207,7 +215,7 @@ describe('The Bid Manager', () => {
           // Because of the preconditions, this makes sure that the end-of-auction callbacks get called when
           // the auction hits the timeout.
           it('should add the bid, but also execute the callbacks signaling the end of the auction',
-            testAddVideoBid(true, true, stubProvider));
+            testAddVideoBid(true, true, stubProvider, false));
         });
       });
 
@@ -220,13 +228,13 @@ describe('The Bid Manager', () => {
           prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(false));
 
           it("shouldn't add the bid to the auction, and shouldn't execute the end-of-auction callbacks",
-            testAddVideoBid(false, false, stubProvider));
+            testAddVideoBid(false, false, stubProvider, false));
         });
 
         describe('when the auction has timed out', () => {
           prepAuction([adUnit], (bidRequest) => bidRequest.start = auctionStart(true));
           it("shouldn't add the bid to the auction, but should execute the end-of-auction callbacks",
-            testAddVideoBid(false, true, stubProvider));
+            testAddVideoBid(false, true, stubProvider, false));
         })
       });
     });
