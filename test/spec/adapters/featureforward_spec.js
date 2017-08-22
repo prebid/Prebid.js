@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import FeatureForwardAdapter from 'src/adapters/featureforward.js';
+import FeatureForwardAdapter from 'modules/featureforwardBidAdapter';
 import bidManager from 'src/bidmanager';
 import * as ajax from 'src/ajax';
 import {parse as parseURL} from 'src/url';
