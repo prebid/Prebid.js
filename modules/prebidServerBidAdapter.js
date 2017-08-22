@@ -54,7 +54,17 @@ const paramTypes = {
   'pubmatic': {
     'publisherId': tryConvertString,
     'adSlot': tryConvertString
-  }
+  },
+  'districtm': {
+    'member': tryConvertString,
+    'invCode': tryConvertString,
+    'placementId': tryConvertNumber
+  },
+  'pulsepoint': {
+    'cf': tryConvertString,
+    'cp': tryConvertNumber,
+    'ct': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
