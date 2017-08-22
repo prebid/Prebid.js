@@ -52,8 +52,53 @@ describe('The video cache', () => {
 
     afterEach(() => xhr.restore());
 
-    it('should make the expected request when store() is called', () => {
-      store([ { vastUrl: 'my-mock-url.com' } ], function() { });
+    it('should execute the callback with a successful result when store() is called', () => {
+      const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
+      const callback = fakeServerCall(
+        { vastUrl: 'my-mock-url.com' },
+        `{"responses":[{"uuid":"${uuid}"}]}`);
+
+      assertSuccess(callback);
+      callback.firstCall.args[1].should.deep.equal([{ uuid: uuid }]);
+    });
+
+    it('should execute the callback with an error if the cache server response has no responses property', () => {
+      const callback = fakeServerCall(
+        { vastUrl: 'my-mock-url.com' },
+        '{"broken":[{"uuid":"c488b101-af3e-4a99-b538-00423e5a3371"}]}');
+      assertError(callback);
+      callback.firstCall.args[1].should.deep.equal([]);
+    });
+
+    it('should execute the callback with an error if the cache server responds with malformed JSON', () => {
+      const callback = fakeServerCall(
+        { vastUrl: 'my-mock-url.com' },
+        'Not JSON here');
+      assertError(callback);
+      callback.firstCall.args[1].should.deep.equal([]);
+    });
+
+    it('should make the expected request when store() is called on an ad with a vastUrl', () => {
+      const expectedValue = `<VAST version="3.0">
+    <Ad>
+      <Wrapper>
+        <AdSystem>prebid.org wrapper</AdSystem>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
+        <Impression></Impression>
+        <Creatives></Creatives>
+      </Wrapper>
+    </Ad>
+  </VAST>`;
+      assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
+    });
+
+    it('should make the expected request when store() is called on an ad with a vastPayload', () => {
+      const vastPaload = '<VAST version="3.0"></VAST>';
+      assertRequestMade({ vastPayload: vastPaload }, vastPaload);
+    });
+
+    function assertRequestMade(bid, expectedValue) {
+      store([bid], function() { });
 
       const request = requests[0];
       request.method.should.equal('POST');
@@ -63,32 +108,21 @@ describe('The video cache', () => {
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{
           type: 'xml',
-          value: `<VAST version="3.0">
-    <Ad>
-      <Wrapper>
-        <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression></Impression>
-        <Creatives></Creatives>
-      </Wrapper>
-    </Ad>
-  </VAST>`,
+          value: expectedValue,
         }],
       });
-    });
+    }
 
-    it('should execute the callback with a successful result when store() is called', () => {
+    function fakeServerCall(bid, responseBody) {
       const callback = sinon.spy();
-      store([ { vastUrl: 'my-mock-url.com' } ], callback);
+      store([ bid ], callback);
       requests[0].respond(
         200,
         {
           'Content-Type': 'application/json',
         },
-        '{"responses":[{"uuid":"c488b101-af3e-4a99-b538-00423e5a3371"}]}');
-
-      assertSuccess(callback);
-      callback.firstCall.args[1].should.deep.equal([{ uuid: 'c488b101-af3e-4a99-b538-00423e5a3371' }]);
-    });
+        responseBody);
+      return callback;
+    }
   });
 });
