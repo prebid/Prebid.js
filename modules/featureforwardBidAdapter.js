@@ -1,5 +1,6 @@
 import {createBid} from 'src/bidfactory';
 import {addBidResponse} from 'src/bidmanager';
+import {registerBidAdapter} from 'src/adaptermanager';
 import {logError, getTopWindowLocation} from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
@@ -85,5 +86,7 @@ function FeatureForwardAdapter() {
     callBids: _callBids
   };
 }
+
+registerBidAdapter(new FeatureForwardAdapter(), 'featureforward');
 
 module.exports = FeatureForwardAdapter;
