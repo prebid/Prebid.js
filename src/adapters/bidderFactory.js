@@ -88,7 +88,7 @@ export default function newBidder(spec) {
               `${request.endpoint}?${parseQueryStringParameters(request.data)}`,
               {
                 success: onSuccess,
-                error: onError
+                error: onFailure
               },
               undefined,
               {
@@ -102,7 +102,7 @@ export default function newBidder(spec) {
               request.endpoint,
               {
                 success: onSuccess,
-                error: onError
+                error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               {
@@ -124,7 +124,16 @@ export default function newBidder(spec) {
         const bidRequestMap = {};
         bidRequests.forEach(bid => {
           bidRequestMap[bid.bidId] = bid;
-        })
+        });
+        function addBidUsingRequestMap(bid) {
+          const bidRequest = bidRequestMap[bid.requestId];
+          if (bidRequest) {
+            const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+            addBidWithCode(bidRequest.placementCode, prebidBid);
+          } else {
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+          }
+        }
 
         let bids;
         try {
@@ -135,17 +144,20 @@ export default function newBidder(spec) {
           return;
         }
 
-        bids.forEach((bid) => {
-          const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequestMap[bid.requestId]), bid);
-          addBidWithCode(bidRequestMap[bid.requestId].placementCode, prebidBid);
-        });
+        if (bids) {
+          if (bids.forEach) {
+            bids.forEach(addBidUsingRequestMap);
+          } else {
+            addBidUsingRequestMap(bids);
+          }
+        }
         onResponse();
       }
 
       // If the server responds with an error, there's not much we can do. Log it, and make sure to
       // call onResponse() so that we're one step closer to calling fillNoBids().
-      function onError() {
-        logError(`Server call for ${spec.code} failed. Continuing without bids.`, null, err);
+      function onFailure(err) {
+        logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
         onResponse();
       }
     }
