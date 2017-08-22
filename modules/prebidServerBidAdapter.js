@@ -129,10 +129,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              StorageManager.remove(pbjsSyncsKey, bidder.bidder);
               queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
-            } else {
-              StorageManager.add(pbjsSyncsKey, bidder.bidder, true);
             }
           });
         }
@@ -206,6 +203,9 @@ function PrebidServer() {
       ajax(config.syncEndpoint, (response) => {
         try {
           response = JSON.parse(response);
+          if (response.status === 'ok') {
+            bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
+          }
           response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
         } catch (e) {
           utils.logError(e);

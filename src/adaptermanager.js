@@ -88,11 +88,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    // if syncedBidders is zero length (no localStorage synced flags)
-    // route all bidders server-side first time and initialize flags
-    let adaptersServerSide = syncedBidders && syncedBidders.length
-      ? _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder))
-      : _s2sConfig.bidders;
+    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
