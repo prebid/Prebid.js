@@ -1,6 +1,6 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
-import {getPriceBucketString} from './cpmBucketManager';
-import {NATIVE_KEYS, nativeBidIsValid} from './native';
+import { getPriceBucketString } from './cpmBucketManager';
+import { NATIVE_KEYS, nativeBidIsValid } from './native';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';

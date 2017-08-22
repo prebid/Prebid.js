@@ -134,6 +134,7 @@ describe('AppNexusAdapter', () => {
       REQUEST.bids[0].nativeParams = {
         title: {required: true},
         body: {required: true},
+        cta: {required: false},
         sponsoredBy: {required: true}
       };
 
@@ -143,6 +144,7 @@ describe('AppNexusAdapter', () => {
       expect(request.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
         description: {required: true},
+        ctatext: {required: false},
         sponsored_by: {required: true}
       });
 
@@ -266,6 +268,7 @@ describe('AppNexusAdapter', () => {
       RESPONSE.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
         'desc': 'Cool description great stuff',
+        'ctatext': 'Do it',
         'sponsored': 'AppNexus',
         'icon': {
           'width': 0,
@@ -295,6 +298,7 @@ describe('AppNexusAdapter', () => {
 
       expect(response.native.title).to.equal('Native Creative');
       expect(response.native.body).to.equal('Cool description great stuff');
+      expect(response.native.cta).to.equal('Do it');
       expect(response.native.image).to.equal('http://cdn.adnxs.com/img.png');
 
       RESPONSE.tags[0].ads[0].ad_type = 'banner';
