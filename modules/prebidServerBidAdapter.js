@@ -7,6 +7,8 @@ import { STATUS, S2S } from 'src/constants';
 import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
+
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
@@ -197,25 +199,30 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    if (!_cookiesQueued) {
-      _cookiesQueued = true;
-      const payload = JSON.stringify({
-        uuid: utils.generateUUID(),
-        bidders: bidderCodes
-      });
-      ajax(config.syncEndpoint, (response) => {
-        try {
-          response = JSON.parse(response);
-          response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
-        } catch (e) {
-          utils.logError(e);
-        }
-      },
-      payload, {
-        contentType: 'text/plain',
-        withCredentials: true
-      });
+    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
+    if (_cookiesQueued || syncedList.length === bidderCodes.length) {
+      return;
     }
+    _cookiesQueued = true;
+    const payload = JSON.stringify({
+      uuid: utils.generateUUID(),
+      bidders: bidderCodes
+    });
+    ajax(config.syncEndpoint, (response) => {
+      try {
+        response = JSON.parse(response);
+        if (response.status === 'ok') {
+          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
+        }
+        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+      } catch (e) {
+        utils.logError(e);
+      }
+    },
+    payload, {
+      contentType: 'text/plain',
+      withCredentials: true
+    });
   }
 
   return Object.assign(this, {
