@@ -60,6 +60,9 @@ describe('The Bid Manager', () => {
 
           if (usePayloadResponse) {
             expect(bid.vastPayload).to.equal('<VAST version="3.0"></VAST>');
+            if (usePrebidCache) {
+              expect(bid.vastUrl).to.equal(`https://prebid.adnxs.com/pbc/v1/cache?uuid=FAKE_UUID`);
+            }
           } else {
             expect(bid.vastUrl).to.equal('www.myVastUrl.com');
           }
