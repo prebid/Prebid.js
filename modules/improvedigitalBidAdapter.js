@@ -64,7 +64,7 @@ const ImproveDigitalAdapter = function () {
 
   $$PREBID_GLOBAL$$.improveDigitalResponse = function(response) {
     let bidRequests = utils.getBidderRequestAllAdUnits(IMPROVE_DIGITAL_BIDDER_CODE);
-    if (bidRequests.bids && bidRequests.bids.length > 0) {
+    if (bidRequests && bidRequests.bids && bidRequests.bids.length > 0) {
       utils._each(bidRequests.bids, function (bidRequest) {
         let bidObjects = response.bid || [];
         utils._each(bidObjects, function (bidObject) {
