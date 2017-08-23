@@ -2,7 +2,7 @@ import { assert } from 'chai';
 import * as utils from '../../../src/utils';
 import adLoader from '../../../src/adloader';
 import bidManager from '../../../src/bidmanager';
-import adapter from '../../../modules/adformBidAdapter';
+import AdformAdapter from '../../../modules/adformBidAdapter';
 
 describe('Adform adapter', () => {
   let _adapter, sandbox;
@@ -112,7 +112,7 @@ describe('Adform adapter', () => {
 
   beforeEach(() => {
     var transactionId = 'transactionId';
-    _adapter = adapter();
+    _adapter = new AdformAdapter();
     utils.getUniqueIdentifierStr = () => 'callback';
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
