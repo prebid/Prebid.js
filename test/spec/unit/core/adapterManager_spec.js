@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
+import { StorageManager } from 'src/storagemanager';
 
 const CONFIG = {
   enabled: true,
@@ -20,10 +22,28 @@ var prebidServerAdapterMock = {
 
 describe('adapterManager tests', () => {
   describe('S2S tests', () => {
+    var stubGetStorageItem;
+    var stubSetStorageItem;
+
     beforeEach(() => {
       AdapterManager.setS2SConfig(CONFIG);
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+
+      stubGetStorageItem = sinon.stub(StorageManager, 'get');
+      stubSetStorageItem = sinon.stub(StorageManager, 'set');
+      stubSetStorageItem = sinon.stub(StorageManager, 'add');
+      stubSetStorageItem = sinon.stub(StorageManager, 'remove');
+
+      stubGetStorageItem.returns(['appnexus']);
+
       prebidServerAdapterMock.callBids.reset();
+    });
+
+    afterEach(() => {
+      StorageManager.get.restore();
+      StorageManager.set.restore();
+      StorageManager.add.restore();
+      StorageManager.remove.restore();
     });
 
     it('invokes callBids on the S2S adapter', () => {
@@ -53,4 +73,27 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
   }); // end s2s tests
+
+  describe('The setBidderSequence() function', () => {
+    let spy;
+
+    beforeEach(() => {
+      spy = sinon.spy(utils, 'logWarn')
+    });
+
+    afterEach(() => {
+      utils.logWarn.restore();
+    });
+
+    it('should log a warning on invalid values', () => {
+      AdapterManager.setBidderSequence('unrecognized sequence');
+      expect(spy.calledOnce).to.equal(true);
+    });
+
+    it('should not log warnings when given recognized values', () => {
+      AdapterManager.setBidderSequence('fixed');
+      AdapterManager.setBidderSequence('random');
+      expect(spy.called).to.equal(false);
+    });
+  })
 });
