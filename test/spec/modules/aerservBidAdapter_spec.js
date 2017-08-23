@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import AerServAdapter from 'modules/aerservBidAadapter';
+import AerServAdapter from 'modules/aerservBidAdapter';
 import bidmanager from 'src/bidmanager';
 
 const BASE_REQUEST = JSON.stringify({

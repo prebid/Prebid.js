@@ -3,6 +3,9 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 import {STATUS} from 'src/constants';
+import adaptermanager from 'src/adaptermanager';
+
+const BIDDER_CODE = 'aerserv';
 
 const AerServAdapter = function AerServAdapter() {
   const ENVIRONMENTS = {
@@ -14,12 +17,11 @@ const AerServAdapter = function AerServAdapter() {
 
   const BANNER_PATH = '/as/json/pbjs/v1?';
   const VIDEO_PATH = '/as/json/pbjsvast/v1?';
-  const BIDDER_CODE = 'aerserv';
   const REQUIRED_PARAMS = ['plc'];
 
   function _isResponseValid(bidRequest, response) {
     return ((bidRequest.mediaType === 'video' && response.vastUrl) || (bidRequest.mediaType !== 'video' && response.adm)) &&
-    response.cpm && response.cpm > 0;
+      response.cpm && response.cpm > 0;
   }
 
   function _createBid(bidRequest, response) {
@@ -32,6 +34,7 @@ const AerServAdapter = function AerServAdapter() {
       if (bidRequest.mediaType === 'video') {
         bid.vastUrl = response.vastUrl;
         bid.descriptionUrl = response.vastUrl;
+        bid.mediaType = 'video';
       } else {
         bid.ad = response.adm;
       }
@@ -92,5 +95,7 @@ const AerServAdapter = function AerServAdapter() {
     callBids: _callBids
   }
 };
+
+adaptermanager.registerBidAdapter(new AerServAdapter(), BIDDER_CODE, {supportedMediaTypes: ['video']});
 
 module.exports = AerServAdapter;
