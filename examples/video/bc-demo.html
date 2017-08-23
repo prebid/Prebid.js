@@ -1,0 +1,156 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.css" rel="stylesheet">
+
+  <title>Prebid.js Brightcove Example</title>
+  <script type="text/javascript" src="https://acdn.adnxs.com/prebid/not-for-prod/prebid.js"></script>
+  <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+      /*
+      Prebid Video adUnit
+      */
+
+      var tempTag = false;
+      var invokeVideoPlayer = function(url){
+        tempTag = url;
+      }
+
+      var videoAdUnit = {
+        code: 'video1',
+        sizes: [640,480],
+        mediaType: 'video',
+        bids: [
+          {
+            bidder: 'appnexusAst',
+            params: {
+              placementId: '9333431', // Add your own placement id here
+              video: {
+                skipppable: true,
+                playback_method: ['auto_play_sound_off']
+              }
+            }
+          }
+        ]
+      };
+
+      var logBids = function(bids) {
+        console.log('MESSAGE: got bids back: ');
+        console.log(bids);
+        if (!bids.video1) {
+          console.log('MESSAGE: no video demand');
+        } else {
+          console.log('MESSAGE: we got video demand!');
+        }
+
+        try {
+          url = bids.video1.bids[0].vastUrl;
+          console.log('MESSAGE: VAST URL: ');
+          console.log('MESSAGE: ' + url);
+        } catch (e) {
+          console.log("MESSAGE: There was an error logging the vast url: " + e);
+        }
+      }
+
+      pbjs.que.push(function(){
+        pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+        pbjs.requestBids({
+          timeout : 4000,
+          bidsBackHandler : function(bids) { // this function will be called once bids are returned
+            logBids(bids);
+            var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+            adserverTag = adserverTag + '&correlator=' + Date.now()
+            var options = {
+              'adserver': 'dfp',
+              'code': 'video1' //this code name must match the code name defined in the videoAdUnit json above
+             };
+            //generate the URL to pass into the video player
+            var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+            // send masterTagUrl to the video player
+            invokeVideoPlayer(masterTagUrl);
+
+          }
+        });
+      });
+
+      pbjs.bidderSettings =
+      {
+        standard: {
+          adserverTargeting: [
+            {
+              key: "hb_bidder",
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+          }, {
+              key: "hb_adid",
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+          }, {
+              key: "hb_pb",
+              val: function (bidResponse) {
+                return "10.00";
+              }
+          }, {
+              key: "hb_size",
+              val: function (bidResponse) {
+                  return bidResponse.size;
+              }
+            }
+          ]
+        }
+      };
+  </script>
+</head>
+<body>
+<h1> Brightcove Prebid Example </h1>
+<!--
+By use of this code snippet, I agree to the Brightcove Publisher T and C
+found at https://accounts.brightcove.com/en/terms-and-conditions/.
+-->
+<video id="myVideo"
+        data-video-id="5276850149001"
+        data-account="5229431809001"
+        data-player="rJVmLwTBx"
+        data-embed="default"
+        data-application-id
+        class="video-js"
+        controls
+        width="300"
+        height="150"></video>
+
+
+<script src="//players.brightcove.net/5229431809001/rJVmLwTBx_default/index.min.js"></script>
+<script src="//players.brightcove.net/videojs-ima3/2/videojs.ima3.min.js"></script>
+
+<script type="text/JavaScript">
+  function invokeVideoPlayer(url){
+    bc("myVideo").ima3({
+      serverUrl: url,
+      debug: true,
+      adTechOrder: [
+        "html5",
+        "flash"
+      ],
+    });
+
+    videojs("myVideo").ready(function(){
+      var myPlayer = this;
+
+      myPlayer.on("ima3error", function(){
+        console.log("There was an ima3 error.");
+      });
+    });
+  }
+
+  if (tempTag) {
+    invokeVideoPlayer(tempTag);
+    tempTag = false;
+  }
+</script>
+</body>
+</html>

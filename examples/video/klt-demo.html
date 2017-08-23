@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>Kaltura Prebid Demo</title>
+	<script type="text/javascript" src="https://acdn.adnxs.com/prebid/not-for-prod/prebid.js"></script>
+
+	<script>
+	    var pbjs = pbjs || {};
+	    pbjs.que = pbjs.que || [];
+
+	    /*
+	    Prebid Video adUnit
+	    */
+
+	    var dynamicTag = false;
+	    var invokeVideoPlayer = function(url){
+	      dynamicTag = url;
+	    }
+
+	    var videoAdUnit = {
+	      code: 'video1',
+	      sizes: [640,480],
+	      mediaType: 'video',
+	      bids: [
+	        {
+	          bidder: 'appnexusAst',
+	          params: {
+	            placementId: '9333431', // Add your own placement id here
+	            video: {
+	              skipppable: true,
+	              playback_method: ['auto_play_sound_off']
+	            }
+	          }
+	        }
+	      ]
+	    };
+
+	    pbjs.que.push(function(){
+	      pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+	      pbjs.requestBids({
+	        timeout : 4000,
+	        bidsBackHandler : function(bids) { // this function will be called once bids are returned
+	          var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+	          adserverTag = adserverTag + '&correlator=' + Date.now()
+	          var options = {
+	            'adserver': 'dfp',
+	            'code': 'video1' //this code name must match the code name defined in the videoAdUnit json above
+	           };
+	          //generate the URL to pass into the video player
+	          var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+	          // send masterTagUrl to the video player
+	          invokeVideoPlayer(masterTagUrl);
+
+	        }
+	      });
+	    });
+
+	    pbjs.bidderSettings =
+	    {
+	        standard: {
+	            adserverTargeting: [
+	                {
+	                    key: "hb_bidder",
+	                    val: function (bidResponse) {
+	                        return bidResponse.bidderCode;
+	                    }
+	                }, {
+	                    key: "hb_adid",
+	                    val: function (bidResponse) {
+	                        return bidResponse.adId;
+	                    }
+	                }, {
+	                    key: "hb_pb",
+	                    val: function (bidResponse) {
+	                        return "10.00";
+	                    }
+	                }, {
+	                    key: "hb_size",
+	                    val: function (bidResponse) {
+	                        return bidResponse.size;
+
+	                    }
+	                }
+	            ]
+	        }
+	    };
+	</script>
+</head>
+<body>
+	<div id="myPlayer" style="width:320px; height:250px;"></div>
+	<script src="http://cdnapi.kaltura.com/p/2222001/sp/222200100/embedIframeJs/uiconf_id/37440401/partner_id/2222001"></script>
+	<script>
+		invokeVideoPlayer = function(url){
+			// Documentation for kWidget available here: http://player.kaltura.com/docs/kwidget
+			kWidget.embed({
+			  	"targetId": "myPlayer",
+			  	"wid": "_2222001",
+			  	"uiconf_id": 37440401,
+			  	"flashvars": {
+			    	"streamerType": "auto",
+			    	"vast": {
+			    		"plugin": true,
+    					"prerollUrl": url,
+			    	}
+			  	},
+			  	"entry_id": "1_k4eka7er",
+			  	readyCallback: function(playerId){
+			  		console.log("Kaltura player " + playerId + " is ready.");
+			  	}
+			});
+		}
+
+		if (dynamicTag) {
+	      invokeVideoPlayer(dynamicTag);
+	      dynamicTag = false;
+	    }
+	</script>
+</body>
+</html>

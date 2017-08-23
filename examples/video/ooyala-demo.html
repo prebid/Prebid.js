@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://acdn.adnxs.com/prebid/not-for-prod/prebid.js"></script>
+<title>Ooyala Prebid Demo</title>
+<!-- OOYALA PLUGINS -->
+<!-- CORE PLAYER REQUIRED -->
+<script src="//player.ooyala.com/static/v4/stable/latest/core.min.js"></script>
+<!-- VIDEO PLUGINS -->
+<script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/main_html5.min.js"></script>
+<script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/bit_wrapper.min.js"></script>
+<script src="//player.ooyala.com/static/v4/stable/latest/video-plugin/osmf_flash.min.js"></script>
+<!-- HTML5 SKIN -->
+<script src="//player.ooyala.com/static/v4/stable/latest/skin-plugin/html5-skin.min.js"></script>
+<!-- SKIN ASSET -->
+<link rel="stylesheet" href="//player.ooyala.com/static/v4/stable/latest/skin-plugin/html5-skin.min.css"/>
+<!-- AD PLUGIN  -->
+<!-- <script src="//player.ooyala.com/static/v4/stable/latest/ad-plugin/ad_manager_vast.min.js"></script> -->
+
+<!-- IMA PLUGIN -->
+<script src="//player.ooyala.com/static/v4/stable/latest/ad-plugin/google_ima.js"></script>
+<script>
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    console.log("|||| Start of prebid: " + performance.now());
+    /*
+    Prebid Video adUnit
+    */
+
+    var dynamicTag = false;
+    var invokeVideoPlayer = function(url){
+      dynamicTag = url;
+    }
+
+    var videoAdUnit = {
+      code: 'video1',
+      sizes: [640,480],
+      mediaType: 'video',
+      bids: [
+        {
+          bidder: 'appnexusAst',
+          params: {
+            placementId: '9333431', // Add your own placement id here
+            video: {
+              skipppable: true,
+              playback_method: ['auto_play_sound_off']
+            }
+          }
+        }
+      ]
+    };
+
+    pbjs.que.push(function(){
+      pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+      pbjs.requestBids({
+        timeout : 4000,
+        bidsBackHandler : function(bids) { // this function will be called once bids are returned
+          var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+          adserverTag = adserverTag + '&correlator=' + Date.now()
+          var options = {
+            'adserver': 'dfp',
+            'code': 'video1' //this code name must match the code name defined in the videoAdUnit json above
+           };
+          //generate the URL to pass into the video player
+          var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+          // debugger;
+          // send masterTagUrl to the video player
+          invokeVideoPlayer(masterTagUrl);
+
+        }
+      });
+    });
+
+    pbjs.bidderSettings =
+    {
+        standard: {
+            adserverTargeting: [
+                {
+                    key: "hb_bidder",
+                    val: function (bidResponse) {
+                        return bidResponse.bidderCode;
+                    }
+                }, {
+                    key: "hb_adid",
+                    val: function (bidResponse) {
+                        return bidResponse.adId;
+                    }
+                }, {
+                    key: "hb_pb",
+                    val: function (bidResponse) {
+                        return "10.00";
+                    }
+                }, {
+                    key: "hb_size",
+                    val: function (bidResponse) {
+                        return bidResponse.size;
+
+                    }
+                }
+            ]
+        }
+    };
+</script>
+</head>
+<body>
+<div id='container' style='width:640px;height:266px;'></div>
+<script>
+	var invokeVideoPlayer = function(url){
+		// url = "//video-demo.appnexus.com/pbjs/prebidVideoVast3.xml"
+		console.log("invoking video player with url " + url);
+		var playerParam = {
+			'pcode':'lsbWkyOjtI6LOjmlqk2o5I-TsWRA',
+			'playerBrandingId':'45b8294c6ad14265b2b47586c911cb07',
+			'debug': true,
+			'autoplay': true,
+      'initialVolume': 0.0,
+			'skin': {
+				'config': '//player.ooyala.com/static/v4/stable/4.6.9/skin-plugin/skin.json',
+				'inline': {
+					'adScreen': {
+						'showAdMarquee': true,
+						'showAdCountDown': true,
+						'showControlBar': true,
+						'useGoogleAdUI': true
+					}
+				}
+			},
+			"google-ima-ads-manager":{
+				"all_ads": [
+					{
+						"position":"0",
+						"position_type": "t",
+						"tag_url": url
+					}
+				],
+				'showAdControls': true
+			}
+		};
+		OO.ready(function() {
+			console.log("OO is ready, invoking");
+			console.dir(playerParam);
+			window.pp = OO.Player.create('container', 'ltcG54NzE6Bxk08Mqs1_KMcQZDN7lH8N', playerParam);
+		});
+	}
+  if (dynamicTag) {
+      invokeVideoPlayer(dynamicTag);
+      dynamicTag = false;
+  }
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Show Video Ads with a DFP Video Tag
-description: 
+description:
 pid: 0
 is_top_nav: yeah
 top_nav_section: dev_docs
@@ -151,7 +151,7 @@ the ad -- this is where `invokeVideoPlayer` is defined:
 
 ```html
 <div class="example-video-container">
-  <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls 
+  <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
     data-setup='{}'
     width='640'
     height='480'
@@ -192,10 +192,10 @@ an instream pre-roll video ad followed by the oceans video from the [video.js ho
 
 Below, find links to end-to-end "working examples" integrating Prebid.js demand with various video players:
 
-+ [video.js](http://video-demo.appnexus.com/pbjs/mjacobson/video_testing/prebid_video_videojs_new.html)
-+ [JWPlayer](http://video-demo.appnexus.com/pbjs/JWPlayerDemo/jwPlayerPrebid.html)
-+ [Brightcove](http://video-demo.appnexus.com/pbjs/brightcove-prebid/bc-demo.html)
-+ [Kaltura](http://video-demo.appnexus.com/pbjs/kaltura-prebid/klt-demo.html)
-+ [Ooyala](http://video-demo.appnexus.com/pbjs/ooyala-prebid/ooyala-demo.html)
++ [video.js]({{site.github.url}}/examples/video/prebid_video_videojs_new.html)
++ [JWPlayer]({{site.github.url}}/examples/video/jwPlayerPrebid.html)
++ [Brightcove]({{site.github.url}}/examples/video/bc-demo.html)
++ [Kaltura]({{site.github.url}}/examples/video/klt-demo.html)
++ [Ooyala]({{site.github.url}}/examples/video/ooyala-demo.html)
 
 </div>

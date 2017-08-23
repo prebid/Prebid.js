@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- This page is an example of prebid and JWPlayer integration with
+       a JWPlayer playAd call once the player is ready for playback -->
+  <meta charset="utf-8" />
+  <title>Prebid.js JW Player Example</title>
+
+  <!-- prebid.js -->
+  <script src="https://acdn.adnxs.com/prebid/not-for-prod/prebid.js" async=true></script>
+
+  <!-- JWPlayer -->
+    <script type="text/javascript" src="http://ssl.p.jwpcdn.com/player/v/7.2.4/jwplayer.js"></script>
+    <script type="text/javascript">
+       jwplayer.key="YEUwUA9wRFeDcydr"; //Test Key - replace this with your own valid JWPlayer license key
+    </script>
+  <script>
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    // define invokeVideoPlayer in advance in case we get the bids back from prebid before the entire page loads
+    var tempTag = false;
+    var invokeVideoPlayer = function(url){
+      tempTag = url;
+    }
+
+    /*
+    Prebid Video adUnit
+    */
+
+    var videoAdUnit = {
+      code: 'video1',
+      sizes: [640,480],
+      mediaType: 'video',
+      bids: [
+        {
+          bidder: 'appnexusAst',
+          params: {
+            placementId: '9333431', // Add your own placement id here
+            video: {
+              skipppable: true,
+              playback_method: ['auto_play_sound_off']
+            }
+          }
+        }
+      ]
+    };
+
+    var logBids = function(bids){
+      console.log('MESSAGE: got bids back: ');
+      console.log(bids);
+      if (!bids.video1) {
+        console.log('MESSAGE: no video demand');
+      }
+      else {
+        console.log('MESSAGE: we got video demand!');
+      }
+
+      // Log the VAST URL, if there is one
+      try {
+        url = bids.video1.bids[0].vastUrl;
+        console.log('MESSAGE: VAST URL: ');
+        console.log('MESSAGE: ' + url);
+      } catch (e) {
+        console.log("MESSAGE: There was an error logging the vast url: " + e);
+      } // ignore if there is no vastUrl
+    }
+
+    pbjs.que.push(function(){
+      pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+      pbjs.requestBids({
+        timeout : 700,
+        bidsBackHandler : function(bids) { // this function will be called once bids are returned from prebid
+          // log the bids for debugging purposes
+          logBids(bids);
+          // this is the example adserver tag from https://support.google.com/dfp_premium/answer/1068325?hl=en&ref_topic=2480647
+          var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
+          adserverTag = adserverTag + '&correlator=' + Date.now()
+          var options = {
+            'adserver': 'dfp',
+            'code': 'video1' //this code name must match the code name defined in the videoAdUnit json above
+           };
+
+          //generate the URL to pass into the video player
+          var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+          // send masterTagUrl to the video player
+          invokeVideoPlayer(masterTagUrl);
+        }
+      });
+    });
+
+    pbjs.bidderSettings =
+    {
+        standard: {
+            adserverTargeting: [
+                {
+                    key: "hb_bidder",
+                    val: function (bidResponse) {
+                        return bidResponse.bidderCode;
+                    }
+                }, {
+                    key: "hb_adid",
+                    val: function (bidResponse) {
+                        return bidResponse.adId;
+                    }
+                }, {
+                    key: "hb_pb",
+                    val: function (bidResponse) {
+                        return "10.00";
+                    }
+                }, {
+                    key: "hb_size",
+                    val: function (bidResponse) {
+                        return bidResponse.size;
+
+                    }
+                }
+            ]
+        }
+    };
+
+  </script>
+</head>
+
+<body>
+
+  <h2>Prebid Video - JWPlayer</h2>
+  <br>
+  <br>
+  <div id="playerContainerJW" style='width:552px; height:310px; border:1px solid black;'>
+  </div>
+
+  <script>
+    var jwPlayerInstance = jwplayer("playerContainerJW");
+
+    invokeVideoPlayer = function(url) {
+        jwPlayerInstance.setup({
+            "file": "http://video-demo.appnexus.com/pbjs/JWPlayerDemo/AppNexus_Summit_Video_HighRes.mp4",
+            "autostart": true,
+            "mute": true,
+            "advertising": {
+                client: "vast",
+            }
+        });
+
+        jwPlayerInstance.on('beforePlay', function(){
+            jwPlayerInstance.playAd(url);
+        })
+    }
+
+    if (tempTag) {
+        invokeVideoPlayer(tempTag);
+        tempTag = false;
+    }
+  </script>
+  <br>
+  <br>
+  <p>
+    <a href="jwPlatformPrebidDemo.html">Click here to see an example of integrating Prebid with a JW Platform account.</a></p>
+  <p>
+    <a href="jwPlaylistUniqueAds.html">Click here to see an example of using Prebid to show a new ad between JW Player playlist items.</a>
+  </p>
+</body>
+</html>
