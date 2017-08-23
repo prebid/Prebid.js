@@ -5,7 +5,7 @@ import bidManager from '../../../src/bidmanager';
 import AdformAdapter from '../../../modules/adformBidAdapter';
 
 describe('Adform adapter', () => {
-  let _adapter, sandbox;
+  let _adformAdapter, sandbox;
 
   describe('request', () => {
     it('should create callback method on PREBID_GLOBAL', () => {
@@ -112,11 +112,11 @@ describe('Adform adapter', () => {
 
   beforeEach(() => {
     var transactionId = 'transactionId';
-    _adapter = new AdformAdapter();
+    _adformAdapter = new AdformAdapter();
     utils.getUniqueIdentifierStr = () => 'callback';
     sandbox = sinon.sandbox.create();
     sandbox.stub(adLoader, 'loadScript');
-    _adapter.callBids({
+    _adformAdapter.callBids({
       bids: [
         {
           bidId: 'abc',
