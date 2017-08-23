@@ -113,7 +113,8 @@ export default function newBidder(spec) {
             );
             break;
           default:
-            throw new Error(`buildRequest() must return a bid whose type is either "get" or "post". Got ${request.type}`);
+            logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+            onResponse();
         }
       }
 
