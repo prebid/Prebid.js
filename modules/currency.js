@@ -93,11 +93,11 @@ export function addBidResponseDecorator(fn) {
 
     let bidder = bid.bidderCode || bid.bidder;
     if (bidderCurrencyDefault[bidder]) {
-      let override = bidderCurrencyDefault[bidder];
-      if (bid.currency && override !== bid.currency) {
-        utils.logWarn(`Currency override '${bidder}: ${override}' ignored. adapter specified '${bid.currency}'`);
+      let currencyDefault = bidderCurrencyDefault[bidder];
+      if (bid.currency && currencyDefault !== bid.currency) {
+        utils.logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
       } else {
-        bid.currency = override;
+        bid.currency = currencyDefault;
       }
     }
 
