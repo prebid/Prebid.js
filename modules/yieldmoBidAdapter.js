@@ -67,7 +67,6 @@ var YieldmoAdapter = function YieldmoAdapter() {
     var _s = document.location.protocol === 'https:' ? 1 : 0; // 1 if page is secure
     var description = _getPageDescription();
     var title = document.title || ''; // Value of the title from the publisher's page. 
-    var e = 4; // 0 (COP) or 4 (DFP) for now -- ad server should reject other environments (TODO: validate that it will always be the case)
     var bust = new Date().getTime().toString(); // cache buster
     var scrd = window.devicePixelRatio || 0; // screen pixel density
 
