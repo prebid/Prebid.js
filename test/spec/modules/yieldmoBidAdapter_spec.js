@@ -52,7 +52,7 @@ describe('Yieldmo adapter', () => {
     });
 
     it('should load a script with passed bid params', () => {
-      let route = 'http://ads.yieldmo.com/ads?';
+      let route = 'http://bid.yieldmo.com/exchange/prebid?';
       let requestParams = parseURL(bidRequestURL).search;
       let parsedPlacementParams = JSON.parse(decodeURIComponent(requestParams.p));
 
