@@ -334,15 +334,17 @@ describe('improvedigital adapter tests', function () {
     debug: ''
   };
 
+  var randomNumber = 9876543210;
   beforeEach(() => {
     improveDigitalAdapter = new Adapter();
     sandbox = sinon.sandbox.create();
-    var randomNumber = 9876543210;
     sandbox.stub(
-      improveDigitalAdapter.idClient,
-      'getRandomString',
+      utils,
+      'getUniqueIdentifierStr',
       function() {
-        return randomNumber++;
+        var retValue = randomNumber.toString();
+        randomNumber++;
+        return retValue;
       }
     );
     bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
@@ -364,12 +366,13 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
   describe('callBids simpleSmartTagBidRequest', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -378,12 +381,13 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pubid%22%3A1032%2C%22pkey%22%3A%22data_team_test_hb_smoke_test%22%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pubid%22%3A1032%2C%22pkey%22%3A%22data_team_test_hb_smoke_test%22%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
   describe('callBids keyValueBidRequest', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -392,12 +396,13 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
   describe('callBids sizeBidRequest', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -406,12 +411,13 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
   describe('callBids twoAdSlots', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -420,13 +426,14 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript twice with correct parameters', () => {
       sinon.assert.calledTwice(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543211%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
   describe('callBids threeAdSlots', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -435,9 +442,9 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript thrice with correct parameters', () => {
       sinon.assert.calledThrice(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543211%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543212%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%227g8h9i%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543212%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%227g8h9i%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -456,6 +463,7 @@ describe('improvedigital adapter tests', function () {
 
   describe('callBids twoAdSlotsSingleRequest', () => {
     beforeEach(() => {
+      randomNumber = 9876543210;
       sandbox.stub(
         adloader,
         'loadScript'
@@ -464,7 +472,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript twice with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A9876543210%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%2C%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%2C%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -489,39 +497,22 @@ describe('improvedigital adapter tests', function () {
         bidmanager,
         'addBidResponse'
       );
-      var randomId = 1111111110;
-      sandbox.stub(
-        utils,
-        'getUniqueIdentifierStr',
-        function() {
-          randomId++;
-          return randomId.toString();
-        }
-      );
       $$PREBID_GLOBAL$$._bidsRequested.push(simpleBidRequest);
       improveDigitalAdapter.callBids(simpleBidRequest);
       $$PREBID_GLOBAL$$.improveDigitalResponse(simpleResponse);
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', adId: '1111111111', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\"/><img src=\\\"http:\\/\\/link2\\\"/><img src=\\\"http:\\/\\/link3\\\"/>\")</script>', cpm: 1.85185185185185}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\"/><img src=\\\"http:\\/\\/link2\\\"/><img src=\\\"http:\\/\\/link3\\\"/>\")</script>', cpm: 1.85185185185185, adId: '1a2b3c'}));
     });
   });
 
   describe('improveDigitalResponse zero bid', () => {
     beforeEach(() => {
+      randomNumber = 1111111111;
       sandbox.stub(
         bidmanager,
         'addBidResponse'
-      );
-      var randomId = 1111111110;
-      sandbox.stub(
-        utils,
-        'getUniqueIdentifierStr',
-        function() {
-          randomId++;
-          return randomId.toString();
-        }
       );
       $$PREBID_GLOBAL$$._bidsRequested.push(simpleBidRequest);
       improveDigitalAdapter.callBids(simpleBidRequest);
@@ -529,24 +520,16 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, statusMessage: 'Bid returned empty or error response', adId: '1111111111'}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, statusMessage: 'Bid returned empty or error response', adId: '1a2b3c'}));
     });
   });
 
   describe('improveDigitalResponse multipleResponseWithOneNoBid', () => {
     beforeEach(() => {
+      randomNumber = 1111111111;
       sandbox.stub(
         bidmanager,
         'addBidResponse'
-      );
-      var randomId = 1111111110;
-      sandbox.stub(
-        utils,
-        'getUniqueIdentifierStr',
-        function() {
-          randomId++;
-          return randomId.toString();
-        }
       );
       $$PREBID_GLOBAL$$._bidsRequested.push(twoAdSlots);
       improveDigitalAdapter.callBids(twoAdSlots);
@@ -554,25 +537,17 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledTwice(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', adId: '1111111111', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\"/><img src=\\\"http:\\/\\/link2\\\"/><img src=\\\"http:\\/\\/link3\\\"/>\")</script>', cpm: 1.85185185185185}));
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement2', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, statusMessage: 'Bid returned empty or error response', adId: '1111111112'}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, adId: '1a2b3c', statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\"/><img src=\\\"http:\\/\\/link2\\\"/><img src=\\\"http:\\/\\/link3\\\"/>\")</script>', cpm: 1.85185185185185}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement2', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, adId: '4d5e6f', statusMessage: 'Bid returned empty or error response'}));
     });
   });
 
   describe('improveDigitalResponse multipleInvalidResponses', () => {
     beforeEach(() => {
+      randomNumber = 1111111111;
       sandbox.stub(
         bidmanager,
         'addBidResponse'
-      );
-      var randomId = 1111111110;
-      sandbox.stub(
-        utils,
-        'getUniqueIdentifierStr',
-        function() {
-          randomId++;
-          return randomId.toString();
-        }
       );
       $$PREBID_GLOBAL$$._bidsRequested.push(twoAdSlots);
       improveDigitalAdapter.callBids(twoAdSlots);
@@ -580,8 +555,8 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call bidmanager.addBidResponse twice both with invalid', () => {
       sinon.assert.calledTwice(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, statusMessage: 'Bid returned empty or error response', adId: '1111111111'}));
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement2', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, statusMessage: 'Bid returned empty or error response', adId: '1111111112'}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, adId: '1a2b3c', statusMessage: 'Bid returned empty or error response'}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement2', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, adId: '4d5e6f', statusMessage: 'Bid returned empty or error response'}));
     });
   });
 });
