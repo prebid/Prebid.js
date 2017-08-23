@@ -17,8 +17,7 @@ function Spotx() {
     }
     bidReq = bidRequest.bids[0] || [];
 
-    if (!validateParams(bidReq))
-    {
+    if (!validateParams(bidReq)) {
       console.log('Bid Request does not contain valid parameters.');
       return;
     }
@@ -27,24 +26,20 @@ function Spotx() {
   };
 
   // Load the SpotX Direct AdOS SDK onto the page
-  function loadDSDK()
-  {
+  function loadDSDK() {
     var channelId = bidReq.params.video.channel_id;
     adLoader.loadScript('//js.spotx.tv/directsdk/v1/' + channelId + '.js', initDSDK, true);
   }
 
   // We have a Direct AdOS SDK! Set options and initialize it!
-  function initDSDK()
-  {
+  function initDSDK() {
     var options = bidReq.params.video;
 
     // If we are passed a id string set the slot and video slot to the element using that id.
-    if (typeof options.slot === 'string')
-    {
+    if (typeof options.slot === 'string') {
       options.slot = document.getElementById(bidReq.params.video.slot);
     }
-    if (typeof options.video_slot === 'string')
-    {
+    if (typeof options.video_slot === 'string') {
       options.video_slot = document.getElementById(bidReq.params.video.video_slot);
     }
 
@@ -73,8 +68,7 @@ function Spotx() {
     });
   }
 
-  function createBid(status)
-  {
+  function createBid(status) {
     var bid = bidfactory.createBid(status, utils.getBidRequest(bidReq.bidId));
 
     // Stuff we have no matter what
@@ -103,21 +97,18 @@ function Spotx() {
   function handleResponse(response) {
     if (!response || !response.bids || !response.bids.length) {
       bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.NO_BID));
-    }
-    else {
+    } else {
       bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.GOOD, response.bids[0]));
     }
   }
 
   function validateParams(request) {
-    if (typeof request.params !== 'object' && typeof request.params.video !== 'object')
-    {
+    if (typeof request.params !== 'object' && typeof request.params.video !== 'object') {
       return false;
     }
 
     // Check that all of our required parameters are defined.
-    if (bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined)
-    {
+    if (bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined) {
       return false;
     }
     return true;

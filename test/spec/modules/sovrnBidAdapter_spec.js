@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import Adapter from 'modules/sovrnBidAdapter';
 import bidmanager from 'src/bidmanager';
 import adloader from 'src/adloader';
+var utils = require('src/utils');
 
 describe('sovrn adapter tests', function () {
   let adapter;
@@ -12,7 +13,8 @@ describe('sovrn adapter tests', function () {
         bidId: 'bidId1',
         bidder: 'sovrn',
         params: {
-          tagid: '315045'
+          tagid: '315045',
+          bidfloor: 1.25
         },
         sizes: [[320, 50]],
         placementCode: 'div-gpt-ad-12345-1'
@@ -42,9 +44,11 @@ describe('sovrn adapter tests', function () {
 
   describe('requestBids', function () {
     let stubLoadScript;
+
     beforeEach(() => {
       stubLoadScript = sinon.stub(adloader, 'loadScript');
     });
+
     afterEach(() => {
       stubLoadScript.restore();
     });
@@ -57,7 +61,7 @@ describe('sovrn adapter tests', function () {
       adapter.callBids(bidderRequest);
 
       let sovrnScript = decodeURIComponent(stubLoadScript.getCall(0).args[0]);
-      let firstExpectedImpObj = '{"id":"bidId1","banner":{"w":320,"h":50},"tagid":"315045","bidfloor":""}';
+      let firstExpectedImpObj = '{"id":"bidId1","banner":{"w":320,"h":50},"tagid":"315045","bidfloor":1.25}';
       let secondExpectedImpObj = '{"id":"bidId2","banner":{"w":320,"h":50},"tagid":"315046","bidfloor":""}';
 
       expect(sovrnScript).to.contain(firstExpectedImpObj);
@@ -67,11 +71,25 @@ describe('sovrn adapter tests', function () {
 
   describe('sovrnResponse', function () {
     let stubAddBidResponse;
+    let getRequestStub;
+    let getRequestsStub;
+
     beforeEach(() => {
       stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+      getRequestStub = sinon.stub(utils, 'getBidRequest');
+      getRequestStub.withArgs(bidderRequest.bids[0].bidId).returns(bidderRequest.bids[0]);
+      getRequestStub.withArgs(bidderRequest.bids[1].bidId).returns(bidderRequest.bids[1]);
+      getRequestStub.withArgs(bidderRequest.bids[2].bidId).returns(bidderRequest.bids[2]);
+
+      getRequestsStub = sinon.stub(utils, 'getBidderRequestAllAdUnits');
+      getRequestsStub.returns(bidderRequest);
     });
+
     afterEach(() => {
       stubAddBidResponse.restore();
+      getRequestStub.restore();
+      getRequestsStub.restore();
     });
 
     it('should exist and be a function', function () {
@@ -79,13 +97,10 @@ describe('sovrn adapter tests', function () {
     });
 
     it('should add empty bid responses if no bids returned', function () {
-      // no bids returned in the response.
       let response = {
         'id': '54321',
         'seatbid': []
       };
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       $$PREBID_GLOBAL$$.sovrnResponse(response);
 
@@ -112,7 +127,6 @@ describe('sovrn adapter tests', function () {
     });
 
     it('should add a bid response for bids returned and empty bid responses for the rest', function () {
-      // Returning a single bid in the response.
       let response = {
         'id': '54321111',
         'seatbid': [ {
@@ -129,8 +143,6 @@ describe('sovrn adapter tests', function () {
           } ]
         } ]
       };
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       $$PREBID_GLOBAL$$.sovrnResponse(response);
 
