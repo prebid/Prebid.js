@@ -94,7 +94,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
-    if (ymResponses && ymResponses.length > 0) {
+    if (ymResponses && ymResponses.constructor === Array && ymResponses.length > 0) {
       for (var i = 0; i < ymResponses.length; i++) {
         _registerPlacementBid(ymResponses[i]);
       }
