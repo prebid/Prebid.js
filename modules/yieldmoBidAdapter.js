@@ -19,7 +19,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   function buildYieldmoCall(bids) {
     // build our base tag, based on if we are http or https
-    var ymURI = '//ads.yieldmo.com/ads?';
+    var ymURI = '//bid.yieldmo.com/exchange/prebid?';
     var ymCall = document.location.protocol + ymURI;
 
     // Placement specific information
@@ -94,12 +94,15 @@ var YieldmoAdapter = function YieldmoAdapter() {
 
   // expose the callback to the global object:
   $$PREBID_GLOBAL$$.YMCB = function(ymResponses) {
-    if (ymResponses) {
+    if (ymResponses && ymResponses.constructor === Array && ymResponses.length > 0) {
       for (var i = 0; i < ymResponses.length; i++) {
         _registerPlacementBid(ymResponses[i]);
       }
     } else {
-      // no response data
+      // If an incorrect response is returned, register error bids for all placements
+      // to prevent Prebid waiting till timeout for response 
+      _registerNoResponseBids();
+
       // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
       // @endif
@@ -128,6 +131,17 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bid.bidderCode = 'yieldmo';
       bidmanager.addBidResponse(placementCode, bid);
     }
+  }
+
+  function _registerNoResponseBids() {
+    var yieldmoBidRequests = $$PREBID_GLOBAL$$._bidsRequested.find(bid => bid.bidderCode === 'yieldmo');
+
+    utils._each(yieldmoBidRequests.bids, function (currentBid) {
+      var bid = [];
+      bid = bidfactory.createBid(2, currentBid);
+      bid.bidderCode = 'yieldmo';
+      bidmanager.addBidResponse(currentBid.placementCode, bid);
+    });
   }
 
   return {
