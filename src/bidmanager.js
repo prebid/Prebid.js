@@ -1,7 +1,7 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
-import {getPriceBucketString} from './cpmBucketManager';
-import {NATIVE_KEYS, nativeBidIsValid} from './native';
-import { store } from './videoCache';
+import { getPriceBucketString } from './cpmBucketManager';
+import { NATIVE_KEYS, nativeBidIsValid } from './native';
+import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 
@@ -86,20 +86,20 @@ exports.addBidResponse = function (adUnitCode, bid) {
       return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
     }
 
-    if (!adUnitCode) {
-      utils.logWarn('No adUnitCode was supplied to addBidResponse.');
+    if (!bid) {
+      utils.logError(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
       return false;
     }
-    if (!bid) {
-      utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
+    if (!adUnitCode) {
+      utils.logError(errorMessage('No adUnitCode was supplied to addBidResponse.'));
       return false;
     }
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
     }
-    if (bid.mediaType === 'video' && !bid.vastUrl) {
-      utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
+    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastPayload)) {
+      utils.logError(errorMessage(`Video bid has no vastUrl or vastPayload property.`));
       return false;
     }
     if (bid.mediaType === 'banner' && !validBidSize(bid)) {
@@ -210,6 +210,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
         } else {
           bid.videoCacheKey = cacheIds[0].uuid;
+          if (!bid.vastUrl) {
+            bid.vastUrl = getCacheUrl(bid.videoCacheKey);
+          }
           addBidToAuction(bid);
         }
         doCallbacksIfNeeded();

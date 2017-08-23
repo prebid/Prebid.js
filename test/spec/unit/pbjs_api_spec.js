@@ -1571,11 +1571,15 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return original adservertag if there are no bids for the given placement code', () => {
-      var options = {
+      // urls.js:parse returns port 443 for IE11, blank for other browsers
+      const ie11port = !!window.MSInputMethodContext && !!document.documentMode ? ':443' : '';
+      const adserverTag = `https://pubads.g.doubleclick.net${ie11port}/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com`;
+
+      const masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, {
         'adserver': 'dfp',
         'code': 'one-without-bids'
-      };
-      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      });
+
       expect(masterTagUrl).to.equal(adserverTag);
     });
 
