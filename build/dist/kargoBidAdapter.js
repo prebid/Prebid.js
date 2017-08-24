@@ -1,14 +1,14 @@
-pbjsChunk([48],{
+pbjsChunk([52],{
 
-/***/ 121:
+/***/ 133:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(122);
+module.exports = __webpack_require__(134);
 
 
 /***/ }),
 
-/***/ 122:
+/***/ 134:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -65,9 +65,9 @@ var KargoAdapter = function KargoAdapter() {
       adSlotIds: utils._map(params.bids, (function (bid) {
         return bid.params.placementId;
       }))
-    }, _getAllMetadata()),
-        encodedParams = encodeURIComponent(JSON.stringify(transformedParams)),
-        callbackName = 'kargo_prebid_' + params.requestId.replace(/-/g, '_');
+    }, _getAllMetadata());
+    var encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
+    var callbackName = 'kargo_prebid_' + params.requestId.replace(/-/g, '_');
 
     window.pbjs[callbackName] = _handleBid(params.bids);
 
@@ -76,35 +76,16 @@ var KargoAdapter = function KargoAdapter() {
 
   function _readCookie(name) {
     var nameEquals = name + '=';
+    var cookies = document.cookie.split(';');
 
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = document.cookie.split(';')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var cookie = _step.value;
-
-        while (cookie.charAt(0) === ' ') {
-          cookie = cookie.substring(1, cookie.length);
-        }
-
-        if (cookie.indexOf(nameEquals) === 0) {
-          return cookie.substring(nameEquals.length, cookie.length);
-        }
+    for (var key in cookies) {
+      var cookie = cookies[key];
+      while (cookie.charAt(0) === ' ') {
+        cookie = cookie.substring(1, cookie.length);
       }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator['return']) {
-          _iterator['return']();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
+
+      if (cookie.indexOf(nameEquals) === 0) {
+        return cookie.substring(nameEquals.length, cookie.length);
       }
     }
 
@@ -113,8 +94,8 @@ var KargoAdapter = function KargoAdapter() {
 
   function _getCrbIds() {
     try {
-      var crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb'))),
-          syncIds = {};
+      var crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb')));
+      var syncIds = {};
 
       if (crb && crb.v) {
         var vParsed = JSON.parse(atob(crb.v));
@@ -132,8 +113,8 @@ var KargoAdapter = function KargoAdapter() {
 
   function _getUid() {
     try {
-      var uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid'))),
-          vData = {};
+      var uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid')));
+      var vData = {};
 
       if (uid && uid.v) {
         vData = uid.v;
@@ -154,8 +135,8 @@ var KargoAdapter = function KargoAdapter() {
   }
 
   function _getKrux() {
-    var segmentsStr = _getKruxSegments(),
-        segments = [];
+    var segmentsStr = _getKruxSegments();
+    var segments = [];
 
     if (segmentsStr) {
       segments = segmentsStr.split(',');
@@ -176,8 +157,8 @@ var KargoAdapter = function KargoAdapter() {
   }
 
   function _getUserIds() {
-    var uid = _getUid(),
-        crbIds = _getCrbIds();
+    var uid = _getUid();
+    var crbIds = _getCrbIds();
 
     return {
       kargoID: uid.userId,
@@ -208,4 +189,4 @@ module.exports = KargoAdapter;
 
 /***/ })
 
-},[121]);
+},[133]);

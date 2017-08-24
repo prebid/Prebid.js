@@ -1,14 +1,14 @@
-pbjsChunk([78],{
+pbjsChunk([87],{
 
-/***/ 56:
+/***/ 58:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(57);
+module.exports = __webpack_require__(59);
 
 
 /***/ }),
 
-/***/ 57:
+/***/ 59:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -29,8 +29,8 @@ var adaptermanager = __webpack_require__(1);
  */
 var AdmediaAdapter = function AdmediaAdapter() {
   function _callBids(params) {
-    var bids,
-        bidderUrl = window.location.protocol + '//b.admedia.com/banner/prebid/bidder/?';
+    var bids;
+    var bidderUrl = window.location.protocol + '//b.admedia.com/banner/prebid/bidder/?';
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};
@@ -125,4 +125,4 @@ module.exports = AdmediaAdapter;
 
 /***/ })
 
-},[56]);
+},[58]);

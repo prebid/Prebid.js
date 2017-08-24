@@ -1,14 +1,14 @@
 pbjsChunk([0],{
 
-/***/ 169:
+/***/ 189:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(170);
+module.exports = __webpack_require__(190);
 
 
 /***/ }),
 
-/***/ 170:
+/***/ 190:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -79,7 +79,7 @@ var sharethroughAdapter = _extends((0, _AnalyticsAdapter2['default'])({
     this.fireBeacon(loseBeaconUrl);
   },
   appendEnvFields: function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.27.0-pre');
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.28.0-pre');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
 
@@ -141,7 +141,6 @@ var LIBRARY = 'library';
 var ENDPOINT = 'endpoint';
 var BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 function AnalyticsAdapter(_ref) {
@@ -243,9 +242,7 @@ function AnalyticsAdapter(_ref) {
             args = event.args;
 
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType: eventType, args: args });
         }
       }));
@@ -308,4 +305,4 @@ function AnalyticsAdapter(_ref) {
 
 /***/ })
 
-},[169]);
+},[189]);

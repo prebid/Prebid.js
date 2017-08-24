@@ -1,30 +1,32 @@
-pbjsChunk([39],{
+pbjsChunk([42],{
 
-/***/ 139:
+/***/ 155:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(140);
+module.exports = __webpack_require__(156);
 
 
 /***/ }),
 
-/***/ 140:
+/***/ 156:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
 var adloader = __webpack_require__(5);
-var Adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 var adaptermanager = __webpack_require__(1);
 
 var PiximediaAdapter = function PiximediaAdapter() {
   var PREBID_URL = '//static.adserver.pm/prebid';
-  var baseAdapter = Adapter.createNew('piximedia');
+  var baseAdapter = new Adapter('piximedia');
   var bidStash = {};
 
   var tryAppendPixiQueryString = function tryAppendPixiQueryString(url, name, value) {
@@ -155,11 +157,11 @@ var PiximediaAdapter = function PiximediaAdapter() {
   };
 
   // return an object with PiximediaAdapter methods
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new PiximediaAdapter(), 'piximedia');
@@ -168,4 +170,4 @@ module.exports = PiximediaAdapter;
 
 /***/ })
 
-},[139]);
+},[155]);

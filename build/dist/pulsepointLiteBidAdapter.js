@@ -1,18 +1,20 @@
-pbjsChunk([34],{
+pbjsChunk([35],{
 
-/***/ 153:
+/***/ 173:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(154);
+module.exports = __webpack_require__(174);
 
 
 /***/ }),
 
-/***/ 154:
+/***/ 174:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _bidfactory = __webpack_require__(3);
 
@@ -309,14 +311,11 @@ function PulsePointLiteAdapter() {
     return !!slot.nativeParams;
   }
 
-  return {
+  return _extends(this, {
     callBids: _callBids
-  };
+  });
 }
 
-PulsePointLiteAdapter.createNew = function () {
-  return new PulsePointLiteAdapter();
-};
 /**
  * "pulseLite" will be the adapter name going forward. "pulsepointLite" to be
  * deprecated, but kept here for backwards compatibility.
@@ -334,4 +333,4 @@ module.exports = PulsePointLiteAdapter;
 
 /***/ })
 
-},[153]);
+},[173]);

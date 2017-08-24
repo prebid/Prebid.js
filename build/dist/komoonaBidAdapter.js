@@ -1,18 +1,20 @@
-pbjsChunk([47],{
+pbjsChunk([51],{
 
-/***/ 123:
+/***/ 135:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(124);
+module.exports = __webpack_require__(136);
 
 
 /***/ }),
 
-/***/ 124:
+/***/ 136:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _adapter = __webpack_require__(7);
 
@@ -47,7 +49,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 var ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
 
 function KomoonaAdapter() {
-  var baseAdapter = _adapter2['default'].createNew('komoona');
+  var baseAdapter = new _adapter2['default']('komoona');
   var bidRequests = {};
 
   /* Prebid executes this function when the page asks to send out bid requests */
@@ -146,16 +148,11 @@ function KomoonaAdapter() {
     return bid;
   }
 
-  return {
-    createNew: KomoonaAdapter.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-KomoonaAdapter.createNew = function () {
-  return new KomoonaAdapter();
-};
 
 _adaptermanager2['default'].registerBidAdapter(new KomoonaAdapter(), 'komoona');
 
@@ -163,4 +160,4 @@ module.exports = KomoonaAdapter;
 
 /***/ })
 
-},[123]);
+},[135]);

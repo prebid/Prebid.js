@@ -1,18 +1,20 @@
-pbjsChunk([70],{
+pbjsChunk([79],{
 
-/***/ 74:
+/***/ 76:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(75);
+module.exports = __webpack_require__(77);
 
 
 /***/ }),
 
-/***/ 75:
+/***/ 77:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
@@ -29,11 +31,13 @@ var _bidmanager = __webpack_require__(2);
 
 var _constants = __webpack_require__(4);
 
-var _url = __webpack_require__(10);
+var _url = __webpack_require__(11);
 
 var _utils = __webpack_require__(0);
 
 var _adapter = __webpack_require__(7);
+
+var _adapter2 = _interopRequireDefault(_adapter);
 
 var _adaptermanager = __webpack_require__(1);
 
@@ -41,9 +45,9 @@ var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var _createNew = (0, _adapter.createNew)('audienceNetwork'),
-    setBidderCode = _createNew.setBidderCode,
-    getBidderCode = _createNew.getBidderCode;
+var _ref = new _adapter2['default']('audienceNetwork'),
+    setBidderCode = _ref.setBidderCode,
+    getBidderCode = _ref.getBidderCode;
 
 /**
  * Does this bid request contain valid parameters?
@@ -167,7 +171,7 @@ var createSuccessBidResponse = function createSuccessBidResponse(placementId, si
   bid.fb_placementid = placementId;
   // Video attributes
   if (isVideo(format)) {
-    var vast = 'https://an.facebook.com/v1/instream/vast.xml?placementid=' + placementId + '&pageurl=' + encodeURIComponent(pageurl) + '&playerwidth=' + bid.width + '&playerheight=' + bid.height + '&bidid=' + bidId;
+    var vast = 'https://an.facebook.com/v1/instream/vast.xml?placementid=' + placementId + '&pageurl=' + pageurl + '&playerwidth=' + bid.width + '&playerheight=' + bid.height + '&bidid=' + bidId;
     bid.mediaType = 'video';
     bid.vastUrl = vast;
     bid.descriptionUrl = vast;
@@ -220,7 +224,7 @@ var callBids = function callBids(bidRequest) {
   if (placementids.length) {
     // Build URL
     var testmode = isTestmode();
-    var pageurl = location.href;
+    var pageurl = encodeURIComponent(location.href);
     var search = {
       placementids: placementids,
       adformats: adformats,
@@ -283,9 +287,13 @@ var callBids = function callBids(bidRequest) {
  * @property {Function} setBidderCode - used for bidder aliasing
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
-var AudienceNetwork = function AudienceNetwork() {
-  return { callBids: callBids, setBidderCode: setBidderCode, getBidderCode: getBidderCode };
-};
+function AudienceNetwork() {
+  return _extends(this, {
+    callBids: callBids,
+    setBidderCode: setBidderCode,
+    getBidderCode: getBidderCode
+  });
+}
 
 _adaptermanager2['default'].registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
   supportedMediaTypes: ['video']
@@ -295,4 +303,4 @@ module.exports = AudienceNetwork;
 
 /***/ })
 
-},[74]);
+},[76]);

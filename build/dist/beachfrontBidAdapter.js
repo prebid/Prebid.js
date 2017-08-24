@@ -1,18 +1,20 @@
-pbjsChunk([69],{
+pbjsChunk([78],{
 
-/***/ 76:
+/***/ 78:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(77);
+module.exports = __webpack_require__(79);
 
 
 /***/ }),
 
-/***/ 77:
+/***/ 79:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _adapter = __webpack_require__(7);
 
@@ -45,7 +47,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 var ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
 function BeachfrontAdapter() {
-  var baseAdapter = _adapter2['default'].createNew('beachfront');
+  var baseAdapter = new _adapter2['default']('beachfront');
 
   baseAdapter.callBids = function (bidRequests) {
     var bids = bidRequests.bids || [];
@@ -159,24 +161,19 @@ function BeachfrontAdapter() {
     return bid;
   }
 
-  return {
-    createNew: BeachfrontAdapter.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-BeachfrontAdapter.createNew = function () {
-  return new BeachfrontAdapter();
-};
 
 _adaptermanager2['default'].registerBidAdapter(new BeachfrontAdapter(), 'beachfront', {
   supportedMediaTypes: ['video']
 });
 
 module.exports = BeachfrontAdapter;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(25)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)))
 
 /***/ })
 
-},[76]);
+},[78]);

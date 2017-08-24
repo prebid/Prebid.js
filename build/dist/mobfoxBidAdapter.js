@@ -1,14 +1,14 @@
-pbjsChunk([42],{
+pbjsChunk([45],{
 
-/***/ 133:
+/***/ 149:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(134);
+module.exports = __webpack_require__(150);
 
 
 /***/ }),
 
-/***/ 134:
+/***/ 150:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18,13 +18,12 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
 var ajax = __webpack_require__(6);
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
 var adaptermanager = __webpack_require__(1);
 
-var mobfoxAdapter = function mobfoxAdapter() {
+function MobfoxAdapter() {
   var BIDDER_CODE = 'mobfox';
   var BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 
@@ -165,8 +164,8 @@ var mobfoxAdapter = function mobfoxAdapter() {
       throw ['htmlString is missing', responseBody];
     }
 
-    var cpm = void 0,
-        cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
+    var cpm = void 0;
+    var cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
     try {
       cpm = Number(cpmHeader);
     } catch (e) {
@@ -195,11 +194,11 @@ var mobfoxAdapter = function mobfoxAdapter() {
   return {
     callBids: callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new mobfoxAdapter(), 'mobfox');
-module.exports = mobfoxAdapter;
+adaptermanager.registerBidAdapter(new MobfoxAdapter(), 'mobfox');
+module.exports = MobfoxAdapter;
 
 /***/ })
 
-},[133]);
+},[149]);

@@ -1,14 +1,14 @@
-pbjsChunk([10],{
+pbjsChunk([11],{
 
-/***/ 205:
+/***/ 225:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(206);
+module.exports = __webpack_require__(226);
 
 
 /***/ }),
 
-/***/ 206:
+/***/ 226:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ var adloader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
 function VertozAdapter() {
-  var BASE_URI = '//banner.vrtzads.com/vzhbidder/bid?';
+  var BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
   var BIDDER_NAME = 'vertoz';
   var QUERY_PARAM_KEY = 'q';
 
@@ -88,4 +88,4 @@ module.exports = VertozAdapter;
 
 /***/ })
 
-},[205]);
+},[225]);

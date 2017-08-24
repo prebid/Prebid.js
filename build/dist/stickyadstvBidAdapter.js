@@ -1,14 +1,14 @@
-pbjsChunk([20],{
+pbjsChunk([21],{
 
-/***/ 185:
+/***/ 205:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(186);
+module.exports = __webpack_require__(206);
 
 
 /***/ }),
 
-/***/ 186:
+/***/ 206:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -16,7 +16,7 @@ module.exports = __webpack_require__(186);
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var Adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
 var adloader = __webpack_require__(5);
@@ -253,7 +253,7 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     };
   };
 
-  return _extends(Adapter.createNew(STICKYADS_BIDDERCODE), {
+  return _extends(this, new Adapter(STICKYADS_BIDDERCODE), {
     callBids: _callBids,
     formatBidObject: formatBidObject,
     formatAdHTML: formatAdHTML,
@@ -261,13 +261,8 @@ var StickyAdsTVAdapter = function StickyAdsTVAdapter() {
     getBid: getBid,
     getTopMostWindow: getTopMostWindow,
     getComponentId: getComponentId,
-    getAPIName: getAPIName,
-    createNew: StickyAdsTVAdapter.createNew // enable alias feature (to be used for freewheel-ssp alias)
+    getAPIName: getAPIName
   });
-};
-
-StickyAdsTVAdapter.createNew = function () {
-  return new StickyAdsTVAdapter();
 };
 
 adaptermanager.registerBidAdapter(new StickyAdsTVAdapter(), 'stickyadstv');
@@ -277,4 +272,4 @@ module.exports = StickyAdsTVAdapter;
 
 /***/ })
 
-},[185]);
+},[205]);

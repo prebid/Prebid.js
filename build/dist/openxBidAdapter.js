@@ -1,22 +1,24 @@
-pbjsChunk([40],{
+pbjsChunk([43],{
 
-/***/ 137:
+/***/ 153:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(138);
+module.exports = __webpack_require__(154);
 
 
 /***/ }),
 
-/***/ 138:
+/***/ 154:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+var _config = __webpack_require__(10);
+
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
-var adloader = __webpack_require__(5);
+var ajax = __webpack_require__(6);
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
 var adaptermanager = __webpack_require__(1);
@@ -24,11 +26,21 @@ var adaptermanager = __webpack_require__(1);
 var OpenxAdapter = function OpenxAdapter() {
   var BIDDER_CODE = 'openx';
   var BIDDER_CONFIG = 'hb_pb';
+  var BIDDER_VERSION = '1.0.1';
   var startTime = void 0;
+  var timeout = _config.config.getConfig('bidderTimeout');
 
   var pdNode = null;
 
-  pbjs.oxARJResponse = function (oxResponseObj) {
+  function oxARJResponse(oxResponseObj) {
+    try {
+      oxResponseObj = JSON.parse(oxResponseObj);
+    } catch (_) {
+      // Could not parse response, changing to an empty response instead
+      oxResponseObj = {
+        ads: {}
+      };
+    }
     var adUnits = oxResponseObj.ads.ad;
     if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
       makePDCall(oxResponseObj.ads.pixels);
@@ -56,11 +68,10 @@ var OpenxAdapter = function OpenxAdapter() {
 
       var beaconParams = {
         bd: +new Date() - startTime,
-        br: '0', // maybe 0, t, or p
-        bt: pbjs.cbTimeout || pbjs.bidderTimeout, // For the timeout per bid request
+        br: '0', // may be 0, t, or p
+        bt: Math.min(timeout, window.PREBID_TIMEOUT || _config.config.getConfig('bidderTimeout')),
         bs: window.location.hostname
       };
-
       // no fill :(
       if (!auid || !adUnit.pub_rev) {
         addBidResponse(null, bid);
@@ -77,12 +88,12 @@ var OpenxAdapter = function OpenxAdapter() {
   };
 
   function getViewportDimensions(isIfr) {
-    var width = void 0,
-        height = void 0,
-        tWin = window,
-        tDoc = document,
-        docEl = tDoc.documentElement,
-        body = void 0;
+    var width = void 0;
+    var height = void 0;
+    var tWin = window;
+    var tDoc = document;
+    var docEl = tDoc.documentElement;
+    var body = void 0;
 
     if (isIfr) {
       try {
@@ -142,6 +153,9 @@ var OpenxAdapter = function OpenxAdapter() {
         bidResponse.width = creative.width;
         bidResponse.height = creative.height;
       }
+      if (adUnit.tbd) {
+        bidResponse.tbd = adUnit.tbd;
+      }
     }
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
@@ -196,6 +210,9 @@ var OpenxAdapter = function OpenxAdapter() {
     params.auid = utils._map(bids, (function (bid) {
       return bid.params.unit;
     })).join('%2C');
+    params.dddid = utils._map(bids, (function (bid) {
+      return bid.transactionId;
+    })).join('%2C');
     params.aus = utils._map(bids, (function (bid) {
       return utils.parseSizesInput(bid.sizes).join(',');
     })).join('|');
@@ -208,16 +225,21 @@ var OpenxAdapter = function OpenxAdapter() {
       }
     }));
 
-    params.callback = 'window.pbjs.oxARJResponse';
-    var queryString = buildQueryStringFromParams(params);
-
-    adloader.loadScript('//' + delDomain + '/w/1.0/arj?' + queryString);
+    try {
+      var queryString = buildQueryStringFromParams(params);
+      var url = '//' + delDomain + '/w/1.0/arj?' + queryString;
+      ajax.ajax(url, oxARJResponse, void 0, {
+        withCredentials: true
+      });
+    } catch (err) {
+      utils.logMessage('Ajax call failed due to ' + err);
+    }
   }
 
   function callBids(params) {
-    var isIfr = void 0,
-        bids = params.bids || [],
-        currentURL = window.parent !== window ? document.referrer : window.location.href;
+    var isIfr = void 0;
+    var bids = params.bids || [];
+    var currentURL = window.parent !== window ? document.referrer : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
@@ -231,6 +253,9 @@ var OpenxAdapter = function OpenxAdapter() {
     var delDomain = bids[0].params.delDomain;
 
     startTime = new Date(params.start);
+    if (params.timeout) {
+      timeout = params.timeout;
+    }
 
     buildRequest(bids, {
       ju: currentURL,
@@ -242,7 +267,8 @@ var OpenxAdapter = function OpenxAdapter() {
       tws: getViewportDimensions(isIfr),
       ef: 'bt%2Cdb',
       be: 1,
-      bc: BIDDER_CONFIG
+      bc: BIDDER_CONFIG + '_' + BIDDER_VERSION,
+      nocache: new Date().getTime()
     }, delDomain);
   }
 
@@ -257,4 +283,4 @@ module.exports = OpenxAdapter;
 
 /***/ })
 
-},[137]);
+},[153]);

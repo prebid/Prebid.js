@@ -1,6 +1,14 @@
-pbjsChunk([59],{
+pbjsChunk([66],{
 
-/***/ 100:
+/***/ 105:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(106);
+
+
+/***/ }),
+
+/***/ 106:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -78,9 +86,9 @@ pbjs.express = function () {
       var adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
       for (var i = gptSlots.length - 1; i > -1; i--) {
-        var gptSlot = gptSlots[i],
-            elemId = gptSlot.getSlotElementId(),
-            adUnit = adUnitsCache[elemId];
+        var gptSlot = gptSlots[i];
+        var elemId = gptSlot.getSlotElementId();
+        var adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
           adUnit._gptSlot = gptSlot;
@@ -210,14 +218,6 @@ pbjs.express = function () {
   }));
 };
 
-/***/ }),
-
-/***/ 99:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(100);
-
-
 /***/ })
 
-},[99]);
+},[105]);

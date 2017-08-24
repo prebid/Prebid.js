@@ -1,14 +1,14 @@
-pbjsChunk([68],{
+pbjsChunk([77],{
 
-/***/ 78:
+/***/ 80:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(79);
+module.exports = __webpack_require__(81);
 
 
 /***/ }),
 
-/***/ 79:
+/***/ 81:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75,4 +75,4 @@ module.exports = BidfluenceAdapter;
 
 /***/ })
 
-},[78]);
+},[80]);

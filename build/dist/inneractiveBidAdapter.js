@@ -1,14 +1,14 @@
-pbjsChunk([51],{
+pbjsChunk([56],{
 
-/***/ 115:
+/***/ 125:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(116);
+module.exports = __webpack_require__(126);
 
 
 /***/ }),
 
-/***/ 116:
+/***/ 126:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -40,11 +40,13 @@ var _bidfactory2 = _interopRequireDefault(_bidfactory);
 
 var _constants = __webpack_require__(4);
 
-var _url = __webpack_require__(10);
+var _url = __webpack_require__(11);
 
 var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+var _config = __webpack_require__(10);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -267,7 +269,7 @@ var Url = {
     }
 
     if (typeof pbjs !== 'undefined') {
-      toQueryString.bco = pbjs.cbTimeout || pbjs.bidderTimeout;
+      toQueryString.bco = pbjs.cbTimeout || _config.config.getConfig('bidderTimeout');
     }
 
     toQueryString.timestamp = Date.now();
@@ -306,7 +308,9 @@ var InnerActiveAdapter = (function () {
   function InnerActiveAdapter() {
     _classCallCheck(this, InnerActiveAdapter);
 
-    this.iaAdapter = _adapter2['default'].createNew(CONSTANTS.ADAPTER_NAME);
+    this.iaAdapter = new _adapter2['default'](CONSTANTS.ADAPTER_NAME);
+    this.setBidderCode = this.iaAdapter.setBidderCode.bind(this);
+
     this.bidByBidId = {};
   }
 
@@ -527,17 +531,6 @@ var InnerActiveAdapter = (function () {
     value: function _getUtils() {
       return { Reporter: Reporter };
     }
-
-    /**
-     * Creates new instance of InnerActiveAdapter for prebid auction
-     * @returns {InnerActiveAdapter}
-     */
-
-  }, {
-    key: 'createNew',
-    value: function createNew() {
-      return new InnerActiveAdapter();
-    }
   }]);
 
   return InnerActiveAdapter;
@@ -549,4 +542,4 @@ module.exports = InnerActiveAdapter;
 
 /***/ })
 
-},[115]);
+},[125]);

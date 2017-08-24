@@ -1,14 +1,14 @@
-pbjsChunk([28],{
+pbjsChunk([29],{
 
-/***/ 167:
+/***/ 187:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(168);
+module.exports = __webpack_require__(188);
 
 
 /***/ }),
 
-/***/ 168:
+/***/ 188:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -41,7 +41,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var ServerBidAdapter = function ServerBidAdapter() {
-  var baseAdapter = _adapter2['default'].createNew('serverbid');
+  var baseAdapter = new _adapter2['default']('serverbid');
 
   var BASE_URI = '//e.serverbid.com/api/v2';
 
@@ -153,14 +153,10 @@ var ServerBidAdapter = function ServerBidAdapter() {
   };
 };
 
-ServerBidAdapter.createNew = function () {
-  return new ServerBidAdapter();
-};
-
 _adaptermanager2['default'].registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 
 module.exports = ServerBidAdapter;
 
 /***/ })
 
-},[167]);
+},[187]);

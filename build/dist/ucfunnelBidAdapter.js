@@ -1,22 +1,18 @@
-pbjsChunk([14],{
+pbjsChunk([15],{
 
-/***/ 197:
+/***/ 217:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(198);
+module.exports = __webpack_require__(218);
 
 
 /***/ }),
 
-/***/ 198:
+/***/ 218:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-
-var _adapter = __webpack_require__(7);
-
-var Adapter = _interopRequireWildcard(_adapter);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -38,14 +34,14 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var VER = 'ADGENT_PREBID-2017051801';
 var UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
-function ucfunnelAdapter() {
+function UcfunnelAdapter() {
   function _callBids(params) {
     var bids = params.bids || [];
 
@@ -80,11 +76,11 @@ function ucfunnelAdapter() {
   function buildOptimizedCall(bid) {
     bid.startTime = new Date().getTime();
 
-    var host = utils.getTopWindowLocation().host,
-        page = utils.getTopWindowLocation().pathname,
-        refer = document.referrer,
-        language = navigator.language,
-        dnt = navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' ? 1 : 0;
+    var host = utils.getTopWindowLocation().host;
+    var page = utils.getTopWindowLocation().pathname;
+    var refer = document.referrer;
+    var language = navigator.language;
+    var dnt = navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1' ? 1 : 0;
 
     var queryString = ['ifr', 0, 'bl', language, 'je', 1, 'dnt', dnt, 'host', host, 'u', page, 'ru', refer, 'adid', bid.params.adid, 'w', bid.params.width, 'h', bid.params.height, 'ver', VER];
 
@@ -113,10 +109,10 @@ function ucfunnelAdapter() {
   };
 };
 
-_adaptermanager2['default'].registerBidAdapter(new ucfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
+_adaptermanager2['default'].registerBidAdapter(new UcfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
 
-module.exports = ucfunnelAdapter;
+module.exports = UcfunnelAdapter;
 
 /***/ })
 
-},[197]);
+},[217]);

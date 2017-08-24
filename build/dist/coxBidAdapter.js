@@ -1,14 +1,14 @@
-pbjsChunk([63],{
+pbjsChunk([71],{
 
-/***/ 88:
+/***/ 92:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(89);
+module.exports = __webpack_require__(93);
 
 
 /***/ }),
 
-/***/ 89:
+/***/ 93:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20,10 +20,10 @@ var adLoader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
 function CoxAdapter() {
-  var adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl'],
-      otherKeys = ['siteId', 'wrapper', 'referrerUrl'],
-      placementMap = {},
-      W = window;
+  var adZoneAttributeKeys = ['id', 'size', 'thirdPartyClickUrl'];
+  var otherKeys = ['siteId', 'wrapper', 'referrerUrl'];
+  var placementMap = {};
+  var W = window;
 
   var COX_BIDDER_CODE = 'cox';
 
@@ -35,13 +35,13 @@ function CoxAdapter() {
     if (!W.CMT) W.CMT = _getCoxLite();
 
     // Populate the tag with the info from prebid
-    var bids = params.bids || [],
-        tag = W.cdsTag,
-        i,
-        j;
+    var bids = params.bids || [];
+    var tag = W.cdsTag;
+    var i;
+    var j;
     for (i = 0; i < bids.length; i++) {
-      var bid = bids[i],
-          cfg = bid.params || {};
+      var bid = bids[i];
+      var cfg = bid.params || {};
 
       if (cfg.id) {
         tag.zones = tag.zones || {};
@@ -85,9 +85,9 @@ function CoxAdapter() {
     // }
 
     for (var adZoneKey in placementMap) {
-      var bid = W.CMT.Service.getBidTrue(adZoneKey),
-          bidObj,
-          data = placementMap[adZoneKey];
+      var bid = W.CMT.Service.getBidTrue(adZoneKey);
+      var bidObj;
+      var data = placementMap[adZoneKey];
 
       if (bid > 0) {
         bidObj = bidfactory.createBid(1);
@@ -124,19 +124,19 @@ function CoxAdapter() {
             try {
               if (!W.location.ancestorOrigins) return;
               for (var i = 0, len = W.location.ancestorOrigins.length; len > i; i++) {
-                callback.call(null, W.location.ancestorOrigins[i], i);
+                callback(W.location.ancestorOrigins[i], i);
               }
             } catch (ignore) {}
             return [];
           }
 
           function f1(callback) {
-            var oneWindow,
-                infoArray = [];
+            var oneWindow;
+            var infoArray = [];
             do {
               try {
                 oneWindow = oneWindow ? oneWindow.parent : W;
-                callback.call(null, oneWindow, infoArray);
+                callback(oneWindow, infoArray);
               } catch (t) {
                 infoArray.push({
                   referrer: null,
@@ -172,9 +172,9 @@ function CoxAdapter() {
         },
 
         srTestCapabilities: function srTestCapabilities() {
-          var plugins = navigator.plugins,
-              flashVer = -1,
-              sf = 'Shockwave Flash';
+          var plugins = navigator.plugins;
+          var flashVer = -1;
+          var sf = 'Shockwave Flash';
 
           if (plugins && plugins.length > 0) {
             if (plugins[sf + ' 2.0'] || plugins[sf]) {
@@ -246,8 +246,8 @@ function CoxAdapter() {
         },
 
         _getData: function _getData(zoneKey, field) {
-          var response = this._getResponse(),
-              zoneResponseData = response.zones ? response.zones[zoneKey] : {};
+          var response = this._getResponse();
+          var zoneResponseData = response.zones ? response.zones[zoneKey] : {};
 
           return (zoneResponseData || {})[field] || null;
         },
@@ -275,4 +275,4 @@ module.exports = CoxAdapter;
 
 /***/ })
 
-},[88]);
+},[92]);

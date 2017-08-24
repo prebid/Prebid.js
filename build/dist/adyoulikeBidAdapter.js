@@ -1,18 +1,20 @@
-pbjsChunk([75],{
+pbjsChunk([84],{
 
-/***/ 62:
+/***/ 64:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(63);
+module.exports = __webpack_require__(65);
 
 
 /***/ }),
 
-/***/ 63:
+/***/ 65:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _adapter = __webpack_require__(7);
 
@@ -30,7 +32,7 @@ var _utils = __webpack_require__(0);
 
 var utils = _interopRequireWildcard(_utils);
 
-var _url = __webpack_require__(10);
+var _url = __webpack_require__(11);
 
 var _ajax = __webpack_require__(6);
 
@@ -47,7 +49,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
   var _VERSION = '0.1';
 
-  var baseAdapter = _adapter2['default'].createNew('adyoulike');
+  var baseAdapter = new _adapter2['default']('adyoulike');
 
   baseAdapter.callBids = function (bidRequest) {
     var bidRequests = {};
@@ -183,8 +185,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
   /* Get parsed size from request size */
   function getSize(requestSizes) {
-    var parsed = {},
-        size = utils.parseSizesInput(requestSizes)[0];
+    var parsed = {};
+    var size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -230,15 +232,10 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     _bidmanager2['default'].addBidResponse(placement, bid);
   }
 
-  return {
-    createNew: AdyoulikeAdapter.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
-};
-
-AdyoulikeAdapter.createNew = function () {
-  return new AdyoulikeAdapter();
+  });
 };
 
 _adaptermanager2['default'].registerBidAdapter(new AdyoulikeAdapter(), 'adyoulike');
@@ -247,4 +244,4 @@ module.exports = AdyoulikeAdapter;
 
 /***/ })
 
-},[62]);
+},[64]);

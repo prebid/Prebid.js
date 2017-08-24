@@ -1,14 +1,14 @@
-pbjsChunk([83],{
+pbjsChunk([92],{
 
-/***/ 46:
+/***/ 48:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(47);
+module.exports = __webpack_require__(49);
 
 
 /***/ }),
 
-/***/ 47:
+/***/ 49:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -23,7 +23,7 @@ var bidmanager = __webpack_require__(2);
 var adloader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
-var adBundAdapter = function adBundAdapter() {
+function AdBundAdapter() {
   var timezone = new Date().getTimezoneOffset();
   var bidAPIs = ['http://us-east-engine.adbund.xyz/prebid/ad/get', 'http://us-west-engine.adbund.xyz/prebid/ad/get'];
   // Based on the time zone to select the interface to the server
@@ -77,12 +77,12 @@ var adBundAdapter = function adBundAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new adBundAdapter(), 'adbund');
+adaptermanager.registerBidAdapter(new AdBundAdapter(), 'adbund');
 
-module.exports = adBundAdapter;
+module.exports = AdBundAdapter;
 
 /***/ })
 
-},[46]);
+},[48]);

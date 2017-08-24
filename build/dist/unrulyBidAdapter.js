@@ -1,14 +1,14 @@
-pbjsChunk([12],{
+pbjsChunk([13],{
 
-/***/ 201:
+/***/ 221:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(202);
+module.exports = __webpack_require__(222);
 
 
 /***/ }),
 
-/***/ 202:
+/***/ 222:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -32,7 +32,7 @@ var utils = _interopRequireWildcard(_utils);
 
 var _constants = __webpack_require__(4);
 
-var _Renderer = __webpack_require__(16);
+var _Renderer = __webpack_require__(17);
 
 var _adaptermanager = __webpack_require__(1);
 
@@ -111,7 +111,7 @@ function createBidResponseHandler(bidRequestBids) {
   };
 }
 
-function createUnrulyAdapter() {
+function UnrulyAdapter() {
   var adapter = {
     exchangeUrl: 'https://targeting.unrulymedia.com/prebid',
     callBids: function callBids(_ref2) {
@@ -137,10 +137,10 @@ function createUnrulyAdapter() {
   return adapter;
 }
 
-_adaptermanager2['default'].registerBidAdapter(new createUnrulyAdapter(), 'unruly');
+_adaptermanager2['default'].registerBidAdapter(new UnrulyAdapter(), 'unruly');
 
-module.exports = createUnrulyAdapter;
+module.exports = UnrulyAdapter;
 
 /***/ })
 
-},[201]);
+},[221]);

@@ -1,14 +1,14 @@
-pbjsChunk([8],{
+pbjsChunk([9],{
 
-/***/ 209:
+/***/ 229:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(210);
+module.exports = __webpack_require__(230);
 
 
 /***/ }),
 
-/***/ 210:
+/***/ 230:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19,21 +19,21 @@ var adloader = __webpack_require__(5);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
 var adaptermanager = __webpack_require__(1);
-var WS_ADAPTER_VERSION = '1.0.2';
+var WS_ADAPTER_VERSION = '1.0.3';
 
 function WidespaceAdapter() {
-  var useSSL = document.location.protocol === 'https:',
-      baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-      callbackName = 'pbjs.widespaceHandleCB';
+  var useSSL = document.location.protocol === 'https:';
+  var baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?';
+  var callbackName = 'pbjs.widespaceHandleCB';
 
   function _callBids(params) {
     var bids = params && params.bids || [];
 
     for (var i = 0; i < bids.length; i++) {
-      var bid = bids[i],
-          callbackUid = bid.bidId,
-          sid = bid.params.sid,
-          currency = bid.params.cur || bid.params.currency;
+      var bid = bids[i];
+      var callbackUid = bid.bidId;
+      var sid = bid.params.sid;
+      var currency = bid.params.cur || bid.params.currency;
 
       // Handle Sizes string
       var sizeQueryString = '';
@@ -55,6 +55,16 @@ function WidespaceAdapter() {
         'hb.currency': currency,
         'sid': sid
       };
+
+      if (bid.params.demo) {
+        var demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+        for (var _i = 0; _i < demoFields.length; _i++) {
+          if (!bid.params.demo[demoFields[_i]]) {
+            continue;
+          }
+          _params['hb.demo.' + demoFields[_i]] = bid.params.demo[demoFields[_i]];
+        }
+      }
 
       requestURL += '#';
 
@@ -78,13 +88,13 @@ function WidespaceAdapter() {
       return;
     }
 
-    var bidObject,
-        bidCode = 'widespace';
+    var bidObject = void 0;
+    var bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
-      var bid = bidsArray[i],
-          placementCode = '',
-          validSizes = [];
+      var bid = bidsArray[i];
+      var placementCode = '';
+      var validSizes = [];
 
       bid.sizes = { height: bid.height, width: bid.width };
 
@@ -134,4 +144,4 @@ module.exports = WidespaceAdapter;
 
 /***/ })
 
-},[209]);
+},[229]);

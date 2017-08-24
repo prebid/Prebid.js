@@ -1,14 +1,14 @@
-pbjsChunk([30],{
+pbjsChunk([31],{
 
-/***/ 163:
+/***/ 183:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(164);
+module.exports = __webpack_require__(184);
 
 
 /***/ }),
 
-/***/ 164:
+/***/ 184:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _adapter = __webpack_require__(7);
 
-var Adapter = _interopRequireWildcard(_adapter);
+var _adapter2 = _interopRequireDefault(_adapter);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -44,9 +44,9 @@ var _ajax = __webpack_require__(6);
 
 var _constants = __webpack_require__(4);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var RUBICON_BIDDER_CODE = 'rubicon';
 
@@ -71,6 +71,7 @@ var sizeMap = {
   8: '120x600',
   9: '160x600',
   10: '300x600',
+  13: '200x200',
   14: '250x250',
   15: '300x250',
   16: '336x280',
@@ -108,13 +109,17 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600'
+  126: '200x600',
+  195: '600x300'
 };
 utils._each(sizeMap, (function (item, key) {
   return sizeMap[item] = key;
 }));
 
 function RubiconAdapter() {
+  var baseAdapter = new _adapter2['default'](RUBICON_BIDDER_CODE);
+  var hasUserSyncFired = false;
+
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -162,7 +167,7 @@ function RubiconAdapter() {
 
       function addErrorBid() {
         var badBid = _bidfactory2['default'].createBid(_constants.STATUS.NO_BID, bid);
-        badBid.bidderCode = bid.bidder;
+        badBid.bidderCode = baseAdapter.getBidderCode();
         _bidmanager2['default'].addBidResponse(bid.placementCode, badBid);
       }
     }));
@@ -174,7 +179,7 @@ function RubiconAdapter() {
 
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
-      var digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({ member: 'T9QSFKPDN9' });
+      var digiTrustUser = window.DigiTrust && (pbjs.getConfig('digiTrustId') || window.DigiTrust.getUser({ member: 'T9QSFKPDN9' }));
       return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
     }
     var digiTrustId = getDigiTrustId();
@@ -313,10 +318,9 @@ function RubiconAdapter() {
   };
 
   function handleRpCB(responseText, bidRequest) {
-    var responseObj = JSON.parse(responseText),
-        // can throw
-    ads = responseObj.ads,
-        adResponseKey = bidRequest.placementCode;
+    var responseObj = JSON.parse(responseText); // can throw
+    var ads = responseObj.ads;
+    var adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if ((typeof responseObj === 'undefined' ? 'undefined' : _typeof(responseObj)) !== 'object' || responseObj.status !== 'ok') {
@@ -344,8 +348,9 @@ function RubiconAdapter() {
       // store bid response
       // bid status is good (indicating 1)
       var bid = _bidfactory2['default'].createBid(_constants.STATUS.GOOD, bidRequest);
-      bid.creative_id = ad.ad_id;
-      bid.bidderCode = bidRequest.bidder;
+      bid.currency = 'USD';
+      bid.creative_id = ad.creative_id;
+      bid.bidderCode = baseAdapter.getBidderCode();
       bid.cpm = ad.cpm || 0;
       bid.dealId = ad.deal;
       if (bidRequest.mediaType === 'video') {
@@ -379,15 +384,16 @@ function RubiconAdapter() {
         utils.logError('Error from addBidResponse', null, err);
       }
     }));
+    // Run the Emily user sync
+    hasUserSyncFired = syncEmily(hasUserSyncFired);
   }
 
   function _adCpmSort(adA, adB) {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return _extends(Adapter.createNew(RUBICON_BIDDER_CODE), {
-    callBids: _callBids,
-    createNew: RubiconAdapter.createNew
+  return _extends(this, baseAdapter, {
+    callBids: _callBids
   });
 }
 
@@ -404,8 +410,8 @@ RubiconAdapter.masSizeOrdering = function (sizes) {
     return result;
   }), []).sort((function (first, second) {
     // sort by MAS_SIZE_PRIORITY priority order
-    var firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
     if (firstPriority > -1 || secondPriority > -1) {
       if (firstPriority === -1) {
@@ -422,9 +428,50 @@ RubiconAdapter.masSizeOrdering = function (sizes) {
   }));
 };
 
-RubiconAdapter.createNew = function () {
-  return new RubiconAdapter();
-};
+/**
+ * syncEmily
+ * @summary A user sync dependency for the Rubicon Project adapter
+ * When enabled, creates an user sync iframe after a delay once the first auction is complete.
+ * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
+ * @example
+ *  // Config example for Rubicon user sync
+ *  pbjs.setConfig({ rubicon: {
+ *    userSync: {
+ *      enabled: true,
+ *      delay: 1000
+ *    }
+ *  }});
+ * @return {boolean} Whether or not Emily synced
+ */
+function syncEmily(hasSynced) {
+  // Check that it has not already been triggered - only meant to fire once
+  if (hasSynced) {
+    return true;
+  }
+
+  var defaultUserSyncConfig = {
+    enabled: true,
+    delay: 5000
+  };
+  var iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+
+  var rubiConfig = pbjs.getConfig('rubicon');
+  var publisherUserSyncConfig = rubiConfig && rubiConfig.userSync;
+
+  // Merge publisher user sync config with the defaults
+  var userSyncConfig = _extends(defaultUserSyncConfig, publisherUserSyncConfig);
+
+  // Check that user sync is enabled
+  if (!userSyncConfig.enabled) {
+    return false;
+  }
+
+  // Delay inserting the Emily iframe
+  setTimeout((function () {
+    return utils.insertCookieSyncIframe(iframeUrl);
+  }), Number(userSyncConfig.delay));
+  return true;
+}
 
 _adaptermanager2['default'].registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
   supportedMediaTypes: ['video']
@@ -435,4 +482,4 @@ module.exports = RubiconAdapter;
 
 /***/ })
 
-},[163]);
+},[183]);

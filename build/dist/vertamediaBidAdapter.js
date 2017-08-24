@@ -1,18 +1,20 @@
-pbjsChunk([11],{
+pbjsChunk([12],{
 
-/***/ 203:
+/***/ 223:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(204);
+module.exports = __webpack_require__(224);
 
 
 /***/ }),
 
-/***/ 204:
+/***/ 224:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _adapter = __webpack_require__(7);
 
@@ -45,8 +47,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 var ENDPOINT = '//rtb.vertamedia.com/hb/';
 
 function VertamediaAdapter() {
-  var baseAdapter = _adapter2['default'].createNew('vertamedia'),
-      bidRequest;
+  var baseAdapter = new _adapter2['default']('vertamedia');
+  var bidRequest = void 0;
 
   baseAdapter.callBids = function (bidRequests) {
     if (!bidRequests || !bidRequests.bids || bidRequests.bids.length === 0) {
@@ -87,8 +89,8 @@ function VertamediaAdapter() {
   }
 
   function getSize(requestSizes) {
-    var parsed = {},
-        size = utils.parseSizesInput(requestSizes)[0];
+    var parsed = {};
+    var size = utils.parseSizesInput(requestSizes)[0];
 
     if (typeof size !== 'string') {
       return parsed;
@@ -142,16 +144,11 @@ function VertamediaAdapter() {
     return bid;
   }
 
-  return {
-    createNew: VertamediaAdapter.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-VertamediaAdapter.createNew = function () {
-  return new VertamediaAdapter();
-};
 
 _adaptermanager2['default'].registerBidAdapter(new VertamediaAdapter(), 'vertamedia', {
   supportedMediaTypes: ['video']
@@ -161,4 +158,4 @@ module.exports = VertamediaAdapter;
 
 /***/ })
 
-},[203]);
+},[223]);

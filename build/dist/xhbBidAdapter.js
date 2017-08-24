@@ -1,22 +1,24 @@
-pbjsChunk([7],{
+pbjsChunk([8],{
 
-/***/ 211:
+/***/ 231:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(212);
+module.exports = __webpack_require__(232);
 
 
 /***/ }),
 
-/***/ 212:
+/***/ 232:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _adapter = __webpack_require__(7);
 
-var Adapter = _interopRequireWildcard(_adapter);
+var _adapter2 = _interopRequireDefault(_adapter);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -38,12 +40,12 @@ var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
 var _adloader = __webpack_require__(5);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
 var XhbAdapter = function XhbAdapter() {
-  var baseAdapter = Adapter.createNew('xhb');
+  var baseAdapter = new _adapter2['default']('xhb');
   var usersync = false;
 
   var _defaultBidderSettings = {
@@ -51,12 +53,17 @@ var XhbAdapter = function XhbAdapter() {
     adserverTargeting: [{
       key: 'hb_xhb_deal',
       val: function val(bidResponse) {
-        return bidResponse.adId;
+        return bidResponse.dealId;
       }
     }, {
       key: 'hb_xhb_adid',
       val: function val(bidResponse) {
         return bidResponse.adId;
+      }
+    }, {
+      key: 'hb_xhb_size',
+      val: function val(bidResponse) {
+        return bidResponse.width + 'x' + bidResponse.height;
       }
     }]
   };
@@ -140,7 +147,7 @@ var XhbAdapter = function XhbAdapter() {
       var responseCPM = void 0;
       var id = jptResponseObj.callback_uid;
       var placementCode = '';
-      var bidObj = getBidRequest(id);
+      var bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
@@ -187,16 +194,11 @@ var XhbAdapter = function XhbAdapter() {
     }
   };
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: XhbAdapter.createNew,
     buildJPTCall: buildJPTCall
-  };
-};
-
-XhbAdapter.createNew = function () {
-  return new XhbAdapter();
+  });
 };
 
 _adaptermanager2['default'].registerBidAdapter(new XhbAdapter(), 'xhb');
@@ -205,4 +207,4 @@ module.exports = XhbAdapter;
 
 /***/ })
 
-},[211]);
+},[231]);

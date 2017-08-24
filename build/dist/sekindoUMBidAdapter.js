@@ -1,20 +1,22 @@
-pbjsChunk([29],{
+pbjsChunk([30],{
 
-/***/ 165:
+/***/ 185:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(166);
+module.exports = __webpack_require__(186);
 
 
 /***/ }),
 
-/***/ 166:
+/***/ 186:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var _utils = __webpack_require__(0);
+
+var _config = __webpack_require__(10);
 
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
@@ -23,8 +25,7 @@ var bidmanager = __webpack_require__(2);
 var adloader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
-var sekindoUMAdapter;
-sekindoUMAdapter = function sekindoUMAdapter() {
+function SekindoUMAdapter() {
   function _callBids(params) {
     var bids = params.bids;
     var bidsCount = bids.length;
@@ -95,7 +96,7 @@ sekindoUMAdapter = function sekindoUMAdapter() {
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbver', '3');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbobj', 'pbjs');
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'dcpmflr', bidfloor);
-    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', pbjs.bidderTimeout);
+    scriptSrc = utils.tryAppendQueryString(scriptSrc, 'hbto', _config.config.getConfig('bidderTimeout'));
     scriptSrc = utils.tryAppendQueryString(scriptSrc, 'protocol', protocol);
 
     adloader.loadScript(scriptSrc);
@@ -104,12 +105,12 @@ sekindoUMAdapter = function sekindoUMAdapter() {
   return {
     callBids: _callBids
   };
-};
+}
 
-adaptermanager.registerBidAdapter(new sekindoUMAdapter(), 'sekindoUM');
+adaptermanager.registerBidAdapter(new SekindoUMAdapter(), 'sekindoUM');
 
-module.exports = sekindoUMAdapter;
+module.exports = SekindoUMAdapter;
 
 /***/ })
 
-},[165]);
+},[185]);

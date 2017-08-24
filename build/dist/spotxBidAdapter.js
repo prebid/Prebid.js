@@ -1,18 +1,20 @@
-pbjsChunk([22],{
+pbjsChunk([23],{
 
-/***/ 181:
+/***/ 201:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(182);
+module.exports = __webpack_require__(202);
 
 
 /***/ }),
 
-/***/ 182:
+/***/ 202:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -47,7 +49,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function Spotx() {
-  var baseAdapter = _adapter2['default'].createNew('Spotx');
+  var baseAdapter = new _adapter2['default']('Spotx');
   var bidReq = void 0;
   var KVP_Object = void 0;
 
@@ -154,16 +156,11 @@ function Spotx() {
     return true;
   }
 
-  return {
-    createNew: Spotx.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-Spotx.createNew = function () {
-  return new Spotx();
-};
 
 _adaptermanager2['default'].registerBidAdapter(new Spotx(), 'spotx', {
   supportedMediaTypes: ['video']
@@ -173,4 +170,4 @@ module.exports = Spotx;
 
 /***/ })
 
-},[181]);
+},[201]);

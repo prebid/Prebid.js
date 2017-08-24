@@ -1,18 +1,20 @@
-pbjsChunk([85],{
+pbjsChunk([94],{
 
-/***/ 40:
+/***/ 42:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(41);
+module.exports = __webpack_require__(43);
 
 
 /***/ }),
 
-/***/ 41:
+/***/ 43:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 /*
  * Adapter for requesting bids from RTK Aardvark
@@ -24,21 +26,23 @@ var utils = __webpack_require__(0);
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
 var adloader = __webpack_require__(5);
-var adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 var constants = __webpack_require__(4);
 var adaptermanager = __webpack_require__(1);
 
-var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
-    AARDVARK_REQUESTS_MAP = 'aardvarkRequests',
-    AARDVARK_BIDDER_CODE = 'aardvark',
-    DEFAULT_REFERRER = 'thor.rtk.io',
-    DEFAULT_ENDPOINT = 'thor.rtk.io',
-    endpoint = DEFAULT_ENDPOINT,
-    requestBids = function requestBids(bidderCode, callbackName, bidReqs) {
-  var ref = utils.getTopWindowLocation(),
-      ai = '',
-      scs = [],
-      bidIds = [];
+var AARDVARK_CALLBACK_NAME = 'aardvarkResponse';
+var AARDVARK_REQUESTS_MAP = 'aardvarkRequests';
+var AARDVARK_BIDDER_CODE = 'aardvark';
+var DEFAULT_REFERRER = 'thor.rtk.io';
+var DEFAULT_ENDPOINT = 'thor.rtk.io';
+
+var endpoint = DEFAULT_ENDPOINT;
+
+function requestBids(bidderCode, callbackName, bidReqs) {
+  var ref = utils.getTopWindowLocation();
+  var ai = '';
+  var scs = [];
+  var bidIds = [];
 
   ref = ref ? ref.host : DEFAULT_REFERRER;
 
@@ -73,8 +77,9 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
   }
 
   adloader.loadScript(['//' + endpoint + '/', ai, '/', scs.join('_'), '/aardvark/?jsonp=pbjs.', callbackName, '&rtkreferer=', ref, '&', bidIds.join('&')].join(''));
-},
-    registerBidResponse = function registerBidResponse(bidderCode, rawBidResponse) {
+}
+
+function registerBidResponse(bidderCode, rawBidResponse) {
   if (rawBidResponse.error) {
     return utils.logWarn('Aardvark bid received with an error, ignoring... [' + rawBidResponse.error + ']');
   }
@@ -101,8 +106,9 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
 
   bidmanager.addBidResponse(bidObj.placementCode, bidResponse);
   pbjs[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid].responded = true;
-},
-    registerAardvarkCallback = function registerAardvarkCallback(bidderCode, callbackName) {
+}
+
+function registerAardvarkCallback(bidderCode, callbackName) {
   pbjs[callbackName] = function (rtkResponseObj) {
     rtkResponseObj.forEach((function (bidResponse) {
       registerBidResponse(bidderCode, bidResponse);
@@ -119,15 +125,16 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
       }
     }
   };
-},
-    AardvarkAdapter = function AardvarkAdapter() {
-  var baseAdapter = adapter.createNew(AARDVARK_BIDDER_CODE);
+}
+
+var AardvarkAdapter = function AardvarkAdapter() {
+  var baseAdapter = new Adapter(AARDVARK_BIDDER_CODE);
 
   pbjs[AARDVARK_REQUESTS_MAP] = pbjs[AARDVARK_REQUESTS_MAP] || {};
 
   baseAdapter.callBids = function (params) {
-    var bidderCode = baseAdapter.getBidderCode(),
-        callbackName = AARDVARK_CALLBACK_NAME;
+    var bidderCode = baseAdapter.getBidderCode();
+    var callbackName = AARDVARK_CALLBACK_NAME;
 
     if (bidderCode !== AARDVARK_BIDDER_CODE) {
       callbackName = [AARDVARK_CALLBACK_NAME, bidderCode].join('_');
@@ -140,15 +147,10 @@ var AARDVARK_CALLBACK_NAME = 'aardvarkResponse',
     return requestBids(bidderCode, callbackName, params.bids || []);
   };
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    createNew: exports.createNew
-  };
-};
-
-exports.createNew = function () {
-  return new AardvarkAdapter();
+    setBidderCode: baseAdapter.setBidderCode
+  });
 };
 
 adaptermanager.registerBidAdapter(new AardvarkAdapter(), 'aardvark');
@@ -157,4 +159,4 @@ module.exports = AardvarkAdapter;
 
 /***/ })
 
-},[40]);
+},[42]);

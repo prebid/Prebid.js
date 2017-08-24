@@ -1,14 +1,14 @@
 pbjsChunk([1],{
 
-/***/ 159:
+/***/ 179:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(160);
+module.exports = __webpack_require__(180);
 
 
 /***/ }),
 
-/***/ 160:
+/***/ 180:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19,8 +19,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _ajax = __webpack_require__(6);
 
 var _AnalyticsAdapter = __webpack_require__(9);
 
@@ -44,12 +42,79 @@ var analyticsType = 'endpoint';
 var auctionInitConst = _constants2['default'].EVENTS.AUCTION_INIT;
 var auctionEndConst = _constants2['default'].EVENTS.AUCTION_END;
 var bidWonConst = _constants2['default'].EVENTS.BID_WON;
+var bidRequestConst = _constants2['default'].EVENTS.BID_REQUESTED;
+var bidAdjustmentConst = _constants2['default'].EVENTS.BID_ADJUSTMENT;
+var bidResponseConst = _constants2['default'].EVENTS.BID_RESPONSE;
 
-var initOptions = { publisherIds: [] };
+var initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
 var bidWon = { options: {}, events: [] };
 var eventStack = { options: {}, events: [] };
 
 var auctionStatus = 'not_started';
+
+var localStoragePrefix = 'roxot_analytics_';
+var utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+var utmTimeoutKey = 'utm_timeout';
+var utmTimeout = 60 * 60 * 1000;
+var sessionTimeout = 60 * 60 * 1000;
+var sessionIdStorageKey = 'session_id';
+var sessionTimeoutKey = 'session_timeout';
+
+function getParameterByName(param) {
+  var vars = {};
+  window.location.href.replace(location.hash, '').replace(/[?&]+([^=&]+)=?([^&]*)?/gi, (function (m, key, value) {
+    vars[key] = value !== undefined ? value : '';
+  }));
+
+  return vars[param] ? vars[param] : '';
+}
+
+function buildSessionIdLocalStorageKey() {
+  return localStoragePrefix.concat(sessionIdStorageKey);
+}
+
+function buildSessionIdTimeoutLocalStorageKey() {
+  return localStoragePrefix.concat(sessionTimeoutKey);
+}
+
+function updateSessionId() {
+  if (isSessionIdTimeoutExpired()) {
+    var newSessionId = utils.generateUUID();
+    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
+  }
+  initOptions.sessionId = getSessionId();
+  updateSessionIdTimeout();
+}
+
+function updateSessionIdTimeout() {
+  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+}
+
+function isSessionIdTimeoutExpired() {
+  var cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+  return Date.now() - cpmSessionTimestamp > sessionTimeout;
+}
+
+function getSessionId() {
+  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
+}
+
+function updateUtmTimeout() {
+  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+}
+
+function isUtmTimeoutExpired() {
+  var utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  return Date.now() - utmTimestamp > utmTimeout;
+}
+
+function buildUtmLocalStorageTimeoutKey() {
+  return localStoragePrefix.concat(utmTimeoutKey);
+}
+
+function buildUtmLocalStorageKey(utmMarkKey) {
+  return localStoragePrefix.concat(utmMarkKey);
+}
 
 function checkOptions() {
   if (typeof initOptions.publisherIds === 'undefined') {
@@ -59,35 +124,68 @@ function checkOptions() {
   return initOptions.publisherIds.length > 0;
 }
 
+function checkAdUnitConfig() {
+  if (typeof initOptions.adUnits === 'undefined') {
+    return false;
+  }
+
+  return initOptions.adUnits.length > 0;
+}
+
 function buildBidWon(eventType, args) {
   bidWon.options = initOptions;
-  bidWon.events = [{ args: args, eventType: eventType }];
+  if (checkAdUnitConfig()) {
+    if (initOptions.adUnits.includes(args.adUnitCode)) {
+      bidWon.events = [{ args: args, eventType: eventType }];
+    }
+  } else {
+    bidWon.events = [{ args: args, eventType: eventType }];
+  }
 }
 
 function buildEventStack() {
   eventStack.options = initOptions;
 }
 
-function send(eventType, data, sendDataType) {
-  var fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', fullUrl, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.withCredentials = true;
-  xhr.onreadystatechange = function (result) {
-    if (this.readyState != 4) return;
-
-    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
-  };
-  xhr.send(JSON.stringify(data));
+function filterBidsByAdUnit(bids) {
+  var filteredBids = [];
+  bids.forEach((function (bid) {
+    if (initOptions.adUnits.includes(bid.placementCode)) {
+      filteredBids.push(bid);
+    }
+  }));
+  return filteredBids;
 }
 
-function pushEvent(eventType, args) {
-  eventStack.events.push({ eventType: eventType, args: args });
+function isValidEvent(eventType, adUnitCode) {
+  if (checkAdUnitConfig()) {
+    var validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
+    if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
+      return false;
+    }
+  }
+  return true;
 }
 
-function flushEvents() {
+function isValidEventStack() {
+  if (eventStack.events.length > 0) {
+    return eventStack.events.some((function (event) {
+      return bidRequestConst === event.eventType || bidWonConst === event.eventType;
+    }));
+  }
+  return false;
+}
+
+function isValidBidWon() {
+  return bidWon.events.length > 0;
+}
+
+function flushEventStack() {
   eventStack.events = [];
+}
+
+function flushBidWon() {
+  bidWon.events = [];
 }
 
 var roxotAdapter = _extends((0, _AnalyticsAdapter2['default'])({ url: url, analyticsType: analyticsType }), {
@@ -107,19 +205,26 @@ var roxotAdapter = _extends((0, _AnalyticsAdapter2['default'])({ url: url, analy
 
     if (eventType === auctionInitConst) {
       auctionStatus = 'started';
-      flushEvents();
+      flushEventStack();
     }
 
     if (eventType === bidWonConst && auctionStatus === 'not_started') {
+      updateSessionId();
       buildBidWon(eventType, info);
-      send(eventType, bidWon, 'bidWon');
+      if (isValidBidWon()) {
+        send(eventType, bidWon, 'bidWon');
+      }
+      flushBidWon();
       return;
     }
 
     if (eventType === auctionEndConst) {
+      updateSessionId();
       buildEventStack(eventType);
-      send(eventType, eventStack, 'eventStack');
-      flushEvents();
+      if (isValidEventStack()) {
+        send(eventType, eventStack, 'eventStack');
+      }
+      flushEventStack();
       auctionStatus = 'not_started';
     } else {
       pushEvent(eventType, info);
@@ -131,9 +236,63 @@ roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
+  initOptions.utmTagData = this.buildUtmTagData();
   utils.logInfo('Roxot Analytics enabled with config', initOptions);
   roxotAdapter.originEnableAnalytics(config);
 };
+
+roxotAdapter.buildUtmTagData = function () {
+  var utmTagData = {};
+  var utmTagsDetected = false;
+  utmTags.forEach((function (utmTagKey) {
+    var utmTagValue = getParameterByName(utmTagKey);
+    if (utmTagValue !== '') {
+      utmTagsDetected = true;
+    }
+    utmTagData[utmTagKey] = utmTagValue;
+  }));
+  utmTags.forEach((function (utmTagKey) {
+    if (utmTagsDetected) {
+      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      updateUtmTimeout();
+    } else {
+      if (!isUtmTimeoutExpired()) {
+        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        updateUtmTimeout();
+      }
+    }
+  }));
+  return utmTagData;
+};
+
+function send(eventType, data, sendDataType) {
+  var fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', fullUrl, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.withCredentials = true;
+  xhr.onreadystatechange = function (result) {
+    if (this.readyState != 4) return;
+
+    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
+  };
+  xhr.send(JSON.stringify(data));
+};
+
+function pushEvent(eventType, args) {
+  if (eventType === bidRequestConst) {
+    if (checkAdUnitConfig()) {
+      args.bids = filterBidsByAdUnit(args.bids);
+    }
+    if (args.bids.length > 0) {
+      eventStack.events.push({ eventType: eventType, args: args });
+    }
+  } else {
+    if (isValidEvent(eventType, args.adUnitCode)) {
+      eventStack.events.push({ eventType: eventType, args: args });
+    }
+  }
+}
 
 _adaptermanager2['default'].registerAnalyticsAdapter({
   adapter: roxotAdapter,
@@ -185,7 +344,6 @@ var LIBRARY = 'library';
 var ENDPOINT = 'endpoint';
 var BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 function AnalyticsAdapter(_ref) {
@@ -287,9 +445,7 @@ function AnalyticsAdapter(_ref) {
             args = event.args;
 
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType: eventType, args: args });
         }
       }));
@@ -352,4 +508,4 @@ function AnalyticsAdapter(_ref) {
 
 /***/ })
 
-},[159]);
+},[179]);

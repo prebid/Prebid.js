@@ -1,14 +1,14 @@
-pbjsChunk([65],{
+pbjsChunk([73],{
 
-/***/ 84:
+/***/ 88:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(85);
+module.exports = __webpack_require__(89);
 
 
 /***/ }),
 
-/***/ 85:
+/***/ 89:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21,11 +21,12 @@ var adloader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
 var CentroAdapter = function CentroAdapter() {
-  var baseUrl = '//t.brand-server.com/hb',
-      devUrl = '//staging.brand-server.com/hb',
-      bidderCode = 'centro',
-      handlerPrefix = 'adCentroHandler_',
-      LOG_ERROR_MESS = {
+  var baseUrl = '//t.brand-server.com/hb';
+  var devUrl = '//staging.brand-server.com/hb';
+  var bidderCode = 'centro';
+  var handlerPrefix = 'adCentroHandler_';
+
+  var LOG_ERROR_MESS = {
     noUnit: 'Bid has no unit',
     noAdTag: 'Bid has missmatch format.',
     noBid: 'Response has no bid.',
@@ -47,8 +48,8 @@ var CentroAdapter = function CentroAdapter() {
   }
 
   function _sendBidRequest(requestedBid) {
-    var bid,
-        size = requestedBid.sizes && requestedBid.sizes[0];
+    var bid;
+    var size = requestedBid.sizes && requestedBid.sizes[0];
 
     bid = requestedBid.params;
     if (!bid.unit) {
@@ -115,8 +116,8 @@ var CentroAdapter = function CentroAdapter() {
    size: [300, 250]
    */
   function _callBids(params) {
-    var bid,
-        bids = params.bids || [];
+    var bid;
+    var bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       bid = bids[i];
       if (bid && bid.bidder === bidderCode) {
@@ -136,4 +137,4 @@ module.exports = CentroAdapter;
 
 /***/ })
 
-},[84]);
+},[88]);

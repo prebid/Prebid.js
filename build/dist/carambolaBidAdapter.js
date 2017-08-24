@@ -1,14 +1,14 @@
-pbjsChunk([66],{
+pbjsChunk([74],{
 
-/***/ 82:
+/***/ 86:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(83);
+module.exports = __webpack_require__(87);
 
 
 /***/ }),
 
-/***/ 83:
+/***/ 87:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -100,7 +100,7 @@ function CarambolaAdapter() {
         }
       }
 
-      var server = bid.params.server || 'route.carambo.la';
+      var server = bid.params.server || 'hb.carambo.la';
       var cbolaHbApiUrl = '//' + server + '/' + REQUEST_PATH;
 
       //  the responses of the bid requests
@@ -130,9 +130,9 @@ function CarambolaAdapter() {
 
   //  build the genral request to the server
   function _callBids(params) {
-    var isIfr = void 0,
-        bids = params.bids || [],
-        currentURL = window.parent !== window ? document.referrer : window.location.href;
+    var isIfr = void 0;
+    var bids = params.bids || [];
+    var currentURL = window.parent !== window ? document.referrer : window.location.href;
     currentURL = currentURL && encodeURIComponent(currentURL);
     try {
       isIfr = window.self !== window.top;
@@ -158,12 +158,12 @@ function CarambolaAdapter() {
   }
 
   function _getViewportDimensions(isIfr) {
-    var width = void 0,
-        height = void 0,
-        tWin = window,
-        tDoc = document,
-        docEl = tDoc.documentElement,
-        body = void 0;
+    var width = void 0;
+    var height = void 0;
+    var tWin = window;
+    var tDoc = document;
+    var docEl = tDoc.documentElement;
+    var body = void 0;
 
     if (isIfr) {
       try {
@@ -203,4 +203,4 @@ module.exports = CarambolaAdapter;
 
 /***/ })
 
-},[82]);
+},[86]);

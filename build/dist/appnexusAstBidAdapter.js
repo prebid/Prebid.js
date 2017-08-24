@@ -1,14 +1,14 @@
-pbjsChunk([73],{
+pbjsChunk([82],{
 
-/***/ 68:
+/***/ 70:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(69);
+module.exports = __webpack_require__(71);
 
 
 /***/ }),
 
-/***/ 69:
+/***/ 71:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22,7 +22,7 @@ var _adapter = __webpack_require__(7);
 
 var _adapter2 = _interopRequireDefault(_adapter);
 
-var _Renderer = __webpack_require__(16);
+var _Renderer = __webpack_require__(17);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -56,6 +56,7 @@ var VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration', 'startdelay'
 var USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 var NATIVE_MAPPING = {
   body: 'description',
+  cta: 'ctatext',
   image: {
     serverName: 'main_image',
     serverParams: { required: true, sizes: [{}] }
@@ -73,7 +74,7 @@ var NATIVE_MAPPING = {
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-  var baseAdapter = _adapter2['default'].createNew('appnexusAst');
+  var baseAdapter = new _adapter2['default']('appnexusAst');
   var bidRequests = {};
   var usersync = false;
 
@@ -148,7 +149,7 @@ function AppnexusAstAdapter() {
 
             // if the mapping for this identifier specifies required server
             // params via the `serverParams` object, merge that in
-            var params = _extends({}, bid.nativeParams[key], NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams);
+            var params = _extends({}, NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams, bid.nativeParams[key]);
 
             nativeRequest[requestKey] = params;
           }));
@@ -399,6 +400,7 @@ function AppnexusAstAdapter() {
         bid.native = {
           title: native.title,
           body: native.desc,
+          cta: native.ctatext,
           sponsoredBy: native.sponsored,
           image: native.main_img && native.main_img.url,
           icon: native.icon && native.icon.url,
@@ -422,16 +424,11 @@ function AppnexusAstAdapter() {
     return bid;
   }
 
-  return {
-    createNew: AppnexusAstAdapter.createNew,
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode
-  };
+  });
 }
-
-AppnexusAstAdapter.createNew = function () {
-  return new AppnexusAstAdapter();
-};
 
 _adaptermanager2['default'].registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']
@@ -441,4 +438,4 @@ module.exports = AppnexusAstAdapter;
 
 /***/ })
 
-},[68]);
+},[70]);

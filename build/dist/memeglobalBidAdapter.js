@@ -1,14 +1,14 @@
-pbjsChunk([43],{
+pbjsChunk([46],{
 
-/***/ 131:
+/***/ 147:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(132);
+module.exports = __webpack_require__(148);
 
 
 /***/ }),
 
-/***/ 132:
+/***/ 148:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21,7 +21,6 @@ var bidmanager = __webpack_require__(2);
 var adloader = __webpack_require__(5);
 var adaptermanager = __webpack_require__(1);
 
-var defaultPlacementForBadBid = null;
 var bidderName = 'memeglobal';
 /**
  * Adapter for requesting bids from Meme Global Media Group
@@ -34,9 +33,6 @@ var MemeGlobalAdapter = function MemeGlobalAdapter() {
     var bids = params.bids;
 
     if (!bids) return;
-
-    // assign the first adUnit (placement) for bad bids;
-    defaultPlacementForBadBid = bids[0].placementCode;
 
     for (var i = 0; i < bids.length; i++) {
       _requestBid(bids[i]);
@@ -146,4 +142,4 @@ module.exports = MemeGlobalAdapter;
 
 /***/ })
 
-},[131]);
+},[147]);

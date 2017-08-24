@@ -1,14 +1,14 @@
-pbjsChunk([57],{
+pbjsChunk([63],{
 
-/***/ 103:
+/***/ 111:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(104);
+module.exports = __webpack_require__(112);
 
 
 /***/ }),
 
-/***/ 104:
+/***/ 112:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -76,6 +76,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
             if (br.mediaType === 'video') {
               bid.vastUrl = bidResponse.vast_url;
               bid.descriptionUrl = bidResponse.vast_url;
+              bid.mediaType = 'video';
             } else {
               bid.ad = bidResponse.ad;
             }
@@ -99,4 +100,4 @@ module.exports = GetIntentAdapter;
 
 /***/ })
 
-},[103]);
+},[111]);

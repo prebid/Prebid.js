@@ -1,14 +1,14 @@
-pbjsChunk([55],{
+pbjsChunk([61],{
 
-/***/ 107:
+/***/ 115:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(108);
+module.exports = __webpack_require__(116);
 
 
 /***/ }),
 
-/***/ 108:
+/***/ 116:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -157,7 +157,7 @@ var GumgumAdapter = function GumgumAdapter() {
 
         bidResponse.request = cachedBidRequest;
         var encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
-        var gumgumAdLoader = '<script>\n        (function (context, topWindow, d, s, G) {\n          G = topWindow.GUMGUM;\n          d = topWindow.document;\n          function loadAd() {\n            topWindow.GUMGUM.pbjs("' + trackingId + '", ' + productId + ', "' + encodedResponse + '" , context);\n          }\n          if (G) {\n            loadAd();\n          } else {\n            topWindow.pbjs.loadScript("https://g2.gumgum.com/javascripts/ggv2.js", loadAd);\n          }\n        }(window, top));\n      </script>';
+        var gumgumAdLoader = '<script>\n        (function (context, topWindow, d, s, G) {\n          G = topWindow.GUMGUM;\n          d = topWindow.document;\n          function loadAd() {\n            topWindow.GUMGUM.pbjs("' + trackingId + '", ' + productId + ', "' + encodedResponse + '" , context);\n          }\n          if (G) {\n            loadAd();\n          } else {\n            topWindow.pbjs.loadScript("https://js.gumgum.com/services.js", loadAd);\n          }\n        }(window, top));\n      </script>';
         _extends(bid, {
           cpm: ad.price,
           ad: gumgumAdLoader,
@@ -185,8 +185,8 @@ var GumgumAdapter = function GumgumAdapter() {
 adaptermanager.registerBidAdapter(new GumgumAdapter(), 'gumgum');
 
 module.exports = GumgumAdapter;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(25)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)))
 
 /***/ })
 
-},[107]);
+},[115]);

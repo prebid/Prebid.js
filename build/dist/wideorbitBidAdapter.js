@@ -1,41 +1,41 @@
-pbjsChunk([9],{
+pbjsChunk([10],{
 
-/***/ 207:
+/***/ 227:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(208);
+module.exports = __webpack_require__(228);
 
 
 /***/ }),
 
-/***/ 208:
+/***/ 228:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var bidfactory = __webpack_require__(3),
-    bidmanager = __webpack_require__(2),
-    utils = __webpack_require__(0),
-    adloader = __webpack_require__(5),
-    adaptermanager = __webpack_require__(1);
+var bidfactory = __webpack_require__(3);
+var bidmanager = __webpack_require__(2);
+var utils = __webpack_require__(0);
+var adloader = __webpack_require__(5);
+var adaptermanager = __webpack_require__(1);
 
 function WideOrbitAdapter() {
-  var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.pbjs.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1',
-      pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=',
-      pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}',
-      pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}',
-      base = window.location.protocol + '//p{pbId}.atemda.com/',
-      bids,
-      adapterName = 'wideorbit';
+  var pageImpression = 'JSAdservingMP.ashx?pc={pc}&pbId={pbId}&clk=&exm=&jsv=1.0&tsv=1.0&cts={cts}&arp=0&fl=0&vitp=&vit=&jscb=window.pbjs.handleWideOrbitCallback&url={referrer}&fp=&oid=&exr=&mraid=&apid=&apbndl=&mpp=0&uid=&cb={cb}&hb=1';
+  var pageRepeatCommonParam = '&gid{o}={gid}&pp{o}=&clk{o}=&rpos{o}={rpos}&ecpm{o}={ecpm}&ntv{o}=&ntl{o}=&adsid{o}=';
+  var pageRepeatParamId = '&pId{o}={pId}&rank{o}={rank}';
+  var pageRepeatParamNamed = '&wsName{o}={wsName}&wName{o}={wName}&rank{o}={rank}&bfDim{o}={width}x{height}&subp{o}={subp}';
+  var base = window.location.protocol + '//p{pbId}.atemda.com/';
+  var bids = void 0;
+  var adapterName = 'wideorbit';
 
   function _fixParamNames(param) {
     if (!param) {
       return;
     }
 
-    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'],
-        prop;
+    var properties = ['site', 'page', 'width', 'height', 'rank', 'subPublisher', 'ecpm', 'atf', 'pId', 'pbId', 'referrer'];
+    var prop = void 0;
 
     utils._each(properties, (function (correctName) {
       for (prop in param) {
@@ -97,10 +97,10 @@ function WideOrbitAdapter() {
   }
 
   function _callBids(params) {
-    var publisherId,
-        bidUrl = '',
-        i,
-        referrer;
+    var publisherId = void 0;
+    var bidUrl = '';
+    var i = void 0;
+    var referrer = void 0;
 
     bids = params.bids || [];
 
@@ -124,8 +124,8 @@ function WideOrbitAdapter() {
   }
 
   function _processUserMatchings(userMatchings) {
-    var headElem = document.getElementsByTagName('head')[0],
-        createdElem;
+    var headElem = document.getElementsByTagName('head')[0];
+    var createdElem = void 0;
 
     utils._each(userMatchings, (function (userMatching) {
       createdElem = undefined;
@@ -164,8 +164,8 @@ function WideOrbitAdapter() {
   }
 
   function _buildAdCode(placement) {
-    var adCode = placement.Source,
-        pixelTag;
+    var adCode = placement.Source;
+    var pixelTag = void 0;
 
     utils._each(placement.TrackingCodes, (function (trackingCode) {
       if (_isUrl(trackingCode)) {
@@ -216,4 +216,4 @@ module.exports = WideOrbitAdapter;
 
 /***/ })
 
-},[207]);
+},[227]);

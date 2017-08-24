@@ -1,18 +1,20 @@
-pbjsChunk([13],{
+pbjsChunk([14],{
 
-/***/ 199:
+/***/ 219:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(200);
+module.exports = __webpack_require__(220);
 
 
 /***/ }),
 
-/***/ 200:
+/***/ 220:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _config = __webpack_require__(10);
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -92,7 +94,7 @@ function UnderdogMediaAdapter() {
     url += UDM_ADAPTER_VERSION;
     url += ';cb=' + Math.random();
     url += ';qqq=' + 1 / bid.cpm;
-    url += ';hbt=' + pbjs.bidderTimeout;
+    url += ';hbt=' + _config.config.getConfig('bidderTimeout');
     url += ';style=adapter';
     url += ';vis=' + encodeURIComponent(document.visibilityState);
 
@@ -128,4 +130,4 @@ module.exports = UnderdogMediaAdapter;
 
 /***/ })
 
-},[199]);
+},[219]);

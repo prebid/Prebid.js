@@ -1,14 +1,14 @@
 pbjsChunk([2],{
 
-/***/ 149:
+/***/ 169:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(150);
+module.exports = __webpack_require__(170);
 
 
 /***/ }),
 
-/***/ 150:
+/***/ 170:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -88,7 +88,6 @@ var LIBRARY = 'library';
 var ENDPOINT = 'endpoint';
 var BUNDLE = 'bundle';
 
-var _timedOutBidders = [];
 var _sampled = true;
 
 function AnalyticsAdapter(_ref) {
@@ -190,9 +189,7 @@ function AnalyticsAdapter(_ref) {
             args = event.args;
 
 
-        if (eventType === BID_TIMEOUT) {
-          _timedOutBidders = args.bidderCode;
-        } else {
+        if (eventType !== BID_TIMEOUT) {
           _enqueue.call(_this, { eventType: eventType, args: args });
         }
       }));
@@ -255,4 +252,4 @@ function AnalyticsAdapter(_ref) {
 
 /***/ })
 
-},[149]);
+},[169]);

@@ -1,14 +1,14 @@
-pbjsChunk([53],{
+pbjsChunk([59],{
 
-/***/ 111:
+/***/ 119:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(112);
+module.exports = __webpack_require__(120);
 
 
 /***/ }),
 
-/***/ 112:
+/***/ 120:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18,7 +18,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _adapter = __webpack_require__(7);
 
-var Adapter = _interopRequireWildcard(_adapter);
+var _adapter2 = _interopRequireDefault(_adapter);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -40,9 +40,9 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var BIDDER_CODE = 'huddledmasses';
 
@@ -121,15 +121,22 @@ function HuddledMassesAdapter() {
     }
 
     var secure = 0;
-    if (window.location.protocol !== 'http:') {
+    var win;
+    try {
+      win = window.top;
+    } catch (e) {
+      win = window;
+    }
+
+    if (win.location.protocol !== 'http:') {
       secure = 1;
     }
 
-    var host = window.location.host;
-    var page = window.location.pathname;
+    var host = win.location.host;
+    var page = win.location.pathname;
     var language = navigator.language;
-    var deviceWidth = window.screen.width;
-    var deviceHeight = window.screen.height;
+    var deviceWidth = win.screen.width;
+    var deviceHeight = win.screen.height;
 
     var queryString = ['banner_id', bid.params.placement_id, 'size_ad', parsedSizes[0], 'alt_size_ad', parsedSizes.slice(1).join(',') || [], 'host', host, 'page', page, 'language', language, 'deviceWidth', deviceWidth, 'deviceHeight', deviceHeight, 'secure', secure, 'bidId', bid.bidId, 'checkOn', 'rf'];
 
@@ -153,9 +160,8 @@ function HuddledMassesAdapter() {
     _bidmanager2['default'].addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return _extends(Adapter.createNew(BIDDER_CODE), { // BIDDER_CODE huddledmasses
-    callBids: _callBids,
-    createNew: HuddledMassesAdapter.createNew
+  return _extends(new _adapter2['default'](BIDDER_CODE), { // BIDDER_CODE huddledmasses
+    callBids: _callBids
   });
 }
 
@@ -185,14 +191,10 @@ HuddledMassesAdapter.masSizeOrdering = function (sizes) {
   }));
 };
 
-HuddledMassesAdapter.createNew = function () {
-  return new HuddledMassesAdapter();
-};
-
 _adaptermanager2['default'].registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');
 
 module.exports = HuddledMassesAdapter;
 
 /***/ })
 
-},[111]);
+},[119]);

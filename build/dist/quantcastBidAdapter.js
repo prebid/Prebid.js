@@ -1,14 +1,14 @@
-pbjsChunk([33],{
+pbjsChunk([34],{
 
-/***/ 155:
+/***/ 175:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(156);
+module.exports = __webpack_require__(176);
 
 
 /***/ }),
 
-/***/ 156:
+/***/ 176:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -121,13 +121,13 @@ var QuantcastAdapter = function QuantcastAdapter() {
           'bidFloor': bid.params.bidFloor || DEFAULT_BID_FLOOR
         }]
       };
+    }));
 
-      utils._each(bidRequests, (function (bidRequest) {
-        ajax.ajax(QUANTCAST_CALLBACK_URL, pbjs.handleQuantcastCB, JSON.stringify(bidRequest), {
-          method: 'POST',
-          withCredentials: true
-        });
-      }));
+    utils._each(bidRequests, (function (bidRequest) {
+      ajax.ajax(QUANTCAST_CALLBACK_URL, pbjs.handleQuantcastCB, JSON.stringify(bidRequest), {
+        method: 'POST',
+        withCredentials: true
+      });
     }));
   }
 
@@ -139,14 +139,10 @@ var QuantcastAdapter = function QuantcastAdapter() {
   };
 };
 
-exports.createNew = function () {
-  return new QuantcastAdapter();
-};
-
 adaptermanager.registerBidAdapter(new QuantcastAdapter(), 'quantcast');
 
 module.exports = QuantcastAdapter;
 
 /***/ })
 
-},[155]);
+},[175]);

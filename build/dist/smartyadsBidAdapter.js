@@ -1,14 +1,14 @@
-pbjsChunk([25],{
+pbjsChunk([26],{
 
-/***/ 175:
+/***/ 195:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(176);
+module.exports = __webpack_require__(196);
 
 
 /***/ }),
 
-/***/ 176:
+/***/ 196:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18,7 +18,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _adapter = __webpack_require__(7);
 
-var Adapter = _interopRequireWildcard(_adapter);
+var _adapter2 = _interopRequireDefault(_adapter);
 
 var _bidfactory = __webpack_require__(3);
 
@@ -40,9 +40,9 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var SMARTYADS_BIDDER_CODE = 'smartyads';
 
@@ -135,11 +135,11 @@ function SmartyadsAdapter() {
       secure = 0;
     }
 
-    var host = window.location.host,
-        page = window.location.pathname,
-        language = navigator.language,
-        deviceWidth = window.screen.width,
-        deviceHeight = window.screen.height;
+    var host = window.location.host;
+    var page = window.location.pathname;
+    var language = navigator.language;
+    var deviceWidth = window.screen.width;
+    var deviceHeight = window.screen.height;
 
     var queryString = ['banner_id', bid.params.banner_id, 'size_ad', parsedSizes[0], 'alt_size_ad', parsedSizes.slice(1).join(',') || undefined, 'host', host, 'page', page, 'language', language, 'deviceWidth', deviceWidth, 'deviceHeight', deviceHeight, 'secure', secure, 'bidId', bid.bidId, 'checkOn', 'rf'];
 
@@ -163,9 +163,8 @@ function SmartyadsAdapter() {
     _bidmanager2['default'].addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return _extends(Adapter.createNew(SMARTYADS_BIDDER_CODE), { // SMARTYADS_BIDDER_CODE smartyads
-    callBids: _callBids,
-    createNew: SmartyadsAdapter.createNew
+  return _extends(new _adapter2['default'](SMARTYADS_BIDDER_CODE), { // SMARTYADS_BIDDER_CODE smartyads
+    callBids: _callBids
   });
 }
 
@@ -182,8 +181,8 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
     return result;
   }), []).sort((function (first, second) {
     // sort by MAS_SIZE_PRIORITY priority order
-    var firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+    var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+    var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
     if (firstPriority > -1 || secondPriority > -1) {
       if (firstPriority === -1) {
@@ -199,14 +198,10 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
   }));
 };
 
-SmartyadsAdapter.createNew = function () {
-  return new SmartyadsAdapter();
-};
-
 _adaptermanager2['default'].registerBidAdapter(new SmartyadsAdapter(), 'smartyads');
 
 module.exports = SmartyadsAdapter;
 
 /***/ })
 
-},[175]);
+},[195]);

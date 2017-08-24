@@ -1,21 +1,20 @@
-pbjsChunk([32],{
+pbjsChunk([33],{
 
-/***/ 157:
+/***/ 177:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(158);
+module.exports = __webpack_require__(178);
 
 
 /***/ }),
 
-/***/ 158:
+/***/ 178:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /* eslint indent: 0 */
-
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _ajax = __webpack_require__(6);
 
@@ -23,22 +22,23 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
+var _config = __webpack_require__(10);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var bidmanager = __webpack_require__(2),
-    bidfactory = __webpack_require__(3),
-    CONSTANTS = __webpack_require__(4);
+var bidmanager = __webpack_require__(2);
+var bidfactory = __webpack_require__(3);
+var CONSTANTS = __webpack_require__(4);
 
 function RhythmoneAdapter(bidManager, global, loader) {
-  var version = '0.9.0.0',
-      defaultZone = '1r',
-      defaultPath = 'mvo',
-      debug = false,
-      requestCompleted = false,
-      placementCodes = {},
-      loadStart,
-      configuredPlacements = [],
-      fat = /(^v|(\.0)+$)/gi;
+  var version = '0.9.0.0';
+  var defaultZone = '1r';
+  var defaultPath = 'mvo';
+  var debug = false;
+  var placementCodes = {};
+  var loadStart = void 0;
+  var configuredPlacements = [];
+  var fat = /(^v|(\.0)+$)/gi;
 
   if (typeof global === 'undefined') {
     global = window;
@@ -71,11 +71,11 @@ function RhythmoneAdapter(bidManager, global, loader) {
   }
 
   function flashInstalled() {
-    var n = global.navigator,
-        p = n.plugins,
-        m = n.mimeTypes,
-        t = 'application/x-shockwave-flash',
-        x = global.ActiveXObject;
+    var n = global.navigator;
+    var p = n.plugins;
+    var m = n.mimeTypes;
+    var t = 'application/x-shockwave-flash';
+    var x = global.ActiveXObject;
 
     if (p && p['Shockwave Flash'] && m && m[t] && m[t].enabledPlugin) {
       return true;
@@ -126,8 +126,8 @@ function RhythmoneAdapter(bidManager, global, loader) {
   }
 
   function getRMPURL(bidParams, bids) {
-    var endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}',
-        query = [];
+    var endpoint = '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    var query = [];
 
     if (typeof bidParams.endpoint === 'string') {
       endpoint = bidParams.endpoint;
@@ -176,10 +176,10 @@ function RhythmoneAdapter(bidManager, global, loader) {
     }), '')); // try/catch is in the attempt function
     p('url', attempt((function () {
       var l;
+      // try/catch is in the attempt function
       try {
         l = global.top.document.location.href.toString();
-      } // try/catch is in the attempt function
-      catch (ex) {
+      } catch (ex) {
         l = global.document.location.href.toString();
       }
       return l;
@@ -190,19 +190,19 @@ function RhythmoneAdapter(bidManager, global, loader) {
     p('dtype', /(ios|ipod|ipad|iphone|android)/i.test(global.navigator.userAgent) ? 1 : /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(global.navigator.userAgent) ? 3 : 2);
     p('flash', flashInstalled() ? 1 : 0);
 
-    var heights = [],
-        widths = [],
-        floors = [],
-        mediaTypes = [],
-        i = 0;
+    var heights = [];
+    var widths = [];
+    var floors = [];
+    var mediaTypes = [];
+    var i = 0;
 
     configuredPlacements = [];
 
     p('hbv', global.pbjs.version.replace(fat, '') + ',' + version.replace(fat, ''));
 
     for (; i < bids.length; i++) {
-      var th = [],
-          tw = [];
+      var th = [];
+      var tw = [];
 
       if (bids[i].sizes.length > 0 && typeof bids[i].sizes[0] === 'number') {
         bids[i].sizes = [bids[i].sizes];
@@ -235,11 +235,11 @@ function RhythmoneAdapter(bidManager, global, loader) {
       doc_version: 1,
       doc_type: 'Prebid Audit',
       placement_id: placementId
-    },
-        ao = document.location.ancestorOrigins,
-        q = [],
-        u = '//hbevents.1rx.io/audit?',
-        i = new Image();
+    };
+    var ao = document.location.ancestorOrigins;
+    var q = [];
+    var u = '//hbevents.1rx.io/audit?';
+    var i = new Image();
 
     if (ao && ao.length > 0) {
       data.ancestor_origins = ao[ao.length - 1];
@@ -260,7 +260,7 @@ function RhythmoneAdapter(bidManager, global, loader) {
     data.response_ms = new Date().getTime() - loadStart;
     data.placement_codes = configuredPlacements.join(',');
     data.bidder_version = version;
-    data.prebid_timeout = prebid_instance.cbTimeout || prebid_instance.bidderTimeout;
+    data.prebid_timeout = prebid_instance.cbTimeout || _config.config.getConfig('bidderTimeout');
 
     for (var k in data) {
       q.push(encodeURIComponent(k) + '=' + encodeURIComponent(_typeof(data[k]) === 'object' ? JSON.stringify(data[k]) : data[k]));
@@ -271,8 +271,8 @@ function RhythmoneAdapter(bidManager, global, loader) {
   }
 
   this.callBids = function (params) {
-    var slotMap = {},
-        bidParams = getBidParameters(params.bids);
+    var slotMap = {};
+    var bidParams = getBidParameters(params.bids);
 
     debug = bidParams !== null && bidParams.debug === true;
 
@@ -290,18 +290,16 @@ function RhythmoneAdapter(bidManager, global, loader) {
       // send quality control beacon here
       sendAuditBeacon(bidParams.placementId);
 
-      requestCompleted = true;
-
       logToConsole('response text: ' + txt);
 
       if (code !== -1) {
         try {
-          var result = JSON.parse(txt),
-              registerBid = function registerBid(bid) {
+          var result = JSON.parse(txt);
+          var registerBid = function registerBid(bid) {
             slotMap[bid.impid].success = 1;
 
-            var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD),
-                placementCode = slotMap[bid.impid].placementCode;
+            var pbResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD);
+            var placementCode = slotMap[bid.impid].placementCode;
 
             placementCodes[placementCode] = false;
 
@@ -347,4 +345,4 @@ module.exports = RhythmoneAdapter;
 
 /***/ })
 
-},[157]);
+},[177]);

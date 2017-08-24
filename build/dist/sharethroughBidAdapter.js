@@ -1,14 +1,14 @@
-pbjsChunk([27],{
+pbjsChunk([28],{
 
-/***/ 171:
+/***/ 191:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(172);
+module.exports = __webpack_require__(192);
 
 
 /***/ }),
 
-/***/ 172:
+/***/ 192:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -78,7 +78,11 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
       var windowLocation = 'str_response_' + bidId;
       var bidJsonString = JSON.stringify(bidResponse);
-      bid.ad = '<div data-str-native-key="' + bid.pkey + '" data-stx-response-name=\'' + windowLocation + '\'>\n                </div>\n                <script>var ' + windowLocation + ' = ' + bidJsonString + '</script>\n                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>\n                <script type=\'text/javascript\'>\n                (function() {\n                    var sfp_js = document.createElement(\'script\');\n                    sfp_js.src = "//native.sharethrough.com/assets/sfp.js";\n                    sfp_js.type = \'text/javascript\';\n                    sfp_js.charset = \'utf-8\';\n                    try {\n                        window.top.document.getElementsByTagName(\'body\')[0].appendChild(sfp_js);\n                    } catch (e) {\n                      console.log(e);\n                    }\n                })();\n                </script>';
+      bid.ad = '<div data-str-native-key="' + bid.pkey + '" data-stx-response-name=\'' + windowLocation + '\'>\n                </div>\n                <script>var ' + windowLocation + ' = ' + bidJsonString + '</script>\n                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>';
+      if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
+        var sfpScriptTag = '\n          <script>\n          (function() {\n            const sfp_js = document.createElement(\'script\');\n            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";\n            sfp_js.type = \'text/javascript\';\n            sfp_js.charset = \'utf-8\';\n            try {\n                window.top.document.getElementsByTagName(\'body\')[0].appendChild(sfp_js);\n            } catch (e) {\n              console.log(e);\n            }\n          })()\n          </script>';
+        bid.ad += sfpScriptTag;
+      }
       bidmanager.addBidResponse(bidObj.placementCode, bid);
     } catch (e) {
       _handleInvalidBid(bidObj);
@@ -91,7 +95,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
   }
 
   function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.27.0-pre');
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.28.0-pre');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
 
@@ -110,4 +114,4 @@ module.exports = SharethroughAdapter;
 
 /***/ })
 
-},[171]);
+},[191]);

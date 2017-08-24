@@ -1,14 +1,14 @@
-pbjsChunk([67],{
+pbjsChunk([76],{
 
-/***/ 80:
+/***/ 82:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(81);
+module.exports = __webpack_require__(83);
 
 
 /***/ }),
 
-/***/ 81:
+/***/ 83:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -35,8 +35,8 @@ var BrightcomAdapter = function BrightcomAdapter() {
   var brightcomCallbackFunction = 'window.pbjs=window.pbjs||window.parent.pbjs||window.top.pbjs;window.pbjs.brightcomResponse';
 
   // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
-  var reqAdUnitsCode = [],
-      resAdUnitsCode = [];
+  var reqAdUnitsCode = [];
+  var resAdUnitsCode = [];
 
   function _callBids(params) {
     var bidRequests = params.bids || [];
@@ -218,4 +218,4 @@ module.exports = BrightcomAdapter;
 
 /***/ })
 
-},[80]);
+},[82]);

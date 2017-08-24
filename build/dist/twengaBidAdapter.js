@@ -1,29 +1,31 @@
-pbjsChunk([15],{
+pbjsChunk([16],{
 
-/***/ 195:
+/***/ 215:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(196);
+module.exports = __webpack_require__(216);
 
 
 /***/ }),
 
-/***/ 196:
+/***/ 216:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
 var adloader = __webpack_require__(5);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
-var Adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 var adaptermanager = __webpack_require__(1);
 
 function TwengaAdapter() {
-  var baseAdapter = Adapter.createNew('twenga');
+  var baseAdapter = new Adapter('twenga');
 
   baseAdapter.callBids = function (params) {
     for (var i = 0; i < params.bids.length; i++) {
@@ -147,17 +149,12 @@ function TwengaAdapter() {
     }
   };
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: TwengaAdapter.createNew,
     buildBidCall: buildBidCall
-  };
-};
-
-TwengaAdapter.createNew = function () {
-  return new TwengaAdapter();
-};
+  });
+}
 
 adaptermanager.registerBidAdapter(new TwengaAdapter(), 'twenga');
 
@@ -165,4 +162,4 @@ module.exports = TwengaAdapter;
 
 /***/ })
 
-},[195]);
+},[215]);

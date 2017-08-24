@@ -1,20 +1,18 @@
-pbjsChunk([81],{
+pbjsChunk([90],{
 
-/***/ 50:
+/***/ 52:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(51);
+module.exports = __webpack_require__(53);
 
 
 /***/ }),
 
-/***/ 51:
+/***/ 53:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -43,7 +41,7 @@ function AdequantAdapter() {
       publisher_id = br_params.publisher_id.toString() || publisher_id;
       var bidfloor = br_params.bidfloor || 0.01;
       cats = br_params.cats || cats;
-      if ((typeof cats === 'undefined' ? 'undefined' : _typeof(cats)) === utils.objectType_string) {
+      if (typeof cats === 'string') {
         cats = cats.split(' ');
       }
       var br_sizes = utils.parseSizesInput(bid_request.sizes);
@@ -69,9 +67,9 @@ function AdequantAdapter() {
   }
 
   function process_bids(replies, placements) {
-    var placement_code,
-        bid,
-        adequant_creatives = window.adequant_creatives;
+    var placement_code;
+    var bid;
+    var adequant_creatives = window.adequant_creatives;
     if (adequant_creatives && adequant_creatives.seatbid) {
       for (var i = 0; i < adequant_creatives.seatbid.length; i++) {
         var bid_response = adequant_creatives.seatbid[i].bid[0];
@@ -111,4 +109,4 @@ module.exports = AdequantAdapter;
 
 /***/ })
 
-},[50]);
+},[52]);

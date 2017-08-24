@@ -1,14 +1,14 @@
-pbjsChunk([79],{
+pbjsChunk([88],{
 
-/***/ 54:
+/***/ 56:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(55);
+module.exports = __webpack_require__(57);
 
 
 /***/ }),
 
-/***/ 55:
+/***/ 57:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -56,7 +56,7 @@ var AdKernelAdapter = function AdKernelAdapter() {
 
   var VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'linearity', 'sequence', 'boxingallowed', 'playbackmethod', 'delivery', 'pos', 'api', 'ext'];
 
-  var baseAdapter = _adapter2['default'].createNew('adkernel');
+  var baseAdapter = new _adapter2['default']('adkernel');
 
   /**
    * Helper object to build multiple bid requests in case of multiple zones/ad-networks
@@ -95,7 +95,10 @@ var AdKernelAdapter = function AdKernelAdapter() {
 
     function buildImp(bid) {
       var size = getBidSize(bid);
-      var imp = { 'id': bid.bidId, 'tagid': bid.placementCode };
+      var imp = {
+        'id': bid.bidId,
+        'tagid': bid.placementCode
+      };
 
       if (bid.mediaType === 'video') {
         imp.video = { w: size[0], h: size[1] };
@@ -333,19 +336,11 @@ var AdKernelAdapter = function AdKernelAdapter() {
     }
   }
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    getBidderCode: baseAdapter.getBidderCode,
-    createNew: AdKernelAdapter.createNew
-  };
-};
-
-/**
- * Creates new instance of AdKernel bidder adapter
- */
-AdKernelAdapter.createNew = function () {
-  return new AdKernelAdapter();
+    getBidderCode: baseAdapter.getBidderCode
+  });
 };
 
 _adaptermanager2['default'].registerBidAdapter(new AdKernelAdapter(), 'adkernel', {
@@ -357,4 +352,4 @@ module.exports = AdKernelAdapter;
 
 /***/ })
 
-},[54]);
+},[56]);

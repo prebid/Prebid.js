@@ -1,14 +1,14 @@
-pbjsChunk([74],{
+pbjsChunk([83],{
 
-/***/ 64:
+/***/ 66:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(65);
+module.exports = __webpack_require__(67);
 
 
 /***/ }),
 
-/***/ 65:
+/***/ 67:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -28,7 +28,7 @@ var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
 var constants = __webpack_require__(4);
 var adaptermanager = __webpack_require__(1);
-var BaseAdapter = __webpack_require__(7);
+var BaseAdapter = __webpack_require__(7)['default'];
 
 var AOL_BIDDERS_CODES = {
   aol: 'aol',
@@ -349,11 +349,8 @@ var AolAdapter = function AolAdapter() {
     }));
   }
 
-  return _extends(BaseAdapter.createNew(AOL_BIDDERS_CODES.aol), {
-    callBids: _callBids,
-    createNew: function createNew() {
-      return new AolAdapter();
-    }
+  return _extends(this, new BaseAdapter(AOL_BIDDERS_CODES.aol), {
+    callBids: _callBids
   });
 };
 
@@ -365,4 +362,4 @@ module.exports = AolAdapter;
 
 /***/ })
 
-},[64]);
+},[66]);

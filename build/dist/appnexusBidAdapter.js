@@ -1,14 +1,14 @@
-pbjsChunk([72],{
+pbjsChunk([81],{
 
-/***/ 70:
+/***/ 72:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(71);
+module.exports = __webpack_require__(73);
 
 
 /***/ }),
 
-/***/ 71:
+/***/ 73:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -29,11 +29,11 @@ var utils = __webpack_require__(0);
 var adloader = __webpack_require__(5);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
-var Adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 
 var AppNexusAdapter;
 AppNexusAdapter = function AppNexusAdapter() {
-  var baseAdapter = Adapter.createNew('appnexus');
+  var baseAdapter = new Adapter('appnexus');
   var usersync = false;
 
   baseAdapter.callBids = function (params) {
@@ -237,16 +237,11 @@ AppNexusAdapter = function AppNexusAdapter() {
     }
   };
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: AppNexusAdapter.createNew,
     buildJPTCall: buildJPTCall
-  };
-};
-
-AppNexusAdapter.createNew = function () {
-  return new AppNexusAdapter();
+  });
 };
 
 _adaptermanager2['default'].registerBidAdapter(new AppNexusAdapter(), 'appnexus');
@@ -262,4 +257,4 @@ module.exports = AppNexusAdapter;
 
 /***/ })
 
-},[70]);
+},[72]);

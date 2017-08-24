@@ -1,9 +1,13 @@
 [
+  "adyoulikeBidAdapter",
   "aolBidAdapter",
   "appnexusBidAdapter",
+  "appnexusAstBidAdapter",
   "audienceNetworkBidAdapter",
   "districtmDMXBidAdapter",
   "indexExchangeBidAdapter",
+  "mobfoxBidAdapter",
   "rubiconBidAdapter",
+  "sovrnBidAdapter",
   "tripleliftBidAdapter"
 ]

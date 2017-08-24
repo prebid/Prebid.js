@@ -1,14 +1,14 @@
-pbjsChunk([16],{
+pbjsChunk([17],{
 
-/***/ 193:
+/***/ 213:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(194);
+module.exports = __webpack_require__(214);
 
 
 /***/ }),
 
-/***/ 194:
+/***/ 214:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -25,6 +25,8 @@ var adaptermanager = __webpack_require__(1);
 */
 
 var TripleLiftAdapter = function TripleLiftAdapter() {
+  var usersync = false;
+
   function _callBids(params) {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
@@ -52,7 +54,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.27.0-pre');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.28.0-pre');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
     tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
@@ -134,6 +136,20 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
+
+      // run usersyncs
+      if (!usersync) {
+        var iframe = utils.createInvisibleIframe();
+        iframe.src = '//ib.3lift.com/sync';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
+        // suppress TL ad tag from running additional usersyncs
+        window._tlSyncDone = true;
+      }
     } else {
       // no response data
       // @if NODE_ENV='debug'
@@ -154,4 +170,4 @@ module.exports = TripleLiftAdapter;
 
 /***/ })
 
-},[193]);
+},[213]);

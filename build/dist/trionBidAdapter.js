@@ -1,32 +1,34 @@
-pbjsChunk([17],{
+pbjsChunk([18],{
 
-/***/ 191:
+/***/ 211:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(192);
+module.exports = __webpack_require__(212);
 
 
 /***/ }),
 
-/***/ 192:
+/***/ 212:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var CONSTANTS = __webpack_require__(4);
 var utils = __webpack_require__(0);
 var adloader = __webpack_require__(5);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
-var Adapter = __webpack_require__(7);
+var Adapter = __webpack_require__(7)['default'];
 var adaptermanager = __webpack_require__(1);
 
 var BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
 var USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 function TrionAdapter() {
-  var baseAdapter = Adapter.createNew('trion');
+  var baseAdapter = new Adapter('trion');
   var userTag = null;
 
   baseAdapter.callBids = function (params) {
@@ -133,17 +135,12 @@ function TrionAdapter() {
     bidmanager.addBidResponse(placementCode, bid);
   };
 
-  return {
+  return _extends(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: TrionAdapter.createNew,
     buildTrionUrl: buildTrionUrl
-  };
-};
-
-TrionAdapter.createNew = function () {
-  return new TrionAdapter();
-};
+  });
+}
 
 adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');
 
@@ -151,4 +148,4 @@ module.exports = TrionAdapter;
 
 /***/ })
 
-},[191]);
+},[211]);
