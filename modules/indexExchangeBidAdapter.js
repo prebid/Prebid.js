@@ -269,11 +269,24 @@ var cygnus_index_start = function () {
     this.siteID = siteID;
     this.impressions = [];
     this._parseFnName = undefined;
+
+    // Get page URL
+    this.sitePage = undefined;
+    try {
+      this.sitePage = utils.getTopWindowUrl();
+    } catch (e) {}
+    // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
+    if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
+      if (top === self) {
+        this.sitePage = location.href;
+      } else {
+        this.sitePage = document.referrer;
+      }
+    }
+
     if (top === self) {
-      this.sitePage = location.href;
       this.topframe = 1;
     } else {
-      this.sitePage = document.referrer;
       this.topframe = 0;
     }
 
