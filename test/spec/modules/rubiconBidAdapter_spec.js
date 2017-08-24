@@ -1034,7 +1034,7 @@ describe('the rubicon adapter', () => {
     let addBidResponseAction;
     let rubiconAdapter;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
-    let origGetConfig = window.pbjs.getConfig;
+    let origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
 
     beforeEach(() => {
       bids = [];
@@ -1098,11 +1098,11 @@ describe('the rubicon adapter', () => {
     afterEach(() => {
       server.restore();
       clock.restore();
-      window.pbjs.getConfig = origGetConfig;
+      window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
     });
 
     it('should add the Emily iframe by default', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {delay: 10}
         }};
@@ -1123,7 +1123,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should add the Emily iframe when enabled', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: true, delay: 20}
         }};
@@ -1144,7 +1144,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not fire more than once', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: true, delay: 100}
         }};
@@ -1172,7 +1172,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not add the Emily iframe when disabled', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: false, delay: 50}
         }};

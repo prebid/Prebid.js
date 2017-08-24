@@ -1,3 +1,5 @@
+const utils = require('src/utils');
+
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
   'buckets': [{
@@ -98,8 +100,8 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   return cpmStr;
 }
 
-function isValidPriceConfig(config) {
-  if (!config || !config.buckets || !Array.isArray(config.buckets)) {
+function isValidePriceConfig(config) {
+  if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
   let isValid = true;
