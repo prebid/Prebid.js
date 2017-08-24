@@ -65,20 +65,24 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bid.ad = `<div data-str-native-key="${bid.pkey}" data-stx-response-name='${windowLocation}'>
                 </div>
                 <script>var ${windowLocation} = ${bidJsonString}</script>
-                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>
-                <script type='text/javascript'>
-                (function() {
-                    var sfp_js = document.createElement('script');
-                    sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
-                    sfp_js.type = 'text/javascript';
-                    sfp_js.charset = 'utf-8';
-                    try {
-                        window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
-                    } catch (e) {
-                      console.log(e);
-                    }
-                })();
-                </script>`;
+                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>`
+      if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
+        let sfpScriptTag = `
+          <script>
+          (function() {
+            const sfp_js = document.createElement('script');
+            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
+            sfp_js.type = 'text/javascript';
+            sfp_js.charset = 'utf-8';
+            try {
+                window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
+            } catch (e) {
+              console.log(e);
+            }
+          })()
+          </script>`
+        bid.ad += sfpScriptTag;
+      }
       bidmanager.addBidResponse(bidObj.placementCode, bid);
     } catch (e) {
       _handleInvalidBid(bidObj);

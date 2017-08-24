@@ -14,6 +14,7 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const NATIVE_MAPPING = {
   body: 'description',
+  cta: 'ctatext',
   image: {
     serverName: 'main_image',
     serverParams: { required: true, sizes: [{}] }
@@ -31,7 +32,7 @@ const NATIVE_MAPPING = {
  * to Prebid.js. This adapter supports alias bidding.
  */
 function AppnexusAstAdapter() {
-  let baseAdapter = Adapter.createNew('appnexusAst');
+  let baseAdapter = new Adapter('appnexusAst');
   let bidRequests = {};
   let usersync = false;
 
@@ -110,8 +111,8 @@ function AppnexusAstAdapter() {
               // if the mapping for this identifier specifies required server
               // params via the `serverParams` object, merge that in
               const params = Object.assign({},
-                bid.nativeParams[key],
-                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams,
+                bid.nativeParams[key]
               );
 
               nativeRequest[requestKey] = params;
@@ -219,7 +220,7 @@ function AppnexusAstAdapter() {
 
   /* Check that a bid has required paramters */
   function valid(bid) {
-    if (bid.params.placementId || bid.params.member && bid.params.invCode) {
+    if (bid.params.placementId || (bid.params.member && bid.params.invCode)) {
       return bid;
     } else {
       utils.logError('bid requires placementId or (member and invCode) params');
@@ -344,6 +345,7 @@ function AppnexusAstAdapter() {
         bid.native = {
           title: native.title,
           body: native.desc,
+          cta: native.ctatext,
           sponsoredBy: native.sponsored,
           image: native.main_img && native.main_img.url,
           icon: native.icon && native.icon.url,
@@ -367,16 +369,11 @@ function AppnexusAstAdapter() {
     return bid;
   }
 
-  return {
-    createNew: AppnexusAstAdapter.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  };
+  });
 }
-
-AppnexusAstAdapter.createNew = function() {
-  return new AppnexusAstAdapter();
-};
 
 adaptermanager.registerBidAdapter(new AppnexusAstAdapter(), 'appnexusAst', {
   supportedMediaTypes: ['video', 'native']

@@ -1,7 +1,8 @@
-const cookie = exports;
 import * as utils from './utils';
 import adLoader from './adloader';
+import { StorageManager, pbjsSyncsKey } from './storagemanager';
 
+const cookie = exports;
 const queue = [];
 
 function fireSyncs() {
@@ -12,9 +13,14 @@ function fireSyncs() {
     } else {
       utils.insertPixel(obj.url);
     }
+    setBidderSynced(obj.bidder);
   });
   // empty queue.
   queue.length = 0;
+}
+
+function setBidderSynced(bidder) {
+  StorageManager.add(pbjsSyncsKey, bidder, true);
 }
 
 /**
@@ -33,8 +39,7 @@ cookie.queueSync = function ({bidder, url, type}) {
 cookie.syncCookies = function(timeout) {
   if (timeout) {
     setTimeout(fireSyncs, timeout);
-  }
-  else {
+  } else {
     fireSyncs();
   }
 };
