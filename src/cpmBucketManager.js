@@ -100,7 +100,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   return cpmStr;
 }
 
-function isValidePriceConfig(config) {
+function isValidPriceConfig(config) {
   if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }

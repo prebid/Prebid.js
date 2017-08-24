@@ -7,7 +7,7 @@
  * Defining and access properties in this way is now deprecated, but these will
  * continue to work during a deprecation window.
  */
-import { isValidePriceConfig } from './cpmBucketManager';
+import { isValidPriceConfig } from './cpmBucketManager';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -134,7 +134,7 @@ export function newConfig() {
         utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
       }
     } else if (typeof val === 'object') {
-      if (!isValidePriceConfig(val)) {
+      if (!isValidPriceConfig(val)) {
         utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
         return false;
       }
