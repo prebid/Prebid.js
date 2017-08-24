@@ -44,8 +44,24 @@ const AerServAdapter = function AerServAdapter() {
     }
   }
 
-  function _buildQueryParameters(bidRequest, requestParams) {
-    Object.keys(bidRequest.params).forEach(param => requestParams[param] = bidRequest.params[param]);
+  function _getFirstSize(sizes) {
+    let sizeObj = {};
+    if (utils.isArray(sizes) && sizes.length > 0 && utils.isArray(sizes[0]) && sizes[0].length === 2) {
+      sizeObj['vpw'] = sizes[0][0];
+      sizeObj['vph'] = sizes[0][1];
+    }
+    return sizeObj;
+  }
+
+  function _buildQueryParameters(bid, requestParams) {
+    Object.keys(bid.params).filter(param => param !== 'video')
+      .forEach(param => requestParams[param] = bid.params[param]);
+
+    if (bid.mediaType === 'video') {
+      let videoDimensions = _getFirstSize(bid.sizes);
+      Object.keys(videoDimensions).forEach(param => requestParams[param] = videoDimensions[param]);
+      Object.keys(bid.params.video || {}).forEach(param => requestParams[param] = bid.params.video[param]);
+    }
 
     return utils.parseQueryStringParameters(requestParams);
   }
@@ -75,18 +91,18 @@ const AerServAdapter = function AerServAdapter() {
     currentUrl = currentUrl && encodeURIComponent(currentUrl);
 
     let bids = bidRequests.bids || [];
-    bids.forEach(bidRequest => {
-      if (utils.hasValidBidRequest(bidRequest.params, REQUIRED_PARAMS, BIDDER_CODE)) {
-        let env = ENVIRONMENTS[bidRequest.params['env']] || ENVIRONMENTS['prod'];
-        let requestPath = bidRequest.mediaType === 'video' ? VIDEO_PATH : BANNER_PATH;
+    bids.forEach(bid => {
+      if (utils.hasValidBidRequest(bid.params, REQUIRED_PARAMS, BIDDER_CODE)) {
+        let env = ENVIRONMENTS[bid.params['env']] || ENVIRONMENTS['prod'];
+        let requestPath = bid.mediaType === 'video' ? VIDEO_PATH : BANNER_PATH;
         let pageParameters = {url: currentUrl};
-        let parameterStr = _buildQueryParameters(bidRequest, pageParameters);
+        let parameterStr = _buildQueryParameters(bid, pageParameters);
 
         let url = `//${env}${requestPath}${parameterStr}`;
         utils.logMessage('sending request to: ' + url);
-        ajax(url, _handleResponse(bidRequest), null, {withCredentials: true});
+        ajax(url, _handleResponse(bid), null, {withCredentials: true});
       } else {
-        bidmanager.addBidResponse(bidRequest.placementCode, bidfactory.createBid(STATUS.NO_BID, bidRequest));
+        bidmanager.addBidResponse(bid.placementCode, bidfactory.createBid(STATUS.NO_BID, bid));
       }
     });
   }

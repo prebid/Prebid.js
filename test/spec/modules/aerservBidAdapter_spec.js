@@ -80,6 +80,22 @@ describe('AerServ Adapter', () => {
       expect(requests[0].url).to.include('/as/json/pbjsvast/v1');
     });
 
+    it('properly adds video parameters to the request', () => {
+      let bidRequest = JSON.parse(BASE_REQUEST);
+      bidRequest.bids[0]['mediaType'] = 'video';
+      bidRequest.bids[0].params['video'] = { videoParam: 'videoValue' };
+      adapter.callBids(bidRequest);
+      expect(requests[0].url).to.include('videoParam=videoValue');
+    });
+
+    it('parses the first size for video requests', () => {
+      let bidRequest = JSON.parse(BASE_REQUEST);
+      bidRequest.bids[0]['mediaType'] = 'video';
+      adapter.callBids(bidRequest);
+      expect(requests[0].url).to.include('vpw=300');
+      expect(requests[0].url).to.include('vph=250');
+    });
+
     it('sends requests to production by default', () => {
       adapter.callBids(JSON.parse(BASE_REQUEST));
       expect(requests[0].url).to.include('//ads.aerserv.com');
