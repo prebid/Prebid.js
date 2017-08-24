@@ -601,7 +601,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       return;
     }
 
-    var sizeID = 0;
+    var sizeID = Math.floor(Math.random() * 1000000);
 
     // Expecting nested arrays for sizes
     if (!utils.isArray(bid.sizes[0])) {
