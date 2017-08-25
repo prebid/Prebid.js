@@ -153,7 +153,7 @@ export function newConfig() {
   function getConfig(...args) {
     if (args.length <= 1 && typeof args[0] !== 'function') {
       const option = args[0];
-      return option ? config[option] : config;
+      return option ? utils.deepAccess(config, option) : config;
     }
 
     return subscribe(...args);

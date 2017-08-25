@@ -677,3 +677,14 @@ export function groupBy(xs, key) {
     return rv;
   }, {});
 }
+
+export function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (let i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
+}
