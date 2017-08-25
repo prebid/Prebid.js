@@ -166,7 +166,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
     const priceStringsObj = getPriceBucketString(
       bid.cpm,
       config.getConfig('customPriceBucket'),
-      config.getConfig('currency.currencyMultiplier')
+      config.getConfig('currency.granularityMultiplier')
     );
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
