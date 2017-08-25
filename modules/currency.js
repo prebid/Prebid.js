@@ -24,6 +24,12 @@ var bidderCurrencyDefault = {};
 
 export function setConfig(config) {
   let url = DEFAULT_CURRENCY_RATE_URL;
+
+  if (typeof config.rates === 'object') {
+    currencyRates.conversions = config.rates;
+    currencyRatesLoaded = true;
+  }
+
   if (typeof config.adServerCurrency === 'string') {
     utils.logInfo('enabling currency support', arguments);
 

@@ -75,6 +75,28 @@ describe('currency', function () {
 
       expect(innerBid.currency).to.equal('JPY')
     });
+
+    it('uses rates specified in json when provided', () => {
+      setConfig({
+        adServerCurrency: 'USD',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
+      var innerBid;
+
+      var wrappedAddBidResponseFn = addBidResponseDecorator(function(adCodeId, bid) {
+      	innerBid = bid;
+      });
+
+      wrappedAddBidResponseFn('elementId', bid);
+
+      expect(innerBid.cpm).to.equal('1.0000');
+    });
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', () => {
