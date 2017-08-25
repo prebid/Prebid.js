@@ -3,6 +3,7 @@
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { StorageManager, pbjsSyncsKey } from './storagemanager';
 import { ajaxBuilder } from 'src/ajax';
 
 var utils = require('./utils.js');
@@ -92,6 +93,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
 exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) {
   let bidRequests = [];
   let bidderCodes = getBidderCodes(adUnits);
+  const syncedBidders = StorageManager.get(pbjsSyncsKey);
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
@@ -104,7 +106,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders;
+    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
@@ -157,10 +159,13 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
     let adaptersServerSide = _s2sConfig.bidders;
     const s2sAdapter = _bidderRegistry[_s2sConfig.adapter];
     let tid = serverBidRequests[0].tid;
+
     if (s2sAdapter) {
       let s2sBidRequest = {tid, 'ad_units': getAdUnitCopyForPrebidServer(adUnits)};
       utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-      s2sAdapter.callBids(s2sBidRequest);
+      if (s2sBidRequest.ad_units.length) {
+        s2sAdapter.callBids(s2sBidRequest);
+      }
     }
   }
 

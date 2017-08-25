@@ -157,6 +157,8 @@ export function parseGPTSingleSizeArray(singleSize) {
 exports.getTopWindowLocation = function () {
   let location;
   try {
+    // force an exception in x-domain enviornments. #1509
+    window.top.location.toString();
     location = window.top.location;
   } catch (e) {
     location = window.location;
