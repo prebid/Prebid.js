@@ -134,6 +134,7 @@ describe('AppNexusAdapter', () => {
       REQUEST.bids[0].nativeParams = {
         title: {required: true},
         body: {required: true},
+        image: {required: true, sizes: [{ width: 100, height: 100 }] },
         cta: {required: false},
         sponsoredBy: {required: true}
       };
@@ -144,8 +145,26 @@ describe('AppNexusAdapter', () => {
       expect(request.tags[0].native.layouts[0]).to.deep.equal({
         title: {required: true},
         description: {required: true},
+        main_image: {required: true, sizes: [{ width: 100, height: 100 }] },
         ctatext: {required: false},
         sponsored_by: {required: true}
+      });
+
+      delete REQUEST.bids[0].mediaType;
+      delete REQUEST.bids[0].params.nativeParams;
+    });
+
+    it('sets required native asset params when not provided on adunit', () => {
+      REQUEST.bids[0].mediaType = 'native';
+      REQUEST.bids[0].nativeParams = {
+        image: {required: true},
+      };
+
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody);
+      expect(request.tags[0].native.layouts[0]).to.deep.equal({
+        main_image: {required: true, sizes: [{}] },
       });
 
       delete REQUEST.bids[0].mediaType;
