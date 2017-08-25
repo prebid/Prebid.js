@@ -1,9 +1,10 @@
-import { uniques, timestamp, delayExecution } from './utils';
+import { uniques, timestamp, adUnitsFilter, delayExecution } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { nativeBidIsValid } from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
+import { syncCookies } from './cookie';
 
 const utils = require('./utils');
 const adaptermanager = require('./adaptermanager');
@@ -71,12 +72,17 @@ function Auction({adUnits, adUnitCodes}) {
     let callback = this.getCallback();
     if (callback != null) {
       try {
-        callback.apply($$PREBID_GLOBAL$$);
+        const adUnitCodes = this.getAdUnitCodes();
+        const bids = [this.getBidsReceived()
+          .filter(adUnitsFilter.bind(this, adUnitCodes))
+          .reduce(groupByPlacement, {})];
+        callback.apply($$PREBID_GLOBAL$$, bids);
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
+      } finally {
+        syncCookies(config.getConfig('cookieSyncDelay'));
       }
       this.setCallback(null);
-      $$PREBID_GLOBAL$$.clearAuction();
 
       if (timedOut) {
         const timedOutBidders = this.getTimedOutBidders();
@@ -428,6 +434,18 @@ export function adjustBids(bid) {
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
   }
+}
+
+/**
+ * groupByPlacement is a reduce function that converts an array of Bid objects
+ * to an object with placement codes as keys, with each key representing an object
+ * with an array of `Bid` objects for that placement
+ * @returns {*} as { [adUnitCode]: { bids: [Bid, Bid, Bid] } }
+ */
+function groupByPlacement(bidsByPlacement, bid) {
+  if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
+  bidsByPlacement[bid.adUnitCode].bids.push(bid);
+  return bidsByPlacement;
 }
 
 export function createAuction() {

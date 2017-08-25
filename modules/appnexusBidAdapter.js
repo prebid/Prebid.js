@@ -11,10 +11,10 @@ AppNexusAdapter = function AppNexusAdapter() {
   var baseAdapter = new Adapter('appnexus');
   var usersync = false;
 
-  baseAdapter.callBids = function (bidderRequest, addBidResponse, done) {
+  baseAdapter.callBids = function ({bidRequest, addBidResponse, done}) {
     // var bidCode = baseAdapter.getBidderCode();
 
-    var anArr = bidderRequest.bids;
+    var anArr = bidRequest.bids;
     var callbackCounter = 0;
 
     // var bidsCount = anArr.length;
@@ -22,17 +22,19 @@ AppNexusAdapter = function AppNexusAdapter() {
     // set expected bids count for callback execution
     // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
 
+    // appnexus jpt endpoint is jsonp only so created unique jsonp callbacks to support multiple auction requests
+    let jsonpCallback = `handleCb${utils.getUniqueIdentifierStr()}`;
     for (var i = 0; i < anArr.length; i++) {
-      var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
+      var biddderRequest = anArr[i];
+      var callbackId = biddderRequest.bidId;
+      adloader.loadScript(buildJPTCall(biddderRequest, callbackId, jsonpCallback));
 
       // store a reference to the bidRequest from the callback id
       // bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
 
     // expose the callback to the global object:
-    $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
+    $$PREBID_GLOBAL$$[jsonpCallback] = function (jptResponseObj) {
       var bidCode;
       callbackCounter++;
 
@@ -40,7 +42,7 @@ AppNexusAdapter = function AppNexusAdapter() {
         var responseCPM;
         var id = jptResponseObj.callback_uid;
         var placementCode = '';
-        var bidObj = bidderRequest.bids.find(bid => bid.bidId === id); // getBidRequest(id);
+        var bidObj = bidRequest.bids.find(bid => bid.bidId === id); // getBidRequest(id);
         if (bidObj) {
           bidCode = bidObj.bidder;
 
@@ -75,7 +77,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           bid.height = jptResponseObj.result.height;
           bid.dealId = jptResponseObj.result.deal_id;
 
-          addBidResponse(placementCode, bid, bidderRequest.auctionId);
+          addBidResponse(placementCode, bid, bidRequest.auctionId);
         } else {
           // no response data
           // @if NODE_ENV='debug'
@@ -85,7 +87,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           // indicate that there is no bid for this placement
           bid = bidfactory.createBid(2, bidObj);
           bid.bidderCode = bidCode;
-          addBidResponse(placementCode, bid, bidderRequest.auctionId);
+          addBidResponse(placementCode, bid, bidRequest.auctionId);
         }
 
         if (!usersync) {
@@ -111,7 +113,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     };
   };
 
-  function buildJPTCall(bid, callbackId) {
+  function buildJPTCall(bid, callbackId, jsonpCallback) {
     // determine tag params
     var placementId = utils.getBidIdParameter('placementId', bid.params);
 
@@ -124,7 +126,7 @@ AppNexusAdapter = function AppNexusAdapter() {
     var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
     var jptCall = '//ib.adnxs.com/jpt?';
 
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleAnCB');
+    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.' + jsonpCallback);
     jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
     jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
     jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
@@ -216,81 +218,6 @@ AppNexusAdapter = function AppNexusAdapter() {
 
     return jptCall;
   }
-
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleAnCB = function (jptResponseObj) {
-    var bidCode;
-
-    if (jptResponseObj && jptResponseObj.callback_uid) {
-      var responseCPM;
-      var id = jptResponseObj.callback_uid;
-      var placementCode = '';
-      var bidObj = getBidRequest(id);
-      if (bidObj) {
-        bidCode = bidObj.bidder;
-
-        placementCode = bidObj.placementCode;
-
-        // set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
-      }
-
-      // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for ad ID: ' + id);
-
-      // @endif
-      var bid = [];
-      if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
-        responseCPM = parseInt(jptResponseObj.result.cpm, 10);
-
-        // CPM response from /jpt is dollar/cent multiplied by 10000
-        // in order to avoid using floats
-        // switch CPM to "dollar/cent"
-        responseCPM = responseCPM / 10000;
-
-        // store bid response
-        // bid status is good (indicating 1)
-        var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1, bidObj);
-        bid.creative_id = adId;
-        bid.bidderCode = bidCode;
-        bid.cpm = responseCPM;
-        bid.adUrl = jptResponseObj.result.ad;
-        bid.width = jptResponseObj.result.width;
-        bid.height = jptResponseObj.result.height;
-        bid.dealId = jptResponseObj.result.deal_id;
-
-        bidmanager.addBidResponse(placementCode, bid);
-      } else {
-        // no response data
-        // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-
-        // @endif
-        // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bid);
-      }
-
-      if (!usersync) {
-        var iframe = utils.createInvisibleIframe();
-        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-        try {
-          document.body.appendChild(iframe);
-        } catch (error) {
-          utils.logError(error);
-        }
-        usersync = true;
-      }
-    } else {
-      // no response data
-      // @if NODE_ENV='debug'
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-
-      // @endif
-    }
-  };
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,

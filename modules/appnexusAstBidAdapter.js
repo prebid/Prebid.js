@@ -2,7 +2,6 @@ import Adapter from 'src/adapter';
 import { Renderer } from 'src/Renderer';
 import bidfactory from 'src/bidfactory';
 import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
@@ -35,7 +34,7 @@ function AppnexusAstAdapter() {
   let usersync = false;
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest, addBidResponse, done) {
+  baseAdapter.callBids = function({bidRequest, addBidResponse, done, ajax}) {
     bidRequests = {};
 
     const bids = bidRequest.bids || [];
@@ -145,82 +144,79 @@ function AppnexusAstAdapter() {
         payloadJson.member_id = member;
       }
       const payload = JSON.stringify(payloadJson);
-      ajax(ENDPOINT, handleResponse, payload, {
+      ajax(ENDPOINT, handleResponse.bind(this, bidRequest, addBidResponse, done), payload, {
         contentType: 'text/plain',
         withCredentials: true
       });
-
-      /* Notify Prebid of bid responses so bids can get in the auction */
-      // Disabled lint for no-inner declaration error
-      /*eslint-disable */
-      function handleResponse(response) {
-        let parsed;
-
-        try {
-          parsed = JSON.parse(response);
-        } catch (error) {
-          utils.logError(error);
-        }
-
-        if (!parsed || parsed.error) {
-          let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-          if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
-          utils.logError(errorMessage);
-
-          // signal this response is complete
-          Object.keys(bidRequests)
-            .map(bidId => bidRequests[bidId].placementCode)
-            .forEach(placementCode => {
-              addBidResponse(placementCode, createBid(STATUS.NO_BID), auctionId);
-              done();
-            });
-          return;
-        }
-
-        parsed.tags.forEach(tag => {
-          const ad = getRtbBid(tag);
-          const cpm = ad && ad.cpm;
-          const type = ad && ad.ad_type;
-
-          let status;
-          if (cpm !== 0 && (SUPPORTED_AD_TYPES.includes(type))) {
-            status = STATUS.GOOD;
-          } else {
-            status = STATUS.NO_BID;
-          }
-
-          if (type && (!SUPPORTED_AD_TYPES.includes(type))) {
-            utils.logError(`${type} ad type not supported`);
-          }
-
-          tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
-          const bid = createBid(status, tag);
-          if (type === 'native') bid.mediaType = 'native';
-          if (type === 'video') bid.mediaType = 'video';
-          if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
-
-          if (bid.adId in bidRequests) {
-            const placement = bidRequests[bid.adId].placementCode;
-            const auctionId = bidRequests[bid.adId].auctionId;
-            addBidResponse(placement, bid, auctionId);
-          }
-        });
-
-        if (!usersync) {
-          const iframe = utils.createInvisibleIframe();
-          iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-          try {
-            document.body.appendChild(iframe);
-          } catch (error) {
-            utils.logError(error);
-          }
-          usersync = true;
-        }
-        done();
-      }
-      /*eslint-enable */
     }
   };
+
+  /* Notify Prebid of bid responses so bids can get in the auction */
+  function handleResponse(bidRequest, addBidResponse, done, response) {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(response);
+    } catch (error) {
+      utils.logError(error);
+    }
+
+    if (!parsed || parsed.error) {
+      let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
+      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
+      utils.logError(errorMessage);
+
+      // signal this response is complete
+      Object.keys(bidRequests)
+        .map(bidId => bidRequests[bidId].placementCode)
+        .forEach(placementCode => {
+          addBidResponse(placementCode, createBid(STATUS.NO_BID), auctionId);
+          done();
+        });
+      return;
+    }
+
+    parsed.tags.forEach(tag => {
+      const ad = getRtbBid(tag);
+      const cpm = ad && ad.cpm;
+      const type = ad && ad.ad_type;
+
+      let status;
+      if (cpm !== 0 && (SUPPORTED_AD_TYPES.includes(type))) {
+        status = STATUS.GOOD;
+      } else {
+        status = STATUS.NO_BID;
+      }
+
+      if (type && (!SUPPORTED_AD_TYPES.includes(type))) {
+        utils.logError(`${type} ad type not supported`);
+      }
+
+      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
+      const bid = createBid(status, tag);
+      if (type === 'native') bid.mediaType = 'native';
+      if (type === 'video') bid.mediaType = 'video';
+      if (ad && ad.renderer_url) bid.mediaType = 'video-outstream';
+
+      if (bid.adId in bidRequests) {
+        const placement = bidRequests[bid.adId].placementCode;
+        const auctionId = bidRequests[bid.adId].auctionId;
+        addBidResponse(placement, bid, auctionId);
+      }
+    });
+
+    if (!usersync) {
+      const iframe = utils.createInvisibleIframe();
+      iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
+      try {
+        document.body.appendChild(iframe);
+      } catch (error) {
+        utils.logError(error);
+      }
+      usersync = true;
+    }
+    done();
+  }
 
   /* Check that a bid has required paramters */
   function valid(bid) {

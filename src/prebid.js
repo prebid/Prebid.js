@@ -9,7 +9,6 @@ import { parse as parseURL, format as formatURL } from './url';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
-import { setAjaxTimeout } from './ajax';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 
@@ -33,9 +32,6 @@ var eventValidators = {
 };
 
 /* Public vars */
-
-$$PREBID_GLOBAL$$._bidsRequested = [];
-$$PREBID_GLOBAL$$._bidsReceived = [];
 // _adUnitCodes stores the current filter to use for adUnits as an array of adUnitCodes
 $$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
@@ -303,11 +299,6 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 };
 
-$$PREBID_GLOBAL$$.clearAuction = function() {
-  syncCookies(config.getConfig('cookieSyncDelay'));
-  utils.logMessage('Prebid auction cleared');
-};
-
 /**
  *
  * @param bidsBackHandler
@@ -359,21 +350,17 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
-        $$PREBID_GLOBAL$$.clearAuction();
+        syncCookies(config.getConfig('cookieSyncDelay'));
       }
     }
     return;
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes});
-  // auction.setAdUnits(adUnits);
-  // auction.setAdUnitCodes(adUnitCodes);
-
   if (typeof bidsBackHandler === 'function') {
     auction.startAuctionTimer(bidsBackHandler, cbTimeout);
   }
   auction.callBids(cbTimeout);
-  setAjaxTimeout(cbTimeout);
 };
 
 /**

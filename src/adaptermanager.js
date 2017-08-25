@@ -3,6 +3,7 @@
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { ajaxBuilder } from 'src/ajax';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -147,7 +148,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
   return bidRequests;
 }
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, done) => {
+exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
   let serverBidRequests = bidRequests.filter(bidRequest => {
     return bidRequest.src && bidRequest.src === CONSTANTS.S2S.SRC;
   });
@@ -163,6 +164,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, done) => {
     }
   }
 
+  let ajax = ajaxBuilder(bidRequests[0].timeout);
   bidRequests.forEach(bidRequest => {
     bidRequest.start = new Date().getTime();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
@@ -171,8 +173,8 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, done) => {
       utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
       bidRequest.doneCbCallCount = 0;
-      let doneCb = done(bidRequest.bidderRequestId);
-      adapter.callBids(bidRequest, addBidResponse, doneCb);
+      let done = doneCb(bidRequest.bidderRequestId);
+      adapter.callBids({bidRequest, addBidResponse, done, ajax});
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
     }

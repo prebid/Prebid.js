@@ -42,7 +42,6 @@ auction.getAdUnits = getAdUnits;
 
 function resetAuction() {
   $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
-  $$PREBID_GLOBAL$$.clearAuction();
   auction.getBidderRequests = getBidRequests;
   auction.getBidsReceived = getBidResponses;
   auction.getAdUnits = getAdUnits;
@@ -1201,24 +1200,6 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(() => {
       auctionManager.createAuction.restore();
-    });
-
-    it('should call AUCTION_END only once', () => {
-      resetAuction();
-      var spyClearAuction = sinon.spy($$PREBID_GLOBAL$$, 'clearAuction');
-      var clock1 = sinon.useFakeTimers();
-
-      var requestObj = {
-        bidsBackHandler: function bidsBackHandlerCallback() {},
-        timeout: 2000,
-        adUnits: auction.getAdUnits()
-      };
-
-      $$PREBID_GLOBAL$$.requestBids(requestObj);
-      clock1.tick(2001);
-      assert.ok(spyClearAuction.calledOnce, true);
-      clock1.restore();
-      resetAuction();
     });
   });
 
