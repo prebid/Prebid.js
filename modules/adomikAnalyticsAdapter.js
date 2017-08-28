@@ -96,7 +96,6 @@ function sendTypedEvent() {
         events[`${eventKey}s`] = [];
         if (typedEventsByType[eventKey] !== undefined) {
           typedEventsByType[eventKey].forEach((typedEvent) => {
-
             if (typedEvent.event.size !== undefined) {
               const size = sizeUtils.handleSize(sizes, typedEvent.event.size);
               if (size !== undefined) {
@@ -118,11 +117,15 @@ function sendTypedEvent() {
 
   // Encode object in base64
   const encodedBuf = window.btoa(JSON.stringify(bulkEvents));
-  // Create final url
-  const encodedUri = 'http://' + currentContext.url + '/?q=' + encodeURIComponent(encodedBuf);
-  // Hack to send data
-  const img = new Image(1, 1);
-  img.src = encodedUri;
+  // Create final url and split it in 1600 characters max (+endpoint length)
+  const encodedUri = encodeURIComponent(encodedBuf);
+
+  const splittedUrl = encodedUri.match(/.{1,1600}/g);
+  splittedUrl.forEach((split, i) => {
+    const partUrl = `${split}&id=${currentContext.id}&part=${i}&on=${splittedUrl.length - 1}`;
+    const img = new Image(1, 1);
+    img.src = 'http://' + currentContext.url + '/?q=' + partUrl;
+  })
 };
 
 let bidwonTimeout = 1000;
