@@ -5,8 +5,6 @@ import * as utils from 'src/utils';
 import bidmanager from 'src/bidmanager';
 import { config } from 'src/config';
 
-$$PREBID_GLOBAL$$.currency = setConfig;
-
 const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
 
@@ -22,6 +20,35 @@ export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
 
+/**
+ * Configuration function for currency
+ * @param  {string} [config.adServerCurrency = 'USD']
+ *  ISO 4217 3-letter currency code that represents the target currency. (e.g. 'EUR').  If this value is present,
+ *  the currency conversion feature is activated.
+ * @param  {number} [config.granularityMultiplier = 1]
+ *  A decimal value representing how mcuh to scale the price granularity calculations.
+ * @param  {object} config.bidderCurrencyDefault
+ *  An optional argument to specify bid currencies for bid adapters.  This option is provided for the transitional phase
+ *  before every bid adapter will specify its own bid currency.  If the adapter specifies a bid currency, this value is
+ *  ignored for that bidder.
+ *
+ *  example:
+ *  {
+ *    rubicon: 'USD'
+ *  }
+ * @param  {string} [config.conversionRateFile = 'http://currency.prebid.org/latest.json']
+ *  Optional path to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
+ *  if not specified.
+ * @param  {object} [config.rates]
+ *  This optional argument allows you to specify the rates with a JSON object, subverting the need for a external
+ *  config.conversionRateFile parameter.  If this argument is specified, the conversion rate file will not be loaded.
+ *
+ *  example:
+ *  {
+ *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
+ *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
+ *  }
+ */
 export function setConfig(config) {
   let url = DEFAULT_CURRENCY_RATE_URL;
 
