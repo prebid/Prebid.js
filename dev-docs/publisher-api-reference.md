@@ -41,6 +41,8 @@ This page has documentation for the public API methods of Prebid.js.
   * [.onEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.offEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.aliasBidder(adapterName, aliasedName)](#module_pbjs.aliasBidder)
+  * [.setConfig(options)](#module_pbjs.setConfig)
+  * [.getConfig([string])](#module_pbjs.getConfig)
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -344,7 +346,11 @@ Returns a bool if all the bids have returned or timed out
 
 ### pbjs.enableSendAllBids()
 
-(Added in version 0.9.2)
+{: .alert.alert-info :}
+Added in version 0.9.2
+
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0.  Please use [`setConfig`](#module_pbjs.setConfig) instead.
 
 After this method is called, Prebid.js will generate bid keywords for all bids, instead of the default behavior of only sending the top winning bid to the ad server.
 
@@ -381,6 +387,9 @@ After this method is called, `pbjs.getAdserverTargeting()` will give you the bel
 <a name="module_pbjs.setPriceGranularity"></a>
 
 ### pbjs.setPriceGranularity
+
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0.  Please use [`setConfig`](#module_pbjs.setConfig) instead.
 
 This method is used to configure which price bucket is used for the `hb_pb` keyword.  For an example showing how to use this method, see the [Simplified price bucket setup](/dev-docs/examples/simplified-price-bucket-setup.html).
 
@@ -680,7 +689,7 @@ pbjs.bidderSettings = {
 {% endhighlight %}
 
 
-In otherwords, the above config sends 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html#common-bidresponse).
+In other words, the above config sends 2 pairs of key/value strings targeting for every AppNexus bid and for every ad unit. The 1st pair would be `apn_pbMg` => the value of `bidResponse.pbMg`. The 2nd pair would be `apn_adId` => the value of `bidResponse.adId`. You can find the documentation of bidResponse object [here](bidders.html#common-bidresponse).
 
 Note that sendStandardTargeting is set to false so that the standard Prebid targeting (hb_bidder, etc.) aren't also sent to the ad server.
 
@@ -807,6 +816,9 @@ Remove a callback event
 
 ### pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options) ⇒ `String`
 
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0.
+
 **Kind**: static method of [pbjs](#module_pbjs)
 
 **Returns**: `String` - Video ad tag
@@ -842,16 +854,24 @@ For an example showing how to use this method, see [Show Video Ads with a DFP Vi
 
 ### pbjs.setBidderSequence(order)
 
+{: .alert.alert-danger :}
+This method is deprecated as of version 0.27.0.  Please use [`setConfig`](#module_pbjs.setConfig) instead.
+
+{: .alert.alert-danger :}
+**BREAKING CHANGE**  
+As of version 0.27.0, To encourage fairer auctions, Prebid will randomize the order bidders are called by default. To replicate legacy behavior, call `pbjs.setBidderSequence('fixed')`.
+
 This method shuffles the order in which bidders are called.
 
-It takes an argument `order` that currently only accepts the string `"random"` to shuffle the sequence bidders are called in.
+It takes an argument `order` that currently accepts the following strings:
 
-If the sequence is not set with this method, the bidders are called in the order they are defined within the `adUnit.bids` array on page, which is the current default.
+- `"random"`: shuffle the sequence bidders are called in
+- `"fixed"`: bidders are called in the order they are defined within the `adUnit.bids` array on page
 
 Example use:
 
 ```javascript
-pbjs.setBidderSequence('random');
+pbjs.setBidderSequence('fixed'); /* defaults to 'random' as of 0.27.0 */
 ```
 
 <a name="module_pbjs.onEvent"></a>
@@ -961,5 +981,149 @@ If you define an alias and are using `pbjs.sendAllBids`, you must also set up ad
 + `hb_adid_newalias`
 + `hb_size_newalias`
 + `hb_deal_newalias`
+
+<a name="module_pbjs.setConfig"></a>
+
+### pbjs.setConfig(options)
+
+{: .alert.alert-info :}
+Added in version 0.27.0
+
+`setConfig` is designed to allow for advanced configuration while reducing the surface area of the public API.  For more information about the move to `setConfig` (and the resulting deprecations of some other public methods), see [the Prebid 1.0 public API proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
+
+See below for usage examples.
+
+{: .alert.alert-warning :}
+The `options` param object must be JSON - no JavaScript functions are allowed.
+
+Turn on debugging:
+
+{% highlight js %}
+pbjs.setConfig({ debug: true });
+{% endhighlight %}
+
+Set a global bidder timeout:
+
+{% highlight js %}
+pbjs.setConfig({ bidderTimeout: 3000 });
+{% endhighlight %}
+
+Turn on enable send all bids mode:
+
+{% highlight js %}
+pbjs.setConfig({ enableSendAllBids: true })
+{% endhighlight %}
+
+Set the order in which bidders are called:
+
+{% highlight js %}
+pbjs.setConfig({ bidderSequence: "fixed" })   /* default is "random" as of 0.27.0 */
+{% endhighlight %}
+
+Set the publisher's domain where Prebid is running, for cross-domain iFrame communication:
+
+{% highlight js %}
+pbjs.setConfig({ publisherDomain: "https://www.theverge.com" )
+{% endhighlight %}
+
+Set a delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load:
+
+{% highlight js %}
+pbjs.setConfig({ cookieSyncDelay: 100 )
+{% endhighlight %}
+
+Set a default price granularity scheme:
+
+{% highlight js %}
+pbjs.setConfig({ priceGranularity: "medium" })
+{% endhighlight %}
+
+{: .alert.alert-info :}
+Note that the allowed values for `priceGranularity` have not changed: string values, or the custom CPM bucket object.
+
+Set a custom price granularity scheme:
+
+{% highlight js %}
+const customGranularity = {
+  'buckets': [{
+      'min': 0,
+      'max': 3,
+      'increment': 0.01,
+      'cap': true
+  }]
+};
+
+pbjs.setConfig({
+    priceGranularity: customGranularity
+})
+{% endhighlight %}
+
+Set config for [server-to-server]({{site.baseurl}}/dev-docs/get-started-with-prebid-server.html) header bidding:
+
+{% highlight js %}
+pbjs.setConfig({
+    s2sConfig: {
+        accountId: '1',
+        enabled: true,
+        bidders: ['appnexus', 'pubmatic'],
+        timeout: 1000,
+        adapter: 'prebidServer',
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+    }
+})
+{% endhighlight %}
+
+Set arbitrary configuration values:
+
+`pbjs.setConfig({ <key>: <value> });`
+
+#### Troubleshooting your configuration
+
+If you call `pbjs.setConfig` without an object, e.g.,
+
+{% highlight js %}
+pbjs.setConfig('debug', 'true'))
+{% endhighlight %}
+
+then Prebid.js will print an error to the console that says:
+
+```
+ERROR: setConfig options must be an object
+```
+
+If you don't see that message, you can assume the config object is valid.
+
+<a name="module_pbjs.getConfig"></a>
+
+### pbjs.getConfig([string])
+
+{: .alert.alert-info :}
+Added in version 0.27.0
+
+The `getConfig` function is for retrieving the current configuration object or subscribing to configuration updates. When called with no parameters, the entire config object is returned. When called with a string parameter, a single configuration property matching that parameter is returned.
+
+{% highlight js %}
+/* Get config object */
+config.getConfig()
+
+/* Get debug config */
+config.getConfig('debug')
+{% endhighlight %}
+
+The `getConfig` function also contains a 'subscribe' ability that adds a callback function to a set of listeners that are invoked whenever `setConfig` is called. The subscribed function will be passed the options object that was used in the `setConfig` call. Individual topics can be subscribed to by passing a string as the first parameter and a callback function as the second.  For example:
+
+{% highlight js %}
+
+/* Subscribe to all configuration changes */
+getConfig((config) => console.log('config set:', config));
+
+/* Subscribe to only 'logging' changes */
+getConfig('logging', (config) => console.log('logging set:', config));
+
+/* Unsubscribe */
+const unsubscribe = getConfig(...);
+unsubscribe(); // no longer listening
+
+{% endhighlight %}
 
 </div>

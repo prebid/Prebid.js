@@ -53,24 +53,24 @@ Update your site's hosted copy of Prebid.js to use the new build you just genera
 
 ## Step 4. Configure S2S bidder adapters
 
-The Prebid Server settings (defined by the `pbjs.setS2SConfig` method) go in the same anonmymous function where you define your ad units.  This method must be called before `pbjs.requestBids`.
+The Prebid Server settings (defined by the [`pbjs.setConfig`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig) method) go in the same anonymous function where you define your ad units.  This method must be called before `pbjs.requestBids`.
 
-The code in your Prebid configuration block should look something like the following.  See the table below the code sample for definitions of the keys passed to `setS2SConfig`.
+The code in your Prebid configuration block should look something like the following.  See the table below the code sample for definitions of the keys in the `setS2SConfig` object.
 
 {% highlight js %}
 var pbjs = pbjs || {};
 
 pbjs.que.push(function() {
 
-    pbjs.logging = true;
-
-    pbjs.setS2SConfig({
-        accountId: '1',
-        enabled: true,
-        bidders: ['appnexus', 'pubmatic'],
-        timeout: 1000,
-        adapter: 'prebidServer',
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+    pbjs.setConfig({
+        s2sConfig: {
+            accountId: '1',
+            enabled: true,
+            bidders: ['appnexus', 'pubmatic'],
+            timeout: 1000,
+            adapter: 'prebidServer',
+            endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+        }
     });
 
     var adUnits = [{
@@ -83,7 +83,7 @@ pbjs.que.push(function() {
 });
 {% endhighlight %}
 
-Fields you can set in `setS2SConfig`:
+Fields in the `setS2SConfig` object:
 
 {: .table .table-bordered .table-striped }
 | Field       | Type          | Required? | Description                                                            |
