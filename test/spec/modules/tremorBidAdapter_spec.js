@@ -39,16 +39,16 @@ const REQUEST = {
 };
 
 const RESPONSE = {
-  "cur": "USD",
-  "id": "3dba13e35f3d42f998bc7e65fd871889",
-  "seatbid": [{
-    "seat": "TremorVideo",
-    "bid": [{
-      "adomain": [],
-      "price": 0.50000,
-      "id": "3dba13e35f3d42f998bc7e65fd871889",
-      "adm": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<VAST version=\"2.0\">    <Ad id=\"defaultText\">        <InLine>            <AdSystem version=\"1.0\">Tremor Video</AdSystem>            <AdTitle>Test MP4 Creative</AdTitle>            <Error><![CDATA[https://events.tremorhub.com/diag?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&rid=3dba13e35f3d42f998bc7e65fd871889&rtype=VAST_ERR&vastError=[ERRORCODE]&sec=true&adcode=ssp-!demo!-lufip&seatId=60858&pbid=47376&brid=141046&sid=149810&sdom=console.tremorhub.com&aid=348453]]></Error>\n<Impression id=\"TV\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=IMP&tvssa=false]]></Impression>\n<Impression/>            <Creatives>                <Creative>                    <Linear>                        <Duration><![CDATA[ 00:00:30 ]]></Duration>                        <AdParameters><![CDATA[ &referer=- ]]></AdParameters>                        <MediaFiles>                            <MediaFile delivery=\"progressive\" height=\"360\" type=\"video/mp4\" width=\"640\">                                <![CDATA[https://cdn.tremorhub.com/adUnitTest/tremor_video_test_ad_30sec_640x360.mp4]]>                            </MediaFile>                        </MediaFiles>                        <TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=start&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=firstQuartile&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=midpoint&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=thirdQuartile&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=complete&vastcrtype=linear&crid=]]></Tracking>\n</TrackingEvents>                        <VideoClicks>\n<ClickTracking id=\"TV\"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=click&vastcrtype=linear&crid=]]></ClickTracking>\n</VideoClicks>                    </Linear>                </Creative>            </Creatives>            <Extensions/>        </InLine>    </Ad>\n</VAST>\n",
-      "impid": "1"
+  'cur': 'USD',
+  'id': '3dba13e35f3d42f998bc7e65fd871889',
+  'seatbid': [{
+    'seat': 'TremorVideo',
+    'bid': [{
+      'adomain': [],
+      'price': 0.50000,
+      'id': '3dba13e35f3d42f998bc7e65fd871889',
+      'adm': '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<VAST version="2.0">    <Ad id="defaultText">        <InLine>            <AdSystem version="1.0">Tremor Video</AdSystem>            <AdTitle>Test MP4 Creative</AdTitle>            <Error><![CDATA[https://events.tremorhub.com/diag?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&rid=3dba13e35f3d42f998bc7e65fd871889&rtype=VAST_ERR&vastError=[ERRORCODE]&sec=true&adcode=ssp-!demo!-lufip&seatId=60858&pbid=47376&brid=141046&sid=149810&sdom=console.tremorhub.com&aid=348453]]></Error>\n<Impression id="TV"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=IMP&tvssa=false]]></Impression>\n<Impression/>            <Creatives>                <Creative>                    <Linear>                        <Duration><![CDATA[ 00:00:30 ]]></Duration>                        <AdParameters><![CDATA[ &referer=- ]]></AdParameters>                        <MediaFiles>                            <MediaFile delivery="progressive" height="360" type="video/mp4" width="640">                                <![CDATA[https://cdn.tremorhub.com/adUnitTest/tremor_video_test_ad_30sec_640x360.mp4]]>                            </MediaFile>                        </MediaFiles>                        <TrackingEvents>\n<Tracking event="start"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=start&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event="firstQuartile"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=firstQuartile&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event="midpoint"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=midpoint&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event="thirdQuartile"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=thirdQuartile&vastcrtype=linear&crid=]]></Tracking>\n<Tracking event="complete"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=complete&vastcrtype=linear&crid=]]></Tracking>\n</TrackingEvents>                        <VideoClicks>\n<ClickTracking id="TV"><![CDATA[https://events.tremorhub.com/evt?rid=3dba13e35f3d42f998bc7e65fd871889&req_ts=1503951950395&pbid=47376&seatid=60858&aid=348453&asid=null&lid=null&tuid=97e0d10a4b504700b578e4f7d22cac35&evt=click&vastcrtype=linear&crid=]]></ClickTracking>\n</VideoClicks>                    </Linear>                </Creative>            </Creatives>            <Extensions/>        </InLine>    </Ad>\n</VAST>\n',
+      'impid': '1'
     }]
   }]
 };
@@ -98,12 +98,18 @@ describe('TremorBidAdapter', () => {
       REQUEST.bids[0].params.adCode = AD_CODE;
       REQUEST.bids[0].params.subDomain = SUB_DOMAIN;
       REQUEST.bids[0].sizes = SIZES;
-
       adapter.callBids(REQUEST);
-      console.log(requests.length);
-      console.log('tremor', requests[0]);
-      const request = JSON.parse(requests[0].requestBody);
-      expect(request).to.be.null;
+      const requestUrl = requests[0].url;
+      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480&srcPageUrl=http%3A%2F%2Flocalhost%3A9876%2Fcontext.html&mediaId=MyCoolVideo&fmt=json');
+    });
+
+    it('generates a proper ad call URL given a different size format', () => {
+      REQUEST.bids[0].params.adCode = AD_CODE;
+      REQUEST.bids[0].params.subDomain = SUB_DOMAIN;
+      REQUEST.bids[0].sizes = [SIZES];
+      adapter.callBids(REQUEST);
+      const requestUrl = requests[0].url;
+      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480&srcPageUrl=http%3A%2F%2Flocalhost%3A9876%2Fcontext.html&mediaId=MyCoolVideo&fmt=json');
     });
   });
 
@@ -134,13 +140,9 @@ describe('TremorBidAdapter', () => {
 
     it('handles nobid responses', () => {
       server.respondWith(JSON.stringify({
-        'version': '0.0.1',
-        'tags': [{
-          'uuid': '84ab500420319d',
-          'tag_id': 5976557,
-          'auction_id': '297492697822162468',
-          'nobid': true
-        }]
+        "cur": "USD",
+        "id": "ff83ce7e00df41c9bce79b651afc7c51",
+        "seatbid": []
       }));
 
       adapter.callBids(REQUEST);

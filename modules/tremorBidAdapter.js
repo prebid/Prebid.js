@@ -67,8 +67,8 @@ function TremorAdapter() {
       OPTIONAL_PARAMS.forEach(param => {
         if (bid.params[param]) {
           url += ('&' + param + '=' + bid.params[param]);
-        } }
-      );
+        }
+      });
 
       url = (url + '&fmt=json');
 
