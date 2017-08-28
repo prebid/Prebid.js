@@ -1,4 +1,3 @@
-import {ajax} from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adaptermanager from 'src/adaptermanager';
@@ -47,7 +46,7 @@ const sizeUtils = {
     };
   },
   handleSize: (sizes, typedEventSize) => {
-    let formattedSize = undefined;
+    let formattedSize = null;
     if (sizeUtils.sizeAlreadyExists(sizes, typedEventSize) === undefined) {
       formattedSize = sizeUtils.formatSize(typedEventSize);
     }
@@ -71,9 +70,11 @@ function buildTypedEvents() {
       existTypedEvent = groupedTypedEvents.length - 1;
     }
 
-    groupedTypedEvents[existTypedEvent][type] ?
-      groupedTypedEvents[existTypedEvent][type] = [...groupedTypedEvents[existTypedEvent][type], typedEvent]
-    : groupedTypedEvents[existTypedEvent][type] = [typedEvent];
+    if (groupedTypedEvents[existTypedEvent][type]) {
+      groupedTypedEvents[existTypedEvent][type] = [...groupedTypedEvents[existTypedEvent][type], typedEvent];
+    } else {
+      groupedTypedEvents[existTypedEvent][type] = [typedEvent];
+    }
   });
 
   return groupedTypedEvents;
@@ -98,7 +99,7 @@ function sendTypedEvent() {
           typedEventsByType[eventKey].forEach((typedEvent) => {
             if (typedEvent.event.size !== undefined) {
               const size = sizeUtils.handleSize(sizes, typedEvent.event.size);
-              if (size !== undefined) {
+              if (size !== null) {
                 sizes = [...sizes, size];
               }
             }
@@ -135,7 +136,6 @@ let adomikAdapter = Object.assign(adapter({}),
     // Track every event needed
     track({ eventType, args }) {
       switch (eventType) {
-
         case auctionInit:
           currentContext = {
             uid: args.config.id,
@@ -144,7 +144,7 @@ let adomikAdapter = Object.assign(adapter({}),
             timeouted: false,
             timeout: args.timeout
           };
-          if (args.config.bidwonTimeout !== undefined && typeof(args.config.bidwonTimeout) === 'number') {
+          if (args.config.bidwonTimeout !== undefined && typeof args.config.bidwonTimeout === 'number') {
             bidwonTimeout = args.config.bidwonTimeout;
           }
           break;
@@ -184,11 +184,10 @@ let adomikAdapter = Object.assign(adapter({}),
 
         case auctionEnd:
           setTimeout(() => {
-              if (bucketEvents.length > 0) {
-                sendTypedEvent();
-              }
+            if (bucketEvents.length > 0) {
+              sendTypedEvent();
             }
-          , bidwonTimeout);
+          }, bidwonTimeout);
           break;
       }
     }
