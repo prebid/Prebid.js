@@ -527,9 +527,8 @@ $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
 
 /**
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
- * @param  {[type]} bidderAdaptor [description]
- * @param  {[type]} bidderCode    [description]
- * @return {[type]}               [description]
+ * @param  {Function} bidderAdaptor [description]
+ * @param  {String} bidderCode [description]
  */
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
@@ -542,7 +541,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 
 /**
  * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
- * @param  {[type]} options [description]
+ * @param  {Object} options [description]
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
@@ -568,8 +567,8 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
 
 /**
  * Wrapper to bidfactory.createBid()
- * @param  {[type]} statusCode [description]
- * @return {[type]}            [description]
+ * @param  {String} statusCode [description]
+ * @return {Object} bidResponse [description]
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
@@ -578,8 +577,8 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 
 /**
  * Wrapper to bidmanager.addBidResponse
- * @param {[type]} adUnitCode [description]
- * @param {[type]} bid        [description]
+ * @param {String} adUnitCode [description]
+ * @param {Object} bid [description]
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
@@ -593,9 +592,8 @@ $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
 
 /**
  * Wrapper to adloader.loadScript
- * @param  {[type]}   tagSrc   [description]
+ * @param  {String} tagSrc [description]
  * @param  {Function} callback [description]
- * @return {[type]}            [description]
  */
 $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
