@@ -144,8 +144,8 @@ export function newConfig() {
 
   /*
    * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuartion
-   * property name.
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
    *
    * If called with callback parameter, or a string and a callback parameter,
    * subscribes to configuration updates. See `subscribe` function for usage.
