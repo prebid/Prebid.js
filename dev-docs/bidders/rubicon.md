@@ -57,3 +57,20 @@ The following video parameters are supported as of 0.19.0:
 | `aeParams.p_aso.video.ext.maxbitrate` | optional | Integer indicating maximum bitrate of video ad in kbps. | `"aeParams": {"p_aso.video.ext.maxbitrate": "1200"}` |
 | `aeParams.p_aso.video.ext.minbitrate` | optional | Integer indicating minimum bitrate of video ad in kbps. | `"aeParams": {"p_aso.video.ext.minbitrate": "400"}` |
 | `aeParams.p_aso.video.ext.boxingallowed` | optional | Integer indicating whether the seller permits letterboxing. The default is "1", -- letterboxing is permitted. "0" indicates it is not permitted. | `"aeParams": {"p_aso.video.ext.boxingallowed": "1"}` |
+
+### Configuration
+
+As of Prebid 0.27, the Rubicon adapter initiates user-sync requests that will improve DSP match rate,
+with the aim of generating higher bid prices.
+
+By default, sync requests are fired 5 seconds after the auction is complete. User-sync behavior can be 
+controlled with a call to setConfig():
+
+```javascript
+$$PREBID_GLOBAL$$.setConfig({ rubicon: {
+    userSync: {
+      enabled: true,  // set enabled to false to turn off user-sync
+      delay: 7000     // milliseconds after auction is complete
+    }
+ }});
+```

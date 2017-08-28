@@ -52,12 +52,13 @@ DigiTrust.initialize({
 var identityResponse = DigiTrust.getUser({
   "member": "PUBLISHER_DIGITRUST_MEMBER_ID"
 });
-if (identityResponse && identityResponse.success) {
-  pbjs.digiTrustId=identityResponse;
+if (typeof identityResponse === 'object' && identityResponse.success) {
+  pbjs.setConfig({digiTrustId: identityResponse});
 }
 {% endhighlight %}
 
 **Notes**:
+
 * you'll need replace the placeholders PUBLISHER_DIGITRUST_MEMBER_ID and PUBLISHER_DIGITRUST_SITE_ID.
 * the 'redirects' option to DigiTrust.initialize() may be set to false in order to disable the link-rewriting behavior to acquire a first party cookie context.
  
