@@ -77,7 +77,8 @@ var CriteoAdapter = function CriteoAdapter() {
         _callbackError(slots), // timeout handled as error
         undefined,
         networkid,
-        integrationMode
+        integrationMode,
+        params
       );
 
       // process the event as soon as possible
