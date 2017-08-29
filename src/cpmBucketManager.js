@@ -57,26 +57,25 @@ const _autoPriceConfig = {
   }]
 };
 
-function getPriceBucketString(cpm, customConfig) {
-  let cpmFloat = 0;
-  cpmFloat = parseFloat(cpm);
+function getPriceBucketString(cpm, customConfig, granularityMultiplier = 1) {
+  let cpmFloat = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
     cpmFloat = '';
   }
 
   return {
-    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig),
-    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig),
-    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig),
-    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig),
-    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom: (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig)
+    low: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _lgPriceConfig, granularityMultiplier),
+    med: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _mgPriceConfig, granularityMultiplier),
+    high: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _hgPriceConfig, granularityMultiplier),
+    auto: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _autoPriceConfig, granularityMultiplier),
+    dense: (cpmFloat === '') ? '' : getCpmStringValue(cpm, _densePriceConfig, granularityMultiplier),
+    custom: (cpmFloat === '') ? '' : getCpmStringValue(cpm, customConfig, granularityMultiplier)
   };
 }
 
-function getCpmStringValue(cpm, config) {
+function getCpmStringValue(cpm, config, granularityMultiplier) {
   let cpmStr = '';
-  if (!isValidePriceConfig(config)) {
+  if (!isValidPriceConfig(config)) {
     return cpmStr;
   }
   const cap = config.buckets.reduce((prev, curr) => {
@@ -88,20 +87,20 @@ function getCpmStringValue(cpm, config) {
     'max': 0,
   });
   let bucket = config.buckets.find(bucket => {
-    if (cpm > cap.max) {
+    if (cpm > cap.max * granularityMultiplier) {
       const precision = bucket.precision || _defaultPrecision;
-      cpmStr = bucket.max.toFixed(precision);
-    } else if (cpm <= bucket.max && cpm >= bucket.min) {
+      cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
+    } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucket.min * granularityMultiplier) {
       return bucket;
     }
   });
   if (bucket) {
-    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
+    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision, granularityMultiplier);
   }
   return cpmStr;
 }
 
-function isValidePriceConfig(config) {
+function isValidPriceConfig(config) {
   if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
@@ -114,12 +113,12 @@ function isValidePriceConfig(config) {
   return isValid;
 }
 
-function getCpmTarget(cpm, increment, precision) {
+function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
   if (!precision) {
     precision = _defaultPrecision;
   }
-  let bucketSize = 1 / increment;
+  let bucketSize = 1 / increment * granularityMultiplier;
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
-export { getPriceBucketString, isValidePriceConfig };
+export { getPriceBucketString, isValidPriceConfig };

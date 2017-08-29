@@ -7,7 +7,7 @@
  * Defining and access properties in this way is now deprecated, but these will
  * continue to work during a deprecation window.
  */
-import { isValidePriceConfig } from './cpmBucketManager';
+import { isValidPriceConfig } from './cpmBucketManager';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -134,7 +134,7 @@ export function newConfig() {
         utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
       }
     } else if (typeof val === 'object') {
-      if (!isValidePriceConfig(val)) {
+      if (!isValidPriceConfig(val)) {
         utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
         return false;
       }
@@ -144,8 +144,8 @@ export function newConfig() {
 
   /*
    * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuartion
-   * property name.
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
    *
    * If called with callback parameter, or a string and a callback parameter,
    * subscribes to configuration updates. See `subscribe` function for usage.
@@ -153,7 +153,7 @@ export function newConfig() {
   function getConfig(...args) {
     if (args.length <= 1 && typeof args[0] !== 'function') {
       const option = args[0];
-      return option ? config[option] : config;
+      return option ? utils.deepAccess(config, option) : config;
     }
 
     return subscribe(...args);
