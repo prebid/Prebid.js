@@ -353,7 +353,7 @@ describe('Unit: Prebid Module', function () {
           { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
         ]
       };
-      // set custom config object
+
       let currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
       bid.cpm = 2.1234;
