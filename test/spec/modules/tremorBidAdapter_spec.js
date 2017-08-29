@@ -2,10 +2,8 @@ import {expect} from 'chai';
 import Adapter from 'modules/tremorBidAdapter';
 import bidmanager from 'src/bidmanager';
 
-const ENDPOINT = '.ads.tremorhub.com/ad/tag';
-
 const AD_CODE = 'ssp-!demo!-lufip';
-const SUB_DOMAIN = 'ssp-%21demo%21-rm6rh';
+const SUPPLY_CODE = 'ssp-%21demo%21-rm6rh';
 const SIZES = [640, 480];
 const REQUEST = {
   'code': 'video1',
@@ -79,7 +77,7 @@ describe('TremorBidAdapter', () => {
       expect(requests).to.be.empty;
     });
 
-    it('requires adCode && subDomain', () => {
+    it('requires adCode && supplyCode', () => {
       let backup = REQUEST.bids[0].params;
       REQUEST.bids[0].params = {adCode: AD_CODE};
       adapter.callBids(REQUEST);
@@ -96,20 +94,22 @@ describe('TremorBidAdapter', () => {
 
     it('generates a proper ad call URL', () => {
       REQUEST.bids[0].params.adCode = AD_CODE;
-      REQUEST.bids[0].params.subDomain = SUB_DOMAIN;
+      REQUEST.bids[0].params.supplyCode = SUPPLY_CODE;
       REQUEST.bids[0].sizes = SIZES;
       adapter.callBids(REQUEST);
       const requestUrl = requests[0].url;
-      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480&srcPageUrl=http%3A%2F%2Flocalhost%3A9876%2Fcontext.html&mediaId=MyCoolVideo&fmt=json');
+      let srcPageURl = ('&srcPageUrl=' + encodeURIComponent(document.location.href));
+      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480' + srcPageURl + '&mediaId=MyCoolVideo&fmt=json');
     });
 
     it('generates a proper ad call URL given a different size format', () => {
       REQUEST.bids[0].params.adCode = AD_CODE;
-      REQUEST.bids[0].params.subDomain = SUB_DOMAIN;
+      REQUEST.bids[0].params.supplyCode = SUPPLY_CODE;
       REQUEST.bids[0].sizes = [SIZES];
       adapter.callBids(REQUEST);
       const requestUrl = requests[0].url;
-      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480&srcPageUrl=http%3A%2F%2Flocalhost%3A9876%2Fcontext.html&mediaId=MyCoolVideo&fmt=json');
+      let srcPageURl = ('&srcPageUrl=' + encodeURIComponent(document.location.href));
+      expect(requestUrl).to.equal('http://ssp-%21demo%21-rm6rh.ads.tremorhub.com/ad/tag?adCode=ssp-!demo!-lufip&playerWidth=640&playerHeight=480' + srcPageURl + '&mediaId=MyCoolVideo&fmt=json');
     });
   });
 
@@ -140,9 +140,9 @@ describe('TremorBidAdapter', () => {
 
     it('handles nobid responses', () => {
       server.respondWith(JSON.stringify({
-        "cur": "USD",
-        "id": "ff83ce7e00df41c9bce79b651afc7c51",
-        "seatbid": []
+        'cur': 'USD',
+        'id': 'ff83ce7e00df41c9bce79b651afc7c51',
+        'seatbid': []
       }));
 
       adapter.callBids(REQUEST);

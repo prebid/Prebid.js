@@ -12,8 +12,6 @@ import adaptermanager from 'src/adaptermanager';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 
-// 'episode', 'mediaDesc', 'series', 'season',
-
 const OPTIONAL_PARAMS = [
   'mediaId', 'mediaUrl', 'mediaTitle', 'contentLength', 'floor',
   'efloor', 'custom', 'categories', 'keywords', 'blockDomains',
@@ -22,9 +20,18 @@ const OPTIONAL_PARAMS = [
 ];
 
 /**
- * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
+ * Bidder adapter Tremor Video. Given the list of all ad unit tag IDs,
  * sends out a bid request. When a bid response is back, registers the bid
- * to Prebid.js. This adapter supports alias bidding.
+ * to Prebid.js.
+ * Steps:
+ * - Format and send the bid request
+ * - Evaluate and handle the response
+ * - Store potential VAST markup
+ * - Send request to ad server
+ * - intercept ad server response
+ * - Check if the vast wrapper URL is http://cdn.tremorhub.com/static/dummy.xml
+ * - If yes: then render the locally stored VAST markup by directly passing it to your player
+ * - Else: give the player the VAST wrapper from your ad server
  */
 function TremorAdapter() {
   let baseAdapter = new Adapter('tremor');
@@ -39,11 +46,17 @@ function TremorAdapter() {
         if (url) {
           ajax(url, response => {
             handleResponse(bid, response);
-          }, null, {method: 'GET', withCredentials: false});
+          }, null, {method: 'GET', withCredentials: true});
         }
       });
   };
 
+  /**
+   * Generates the url based on the parameters given. Sizes are required.
+   * The format is: [L,W] or [[L1,W1],...]
+   * @param bid
+   * @returns {string}
+   */
   function generateUrl(bid) {
     // get the sizes
     let width, height;
@@ -56,9 +69,8 @@ function TremorAdapter() {
       height = bid.sizes[0][1];
     }
     if (width && height) {
-      let base_url = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-      base_url = (base_url + bid.params.subDomain + ENDPOINT);
-      let url = base_url + '?adCode=' + bid.params.adCode;
+      let scheme = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
+      let url = scheme + bid.params.supplyCode + ENDPOINT + '?adCode=' + bid.params.adCode;
 
       url += ('&playerWidth=' + width);
       url += ('&playerHeight=' + height);
@@ -109,16 +121,25 @@ function TremorAdapter() {
     }
   }
 
-  /* Check that a bid has required paramters */
+  /**
+   * We require the ad code and the supply code to generate a tag url
+   * @param bid
+   * @returns {*}
+   */
   function valid(bid) {
-    if (bid.params.adCode && bid.params.subDomain) {
+    if (bid.params.adCode && bid.params.supplyCode) {
       return bid;
     } else {
       utils.logError('missing bid params');
     }
   }
 
-  /* Create and return a bid object based on status and tag */
+  /**
+   * Create and return a bid object based on status and tag
+   * @param status
+   * @param reqBid
+   * @param response
+   */
   function createBid(status, reqBid, response) {
     let bid = bidfactory.createBid(status, reqBid);
     bid.code = baseAdapter.getBidderCode();
@@ -128,8 +149,8 @@ function TremorAdapter() {
       bid.cpm = response.price;
       bid.crid = response.crid;
       bid.vastXml = response.adm;
-      // This is a dummy vast URL, Tremor sends back the vast XML.
-      bid.vastUrl = 'http://cdn.tremorhub.com/static/dummy.mp4';
+      // This is a dummy vast URL, Tremor sends back the vast XML (the line above).
+      bid.vastUrl = 'http://cdn.tremorhub.com/static/dummy.xml';
       bid.mediaType = 'video';
     }
 
