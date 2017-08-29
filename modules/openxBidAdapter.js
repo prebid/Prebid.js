@@ -1,7 +1,7 @@
 import { config } from 'src/config';
 const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
-const adloader = require('src/adloader');
+const ajax = require('src/ajax');
 const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
 const adaptermanager = require('src/adaptermanager');
@@ -9,11 +9,21 @@ const adaptermanager = require('src/adaptermanager');
 const OpenxAdapter = function OpenxAdapter() {
   const BIDDER_CODE = 'openx';
   const BIDDER_CONFIG = 'hb_pb';
+  const BIDDER_VERSION = '1.0.1';
   let startTime;
+  let timeout = config.getConfig('bidderTimeout');
 
   let pdNode = null;
 
-  $$PREBID_GLOBAL$$.oxARJResponse = function (oxResponseObj) {
+  function oxARJResponse (oxResponseObj) {
+    try {
+      oxResponseObj = JSON.parse(oxResponseObj);
+    } catch (_) {
+      // Could not parse response, changing to an empty response instead
+      oxResponseObj = {
+        ads: {}
+      };
+    }
     let adUnits = oxResponseObj.ads.ad;
     if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
       makePDCall(oxResponseObj.ads.pixels);
@@ -39,11 +49,10 @@ const OpenxAdapter = function OpenxAdapter() {
 
       let beaconParams = {
         bd: +(new Date()) - startTime,
-        br: '0', // maybe 0, t, or p
-        bt: $$PREBID_GLOBAL$$.cbTimeout || config.getConfig('bidderTimeout'), // For the timeout per bid request
+        br: '0', // may be 0, t, or p
+        bt: Math.min(timeout, window.PREBID_TIMEOUT || config.getConfig('bidderTimeout')),
         bs: window.location.hostname
       };
-
       // no fill :(
       if (!auid || !adUnit.pub_rev) {
         addBidResponse(null, bid);
@@ -125,6 +134,9 @@ const OpenxAdapter = function OpenxAdapter() {
         bidResponse.width = creative.width;
         bidResponse.height = creative.height;
       }
+      if (adUnit.tbd) {
+        bidResponse.tbd = adUnit.tbd;
+      }
     }
     bidmanager.addBidResponse(bid.placementCode, bidResponse);
   }
@@ -176,6 +188,7 @@ const OpenxAdapter = function OpenxAdapter() {
     }
 
     params.auid = utils._map(bids, bid => bid.params.unit).join('%2C');
+    params.dddid = utils._map(bids, bid => bid.transactionId).join('%2C');
     params.aus = utils._map(bids, bid => {
       return utils.parseSizesInput(bid.sizes).join(',');
     }).join('|');
@@ -188,10 +201,15 @@ const OpenxAdapter = function OpenxAdapter() {
       }
     });
 
-    params.callback = 'window.$$PREBID_GLOBAL$$.oxARJResponse';
-    let queryString = buildQueryStringFromParams(params);
-
-    adloader.loadScript(`//${delDomain}/w/1.0/arj?${queryString}`);
+    try {
+      let queryString = buildQueryStringFromParams(params);
+      let url = `//${delDomain}/w/1.0/arj?${queryString}`;
+      ajax.ajax(url, oxARJResponse, void (0), {
+        withCredentials: true
+      });
+    } catch (err) {
+      utils.logMessage(`Ajax call failed due to ${err}`);
+    }
   }
 
   function callBids(params) {
@@ -211,6 +229,9 @@ const OpenxAdapter = function OpenxAdapter() {
     let delDomain = bids[0].params.delDomain;
 
     startTime = new Date(params.start);
+    if (params.timeout) {
+      timeout = params.timeout;
+    }
 
     buildRequest(bids, {
       ju: currentURL,
@@ -222,7 +243,8 @@ const OpenxAdapter = function OpenxAdapter() {
       tws: getViewportDimensions(isIfr),
       ef: 'bt%2Cdb',
       be: 1,
-      bc: BIDDER_CONFIG
+      bc: `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
+      nocache: new Date().getTime()
     },
     delDomain);
   }

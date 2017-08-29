@@ -95,6 +95,15 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
+  var files = [
+    'test/helpers/prebidGlobal.js',
+    'test/**/*_spec.js'
+  ];
+  // This file opens the /debug.html tab automatically.
+  // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
+  if (watchMode) {
+    files.push('test/helpers/karma-init.js');
+  }
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -109,12 +118,7 @@ module.exports = function(codeCoverage, browserstack, watchMode) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
-    // list of files / patterns to load in the browser
-    files: [
-      'test/helpers/prebidGlobal.js',
-      'test/**/*_spec.js',
-      'test/helpers/karma-init.js'
-    ],
+    files: files,
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor

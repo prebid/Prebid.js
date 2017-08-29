@@ -1100,8 +1100,34 @@ describe('the rubicon adapter', () => {
       userSync.registerSync.restore();
     });
 
-    it('should register the Emily iframe', () => {
-      expect(userSync.registerSync.calledOnce).to.be.false;
+    it('should not add the Emily iframe by default', () => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {delay: 10}
+        }};
+        return config[key];
+      });
+
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+
+      // move clock to just before the usersync delay, should be no iframe
+      clock.tick(9);
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
+      // move clock to usersync delay, iframe should still not have been added
+      clock.tick(1);
+      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      expect(iframes.length).to.equal(0);
+    });
+
+    it('should add the Emily iframe when enabled', () => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+        var config = { rubicon: {
+          userSync: {enabled: true, delay: 20}
+        }};
+        return config[key];
+      });
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
       expect(userSync.registerSync.calledOnce).to.be.true;

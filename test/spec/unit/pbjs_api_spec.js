@@ -7,6 +7,7 @@ import {
   getTargetingKeysBidLandscape,
   getAdUnits
 } from 'test/fixtures/fixtures';
+import { config as configObj } from 'src/config';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -1261,15 +1262,6 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
     });
 
-    it('should call bidmanager.setPriceGranularity with granularity', () => {
-      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
-      const granularity = 'low';
-
-      $$PREBID_GLOBAL$$.setConfig({ priceGranularity: granularity });
-      assert.ok(setPriceGranularitySpy.called, 'called bidmanager.setPriceGranularity');
-      bidmanager.setPriceGranularity.restore();
-    });
-
     it('should log error when not passed a valid config object', () => {
       const logErrorSpy = sinon.spy(utils, 'logError');
       const error = 'Invalid custom price value passed to `setPriceGranularity()`';
@@ -1293,9 +1285,8 @@ describe('Unit: Prebid Module', function () {
       utils.logError.restore();
     });
 
-    it('should call bidmanager.setCustomPriceBucket with custom config buckets', () => {
-      const setCustomPriceBucket = sinon.spy(bidmanager, 'setCustomPriceBucket');
-      const setPriceGranularitySpy = sinon.spy(bidmanager, 'setPriceGranularity');
+    it('should set customPriceBucket with custom config buckets', () => {
+      let customPriceBucket = configObj.getConfig('customPriceBucket');
       const goodConfig = {
         'buckets': [{
           'min': 0,
@@ -1305,12 +1296,11 @@ describe('Unit: Prebid Module', function () {
         }
         ]
       };
-
-      $$PREBID_GLOBAL$$.setConfig({ priceGranularity: goodConfig });
-      assert.ok(setCustomPriceBucket.called, 'called bidmanager.setCustomPriceBucket');
-      bidmanager.setCustomPriceBucket.restore();
-      assert.ok(setPriceGranularitySpy.calledWith('custom'), 'called bidmanager.setPriceGranularity');
-      bidmanager.setPriceGranularity.restore();
+      configObj.setConfig({ priceGranularity: goodConfig });
+      let priceGranularity = configObj.getConfig('priceGranularity');
+      let newCustomPriceBucket = configObj.getConfig('customPriceBucket');
+      expect(goodConfig).to.deep.equal(newCustomPriceBucket);
+      expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
     });
   });
 
@@ -1581,11 +1571,15 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return original adservertag if there are no bids for the given placement code', () => {
-      var options = {
+      // urls.js:parse returns port 443 for IE11, blank for other browsers
+      const ie11port = !!window.MSInputMethodContext && !!document.documentMode ? ':443' : '';
+      const adserverTag = `https://pubads.g.doubleclick.net${ie11port}/gampad/ads?sz=640x480&iu=/19968336/header-bid-tag-0&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com`;
+
+      const masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, {
         'adserver': 'dfp',
         'code': 'one-without-bids'
-      };
-      var masterTagUrl = $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+      });
+
       expect(masterTagUrl).to.equal(adserverTag);
     });
 

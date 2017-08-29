@@ -6,7 +6,6 @@ import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
-import { isValidePriceConfig } from './cpmBucketManager';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
@@ -535,9 +534,8 @@ $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
 
 /**
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
- * @param  {[type]} bidderAdaptor [description]
- * @param  {[type]} bidderCode    [description]
- * @return {[type]}               [description]
+ * @param  {Function} bidderAdaptor [description]
+ * @param  {String} bidderCode [description]
  */
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
@@ -550,7 +548,7 @@ $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 
 /**
  * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
- * @param  {[type]} options [description]
+ * @param  {Object} options [description]
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
@@ -576,8 +574,8 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
 
 /**
  * Wrapper to bidfactory.createBid()
- * @param  {[type]} statusCode [description]
- * @return {[type]}            [description]
+ * @param  {String} statusCode [description]
+ * @return {Object} bidResponse [description]
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
@@ -586,8 +584,8 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 
 /**
  * Wrapper to bidmanager.addBidResponse
- * @param {[type]} adUnitCode [description]
- * @param {[type]} bid        [description]
+ * @param {String} adUnitCode [description]
+ * @param {Object} bid [description]
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
@@ -601,9 +599,8 @@ $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
 
 /**
  * Wrapper to adloader.loadScript
- * @param  {[type]}   tagSrc   [description]
+ * @param  {String} tagSrc [description]
  * @param  {Function} callback [description]
- * @return {[type]}            [description]
  */
 $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
@@ -647,22 +644,9 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
  */
 $$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
+  utils.logWarn('$$PREBID_GLOBAL$$.setPriceGranularity will be removed in Prebid 1.0. Use $$PREBID_GLOBAL$$.setConfig({ priceGranularity: <granularity> }) instead.')
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
-  if (!granularity) {
-    utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-    return;
-  }
-  if (typeof granularity === 'string') {
-    bidmanager.setPriceGranularity(granularity);
-  } else if (typeof granularity === 'object') {
-    if (!isValidePriceConfig(granularity)) {
-      utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
-      return;
-    }
-    bidmanager.setCustomPriceBucket(granularity);
-    bidmanager.setPriceGranularity(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
-    utils.logMessage('Using custom price granularity');
-  }
+  config.setConfig({ priceGranularity: granularity });
 };
 
 /** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */

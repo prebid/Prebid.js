@@ -14,6 +14,7 @@ const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const NATIVE_MAPPING = {
   body: 'description',
+  cta: 'ctatext',
   image: {
     serverName: 'main_image',
     serverParams: { required: true, sizes: [{}] }
@@ -110,8 +111,8 @@ function AppnexusAstAdapter() {
               // if the mapping for this identifier specifies required server
               // params via the `serverParams` object, merge that in
               const params = Object.assign({},
-                bid.nativeParams[key],
-                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+                NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams,
+                bid.nativeParams[key]
               );
 
               nativeRequest[requestKey] = params;
@@ -344,6 +345,7 @@ function AppnexusAstAdapter() {
         bid.native = {
           title: native.title,
           body: native.desc,
+          cta: native.ctatext,
           sponsoredBy: native.sponsored,
           image: native.main_img && native.main_img.url,
           icon: native.icon && native.icon.url,

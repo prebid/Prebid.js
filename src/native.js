@@ -9,6 +9,7 @@ export const NATIVE_KEYS = {
   image: 'hb_native_image',
   icon: 'hb_native_icon',
   clickUrl: 'hb_native_linkurl',
+  cta: 'hb_native_cta',
 };
 
 export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
