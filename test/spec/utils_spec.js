@@ -524,4 +524,34 @@ describe('Utils', function () {
       assert.equal(arr.length, count, 'Polyfill test fails')
     });
   });
+
+  describe('deepAccess', function() {
+    var obj = {
+      1: 2,
+      test: {
+        first: 11
+      }
+    };
+
+    it('should allow deep access of object properties', function() {
+      var value1 = utils.deepAccess(obj, 'test');
+      assert.deepEqual(value1, obj.test);
+
+      var value2 = utils.deepAccess(obj, 'test.first');
+      assert.equal(value2, 11);
+
+      var value3 = utils.deepAccess(obj, 1);
+      assert.equal(value3, 2);
+    });
+
+    it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function() {
+      var value;
+
+      assert.doesNotThrow(function() {
+        value = utils.deepAccess(obj, 'test.second.third');
+      });
+
+      assert.equal(value, undefined);
+    });
+  });
 });

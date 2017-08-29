@@ -1101,7 +1101,7 @@ describe('the rubicon adapter', () => {
       window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
     });
 
-    it('should add the Emily iframe by default', () => {
+    it('should not add the Emily iframe by default', () => {
       sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {delay: 10}
@@ -1116,10 +1116,10 @@ describe('the rubicon adapter', () => {
       clock.tick(9);
       let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
       expect(iframes.length).to.equal(0);
-      // move clock to usersync delay, iframe should have been added
+      // move clock to usersync delay, iframe should still not have been added
       clock.tick(1);
       iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(1);
+      expect(iframes.length).to.equal(0);
     });
 
     it('should add the Emily iframe when enabled', () => {

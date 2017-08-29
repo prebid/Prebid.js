@@ -178,7 +178,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, config.getConfig('customPriceBucket'));
+    const priceStringsObj = getPriceBucketString(
+      bid.cpm,
+      config.getConfig('customPriceBucket'),
+      config.getConfig('currency.granularityMultiplier')
+    );
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
