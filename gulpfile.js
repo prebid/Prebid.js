@@ -219,7 +219,7 @@ gulp.task('clean-docs', function () {
 
 gulp.task('docs', ['clean-docs'], function () {
   return gulp.src('src/prebid.js')
-    .pipe(gulpDocumentation('html'))
+    .pipe(gulpDocumentation('md'))
     .on('error', function (err) {
       gutil.log('`gulp-documentation` failed:', err.message);
     })
