@@ -114,13 +114,13 @@ export function newUserSync(userSyncConfig) {
    * @public
    * @params {string} type The type of the sync including image, iframe
    * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string|object} data A series of arguments
+   * @params {string} url Either the pixel url or iframe url depending on the type
 
    * @example <caption>Using Image Sync</caption>
    * // registerSync(type, adapter, pixelUrl)
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
-  publicApi.registerSync = (type, bidder, ...data) => {
+  publicApi.registerSync = (type, bidder, url) => {
     if (!userSyncConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "{$type}" not supported`);
     }
@@ -135,7 +135,7 @@ export function newUserSync(userSyncConfig) {
     if (hasEnabledBidders && userSyncConfig.enabledBidders.indexOf(bidder) < 0) {
       return utils.logWarn(`Bidder "{$bidder}" not supported`);
     }
-    queue[type].push([bidder, ...data]);
+    queue[type].push([bidder, url]);
     numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
   };
 
