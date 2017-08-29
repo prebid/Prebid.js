@@ -86,7 +86,7 @@ export function newConfig() {
           this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
         } else if (typeof val === 'object') {
           this._customPriceBucket = val;
-          this._priceGranularity = GRANULARITY_OPTIONS.MEDIUM;
+          this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
           utils.logMessage('Using custom price granularity');
         }
       }

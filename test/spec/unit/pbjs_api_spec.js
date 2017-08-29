@@ -1300,7 +1300,7 @@ describe('Unit: Prebid Module', function () {
       let priceGranularity = configObj.getConfig('priceGranularity');
       let newCustomPriceBucket = configObj.getConfig('customPriceBucket');
       expect(goodConfig).to.deep.equal(newCustomPriceBucket);
-      expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
     });
   });
 
