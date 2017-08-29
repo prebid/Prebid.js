@@ -23,7 +23,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
-const { syncUsers, overrideSync } = userSync;
+const { syncUsers, syncUsersOverride } = userSync;
 
 /* private variables */
 
@@ -72,6 +72,9 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
+
+// Allow publishers who enable user sync override to trigger their sync
+$$PREBID_GLOBAL$$.triggerUserSyncs = syncUsersOverride;
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -333,12 +336,13 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  let userSyncConfig = config.getConfig('userSync') || {}
-  // Automatically trigger the user syncs if configured by the publisher
+  // Only automatically sync if the publisher has not chosen to "enableOverride"
+  let userSyncConfig = config.getConfig('userSync') || {};
   if (!userSyncConfig.enableOverride) {
     // Delay the auto sync by the config delay
     syncUsers(userSyncConfig.syncDelay);
   }
+
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -714,7 +718,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * @param {string} order One of the valid orders, described above.
  * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
-$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
+$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence;
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
@@ -762,9 +766,6 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
   }, options);
   adaptermanager.setS2SConfig(config);
 };
-
-// Expose user syncing to the public API based on config "userSync.enableOverride"
-overrideSync((config.getConfig('userSync') || {}).enableOverride);
 
 /**
  * Get Prebid config options

@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
-export function newUserSync() {
+export function newUserSync(userSyncConfig) {
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
@@ -14,12 +14,8 @@ export function newUserSync() {
   // How many bids for each adapter
   let numAdapterBids = {};
 
-  // Get userSync configuration
-  let userSyncConfig = config.getConfig('userSync') || {};
-  // reset if it's set later
-  config.getConfig('userSync', (conf) => {
-    userSyncConfig = conf['userSync'] || {};
-  });
+  // Use what is in config by default
+  userSyncConfig = userSyncConfig || config.getConfig('userSync');
 
   /**
    * @function getDefaultQueue
@@ -31,7 +27,7 @@ export function newUserSync() {
     return {
       image: [],
       iframe: []
-    }
+    };
   }
 
   /**
@@ -128,6 +124,9 @@ export function newUserSync() {
     if (!userSyncConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "{$type}" not supported`);
     }
+    if (!bidder) {
+      return utils.logWarn(`Bidder is required for registering sync`);
+    }
     if (Number(numAdapterBids[bidder]) >= userSyncConfig.syncsPerBidder) {
       return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
     }
@@ -154,14 +153,13 @@ export function newUserSync() {
   };
 
   /**
-   * @function overrideSync
-   * @summary Expose syncUsers method to the publisher for manual syncing when enabled
-   * @param {boolean} enableOverride Tells this module to expose the syncUsers method to the public
+   * @function overrideSyncUsers
+   * @summary A `syncUsers` wrapper for determining if enableOverride has been turned on
    * @public
    */
-  publicApi.overrideSync = (enableOverride) => {
-    if (enableOverride) {
-      $$PREBID_GLOBAL$$.syncUsers = userSync.syncUsers;
+  publicApi.syncUsersOverride = () => {
+    if (userSyncConfig.enableOverride) {
+      publicApi.syncUsers();
     }
   };
 
