@@ -1,12 +1,12 @@
 const LIB_VERSION_GLOBAL = '3.0.5';
 
-var CONSTANTS = require('src/constants');
-var utils = require('src/utils');
-var bidfactory = require('src/bidfactory');
-var bidmanager = require('src/bidmanager');
-var adloader = require('src/adloader');
-var Adapter = require('src/adapter').default;
-var adaptermanager = require('src/adaptermanager');
+const CONSTANTS = require('src/constants');
+const utils = require('src/utils');
+const bidfactory = require('src/bidfactory');
+const bidmanager = require('src/bidmanager');
+const adloader = require('src/adloader');
+const Adapter = require('src/adapter').default;
+const adaptermanager = require('src/adaptermanager');
 
 const IMPROVE_DIGITAL_BIDDER_CODE = 'improvedigital';
 
@@ -14,10 +14,10 @@ const ImproveDigitalAdapter = function () {
   let baseAdapter = new Adapter(IMPROVE_DIGITAL_BIDDER_CODE);
   baseAdapter.idClient = new ImproveDigitalAdServerJSClient('hb');
 
-  let LIB_VERSION = LIB_VERSION_GLOBAL;
+  const LIB_VERSION = LIB_VERSION_GLOBAL;
 
   // Ad server needs to implement JSONP using this function as the callback
-  let CALLBACK_FUNCTION = '$$PREBID_GLOBAL$$' + '.improveDigitalResponse';
+  const CALLBACK_FUNCTION = '$$PREBID_GLOBAL$$' + '.improveDigitalResponse';
 
   baseAdapter.getNormalizedBidRequest = function(bid) {
     let adUnitId = utils.getBidIdParameter('placementCode', bid) || null;
@@ -62,6 +62,12 @@ const ImproveDigitalAdapter = function () {
     return normalizedBidRequest;
   }
 
+  let submitNoBidResponse = function(bidRequest) {
+    let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
+    bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
+    bidmanager.addBidResponse(bidRequest.placementCode, bid);
+  };
+
   $$PREBID_GLOBAL$$.improveDigitalResponse = function(response) {
     let bidRequests = utils.getBidderRequestAllAdUnits(IMPROVE_DIGITAL_BIDDER_CODE);
     if (bidRequests && bidRequests.bids && bidRequests.bids.length > 0) {
@@ -69,43 +75,35 @@ const ImproveDigitalAdapter = function () {
         let bidObjects = response.bid || [];
         utils._each(bidObjects, function (bidObject) {
           if (bidObject.id === bidRequest.bidId) {
-            let bid;
             if (!bidObject.price || bidObject.price === null) {
-              bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-              bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
-              bidmanager.addBidResponse(bidRequest.placementCode, bid);
+              submitNoBidResponse(bidRequest);
               return;
             }
             if (bidObject.errorCode && bidObject.errorCode !== 0) {
-              bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-              bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
-              bidmanager.addBidResponse(bidRequest.placementCode, bid);
+              submitNoBidResponse(bidRequest);
               return;
             }
             if (!bidObject.adm || bidObject.adm === null || typeof bidObject.adm !== 'string') {
-              bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-              bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
-              bidmanager.addBidResponse(bidRequest.placementCode, bid);
+              submitNoBidResponse(bidRequest);
               return;
             }
 
-            bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
+            let bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
 
             let syncString = '';
             let syncArray = (bidObject.sync && bidObject.sync.length > 0) ? bidObject.sync : [];
 
             utils._each(syncArray, function (syncElement) {
-              syncString += (syncString === '') ? 'document.writeln(\"' : '';
               let syncInd = syncElement.replace(/\//g, '\\\/');
-              syncString += '<img src=\\\"' + syncInd + '\\\"\/>';
+              syncString = `${syncString}${(syncString === '') ? 'document.writeln(\"' : ''}<img src=\\\"${syncInd}\\\" style=\\\"display:none\\\"\/>`;
             });
-            syncString += (syncString === '') ? '' : '\")';
+            syncString = `${syncString}${(syncString === '') ? '' : '\")'}`;
 
             let nurl = '';
             if (bidObject.nurl && bidObject.nurl.length > 0) {
-              nurl = '<img src=\"' + bidObject.nurl + '\" width=\"0\" height=\"0\" style=\"display:none\">';
+              nurl = `<img src=\"${bidObject.nurl}\" width=\"0\" height=\"0\" style=\"display:none\">`;
             }
-            bid.ad = nurl + '<script>' + bidObject.adm + syncString + '</script>';
+            bid.ad = `${nurl}<script>${bidObject.adm}${syncString}</script>`;
             bid.bidderCode = IMPROVE_DIGITAL_BIDDER_CODE;
             bid.cpm = parseFloat(bidObject.price);
             bid.width = bidObject.w;
@@ -187,7 +185,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ad.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: '?jsonp=',
-    CLIENT_VERSION: 'JS-4.0.0',
+    CLIENT_VERSION: 'JS-4.0.2',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       BAD_HTTP_REQUEST_TYPE_PARAM: 1,
@@ -212,9 +210,9 @@ function ImproveDigitalAdServerJSClient(endPoint) {
       return this.getErrorReturn(this.CONSTANTS.ERROR_CODES.LIB_VERSION_MISSING);
     }
 
-    var impressionObjects = [];
-    var impressionObject;
-    var counter;
+    let impressionObjects = [];
+    let impressionObject;
+    let counter;
     if (utils.isArray(requestObject)) {
       for (counter = 0; counter < requestObject.length; counter++) {
         impressionObject = this.createImpressionObject(requestObject[counter]);
@@ -225,14 +223,14 @@ function ImproveDigitalAdServerJSClient(endPoint) {
       impressionObjects.push(impressionObject);
     }
 
-    var returnObject = {};
+    let returnObject = {};
     returnObject.idMappings = [];
     returnObject.requests = [];
-    var errors = null;
+    let errors = null;
 
-    var baseUrl = (requestParameters.secure === 1 ? 'https' : 'http') + '://' + this.CONSTANTS.AD_SERVER_BASE_URL + '/' + this.CONSTANTS.END_POINT + this.CONSTANTS.AD_SERVER_URL_PARAM;
+    let baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
 
-    var bidRequestObject = {
+    let bidRequestObject = {
       bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
     };
     for (counter = 0; counter < impressionObjects.length; counter++) {
@@ -252,7 +250,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
         bidRequestObject.bid_request.imp = bidRequestObject.bid_request.imp || [];
 
         bidRequestObject.bid_request.imp.push(impressionObject.impressionObject);
-        var outputUri = encodeURIComponent(baseUrl + JSON.stringify(bidRequestObject));
+        let outputUri = encodeURIComponent(baseUrl + JSON.stringify(bidRequestObject));
 
         if (!requestParameters.singleRequestMode) {
           returnObject.requests.push({
@@ -297,7 +295,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
   };
 
   this.createBasicBidRequestObject = function(requestParameters, extraRequestParameters) {
-    var impressionBidRequestObject = {};
+    let impressionBidRequestObject = {};
     if (requestParameters.requestId) {
       impressionBidRequestObject.id = requestParameters.requestId;
     } else {
@@ -322,7 +320,7 @@ function ImproveDigitalAdServerJSClient(endPoint) {
       impressionBidRequestObject.version = requestParameters.libVersion + '-' + this.CONSTANTS.CLIENT_VERSION;
     }
     if (extraRequestParameters) {
-      for (var prop in extraRequestParameters) {
+      for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
       }
     }
@@ -331,8 +329,8 @@ function ImproveDigitalAdServerJSClient(endPoint) {
   };
 
   this.createImpressionObject = function(placementObject) {
-    var outputObject = {};
-    var impressionObject = {};
+    let outputObject = {};
+    let impressionObject = {};
     outputObject.impressionObject = impressionObject;
 
     if (placementObject.id) {
@@ -356,8 +354,8 @@ function ImproveDigitalAdServerJSClient(endPoint) {
       impressionObject.tid = placementObject.transactionId;
     }
     if (placementObject.keyValues) {
-      for (var key in placementObject.keyValues) {
-        for (var valueCounter = 0; valueCounter < placementObject.keyValues[key].length; valueCounter++) {
+      for (let key in placementObject.keyValues) {
+        for (let valueCounter = 0; valueCounter < placementObject.keyValues[key].length; valueCounter++) {
           impressionObject.kvw = impressionObject.kvw || {};
           impressionObject.kvw[key] = impressionObject.kvw[key] || [];
           impressionObject.kvw[key].push(placementObject.keyValues[key][valueCounter]);
