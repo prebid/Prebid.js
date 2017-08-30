@@ -50,7 +50,7 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
 
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'mediaType',
-          'context',
+          'mediaTypes',
           'renderer'
         ]));
 

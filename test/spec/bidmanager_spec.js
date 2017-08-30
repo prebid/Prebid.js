@@ -601,8 +601,9 @@ describe('bidmanager.js', function () {
     it('requires a renderer on outstream bids', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
         bidder: 'appnexusAst',
-        mediaType: 'video',
-        context: 'outstream',
+        mediaTypes: {
+          video: {context: 'outstream'}
+        },
       }));
 
       const bid = Object.assign({},

@@ -1,7 +1,7 @@
 import { videoAdapters } from './adaptermanager';
 import { getBidRequest } from './utils';
 
-const VIDEO_MEDIA_TYPE = 'video'
+const VIDEO_MEDIA_TYPE = 'video';
 const INSTREAM = 'instream';
 const OUTSTREAM = 'outstream';
 
@@ -17,14 +17,19 @@ export const hasNonVideoBidder = adUnit => adUnit.bids.filter(nonVideoBidder).le
  */
 export function videoBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
+  const context =
+    bidRequest &&
+    bidRequest.mediaTypes &&
+    bidRequest.mediaTypes.video &&
+    bidRequest.mediaTypes.video.context;
 
   // if context not defined assume default 'instream' for video bids
-  if (!bidRequest || !bidRequest.context || bidRequest.context === INSTREAM) {
+  if (!bidRequest || !context || context === INSTREAM) {
     return !!(bid.vastUrl || bid.vastPayload);
   }
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
-  if (bidRequest.context === OUTSTREAM) {
+  if (context === OUTSTREAM) {
     return !!(bid.renderer || bidRequest.renderer);
   }
 
