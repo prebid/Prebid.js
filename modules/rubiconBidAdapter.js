@@ -5,7 +5,7 @@ import adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-import { userSync } from 'src/userSync'
+import { userSync } from 'src/userSync';
 const RUBICON_BIDDER_CODE = 'rubicon';
 
 // use deferred function call since version isn't defined yet at this point
