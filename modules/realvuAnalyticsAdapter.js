@@ -7,7 +7,7 @@ var adloader = require('src/adloader');
 const utils = require('src/utils');
 const url = '//ac.realvu.net/realvu_boost.js';
 
-var realvuAdapter = adapter({global:'realvu_ana', handler:'on', analyticsType: 'library'}); 
+var realvuAnalyticsAdapter = adapter({global:'realvu_ana', handler:'on', analyticsType: 'library'}); 
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: realvuAdapter,
