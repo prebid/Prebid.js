@@ -85,6 +85,11 @@ function UnrulyAdapter() {
         return
       }
 
+      const context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context')
+      if (context !== 'outstream') {
+        return
+      }
+
       const payload = {
         bidRequests: bidRequestBids
       }
