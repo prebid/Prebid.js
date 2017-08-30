@@ -140,7 +140,7 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   after(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
-  })
+  });
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
     beforeEach(() => {
       resetAuction();

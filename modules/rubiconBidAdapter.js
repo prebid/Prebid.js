@@ -5,7 +5,7 @@ import adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-
+import { userSync } from 'src/userSync';
 const RUBICON_BIDDER_CODE = 'rubicon';
 
 // use deferred function call since version isn't defined yet at this point
@@ -422,15 +422,16 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
 /**
  * syncEmily
  * @summary A user sync dependency for the Rubicon Project adapter
- * When enabled, creates an user sync iframe after a delay once the first auction is complete.
- * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
- * @example
- *  // Config example for Rubicon user sync
- *  $$PREBID_GLOBAL$$.setConfig({ rubicon: {
- *    userSync: {
- *      enabled: true,
- *      delay: 1000
- *    }
+ * Registers an Emily iframe user sync to be called/created later by Prebid
+ * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs which are off by default
+@example
+ *  // Config example for iframe user sync
+ *  $$PREBID_GLOBAL$$.setConfig({ userSync: {
+ *    syncEnabled: true,
+ *    pixelEnabled: true,
+ *    syncsPerBidder: 5,
+ *    syncDelay: 3000,
+ *    iframeEnabled: true
  *  }});
  * @return {boolean} Whether or not Emily synced
  */
@@ -440,25 +441,11 @@ function syncEmily(hasSynced) {
     return true;
   }
 
-  const defaultUserSyncConfig = {
-    enabled: false,
-    delay: 5000
-  };
   const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
-  let rubiConfig = $$PREBID_GLOBAL$$.getConfig('rubicon');
-  let publisherUserSyncConfig = rubiConfig && rubiConfig.userSync;
+  // register the sync with the Prebid (to be called later)
+  userSync.registerSync('iframe', 'rubicon', iframeUrl);
 
-  // Merge publisher user sync config with the defaults
-  let userSyncConfig = Object.assign(defaultUserSyncConfig, publisherUserSyncConfig);
-
-  // Check that user sync is enabled
-  if (!userSyncConfig.enabled) {
-    return false;
-  }
-
-  // Delay inserting the Emily iframe
-  setTimeout(() => utils.insertCookieSyncIframe(iframeUrl), Number(userSyncConfig.delay));
   return true;
 }
 

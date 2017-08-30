@@ -452,20 +452,9 @@ exports.insertElement = function(elm, doc, target) {
   } catch (e) {}
 };
 
-exports.insertPixel = function (url) {
+exports.triggerPixel = function (url) {
   const img = new Image();
-  img.id = _getUniqueIdentifierStr();
   img.src = url;
-  img.height = 0;
-  img.width = 0;
-  img.style.display = 'none';
-  img.onload = function() {
-    try {
-      this.parentNode.removeChild(this);
-    } catch (e) {
-    }
-  };
-  exports.insertElement(img);
 };
 
 /**
@@ -473,8 +462,9 @@ exports.insertPixel = function (url) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertCookieSyncIframe = function(url, encodeUri) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
+exports.insertUserSyncIframe = function(url) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, false);
+  iframeHtml = iframeHtml.replace('<iframe', '<iframe sandbox="allow-scripts"');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
@@ -511,7 +501,15 @@ exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
     url = encodeURI(url);
   }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${url}"></iframe>`;
+  return `<iframe id="${exports.getUniqueIdentifierStr()}"
+      frameborder="0"
+      allowtransparency="true"
+      marginheight="0" marginwidth="0"
+      width="0" hspace="0" vspace="0" height="0"
+      style="height:0p;width:0p;display:none;"
+      scrolling="no"
+      src="${url}">
+    </iframe>`;
 };
 
 /**
@@ -663,6 +661,14 @@ export function getBidderRequest(bidder, adUnitCode) {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
+}
+
+export function cookiesAreEnabled() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+  window.document.cookie = 'prebid.cookieTest';
+  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
 }
 
 /**

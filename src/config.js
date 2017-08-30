@@ -15,6 +15,12 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
+const DEFAULT_USERSYNC = {
+  syncEnabled: true,
+  pixelEnabled: true,
+  syncsPerBidder: 5,
+  syncDelay: 3000
+};
 
 const GRANULARITY_OPTIONS = {
   'LOW': 'low',
@@ -118,6 +124,8 @@ export function newConfig() {
       $$PREBID_GLOBAL$$.setS2SConfig(val);
     },
 
+    // userSync defaults
+    userSync: DEFAULT_USERSYNC
   };
 
   function hasGranularity(val) {
