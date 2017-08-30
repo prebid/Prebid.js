@@ -39,7 +39,6 @@ function TremorAdapter() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function (bidRequest) {
     const bids = bidRequest.bids || [];
-
     bids.filter(bid => valid(bid))
       .map(bid => {
         let url = generateUrl(bid);
