@@ -20,7 +20,7 @@ There are several analytics adapter plugins available to track header bidding pe
 | AppNexus                                                         | Contact vendor                                                                      | [Website](https://www.appnexus.com/en/publishers/header-bidding) |               |
 | PulsePoint                                                       | Contact vendor                                                                      | [Website](https://www.pulsepoint.com/header-bidding.html)        |               |
 | ShareThrough                                                     | Contact vendor                                                                      |                                                                  |               |
-| PrebidAnalytics by Roxot                                         | Free, see [terms](http://panel.prebidanalytics.com/account/pages/terms-of-service). | [Website](http://prebidanalytics.com/overview-examples)          |          0.22 |
+| PrebidAnalytics by Roxot                                         | Paid, see [pricing](http://prebidanalytics.com/#pricing). | [Website](http://prebidanalytics.com/overview-examples)          |          0.22 |
 | PubWise                                                          | Free, see [terms](http://admin.pubwise.io/terms)                                    | [Website](https://pubwise.io/)                                   |          0.24 |
 
 None of these analytics options are endorsed or supported by Prebid.org.
