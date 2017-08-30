@@ -1,5 +1,5 @@
 import { videoAdapters } from './adaptermanager';
-import { getBidRequest } from './utils';
+import { getBidRequest, deepAccess } from './utils';
 
 const VIDEO_MEDIA_TYPE = 'video';
 const INSTREAM = 'instream';
@@ -10,7 +10,8 @@ const OUTSTREAM = 'outstream';
  */
 export const videoAdUnit = adUnit => adUnit.mediaType === VIDEO_MEDIA_TYPE;
 const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
-export const hasNonVideoBidder = adUnit => adUnit.bids.filter(nonVideoBidder).length;
+export const hasNonVideoBidder = adUnit =>
+  adUnit.bids.filter(nonVideoBidder).length;
 
 /*
  * Validate that the assets required for video context are present on the bid
@@ -18,10 +19,7 @@ export const hasNonVideoBidder = adUnit => adUnit.bids.filter(nonVideoBidder).le
 export function videoBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
   const context =
-    bidRequest &&
-    bidRequest.mediaTypes &&
-    bidRequest.mediaTypes.video &&
-    bidRequest.mediaTypes.video.context;
+    bidRequest && deepAccess(bidRequest, 'mediaTypes.video.context');
 
   // if context not defined assume default 'instream' for video bids
   if (!bidRequest || !context || context === INSTREAM) {
