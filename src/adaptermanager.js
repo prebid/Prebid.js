@@ -48,9 +48,16 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           });
         }
 
+        if (adUnit.mediaTypes) {
+          if (utils.mediaTypesValid(adUnit.mediaTypes)) {
+            bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
+          } else {
+            utils.logError(`mediaTypes is not correctly configured`);
+          }
+        }
+
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
           'mediaType',
-          'mediaTypes',
           'renderer'
         ]));
 
