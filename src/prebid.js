@@ -342,11 +342,11 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
 };
 
 /**
- * @param {Object} defaults
- * @param {function} defaults.bidsBackHandler
- * @param {number} defaults.timeout
- * @param {Array} defaults.adUnits
- * @param {Array} defaults.adUnitCodes
+ * @param {Object} requestOptions
+ * @param {function} requestOptions.bidsBackHandler
+ * @param {number} requestOptions.timeout
+ * @param {Array} requestOptions.adUnits
+ * @param {Array} requestOptions.adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
