@@ -195,5 +195,6 @@ ServerBidAdapter.createNew = function() {
 
 adaptermanager.registerBidAdapter(new ServerBidAdapter, 'serverbid');
 adaptermanager.aliasBidAdapter('serverbid', 'connectad');
+adaptermanager.aliasBidAdapter('serverbid', 'oft-media');
 
 module.exports = ServerBidAdapter;
