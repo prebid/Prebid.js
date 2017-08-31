@@ -33,8 +33,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  */
 export default function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    callBids: function(bidsRequest) {
-      if (!bidsRequest.bids || !bidsRequest.bids.filter) {
+    callBids: function(bidderRequest) {
+      if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
 
@@ -51,7 +51,7 @@ export default function newBidder(spec) {
         bidmanager.addBidResponse(placementCode, bid);
       }
       function fillNoBids() {
-        bidsRequest.bids
+        bidderRequest.bids
           .map(bidRequest => bidRequest.placementCode)
           .forEach(placementCode => {
             if (placementCode && !placementCodesHandled[placementCode]) {
@@ -60,11 +60,15 @@ export default function newBidder(spec) {
           });
       }
 
-      const bidRequests = bidsRequest.bids.filter(filterAndWarn);
+      const bidRequests = bidderRequest.bids.filter(filterAndWarn);
       if (bidRequests.length === 0) {
         fillNoBids();
         return;
       }
+      const bidRequestMap = {};
+      bidRequests.forEach(bid => {
+        bidRequestMap[bid.bidId] = bid;
+      });
 
       let requests = spec.buildRequests(bidRequests);
       if (!requests || requests.length === 0) {
@@ -122,10 +126,6 @@ export default function newBidder(spec) {
       // If the adapter code fails, no bids should be added. After all the bids have been added, make
       // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
       function onSuccess(response) {
-        const bidRequestMap = {};
-        bidRequests.forEach(bid => {
-          bidRequestMap[bid.bidId] = bid;
-        });
         function addBidUsingRequestMap(bid) {
           const bidRequest = bidRequestMap[bid.requestId];
           if (bidRequest) {
