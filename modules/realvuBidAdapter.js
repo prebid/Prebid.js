@@ -1,19 +1,21 @@
+import adaptermanager from 'src/adaptermanager';
+
 var utils = require('src/utils.js');
 var adloader = require('src/adloader.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
-var Adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
 var realvuAdapter = function realvuAdapter() {
-  var baseAdapter = Adapter.createNew('realvu');
+  var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
     var pbids = params.bids;
     //
     utils.logMessage('realvuBidAdapter params: '+JSON.stringify(params)); 
     var boost_back = function(){
-      var adap=AppnexusAdapter.createNew();
-      var in_back=function(rez){
+      var adap = new AppnexusAdapter();
+      var in_back = function(rez){
         var bid_request = rez.pin.pbjs_bid;
         var callbackId = bid_request.bidId;
         //
@@ -43,10 +45,12 @@ var realvuAdapter = function realvuAdapter() {
     adloader.loadScript("//ac.realvu.net/realvu_boost.js",boost_back,1 );
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    createNew: exports.createNew
-  };
+    setBidderCode: baseAdapter.setBidderCode
+  });
 };
+
+adaptermanager.registerBidAdapter(new realvuAdapter(), 'realvu');
+
 module.exports = realvuAdapter;
