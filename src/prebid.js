@@ -116,7 +116,7 @@ function setRenderSize(doc, width, height) {
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
  * @alias module:$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr
- * @return {array}  returnObj return bids array
+ * @return {Array}  returnObj return bids array
  */
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr', arguments);
@@ -133,7 +133,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
- * @returns {object}  returnObj return bids
+ * @returns {Object}  returnObj return bids
  */
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
   return $$PREBID_GLOBAL$$.getAdserverTargeting(adUnitCode)[adUnitCode];
@@ -141,7 +141,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 /**
  * returns all ad server targeting for all ad units
- * @return {object} Map of adUnitCodes and targeting values []
+ * @return {Object} Map of adUnitCodes and targeting values []
  * @alias module:$$PREBID_GLOBAL$$.getAdserverTargeting
  */
 
@@ -168,7 +168,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 /**
  * This function returns the bid responses at the given moment.
  * @alias module:$$PREBID_GLOBAL$$.getBidResponses
- * @return {object}            map | object that contains the bidResponses
+ * @return {Object}            map | object that contains the bidResponses
  */
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
@@ -193,7 +193,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 
 /**
  * Returns bidResponses for the specified adUnitCode
- * @param  {String} adUnitCode adUnitCode
+ * @param  {string} adUnitCode adUnitCode
  * @alias module:$$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
@@ -318,7 +318,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
- * @param  {String} adUnitCode the adUnitCode to remove
+ * @param  {string} adUnitCode the adUnitCode to remove
  * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
  */
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
@@ -342,11 +342,11 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
 };
 
 /**
- *
- * @param bidsBackHandler
- * @param timeout
- * @param adUnits
- * @param adUnitCodes
+ * @param {Object} requestOptions
+ * @param {function} requestOptions.bidsBackHandler
+ * @param {number} requestOptions.timeout
+ * @param {Array} requestOptions.adUnits
+ * @param {Array} requestOptions.adUnitCodes
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
@@ -443,9 +443,9 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
 };
 
 /**
- * @param {String} event the name of the event
+ * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
- * @param {String} id an identifier in the context of the event
+ * @param {string} id an identifier in the context of the event
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -473,9 +473,9 @@ $$PREBID_GLOBAL$$.onEvent = function (event, handler, id) {
 };
 
 /**
- * @param {String} event the name of the event
+ * @param {string} event the name of the event
  * @param {Function} handler a callback to remove from the event
- * @param {String} id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
+ * @param {string} id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
  */
 $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.offEvent', arguments);
@@ -488,10 +488,10 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 
 /**
  * Add a callback event
- * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
+ * @param {string} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
  * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:$$PREBID_GLOBAL$$.addCallback
- * @returns {String} id for callback
+ * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Please use onEvent instead.
@@ -514,7 +514,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
  * Remove a callback event
  * //@param {string} cbId id of the callback to remove
  * @alias module:$$PREBID_GLOBAL$$.removeCallback
- * @returns {String} id for callback
+ * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Please use offEvent instead.
@@ -528,7 +528,7 @@ $$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
 /**
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
- * @param  {String} bidderCode [description]
+ * @param  {string} bidderCode [description]
  */
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
@@ -567,7 +567,7 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
 
 /**
  * Wrapper to bidfactory.createBid()
- * @param  {String} statusCode [description]
+ * @param  {string} statusCode [description]
  * @return {Object} bidResponse [description]
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
@@ -577,7 +577,7 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 
 /**
  * Wrapper to bidmanager.addBidResponse
- * @param {String} adUnitCode [description]
+ * @param {string} adUnitCode [description]
  * @param {Object} bid [description]
  *
  * @deprecated This function will be removed in Prebid 1.0
@@ -592,7 +592,7 @@ $$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
 
 /**
  * Wrapper to adloader.loadScript
- * @param  {String} tagSrc [description]
+ * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
  */
 $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
@@ -602,7 +602,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 
 /**
  * Will enable sending a prebid.js to data provider specified
- * @param  {object} config object {provider : 'string', options : {}}
+ * @param  {Object} config object {provider : 'string', options : {}}
  */
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -624,7 +624,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 
 /**
  * Sets a default price granularity scheme.
- * @param {String|Object} granularity - the granularity scheme.
+ * @param {string|Object} granularity - the granularity scheme.
  * @deprecated - use pbjs.setConfig({ priceGranularity: <granularity> })
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
@@ -654,7 +654,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
 /**
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
- * @param {object} options options for video tag
+ * @param {Object} options options for video tag
  *
  * @deprecated Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead.
  * This function will be removed in Prebid 1.0.
@@ -701,7 +701,7 @@ $$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
- * @return {array} array containing highest cpm bid object(s)
+ * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
@@ -746,13 +746,13 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
 
 /**
  * Get Prebid config options
- * @param {object} options
+ * @param {Object} options
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
 /**
  * Set Prebid config options
- * @param {object} options
+ * @param {Object} options
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 
@@ -773,14 +773,15 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
- *                        the Prebid script has been fully loaded.
+ * @memberof $$PREBID_GLOBAL$$
+ * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                            the Prebid script has been fully loaded.
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-$$PREBID_GLOBAL$$.cmd.push = function(cmd) {
-  if (typeof cmd === 'function') {
+$$PREBID_GLOBAL$$.cmd.push = function(command) {
+  if (typeof command === 'function') {
     try {
-      cmd.call();
+      command.call();
     } catch (e) {
       utils.logError('Error processing command :' + e.message);
     }
