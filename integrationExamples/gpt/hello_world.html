@@ -14,20 +14,16 @@
 <html>
 <head>
     <script>
-      var PREBID_TIMEOUT = 700;
+      var PREBID_TIMEOUT = 2000;
 
       var adUnits = [{
         code: 'div-gpt-ad-1460505748561-0',
-        sizes: [[300, 250], [300,600]],
+        sizes: [[300, 250]],
 
         // Replace this object to test a new Adapter!
         bids: [{
-          bidder: 'appnexus',
-          params: {
-            placementId: '10433394'
-          }
+          bidder: 'yieldmo'
         }]
-
       }];
 
       var pbjs = pbjs || {};
@@ -88,6 +84,8 @@
         googletag.enableServices();
       });
     </script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 
 <body>

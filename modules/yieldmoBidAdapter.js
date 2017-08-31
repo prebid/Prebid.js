@@ -123,9 +123,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       bidmanager.addBidResponse(placementCode, bid);
     } else {
       // no response data
-      // @if NODE_ENV='debug'
       if (bidObj) { utils.logMessage('No prebid response from yieldmo for placementCode: ' + bidObj.placementCode); }
-      // @endif
       bid = bidfactory.createBid(2, bidObj);
       bid.bidderCode = 'yieldmo';
       bidmanager.addBidResponse(placementCode, bid);
@@ -143,9 +141,9 @@ var YieldmoAdapter = function YieldmoAdapter() {
     });
   }
 
-  return {
+  return Object.assign(this, {
     callBids: _callBids
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new YieldmoAdapter(), 'yieldmo');
