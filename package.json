@@ -60,7 +60,7 @@
     "gulp-util": "^3.0.0",
     "gulp-webdriver": "^1.0.1",
     "istanbul": "^0.4.5",
-    "istanbul-instrumenter-loader": "^2.0.0",
+    "istanbul-instrumenter-loader": "^3.0.0",
     "json-loader": "^0.5.1",
     "karma": "^1.7.0",
     "karma-babel-preprocessor": "^6.0.1",
