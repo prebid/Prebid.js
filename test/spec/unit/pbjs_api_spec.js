@@ -339,6 +339,94 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('getAdserverTargeting', function() {
+    const customConfigObject = {
+      'buckets': [
+        { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
+        { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05},
+        { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
+        { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+      ]
+    };
+    let currentPriceBucket;
+    let bid;
+
+    before(() => {
+      resetAuction();
+      currentPriceBucket = configObj.getConfig('priceGranularity');
+      configObj.setConfig({ priceGranularity: customConfigObject });
+      bid = Object.assign({},
+        bidfactory.createBid(2),
+        getBidResponses()[5]
+      );
+    });
+
+    after(() => {
+      configObj.setConfig({ priceGranularity: currentPriceBucket });
+      resetAuction();
+    })
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$._bidsReceived = [];
+    })
+
+    it('should get correct hb_pb when using bid.cpm is between 0 to 5', () => {
+      bid.cpm = 2.1234;
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          hb_adid: '275bd666f5a5a5d',
+          hb_bidder: 'brealtime',
+          hb_pb: '2.12',
+          hb_size: '300x250'
+        }
+      }
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+    });
+
+    it('should get correct hb_pb when using bid.cpm is between 5 to 8', () => {
+      bid.cpm = 6.78;
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          hb_adid: '275bd666f5a5a5d',
+          hb_bidder: 'brealtime',
+          hb_pb: '6.75',
+          hb_size: '300x250'
+        }
+      }
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+    });
+
+    it('should get correct hb_pb when using bid.cpm is between 8 to 20', () => {
+      bid.cpm = 19.5234;
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          hb_adid: '275bd666f5a5a5d',
+          hb_bidder: 'brealtime',
+          hb_pb: '19.50',
+          hb_size: '300x250'
+        }
+      }
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+    });
+
+    it('should get correct hb_pb when using bid.cpm is between 20 to 25', () => {
+      bid.cpm = 21.5234;
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      var expected = {
+        '/19968336/header-bid-tag-0': {
+          hb_adid: '275bd666f5a5a5d',
+          hb_bidder: 'brealtime',
+          hb_pb: '21.00',
+          hb_size: '300x250'
+        }
+      }
+      expect($$PREBID_GLOBAL$$.getAdserverTargeting()).to.deep.equal(expected);
+    });
+  });
+
   describe('getBidResponses', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       var result = $$PREBID_GLOBAL$$.getBidResponses();
@@ -1300,7 +1388,7 @@ describe('Unit: Prebid Module', function () {
       let priceGranularity = configObj.getConfig('priceGranularity');
       let newCustomPriceBucket = configObj.getConfig('customPriceBucket');
       expect(goodConfig).to.deep.equal(newCustomPriceBucket);
-      expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      expect(priceGranularity).to.equal(CONSTANTS.GRANULARITY_OPTIONS.CUSTOM);
     });
   });
 
