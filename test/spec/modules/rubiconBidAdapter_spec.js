@@ -1033,6 +1033,7 @@ describe('the rubicon adapter', () => {
     let server;
     let addBidResponseAction;
     let rubiconAdapter;
+    let userSyncStub;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
     beforeEach(() => {
@@ -1040,7 +1041,7 @@ describe('the rubicon adapter', () => {
 
       server = sinon.fakeServer.create();
       // monitor userSync registrations
-      sinon.spy(userSync, 'registerSync');
+      userSyncStub = sinon.stub(userSync, 'registerSync');
 
       sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
         bids.push(bid);
@@ -1097,26 +1098,26 @@ describe('the rubicon adapter', () => {
 
     afterEach(() => {
       server.restore();
-      userSync.registerSync.restore();
+      userSyncStub.restore();
     });
 
     it('should register the Emily iframe', () => {
-      expect(userSync.registerSync.calledOnce).to.be.false;
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-      expect(userSync.registerSync.calledOnce).to.be.true;
-      expect(userSync.registerSync.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
+      expect(userSyncStub.calledOnce).to.be.true;
+      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
     });
 
     it('should not register the Emily iframe more than once', () => {
-      expect(userSync.registerSync.calledOnce).to.be.false;
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-      expect(userSync.registerSync.calledOnce).to.be.true;
+      expect(userSyncStub.calledOnce).to.be.true;
       // run another auction, should still have only been called once
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-      expect(userSync.registerSync.calledOnce).to.be.true;
+      expect(userSyncStub.calledOnce).to.be.true;
     });
   });
 });

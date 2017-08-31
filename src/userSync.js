@@ -1,21 +1,25 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
-export function newUserSync(userSyncConfig) {
+/**
+ * Factory function which creates a new UserSyncPool.
+ *
+ * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
+ *   UserSync object needs in order to behave properly.
+ */
+export function newUserSync(userSyncDependencies) {
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
   let queue = getDefaultQueue();
 
-  // Since user syncs require cookie access we want to prevent sending syncs if cookies are not supported
-  let cookiesAreSupported = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
   // Whether or not user syncs have been trigger on this page load
   let hasFired = false;
   // How many bids for each adapter
   let numAdapterBids = {};
 
   // Use what is in config by default
-  userSyncConfig = userSyncConfig || config.getConfig('userSync');
+  const config = userSyncDependencies.config;
 
   /**
    * @function getDefaultQueue
@@ -36,7 +40,7 @@ export function newUserSync(userSyncConfig) {
    * @private
    */
   function fireSyncs() {
-    if (!userSyncConfig.syncEnabled || !cookiesAreSupported || hasFired) {
+    if (!config.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
       return;
     }
 
@@ -59,7 +63,7 @@ export function newUserSync(userSyncConfig) {
    * @private
    */
   function fireImagePixels() {
-    if (!userSyncConfig.pixelEnabled) {
+    if (!config.pixelEnabled) {
       return;
     }
     // Randomize the order of the pixels before firing
@@ -79,7 +83,7 @@ export function newUserSync(userSyncConfig) {
    * @private
    */
   function loadIframes() {
-    if (!userSyncConfig.iframeEnabled) {
+    if (!config.iframeEnabled) {
       return;
     }
     // Randomize the order of these syncs just like the pixels above
@@ -121,19 +125,19 @@ export function newUserSync(userSyncConfig) {
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
   publicApi.registerSync = (type, bidder, url) => {
-    if (!userSyncConfig.syncEnabled || !utils.isArray(queue[type])) {
+    if (!config.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "{$type}" not supported`);
     }
     if (!bidder) {
       return utils.logWarn(`Bidder is required for registering sync`);
     }
-    if (Number(numAdapterBids[bidder]) >= userSyncConfig.syncsPerBidder) {
+    if (Number(numAdapterBids[bidder]) >= config.syncsPerBidder) {
       return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
     }
     // All bidders are enabled by default. If specified only register for enabled bidders.
-    let hasEnabledBidders = userSyncConfig.enabledBidders && userSyncConfig.enabledBidders.length;
-    if (hasEnabledBidders && userSyncConfig.enabledBidders.indexOf(bidder) < 0) {
-      return utils.logWarn(`Bidder "{$bidder}" not supported`);
+    let hasEnabledBidders = config.enabledBidders && config.enabledBidders.length;
+    if (hasEnabledBidders && config.enabledBidders.indexOf(bidder) < 0) {
+      return utils.logWarn(`Bidder "${bidder}" not supported`);
     }
     queue[type].push([bidder, url]);
     numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
@@ -158,7 +162,7 @@ export function newUserSync(userSyncConfig) {
    * @public
    */
   publicApi.syncUsersOverride = () => {
-    if (userSyncConfig.enableOverride) {
+    if (config.enableOverride) {
       publicApi.syncUsers();
     }
   };
@@ -166,4 +170,27 @@ export function newUserSync(userSyncConfig) {
   return publicApi;
 }
 
-export const userSync = newUserSync();
+const browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+
+export const userSync = newUserSync({
+  config: config.getConfig('userSync'),
+  browserSupportsCookies: browserSupportsCookies
+});
+
+/**
+ * @typedef {Object} UserSyncDependencies
+ *
+ * @property {UserSyncConfig} config
+ * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
+ */
+
+/**
+ * @typedef {Object} UserSyncConfig
+ *
+ * @property {boolean} enableOverride
+ * @property {boolean} syncEnabled
+ * @property {boolean} pixelEnabled
+ * @property {boolean} iframeEnabled
+ * @property {int} syncsPerBidder
+ * @property {string[]} enabledBidders
+ */

@@ -2,20 +2,26 @@ import { expect } from 'chai';
 import { config } from 'src/config';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
-let { userSync, newUserSync } = require('../../src/userSync');
+let { newUserSync } = require('../../src/userSync');
 
 describe('user sync', () => {
   let triggerPixelStub;
   let logWarnStub;
   let timeoutStub;
   let shuffleStub;
-  let insertElementStub;
   let getUniqueIdentifierStrStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
   function getUserSyncConfig(userSyncConfig) {
     return Object.assign({}, defaultUserSyncConfig, userSyncConfig);
+  }
+  function newTestUserSync(configOverrides, disableBrowserCookies) {
+    const thisConfig = Object.assign({}, defaultUserSyncConfig, configOverrides);
+    return newUserSync({
+      config: thisConfig,
+      browserSupportsCookies: !disableBrowserCookies,
+    })
   }
 
   beforeEach(() => {
@@ -35,7 +41,7 @@ describe('user sync', () => {
   });
 
   it('should register and fire a pixel URL', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
@@ -43,13 +49,13 @@ describe('user sync', () => {
   });
 
   it('should clear queue after sync', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.syncUsers();
     expect(triggerPixelStub.callCount).to.equal(0);
   });
 
   it('should delay firing a pixel by the expected amount', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     // This implicitly tests cookie and browser support
     userSync.syncUsers(999);
@@ -57,7 +63,7 @@ describe('user sync', () => {
   });
 
   it('should register and fires multiple pixel URLs', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.syncUsers();
@@ -69,14 +75,14 @@ describe('user sync', () => {
   });
 
   it('should not register pixel URL since it is not supported', () => {
-    userSync = newUserSync(getUserSyncConfig({pixelEnabled: false}));
+    const userSync = newTestUserSync({pixelEnabled: false});
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', () => {
-    userSync = newUserSync(getUserSyncConfig({iframeEnabled: true}));
+    const userSync = newTestUserSync({iframeEnabled: true});
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     let iframe = window.document.getElementById(idPrefix + lastId);
@@ -85,7 +91,7 @@ describe('user sync', () => {
   });
 
   it('should only trigger syncs once per page', () => {
-    userSync = newUserSync(getUserSyncConfig({pixelEnabled: true}));
+    const userSync = newTestUserSync({pixelEnabled: true});
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
@@ -112,26 +118,26 @@ describe('user sync', () => {
   // });
 
   it('should prevent registering invalid type', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.registerSync('invalid', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
   });
 
   it('should expose the syncUsers method for the publisher to manually trigger syncs', () => {
     // syncUsersOverride should do nothing by default
-    userSync = newUserSync();
+    let userSync = newTestUserSync();
     let syncUsersSpy = sinon.spy(userSync, 'syncUsers');
     userSync.syncUsersOverride();
     expect(syncUsersSpy.notCalled).to.be.true;
     // syncUsersOverride should trigger syncUsers if enableOverride is on
-    userSync = newUserSync(getUserSyncConfig({enableOverride: true}));
+    userSync = newTestUserSync({enableOverride: true});
     syncUsersSpy = sinon.spy(userSync, 'syncUsers');
     userSync.syncUsersOverride();
     expect(syncUsersSpy.called).to.be.true;
   });
 
   it('should limit the sync per bidder', () => {
-    userSync = newUserSync(getUserSyncConfig({syncsPerBidder: 2}));
+    const userSync = newTestUserSync({syncsPerBidder: 2});
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
@@ -144,7 +150,7 @@ describe('user sync', () => {
   });
 
   it('should balance out bidder requests', () => {
-    userSync = newUserSync();
+    const userSync = newTestUserSync();
     userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
     userSync.registerSync('image', 'atestBidder', 'http://example.com/3');
     userSync.registerSync('image', 'btestBidder', 'http://example.com/2');
@@ -160,7 +166,7 @@ describe('user sync', () => {
   });
 
   it('should disable user sync', () => {
-    userSync = newUserSync(getUserSyncConfig({syncEnabled: false}));
+    const userSync = newTestUserSync({syncEnabled: false});
     userSync.registerSync('pixel', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
     userSync.syncUsers();
@@ -168,7 +174,7 @@ describe('user sync', () => {
   });
 
   it('should only sync enabled bidders', () => {
-    userSync = newUserSync(getUserSyncConfig({enabledBidders: ['testBidderA']}));
+    const userSync = newTestUserSync({enabledBidders: ['testBidderA']});
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();
