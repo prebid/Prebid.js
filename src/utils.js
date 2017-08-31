@@ -1,8 +1,5 @@
-var CONSTANTS = require('./constants.json');
-
-var objectType_object = 'object';
-var objectType_string = 'string';
-var objectType_number = 'number';
+import { config } from './config';
+var CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
 
@@ -14,8 +11,7 @@ var toString = Object.prototype.toString;
 let infoLogger = null;
 try {
   infoLogger = console.info.bind(window.console);
-}
-catch (e) {
+} catch (e) {
 }
 
 /*
@@ -89,8 +85,7 @@ exports.tryAppendQueryString = function (existingUrl, key, value) {
 exports.parseQueryStringParameters = function (queryObj) {
   var result = '';
   for (var k in queryObj) {
-    if (queryObj.hasOwnProperty(k))
-      { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
 
   return result;
@@ -112,11 +107,11 @@ exports.transformAdServerTargetingObj = function (targeting) {
  * @param  {array[array|number]} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {array[string]}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
-exports.parseSizesInput = function (sizeObj) {
+export function parseSizesInput(sizeObj) {
   var parsedSizes = [];
 
   // if a string for now we can assume it is a single size, like "300x250"
-  if (typeof sizeObj === objectType_string) {
+  if (typeof sizeObj === 'string') {
     // multiple sizes will be comma-separated
     var sizes = sizeObj.split(',');
 
@@ -130,18 +125,18 @@ exports.parseSizesInput = function (sizeObj) {
         }
       }
     }
-  } else if (typeof sizeObj === objectType_object) {
+  } else if (typeof sizeObj === 'object') {
     var sizeArrayLength = sizeObj.length;
 
     // don't process empty array
     if (sizeArrayLength > 0) {
       // if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      if (sizeArrayLength === 2 && typeof sizeObj[0] === objectType_number && typeof sizeObj[1] === objectType_number) {
-        parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj));
+      if (sizeArrayLength === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
+        parsedSizes.push(parseGPTSingleSizeArray(sizeObj));
       } else {
         // otherwise, we must be a MultiSize array
         for (var i = 0; i < sizeArrayLength; i++) {
-          parsedSizes.push(this.parseGPTSingleSizeArray(sizeObj[i]));
+          parsedSizes.push(parseGPTSingleSizeArray(sizeObj[i]));
         }
       }
     }
@@ -152,9 +147,9 @@ exports.parseSizesInput = function (sizeObj) {
 
 // parse a GPT style sigle size array, (i.e [300,250])
 // into an AppNexus style string, (i.e. 300x250)
-exports.parseGPTSingleSizeArray = function (singleSize) {
+export function parseGPTSingleSizeArray(singleSize) {
   // if we aren't exactly 2 items in this array, it is invalid
-  if (this.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (exports.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
     return singleSize[0] + 'x' + singleSize[1];
   }
 };
@@ -162,6 +157,8 @@ exports.parseGPTSingleSizeArray = function (singleSize) {
 exports.getTopWindowLocation = function () {
   let location;
   try {
+    // force an exception in x-domain enviornments. #1509
+    window.top.location.toString();
     location = window.top.location;
   } catch (e) {
     location = window.location;
@@ -217,12 +214,13 @@ var errLogFn = (function (hasLogger) {
 }(hasConsoleLogger()));
 
 var debugTurnedOn = function () {
-  if ($$PREBID_GLOBAL$$.logging === false && _loggingChecked === false) {
-    $$PREBID_GLOBAL$$.logging = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+  if (config.getConfig('debug') === false && _loggingChecked === false) {
+    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    config.setConfig({ debug });
     _loggingChecked = true;
   }
 
-  return !!$$PREBID_GLOBAL$$.logging;
+  return !!config.getConfig('debug');
 };
 
 exports.debugTurnedOn = debugTurnedOn;
@@ -266,6 +264,8 @@ var getParameterByName = function (name) {
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
+
+exports.getParameterByName = getParameterByName;
 
 /**
  * This function validates paramaters.
@@ -440,8 +440,7 @@ exports.insertElement = function(elm, doc, target) {
   let elToAppend;
   if (target) {
     elToAppend = doc.getElementsByTagName(target);
-  }
-  else {
+  } else {
     elToAppend = doc.getElementsByTagName('head');
   }
   try {
@@ -455,7 +454,7 @@ exports.insertElement = function(elm, doc, target) {
 
 exports.insertPixel = function (url) {
   const img = new Image();
-  img.id = this.getUniqueIdentifierStr();
+  img.id = _getUniqueIdentifierStr();
   img.src = url;
   img.height = 0;
   img.width = 0;
@@ -466,7 +465,7 @@ exports.insertPixel = function (url) {
     } catch (e) {
     }
   };
-  this.insertElement(img);
+  exports.insertElement(img);
 };
 
 /**
@@ -479,7 +478,7 @@ exports.insertCookieSyncIframe = function(url, encodeUri) {
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
-  this.insertElement(iframe);
+  exports.insertElement(iframe);
 };
 
 /**
@@ -534,8 +533,7 @@ exports.getIframeDocument = function (iframe) {
     } else {
       doc = iframe.contentDocument;
     }
-  }
-  catch (e) {
+  } catch (e) {
     this.logError('Cannot get iframe document', e);
   }
 
@@ -622,7 +620,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes(bid && bid.placementCode || bid && bid.adUnitCode);
+  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
 }
 
 /**
@@ -663,6 +661,38 @@ export function getBidderRequestAllAdUnits(bidder) {
 export function getBidderRequest(bidder, adUnitCode) {
   return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
     return request.bids
-        .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
+      .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
   }) || { start: null, requestId: null };
+}
+
+/**
+ *
+ * https://stackoverflow.com/a/34890276/428704
+ * @export
+ * @param {array} xs
+ * @param {string} key
+ * @returns {${key_value}: ${groupByArray}, key_value: {groupByArray}}
+ */
+export function groupBy(xs, key) {
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+}
+
+/**
+ * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+ * @param {object} obj The object containing the values you would like to access.
+ * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+ * @returns {*} The value found at the specified object path, or undefined if path is not found.
+ */
+export function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (let i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
 }
