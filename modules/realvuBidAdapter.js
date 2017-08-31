@@ -34,7 +34,7 @@ var realvuAdapter = function realvuAdapter() {
         var sizes = utils.parseSizesInput(bid_rq.sizes);
         top.realvu_boost.addUnitById({
           partner_id: bid_rq.params.partnerId,
-          unit_id: bid_rq.params.unitId,
+          unit_id: bid_rq.code,
           callback:in_back,
           pbjs_bid:bid_rq,
           size:sizes[0],
