@@ -1,8 +1,8 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
-import adaptermanager from 'src/adaptermanager';
 import newBidder from 'src/adapters/bidderFactory';
 import { POST } from '../src/ajax';
+import { NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
@@ -26,6 +26,7 @@ const NATIVE_MAPPING = {
 
 const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [VIDEO, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -339,8 +340,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
+// TODO: Before this PR merges, export the "spec" for testing and make this the "registerAdapter" call.
+// We'll have to simplify the unit tests first, though... and right now it's valuable to know that they
+// still work.
 export const adapter = newBidder(spec);
-
-adaptermanager.registerBidAdapter(adapter, 'appnexusAst', {
-  supportedMediaTypes: ['video', 'native']
-});

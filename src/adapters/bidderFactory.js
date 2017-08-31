@@ -1,4 +1,5 @@
 import Adapter from 'src/adapter';
+import adaptermanager from 'src/adaptermanager';
 import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
@@ -32,7 +33,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
 export default function newBidder(spec) {
-  return Object.assign(new Adapter(spec.code), {
+  const bidder = Object.assign(new Adapter(spec.code), {
     callBids: function(bidderRequest) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
@@ -178,6 +179,23 @@ export default function newBidder(spec) {
     bid.bidderCode = spec.code;
     return bid;
   }
+
+  const mediaTypes = Array.isArray(spec.supportedMediaTypes)
+    ? { supportedMediaTypes: spec.supportedMediaTypes }
+    : undefined;
+  adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
+
+  if (Array.isArray(spec.aliases)) {
+    spec.aliases.forEach(alias => {
+      adaptermanager.aliasBidAdapter(spec.code, alias);
+    });
+  }
+
+  // TODO: Before this PR merges, rename this function and stop returning the bidder.
+  // I'm returning it for now to prove that the appnexusAstAdapter_spec tests still pass.
+  // Once that's established, those tests should be simplified so that they only test the
+  // "spec" methods.
+  return bidder;
 }
 
 /**
@@ -219,6 +237,8 @@ export default function newBidder(spec) {
  *
  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
  *   one as is used in the call to registerBidAdapter
+ * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
+ * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
  * @property {function(object): boolean} areParamsValid Determines whether or not the given object has all the params
  *   needed to make a valid request.
  * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
