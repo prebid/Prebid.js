@@ -55,11 +55,13 @@ describe('kargo adapter tests', function () {
   afterEach(() => {
     sandbox.restore();
 
-    for (let cookie of cookies) {
+    for (let key in cookies) {
+      let cookie = cookies[key];
       removeCookie(cookie);
     }
 
-    for (let localStorageItem of localStorageItems) {
+    for (let key in localStorageItems) {
+      let localStorageItem = localStorageItems[key];
       localStorage.removeItem(localStorageItem);
     }
 
