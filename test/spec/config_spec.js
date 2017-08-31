@@ -128,7 +128,7 @@ describe('config API', () => {
       }]
     };
     setConfig({ priceGranularity: goodConfig });
-    expect(getConfig('priceGranularity')).to.be.equal('medium');
+    expect(getConfig('priceGranularity')).to.be.equal('custom');
     expect(getConfig('customPriceBucket')).to.equal(goodConfig);
   });
 

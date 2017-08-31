@@ -269,12 +269,10 @@ function bidToTag(bid) {
 
         // if the mapping for this identifier specifies required server
         // params via the `serverParams` object, merge that in
-        const params = Object.assign({},
-          bid.nativeParams[key],
-          NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams
+        nativeRequest[requestKey] = Object.assign({},
+          NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams,
+          bid.nativeParams[key]
         );
-
-        nativeRequest[requestKey] = params;
       });
 
       tag.native = {layouts: [nativeRequest]};

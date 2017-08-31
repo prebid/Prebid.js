@@ -441,7 +441,7 @@ function syncEmily(hasSynced) {
   }
 
   const defaultUserSyncConfig = {
-    enabled: true,
+    enabled: false,
     delay: 5000
   };
   const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
