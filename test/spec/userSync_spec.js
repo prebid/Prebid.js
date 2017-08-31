@@ -101,21 +101,12 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(1)).to.be.null;
   });
 
-  // Since cookie support is only checked when the module is loaded this test will not work, but a test that covers
-  // this scenario is important and this should be revisited.
-  // it('should not fire syncs since cookies are not supported', () => {
-  //   let isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser', () => true);
-  //   setUserSyncConfig({pixelEnabled: true});
-  //   userSync = newUserSync(config.getConfig('userSync'));
-  //   userSync.registerSync('image', 'testBidder', 'http://example.com');
-  //   userSync.syncUsers();
-  //   expect(triggerPixelStub.getCall(0)).to.be.null;
-  //   isSafariBrowserStub.restore();
-  //   let cookiesAreEnabledStub = sinon.stub(utils, 'cookiesAreEnabled', () => false);
-  //   userSync.registerSync('image', 'testBidder', 'http://example.com');
-  //   userSync.syncUsers();
-  //   expect(triggerPixelStub.getCall(0)).to.be.null;
-  // });
+  it('should not fire syncs if cookies are not supported', () => {
+    const userSync = newTestUserSync({pixelEnabled: true}, true);
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.be.null;
+  });
 
   it('should prevent registering invalid type', () => {
     const userSync = newTestUserSync();
