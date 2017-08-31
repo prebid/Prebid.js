@@ -89,6 +89,11 @@ a[href^="https://prebid.org/"]:after {
   background: #eee;
 }
 
+.bs-docs-masthead .btn.btn-callout {
+    background: #ec971f;
+    color: #fefefe;
+}
+
 .btn.btn-outline {
   color: #FF8800;
   color: #f0ad4e;
@@ -393,4 +398,8 @@ table:not(.jsfiddle-line-number) {
 
 div.pl-doc-entry{
   position: absolute;
+}
+
+.prebid-mobile-notice {
+    margin-top: 2em;
 }
