@@ -25,6 +25,7 @@ const NATIVE_MAPPING = {
   },
   sponsoredBy: 'sponsored_by'
 };
+const SOURCE = 'pbjs';
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -142,7 +143,14 @@ function AppnexusAstAdapter() {
       });
 
     if (!utils.isEmpty(tags)) {
-      const payloadJson = {tags: [...tags], user: userObj};
+      const payloadJson = {
+        tags: [...tags],
+        user: userObj,
+        sdk: {
+          source: SOURCE,
+          version: '$prebid.version$'
+        }
+      };
       if (member > 0) {
         payloadJson.member_id = member;
       }
