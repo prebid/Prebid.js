@@ -257,7 +257,7 @@ export function newBidder(spec) {
  * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
  *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
  *   bids will be discarded.
- * @property {function(): UserSyncInfo[]} fetchUserSyncs
+ * @property {function(): UserSyncInfo[]} [fetchUserSyncs]
  */
 
 /**

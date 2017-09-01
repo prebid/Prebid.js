@@ -1,6 +1,6 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
-import { registerBidder, newBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from 'src/adapters/bidderFactory';
 import { POST } from '../src/ajax';
 import { NATIVE, VIDEO } from 'src/mediaTypes';
 
@@ -24,7 +24,7 @@ const NATIVE_MAPPING = {
   sponsoredBy: 'sponsored_by'
 };
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, NATIVE],
 
@@ -339,10 +339,5 @@ function parseMediaType(rtbBid) {
     return 'banner';
   }
 }
-
-// TODO: Before this PR merges, export the "spec" for testing and replace this with the "registerAdapter" call.
-// We'll have to simplify the unit tests first, though... and right now it's valuable to know that they
-// still work.
-export const adapter = newBidder(spec);
 
 registerBidder(spec);

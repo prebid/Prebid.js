@@ -339,7 +339,6 @@ describe('registerBidder', () => {
       areParamsValid: function() { },
       buildRequests: function() { },
       interpretResponse: function() { },
-      fetchUserSyncs: function() { }
     };
   }
 
