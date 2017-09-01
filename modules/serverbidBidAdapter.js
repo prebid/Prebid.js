@@ -10,11 +10,11 @@ const ServerBidAdapter = function ServerBidAdapter() {
 
   const CONFIG = {
     'serverbid': {
-      'BASE_URI':           'https://e.serverbid.com/api/v2',
+      'BASE_URI': 'https://e.serverbid.com/api/v2',
       'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
     },
     'connectad': {
-      'BASE_URI':           'https://i.connectad.io/api/v2',
+      'BASE_URI': 'https://i.connectad.io/api/v2',
       'SMARTSYNC_BASE_URI': 'https://s.connectad.io/ss'
     }
   };
@@ -53,15 +53,17 @@ const ServerBidAdapter = function ServerBidAdapter() {
     '800x250'
   ];
 
-  sizeMap[77]  = '970x90';
+  sizeMap[77] = '970x90';
   sizeMap[123] = '970x250';
-  sizeMap[43]  = '300x600';
+  sizeMap[43] = '300x600';
 
   const bidIds = [];
 
   baseAdapter.callBids = function(params) {
-    if (params && params.bids && utils.isArray(params.bids)
-        && params.bids.length && CONFIG[params.bidderCode]) {
+    if (params && params.bids &&
+        utils.isArray(params.bids) &&
+        params.bids.length &&
+        CONFIG[params.bidderCode]) {
       const config = CONFIG[params.bidderCode];
       config.request = window[params.bidderCode.toUpperCase() + '_CONFIG'];
       if (!window.SMARTSYNC) {
@@ -193,7 +195,7 @@ ServerBidAdapter.createNew = function() {
   return new ServerBidAdapter();
 };
 
-adaptermanager.registerBidAdapter(new ServerBidAdapter, 'serverbid');
+adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 adaptermanager.aliasBidAdapter('serverbid', 'connectad');
 adaptermanager.aliasBidAdapter('serverbid', 'oft-media');
 
