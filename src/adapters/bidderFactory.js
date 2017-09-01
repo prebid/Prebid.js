@@ -1,10 +1,10 @@
 import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
+import { ajax } from 'src/ajax';
 import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 
-import { ajax, GET, POST } from 'src/ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution } from 'src/utils';
 
 /**
@@ -107,38 +107,52 @@ export function newBidder(spec) {
         requests = [requests];
       }
 
+      // After all the responses have come back, fill up the "no bid" bids and
+      // register any required usersync pixels.
+      const responses = [];
+      function afterAllResponses() {
+        fillNoBids();
+
+        if (spec.getUserSyncs) {
+          // TODO: Before merge, replace this empty object with the real config values.
+          // Then register them with the UserSync pool. This is waiting on the UserSync PR
+          // to be merged first, though.
+          spec.getUserSyncs({ }, responses);
+        }
+      }
+
       // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
-      const onResponse = delayExecution(fillNoBids, requests.length)
+      const onResponse = delayExecution(afterAllResponses, requests.length)
       requests.forEach(processRequest);
 
       function processRequest(request) {
-        switch (request.type) {
-          case GET:
+        switch (request.method) {
+          case 'GET':
             ajax(
-              `${request.endpoint}?${parseQueryStringParameters(request.data)}`,
+              `${request.url}?${parseQueryStringParameters(request.data)}`,
               {
                 success: onSuccess,
                 error: onFailure
               },
               undefined,
               {
-                method: GET,
+                method: 'GET',
                 withCredentials: true
               }
             );
             break;
-          case POST:
+          case 'POST':
             ajax(
-              request.endpoint,
+              request.url,
               {
                 success: onSuccess,
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               {
-                method: POST,
+                method: 'POST',
                 contentType: 'text/plain',
                 withCredentials: true
               }
@@ -154,15 +168,7 @@ export function newBidder(spec) {
       // If the adapter code fails, no bids should be added. After all the bids have been added, make
       // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
       function onSuccess(response) {
-        function addBidUsingRequestMap(bid) {
-          const bidRequest = bidRequestMap[bid.requestId];
-          if (bidRequest) {
-            const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-            addBidWithCode(bidRequest.placementCode, prebidBid);
-          } else {
-            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-          }
-        }
+        responses.push(response);
 
         let bids;
         try {
@@ -181,6 +187,16 @@ export function newBidder(spec) {
           }
         }
         onResponse();
+
+        function addBidUsingRequestMap(bid) {
+          const bidRequest = bidRequestMap[bid.requestId];
+          if (bidRequest) {
+            const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+            addBidWithCode(bidRequest.placementCode, prebidBid);
+          } else {
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+          }
+        }
       }
 
       // If the server responds with an error, there's not much we can do. Log it, and make sure to
@@ -211,9 +227,9 @@ export function newBidder(spec) {
 /**
  * @typedef {object} ServerRequest
  *
- * @param {('GET'|'POST')} type The type of request which this is.
- * @param {string} endpoint The endpoint for the request. For example, "//bids.example.com".
- * @param {string|object} data Data to be sent in the request.
+ * @property {('GET'|'POST')} method The type of request which this is.
+ * @property {string} url The endpoint for the request. For example, "//bids.example.com".
+ * @property {string|object} data Data to be sent in the request.
  *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
  *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
  *   JSON-serialized into the Request body.
@@ -222,22 +238,22 @@ export function newBidder(spec) {
 /**
  * @typedef {object} BidRequest
  *
- * @param {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @param {object} params Any bidder-specific params which the publisher used in their bid request.
+ * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
  *   This is guaranteed to have passed the spec.areParamsValid() test.
  */
 
 /**
  * @typedef {object} Bid
  *
- * @param {string} requestId The specific BidRequest which this bid is aimed at.
+ * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should correspond to one of the
- * @param {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @param {number} cpm The bid price, in US cents per thousand impressions.
- * @param {number} height The height of the ad, in pixels.
- * @param {number} width The width of the ad, in pixels.
+ * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} height The height of the ad, in pixels.
+ * @property {number} width The width of the ad, in pixels.
  *
- * @param [Renderer] renderer A Renderer which can be used as a default for this bid,
+ * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
 
@@ -257,14 +273,26 @@ export function newBidder(spec) {
  * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
  *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
  *   bids will be discarded.
- * @property {function(): UserSyncInfo[]} [fetchUserSyncs]
+ * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
+ *   from the server, determine which user syncs should occur. The argument array will contain every element
+ *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
+ *   important ones should come first, since publishers may limit how many are dropped on their page.
+ */
+
+/**
+ * @typedef {Object} SyncOptions
+ *
+ * An object containing information about usersyncs which the adapter should obey.
+ *
+ * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
+ * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
  */
 
 /**
  * TODO: Move this to the UserSync module after that PR is merged.
  *
- * @typedef {object} UserSyncInfo
+ * @typedef {object} UserSync
  *
- * @param {('image'|'iframe')} type The type of user sync to be done.
- * @param {string} url The URL which makes the sync happen.
+ * @property {('image'|'iframe')} type The type of user sync to be done.
+ * @property {string} url The URL which makes the sync happen.
  */

@@ -9,7 +9,9 @@
  * @typedef {('native'|'video'|'banner')} MediaType
  */
 
-/** @ype MediaType */
+/** @type MediaType */
 export const NATIVE = 'native';
-/** @ype MediaType */
+/** @type MediaType */
 export const VIDEO = 'video';
+/** @type MediaType */
+export const BANNER = 'banner';

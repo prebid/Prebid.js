@@ -35,7 +35,8 @@ describe('bidders created by newBidder', () => {
       code: CODE,
       areParamsValid: sinon.stub(),
       buildRequests: sinon.stub(),
-      interpretResponse: sinon.stub()
+      interpretResponse: sinon.stub(),
+      getUserSyncs: sinon.stub()
     };
     addBidRequestStub = sinon.stub(bidmanager, 'addBidResponse');
   });
@@ -126,8 +127,8 @@ describe('bidders created by newBidder', () => {
       const data = { arg: 2 };
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'POST',
-        endpoint: url,
+        method: 'POST',
+        url: url,
         data: data
       });
 
@@ -149,8 +150,8 @@ describe('bidders created by newBidder', () => {
       const data = { arg: 2 };
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'GET',
-        endpoint: url,
+        method: 'GET',
+        url: url,
         data: data
       });
 
@@ -172,13 +173,13 @@ describe('bidders created by newBidder', () => {
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns([
         {
-          type: 'POST',
-          endpoint: url,
+          method: 'POST',
+          url: url,
           data: data
         },
         {
-          type: 'GET',
-          endpoint: url,
+          method: 'GET',
+          url: url,
           data: data
         }
       ]);
@@ -207,8 +208,8 @@ describe('bidders created by newBidder', () => {
 
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'POST',
-        endpoint: 'test.url.com',
+        method: 'POST',
+        url: 'test.url.com',
         data: {}
       });
 
@@ -224,13 +225,13 @@ describe('bidders created by newBidder', () => {
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns([
         {
-          type: 'POST',
-          endpoint: 'test.url.com',
+          method: 'POST',
+          url: 'test.url.com',
           data: {}
         },
         {
-          type: 'POST',
-          endpoint: 'test.url.com',
+          method: 'POST',
+          url: 'test.url.com',
           data: {}
         },
       ]);
@@ -253,8 +254,8 @@ describe('bidders created by newBidder', () => {
       };
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'POST',
-        endpoint: 'test.url.com',
+        method: 'POST',
+        url: 'test.url.com',
         data: {}
       });
       spec.interpretResponse.returns(bid);
@@ -266,6 +267,22 @@ describe('bidders created by newBidder', () => {
         [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
       expect(placementsWithBids).to.contain('mock/placement');
       expect(placementsWithBids).to.contain('mock/placement2');
+    });
+
+    it('should call spec.getUserSyncs() with the response', () => {
+      const bidder = newBidder(spec);
+
+      spec.areParamsValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(spec.getUserSyncs.calledOnce).to.equal(true);
+      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal(['response body']);
     });
   });
 
@@ -287,8 +304,8 @@ describe('bidders created by newBidder', () => {
 
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'POST',
-        endpoint: 'test.url.com',
+        method: 'POST',
+        url: 'test.url.com',
         data: {}
       });
 
@@ -302,8 +319,8 @@ describe('bidders created by newBidder', () => {
 
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
-        type: 'POST',
-        endpoint: 'test.url.com',
+        method: 'POST',
+        url: 'test.url.com',
         data: {}
       });
       spec.interpretResponse.returns([]);
@@ -315,6 +332,22 @@ describe('bidders created by newBidder', () => {
         [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
       expect(placementsWithBids).to.contain('mock/placement');
       expect(placementsWithBids).to.contain('mock/placement2');
+    });
+
+    it('should call spec.getUserSyncs() with no responses', () => {
+      const bidder = newBidder(spec);
+
+      spec.areParamsValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(spec.getUserSyncs.calledOnce).to.equal(true);
+      expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
     });
   });
 });

@@ -1,11 +1,10 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { POST } from '../src/ajax';
 import { NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
-const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
+const URL = '//ib.adnxs.com/ut/v3/prebid';
 const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
@@ -27,6 +26,7 @@ const NATIVE_MAPPING = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, NATIVE],
+  aliases: ['dummy'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -64,8 +64,8 @@ export const spec = {
     }
     const payloadString = JSON.stringify(payload);
     return {
-      type: POST,
-      endpoint: ENDPOINT,
+      method: 'POST',
+      url: URL,
       data: payloadString,
     };
   },
@@ -90,19 +90,17 @@ export const spec = {
       }
     });
     return bids;
+  },
+
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+      }];
+    }
   }
 }
-
-// TODO: Patch UserSync into the spec, once the UserSync PR has been merged.
-// function userSyncCode() {
-//   const iframe = utils.createInvisibleIframe();
-//   iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-//   try {
-//     document.body.appendChild(iframe);
-//   } catch (error) {
-//     utils.logError(error);
-//   }
-// }
 
 function newRenderer(adUnitCode, rtbBid) {
   const renderer = Renderer.install({

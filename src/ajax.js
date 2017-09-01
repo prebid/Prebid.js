@@ -5,9 +5,6 @@ var utils = require('./utils');
 const XHR_DONE = 4;
 let _timeout = 3000;
 
-export const GET = 'GET';
-export const POST = 'POST';
-
 /**
  * Simple IE9+ and cross-browser ajax request function
  * Note: x-domain requests in IE9 do not support the use of cookies
@@ -25,7 +22,7 @@ export function ajax(url, callback, data, options = {}) {
   try {
     let x;
     let useXDomainRequest = false;
-    let method = options.method || (data ? POST : GET);
+    let method = options.method || (data ? 'POST' : 'GET');
 
     let callbacks = typeof callback === 'object' ? callback : {
       success: function() {
@@ -100,7 +97,7 @@ export function ajax(url, callback, data, options = {}) {
       }
       x.setRequestHeader('Content-Type', options.contentType || 'text/plain');
     }
-    x.send(method === POST && data);
+    x.send(method === 'POST' && data);
   } catch (error) {
     utils.logError('xhr construction', error);
   }
