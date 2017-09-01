@@ -255,7 +255,7 @@ var cygnus_index_start = function () {
     }
   }
 
-  function OpenRTBRequest(siteID, parseFn, timeoutDelay) {
+  function OpenRTBRequest(siteID, parseFn, timeoutDelay, referrer) {
     this.initialized = false;
     if (typeof siteID !== 'number' || siteID % 1 !== 0 || siteID < 0) {
       throw 'Invalid Site ID';
@@ -272,15 +272,19 @@ var cygnus_index_start = function () {
 
     // Get page URL
     this.sitePage = undefined;
-    try {
-      this.sitePage = utils.getTopWindowUrl();
-    } catch (e) {}
-    // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
-    if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
-      if (top === self) {
-        this.sitePage = location.href;
-      } else {
-        this.sitePage = document.referrer;
+    if (referrer) {
+      this.sitePage = referrer;
+    } else {
+      try {
+        this.sitePage = utils.getTopWindowUrl();
+      } catch (e) {}
+      // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
+      if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
+        if (top === self) {
+          this.sitePage = location.href;
+        } else {
+          this.sitePage = document.referrer;
+        }
       }
     }
 
@@ -434,7 +438,8 @@ var cygnus_index_start = function () {
       return;
     }
 
-    var req = new OpenRTBRequest(cygnus_index_args.siteID, cygnus_index_args.parseFn, cygnus_index_args.timeout);
+    var req = new OpenRTBRequest(cygnus_index_args.siteID, cygnus_index_args.parseFn, cygnus_index_args.timeout,
+      cygnus_index_args.referrer);
     if (cygnus_index_args.url && typeof cygnus_index_args.url === 'string') {
       req.setPageOverride(cygnus_index_args.url);
     }
@@ -641,7 +646,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       }
 
       var usingSizeSpecificSiteID = false;
-      // Check for size defined in bidder params 
+      // Check for size defined in bidder params
       if (bid.params.size && utils.isArray(bid.params.size)) {
         if (!(bid.sizes[j][0] == bid.params.size[0] && bid.sizes[j][1] == bid.params.size[1])) {
           passOnBid(bid.placementCode);
@@ -681,6 +686,8 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 
         var slotName = usingSizeSpecificSiteID ? String(slotID) : slotID + '_' + sizeID;
         slotIdMap[slotName] = bid;
+
+        cygnus_index_args.referrer = bid.params.referrer
 
         // Doesn't need the if(primary_request) conditional since we are using the mergeSlotInto function which is safe
         cygnus_index_args.slots = mergeSlotInto({
