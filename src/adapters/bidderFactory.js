@@ -17,23 +17,50 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *
  * Typical usage looks something like:
  *
- * const adapter = newBidder({
+ * const adapter = registerBidder({
  *   code: 'myBidderCode',
+ *   aliases: ['alias1', 'alias2'],
+ *   supportedMediaTypes: ['video', 'native'],
  *   areParamsValid: function(paramsObject) { return true/false },
  *   buildRequests: function(bidRequests) { return some ServerRequest(s) },
  *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
  * });
+ *
+ * @see BidderSpec for the full API and more thorough descriptions.
  */
 
 /**
- * This function aims to minimize the Adapter-specific code for "single request" Bidders. That is, if your adapter
- * only makes a single request to the server for bids, regardless of how many bid requests or ad units are in
- * the Auction, then this function is for you.
+ * Register a bidder with prebid, using the given spec.
+ *
+ * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
-export default function newBidder(spec) {
-  const bidder = Object.assign(new Adapter(spec.code), {
+export function registerBidder(spec) {
+  const mediaTypes = Array.isArray(spec.supportedMediaTypes)
+    ? { supportedMediaTypes: spec.supportedMediaTypes }
+    : undefined;
+  function putBidder(spec) {
+    const bidder = newBidder(spec);
+    adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
+  }
+
+  putBidder(spec);
+  if (Array.isArray(spec.aliases)) {
+    spec.aliases.forEach(alias => {
+      putBidder(Object.assign({}, spec, { code: alias }));
+    });
+  }
+}
+
+/**
+ * Make a new bidder from the given spec. This is exported mainly for testing.
+ * Adapters will probably find it more convenient to use registerBidder instead.
+ *
+ * @param {BidderSpec} spec
+ */
+export function newBidder(spec) {
+  return Object.assign(new Adapter(spec.code), {
     callBids: function(bidderRequest) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
@@ -179,23 +206,6 @@ export default function newBidder(spec) {
     bid.bidderCode = spec.code;
     return bid;
   }
-
-  const mediaTypes = Array.isArray(spec.supportedMediaTypes)
-    ? { supportedMediaTypes: spec.supportedMediaTypes }
-    : undefined;
-  adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
-
-  if (Array.isArray(spec.aliases)) {
-    spec.aliases.forEach(alias => {
-      adaptermanager.aliasBidAdapter(spec.code, alias);
-    });
-  }
-
-  // TODO: Before this PR merges, rename this function and stop returning the bidder.
-  // I'm returning it for now to prove that the appnexusAstAdapter_spec tests still pass.
-  // Once that's established, those tests should be simplified so that they only test the
-  // "spec" methods.
-  return bidder;
 }
 
 /**

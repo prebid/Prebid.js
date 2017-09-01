@@ -1,5 +1,6 @@
-import newBidder from 'src/adapters/bidderFactory';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 import bidmanager from 'src/bidmanager';
+import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
 import { STATUS } from 'src/constants';
@@ -24,10 +25,10 @@ const MOCK_BIDS_REQUEST = {
   ]
 }
 
-describe('The bidder factory', () => {
+describe('bidders created by newBidder', () => {
   let spec;
-  let bidder;
   let addBidRequestStub;
+  let bidder;
 
   beforeEach(() => {
     spec = {
@@ -36,7 +37,6 @@ describe('The bidder factory', () => {
       buildRequests: sinon.stub(),
       interpretResponse: sinon.stub()
     };
-    bidder = newBidder(spec);
     addBidRequestStub = sinon.stub(bidmanager, 'addBidResponse');
   });
 
@@ -56,6 +56,8 @@ describe('The bidder factory', () => {
     });
 
     it('should handle bad bid requests gracefully', () => {
+      const bidder = newBidder(spec);
+
       bidder.callBids({});
       bidder.callBids({ bids: 'nothing useful' });
 
@@ -66,6 +68,8 @@ describe('The bidder factory', () => {
     });
 
     it('should call buildRequests(bidRequest) the params are valid', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns([]);
 
@@ -78,6 +82,8 @@ describe('The bidder factory', () => {
     });
 
     it('should not call buildRequests the params are invalid', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(false);
       spec.buildRequests.returns([]);
 
@@ -89,6 +95,8 @@ describe('The bidder factory', () => {
     });
 
     it('should filter out invalid bids before calling buildRequests', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.onFirstCall().returns(true);
       spec.areParamsValid.onSecondCall().returns(false);
       spec.buildRequests.returns([]);
@@ -102,6 +110,8 @@ describe('The bidder factory', () => {
     });
 
     it("should make no server requests if the spec doesn't return any", () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns([]);
 
@@ -111,6 +121,7 @@ describe('The bidder factory', () => {
     });
 
     it('should make the appropriate POST request', () => {
+      const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
       spec.areParamsValid.returns(true);
@@ -133,6 +144,7 @@ describe('The bidder factory', () => {
     });
 
     it('should make the appropriate GET request', () => {
+      const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
       spec.areParamsValid.returns(true);
@@ -154,6 +166,7 @@ describe('The bidder factory', () => {
     });
 
     it('should make multiple calls if the spec returns them', () => {
+      const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
       spec.areParamsValid.returns(true);
@@ -190,6 +203,8 @@ describe('The bidder factory', () => {
     });
 
     it('should call spec.interpretResponse() with the response body content', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
         type: 'POST',
@@ -204,6 +219,8 @@ describe('The bidder factory', () => {
     });
 
     it('should call spec.interpretResponse() once for each request made', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns([
         {
@@ -224,6 +241,8 @@ describe('The bidder factory', () => {
     });
 
     it("should add bids for each placement code into the bidmanager, even if the bidder doesn't bid on all of them", () => {
+      const bidder = newBidder(spec);
+
       const bid = {
         requestId: 'some-id',
         ad: 'ad-url.com',
@@ -264,6 +283,8 @@ describe('The bidder factory', () => {
     });
 
     it('should not spec.interpretResponse()', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
         type: 'POST',
@@ -277,6 +298,8 @@ describe('The bidder factory', () => {
     });
 
     it('should add bids for each placement code into the bidmanager', () => {
+      const bidder = newBidder(spec);
+
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
         type: 'POST',
@@ -295,3 +318,61 @@ describe('The bidder factory', () => {
     });
   });
 });
+
+describe('registerBidder', () => {
+  let registerBidAdapterStub;
+  let aliasBidAdapterStub;
+
+  beforeEach(() => {
+    registerBidAdapterStub = sinon.stub(adaptermanager, 'registerBidAdapter');
+    aliasBidAdapterStub = sinon.stub(adaptermanager, 'aliasBidAdapter');
+  });
+
+  afterEach(() => {
+    registerBidAdapterStub.restore();
+    aliasBidAdapterStub.restore();
+  });
+
+  function newEmptySpec() {
+    return {
+      code: CODE,
+      areParamsValid: function() { },
+      buildRequests: function() { },
+      interpretResponse: function() { },
+      fetchUserSyncs: function() { }
+    };
+  }
+
+  it('should register a bidder with the adapterManager', () => {
+    registerBidder(newEmptySpec());
+    expect(registerBidAdapterStub.calledOnce).to.equal(true);
+    expect(registerBidAdapterStub.firstCall.args[0]).to.have.property('callBids');
+    expect(registerBidAdapterStub.firstCall.args[0].callBids).to.be.a('function');
+
+    expect(registerBidAdapterStub.firstCall.args[1]).to.equal(CODE);
+    expect(registerBidAdapterStub.firstCall.args[2]).to.be.undefined;
+  });
+
+  it('should register a bidder with the appropriate mediaTypes', () => {
+    const thisSpec = Object.assign(newEmptySpec(), { supportedMediaTypes: ['video'] });
+    registerBidder(thisSpec);
+    expect(registerBidAdapterStub.calledOnce).to.equal(true);
+    expect(registerBidAdapterStub.firstCall.args[2]).to.deep.equal({supportedMediaTypes: ['video']});
+  });
+
+  it('should register bidders with the appropriate aliases', () => {
+    const thisSpec = Object.assign(newEmptySpec(), { aliases: ['foo', 'bar'] });
+    registerBidder(thisSpec);
+
+    expect(registerBidAdapterStub.calledThrice).to.equal(true);
+
+    // Make sure our later calls don't override the bidder code from previous calls.
+    expect(registerBidAdapterStub.firstCall.args[0].getBidderCode()).to.equal(CODE);
+    expect(registerBidAdapterStub.secondCall.args[0].getBidderCode()).to.equal('foo')
+    expect(registerBidAdapterStub.thirdCall.args[0].getBidderCode()).to.equal('bar')
+
+    expect(registerBidAdapterStub.firstCall.args[1]).to.equal(CODE);
+    expect(registerBidAdapterStub.secondCall.args[1]).to.equal('foo')
+    expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
+  });
+})

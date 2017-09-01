@@ -1,6 +1,6 @@
 import { Renderer } from 'src/Renderer';
 import * as utils from 'src/utils';
-import newBidder from 'src/adapters/bidderFactory';
+import { registerBidder, newBidder } from 'src/adapters/bidderFactory';
 import { POST } from '../src/ajax';
 import { NATIVE, VIDEO } from 'src/mediaTypes';
 
@@ -340,7 +340,9 @@ function parseMediaType(rtbBid) {
   }
 }
 
-// TODO: Before this PR merges, export the "spec" for testing and make this the "registerAdapter" call.
+// TODO: Before this PR merges, export the "spec" for testing and replace this with the "registerAdapter" call.
 // We'll have to simplify the unit tests first, though... and right now it's valuable to know that they
 // still work.
 export const adapter = newBidder(spec);
+
+registerBidder(spec);
