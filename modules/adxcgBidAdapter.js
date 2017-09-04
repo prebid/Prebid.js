@@ -4,6 +4,7 @@ import * as utils from 'src/utils';
 import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 import { ajax } from 'src/ajax';
+import * as url from 'src/url';
 
 /**
  * Adapter for requesting bids from Adxcg
@@ -22,25 +23,35 @@ function AdxcgAdapter() {
         bidRequests[bid.bidId] = bid;
         adZoneIds.push(utils.getBidIdParameter('adzoneid', bid.params));
         prebidBidIds.push(bid.bidId);
-
-        let parsedSizes = parseWidthAndHeight(bid);
-        sizes.push(parsedSizes);
+        sizes.push(utils.parseSizesInput(bid.sizes).join('|'));
       });
 
-      let secure = window.location.protocol == 'https:';
+      let location = utils.getTopWindowLocation();
+      let secure = location.protocol == 'https:';
 
-      let requestUrl = (secure ? 'https://ad-emea-secure' : 'http://ad-emea') + '.adxcg.net/get/adi?renderformat=javascript&ver=r20141124' +
-        '&adzoneid=' + adZoneIds.join(',') +
-        '&format=' + sizes.join(',') +
-        '&prebidBidIds=' + prebidBidIds.join(',') +
-        '&url=' + escape(removeUrlParameters(document.location.href));
+      let requestUrl = url.parse(location.href);
+      requestUrl.search = null;
+      requestUrl.hash = null;
 
-      if (secure) {
-        requestUrl += '&secure=1';
-      }
+      let adxcgRequestUrl = url.format({
+        protocol: secure ? 'https' : 'http',
+        hostname: secure ? 'ad-emea-secure.adxcg.net' : 'ad-emea.adxcg.net',
+        pathname: '/get/adi',
+        search: {
+          renderformat: 'javascript',
+          ver: 'r20141124',
+          adzoneid: adZoneIds.join(','),
+          format: sizes.join(','),
+          prebidBidIds: prebidBidIds.join(','),
+          url: escape(url.format(requestUrl)),
+          secure: secure ? '1' : '0'
+        }
+      });
 
-      utils.logMessage('submitting request: ' + requestUrl);
-      ajax(requestUrl, handleResponse);
+      utils.logMessage(`submitting request: ${adxcgRequestUrl}`);
+      ajax(adxcgRequestUrl, handleResponse, null, {
+        withCredentials: true
+      });
     }
   }
 
@@ -49,7 +60,7 @@ function AdxcgAdapter() {
 
     try {
       adxcgBidReponseList = JSON.parse(response);
-      utils.logMessage('adxcgBidReponseList: ' + JSON.stringify(adxcgBidReponseList));
+      utils.logMessage(`adxcgBidReponseList: ${JSON.stringify(adxcgBidReponseList)}`);
     } catch (error) {
       adxcgBidReponseList = [];
       utils.logError(error);
@@ -78,7 +89,7 @@ function AdxcgAdapter() {
         let nativeResponse = adxcgBidReponse.nativeResponse;
 
         bid.native = {
-          clickUrl: nativeResponse.link.url,
+          clickUrl: escape(nativeResponse.link.url),
           impressionTrackers: nativeResponse.imptrackers
         };
 
@@ -104,43 +115,17 @@ function AdxcgAdapter() {
       bid.width = adxcgBidReponse.width;
       bid.height = adxcgBidReponse.height;
 
-      utils.logMessage('submitting bid[' + bidRequest.placementCode + ']:' + JSON.stringify(bid));
+      utils.logMessage(`submitting bid[${bidRequest.placementCode}]: ${JSON.stringify(bid)}`);
       bidmanager.addBidResponse(bidRequest.placementCode, bid);
     });
 
     Object.keys(bidRequests)
       .map(bidId => bidRequests[bidId].placementCode)
       .forEach(placementCode => {
-        utils.logMessage('creating no_bid bid for => ' + placementCode);
+        utils.logMessage(`creating no_bid bid for: ${placementCode}`);
         bidmanager.addBidResponse(placementCode, bidfactory.createBid(STATUS.NO_BID));
       });
   };
-
-  function removeUrlParameters(oldURL) {
-    let index = 0;
-    let newURL = oldURL;
-    index = oldURL.indexOf('?');
-    if (index == -1) {
-      index = oldURL.indexOf('#');
-    }
-    if (index != -1) {
-      newURL = oldURL.substring(0, index);
-    }
-    return newURL;
-  }
-
-  function parseWidthAndHeight(bid) {
-    let fSizes = '';
-    let sizeArrayLength = bid.sizes.length;
-    if (sizeArrayLength === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-      fSizes = bid.sizes[0] + 'x' + bid.sizes[1];
-    } else {
-      for (let i = 0; i < sizeArrayLength; i++) {
-        fSizes += (i != 0 ? '|' : '') + bid.sizes[i][0] + 'x' + bid.sizes[i][1];
-      }
-    }
-    return fSizes;
-  }
 
   return {
     callBids: _callBids
