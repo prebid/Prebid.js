@@ -135,8 +135,7 @@ describe('Admixer adapter', function () {
   var validJsonVideoParams = {
     zone: 'zone_id',
     callback_uid: 'ad-unit-1',
-    sizes: '300x250-300x600',
-    skippable: true
+    sizes: '300x250',
   };
 
   const getSandbox = useSandbox();
@@ -162,24 +161,20 @@ describe('Admixer adapter', function () {
       Adapter.callBids(validVideoData_2);
       sinon.assert.calledOnce(stubAjax);
     });
+    // These tests began failing with the sinon 1.x -> 3.x upgrade. Unfortunately,
+    // they're not using a sinon 1.x API legally... so it's unclear exactly what
+    // they're supposed to be testing.
     // it('display: ajax params should be matched', function () {
     //   const stubAjax = getSandbox().stub(Ajax, 'ajax');
     //   Adapter.callBids(validData_1);
-    //   stubAjax.calledWith
-    //   sinon.assert.calledWithMatch(stubAjax,
-    //     invUrl,
-    //     function () {},
-    //     validJsonParams,
-    //     {method: 'GET'});
+    //   sinon.assert.calledWith(stubAjax, sinon.match(invUrl, function () {
+    //   }, validJsonParams, {method: 'GET'}));
     // });
     // it('video: ajax params should be matched', function () {
     //   const stubAjax = getSandbox().stub(Ajax, 'ajax');
     //   Adapter.callBids(validVideoData_3);
-    //   sinon.assert.calledWithMatch(stubAjax,
-    //     invVastUrl,
-    //     function () {},
-    //     validJsonVideoParams,
-    //     {method: 'GET'});
+    //   sinon.assert.calledWith(stubAjax, sinon.match(invVastUrl, function () {
+    //   }, validJsonVideoParams, {method: 'GET'}));
     // });
   });
   describe('bid request with invalid data', function () {

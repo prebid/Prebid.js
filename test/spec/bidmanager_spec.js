@@ -1,12 +1,9 @@
-var assert = require('assert');
-
-/* use this method to test individual files instead of the whole prebid.js project */
-
-// TODO refactor to use the spec files
-var utils = require('../../src/utils');
-var bidmanager = require('../../src/bidmanager');
-var bidfactory = require('../../src/bidfactory');
-var fixtures = require('../fixtures/fixtures');
+import useSandbox from 'test/mocks/sandbox';
+import * as utils from 'src/utils';
+import * as bidmanager from 'src/bidmanager';
+import * as bidfactory from 'src/bidfactory';
+import * as fixtures from 'test/fixtures/fixtures';
+import * as assert from 'assert';
 
 describe('replaceTokenInString', function () {
   it('should replace all given tokens in a String', function () {
@@ -418,15 +415,7 @@ describe('bidmanager.js', function () {
       $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
 
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
+    const getSandbox = useSandbox()
 
     it('should return proper price bucket increments for dense mode', () => {
       const bid = Object.assign({},
@@ -512,7 +501,7 @@ describe('bidmanager.js', function () {
     });
 
     it('should add banner bids that have no width or height but single adunit size', () => {
-      sandbox.stub(utils, 'getBidderRequest').callsFake(() => {
+      getSandbox().stub(utils, 'getBidderRequest').callsFake(() => {
         return {
           bids: [{
             sizes: [[300, 250]],
@@ -538,7 +527,7 @@ describe('bidmanager.js', function () {
     });
 
     it('should not add native bids that do not have required assets', () => {
-      sandbox.stub(utils, 'getBidRequest').callsFake(() => {
+      getSandbox().stub(utils, 'getBidRequest').callsFake(() => {
         return {
           bidder: 'appnexusAst',
           nativeParams: {
@@ -563,7 +552,7 @@ describe('bidmanager.js', function () {
     });
 
     it('should add native bids that do have required assets', () => {
-      sandbox.stub(utils, 'getBidRequest').callsFake(() => {
+      getSandbox().stub(utils, 'getBidRequest').callsFake(() => {
         return {
           bidder: 'appnexusAst',
           nativeParams: {
@@ -588,7 +577,7 @@ describe('bidmanager.js', function () {
     });
 
     it('installs publisher-defined renderers on bids', () => {
-      sandbox.stub(utils, 'getBidderRequest').callsFake(() => {
+      getSandbox().stub(utils, 'getBidderRequest').callsFake(() => {
         return {
           bids: [{
             renderer: {
