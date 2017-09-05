@@ -743,10 +743,10 @@ export function getDefinedParams(object, params) {
 
 /**
  * Validates an adunit's `mediaTypes` parameter
- * @param{MediaTypes} mediaTypes mediaTypes parameter to validate
- * @returns{boolean} If object is valie
+ * @param {MediaTypes} mediaTypes mediaTypes parameter to validate
+ * @return {boolean} If object is valid
  */
-export function mediaTypesValid(mediaTypes) {
+export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
   const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
 

@@ -13,10 +13,17 @@ const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
 export const hasNonVideoBidder = adUnit =>
   adUnit.bids.filter(nonVideoBidder).length;
 
-/*
- * Validate that the assets required for video context are present on the bid
+/**
+ * @typedef {object} VideoBid
+ * @property {string} adId id of the bid
  */
-export function videoBidIsValid(bid) {
+
+/**
+ * Validate that the assets required for video context are present on the bid
+ * @param {VideoBid} bid video bid to validate
+ * @return {boolean} If object is valid
+ */
+export function isValidVideoBid(bid) {
   const bidRequest = getBidRequest(bid.adId);
   const context =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video.context');
