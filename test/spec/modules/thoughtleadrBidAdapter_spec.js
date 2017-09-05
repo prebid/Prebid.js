@@ -61,7 +61,7 @@ describe('thoughtleadr adapter tests', function () {
 
   describe('requestPlacement', function () {
     it('should request header-bid.json', function () {
-      ajaxMock = sandbox.stub(ajax, 'ajax').callsFake(function (url, cb) {
+      ajaxMock = sandbox.stub(ajax, 'ajax', function (url, cb) {
         cb(JSON.stringify({
           header_bid_token: 'asd',
           media_type: 'article',
@@ -76,7 +76,7 @@ describe('thoughtleadr adapter tests', function () {
     });
 
     it('should request header-bid.json without bids', function () {
-      ajaxMock = sandbox.stub(ajax, 'ajax').callsFake(function (url, cb) {
+      ajaxMock = sandbox.stub(ajax, 'ajax', function (url, cb) {
         cb(JSON.stringify({}));
       });
 
@@ -88,7 +88,7 @@ describe('thoughtleadr adapter tests', function () {
     });
 
     it('should sync cookies', function () {
-      ajaxMock = sandbox.stub(ajax, 'ajax').callsFake(function (url, cb) {
+      ajaxMock = sandbox.stub(ajax, 'ajax', function (url, cb) {
         cb(JSON.stringify({
           header_bid_token: 'asd',
           media_type: 'article',

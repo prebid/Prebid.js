@@ -1,4 +1,3 @@
-import sinon from 'sinon';
 import * as videoCache from 'src/videoCache';
 
 /**
