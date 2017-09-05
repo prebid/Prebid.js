@@ -33,9 +33,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       ymCall = ymCall.substring(0, ymCall.length - 1);
     }
 
-    // @if NODE_ENV='debug'
     utils.logMessage('ymCall request built: ' + ymCall);
-    // @endif
 
     return ymCall;
   }
@@ -102,9 +100,7 @@ var YieldmoAdapter = function YieldmoAdapter() {
       // to prevent Prebid waiting till timeout for response 
       _registerNoResponseBids();
 
-      // @if NODE_ENV='debug'
       utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-      // @endif
     }
   };
 
