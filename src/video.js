@@ -30,7 +30,7 @@ export function isValidVideoBid(bid) {
 
   // if context not defined assume default 'instream' for video bids
   if (!bidRequest || !context || context === INSTREAM) {
-    return !!(bid.vastUrl || bid.vastPayload);
+    return !!(bid.vastUrl || bid.vastXml);
   }
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
