@@ -117,7 +117,7 @@ function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
   if (!precision) {
     precision = _defaultPrecision;
   }
-  let bucketSize = 1 / increment * granularityMultiplier;
+  let bucketSize = 1 / (increment * granularityMultiplier);
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
