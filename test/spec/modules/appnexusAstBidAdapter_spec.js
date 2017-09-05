@@ -130,11 +130,6 @@ describe('AppNexusAdapter', () => {
     });
 
     it('should add source and verison to the tag', () => {
-      REQUEST.sdk = {
-        source: 'pbjs',
-        version: '$prebid.version$'
-      };
-
       adapter.callBids(REQUEST);
 
       const request = JSON.parse(requests[0].requestBody);
@@ -143,8 +138,6 @@ describe('AppNexusAdapter', () => {
         source: 'pbjs',
         version: '$prebid.version$'
       });
-
-      delete REQUEST.sdk;
     });
 
     it('attaches native params to the request', () => {
