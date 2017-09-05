@@ -1,12 +1,9 @@
-var assert = require('assert');
-
-/* use this method to test individual files instead of the whole prebid.js project */
-
-// TODO refactor to use the spec files
-var utils = require('../../src/utils');
-var bidmanager = require('../../src/bidmanager');
-var bidfactory = require('../../src/bidfactory');
-var fixtures = require('../fixtures/fixtures');
+import useSandbox from 'test/mocks/sandbox';
+import * as utils from 'src/utils';
+import * as bidmanager from 'src/bidmanager';
+import * as bidfactory from 'src/bidfactory';
+import * as fixtures from 'test/fixtures/fixtures';
+import * as assert from 'assert';
 
 describe('replaceTokenInString', function () {
   it('should replace all given tokens in a String', function () {
@@ -417,6 +414,9 @@ describe('bidmanager.js', function () {
     before(() => {
       $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
     });
+
+    const getSandbox = useSandbox()
+
     it('should return proper price bucket increments for dense mode', () => {
       const bid = Object.assign({},
         bidfactory.createBid(2),
@@ -501,11 +501,13 @@ describe('bidmanager.js', function () {
     });
 
     it('should add banner bids that have no width or height but single adunit size', () => {
-      sinon.stub(utils, 'getBidderRequest', () => ({
-        bids: [{
-          sizes: [[300, 250]],
-        }]
-      }));
+      getSandbox().stub(utils, 'getBidderRequest').callsFake(() => {
+        return {
+          bids: [{
+            sizes: [[300, 250]],
+          }]
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -522,18 +524,18 @@ describe('bidmanager.js', function () {
       assert.equal(bid.adId, addedBid.adId);
       assert.equal(addedBid.width, 300);
       assert.equal(addedBid.height, 250);
-
-      utils.getBidderRequest.restore();
     });
 
     it('should not add native bids that do not have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
-        bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
-        },
-        mediaType: 'native',
-      }));
+      getSandbox().stub(utils, 'getBidRequest').callsFake(() => {
+        return {
+          bidder: 'appnexusAst',
+          nativeParams: {
+            title: {'required': true},
+          },
+          mediaType: 'native',
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -547,18 +549,18 @@ describe('bidmanager.js', function () {
       const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
       bidmanager.addBidResponse('adUnit-code', bid);
       assert.equal(bidsRecCount, $$PREBID_GLOBAL$$._bidsReceived.length);
-
-      utils.getBidRequest.restore();
     });
 
     it('should add native bids that do have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
-        bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
-        },
-        mediaType: 'native',
-      }));
+      getSandbox().stub(utils, 'getBidRequest').callsFake(() => {
+        return {
+          bidder: 'appnexusAst',
+          nativeParams: {
+            title: {'required': true},
+          },
+          mediaType: 'native',
+        }
+      });
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -572,19 +574,19 @@ describe('bidmanager.js', function () {
       const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
       bidmanager.addBidResponse('adUnit-code', bid);
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
-
-      utils.getBidRequest.restore();
     });
 
     it('installs publisher-defined renderers on bids', () => {
-      sinon.stub(utils, 'getBidderRequest', () => ({
-        bids: [{
-          renderer: {
-            url: 'renderer.js',
-            render: (bid) => bid
-          }
-        }]
-      }));
+      getSandbox().stub(utils, 'getBidderRequest').callsFake(() => {
+        return {
+          bids: [{
+            renderer: {
+              url: 'renderer.js',
+              render: (bid) => bid
+            }
+          }]
+        };
+      });
 
       const bid = Object.assign({}, bidfactory.createBid(1), {
         bidderCode: 'appnexusAst',
@@ -594,8 +596,6 @@ describe('bidmanager.js', function () {
       bidmanager.addBidResponse('adUnit-code', bid);
       const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
-
-      utils.getBidderRequest.restore();
     });
   });
 });

@@ -146,14 +146,12 @@ describe('Adkernel adapter', () => {
     let bidRequest;
 
     beforeEach(() => {
-      sandbox.stub(utils, 'getTopWindowLocation', () => {
-        return {
-          protocol: 'https:',
-          hostname: 'example.com',
-          host: 'example.com',
-          pathname: '/index.html',
-          href: 'http://example.com/index.html'
-        };
+      sandbox.stub(utils, 'getTopWindowLocation').returns({
+        protocol: 'https:',
+        hostname: 'example.com',
+        host: 'example.com',
+        pathname: '/index.html',
+        href: 'http://example.com/index.html'
       });
 
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(bidResponse1));
@@ -198,14 +196,12 @@ describe('Adkernel adapter', () => {
     let bidRequest;
 
     beforeEach(() => {
-      sandbox.stub(utils, 'getTopWindowLocation', () => {
-        return {
-          protocol: 'https:',
-          hostname: 'example.com',
-          host: 'example.com',
-          pathname: '/index.html',
-          href: 'http://example.com/index.html'
-        };
+      sandbox.stub(utils, 'getTopWindowLocation').returns({
+        protocol: 'https:',
+        hostname: 'example.com',
+        host: 'example.com',
+        pathname: '/index.html',
+        href: 'http://example.com/index.html'
       });
       ajaxStub.onCall(0).callsArgWith(1, JSON.stringify(videoBidResponse));
       doRequest([bid_video]);
@@ -324,10 +320,8 @@ describe('Adkernel adapter', () => {
         '//sync.adkernel.com/user-sync?zone=2&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D',
         '//sync.adkernel.com/user-sync?zone=1&r=%2F%2Frtb.adkernel.com%2Fuser-synced%3Fuid%3D%7BUID%7D'];
       let userSyncUrls = [];
-      sandbox.stub(utils, 'createInvisibleIframe', () => {
-        return {};
-      });
-      sandbox.stub(utils, 'addEventHandler', (el, ev, cb) => {
+      sandbox.stub(utils, 'createInvisibleIframe').returns({});
+      sandbox.stub(utils, 'addEventHandler').callsFake((el, ev, cb) => {
         userSyncUrls.push(el.src);
         cb(); // instant callback
       });

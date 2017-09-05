@@ -101,15 +101,13 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser', () =>
-        ({
-          success: true,
-          identity: {
-            privacy: {optout: false},
-            id: 'testId'
-          }
-        })
-      );
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
+        success: true,
+        identity: {
+          privacy: {optout: false},
+          id: 'testId'
+        }
+      });
 
       adapter.callBids(bidderRequest);
       expect(adLoader.loadScript.firstCall.args[0]).to.include('&dt=testId');
@@ -125,15 +123,13 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser', () =>
-        ({
-          success: true,
-          identity: {
-            privacy: {optout: true},
-            id: 'testId'
-          }
-        })
-      );
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
+        success: true,
+        identity: {
+          privacy: {optout: true},
+          id: 'testId'
+        }
+      });
 
       adapter.callBids(bidderRequest);
       expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');
@@ -144,15 +140,13 @@ describe('gumgum adapter', () => {
       window.DigiTrust = {
         getUser: function() {}
       };
-      sandbox.stub(window.DigiTrust, 'getUser', () =>
-        ({
-          success: false,
-          identity: {
-            privacy: {optout: false},
-            id: 'testId'
-          }
-        })
-      );
+      sandbox.stub(window.DigiTrust, 'getUser').returns({
+        success: false,
+        identity: {
+          privacy: {optout: false},
+          id: 'testId'
+        }
+      });
 
       adapter.callBids(bidderRequest);
       expect(adLoader.loadScript.firstCall.args[0]).to.not.include('&dt');

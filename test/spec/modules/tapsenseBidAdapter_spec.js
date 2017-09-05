@@ -209,7 +209,7 @@ describe('TapSenseAdapter', () => {
       sandbox.stub(bidmanager, 'addBidResponse');
       sandbox.stub(adloader, 'loadScript');
       let bids = makeSuccessfulRequest(adapter);
-      sandbox.stub(utils, 'getBidRequest', (id) => {
+      sandbox.stub(utils, 'getBidRequest').callsFake((id) => {
         return bids.find((item) => { return item.bidId === id });
       })
     });

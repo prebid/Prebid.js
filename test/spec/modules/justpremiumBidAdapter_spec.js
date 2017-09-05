@@ -33,15 +33,13 @@ describe('justpremium adapter', () => {
         }
       };
       sandbox = sinon.sandbox.create();
-      sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+      sandbox.stub(adLoader, 'loadScript').callsFake((url, callback) => {
         if (url === window.location.protocol + CONST.LIB) {
           window.Jpx = factory;
           callback();
         }
       });
-      sandbox.stub(factory.JAM, 'instance', () => {
-        return {};
-      })
+      sandbox.stub(factory.JAM, 'instance').returns({});
     });
 
     afterEach(() => {
@@ -249,7 +247,7 @@ describe('justpremium adapter', () => {
 
     it('should add empty bid if there was no valid response', () => {
       adLoader.loadScript.restore();
-      const stubLoadScript = sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+      const stubLoadScript = sandbox.stub(adLoader, 'loadScript').callsFake((url, callback) => {
         if (callback) {
           callback(new Error('test'));
         }
@@ -303,13 +301,13 @@ describe('justpremium adapter', () => {
         ]
       };
 
-      const stubLoadScript = sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+      const stubLoadScript = sandbox.stub(adLoader, 'loadScript').callsFake((url, callback) => {
         if (callback) {
           callback();
         }
       });
       const stubAddBidResponse = sandbox.stub(bidmanager, 'addBidResponse');
-      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid', (factory) => {
+      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid').callsFake((factory) => {
         return factory();
       });
 
@@ -353,13 +351,13 @@ describe('justpremium adapter', () => {
         format: 'wp'
       };
 
-      const stubLoadScript = sandbox.stub(adLoader, 'loadScript', (url, callback) => {
+      const stubLoadScript = sandbox.stub(adLoader, 'loadScript').callsFake((url, callback) => {
         if (callback) {
           callback();
         }
       });
       const stubAddBidResponse = sandbox.stub(bidmanager, 'addBidResponse');
-      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid', (factory) => {
+      const stubCreateBid = sandbox.stub(jPAM.cb.bidder20000, 'createBid').callsFake((factory) => {
         const bid = factory({});
 
         Object.assign(bid, responseData);

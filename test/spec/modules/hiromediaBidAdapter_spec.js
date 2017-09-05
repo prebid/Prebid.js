@@ -15,6 +15,7 @@ describe('hiromedia adapter', function () {
   let xhr;
   let addBidResponseStub;
   let hasValidBidRequestSpy;
+  let requests;
   let placementId = 0;
 
   window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
@@ -24,7 +25,11 @@ describe('hiromedia adapter', function () {
     sandbox = sinon.sandbox.create();
 
     // Used to spy on bid requests
+    requests = [];
     xhr = sandbox.useFakeXMLHttpRequest();
+    xhr.onCreate = (request) => {
+      requests.push(request);
+    };
 
     // Used to spy on bid responses
     addBidResponseStub = sandbox.stub(bidmanager, 'addBidResponse');
@@ -42,7 +47,7 @@ describe('hiromedia adapter', function () {
   // Helper function that asserts that no bidding activity (requests nor responses)
   // was made during a test.
   const assertNoBids = () => {
-    expect(xhr.requests.length).to.be.equal(0);
+    expect(requests.length).to.be.equal(0);
     sinon.assert.notCalled(addBidResponseStub);
   };
 
@@ -103,7 +108,7 @@ describe('hiromedia adapter', function () {
       };
 
       adapter.callBids(params);
-      expect(xhr.requests.length).to.equal(3);
+      expect(requests.length).to.equal(3);
       sinon.assert.notCalled(addBidResponseStub);
       sinon.assert.calledThrice(hasValidBidRequestSpy);
 
@@ -111,7 +116,7 @@ describe('hiromedia adapter', function () {
         expect(hasValidBidRequestSpy.returnValues[index]).to.be.equal(true);
 
         // validate request
-        const bidRequest = xhr.requests[index].url;
+        const bidRequest = requests[index].url;
         const defaultBidUrl = urlParse(DEFAULT_ENDPOINT);
         const bidUrl = urlParse(bidRequest, true);
         const query = bidUrl.query;
@@ -141,9 +146,9 @@ describe('hiromedia adapter', function () {
       };
 
       adapter.callBids(params);
-      expect(xhr.requests.length).to.be.equal(1);
+      expect(requests.length).to.be.equal(1);
 
-      const bidRequest = xhr.requests[0].url;
+      const bidRequest = requests[0].url;
       const bidUrl = urlParse(bidRequest, true);
       const query = bidUrl.query;
 
@@ -161,7 +166,7 @@ describe('hiromedia adapter', function () {
       };
 
       adapter.callBids(params);
-      expect(xhr.requests.length).to.be.equal(0);
+      expect(requests.length).to.be.equal(0);
       sinon.assert.calledOnce(hasValidBidRequestSpy);
       sinon.assert.calledOnce(addBidResponseStub);
 
@@ -183,9 +188,9 @@ describe('hiromedia adapter', function () {
       };
 
       adapter.callBids(params);
-      expect(xhr.requests.length).to.be.equal(1);
+      expect(requests.length).to.be.equal(1);
 
-      const bidRequest = xhr.requests[0].url;
+      const bidRequest = requests[0].url;
       const defaultBidUrl = urlParse(DEFAULT_ENDPOINT);
       const bidUrl = urlParse(bidRequest, true);
       const query = bidUrl.query;
@@ -297,7 +302,7 @@ describe('hiromedia adapter', function () {
       let randomIndex = 0;
 
       server.respondWith((request) => {
-        const mathRandomStub = sandbox.stub(Math, 'random', function () {
+        const mathRandomStub = sandbox.stub(Math, 'random').callsFake(function () {
           const randomValue = randomValues[randomIndex];
 
           randomIndex += 1;

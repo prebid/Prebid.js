@@ -16,7 +16,7 @@ describe('openx adapter tests', function () {
     };
 
     beforeEach(() => {
-      stubAjax = sinon.stub(ajax, 'ajax', responseHandlerCallback);
+      stubAjax = sinon.stub(ajax, 'ajax').callsFake(responseHandlerCallback);
       stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(document.body, 'appendChild');
     });
