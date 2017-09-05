@@ -53,7 +53,7 @@ describe('cpmBucketManager', () => {
       }
       ]
     };
-    let expected = '{"low":"552.45","med":"1824.09","high":"1824.09","auto":"1824.09","dense":"1824.09","custom":"1824.0882"}';
+    let expected = '{"low":"552.45","med":"1823.09","high":"1823.09","auto":"1823.09","dense":"1823.09","custom":"1823.0850"}';
     let output = getPriceBucketString(cpm, customConfig, 110.49);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
