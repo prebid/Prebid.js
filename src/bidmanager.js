@@ -113,8 +113,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
     }
-    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastPayload)) {
-      utils.logError(errorMessage(`Video bid has no vastUrl or vastPayload property.`));
+    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastXml)) {
+      utils.logError(errorMessage(`Video bid has no vastUrl or vastXml property.`));
       return false;
     }
     if (bid.mediaType === 'banner' && !validBidSize(bid)) {
