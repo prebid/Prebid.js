@@ -42,7 +42,7 @@ describe('Smartyads adapter tests', function () {
       bids = [];
       server = sinon.fakeServer.create();
 
-      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
+      sandbox.stub(bidManager, 'addBidResponse').callsFake((elemId, bid) => {
         bids.push(bid);
       });
     });

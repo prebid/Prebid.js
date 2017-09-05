@@ -57,7 +57,7 @@ describe('mobfox adapter tests', function () {
     }
   }
   function createMobfoxErrorStub() {
-    return sinon.stub(ajax, 'ajax', (url, callbacks) => {
+    return sinon.stub(ajax, 'ajax').callsFake((url, callbacks) => {
       callbacks.success(
         JSON.stringify({error: 'No Ad Available'}),
         xhrMock
@@ -66,7 +66,7 @@ describe('mobfox adapter tests', function () {
   }
 
   function createMobfoxSuccessStub() {
-    return sinon.stub(ajax, 'ajax', (url, callbacks) => {
+    return sinon.stub(ajax, 'ajax').callsFake((url, callbacks) => {
       callbacks.success(
         JSON.stringify(mockResponses.banner)
         , xhrMock

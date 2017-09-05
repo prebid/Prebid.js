@@ -93,7 +93,7 @@ describe('kargo adapter tests', function () {
   }
 
   function simulateAdLoader() {
-    sandbox.stub(adloader, 'loadScript', (url) => {
+    sandbox.stub(adloader, 'loadScript').callsFake((url) => {
       window.$$PREBID_GLOBAL$$.kargo_prebid_f4cf851b_665a_43d7_b22c_33c8fdebe577(adUnits);
       krakenParams = JSON.parse(decodeURIComponent(url.match(/\?json=(.*)&cb=/)[1]));
     });
