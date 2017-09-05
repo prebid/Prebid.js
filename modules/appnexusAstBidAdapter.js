@@ -289,7 +289,13 @@ function bidToTag(bid) {
     }
   }
 
-  if (bid.mediaType === 'video') { tag.require_asset_url = true; }
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+
+  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+    tag.require_asset_url = true;
+  }
+
   if (bid.params.video) {
     tag.video = {};
     // place any valid video params on the tag
