@@ -68,7 +68,7 @@ describe('twenga adapter tests', function () {
   };
 
   it('creates an empty bid response if no bids', function() {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript').callsFake(function(url) {
+    var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
       var bidUrl = stubLoadScript.getCall(0).args[0];
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
@@ -88,7 +88,7 @@ describe('twenga adapter tests', function () {
   });
 
   it('creates a bid response if bid is returned', function() {
-    var stubLoadScript = sinon.stub(adLoader, 'loadScript').callsFake(function(url) {
+    var stubLoadScript = sinon.stub(adLoader, 'loadScript', function(url) {
       var bidUrl = stubLoadScript.getCall(0).args[0];
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);

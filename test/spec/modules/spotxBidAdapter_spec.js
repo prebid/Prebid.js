@@ -170,7 +170,7 @@ describe('spotx adapter tests', () => {
           }
         };
 
-        loadScriptStub = sinon.stub(adLoader, 'loadScript').callsFake(function(url, callback) {
+        loadScriptStub = sinon.stub(adLoader, 'loadScript', function(url, callback) {
           callback();
         });
       });
@@ -180,7 +180,7 @@ describe('spotx adapter tests', () => {
       });
 
       it('should add bid response on success', (done) => {
-        sinon.stub(bidManager, 'addBidResponse').callsFake((placementCode, bid) => {
+        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
           expect(placementCode).to.equal('video1');
           expect(bid.bidderCode).to.equal('spotx');
           expect(bid.cpm).to.equal(20);
@@ -202,7 +202,7 @@ describe('spotx adapter tests', () => {
       });
 
       it('should add failed bid response on error', (done) => {
-        sinon.stub(bidManager, 'addBidResponse').callsFake((placementCode, bid) => {
+        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
           expect(placementCode).to.equal('video1');
           expect(bid.bidderCode).to.equal('spotx');
           expect(bid.statusMessage).to.equal('Bid returned empty or error response');
