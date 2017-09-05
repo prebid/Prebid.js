@@ -359,7 +359,9 @@ describe('improvedigital adapter tests', function () {
   beforeEach(() => {
     improveDigitalAdapter = new Adapter();
     sandbox = sinon.sandbox.create();
-    sandbox.stub(utils, 'getUniqueIdentifierStr').callsFake(
+    sandbox.stub(
+      utils,
+      'getUniqueIdentifierStr',
       function() {
         var retValue = randomNumber.toString();
         randomNumber++;

@@ -114,13 +114,17 @@ function setupTest(testRequest, force = false) {
   yieldbotLibStub.enableAsync = sandbox.stub(window.yieldbot, 'enableAsync');
 
   yieldbotLibStub.getSlotCriteria =
-    sandbox.stub(window.yieldbot, 'getSlotCriteria').callsFake(
+    sandbox.stub(
+      window.yieldbot,
+      'getSlotCriteria',
       (slotName) => {
         return YB_BID_FIXTURE[slotName] || {ybot_ad: 'n'};
       });
 
   yieldbotLibStub.go =
-    sandbox.stub(window.yieldbot, 'go').callsFake(
+    sandbox.stub(
+      window.yieldbot,
+      'go',
       () => {
         window.yieldbot._initialized = true;
       });

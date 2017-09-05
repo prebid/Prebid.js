@@ -42,7 +42,7 @@ describe('CoxAdapter', () => {
 
     // ===== 1
     it('should provide a correctly populated Bid given a valid response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript').callsFake(() => { emitScript(normalResponse); })
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(normalResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -54,7 +54,7 @@ describe('CoxAdapter', () => {
 
     // ===== 2
     it('should provide an empty Bid given a zero-price response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript').callsFake(() => { emitScript(zeroPriceResponse); })
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(zeroPriceResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -65,7 +65,7 @@ describe('CoxAdapter', () => {
 
     // ===== 3
     it('should provide an empty Bid given an incomplete response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript').callsFake(() => { emitScript(incompleteResponse); })
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(incompleteResponse); })
 
       adapter.callBids(oneBidConfig);
 
@@ -76,7 +76,7 @@ describe('CoxAdapter', () => {
 
     // ===== 4
     it('should not provide a Bid given no response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript').callsFake(() => { emitScript(''); });
+      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(''); });
 
       adapter.callBids(oneBidConfig);
 

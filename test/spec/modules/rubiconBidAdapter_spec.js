@@ -193,21 +193,16 @@ describe('the rubicon adapter', () => {
 
     describe('for requests', () => {
       let xhr,
-        bids,
-        requests;
+        bids;
 
       beforeEach(() => {
         rubiconAdapter = new RubiconAdapter();
 
         bids = [];
-        requests = [];
 
         xhr = sandbox.useFakeXMLHttpRequest();
-        xhr.onCreate = (request) => {
-          requests.push(request);
-        }
 
-        sandbox.stub(bidManager, 'addBidResponse').callsFake((elemId, bid) => {
+        sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
           bids.push(bid);
         });
       });
@@ -220,7 +215,7 @@ describe('the rubicon adapter', () => {
         it('should make a well-formed request', () => {
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let [path, query] = request.url.split('?');
           query = parseQuery(query);
@@ -268,7 +263,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(sizesBidderRequest);
 
-          let query = parseQuery(requests[0].url.split('?')[1]);
+          let query = parseQuery(xhr.requests[0].url.split('?')[1]);
 
           expect(query['size_id']).to.equal('55');
           expect(query['alt_size_ids']).to.equal('57,59');
@@ -280,7 +275,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(sizesBidderRequest);
 
-          expect(requests.length).to.equal(0);
+          expect(xhr.requests.length).to.equal(0);
 
           expect(bidManager.addBidResponse.calledOnce).to.equal(true);
           expect(bids).to.be.lengthOf(1);
@@ -293,7 +288,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(noAccountBidderRequest);
 
-          expect(requests.length).to.equal(0);
+          expect(xhr.requests.length).to.equal(0);
           expect(bidManager.addBidResponse.calledOnce).to.equal(true);
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
@@ -305,7 +300,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(floorBidderRequest);
 
-          let query = parseQuery(requests[0].url.split('?')[1]);
+          let query = parseQuery(xhr.requests[0].url.split('?')[1]);
 
           expect(query['rp_floor']).to.equal('2');
         });
@@ -314,7 +309,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
               success: true,
               identity: {
@@ -327,7 +322,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let query = request.url.split('?')[1];
           query = parseQuery(query);
@@ -350,7 +345,7 @@ describe('the rubicon adapter', () => {
         it('should not send digitrust params when DigiTrust not loaded', () => {
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let query = request.url.split('?')[1];
           query = parseQuery(query);
@@ -367,7 +362,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
               success: true,
               identity: {
@@ -380,7 +375,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let query = request.url.split('?')[1];
           query = parseQuery(query);
@@ -399,7 +394,7 @@ describe('the rubicon adapter', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+          sandbox.stub(window.DigiTrust, 'getUser', () =>
             ({
               success: false,
               identity: {
@@ -412,7 +407,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let query = request.url.split('?')[1];
           query = parseQuery(query);
@@ -442,7 +437,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should send digiTrustId config params', () => {
-            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -458,7 +453,7 @@ describe('the rubicon adapter', () => {
 
             rubiconAdapter.callBids(bidderRequest);
 
-            let request = requests[0];
+            let request = xhr.requests[0];
 
             let query = request.url.split('?')[1];
             query = parseQuery(query);
@@ -479,7 +474,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -495,7 +490,7 @@ describe('the rubicon adapter', () => {
 
             rubiconAdapter.callBids(bidderRequest);
 
-            let request = requests[0];
+            let request = xhr.requests[0];
 
             let query = request.url.split('?')[1];
             query = parseQuery(query);
@@ -512,7 +507,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -528,7 +523,7 @@ describe('the rubicon adapter', () => {
 
             rubiconAdapter.callBids(bidderRequest);
 
-            let request = requests[0];
+            let request = xhr.requests[0];
 
             let query = request.url.split('?')[1];
             query = parseQuery(query);
@@ -545,14 +540,14 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {};
               return config[key];
             });
 
             rubiconAdapter.callBids(bidderRequest);
 
-            let request = requests[0];
+            let request = xhr.requests[0];
 
             let query = request.url.split('?')[1];
             query = parseQuery(query);
@@ -584,13 +579,13 @@ describe('the rubicon adapter', () => {
         it('should make a well-formed video request', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now').callsFake(() =>
+          sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
 
           rubiconAdapter.callBids(bidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
 
           let url = request.url;
           let post = JSON.parse(request.requestBody);
@@ -646,7 +641,7 @@ describe('the rubicon adapter', () => {
         it('should allow a floor price override', () => {
           createVideoBidderRequest();
 
-          sandbox.stub(Date, 'now').callsFake(() =>
+          sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
 
@@ -657,7 +652,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(floorBidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
           let post = JSON.parse(request.requestBody);
 
           let floor = post.slots[0].floor;
@@ -667,7 +662,7 @@ describe('the rubicon adapter', () => {
 
         it('should trap when no video object is passed in', () => {
           createVideoBidderRequestNoVideo();
-          sandbox.stub(Date, 'now').callsFake(() =>
+          sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
 
@@ -675,12 +670,12 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(floorBidderRequest);
 
-          expect(requests.length).to.equal(0);
+          expect(xhr.requests.length).to.equal(0);
         });
 
         it('should get size from bid.sizes too', () => {
           createVideoBidderRequestNoPlayer();
-          sandbox.stub(Date, 'now').callsFake(() =>
+          sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
           );
 
@@ -688,7 +683,7 @@ describe('the rubicon adapter', () => {
 
           rubiconAdapter.callBids(floorBidderRequest);
 
-          let request = requests[0];
+          let request = xhr.requests[0];
           let post = JSON.parse(request.requestBody);
 
           expect(post.slots[0].width).to.equal(300);
@@ -707,7 +702,7 @@ describe('the rubicon adapter', () => {
 
         server = sinon.fakeServer.create();
 
-        sandbox.stub(bidManager, 'addBidResponse').callsFake((elemId, bid) => {
+        sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
           bids.push(bid);
           if (addBidResponseAction) {
             addBidResponseAction();
@@ -1047,7 +1042,7 @@ describe('the rubicon adapter', () => {
       server = sinon.fakeServer.create();
       clock = sinon.useFakeTimers();
 
-      sandbox.stub(bidManager, 'addBidResponse').callsFake((elemId, bid) => {
+      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
         bids.push(bid);
         if (addBidResponseAction) {
           addBidResponseAction();
@@ -1107,7 +1102,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not add the Emily iframe by default', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {delay: 10}
         }};
@@ -1128,7 +1123,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should add the Emily iframe when enabled', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: true, delay: 20}
         }};
@@ -1149,7 +1144,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not fire more than once', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: true, delay: 100}
         }};
@@ -1177,7 +1172,7 @@ describe('the rubicon adapter', () => {
     });
 
     it('should not add the Emily iframe when disabled', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
         var config = { rubicon: {
           userSync: {enabled: false, delay: 50}
         }};

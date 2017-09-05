@@ -71,7 +71,7 @@ describe('imonomy adapter test', () => {
     });
 
     it('no bid if cdb handler responds with no bid empty string response', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.NO_BID });
         done();
       });
@@ -83,7 +83,7 @@ describe('imonomy adapter test', () => {
     });
 
     it('adds bid for valid request', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.GOOD });
         done();
       });
@@ -95,7 +95,7 @@ describe('imonomy adapter test', () => {
     });
 
     it('adds bid for valid request with UM', (done) => {
-      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse').callsFake(function (adUnitCode, bid) {
+      stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.GOOD });
         done();
       });
