@@ -105,6 +105,10 @@ The following parameters in the `bidResponse` object are common across all bidde
 <code>hb_adid_{{ page.biddercode }}</code>
 <code>hb_size_{{ page.biddercode }}</code>
 
+{% endif %}
+
+{% if page.bidder_supports_deals != false %}
+
 <h3>"Default Deal ID" Ad Server Key</h3>
 
 <code>hb_deal_{{ page.biddercode }}</code>
