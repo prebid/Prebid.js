@@ -7,20 +7,20 @@ var bidfactory = require('src/bidfactory.js');
 var Adapter = require('src/adapter.js').default;
 var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
-var realvuAdapter = function realvuAdapter() {
+var RealVuAdapter = function RealVuAdapter() {
   var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
     var pbids = params.bids;
-    //
-    utils.logMessage('realvuBidAdapter params: '+JSON.stringify(params)); 
-    var boost_back = function(){
+    
+    utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
+    var boost_back = function() {
       var adap = new AppnexusAdapter();
-      var in_back = function(rez){
+      var in_back = function(rez) {
         var bid_request = rez.pin.pbjs_bid;
         var callbackId = bid_request.bidId;
-        //
-        utils.logMessage('realvuBidAdapter boost callback "'+callbackId+'", rez.realvu='+rez.realvu); 
-        if(rez.realvu==='yes'){
+        
+        utils.logMessage('realvuBidAdapter boost callback "' + callbackId + '", rez.realvu=' + rez.realvu);
+        if (rez.realvu === 'yes') {
           adloader.loadScript(adap.buildJPTCall(bid_request, callbackId));
         }
         else { // not in view - respond with no bid.
@@ -29,20 +29,20 @@ var realvuAdapter = function realvuAdapter() {
           bidmanager.addBidResponse(bid_request.placementCode, adResponse);
         }
       };
-      for(var i=0;i<pbids.length;i++){
-        var bid_rq = pbids[i];    
+      for (var i = 0; i < pbids.length; i++) {
+        var bid_rq = pbids[i];
         var sizes = utils.parseSizesInput(bid_rq.sizes);
         top.realvu_boost.addUnitById({
           partner_id: bid_rq.params.partnerId,
           unit_id: bid_rq.code,
-          callback:in_back,
-          pbjs_bid:bid_rq,
-          size:sizes[0],
-          mode:'kvp'
+          callback: in_back,
+          pbjs_bid: bid_rq,
+          size: sizes[0],
+          mode: 'kvp'
         });
       }
     };
-    adloader.loadScript("//ac.realvu.net/realvu_boost.js",boost_back,1 );
+    adloader.loadScript('//ac.realvu.net/realvu_boost.js', boost_back, 1);
   };
 
   return Object.assign(this, {
@@ -51,6 +51,6 @@ var realvuAdapter = function realvuAdapter() {
   });
 };
 
-adaptermanager.registerBidAdapter(new realvuAdapter(), 'realvu');
+adaptermanager.registerBidAdapter(new RealVuAdapter(), 'realvu');
 
-module.exports = realvuAdapter;
+module.exports = RealVuAdapter;
