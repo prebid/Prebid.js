@@ -36,7 +36,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
         if (utils.isStr(zoneId)) {
           return zoneId.split(',').slice(0, 50).join();
         } else {
-          return '';
+          return undefined;
         }
       }
     }
@@ -93,8 +93,6 @@ var PubmaticAdapter = function PubmaticAdapter() {
         // istanbul ignore else
         if (value) {
           entry = customPars[key];
-
-          console.log(key, value, typeof value, utils.isStr(value));
 
           if (typeof entry === 'object') {
             value = entry.m(value, conf);
