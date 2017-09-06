@@ -94,20 +94,19 @@ var PubmaticAdapter = function PubmaticAdapter() {
         if (value) {
           entry = customPars[key];
 
+          console.log(key, value, typeof value, utils.isStr(value));
+
           if (typeof entry === 'object') {
             value = entry.m(value, conf);
             key = entry.n;
           } else {
-            if (utils.isStr(value)) {
-              key = customPars[key];
-            } else {
-              utils.logWarn('PubMatic: Ignoring param key: ' + customPars[key] + ', expects string-value, found ' + typeof value);
-            }
+            key = customPars[key];
           }
 
-          // istanbul ignore else
-          if (value) {
+          if (utils.isStr(value)) {
             conf[key] = value;
+          } else {
+            utils.logWarn('PubMatic: Ignoring param key: ' + customPars[key] + ', expects string-value, found ' + typeof value);
           }
         }
       }
