@@ -16,7 +16,7 @@ var opens = require('open');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var del = require('del');
-var gulpJsdoc2md = require('gulp-jsdoc-to-markdown');
+var gulpDocumentation = require('gulp-documentation');
 var concat = require('gulp-concat');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
@@ -219,10 +219,9 @@ gulp.task('clean-docs', function () {
 
 gulp.task('docs', ['clean-docs'], function () {
   return gulp.src('src/prebid.js')
-    .pipe(concat('readme.md'))
-    .pipe(gulpJsdoc2md())
+    .pipe(gulpDocumentation('md'))
     .on('error', function (err) {
-      gutil.log('jsdoc2md failed:', err.message);
+      gutil.log('`gulp-documentation` failed:', err.message);
     })
     .pipe(gulp.dest('docs'));
 });
