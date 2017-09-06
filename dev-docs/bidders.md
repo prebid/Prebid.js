@@ -30,6 +30,7 @@ For information about which bidders support video and native demand, see <a href
 - [Bidders](#bidders)
 - [Common Bid Response Parameters](#common-bid-response-parameters)
 - [Bidders with Video and Native Demand](#bidders-with-video-and-native-demand)
+- [Bidders integrated with Prebid Server](#prebid-server-bidders)
 
 ## Bidders
 
@@ -85,6 +86,21 @@ The following parameters in the `bidResponse` object are common across all bidde
 | rubicon         | 'video'               |
 | spotx           | 'video'               |
 | vertamedia      | 'video'               |
+
+<a name="prebid-server-bidders"></a>
+
+## Bidders integrated with Prebid Server
+{: .no_toc }
+
+Demand from the bidders listed below is available via the [Prebid Server integration]({{site.baseurl}}/dev-docs/get-started-with-prebid-server.html).
+
+- [appnexus](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L628)
+- [districtm](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L629)
+- [indexExchange](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L630)
+- [pubmatic](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L631)
+- [pulsepoint](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L632)
+- [rubicon](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L633)
+- [audienceNetwork](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L635)
 
 </div>
 
