@@ -8,9 +8,12 @@ import adaptermanager from 'src/adaptermanager';
 const ServerBidAdapter = function ServerBidAdapter() {
   const baseAdapter = new Adapter('serverbid');
 
-  const BASE_URI = '//e.serverbid.com/api/v2';
+  const SERVERBID_BASE_URI = 'https://e.serverbid.com/api/v2';
+  const SMARTSYNC_BASE_URI = 'https://s.zkcdn.net/ss';
+  const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
-  const sizeMap = [null,
+  const sizeMap = [
+    null,
     '120x90',
     '120x90',
     '468x60',
@@ -45,43 +48,66 @@ const ServerBidAdapter = function ServerBidAdapter() {
 
   baseAdapter.callBids = function(params) {
     if (params && params.bids && utils.isArray(params.bids) && params.bids.length) {
-      const data = {
-        placements: [],
-        time: Date.now(),
-        user: {},
-        url: utils.getTopWindowUrl(),
-        referrer: document.referrer,
-        enableBotFiltering: true,
-        includePricingData: true
-      };
-
-      const bids = params.bids || [];
-      for (let i = 0; i < bids.length; i++) {
-        const bid = bids[i];
-
-        bidIds.push(bid.bidId);
-
-        const bid_data = {
-          networkId: bid.params.networkId,
-          siteId: bid.params.siteId,
-          zoneIds: bid.params.zoneIds,
-          campaignId: bid.params.campaignId,
-          flightId: bid.params.flightId,
-          adId: bid.params.adId,
-          divName: bid.bidId,
-          adTypes: bid.adTypes || getSize(bid.sizes)
+      if (!window.SMARTSYNC) {
+        _callBids(params);
+      } else {
+        window[SMARTSYNC_CALLBACK] = function() {
+          window[SMARTSYNC_CALLBACK] = function() {};
+          _callBids(params);
         };
 
-        if (bid_data.networkId && bid_data.siteId) {
-          data.placements.push(bid_data);
-        }
-      }
+        const siteId = params.bids[0].params.siteId;
+        _appendScript(SMARTSYNC_BASE_URI + '/' + siteId + '.js');
 
-      if (data.placements.length) {
-        ajax(BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+        const sstimeout = window.SMARTSYNC_TIMEOUT || ((params.timeout || 500) / 2);
+        setTimeout(function() {
+          var cb = window[SMARTSYNC_CALLBACK];
+          window[SMARTSYNC_CALLBACK] = function() {};
+          cb();
+        }, sstimeout);
       }
     }
   };
+
+  function _appendScript(src) {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = src;
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+
+  function _callBids(params) {
+    const data = {
+      placements: [],
+      time: Date.now(),
+      user: {},
+      url: utils.getTopWindowUrl(),
+      referrer: document.referrer,
+      enableBotFiltering: true,
+      includePricingData: true
+    };
+
+    const bids = params.bids || [];
+
+    for (let i = 0; i < bids.length; i++) {
+      const bid = bids[i];
+
+      bidIds.push(bid.bidId);
+
+      const placement = Object.assign({
+        divName: bid.bidId,
+        adTypes: bid.adTypes || getSize(bid.sizes)
+      }, bid.params);
+
+      if (placement.networkId && placement.siteId) {
+        data.placements.push(placement);
+      }
+    }
+
+    if (data.placements.length) {
+      ajax(SERVERBID_BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+    }
+  }
 
   function _responseCallback(result) {
     let bid;

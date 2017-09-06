@@ -20,7 +20,7 @@ const BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
 
 /**
  * @typedef {object} CacheablePayloadBid
- * @property {string} vastPayload Some VAST XML which loads an ad in a video player.
+ * @property {string} vastXml Some VAST XML which loads an ad in a video player.
  */
 
 /**
@@ -58,7 +58,7 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  const vastValue = bid.vastPayload ? bid.vastPayload : wrapURI(bid.vastUrl);
+  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl);
   return {
     type: 'xml',
     value: vastValue
