@@ -5,7 +5,7 @@ var ajax = require('src/ajax.js').ajax;
 var adaptermanager = require('src/adaptermanager');
 
 const STR_BIDDER_CODE = 'sharethrough';
-const STR_VERSION = '1.2.0';
+const STR_VERSION = '1.3.0';
 
 var SharethroughAdapter = function SharethroughAdapter() {
   const str = {};
@@ -66,23 +66,27 @@ var SharethroughAdapter = function SharethroughAdapter() {
                 </div>
                 <script>var ${windowLocation} = ${bidJsonString}</script>
                 <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>`
-      if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
+
+      // if sfp.js/tag.js is not already loaded on top page
+      if (!(window.top.STR && window.top.STR.Tag)) {
         let sfpScriptTag = `
           <script>
-          (function() {
-            const sfp_js = document.createElement('script');
-            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
-            sfp_js.type = 'text/javascript';
-            sfp_js.charset = 'utf-8';
-            try {
-                window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
-            } catch (e) {
-              console.log(e);
-            }
-          })()
+            (function() {
+              const sfp_js = document.createElement('script');
+              sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
+              sfp_js.type = 'text/javascript';
+              sfp_js.charset = 'utf-8';
+              try {
+                  window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
+              } catch (e) {
+                console.log(e);
+              }
+            })()
           </script>`
+
         bid.ad += sfpScriptTag;
       }
+
       bidmanager.addBidResponse(bidObj.placementCode, bid);
     } catch (e) {
       _handleInvalidBid(bidObj);
