@@ -60,17 +60,16 @@ The following video parameters are supported as of 0.19.0:
 
 ### Configuration
 
-As of Prebid 0.27, the Rubicon adapter initiates user-sync requests that will improve DSP match rate,
+As of Prebid 0.27, the Rubicon adapter has the ability to initiate user-sync requests that will improve DSP user ID match rate,
 with the aim of generating higher bid prices.
 
-By default, sync requests are fired 5 seconds after the auction is complete. User-sync behavior can be 
-controlled with a call to setConfig():
+By default, sync requests are off. To improve monetization, we recommend firing user syncs 5 seconds after the auction is complete with a call to setConfig():
 
 ```javascript
 $$PREBID_GLOBAL$$.setConfig({ rubicon: {
     userSync: {
       enabled: true,  // set enabled to false to turn off user-sync
-      delay: 7000     // milliseconds after auction is complete
+      delay: 5000     // milliseconds after auction is complete
     }
  }});
 ```
