@@ -22,6 +22,7 @@ const NATIVE_MAPPING = {
   },
   sponsoredBy: 'sponsored_by'
 };
+const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -58,7 +59,14 @@ export const spec = {
     const memberIdBid = bidRequests.find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
-    const payload = {tags: [...tags], user: userObj};
+    const payload = {
+      tags: [...tags],
+      user: userObj,
+      sdk: {
+        source: SOURCE,
+        version: '$prebid.version$'
+      }
+    };
     if (member > 0) {
       payload.member_id = member;
     }
