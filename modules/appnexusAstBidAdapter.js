@@ -27,7 +27,6 @@ const SOURCE = 'pbjs';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, NATIVE],
-  aliases: ['dummy'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -85,9 +84,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    const parsed = JSON.parse(serverResponse);
     const bids = [];
-    parsed.tags.forEach(serverBid => {
+    serverResponse.tags.forEach(serverBid => {
       const rtbBid = getRtbBid(serverBid);
       if (rtbBid) {
         if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {

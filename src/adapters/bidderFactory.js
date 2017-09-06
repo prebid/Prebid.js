@@ -30,6 +30,79 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  */
 
 /**
+ * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
+ * make a Bidder.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
+ * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
+ * @property {function(object): boolean} areParamsValid Determines whether or not the given object has all the params
+ *   needed to make a valid request.
+ * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
+ *   requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
+ *   a "params" property which has passed the areParamsValid() test
+ * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
+ *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
+ *   bids will be discarded.
+ * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
+ *   from the server, determine which user syncs should occur. The argument array will contain every element
+ *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
+ *   important ones should come first, since publishers may limit how many are dropped on their page.
+ */
+
+/**
+ * @typedef {object} BidRequest
+ *
+ * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ *   This is guaranteed to have passed the spec.areParamsValid() test.
+ */
+
+/**
+ * @typedef {object} ServerRequest
+ *
+ * @property {('GET'|'POST')} method The type of request which this is.
+ * @property {string} url The endpoint for the request. For example, "//bids.example.com".
+ * @property {string|object} data Data to be sent in the request.
+ *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
+ *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
+ *   JSON-serialized into the Request body.
+ */
+
+/**
+ * @typedef {object} Bid
+ *
+ * @property {string} requestId The specific BidRequest which this bid is aimed at.
+ *   This should correspond to one of the
+ * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} height The height of the ad, in pixels.
+ * @property {number} width The width of the ad, in pixels.
+ *
+ * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
+ *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
+ */
+
+/**
+ * @typedef {Object} SyncOptions
+ *
+ * An object containing information about usersyncs which the adapter should obey.
+ *
+ * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
+ * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
+ */
+
+/**
+ * TODO: Move this to the UserSync module after that PR is merged.
+ *
+ * @typedef {object} UserSync
+ *
+ * @property {('image'|'iframe')} type The type of user sync to be done.
+ * @property {string} url The URL which makes the sync happen.
+ */
+
+/**
  * Register a bidder with prebid, using the given spec.
  *
  * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
@@ -168,6 +241,9 @@ export function newBidder(spec) {
       // If the adapter code fails, no bids should be added. After all the bids have been added, make
       // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
       function onSuccess(response) {
+        try {
+          response = JSON.parse(response);
+        } catch (e) { /* response might not be JSON... that's ok. */ }
         responses.push(response);
 
         let bids;
@@ -223,76 +299,3 @@ export function newBidder(spec) {
     return bid;
   }
 }
-
-/**
- * @typedef {object} ServerRequest
- *
- * @property {('GET'|'POST')} method The type of request which this is.
- * @property {string} url The endpoint for the request. For example, "//bids.example.com".
- * @property {string|object} data Data to be sent in the request.
- *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
- *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
- *   JSON-serialized into the Request body.
- */
-
-/**
- * @typedef {object} BidRequest
- *
- * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- *   This is guaranteed to have passed the spec.areParamsValid() test.
- */
-
-/**
- * @typedef {object} Bid
- *
- * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should correspond to one of the
- * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @property {number} cpm The bid price, in US cents per thousand impressions.
- * @property {number} height The height of the ad, in pixels.
- * @property {number} width The width of the ad, in pixels.
- *
- * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
- *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
- */
-
-/**
- * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
- * make a Bidder.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
- * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
- * @property {function(object): boolean} areParamsValid Determines whether or not the given object has all the params
- *   needed to make a valid request.
- * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
- *   requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   a "params" property which has passed the areParamsValid() test
- * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
- *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
- *   bids will be discarded.
- * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
- *   from the server, determine which user syncs should occur. The argument array will contain every element
- *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
- *   important ones should come first, since publishers may limit how many are dropped on their page.
- */
-
-/**
- * @typedef {Object} SyncOptions
- *
- * An object containing information about usersyncs which the adapter should obey.
- *
- * @property {boolean} iframeEnabled True if iframe usersyncs are allowed, and false otherwise
- * @property {boolean} pixelEnabled True if image usersyncs are allowed, and false otherwise
- */
-
-/**
- * TODO: Move this to the UserSync module after that PR is merged.
- *
- * @typedef {object} UserSync
- *
- * @property {('image'|'iframe')} type The type of user sync to be done.
- * @property {string} url The URL which makes the sync happen.
- */
