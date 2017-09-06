@@ -85,7 +85,7 @@ try {
 The final step for implementing Prebid Mobile is to attach bid keywords on the ad object. You can either attach bids immediately or wait for ads before attaching bids. To attach bids immediately use the following API.
 
 ```java
-Prebid.attachBids(YOUR-AD-REQUEST-HERE, YOUR-AD-UNIT-ID-HERE, this.getActivity());
+Prebid.attachBids(YOUR-AD-OBJECT-HERE, YOUR-AD-UNIT-ID-HERE, Context);
 ```
 
 To wait for ads before attaching bids, implement the following listener.
@@ -93,8 +93,9 @@ To wait for ads before attaching bids, implement the following listener.
 ```java
 @Override
 public void onAttachComplete(Object adObj) {
-    if (adView2 != null && adObj != null && adObj instanceof PublisherAdRequest) {
-        adView2.loadAd((PublisherAdRequest) adObj);
+	// using dfp implementation as an example
+    if (adView != null && adObj != null && adObj instanceof PublisherAdRequest) {
+        adView.loadAd((PublisherAdRequest) adObj);
         Prebid.detachUsedBid(adObj);
     }
 }
@@ -105,8 +106,8 @@ Prebid Mobile will immediately tell your app whether it has a bid or not without
 {: .table .table-bordered .table-striped }
 | Primary Ad Server | Ad Object Type | Ad Object                  | Load Method                                        |
 |-------------------|----------------|----------------------------|----------------------------------------------------|
-| DFP               | Banner         | `PublisherAdView`          | `public void loadAd(PublisherAdRequest adRequest)` |
-| DFP               | Interstitial   | `PublisherInterstitialAd`  | `public void loadAd(PublisherAdRequest adRequest)` |
+| DFP               | Banner         | `PublisherAdRequest`       | `public void loadAd(PublisherAdRequest adRequest)` |
+| DFP               | Interstitial   | `PublisherAdRequest`       | `public void loadAd(PublisherAdRequest adRequest)` |
 | MoPub             | Banner         | `MoPubView`                | `public void loadAd()`                             |
 | MoPub             | Interstitial   | `MoPubInterstitial`        | `public void load()`                               |
 
