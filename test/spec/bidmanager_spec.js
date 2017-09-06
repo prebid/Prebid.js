@@ -465,6 +465,20 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid.adserverTargeting[`hb_deal`], bid.dealId, 'dealId placed in adserverTargeting');
     });
 
+    it('should pass through default adserverTargeting sent from adapter', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[0]
+      );
+
+      bid.adserverTargeting.extra = 'stuff';
+
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid.adserverTargeting.hb_bidder, 'triplelift');
+      assert.equal(addedBid.adserverTargeting.extra, 'stuff');
+    });
+
     it('should not alter bid adID', () => {
       const bid1 = Object.assign({},
         bidfactory.createBid(2),

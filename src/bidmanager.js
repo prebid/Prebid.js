@@ -191,12 +191,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbCg = priceStringsObj.custom;
 
     // if there is any key value pairs to map do here
-    var keyValues = {};
+    var keyValues;
     if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
     }
 
-    bid.adserverTargeting = keyValues;
+    // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
+    bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
   }
 
   function doCallbacksIfNeeded() {
