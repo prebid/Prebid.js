@@ -349,12 +349,11 @@ function outstreamRender(bid) {
       uuid: bid.adResponse.uuid,
       adResponse: bid.adResponse,
       rendererOptions: bid.renderer.getConfig()
-    }, handleOutstreamRendererEvents.bind(bid));
+    }, handleOutstreamRendererEvents.bind(null, bid));
   });
 }
 
-function handleOutstreamRendererEvents(id, eventName) {
-  const bid = this;
+function handleOutstreamRendererEvents(bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
