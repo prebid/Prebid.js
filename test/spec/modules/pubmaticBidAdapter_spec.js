@@ -98,7 +98,7 @@ describe('PubMaticAdapter', () => {
             profId: '1234',
             verId: '12',
             pmzoneid: 'abcd123, efg345',
-            dctr: 1234
+            dctr: 'key=1234,5678'
           }
         }));
         var callURL = utils.createContentToExecuteExtScriptInFriendlyFrame.getCall(0).args[0];
@@ -120,9 +120,8 @@ describe('PubMaticAdapter', () => {
         expect(callURL).to.contain('wiid=abcdefghijk');
         expect(callURL).to.contain('profId=1234');
         expect(callURL).to.contain('verId=12');
-        // todo
-        // dctr check
-        // pmzoneid check
+        expect(callURL).to.contain('pmZoneId=abcd123%2C%20efg345');
+        expect(callURL).to.contain('dctr=key%3D1234%2C5678');
       });
 
       it('for publisherId 9990 call is made to gads.pubmatic.com, age passed as int not being passed ahead', () => {
@@ -140,8 +139,8 @@ describe('PubMaticAdapter', () => {
         }));
         var callURL = utils.createContentToExecuteExtScriptInFriendlyFrame.getCall(0).args[0];
         expect(callURL).to.contain('gads.pubmatic.com/AdServer/AdCallAggregator?');
-        // todo
-        // pmzoneid check not being passed
+        expect(callURL).to.not.contain('age=20');
+        expect(callURL).to.not.contain('dctr=1234');
       });
 
       it('for publisherId 9990 call is made to gads.pubmatic.com, invalid data for pmzoneid', () => {
@@ -159,12 +158,11 @@ describe('PubMaticAdapter', () => {
         }));
         var callURL = utils.createContentToExecuteExtScriptInFriendlyFrame.getCall(0).args[0];
         expect(callURL).to.contain('gads.pubmatic.com/AdServer/AdCallAggregator?');
-        // todo
-        // pmzoneid check not being passed
+        expect(callURL).to.not.contain('pmZoneId=');
       });
     });
 
-    describe('bid response', () => {
+    describe('#handlePubmaticCallback: ', () => {
       beforeEach(() => {
         sinon.stub(utils, 'createContentToExecuteExtScriptInFriendlyFrame', function() {
           return '';
@@ -181,7 +179,7 @@ describe('PubMaticAdapter', () => {
         expect($$PREBID_GLOBAL$$.handlePubmaticCallback).to.exist.and.to.be.a('function');
       });
 
-      xit('empty response, arguments not passed', () => {
+      it('empty response, arguments not passed', () => {
         adapter.callBids(createBidderRequest({
           params: {
             publisherId: 9999,
@@ -190,10 +188,10 @@ describe('PubMaticAdapter', () => {
           }
         }));
         $$PREBID_GLOBAL$$.handlePubmaticCallback();
-        sinon.assert.called(bidmanager.addBidResponse);
+        expect(bidmanager.addBidResponse.callCount).to.equal(0);
       });
 
-      xit('empty response', () => {
+      it('empty response', () => {
         adapter.callBids(createBidderRequest({
           params: {
             publisherId: 9999,
@@ -203,6 +201,10 @@ describe('PubMaticAdapter', () => {
         }));
         $$PREBID_GLOBAL$$.handlePubmaticCallback({}, {});
         sinon.assert.called(bidmanager.addBidResponse);
+        expect(bidmanager.addBidResponse.firstCall.args[0]).to.equal('DIV_1');
+        var theBid = bidmanager.addBidResponse.firstCall.args[1];
+        expect(theBid.bidderCode).to.equal('pubmatic');
+        expect(theBid.getStatusCode()).to.equal(2);
       });
 
       it('not empty response', () => {
