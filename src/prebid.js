@@ -647,6 +647,10 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
   config.setConfig({ enableSendAllBids: true });
 };
 
+/**
+ * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array} of bid object(s).
+*/
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
 };
