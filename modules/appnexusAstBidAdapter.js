@@ -338,7 +338,6 @@ function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
 }
 
-
 function outstreamRender(bid) {
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
