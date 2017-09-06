@@ -117,7 +117,12 @@ function newRenderer(adUnitCode, rtbBid) {
     config: { adText: `AppNexus Outstream Video Ad via Prebid.js` },
     loaded: false,
   });
-  renderer.setRender(outstreamRender);
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarning('Prebid Error calling setRender on renderer', err);
+  }
 
   renderer.setEventHandlers({
     impression: () => utils.logMessage('AppNexus outstream video impression event'),
@@ -331,6 +336,26 @@ function hasMemberId(bid) {
 
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+}
+
+
+function outstreamRender(bid) {
+  // push to render queue because ANOutstreamVideo may not be loaded yet
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      tagId: bid.adResponse.tag_id,
+      sizes: [bid.getSize().split('x')],
+      targetId: bid.adUnitCode, // target div id to render video
+      uuid: bid.adResponse.uuid,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(bid));
+  });
+}
+
+function handleOutstreamRendererEvents(id, eventName) {
+  const bid = this;
+  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 function parseMediaType(rtbBid) {
