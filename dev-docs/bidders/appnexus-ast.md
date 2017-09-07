@@ -22,15 +22,15 @@ adapter include:
 ### bid params
 
 {: .table .table-bordered .table-striped }
-| Name                | Scope    | Description                                                                                                               | Example                                               |
-|---------------------+----------+---------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------|
-| `placementId`       | required | The placement ID from AppNexus.  You may identify a placement using the `invCode` and `member` instead of a placement ID. | `"234234"`                                            |
-| `allowSmallerSizes` | optional | If `true`, ads smaller than the values in your ad unit's `sizes` array will be allowed to serve. Defaults to `false`.     | `true`                                                |
-| `keywords`          | optional | A set of key-value pairs applied to all ad slots on the page.  Mapped to query string segments for buy-side targeting.    | `keywords: { genre: ['rock', 'pop'] }`                |
-| `video`             | optional | Video targeting parameters.  See the [video section below](#appnexus-ast-video) for details.                              | `video: { playback_method: ['auto_play_sound_off'] }` |
-| `invCode`           | optional | The inventory code from AppNexus. Must be used with `member`.                                                             | `"abc123"`                                            |
-| `member`            | optional | The member ID  from AppNexus. Must be used with `invCode`.                                                                | `"12345"`                                             |
-| `reserve`           | optional | Sets a floor price for the bid that is returned                                                                           | `0.90`                                                |
+| Name                | Scope    | Description                                                                                                                                                                   | Example                                               |
+|---------------------+----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------|
+| `placementId`       | required | The placement ID from AppNexus.  You may identify a placement using the `invCode` and `member` instead of a placement ID.                                                     | `"234234"`                                            |
+| `allowSmallerSizes` | optional | If `true`, ads smaller than the values in your ad unit's `sizes` array will be allowed to serve. Defaults to `false`.                                                         | `true`                                                |
+| `keywords`          | optional | A set of key-value pairs applied to all ad slots on the page.  Mapped to [query string segments for buy-side targeting](https://wiki.appnexus.com/x/7oCzAQ) (login required). | `keywords: { genre: ['rock', 'pop'] }`                |
+| `video`             | optional | Video targeting parameters.  See the [video section below](#appnexus-ast-video) for details.                                                                                  | `video: { playback_method: ['auto_play_sound_off'] }` |
+| `invCode`           | optional | The inventory code from AppNexus. Must be used with `member`.                                                                                                                 | `"abc123"`                                            |
+| `member`            | optional | The member ID  from AppNexus. Must be used with `invCode`.                                                                                                                    | `"12345"`                                             |
+| `reserve`           | optional | Sets a floor price for the bid that is returned                                                                                                                               | `0.90`                                                |
 
 (Sizes set in `adUnit` object will also apply to the AppNexus bid requests.)
 
