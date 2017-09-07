@@ -57,7 +57,7 @@ function gulpBundle(dev) {
   return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
-module.exports = function nodeBundle(modules) {
+function nodeBundle(modules) {
   return new Promise((resolve, reject) => {
     bundle(false, modules)
       .on('error', (err) => {
@@ -68,7 +68,7 @@ module.exports = function nodeBundle(modules) {
         done();
       }));
   });
-};
+}
 
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules(),
@@ -118,6 +118,10 @@ function newKarmaCallback(done) {
 gulp.task('build-bundle-dev', ['devpack'], gulpBundle.bind(null, true));
 gulp.task('build-bundle-prod', ['webpack'], gulpBundle.bind(null, false));
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+gulp.task('bundle-to-stdout', function() {
+  nodeBundle().then(file => console.log(file));
+});
 
 gulp.task('devpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
@@ -292,3 +296,5 @@ gulp.task('build-postbid', function() {
     .pipe(uglify())
     .pipe(gulp.dest('build/dist'));
 });
+
+module.exports = nodeBundle;
