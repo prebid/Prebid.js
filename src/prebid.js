@@ -1,4 +1,4 @@
-/** @module $$PREBID_GLOBAL$$ */
+/** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
@@ -115,7 +115,7 @@ function setRenderSize(doc, width, height) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr
+ * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
  * @return {Array}  returnObj return bids array
  */
 $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
@@ -142,7 +142,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 /**
  * returns all ad server targeting for all ad units
  * @return {Object} Map of adUnitCodes and targeting values []
- * @alias module:$$PREBID_GLOBAL$$.getAdserverTargeting
+ * @alias module:pbjs.getAdserverTargeting
  */
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
@@ -167,7 +167,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 /**
  * This function returns the bid responses at the given moment.
- * @alias module:$$PREBID_GLOBAL$$.getBidResponses
+ * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
  */
 
@@ -194,7 +194,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 /**
  * Returns bidResponses for the specified adUnitCode
  * @param  {string} adUnitCode adUnitCode
- * @alias module:$$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode
+ * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
 
@@ -208,7 +208,7 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
- * @alias module:$$PREBID_GLOBAL$$.setTargetingForGPTAsync
+ * @alias module:pbjs.setTargetingForGPTAsync
  */
 $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
@@ -245,7 +245,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
 
 /**
  * Returns a bool if all the bids have returned or timed out
- * @alias module:$$PREBID_GLOBAL$$.allBidsAvailable
+ * @alias module:pbjs.allBidsAvailable
  * @return {bool} all bids available
  *
  * @deprecated This function will be removed in Prebid 1.0
@@ -263,7 +263,7 @@ $$PREBID_GLOBAL$$.allBidsAvailable = function () {
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
  * @param  {HTMLDocument} doc document
  * @param  {string} id bid id to locate the ad
- * @alias module:$$PREBID_GLOBAL$$.renderAd
+ * @alias module:pbjs.renderAd
  */
 $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
@@ -319,7 +319,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
  * @param  {string} adUnitCode the adUnitCode to remove
- * @alias module:$$PREBID_GLOBAL$$.removeAdUnit
+ * @alias module:pbjs.removeAdUnit
  */
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
@@ -426,7 +426,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
  *
  * Add adunit(s)
  * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
- * @alias module:$$PREBID_GLOBAL$$.addAdUnits
+ * @alias module:pbjs.addAdUnits
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
@@ -490,7 +490,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * Add a callback event
  * @param {string} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
  * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
- * @alias module:$$PREBID_GLOBAL$$.addCallback
+ * @alias module:pbjs.addCallback
  * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
@@ -513,7 +513,7 @@ $$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
 /**
  * Remove a callback event
  * //@param {string} cbId id of the callback to remove
- * @alias module:$$PREBID_GLOBAL$$.removeCallback
+ * @alias module:pbjs.removeCallback
  * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
@@ -773,10 +773,10 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @memberof $$PREBID_GLOBAL$$
+ * @memberof pbjs
  * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                            the Prebid script has been fully loaded.
- * @alias module:$$PREBID_GLOBAL$$.cmd.push
+ * @alias module:pbjs.cmd.push
  */
 $$PREBID_GLOBAL$$.cmd.push = function(command) {
   if (typeof command === 'function') {
