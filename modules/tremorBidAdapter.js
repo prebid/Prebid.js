@@ -148,8 +148,6 @@ function TremorAdapter() {
       bid.cpm = response.price;
       bid.crid = response.crid;
       bid.vastXml = response.adm;
-      // This is a dummy vast URL, Tremor sends back the vast XML (the line above).
-      bid.vastUrl = 'http://cdn.tremorhub.com/static/dummy.xml';
       bid.mediaType = 'video';
     }
 
