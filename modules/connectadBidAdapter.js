@@ -42,6 +42,12 @@ function ConnectAdAdapter() {
     var reqUrl;
     for (var i = 0; i < params.bids.length; i++) {
       var bid = params.bids[i];
+      if (!bid.params || !bid.params.placementId) {
+        var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
+        bidObject.bidderCode = bidderCode;
+        bidmanager.addBidResponse(bid.placementCode, bidObject);
+        continue;
+      }
       bid.ConnectAdConId = _genAdConId();
       var placementId = utils.getBidIdParameter('placementId', bid.params);
       var host = 'connected-by.connectad.io';

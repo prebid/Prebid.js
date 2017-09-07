@@ -5,10 +5,10 @@ var utils = require('src/utils.js');
 var adaptermanager = require('src/adaptermanager.js');
 var Ajax = require('src/ajax.js');
 
-function AdSpiritAdapter() {
+function XapadsMediaAdapter() {
   var rtbUrl = '/rtb/getbid.php?rtbprovider=prebid';
   var scriptUrl = '/adasync.min.js';
-  var bidderCode = 'adspirit';
+  var bidderCode = 'xapadsmedia';
 
   function _responseCallback(bid, data) {
     var bidObject;
@@ -28,11 +28,11 @@ function AdSpiritAdapter() {
 
   function _bid(bid, data) {
     var bidObject;
-    var host = utils.getBidIdParameter('host', bid.params);
+    var host = 'dsp.xapads.com';
     bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
     bidObject.bidderCode = bidderCode;
     bidObject.cpm = data.cpm;
-    bidObject.ad = '<scr' + 'ipt src="//' + host + scriptUrl + '"></scr' + 'ipt>' + '<ins id="' + bid.adspiritConId + '"></ins>' + data.adm;
+    bidObject.ad = '<scr' + 'ipt src="//' + host + scriptUrl + '"></scr' + 'ipt>' + '<ins id="' + bid.XapadsMediaConId + '"></ins>' + data.adm;
     bidObject.width = data.w;
     bidObject.height = data.h;
     bidmanager.addBidResponse(bid.placementCode, bidObject);
@@ -42,16 +42,16 @@ function AdSpiritAdapter() {
     var reqUrl;
     for (var i = 0; i < params.bids.length; i++) {
       var bid = params.bids[i];
-      if (!bid.params || !bid.params.placementId || !bid.params.host) {
+      if (!bid.params || !bid.params.placementId) {
         var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
         bidObject.bidderCode = bidderCode;
         bidmanager.addBidResponse(bid.placementCode, bidObject);
         continue;
       }
-      bid.adspiritConId = _genAdConId();
+      bid.XapadsMediaConId = _genAdConId();
       var placementId = utils.getBidIdParameter('placementId', bid.params);
-      var host = utils.getBidIdParameter('host', bid.params);
-      reqUrl = '//' + host + rtbUrl + '&pid=' + placementId + '&ref=' + encodeURIComponent(utils.getTopWindowUrl()) + '&scx=' + (screen.width) + '&scy=' + (screen.height) + '&wcx=' + ('innerWidth' in window ? window.innerWidth : page.clientWidth) + '&wcy=' + ('innerHeight' in window ? window.innerHeight : page.clientHeight) + '&async=' + bid.adspiritConId + '&t=' + Math.round(Math.random() * 100000);
+      var host = 'dsp.xapads.com';
+      reqUrl = '//' + host + rtbUrl + '&pid=' + placementId + '&ref=' + encodeURIComponent(utils.getTopWindowUrl()) + '&scx=' + (screen.width) + '&scy=' + (screen.height) + '&wcx=' + ('innerWidth' in window ? window.innerWidth : page.clientWidth) + '&wcy=' + ('innerHeight' in window ? window.innerHeight : page.clientHeight) + '&async=' + bid.XapadsMediaConId + '&t=' + Math.round(Math.random() * 100000);
       Ajax.ajax(reqUrl, _responseCallback.bind(this, bid), { }, {method: 'GET'});
     }
   }
@@ -66,5 +66,5 @@ function AdSpiritAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new AdSpiritAdapter(), 'adspirit');
-module.exports = AdSpiritAdapter;
+adaptermanager.registerBidAdapter(new XapadsMediaAdapter(), 'xapadsmedia');
+module.exports = XapadsMediaAdapter;
