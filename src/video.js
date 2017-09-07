@@ -2,7 +2,6 @@ import { videoAdapters } from './adaptermanager';
 import { getBidRequest, deepAccess } from './utils';
 
 const VIDEO_MEDIA_TYPE = 'video';
-const INSTREAM = 'instream';
 const OUTSTREAM = 'outstream';
 
 /**
@@ -25,11 +24,14 @@ export const hasNonVideoBidder = adUnit =>
  */
 export function isValidVideoBid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  const context =
-    bidRequest && deepAccess(bidRequest, 'mediaTypes.video.context');
+
+  const videoMediaType =
+    bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
+  const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   // if context not defined assume default 'instream' for video bids
-  if (!bidRequest || !context || context === INSTREAM) {
+  // instream bids require a vast url or vast xml content
+  if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     return !!(bid.vastUrl || bid.vastXml);
   }
 
