@@ -139,24 +139,25 @@ export function newBidder(spec) {
         return;
       }
 
-      // callBids must add a NO_BID response for _every_ placementCode, in order for the auction to
+      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
       // end properly. This map stores placement codes which we've made _real_ bids on.
       //
-      // As we add _real_ bids to the bidmanager, we'll log the placementCodes here too. Once all the real
-      // bids have been added, fillNoBids() can be called to end the auction.
+      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
+      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
+      // will end the auction.
       //
       // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
-      const placementCodesHandled = {};
-      function addBidWithCode(placementCode, bid) {
-        placementCodesHandled[placementCode] = true;
-        bidmanager.addBidResponse(placementCode, bid);
+      const adUnitCodesHandled = {};
+      function addBidWithCode(adUnitCode, bid) {
+        adUnitCodesHandled[adUnitCode] = true;
+        bidmanager.addBidResponse(adUnitCode, bid);
       }
       function fillNoBids() {
         bidderRequest.bids
           .map(bidRequest => bidRequest.placementCode)
-          .forEach(placementCode => {
-            if (placementCode && !placementCodesHandled[placementCode]) {
-              bidmanager.addBidResponse(placementCode, newEmptyBid());
+          .forEach(adUnitCode => {
+            if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
+              bidmanager.addBidResponse(adUnitCode, newEmptyBid());
             }
           });
       }
