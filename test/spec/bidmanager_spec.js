@@ -599,7 +599,7 @@ describe('bidmanager.js', function () {
     });
 
     it('requires a renderer on outstream bids', () => {
-      getSandbox().stub(utils, 'getBidRequest').callsFake(() => ({
+      sinon.stub(utils, 'getBidRequest', () => ({
         bidder: 'appnexusAst',
         mediaTypes: {
           video: {context: 'outstream'}
@@ -618,6 +618,8 @@ describe('bidmanager.js', function () {
       const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
       bidmanager.addBidResponse('adUnit-code', bid);
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
+
+      utils.getBidRequest.restore();
     });
   });
 });

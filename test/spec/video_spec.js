@@ -1,12 +1,9 @@
-import useSandbox from 'test/mocks/sandbox';
 import { isValidVideoBid } from 'src/video';
 const utils = require('src/utils');
 
 describe('video.js', () => {
-  const getSandbox = useSandbox()
-
   it('validates valid instream bids', () => {
-    getSandbox().stub(utils, 'getBidRequest').callsFake(() => ({
+    sinon.stub(utils, 'getBidRequest', () => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'instream' },
@@ -18,10 +15,12 @@ describe('video.js', () => {
     });
 
     expect(valid).to.be(true);
+
+    utils.getBidRequest.restore();
   });
 
   it('catches invalid instream bids', () => {
-    getSandbox().stub(utils, 'getBidRequest').callsFake(() => ({
+    sinon.stub(utils, 'getBidRequest', () => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'instream' },
@@ -31,10 +30,12 @@ describe('video.js', () => {
     const valid = isValidVideoBid({});
 
     expect(valid).to.be(false);
+
+    utils.getBidRequest.restore();
   });
 
   it('validates valid outstream bids', () => {
-    getSandbox().stub(utils, 'getBidRequest').callsFake(() => ({
+    sinon.stub(utils, 'getBidRequest', () => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'outstream' },
@@ -49,10 +50,12 @@ describe('video.js', () => {
     });
 
     expect(valid).to.be(true);
+
+    utils.getBidRequest.restore();
   });
 
   it('catches invalid outstream bids', () => {
-    getSandbox().stub(utils, 'getBidRequest').callsFake(() => ({
+    sinon.stub(utils, 'getBidRequest', () => ({
       bidder: 'appnexusAst',
       mediaTypes: {
         video: { context: 'outstream' },
@@ -62,5 +65,7 @@ describe('video.js', () => {
     const valid = isValidVideoBid({});
 
     expect(valid).to.be(false);
+
+    utils.getBidRequest.restore();
   });
 });
