@@ -259,7 +259,7 @@ describe('Essens adapter tests', function () {
     })
 
     it('Check method exist', function () {
-      expect(pbjs.essensResponseHandler).to.exist.and.to.be.a('function')
+      expect($$PREBID_GLOBAL$$.essensResponseHandler).to.exist.and.to.be.a('function')
     })
 
     it('Check invalid response', function () {

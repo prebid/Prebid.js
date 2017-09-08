@@ -57,8 +57,9 @@ function Spotx() {
       bid.url = adServerKVPs.spotx_ad_key;
       bid.cur = 'USD';
       bid.bidderCode = 'spotx';
-      bid.height = bidReq.sizes[0][1];
-      bid.width = bidReq.sizes[0][0];
+      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
+      bid.height = sizes[1];
+      bid.width = sizes[0];
       resp.bids.push(bid);
       KVP_Object = adServerKVPs;
       handleResponse(resp);
@@ -86,8 +87,9 @@ function Spotx() {
       bid.vastUrl = url;
       bid.ad = url;
 
-      bid.width = bidReq.sizes[0][0];
-      bid.height = bidReq.sizes[0][1];
+      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
+      bid.height = sizes[1];
+      bid.width = sizes[0];
     }
 
     return bid;

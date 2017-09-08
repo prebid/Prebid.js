@@ -56,8 +56,10 @@ const KargoAdapter = function KargoAdapter() {
 
   function _readCookie(name) {
     let nameEquals = `${name}=`;
+    let cookies = document.cookie.split(';');
 
-    for (let cookie of document.cookie.split(';')) {
+    for (let key in cookies) {
+      let cookie = cookies[key];
       while (cookie.charAt(0) === ' ') {
         cookie = cookie.substring(1, cookie.length);
       }
