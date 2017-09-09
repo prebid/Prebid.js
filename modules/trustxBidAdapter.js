@@ -21,46 +21,27 @@ var TrustxAdapter = function TrustxAdapter() {
     hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
   };
 
-  function _makeHandler(auids, placementMap, onTimeoutWorker, needToSendStat) {
+  function _makeHandler(auids, placementMap) {
     var cbName = bidderCode + '_callback_wrapper_' + auids.join('_');
     $$PREBID_GLOBAL$$[cbName] = function(resp) {
       delete $$PREBID_GLOBAL$$[cbName];
-      _responseProcessing(resp, auids, placementMap, onTimeoutWorker, needToSendStat);
+      _responseProcessing(resp, auids, placementMap);
     };
     return '$$PREBID_GLOBAL$$.' + cbName;
   }
 
-  function _sendRequest(auids, placementMap, onTimeoutWorker) {
+  function _sendRequest(auids, placementMap) {
     var query = [];
     var path = reqPath;
     var needToSendStat = Math.random() < 0.1;
+    $$PREBID_GLOBAL$$.needToSendTrustxStat = needToSendStat;
     query.push('u=' + encodeURIComponent(location.href));
     query.push('auids=' + encodeURIComponent(auids.join(',')));
-    query.push('cb=' + _makeHandler(auids, placementMap, onTimeoutWorker, needToSendStat));
+    query.push('cb=' + _makeHandler(auids, placementMap));
     query.push('pt=' + (window.globalPrebidTrustxPriceType === 'net' ? 'net' : 'gross'));
     query.push('hbstat=' + (needToSendStat ? '1' : '0'));
 
     adloader.loadScript(reqHost + path + query.join('&'));
-  }
-
-  function _makeTimeoutWorker() {
-    var active = true;
-    var handler = function() {
-      worker.called = true;
-      $$PREBID_GLOBAL$$.offEvent('bidTimeout', handler);
-    };
-    $$PREBID_GLOBAL$$.onEvent('bidTimeout', handler);
-    var worker = {
-      startTime: new Date().getTime(),
-      off: function() {
-        if (active && !this.called) {
-          active = false;
-          $$PREBID_GLOBAL$$.offEvent('bidTimeout', handler);
-        }
-      },
-      called: false
-    };
-    return worker;
   }
 
   function _callBids(params) {
@@ -85,25 +66,10 @@ var TrustxAdapter = function TrustxAdapter() {
     }
 
     if (auids.length) {
-      var onTimeoutWorker = _makeTimeoutWorker();
-      _sendRequest(auids, placementMap, onTimeoutWorker);
+      _sendRequest(auids, placementMap);
     } else if (hasBid) {
       utils.logError(LOG_ERROR_MESS.emptyUids);
     }
-  }
-
-  function tryToSendStat(startTime, timeout, auids, isTimeouted, error) {
-    var protocol = location.protocol === 'https:' ? 'https:' : 'http:';
-    var stat = {
-      wrapper: 'prebid',
-      tt: timeout,
-      ct: new Date().getTime() - startTime,
-      st: isTimeouted ? 'to' : error ? 'err' : 'ok',
-      cr: 10
-    };
-    stat = encodeURIComponent(JSON.stringify(stat));
-    auids = encodeURIComponent(auids.join(','));
-    (new Image()).src = protocol + '//sofia.trustx.org/hbstat?auids=' + auids + '&stat=' + stat + '&rnd=' + Math.random();
   }
 
   function _getBidFromResponse(resp) {
@@ -162,7 +128,7 @@ var TrustxAdapter = function TrustxAdapter() {
     }
   }
 
-  function _responseProcessing(resp, auids, placementMap, onTimeoutWorker, needToSendStat) {
+  function _responseProcessing(resp, auids, placementMap) {
     var errorMessage;
 
     if (!resp) errorMessage = LOG_ERROR_MESS.emptyResponse;
@@ -187,15 +153,6 @@ var TrustxAdapter = function TrustxAdapter() {
         }
       }
     }
-
-    onTimeoutWorker.off();
-    needToSendStat && tryToSendStat(
-      onTimeoutWorker.startTime,
-      $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer,
-      auids,
-      onTimeoutWorker.called,
-      errorMessage
-    );
 
     if (errorMessage) utils.logError(errorMessage);
   }
