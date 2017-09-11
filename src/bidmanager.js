@@ -86,10 +86,10 @@ exports.addBidResponse = function (adUnitCode, bid) {
     prepareBidForAuction();
 
     if (bid.mediaType === 'video') {
-      tryAddVideoBid(bid);
+      tryAddVideoBid();
     } else {
       doCallbacksIfNeeded();
-      addBidToAuction(bid);
+      addBidToAuction();
     }
   }
 
@@ -222,7 +222,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
   }
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
-  function tryAddVideoBid(bid) {
+  function tryAddVideoBid() {
     if (config.getConfig('usePrebidCache')) {
       store([bid], function(error, cacheIds) {
         if (error) {
@@ -232,12 +232,12 @@ exports.addBidResponse = function (adUnitCode, bid) {
           if (!bid.vastUrl) {
             bid.vastUrl = getCacheUrl(bid.videoCacheKey);
           }
-          addBidToAuction(bid);
+          addBidToAuction();
         }
         doCallbacksIfNeeded();
       });
     } else {
-      addBidToAuction(bid);
+      addBidToAuction();
       doCallbacksIfNeeded();
     }
   }
