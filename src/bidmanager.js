@@ -88,7 +88,6 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.mediaType === 'video') {
       tryAddVideoBid();
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction();
     }
   }
@@ -199,11 +198,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.adserverTargeting = keyValues;
   }
 
-  function doCallbacksIfNeeded() {
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-      const timedOut = true;
-      exports.executeCallback(timedOut);
-    }
+  function hasTimedOut() {
+    return bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer;
   }
 
   // Add a bid to the auction.
@@ -216,8 +212,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
       triggerAdUnitCallbacks(bid.adUnitCode);
     }
 
-    if (bidsBackAll()) {
-      exports.executeCallback();
+    const timedOut = hasTimedOut();
+    if (timedOut || bidsBackAll()) {
+      exports.executeCallback(timedOut);
     }
   }
 
@@ -227,6 +224,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
       store([bid], function(error, cacheIds) {
         if (error) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+
+          const timedOut = hasTimedOut();
+          if (timedOut) {
+            exports.executeCallback(timedOut);
+          }
         } else {
           bid.videoCacheKey = cacheIds[0].uuid;
           if (!bid.vastUrl) {
@@ -234,11 +236,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
           }
           addBidToAuction();
         }
-        doCallbacksIfNeeded();
       });
     } else {
       addBidToAuction();
-      doCallbacksIfNeeded();
     }
   }
 };
