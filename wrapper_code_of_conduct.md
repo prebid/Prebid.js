@@ -10,10 +10,14 @@ pid: 20
 <div class="bs-docs-section" markdown="1">
 
 # Prebid.org Header Bidding Wrapper Code of Conduct
+{:.no_toc}
 
 *This is a living document. Last revision: September 5th, 2017.*
 
 This Wrapper Code of Conduct establishes the principles by which we believe header bidding wrappers should operate.
+
+* TOC
+{:toc}
 
 ## Definitions
 
@@ -52,5 +56,10 @@ This Wrapper Code of Conduct establishes the principles by which we believe head
 * Publishers must set timeout periods, and the timeouts should be consistent across all demand partners within a given auction.
 * The wrapper must reject any bid responses received after the conclusion of the timeout period.
 * The wrapper must send bids to the decisioning layer as soon as all demand partners have responded or the timeout has been reached.
+
+## Further Reading
+
++ [Project Principles]({{site.baseurl}}/principles.html)
++ [Getting Started]({{site.baseurl}}/overview/getting-started.html)
 
 </div>
