@@ -109,6 +109,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage('No adUnitCode was supplied to addBidResponse.'));
       return false;
     }
+
+    const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
+    if (!bidRequest.start) {
+      utils.logError(errorMessage('Cannot find valid matching bid request.'));
+      return false;
+    }
+
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
