@@ -1,14 +1,14 @@
 ---
 layout: bidder
-title: 152Media
-description: Prebid 152Media Bidder Adaptor
+title: Gourmet Ads
+description: Prebid Gourmet Ads Bidder Adaptor
 
 top_nav_section: dev_docs
 nav_section: reference
 
 hide: true
 
-biddercode: oftmedia
+biddercode: gourmetads
 
 aliasCode : appnexus
 
@@ -23,3 +23,5 @@ biddercode_longer_than_12: false
 | Name | Scope | Description | Example |
 |:-----------|:---------|:------------|:-----------------|
 | `placementId` | required | | |
+
+Gourmet Ads is an aliased bidder for AppNexus

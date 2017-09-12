@@ -10,6 +10,8 @@ hide: true
 
 biddercode: headbidding
 
+aliasCode : adkernel
+
 biddercode_longer_than_12: false
 
 

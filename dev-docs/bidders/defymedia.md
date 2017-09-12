@@ -10,6 +10,8 @@ hide: true
 
 biddercode: defymedia
 
+aliasCode : appnexus
+
 biddercode_longer_than_12: false
 
 

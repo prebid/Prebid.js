@@ -10,6 +10,8 @@ hide: true
 
 biddercode: featureforward
 
+aliasCode : appnexus
+
 biddercode_longer_than_12: true
 
 
