@@ -20,7 +20,7 @@ We sat down with
 answer a few questions about why
 [Prebid.org](http://prebid.org/overview/what-is-prebid-org.html) is
 being launched as an independent entity and what it means for
-publishers.  Michael is a Product Line Manager at
+publishers and vendors.  Michael is a Product Line Manager at
 [AppNexus](https://www.appnexus.com) and Chairman of
 [Prebid.org](http://prebid.org/overview/what-is-prebid-org.html).
 
