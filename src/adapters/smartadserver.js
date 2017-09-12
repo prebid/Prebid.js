@@ -34,7 +34,9 @@ var SmartAdServer = function SmartAdServer() {
     callBids: function(params) {
       for (var i = 0; i < params.bids.length; i++) {
         var bid = params.bids[i];
-        var adCall = url.parse(bid.params.domain);
+        var topUrl = bid.params.domain || document.referrer || window.location.href;
+        var domain = topUrl.indexOf('https://') ? 'https://prg.smartadserver.com' : 'http://prg.smartadserver.com';
+        var adCall = url.parse(domain);
         adCall.pathname = "/prebid";
         adCall.search = {
           "pbjscbk": "pbjs." + generateCallback(bid),
