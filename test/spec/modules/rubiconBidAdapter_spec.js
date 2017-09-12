@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
-import RubiconAdapter from 'modules/rubiconBidAdapter';
-import {parse as parseQuery} from 'querystring';
+import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter';
+import { parse as parseQuery } from 'querystring';
+import { newBidder } from 'src/adapters/bidderFactory';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -161,8 +162,6 @@ describe('the rubicon adapter', () => {
   });
 
   describe('MAS mapping / ordering', () => {
-    let masSizeOrdering = RubiconAdapter.masSizeOrdering;
-
     it('should not include values without a proper mapping', () => {
       // two invalid sizes included: [42, 42], [1, 1]
       let ordering = masSizeOrdering([[320, 50], [42, 42], [300, 250], [640, 480], [1, 1], [336, 280]]);
@@ -196,7 +195,7 @@ describe('the rubicon adapter', () => {
         bids;
 
       beforeEach(() => {
-        rubiconAdapter = new RubiconAdapter();
+        rubiconAdapter = newBidder(spec);
 
         bids = [];
 
@@ -1092,13 +1091,14 @@ describe('the rubicon adapter', () => {
         iframes[i].outerHTML = '';
       }
 
-      rubiconAdapter = new RubiconAdapter();
+      rubiconAdapter = newBidder(spec);
     });
 
     afterEach(() => {
       server.restore();
       clock.restore();
       window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
+      resetUserSync();
     });
 
     it('should not add the Emily iframe by default', () => {

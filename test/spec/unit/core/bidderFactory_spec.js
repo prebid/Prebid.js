@@ -33,7 +33,7 @@ describe('bidders created by newBidder', () => {
   beforeEach(() => {
     spec = {
       code: CODE,
-      areParamsValid: sinon.stub(),
+      isBidRequestValid: sinon.stub(),
       buildRequests: sinon.stub(),
       interpretResponse: sinon.stub(),
       getUserSyncs: sinon.stub()
@@ -63,7 +63,7 @@ describe('bidders created by newBidder', () => {
       bidder.callBids({ bids: 'nothing useful' });
 
       expect(ajaxStub.called).to.equal(false);
-      expect(spec.areParamsValid.called).to.equal(false);
+      expect(spec.isBidRequestValid.called).to.equal(false);
       expect(spec.buildRequests.called).to.equal(false);
       expect(spec.interpretResponse.called).to.equal(false);
     });
@@ -71,13 +71,13 @@ describe('bidders created by newBidder', () => {
     it('should call buildRequests(bidRequest) the params are valid', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(ajaxStub.called).to.equal(false);
-      expect(spec.areParamsValid.calledTwice).to.equal(true);
+      expect(spec.isBidRequestValid.calledTwice).to.equal(true);
       expect(spec.buildRequests.calledOnce).to.equal(true);
       expect(spec.buildRequests.firstCall.args[0]).to.deep.equal(MOCK_BIDS_REQUEST.bids);
     });
@@ -85,27 +85,27 @@ describe('bidders created by newBidder', () => {
     it('should not call buildRequests the params are invalid', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(false);
+      spec.isBidRequestValid.returns(false);
       spec.buildRequests.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(ajaxStub.called).to.equal(false);
-      expect(spec.areParamsValid.calledTwice).to.equal(true);
+      expect(spec.isBidRequestValid.calledTwice).to.equal(true);
       expect(spec.buildRequests.called).to.equal(false);
     });
 
     it('should filter out invalid bids before calling buildRequests', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.onFirstCall().returns(true);
-      spec.areParamsValid.onSecondCall().returns(false);
+      spec.isBidRequestValid.onFirstCall().returns(true);
+      spec.isBidRequestValid.onSecondCall().returns(false);
       spec.buildRequests.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(ajaxStub.called).to.equal(false);
-      expect(spec.areParamsValid.calledTwice).to.equal(true);
+      expect(spec.isBidRequestValid.calledTwice).to.equal(true);
       expect(spec.buildRequests.calledOnce).to.equal(true);
       expect(spec.buildRequests.firstCall.args[0]).to.deep.equal([MOCK_BIDS_REQUEST.bids[0]]);
     });
@@ -113,7 +113,7 @@ describe('bidders created by newBidder', () => {
     it("should make no server requests if the spec doesn't return any", () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
@@ -125,7 +125,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: url,
@@ -148,7 +148,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'GET',
         url: url,
@@ -170,7 +170,7 @@ describe('bidders created by newBidder', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([
         {
           method: 'POST',
@@ -206,7 +206,7 @@ describe('bidders created by newBidder', () => {
     it('should call spec.interpretResponse() with the response body content', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -222,7 +222,7 @@ describe('bidders created by newBidder', () => {
     it('should call spec.interpretResponse() once for each request made', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([
         {
           method: 'POST',
@@ -252,7 +252,7 @@ describe('bidders created by newBidder', () => {
         width: 300,
         placementCode: 'mock/placement'
       };
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -272,7 +272,7 @@ describe('bidders created by newBidder', () => {
     it('should call spec.getUserSyncs() with the response', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -302,7 +302,7 @@ describe('bidders created by newBidder', () => {
     it('should not spec.interpretResponse()', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -317,7 +317,7 @@ describe('bidders created by newBidder', () => {
     it('should add bids for each placement code into the bidmanager', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -337,7 +337,7 @@ describe('bidders created by newBidder', () => {
     it('should call spec.getUserSyncs() with no responses', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: 'test.url.com',
@@ -369,7 +369,7 @@ describe('registerBidder', () => {
   function newEmptySpec() {
     return {
       code: CODE,
-      areParamsValid: function() { },
+      isBidRequestValid: function() { },
       buildRequests: function() { },
       interpretResponse: function() { },
     };
