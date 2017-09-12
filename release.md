@@ -1,8 +1,8 @@
 ## New Features
 - **New adapters**: 
--- AdSpiritAdapter: main adapter
--- ConnectAdAdapter: child adapter with predefined host parameter
--- XapadsMediaAdapter: child adapter with predefined host parameter
+  - AdSpiritAdapter: main adapter
+  - ConnectAdAdapter: child adapter with predefined host parameter
+  - XapadsMediaAdapter: child adapter with predefined host parameter
 
 ### New Adapters
 #### AdSpiritAdapter adapter
