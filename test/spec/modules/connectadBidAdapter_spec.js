@@ -63,11 +63,11 @@ describe('Connectad adapter tests', function () {
     afterEach(function () {
       stubAjax.restore();
     });
-    it('bid request should be called. sizes style -> [[],[]]', function () {
+    it('bid request should be called.', function () {
       Adapter.callBids(validData_1);
       sinon.assert.calledOnce(stubAjax);
     });
-    it('bid request should be called. sizes style -> []', function () {
+    it('bid request should be called.', function () {
       Adapter.callBids(validData_2);
       sinon.assert.calledOnce(stubAjax);
     });
