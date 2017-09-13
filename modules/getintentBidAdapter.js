@@ -55,6 +55,7 @@ var GetIntentAdapter = function GetIntentAdapter() {
             if (br.mediaType === 'video') {
               bid.vastUrl = bidResponse.vast_url;
               bid.descriptionUrl = bidResponse.vast_url;
+              bid.mediaType = 'video';
             } else {
               bid.ad = bidResponse.ad;
             }

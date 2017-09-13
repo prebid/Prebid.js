@@ -36,18 +36,18 @@ const KargoAdapter = function KargoAdapter() {
   }
 
   function _callBids(params) {
-    let transformedParams = Object.assign({}, {
-        timeout: params.timeout,
-        currency: 'USD',
-        cpmGranularity: 1,
-        cpmRange: {
-          floor: 0,
-          ceil: 20
-        },
-        adSlotIds: utils._map(params.bids, bid => bid.params.placementId)
-      }, _getAllMetadata()),
-      encodedParams = encodeURIComponent(JSON.stringify(transformedParams)),
-      callbackName = `kargo_prebid_${params.requestId.replace(/-/g, '_')}`;
+    const transformedParams = Object.assign({}, {
+      timeout: params.timeout,
+      currency: 'USD',
+      cpmGranularity: 1,
+      cpmRange: {
+        floor: 0,
+        ceil: 20
+      },
+      adSlotIds: utils._map(params.bids, bid => bid.params.placementId)
+    }, _getAllMetadata());
+    const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
+    const callbackName = `kargo_prebid_${params.requestId.replace(/-/g, '_')}`;
 
     window.$$PREBID_GLOBAL$$[callbackName] = _handleBid(params.bids);
 
@@ -56,8 +56,10 @@ const KargoAdapter = function KargoAdapter() {
 
   function _readCookie(name) {
     let nameEquals = `${name}=`;
+    let cookies = document.cookie.split(';');
 
-    for (let cookie of document.cookie.split(';')) {
+    for (let key in cookies) {
+      let cookie = cookies[key];
       while (cookie.charAt(0) === ' ') {
         cookie = cookie.substring(1, cookie.length);
       }
@@ -72,8 +74,8 @@ const KargoAdapter = function KargoAdapter() {
 
   function _getCrbIds() {
     try {
-      var crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb'))),
-        syncIds = {};
+      const crb = JSON.parse(decodeURIComponent(_readCookie('krg_crb')));
+      var syncIds = {};
 
       if (crb && crb.v) {
         var vParsed = JSON.parse(atob(crb.v));
@@ -84,24 +86,22 @@ const KargoAdapter = function KargoAdapter() {
       }
 
       return syncIds;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
 
   function _getUid() {
     try {
-      var uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid'))),
-        vData = {};
+      const uid = JSON.parse(decodeURIComponent(_readCookie('krg_uid')));
+      var vData = {};
 
       if (uid && uid.v) {
         vData = uid.v;
       }
 
       return vData;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
@@ -115,8 +115,8 @@ const KargoAdapter = function KargoAdapter() {
   }
 
   function _getKrux() {
-    var segmentsStr = _getKruxSegments(),
-      segments = [];
+    const segmentsStr = _getKruxSegments();
+    var segments = [];
 
     if (segmentsStr) {
       segments = segmentsStr.split(',');
@@ -131,15 +131,14 @@ const KargoAdapter = function KargoAdapter() {
   function _getLocalStorageSafely(key) {
     try {
       return localStorage.getItem(key);
-    }
-    catch (e) {
+    } catch (e) {
       return null;
     }
   }
 
   function _getUserIds() {
-    var uid = _getUid(),
-      crbIds = _getCrbIds();
+    const uid = _getUid();
+    const crbIds = _getCrbIds();
 
     return {
       kargoID: uid.userId,

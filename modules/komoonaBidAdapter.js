@@ -8,10 +8,15 @@ import adaptermanager from 'src/adaptermanager';
 import adloader from 'src/adloader';
 
 function KomoonaAdapter() {
+<<<<<<< HEAD
     const KOMOONA_BIDDER_NAME = 'komoona';
     const pbjsObject = window.$$PREBID_GLOBAL$$;
 
   let baseAdapter = Adapter.createNew('komoona');
+=======
+  let baseAdapter = new Adapter('komoona');
+  let bidRequests = {};
+>>>>>>> 82a027b75dc85954fade12b715e58e3b783ee072
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(params) {
@@ -65,17 +70,20 @@ function KomoonaAdapter() {
     bidmanager.addBidResponse(placementCode, bidResponse);
   }
 
-  return {
-    createNew: KomoonaAdapter.createNew,
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-  };
+  });
 }
 
+<<<<<<< HEAD
 KomoonaAdapter.createNew = function() {
   return new KomoonaAdapter();
 };
 
 adaptermanager.registerBidAdapter(new KomoonaAdapter, 'komoona');
+=======
+adaptermanager.registerBidAdapter(new KomoonaAdapter(), 'komoona');
+>>>>>>> 82a027b75dc85954fade12b715e58e3b783ee072
 
 module.exports = KomoonaAdapter;

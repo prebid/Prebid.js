@@ -111,6 +111,6 @@ SpringServeAdapter = function SpringServeAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SpringServeAdapter(), 'springserveg');
+adaptermanager.registerBidAdapter(new SpringServeAdapter(), 'springserve');
 
 module.exports = SpringServeAdapter;
