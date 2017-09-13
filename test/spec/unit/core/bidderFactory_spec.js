@@ -217,6 +217,11 @@ describe('bidders created by newBidder', () => {
 
       expect(spec.interpretResponse.calledOnce).to.equal(true);
       expect(spec.interpretResponse.firstCall.args[0]).to.equal('response body');
+      expect(spec.interpretResponse.firstCall.args[1]).to.deep.equal({
+        method: 'POST',
+        url: 'test.url.com',
+        data: {}
+      });
     });
 
     it('should call spec.interpretResponse() once for each request made', () => {
