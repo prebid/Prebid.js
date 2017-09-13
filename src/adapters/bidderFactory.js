@@ -21,7 +21,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   code: 'myBidderCode',
  *   aliases: ['alias1', 'alias2'],
  *   supportedMediaTypes: ['video', 'native'],
- *   areParamsValid: function(paramsObject) { return true/false },
+ *   isBidRequestValid: function(paramsObject) { return true/false },
  *   buildRequests: function(bidRequests) { return some ServerRequest(s) },
  *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
  * });
@@ -37,11 +37,11 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   one as is used in the call to registerBidAdapter
  * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
  * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
- * @property {function(object): boolean} areParamsValid Determines whether or not the given object has all the params
+ * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
  *   needed to make a valid request.
- * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
- *   requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   a "params" property which has passed the isBidRequestValid() test
+ * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
+ *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
+ *   passed the isBidRequestValid() test.
  * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
  *   interpret it and return the Bid objects. This function will be run inside a try/catch.
  *   If it throws any errors, your bids will be discarded.
@@ -56,7 +56,6 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *
  * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- *   This is guaranteed to have passed the spec.areParamsValid() test.
  */
 
 /**
@@ -76,6 +75,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should correspond to one of the
  * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {string} currency The currency code for the cpm value
  * @property {number} cpm The bid price, in US cents per thousand impressions.
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
@@ -172,7 +172,7 @@ export function newBidder(spec) {
         bidRequestMap[bid.bidId] = bid;
       });
 
-      let requests = spec.buildRequests(bidRequests);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
         fillNoBids();
         return;
@@ -205,7 +205,7 @@ export function newBidder(spec) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}?${parseQueryStringParameters(request.data)}`,
+              `${request.url}?${typeof request.data === 'object' ? parseQueryStringParameters(request.data) : request.data}`,
               {
                 success: onSuccess,
                 error: onFailure
@@ -286,7 +286,7 @@ export function newBidder(spec) {
   });
 
   function filterAndWarn(bid) {
-    if (!spec.areParamsValid(bid.params)) {
+    if (!spec.isBidRequestValid(bid)) {
       logWarn(`Invalid bid sent to bidder ${spec.code}: ${JSON.stringify(bid)}`);
       return false;
     }
