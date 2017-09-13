@@ -11,6 +11,7 @@ import { syncCookies } from './cookie';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
+import { targeting } from './targeting';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 
@@ -20,7 +21,6 @@ var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
-var targeting = require('./targeting.js');
 
 /* private variables */
 
