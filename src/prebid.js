@@ -258,8 +258,6 @@ $$PREBID_GLOBAL$$.allBidsAvailable = function () {
   return bidmanager.bidsBackAll();
 };
 
-function confiantWrap(a, b, c, d, e, f) { function g(a) { return (l(a) || "")[r]("/", "_")[r]("+", "-") } function h(b, c, d) { var e = v + m(b) + "&d=" + c, f = "err__" + 1 * new Date; j[f] = d; var g = "<" + p + " on" + s + '="void(' + f + '())" ' + q + '="' + e + '" type="text/java' + p + '" ></' + p + ">"; a[u](g) } function i() { var c = g(f + "/" + w.k.hb_bidder[0] + ":" + w.k.hb_size[0]), d = { wh: c, wd: k.parse(k[t](w)), wr: 0 }; h(c, g(k[t](d)), function () { a[u](b) }); var e = { d: d, t: b }; j[f] = {}, j[f][c] = e } var j = a.parentWindow || a.defaultView, k = j.JSON, l = j.btoa, m = j.encodeURIComponent; if (!k || !l) return !1; var n = "t", o = "i", p = "script", q = "src", r = "replace", s = "error", t = "stringify", u = "wr" + o + n + "e", v = "https://" + e + "/?wrapper=" + m(f) + "&tpid=", w = { k: { hb_bidder: [c], hb_size: [d] } }; return i(), a.close(), !0 }
-
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -291,12 +289,13 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           utils.logError(`Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`);
         } else if (ad) {
-
           // calling confiantWrap()
-          if (!confiantWrap(doc, ad, bid.bidder, (width + 'x' + height),
-            'clarium.global.ssl.fastly.net',
-            'dvS98IKwDukcG6gPDYBBcCk9sKY')) {
-            // If confiant can't wrap the ad, add it the old school way.
+          // Optional: list of bidders that don't need wrapping
+          var confiantExcludeBidders = ["bidder1", "bidder2", "bidder3"];
+          var confiantWrap = function (a,b,c,d,e,f){function g(a){return(l(a)||"")[r]("/","_")[r]("+","-")}function h(b,c,d){var e=v+m(b)+"&d="+c,f="err__"+1*new Date;j[f]=d;var g="<"+p+" on"+s+'="void('+f+'())" '+q+'="'+e+'" type="text/java'+p+'" ></'+p+">";a[u](g)}function i(){var c=g(f+"/"+w.k.hb_bidder[0]+":"+w.k.hb_size[0]),d={wh:c,wd:k.parse(k[t](w)),wr:0};h(c,g(k[t](d)),function(){a[u](b)});var e={d:d,t:b};j[f]={},j[f][c]=e}var j=a.parentWindow||a.defaultView,k=j.JSON,l=j.btoa,m=j.encodeURIComponent;if(!k||!l)return!1;var n="t",o="i",p="script",q="src",r="replace",s="error",t="stringify",u="wr"+o+n+"e",v="https://"+e+"/?wrapper="+m(f)+"&tpid=",w={k:{hb_bidder:[c],hb_size:[d]}};return i(),a.close(),!0};
+          // Serve with Confiant or default to regular ad serving
+          // Replace CONFIANT_CDN and CONFIANT_ID with your account information
+          if (confiantExcludeBidders.includes(bid.bidder) || !confiantWrap(doc, ad, bid.bidder, width + 'x' + height, 'clarium.global.ssl.fastly.net', 'dvS98IKwDukcG6gPDYBBcCk9sKY')) {
             doc.write(ad);
             doc.close();
           }
@@ -787,13 +786,8 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  *                            the Prebid script has been fully loaded.
  * @alias module:$$PREBID_GLOBAL$$.cmd.push
  */
-<<<<<<< HEAD
-$$PREBID_GLOBAL$$.cmd.push = function (cmd) {
-  if (typeof cmd === objectType_function) {
-=======
 $$PREBID_GLOBAL$$.cmd.push = function(command) {
   if (typeof command === 'function') {
->>>>>>> 82a027b75dc85954fade12b715e58e3b783ee072
     try {
       command.call();
     } catch (e) {
@@ -807,13 +801,8 @@ $$PREBID_GLOBAL$$.cmd.push = function(command) {
 $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
-<<<<<<< HEAD
-  queue.forEach(function (cmd) {
-    if (typeof cmd.called === objectType_undefined) {
-=======
   queue.forEach(function(cmd) {
     if (typeof cmd.called === 'undefined') {
->>>>>>> 82a027b75dc85954fade12b715e58e3b783ee072
       try {
         cmd.call();
         cmd.called = true;
