@@ -41,10 +41,10 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   needed to make a valid request.
  * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
  *   requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   a "params" property which has passed the areParamsValid() test
- * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
- *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
- *   bids will be discarded.
+ *   a "params" property which has passed the isBidRequestValid() test
+ * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
+ *   interpret it and return the Bid objects. This function will be run inside a try/catch.
+ *   If it throws any errors, your bids will be discarded.
  * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
@@ -236,51 +236,51 @@ export function newBidder(spec) {
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
             onResponse();
         }
-      }
 
-      // If the server responds successfully, use the adapter code to unpack the Bids from it.
-      // If the adapter code fails, no bids should be added. After all the bids have been added, make
-      // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
-      function onSuccess(response) {
-        try {
-          response = JSON.parse(response);
-        } catch (e) { /* response might not be JSON... that's ok. */ }
-        responses.push(response);
+        // If the server responds successfully, use the adapter code to unpack the Bids from it.
+        // If the adapter code fails, no bids should be added. After all the bids have been added, make
+        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        function onSuccess(response) {
+          try {
+            response = JSON.parse(response);
+          } catch (e) { /* response might not be JSON... that's ok. */ }
+          responses.push(response);
 
-        let bids;
-        try {
-          bids = spec.interpretResponse(response);
-        } catch (err) {
-          logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+          let bids;
+          try {
+            bids = spec.interpretResponse(response, request);
+          } catch (err) {
+            logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+            onResponse();
+            return;
+          }
+
+          if (bids) {
+            if (bids.forEach) {
+              bids.forEach(addBidUsingRequestMap);
+            } else {
+              addBidUsingRequestMap(bids);
+            }
+          }
           onResponse();
-          return;
-        }
 
-        if (bids) {
-          if (bids.forEach) {
-            bids.forEach(addBidUsingRequestMap);
-          } else {
-            addBidUsingRequestMap(bids);
+          function addBidUsingRequestMap(bid) {
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.placementCode, prebidBid);
+            } else {
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            }
           }
         }
-        onResponse();
 
-        function addBidUsingRequestMap(bid) {
-          const bidRequest = bidRequestMap[bid.requestId];
-          if (bidRequest) {
-            const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-            addBidWithCode(bidRequest.placementCode, prebidBid);
-          } else {
-            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-          }
+        // If the server responds with an error, there's not much we can do. Log it, and make sure to
+        // call onResponse() so that we're one step closer to calling fillNoBids().
+        function onFailure(err) {
+          logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          onResponse();
         }
-      }
-
-      // If the server responds with an error, there's not much we can do. Log it, and make sure to
-      // call onResponse() so that we're one step closer to calling fillNoBids().
-      function onFailure(err) {
-        logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
-        onResponse();
       }
     }
   });
