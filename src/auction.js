@@ -21,11 +21,9 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-function Auction({adUnits, adUnitCodes}) {
-  var _id = utils.getUniqueIdentifierStr();
+function newAuction({adUnits, adUnitCodes}) {
   var _adUnits = adUnits;
   var _adUnitCodes = adUnitCodes;
-  var _targeting = [];
   var _bidderRequests = [];
   var _bidsReceived = [];
   var _auctionStart;
@@ -34,46 +32,42 @@ function Auction({adUnits, adUnitCodes}) {
   var _callback;
   var _timer;
 
-  this.setTargeting = (targeting) => _targeting = targeting;
-  this.setBidderRequests = (bidderRequests) => _bidderRequests = _bidderRequests.concat(bidderRequests);
-  this.setBidsReceived = (bidsReceived) => _bidsReceived = _bidsReceived.concat(bidsReceived);
-  this.setAuctionId = (auctionId) => _auctionId = auctionId;
-  this.setAuctionStart = (auctionStart) => _auctionStart = auctionStart;
-  this.setAuctionStatus = (auctionStatus) => _auctionStatus = auctionStatus;
-  this.setCallback = (callback) => _callback = callback;
-  this.setTimer = (timer) => _timer = timer;
+  function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
+  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function setAuctionStart(auctionStart) { _auctionStart = auctionStart }
+  function setAuctionStatus(auctionStatus) { _auctionStatus = auctionStatus }
+  function setCallback(callback) { _callback = callback }
+  function setTimer(timer) { _timer = timer; }
 
-  this.getId = () => _id;
-  this.getAdUnits = () => _adUnits;
-  this.getAdUnitCodes = () => _adUnitCodes;
-  this.getTargeting = () => _targeting;
-  this.getBidderRequests = () => _bidderRequests;
-  this.getBidsReceived = () => _bidsReceived;
-  this.getAuctionStart = () => _auctionStart;
-  this.getAuctionId = () => _auctionId;
-  this.getAuctionStatus = () => _auctionStatus;
-  this.getCallback = () => _callback;
-  this.getTimer = () => _timer;
+  function getAdUnits() { return _adUnits };
+  function getAdUnitCodes() { return _adUnitCodes };
+  function getBidRequests() { return _bidderRequests };
+  function getBidsReceived() { return _bidsReceived };
+  function getAuctionStart() { return _auctionStart };
+  function getAuctionStatus() { return _auctionStatus };
+  function getAuctionId() { return _auctionId };
+  function getCallback() { return _callback };
+  function getTimer() { return _timer };
 
-  this.startAuctionTimer = function(callback, cbtimeout) {
-    this.setCallback(callback);
+  function startAuctionTimer(callback, cbtimeout) {
+    setCallback(callback);
     const timedOut = true;
     const timeoutCallback = this.executeCallback.bind(this, timedOut);
     let timer = setTimeout(timeoutCallback, cbtimeout);
-    this.setTimer(timer);
+    setTimer(timer);
   }
 
-  this.executeCallback = function(timedOut, cleartimer) {
+  function executeCallback(timedOut, cleartimer) {
     // clear timer when done calls executeCallback
     if (cleartimer) {
-      clearTimeout(this.getTimer());
+      clearTimeout(getTimer());
     }
 
-    let callback = this.getCallback();
+    let callback = getCallback();
     if (callback != null) {
       try {
-        const adUnitCodes = this.getAdUnitCodes();
-        const bids = [this.getBidsReceived()
+        const adUnitCodes = getAdUnitCodes();
+        const bids = [getBidsReceived()
           .filter(adUnitsFilter.bind(this, adUnitCodes))
           .reduce(groupByPlacement, {})];
         callback.apply($$PREBID_GLOBAL$$, bids);
@@ -82,11 +76,10 @@ function Auction({adUnits, adUnitCodes}) {
       } finally {
         syncCookies(config.getConfig('cookieSyncDelay'));
       }
-      this.setCallback(null);
+      setCallback(null);
 
       if (timedOut) {
-        const timedOutBidders = this.getTimedOutBidders();
-
+        const timedOutBidders = getTimedOutBidders();
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -94,13 +87,13 @@ function Auction({adUnits, adUnitCodes}) {
     }
   }
 
-  this.getTimedOutBidders = function () {
-    return this.getBidsReceived()
+  function getTimedOutBidders() {
+    return getBidsReceived()
       .map((bidSet) => {
         return bidSet.bidderCode;
       })
       .filter(uniques)
-      .filter(bidder => this.getBidsReceived()
+      .filter(bidder => getBidsReceived()
         .map((bid) => {
           return bid.bidder;
         })
@@ -108,24 +101,23 @@ function Auction({adUnits, adUnitCodes}) {
         .indexOf(bidder) < 0);
   };
 
-  this.done = function(bidRequestId) {
-    var auctionObj = this;
+  function done(bidRequestId) {
     var innerBidRequestId = bidRequestId;
     return delayExecution(function() {
-      let request = auctionObj.getBidderRequests().find((bidRequest) => {
+      let request = getBidRequests().find((bidRequest) => {
         return innerBidRequestId === bidRequest.bidderRequestId;
       });
       request.doneCbCallCount += 1;
-      if (auctionObj.getBidderRequests().every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
+      if (getBidRequests().every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
         // when all bidders have called done callback atleast once it means auction is complete
-        auctionObj.setAuctionStatus(AUCTION_COMPLETED);
-        auctionObj.executeCallback(false, true);
+        setAuctionStatus(AUCTION_COMPLETED);
+        executeCallback(false, true);
       }
     }, 1);
   }
 
-  this.addBidResponse = (adUnitCode, bid, auctionId) => {
-    let auction = this; // getAuction(auctionId);
+  function addBidResponse(adUnitCode, bid) {
+    let auction = this;
     if (isValid()) {
       prepareBidForAuction();
 
@@ -174,7 +166,7 @@ function Auction({adUnits, adUnitCodes}) {
         return true;
       }
 
-      const adUnit = auction.getBidderRequests().find(request => {
+      const adUnit = auction.getBidRequests().find(request => {
         return request.bids
           .filter(rbid => rbid.bidder === bid.bidderCode && rbid.placementCode === adUnitCode).length > 0;
       }) || {start: null};
@@ -197,7 +189,7 @@ function Auction({adUnits, adUnitCodes}) {
     // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
     // This should be called before addBidToAuction().
     function prepareBidForAuction() {
-      let bidRequest = auction.getBidderRequests().find(request => {
+      let bidRequest = auction.getBidRequests().find(request => {
         return request.bids
           .filter(rbid => rbid.bidder === bid.bidderCode && rbid.placementCode === adUnitCode).length > 0;
       }) || {start: null};
@@ -205,7 +197,7 @@ function Auction({adUnits, adUnitCodes}) {
       const start = bidRequest.start;
 
       Object.assign(bid, {
-        auctionId: auctionId,
+        auctionId: auction.getAuctionId(),
         requestId: bidRequest.requestId,
         responseTimestamp: timestamp(),
         requestTimestamp: start,
@@ -213,6 +205,8 @@ function Auction({adUnits, adUnitCodes}) {
         bidder: bid.bidderCode,
         adUnitCode
       });
+      // console.log('bid response');
+      // console.log(bid);
 
       bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
 
@@ -257,7 +251,7 @@ function Auction({adUnits, adUnitCodes}) {
     // Add a bid to the auction.
     function addBidToAuction() {
       events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bid);
-      auction.setBidsReceived(bid);
+      auction.addBidReceived(bid);
     }
 
     // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -279,25 +273,43 @@ function Auction({adUnits, adUnitCodes}) {
     }
   }
 
-  this.callBids = (cbTimeout) => {
-    this.setAuctionStatus(AUCTION_STARTED);
-    this.setAuctionStart(Date.now());
+  function callBids(cbTimeout) {
+    setAuctionStatus(AUCTION_STARTED);
+    setAuctionStart(Date.now());
 
     const auctionInit = {
-      timestamp: this.getAuctionStart(),
-      auctionId: this.getAuctionId(),
+      timestamp: getAuctionStart(),
+      auctionId: getAuctionId(),
       timeout: cbTimeout
     };
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-    let bidRequests = adaptermanager.makeBidRequests(this.getAdUnits(), this.getAuctionStart(), this.getAuctionId(), cbTimeout);
+    let bidRequests = adaptermanager.makeBidRequests(getAdUnits(), getAuctionStart(), getAuctionId(), cbTimeout);
+    // console.log('bid requests');
+    // console.log(bidRequests);
     bidRequests.forEach(bidRequest => {
-      this.setBidderRequests(bidRequest);
+      addBidRequests(bidRequest);
     });
-    // let doneCb = this.done();
-    this.setAuctionStatus(AUCTION_IN_PROGRESS);
-    adaptermanager.callBids(this.getAdUnits(), bidRequests, this.addBidResponse, this.done.bind(this));
+
+    setAuctionStatus(AUCTION_IN_PROGRESS);
+    adaptermanager.callBids(getAdUnits(), bidRequests, addBidResponse.bind(this), done.bind(this));
   };
+
+  return {
+    setAuctionStatus,
+    addBidRequests,
+    addBidReceived,
+    getAuctionId,
+    getAdUnits,
+    getAdUnitCodes,
+    getBidRequests,
+    getBidsReceived,
+    getAuctionStatus,
+    addBidResponse,
+    startAuctionTimer,
+    executeCallback,
+    callBids
+  }
 }
 
 export function getStandardBidderSettings() {
@@ -448,6 +460,6 @@ function groupByPlacement(bidsByPlacement, bid) {
   return bidsByPlacement;
 }
 
-export function createAuction() {
-  return new Auction(...arguments);
+export function createAuction({adUnits, adUnitCodes}) {
+  return newAuction({adUnits, adUnitCodes});
 }

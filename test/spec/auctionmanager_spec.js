@@ -409,7 +409,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('should return proper price bucket increments for dense mode', () => {
-      sinon.stub(auction, 'getBidderRequests', () => ([{
+      sinon.stub(auction, 'getBidRequests', () => ([{
         bids: [{
           requestId: '1863e370099523',
           startTime: 1462918897462,
@@ -453,7 +453,7 @@ describe('auctionmanager.js', function () {
       registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
 
-      auction.getBidderRequests.restore();
+      auction.getBidRequests.restore();
     });
 
     it('should place dealIds in adserver targeting', () => {
@@ -508,7 +508,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('should add banner bids that have no width or height but single adunit size', () => {
-      sinon.stub(auction, 'getBidderRequests', () => ([{
+      sinon.stub(auction, 'getBidRequests', () => ([{
         bids: [{
           bidder: '',
           placementCode: 'adUnitCode',
@@ -532,7 +532,7 @@ describe('auctionmanager.js', function () {
       assert.equal(addedBid.width, 300);
       assert.equal(addedBid.height, 250);
 
-      auction.getBidderRequests.restore();
+      auction.getBidRequests.restore();
     });
 
     it('should not add native bids that do not have required assets', () => {
@@ -586,7 +586,7 @@ describe('auctionmanager.js', function () {
     });
 
     it('installs publisher-defined renderers on bids', () => {
-      sinon.stub(auction, 'getBidderRequests', () => ([{
+      sinon.stub(auction, 'getBidRequests', () => ([{
         bids: [{
           bidder: 'appnexusAst',
           placementCode: 'adUnitCode',
@@ -606,7 +606,7 @@ describe('auctionmanager.js', function () {
       const addedBid = auction.getBidsReceived().pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
 
-      auction.getBidderRequests.restore();
+      auction.getBidRequests.restore();
     });
   });
 });

@@ -168,7 +168,6 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       }
     }
   }
-
   let ajax = ajaxBuilder(bidRequests[0].timeout);
   bidRequests.forEach(bidRequest => {
     bidRequest.start = new Date().getTime();

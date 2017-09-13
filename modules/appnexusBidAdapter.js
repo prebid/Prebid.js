@@ -77,7 +77,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           bid.height = jptResponseObj.result.height;
           bid.dealId = jptResponseObj.result.deal_id;
 
-          addBidResponse(placementCode, bid, bidRequest.auctionId);
+          addBidResponse(placementCode, bid);
         } else {
           // no response data
           // @if NODE_ENV='debug'
@@ -87,7 +87,7 @@ AppNexusAdapter = function AppNexusAdapter() {
           // indicate that there is no bid for this placement
           bid = bidfactory.createBid(2, bidObj);
           bid.bidderCode = bidCode;
-          addBidResponse(placementCode, bid, bidRequest.auctionId);
+          addBidResponse(placementCode, bid);
         }
 
         if (!usersync) {

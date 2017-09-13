@@ -8,7 +8,7 @@ export function newAuctionManager() {
   let _public = {};
 
   _public.getBidsRequested = function() {
-    return _auctions.map(auction => auction.getBidderRequests())
+    return _auctions.map(auction => auction.getBidRequests())
       .reduce(flatten, []);
   };
 
@@ -33,8 +33,9 @@ export function newAuctionManager() {
   };
 
   _public.findBidByAdId = function(adId) {
-    return _auctions.map(auction => auction.getBidsReceived()
-      .find(bid => bid.adId === adId))[0];
+    return _auctions.map(auction => auction.getBidsReceived())
+      .reduce(flatten, [])
+      .find(bid => bid.adId === adId);
   };
 
   _public.getStandardBidderAdServerTargeting = function() {
