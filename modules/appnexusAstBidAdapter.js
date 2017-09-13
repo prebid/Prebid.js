@@ -5,7 +5,7 @@ import { NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
-const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
+const SUPPORTED_AD_TYPES = ['banner', 'video', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -218,6 +218,7 @@ function newBid(serverBid, rtbBid) {
 
   return bid;
 }
+
 function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
@@ -362,9 +363,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
 
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
-  if (rtbBid.renderer_url) {
-    return 'video-outstream';
-  } else if (adType === 'video') {
+  if (adType === 'video') {
     return 'video';
   } else if (adType === 'native') {
     return 'native';
