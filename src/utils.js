@@ -620,7 +620,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
+  return filter.includes(bid && bid.adUnitCode);
 }
 
 /**

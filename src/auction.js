@@ -169,7 +169,7 @@ function newAuction({adUnits, adUnitCodes}) {
 
       const adUnit = auction.getBidRequests().find(request => {
         return request.bids
-          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.placementCode === adUnitCode).length > 0;
+          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.adUnitCode === adUnitCode).length > 0;
       }) || {start: null};
 
       const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
@@ -192,7 +192,7 @@ function newAuction({adUnits, adUnitCodes}) {
     function prepareBidForAuction() {
       let bidRequest = auction.getBidRequests().find(request => {
         return request.bids
-          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.placementCode === adUnitCode).length > 0;
+          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.adUnitCode === adUnitCode).length > 0;
       }) || {start: null};
 
       const start = bidRequest.start;

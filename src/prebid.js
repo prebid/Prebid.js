@@ -68,11 +68,11 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 $$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
 
 function checkDefinedPlacement(id) {
-  var placementCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
-  if (!utils.contains(placementCodes, id)) {
+  if (!utils.contains(adUnitCodes, id)) {
     utils.logError('The "' + id + '" placement is not defined.');
     return;
   }

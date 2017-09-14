@@ -414,7 +414,7 @@ describe('auctionmanager.js', function () {
           requestId: '1863e370099523',
           startTime: 1462918897462,
           bidder: 'brealtime',
-          placementCode: '/19968336/header-bid-tag-0',
+          adUnitCode: '/19968336/header-bid-tag-0',
           sizes: [[300, 250]],
         }]
       }]));
@@ -511,7 +511,7 @@ describe('auctionmanager.js', function () {
       sinon.stub(auction, 'getBidRequests', () => ([{
         bids: [{
           bidder: '',
-          placementCode: 'adUnitCode',
+          adUnitCode: 'adUnitCode',
           sizes: [[300, 250]],
         }]
       }]));
@@ -589,7 +589,7 @@ describe('auctionmanager.js', function () {
       sinon.stub(auction, 'getBidRequests', () => ([{
         bids: [{
           bidder: 'appnexusAst',
-          placementCode: 'adUnitCode',
+          adUnitCode: 'adUnitCode',
           renderer: {
             url: 'renderer.js',
             render: (bid) => bid

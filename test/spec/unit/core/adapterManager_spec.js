@@ -60,7 +60,7 @@ describe('adapterManager tests', () => {
               'placementId': '4799418',
               'test': 'me'
             },
-            'placementCode': '/19968336/header-bid-tag1',
+            'adUnitCode': '/19968336/header-bid-tag1',
             'sizes': [
               [
                 728,
@@ -83,7 +83,7 @@ describe('adapterManager tests', () => {
             'params': {
               'placementId': '4799418'
             },
-            'placementCode': '/19968336/header-bid-tag-0',
+            'adUnitCode': '/19968336/header-bid-tag-0',
             'sizes': [
               [
                 300,
@@ -139,7 +139,7 @@ describe('adapterManager tests', () => {
               'placementId': '4799418',
               'test': 'me'
             },
-            'placementCode': '/19968336/header-bid-tag1',
+            'adUnitCode': '/19968336/header-bid-tag1',
             'sizes': [
               [
                 728,
@@ -162,7 +162,7 @@ describe('adapterManager tests', () => {
             'params': {
               'placementId': '4799418'
             },
-            'placementCode': '/19968336/header-bid-tag-0',
+            'adUnitCode': '/19968336/header-bid-tag-0',
             'sizes': [
               [
                 300,

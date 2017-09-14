@@ -431,7 +431,7 @@ describe('Unit: Prebid Module', function () {
             'params': {
               'placementId': '10433394'
             },
-            'placementCode': 'div-gpt-ad-1460505748561-0',
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
             'sizes': [
               [
                 300,
@@ -1113,7 +1113,7 @@ describe('Unit: Prebid Module', function () {
       auction1.getBidRequests = function() {
         return getBidRequests().map((req) => {
           req.bids = req.bids.filter((bid) => {
-            return bid.placementCode === '/19968336/header-bid-tag1';
+            return bid.adUnitCode === '/19968336/header-bid-tag1';
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {
@@ -1129,7 +1129,7 @@ describe('Unit: Prebid Module', function () {
       auction2.getBidRequests = function() {
         return getBidRequests().map((req) => {
           req.bids = req.bids.filter((bid) => {
-            return bid.placementCode === '/19968336/header-bid-tag-0';
+            return bid.adUnitCode === '/19968336/header-bid-tag-0';
           });
           return (req.bids.length > 0) ? req : undefined;
         }).filter((item) => {

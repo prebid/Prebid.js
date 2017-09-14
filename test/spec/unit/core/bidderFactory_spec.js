@@ -9,14 +9,14 @@ const MOCK_BIDS_REQUEST = {
   bids: [
     {
       requestId: 'first-bid-id',
-      placementCode: 'mock/placement',
+      adUnitCode: 'mock/placement',
       params: {
         param: 5
       }
     },
     {
       requestId: 'second-bid-id',
-      placementCode: 'mock/placement2',
+      adUnitCode: 'mock/placement2',
       params: {
         badParam: 6
       }
@@ -256,7 +256,7 @@ describe('bidders created by newBidder', () => {
         cpm: 0.5,
         height: 200,
         width: 300,
-        placementCode: 'mock/placement'
+        adUnitCode: 'mock/placement'
       };
       spec.areParamsValid.returns(true);
       spec.buildRequests.returns({
