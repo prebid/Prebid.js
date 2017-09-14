@@ -335,7 +335,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     callBids: _callBids
   };
 
-
   // JSDoc typedefs
 
   /**

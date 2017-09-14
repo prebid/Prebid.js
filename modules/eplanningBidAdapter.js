@@ -4,7 +4,18 @@ var adaptermanager = require('src/adaptermanager');
 
 function EPlanningAdapter() {
   (function() {
-    var win = window, doc = win.document, pbjsVar = win.$$PREBID_GLOBAL$$, _global = {}, _default = { 'sv': 'ads.us.e-planning.net', 't': 0 }, rnd, FILE = 'file', CALLBACK_FUNCTION = 'hbpb.rH', NULL_SIZE = '1x1', _csRequested = [], PROTO = location.protocol === 'https:' ? 'https:' : 'http:', ISV = 'aklc.img.e-planning.net';
+    const win = window;
+    const doc = win.document;
+    const pbjsVar = win.$$PREBID_GLOBAL$$;
+    const _global = {};
+    const _default = { 'sv': 'ads.us.e-planning.net', 't': 0 };
+    var rnd;
+    const FILE = 'file';
+    const CALLBACK_FUNCTION = 'hbpb.rH';
+    const NULL_SIZE = '1x1';
+    const _csRequested = [];
+    const PROTO = location.protocol === 'https:' ? 'https:' : 'http:';
+    const ISV = 'aklc.img.e-planning.net';
     function Hbpb() {
       var slots = (function() {
         var _data = [];
@@ -17,7 +28,9 @@ function EPlanningAdapter() {
             return data.sizes;
           }
           function getSizesString() {
-            var s = [], i, sizes = getSizes();
+            const s = [];
+            var i;
+            const sizes = getSizes();
             if (sizes && sizes.length) {
               if (typeof sizes[0] === 'object') {
                 for (i = 0; i < sizes.length; i++) {
@@ -42,7 +55,8 @@ function EPlanningAdapter() {
               _data[slotId].ads.push(ad);
             },
             getFormatedResponse: function() {
-              var ad, that = this;
+              var ad;
+              const that = this;
               if (hasAds()) {
                 ad = data.ads[0];
                 return {
@@ -61,7 +75,8 @@ function EPlanningAdapter() {
           };
         }
         function findAll() {
-          var i = 0, r = [];
+          var i = 0;
+          const r = [];
           for (i = 0; i < _data.length; i++) {
             r.push(new Slot(i));
           }
@@ -76,7 +91,9 @@ function EPlanningAdapter() {
             return new Slot(slotId);
           },
           getString: function() {
-            var _slots = [], i, slot;
+            const _slots = [];
+            var i;
+            var slot;
             for (i = 0; i < _data.length; i++) {
               slot = this.get(i);
               _slots.push(slot.getString());
@@ -84,7 +101,8 @@ function EPlanningAdapter() {
             return _slots.join('+');
           },
           findByPlacementCode: function(placementCode) {
-            var i, _slots = findAll();
+            var i;
+            const _slots = findAll();
             for (i = 0; i < _slots.length; i++) {
               if (_slots[i].getPlacementCode() === placementCode) {
                 return _slots[i];
@@ -92,7 +110,9 @@ function EPlanningAdapter() {
             }
           },
           getFormatedResponse: function() {
-            var _slots = findAll(), i, r = [];
+            const _slots = findAll();
+            var i;
+            const r = [];
             for (i = 0; i < _slots.length; i++) {
               r.push(_slots[i].getFormatedResponse());
             }
@@ -103,7 +123,8 @@ function EPlanningAdapter() {
         };
       })();
       function call(params) {
-        var i, bids = params.bids;
+        var i;
+        const bids = params.bids;
         for (i = 0; i < bids.length; i++) {
           slots.add({
             _raw: bids[i],
@@ -142,7 +163,12 @@ function EPlanningAdapter() {
         return CALLBACK_FUNCTION;
       }
       function doRequest() {
-        var clienteId = getGlobalParam('ci'), url, dfpClienteId = '1', sec = 'ROS', params = [], t = getGlobalParam('t');
+        const clienteId = getGlobalParam('ci');
+        var url;
+        const dfpClienteId = '1';
+        const sec = 'ROS';
+        const params = [];
+        const t = getGlobalParam('t');
         if (clienteId && !t) {
           url = PROTO + '//' + getGlobalParam('sv') + '/hb/1/' + clienteId + '/' + dfpClienteId + '/' + (win.location.hostname || FILE) + '/' + sec + '?';
           params.push('rnd=' + getRandom());
@@ -257,7 +283,8 @@ function EPlanningAdapter() {
   };
 
   function getBidObject(bid) {
-    var bidObject = bidfactory.createBid(1), i;
+    const bidObject = bidfactory.createBid(1);
+    var i;
     bidObject.bidderCode = 'eplanning';
     for (i in bid.ad) {
       if (bid.ad.hasOwnProperty(i)) {

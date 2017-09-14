@@ -3,6 +3,7 @@
 import { flatten, getBidderCodes, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { StorageManager, pbjsSyncsKey } from './storagemanager';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -17,8 +18,16 @@ let _s2sConfig = {
   adapter: CONSTANTS.S2S.ADAPTER,
   syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
 };
+
+const RANDOM = 'random';
+const FIXED = 'fixed';
+
+const VALID_ORDERS = {};
+VALID_ORDERS[RANDOM] = true;
+VALID_ORDERS[FIXED] = true;
+
 var _analyticsRegistry = {};
-let _bidderSequence = null;
+let _bidderSequence = RANDOM;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
@@ -66,7 +75,8 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  if (_bidderSequence === CONSTANTS.ORDER.RANDOM) {
+  const syncedBidders = StorageManager.get(pbjsSyncsKey);
+  if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
 
@@ -76,10 +86,9 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     s2sAdapter.queueSync({bidderCodes});
   }
 
-
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders;
+    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
@@ -128,7 +137,9 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
     let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
-    s2sAdapter.callBids(s2sBidRequest);
+    if (s2sBidRequest.ad_units.length) {
+      s2sAdapter.callBids(s2sBidRequest);
+    }
   }
 
   bidderCodes.forEach(bidderCode => {
@@ -156,7 +167,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   });
 };
 
-
 function transformHeightWidth(adUnit) {
   let sizesObj = [];
   let sizes = utils.parseSizesInput(adUnit.sizes);
@@ -175,7 +185,7 @@ exports.videoAdapters = []; // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
-    if (typeof bidAdaptor.callBids === CONSTANTS.objectType_function) {
+    if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
 
       if (supportedMediaTypes.includes('video')) {
@@ -195,15 +205,14 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
 exports.aliasBidAdapter = function (bidderCode, alias) {
   var existingAlias = _bidderRegistry[alias];
 
-  if (typeof existingAlias === CONSTANTS.objectType_undefined) {
+  if (typeof existingAlias === 'undefined') {
     var bidAdaptor = _bidderRegistry[bidderCode];
 
-    if (typeof bidAdaptor === CONSTANTS.objectType_undefined) {
+    if (typeof bidAdaptor === 'undefined') {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        let newAdapter = null;
-        newAdapter = bidAdaptor.createNew();
+        let newAdapter = new bidAdaptor.constructor();
         newAdapter.setBidderCode(alias);
         this.registerBidAdapter(newAdapter, alias);
       } catch (e) {
@@ -217,7 +226,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
 exports.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
-    if (typeof adapter.enableAnalytics === CONSTANTS.objectType_function) {
+    if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
       _analyticsRegistry[code] = adapter;
     } else {
@@ -246,7 +255,11 @@ exports.enableAnalytics = function (config) {
 };
 
 exports.setBidderSequence = function (order) {
-  _bidderSequence = order;
+  if (VALID_ORDERS[order]) {
+    _bidderSequence = order;
+  } else {
+    utils.logWarn(`Invalid order: ${order}. Bidder Sequence was not set.`);
+  }
 };
 
 exports.setS2SConfig = function (config) {

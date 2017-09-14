@@ -9,6 +9,7 @@ var CriteoAdapter = function CriteoAdapter() {
   var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
   var _profileId = 125;
+  var _adapterVersion = 1;
 
   function _callBids(params) {
     if (!window.criteo_pubtag || window.criteo_pubtag instanceof Array) {
@@ -38,25 +39,32 @@ var CriteoAdapter = function CriteoAdapter() {
       var slots = [];
       var isAudit = false;
       var networkid;
+      var integrationMode;
 
       // build slots before sending one multi-slots bid request
       for (var i = 0; i < bids.length; i++) {
         var bid = bids[i];
-        var sizes = bid.sizes || [];
+        var sizes = utils.parseSizesInput(bid.sizes);
         slots.push(
           new Criteo.PubTag.DirectBidding.DirectBiddingSlot(
             bid.placementCode,
             bid.params.zoneId,
             bid.params.nativeCallback ? bid.params.nativeCallback : undefined,
             bid.transactionId,
-            sizes.map((size) => {
-              return { width: size[0], height: size[1] }
+            sizes.map((sizeString) => {
+              var xIndex = sizeString.indexOf('x');
+              var w = parseInt(sizeString.substring(0, xIndex));
+              var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length))
+              return new Criteo.PubTag.DirectBidding.Size(w, h);
             }
             )
           )
         );
 
         networkid = bid.params.networkId || networkid;
+        if (bid.params.integrationMode !== undefined) {
+          integrationMode = bid.params.integrationMode.toLowerCase() == 'amp' ? 1 : 0;
+        }
 
         isAudit |= bid.params.audit !== undefined;
       }
@@ -69,7 +77,9 @@ var CriteoAdapter = function CriteoAdapter() {
         _callbackError(slots),
         _callbackError(slots), // timeout handled as error
         undefined,
-        networkid
+        networkid,
+        integrationMode,
+        _adapterVersion
       );
 
       // process the event as soon as possible
@@ -168,8 +178,7 @@ var CriteoAdapter = function CriteoAdapter() {
         bidObject.height = bidResponse.height;
         bidObject.ad = bidResponse.creative;
       }
-    }
-    else {
+    } else {
       bidObject = _invalidBidResponse();
     }
     return bidObject;

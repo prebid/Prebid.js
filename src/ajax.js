@@ -66,7 +66,7 @@ export function ajax(url, callback, data, options = {}) {
       x.onreadystatechange = function () {
         if (x.readyState === XHR_DONE) {
           let status = x.status;
-          if (status >= 200 && status < 300 || status === 304) {
+          if ((status >= 200 && status < 300) || status === 304) {
             callbacks.success(x.responseText, x);
           } else {
             callbacks.error(x.statusText, x);
@@ -76,7 +76,7 @@ export function ajax(url, callback, data, options = {}) {
     }
 
     if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
+      let urlInfo = parseURL(url, options);
       Object.assign(urlInfo.search, data);
       url = formatURL(urlInfo);
     }

@@ -28,7 +28,7 @@ const expectToContain = (haystack, needle, n = 1) =>
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
-    const adapter = AudienceNetwork();
+    const adapter = new AudienceNetwork();
     it('getBidderCode', () => {
       expect(adapter.getBidderCode).to.be.a('function');
       expect(adapter.getBidderCode()).to.equal(bidderCode);
@@ -71,7 +71,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify no attempt to add a response as no placement was provided
@@ -91,7 +91,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify no attempt to fetch response
       expect(requests).to.have.lengthOf(0);
       // Verify attempt to log error
@@ -109,14 +109,15 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=300x250');
+        .and.to.contain('adformats[]=300x250')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -136,7 +137,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -144,7 +145,8 @@ describe('AudienceNetwork adapter', () => {
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id&placementids[]=test-placement-id')
         .and.to.contain('adformats[]=320x50')
-        .and.to.contain('adformats[]=300x250');
+        .and.to.contain('adformats[]=300x250')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -163,14 +165,15 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=fullwidth');
+        .and.to.contain('adformats[]=fullwidth')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -189,14 +192,15 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=native');
+        .and.to.contain('adformats[]=native')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -215,7 +219,7 @@ describe('AudienceNetwork adapter', () => {
         }]
       };
       // Request bids
-      AudienceNetwork().callBids(params);
+      new AudienceNetwork().callBids(params);
       // Verify attempt to fetch response
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].method).to.equal('GET');
@@ -223,7 +227,8 @@ describe('AudienceNetwork adapter', () => {
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
         .and.to.contain('adformats[]=video')
-        .and.to.contain('sdk[]=');
+        .and.to.contain('sdk[]=')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -253,7 +258,7 @@ describe('AudienceNetwork adapter', () => {
         errors: [error]
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -287,7 +292,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -339,7 +344,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -383,7 +388,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -439,7 +444,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -499,7 +504,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
@@ -562,7 +567,7 @@ describe('AudienceNetwork adapter', () => {
         }
       }));
       // Request bids
-      AudienceNetwork().callBids({
+      new AudienceNetwork().callBids({
         bidderCode,
         bids: [{
           bidder: bidderCode,
