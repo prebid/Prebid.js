@@ -38,6 +38,7 @@ Before configuring the Index Exchange adapter as S2S, you must reach out to the 
 | `tier3SiteID` | optional | | |
 
 ### bid params: Video
+
 {: .table .table-bordered .table-striped }
 | Name | Scope | Description | Example |
 | :--- | :---- | :---------- | :------ |
