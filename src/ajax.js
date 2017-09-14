@@ -74,7 +74,7 @@ export function ajaxBuilder(timeout = 3000) {
       }
 
       if (method === 'GET' && data) {
-        let urlInfo = parseURL(url);
+        let urlInfo = parseURL(url, options);
         Object.assign(urlInfo.search, data);
         url = formatURL(urlInfo);
       }
