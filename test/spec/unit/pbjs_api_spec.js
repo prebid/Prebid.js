@@ -461,7 +461,7 @@ describe('Unit: Prebid Module', function () {
     beforeEach(() => {
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
         return function(url, callback) {
-          callback(JSON.stringify(RESPONSE));
+          callback.success(JSON.stringify(RESPONSE));
         }
       });
     });

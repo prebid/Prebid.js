@@ -110,6 +110,7 @@ function newAuction({adUnits, adUnitCodes}) {
       request.doneCbCallCount += 1;
       if (getBidRequests().every((bidRequest) => bidRequest.doneCbCallCount >= 1)) {
         // when all bidders have called done callback atleast once it means auction is complete
+        utils.logInfo(`Bids Received for Auction with id: ${getAuctionId()}`, getBidsReceived());
         setAuctionStatus(AUCTION_COMPLETED);
         executeCallback(false, true);
       }
@@ -285,8 +286,7 @@ function newAuction({adUnits, adUnitCodes}) {
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
     let bidRequests = adaptermanager.makeBidRequests(getAdUnits(), getAuctionStart(), getAuctionId(), cbTimeout);
-    // console.log('bid requests');
-    // console.log(bidRequests);
+    utils.logInfo(`Bids Requested for Auction with id: ${getAuctionId()}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
     });

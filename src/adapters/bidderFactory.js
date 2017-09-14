@@ -1,7 +1,5 @@
 import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
-import { ajax } from 'src/ajax';
-import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 
@@ -134,7 +132,7 @@ export function registerBidder(spec) {
  */
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
-    callBids: function(bidderRequest) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -150,16 +148,17 @@ export function newBidder(spec) {
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        bidmanager.addBidResponse(adUnitCode, bid);
+        addBidResponse(adUnitCode, bid);
       }
       function fillNoBids() {
         bidderRequest.bids
           .map(bidRequest => bidRequest.placementCode)
           .forEach(adUnitCode => {
             if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-              bidmanager.addBidResponse(adUnitCode, newEmptyBid());
+              addBidResponse(adUnitCode, newEmptyBid());
             }
           });
+        done();
       }
 
       const bidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -186,7 +185,6 @@ export function newBidder(spec) {
       const responses = [];
       function afterAllResponses() {
         fillNoBids();
-
         if (spec.getUserSyncs) {
           // TODO: Before merge, replace this empty object with the real config values.
           // Then register them with the UserSync pool. This is waiting on the UserSync PR

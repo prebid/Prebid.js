@@ -178,7 +178,7 @@ exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb) => {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
       bidRequest.doneCbCallCount = 0;
       let done = doneCb(bidRequest.bidderRequestId);
-      adapter.callBids({bidRequest, addBidResponse, done, ajax});
+      adapter.callBids(bidRequest, addBidResponse, done, ajax);
     } else {
       utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
     }
