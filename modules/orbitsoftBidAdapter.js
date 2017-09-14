@@ -31,9 +31,8 @@ let styleParamsToFieldsMap = {
 
 let OrbitsoftAdapter;
 OrbitsoftAdapter = function OrbitsoftAdapter() {
-  let baseAdapter = Adapter.createNew('orbitsoft');
 
-  baseAdapter.callBids = function (params) {
+  function _callBids(params) {
     let bids = params.bids || [];
 
     for (let i = 0; i < bids.length; i++) {
@@ -49,7 +48,7 @@ OrbitsoftAdapter = function OrbitsoftAdapter() {
         bidmanager.addBidResponse(bidRequest.placementCode, bid);
       }
     }
-  };
+  }
 
   function buildJPTCall(bid, callbackId) {
     // Determine tag params
@@ -216,12 +215,17 @@ OrbitsoftAdapter = function OrbitsoftAdapter() {
     }
   };
 
-  return {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    buildJPTCall: buildJPTCall
-  };
+  return Object.assign(Adapter.createNew('orbitsoft'), {
+    callBids: _callBids,
+    buildJPTCall: buildJPTCall,
+    createNew: OrbitsoftAdapter.createNew
+  });
 };
+
+OrbitsoftAdapter.createNew = function() {
+  return new OrbitsoftAdapter();
+};
+
 
 adaptermanager.registerBidAdapter(new OrbitsoftAdapter(), 'orbitsoft');
 adaptermanager.aliasBidAdapter('orbitsoft', 'orbitadserving');
