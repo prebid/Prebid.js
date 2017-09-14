@@ -666,7 +666,31 @@ export function getBidderRequest(bidder, adUnitCode) {
 }
 
 /**
+ * Given a function, return a function which only executes the original after
+ * it's been called numRequiredCalls times.
  *
+ * Note that the arguments from the previous calls will *not* be forwarded to the original function.
+ * Only the final call's arguments matter.
+ *
+ * @param {function} func The function which should be executed, once the returned function has been executed
+ *   numRequiredCalls times.
+ * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ *   func is.
+ */
+export function delayExecution(func, numRequiredCalls) {
+  if (numRequiredCalls < 1) {
+    throw new Error(`numRequiredCalls must be a positive number. Got ${numRequiredCalls}`);
+  }
+  let numCalls = 0;
+  return function () {
+    numCalls++;
+    if (numCalls === numRequiredCalls) {
+      func.apply(null, arguments);
+    }
+  }
+}
+
+/**
  * https://stackoverflow.com/a/34890276/428704
  * @export
  * @param {array} xs
