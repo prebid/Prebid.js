@@ -11,6 +11,7 @@ biddercode_longer_than_12: false
 
 ### bid params
 
+{: .table .table-bordered .table-striped }
 | Name   | Scope    | Description | Example         |
 | :---   | :----    | :---------- | :------         |
 | size   | required | Size        | `"300x250"`     |
