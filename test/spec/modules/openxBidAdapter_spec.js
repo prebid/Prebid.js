@@ -227,14 +227,14 @@ describe('openx adapter tests', function () {
         }
       ]
     };
-    // adapter().callBids(params);
-    //
-    // sinon.assert.calledOnce(spyLoadScript);
-    //
-    // let bidUrl = spyLoadScript.getCall(0).args[0];
-    // expect(bidUrl).to.include('testdelDomain');
-    // expect(bidUrl).to.include('1234');
-    // expect(bidUrl).to.include('300x250,300x600');
+    adapter().callBids(params);
+
+    sinon.assert.calledOnce(spyLoadScript);
+
+    let bidUrl = spyLoadScript.getCall(0).args[0];
+    expect(bidUrl).to.include('testdelDomain');
+    expect(bidUrl).to.include('1234');
+    expect(bidUrl).to.include('300x250,300x600');
     spyLoadScript.restore();
   });
 
@@ -254,13 +254,13 @@ describe('openx adapter tests', function () {
     };
     adapter().callBids(params);
 
-    // sinon.assert.calledOnce(spyLoadScript);
-    //
-    // let bidUrl = spyLoadScript.getCall(0).args[0];
-    // expect(bidUrl).to.include('testdelDomain');
-    // expect(bidUrl).to.include('1234');
-    // expect(bidUrl).to.include('300x250,300x600');
-    // expect(bidUrl).to.include('c.test1=testval1');
+    sinon.assert.calledOnce(spyLoadScript);
+
+    let bidUrl = spyLoadScript.getCall(0).args[0];
+    expect(bidUrl).to.include('testdelDomain');
+    expect(bidUrl).to.include('1234');
+    expect(bidUrl).to.include('300x250,300x600');
+    expect(bidUrl).to.include('c.test1=testval1');
     spyLoadScript.restore();
   });
 });
