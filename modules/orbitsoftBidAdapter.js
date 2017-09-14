@@ -1,13 +1,14 @@
 import { getBidRequest } from 'src/utils';
+import Adapter from 'src/adapter';
 
 let CONSTANTS = require('src/constants');
-let Adapter = require('src/adapter');
 let bidmanager = require('src/bidmanager');
 let bidfactory = require('src/bidfactory');
 let adloader = require('src/adloader');
 let utils = require('src/utils');
 let adaptermanager = require('src/adaptermanager');
 
+let ORBITSOFT_BIDDERCODE = 'orbitsoft';
 let styleParamsToFieldsMap = {
   'title.family': 'f1', // headerFont
   'title.size': 'fs1', // headerFontSize
@@ -28,9 +29,8 @@ let styleParamsToFieldsMap = {
   'colors.border': 'c1', // borderColor
   'colors.link': 'c6', // lnkColor
 };
-let ORBITSOFT_BIDDERCODE = 'orbitsoft';
-let OrbitsoftAdapter = function OrbitsoftAdapter() {
 
+let OrbitsoftAdapter = function OrbitsoftAdapter() {
   function _callBids (params) {
     let bids = params.bids || [];
 
@@ -39,8 +39,9 @@ let OrbitsoftAdapter = function OrbitsoftAdapter() {
       let callbackId = bidRequest.bidId;
       let jptCall = buildJPTCall(bidRequest, callbackId);
 
-      if (jptCall) { adloader.loadScript(jptCall); }
-      else {
+      if (jptCall) {
+        adloader.loadScript(jptCall);
+      } else {
         // indicate that there is no bid for this placement
         let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
         bid.bidderCode = params.bidderCode;
@@ -62,8 +63,7 @@ let OrbitsoftAdapter = function OrbitsoftAdapter() {
       utils.logMessage('No param requestUrl');
       // @endif
       return null;
-    }
-    else {
+    } else {
       jptCall += '?';
     }
 
@@ -214,7 +214,7 @@ let OrbitsoftAdapter = function OrbitsoftAdapter() {
     }
   };
 
-  return Object.assign(Adapter.createNew(ORBITSOFT_BIDDERCODE), {
+  return Object.assign(new Adapter(ORBITSOFT_BIDDERCODE), {
     callBids: _callBids,
     buildJPTCall: buildJPTCall,
     createNew: OrbitsoftAdapter.createNew
