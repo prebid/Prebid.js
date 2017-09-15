@@ -624,12 +624,16 @@ describe('bidmanager.js', function () {
     });
 
     it('requires a renderer on outstream bids', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
+      const bidRequest = () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         mediaTypes: {
           video: {context: 'outstream'}
         },
-      }));
+      });
+
+      sinon.stub(utils, 'getBidRequest', bidRequest);
+      sinon.stub(utils, 'getBidderRequest', bidRequest);
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -645,6 +649,7 @@ describe('bidmanager.js', function () {
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
 
       utils.getBidRequest.restore();
+      utils.getBidderRequest.restore();
     });
   });
 });
