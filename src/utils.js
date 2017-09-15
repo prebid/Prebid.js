@@ -463,8 +463,7 @@ exports.triggerPixel = function (url) {
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
 exports.insertUserSyncIframe = function(url) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url, false);
-  iframeHtml = iframeHtml.replace('<iframe', '<iframe sandbox="allow-scripts"');
+  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
@@ -491,17 +490,21 @@ exports.createTrackPixelHtml = function (url) {
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = '') {
   if (!url) {
     return '';
   }
   if (encodeUri) {
     url = encodeURI(url);
   }
+  if (sandbox) {
+    sandbox = `sandbox="${sandbox}"`;
+  }
 
-  return `<iframe id="${exports.getUniqueIdentifierStr()}"
+  return `<iframe ${sandbox} id="${exports.getUniqueIdentifierStr()}"
       frameborder="0"
       allowtransparency="true"
       marginheight="0" marginwidth="0"

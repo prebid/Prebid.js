@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config';
+import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 let { newUserSync } = require('../../src/userSync');
@@ -10,6 +11,7 @@ describe('user sync', () => {
   let timeoutStub;
   let shuffleStub;
   let getUniqueIdentifierStrStub;
+  let storageManagerAddStub;
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
@@ -30,6 +32,7 @@ describe('user sync', () => {
     shuffleStub = sinon.stub(utils, 'shuffle', (array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr', () => idPrefix + (lastId += 1));
     timeoutStub = sinon.stub(window, 'setTimeout', (callbackFunc) => { callbackFunc(); });
+    storageManagerAddStub = sinon.stub(StorageManager, 'add');
   });
 
   afterEach(() => {
@@ -38,6 +41,7 @@ describe('user sync', () => {
     shuffleStub.restore();
     getUniqueIdentifierStrStub.restore();
     timeoutStub.restore();
+    storageManagerAddStub.restore();
   });
 
   it('should register and fire a pixel URL', () => {
@@ -46,12 +50,15 @@ describe('user sync', () => {
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
   });
 
   it('should clear queue after sync', () => {
     const userSync = newTestUserSync();
     userSync.syncUsers();
     expect(triggerPixelStub.callCount).to.equal(0);
+    expect(storageManagerAddStub.callCount).to.be.equal(0);
   });
 
   it('should delay firing a pixel by the expected amount', () => {
@@ -72,6 +79,11 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
     expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.include('http://example.com/');
     expect(triggerPixelStub.getCall(2)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
+    expect(storageManagerAddStub.getCall(1)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(1).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
+    expect(storageManagerAddStub.getCall(2)).to.be.null;
   });
 
   it('should not register pixel URL since it is not supported', () => {
@@ -79,6 +91,7 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', () => {
@@ -88,6 +101,8 @@ describe('user sync', () => {
     let iframe = window.document.getElementById(idPrefix + lastId);
     expect(iframe).to.exist;
     expect(iframe.src).to.equal('http://example.com/iframe');
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
   });
 
   it('should only trigger syncs once per page', () => {
@@ -99,6 +114,9 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(triggerPixelStub.getCall(1)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
+    expect(storageManagerAddStub.getCall(1)).to.be.null;
   });
 
   it('should not fire syncs if cookies are not supported', () => {
@@ -106,6 +124,7 @@ describe('user sync', () => {
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.be.null;
   });
 
   it('should prevent registering invalid type', () => {
@@ -115,15 +134,15 @@ describe('user sync', () => {
   });
 
   it('should expose the syncUsers method for the publisher to manually trigger syncs', () => {
-    // syncUsersOverride should do nothing by default
+    // triggerUserSyncs should do nothing by default
     let userSync = newTestUserSync();
     let syncUsersSpy = sinon.spy(userSync, 'syncUsers');
-    userSync.syncUsersOverride();
+    userSync.triggerUserSyncs();
     expect(syncUsersSpy.notCalled).to.be.true;
-    // syncUsersOverride should trigger syncUsers if enableOverride is on
+    // triggerUserSyncs should trigger syncUsers if enableOverride is on
     userSync = newTestUserSync({enableOverride: true});
     syncUsersSpy = sinon.spy(userSync, 'syncUsers');
-    userSync.syncUsersOverride();
+    userSync.triggerUserSyncs();
     expect(syncUsersSpy.called).to.be.true;
   });
 
@@ -138,6 +157,11 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(1)).to.not.be.null;
     expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.match(/^http:\/\/example\.com\/[1|2]/);
     expect(triggerPixelStub.getCall(2)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
+    expect(storageManagerAddStub.getCall(1)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(1).args).to.eql([pbjsSyncsKey, 'testBidder', true]);
+    expect(storageManagerAddStub.getCall(2)).to.be.null;
   });
 
   it('should balance out bidder requests', () => {
@@ -172,5 +196,8 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
     expect(triggerPixelStub.getCall(1)).to.be.null;
+    expect(storageManagerAddStub.getCall(0)).to.not.be.null;
+    expect(storageManagerAddStub.getCall(0).args).to.eql([pbjsSyncsKey, 'testBidderA', true]);
+    expect(storageManagerAddStub.getCall(1)).to.be.null;
   });
 });

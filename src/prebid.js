@@ -22,7 +22,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
-const { syncUsers, syncUsersOverride } = userSync;
+const { syncUsers, triggerUserSyncs } = userSync;
 
 /* private variables */
 
@@ -73,7 +73,7 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
 // Allow publishers who enable user sync override to trigger their sync
-$$PREBID_GLOBAL$$.triggerUserSyncs = syncUsersOverride;
+$$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
