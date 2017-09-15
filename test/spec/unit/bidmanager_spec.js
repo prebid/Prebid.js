@@ -195,7 +195,7 @@ describe('The Bid Manager', () => {
               return `${this.height}x${this.width}`;
             };
             delete copy.cpm;
-            bidManager.addBidResponse('mock/code', copy);
+            bidManager.addBidResponse(adUnit.code, copy);
             expect(copy).to.have.property('hadCpmDuringBidAdjustment', true);
             expect(copy).to.have.property('hadAdUnitCodeDuringBidAdjustment', true);
             expect(copy).to.have.property('hadTimeToRespondDuringBidAdjustment', true);

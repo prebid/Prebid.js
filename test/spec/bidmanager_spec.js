@@ -8,6 +8,10 @@ var bidmanager = require('../../src/bidmanager');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 
+function timestamp() {
+  return new Date().getTime();
+}
+
 describe('replaceTokenInString', function () {
   it('should replace all given tokens in a String', function () {
     var tokensToReplace = {
@@ -516,6 +520,7 @@ describe('bidmanager.js', function () {
 
     it('should add banner bids that have no width or height but single adunit size', () => {
       sinon.stub(utils, 'getBidderRequest', () => ({
+        start: timestamp(),
         bids: [{
           sizes: [[300, 250]],
         }]
@@ -542,6 +547,7 @@ describe('bidmanager.js', function () {
 
     it('should not add native bids that do not have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
@@ -566,13 +572,16 @@ describe('bidmanager.js', function () {
     });
 
     it('should add native bids that do have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
+      const bidRequest = () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
         },
         mediaType: 'native',
-      }));
+      });
+      sinon.stub(utils, 'getBidRequest', bidRequest);
+      sinon.stub(utils, 'getBidderRequest', bidRequest);
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -588,10 +597,12 @@ describe('bidmanager.js', function () {
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
 
       utils.getBidRequest.restore();
+      utils.getBidderRequest.restore();
     });
 
     it('installs publisher-defined renderers on bids', () => {
       sinon.stub(utils, 'getBidderRequest', () => ({
+        start: timestamp(),
         bids: [{
           renderer: {
             url: 'renderer.js',
