@@ -1,7 +1,7 @@
 ---
 layout: bidder
-title: Spotx
-description: Prebid Spotx Bidder Adaptor
+title: SpotX
+description: Prebid SpotX Bidder Adaptor
 
 top_nav_section: dev_docs
 nav_section: reference
@@ -27,9 +27,9 @@ biddercode_longer_than_12: false
 | `content_height` | optional | The desired height of the video ad placement. Requires content_width to also be set | `'480'` |
 | `content_id` | optional | An identifier for the content that can be used for refinement and custom reporting | `'9876543210'` |
 | `contentPageUrl` | optional | Set the url to be used for the content page, uses the current pages url by default | `'http://www.spotx.tv'` |
-| `ados` | optional | See Spotx documentation [here](https://developer.spotxchange.com/content/local/docs/sdkDocs/DirectSdk/README.md#sending-query-parameters-to-spotmarket) | |
+| `ados` | optional | See SpotX documentation [here](https://developer.spotxchange.com/content/local/docs/sdkDocs/DirectSdk/README.md#sending-query-parameters-to-spotmarket) | |
 | `ad_volume` | optional | Value between 0 and 1 to denote the volume the ad should start at | |
 | `hide_skin` | optional | Set to true to hide the spotx skin | |
 | `autoplay` | optional | Set to true to attempt to play the ad as soon as it is loaded | |
 | `ad_mute` | optional | Set to true to start the ad with the volume muted | |
-| `custom` | optional | See Spotx documentation [here](https://developer.spotxchange.com/content/local/docs/sdkDocs/DirectSdk/README.md#custom-property-for-key-value-pair-reporting) | |
+| `custom` | optional | See SpotX documentation [here](https://developer.spotxchange.com/content/local/docs/sdkDocs/DirectSdk/README.md#custom-property-for-key-value-pair-reporting) | |
