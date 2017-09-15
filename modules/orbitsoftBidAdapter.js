@@ -224,9 +224,4 @@ let OrbitsoftAdapter = function OrbitsoftAdapter() {
 };
 
 adaptermanager.registerBidAdapter(new OrbitsoftAdapter(), ORBITSOFT_BIDDERCODE);
-adaptermanager.aliasBidAdapter('orbitsoft', 'orbitadserving');
-adaptermanager.aliasBidAdapter('orbitsoft', 'orbitscripts');
-adaptermanager.aliasBidAdapter('orbitsoft', 'orbitsoftcom');
-adaptermanager.aliasBidAdapter('orbitsoft', 'orbitsoftru');
-
 module.exports = OrbitsoftAdapter;
