@@ -59,7 +59,7 @@ describe('The Bid Manager', () => {
           expect(bid.cpm).to.equal(adjustCpm(0.1));
 
           if (usePayloadResponse) {
-            expect(bid.vastPayload).to.equal('<VAST version="3.0"></VAST>');
+            expect(bid.vastXml).to.equal('<VAST version="3.0"></VAST>');
             if (usePrebidCache) {
               expect(bid.vastUrl).to.equal(`https://prebid.adnxs.com/pbc/v1/cache?uuid=FAKE_UUID`);
             }
@@ -176,7 +176,7 @@ describe('The Bid Manager', () => {
           it('should add bids with a vastUrl and then execute the callbacks signaling the end of the auction',
             testAddVideoBid(true, true, stubProvider, false));
 
-          it('should add bids with a vastPayload and then execute the callbacks signaling the end of the auction',
+          it('should add bids with a vastXml and then execute the callbacks signaling the end of the auction',
             testAddVideoBid(true, true, stubProvider, true));
 
           it('should gracefully do nothing when adUnitCode is undefined', () => {

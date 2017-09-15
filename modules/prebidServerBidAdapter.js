@@ -169,6 +169,7 @@ function PrebidServer() {
             bidObject.ad = bidObj.adm;
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
+            bidObject.adserverTargeting = bidObj.ad_server_targeting;
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
@@ -234,7 +235,7 @@ function PrebidServer() {
       contentType: 'text/plain',
       withCredentials: true
     });
-  }
+  };
 
   return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
