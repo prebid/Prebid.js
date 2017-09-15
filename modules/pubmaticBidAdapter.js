@@ -112,25 +112,12 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return conf;
   }
 
-  function _cleanSlots(slots) {
-    var i,
-      len = slots.length,
-      tempSlot,
-      tempSlots = [];
-
-    for (i = 0; i < len; i++) {
-      tempSlot = slots[i];
-      // istanbul ignore else
-      if (utils.isStr(tempSlot)) {
-        tempSlot = tempSlot.replace(/^\s+/g, '').replace(/\s+$/g, '');
-        // istanbul ignore else
-        if (tempSlot.length > 0) {
-          tempSlots.push(tempSlot);
-        }
-      }
+  function _cleanSlot(slotName){
+    // istanbul ignore else
+    if (utils.isStr(slotName)) {
+      return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
     }
-
-    return tempSlots;
+    return '';
   }
 
   function _legacyExecution(conf, slots) {
@@ -171,10 +158,9 @@ var PubmaticAdapter = function PubmaticAdapter() {
       var bid = bids[i];
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
-      slots.push(bid.params.adSlot);
+      bid.params.adSlot = _cleanSlot(bid.params.adSlot);
+      bid.params.adSlot.length && slots.push(bid.params.adSlot);
     }
-
-    slots = _cleanSlots(slots);
 
     // istanbul ignore else
     if (conf.pubId && slots.length > 0) {
