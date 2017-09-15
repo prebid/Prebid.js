@@ -2,6 +2,10 @@ import { isValidVideoBid } from 'src/video';
 const utils = require('src/utils');
 
 describe('video.js', () => {
+  afterEach(() => {
+    utils.getBidRequest.restore();
+  });
+
   it('validates valid instream bids', () => {
     sinon.stub(utils, 'getBidRequest', () => ({
       bidder: 'appnexusAst',
@@ -15,8 +19,6 @@ describe('video.js', () => {
     });
 
     expect(valid).to.be(true);
-
-    utils.getBidRequest.restore();
   });
 
   it('catches invalid instream bids', () => {
@@ -30,8 +32,6 @@ describe('video.js', () => {
     const valid = isValidVideoBid({});
 
     expect(valid).to.be(false);
-
-    utils.getBidRequest.restore();
   });
 
   it('validates valid outstream bids', () => {
@@ -50,8 +50,6 @@ describe('video.js', () => {
     });
 
     expect(valid).to.be(true);
-
-    utils.getBidRequest.restore();
   });
 
   it('catches invalid outstream bids', () => {
@@ -65,7 +63,5 @@ describe('video.js', () => {
     const valid = isValidVideoBid({});
 
     expect(valid).to.be(false);
-
-    utils.getBidRequest.restore();
   });
 });
