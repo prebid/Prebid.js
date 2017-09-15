@@ -852,7 +852,7 @@ describe('Unit: Prebid Module', function () {
       });
 
       it('should execute callback after timeout', () => {
-        var spyExecuteCallback = sinon.spy(auction, 'executeCallback');
+        var logMessageSpy = sinon.spy(utils, 'logMessage');
         var clock = sinon.useFakeTimers();
         var requestObj = {
           bidsBackHandler: function bidsBackHandlerCallback() {},
@@ -861,14 +861,14 @@ describe('Unit: Prebid Module', function () {
         };
 
         $$PREBID_GLOBAL$$.requestBids(requestObj);
-
+        var re = new RegExp('^Auction [0-9A-Za-z]+ timedOut$');
         clock.tick(requestObj.timeout - 1);
-        assert.ok(spyExecuteCallback.notCalled, 'auction.executeCallback not called');
+        assert.ok(logMessageSpy.neverCalledWith(sinon.match(re)), 'executeCallback not called');
 
         clock.tick(1);
-        assert.ok(spyExecuteCallback.called, 'called auction.executeCallback');
+        assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
 
-        auction.executeCallback.restore();
+        utils.logMessage.restore();
         clock.restore();
       });
 

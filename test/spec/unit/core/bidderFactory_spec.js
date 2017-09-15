@@ -68,7 +68,6 @@ describe('bidders created by newBidder', () => {
     });
 
     it('should call buildRequests(bidRequest) the params are valid', () => {
-      debugger; // eslint-disable-line
       const bidder = newBidder(spec);
 
       spec.areParamsValid.returns(true);
@@ -207,7 +206,6 @@ describe('bidders created by newBidder', () => {
     });
 
     it('should call spec.interpretResponse() with the response body content', () => {
-      debugger; // eslint-disable-line
       const bidder = newBidder(spec);
 
       spec.areParamsValid.returns(true);

@@ -2,6 +2,9 @@ import { auctionManager, newAuctionManager } from 'src/auctionManager';
 import { getKeyValueTargetingPairs } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
+import * as auctionModule from 'src/auction';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import * as ajaxLib from 'src/ajax';
 
 var assert = require('assert');
 
@@ -11,6 +14,7 @@ var assert = require('assert');
 var utils = require('../../src/utils');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
+var adaptermanager = require('src/adaptermanager');
 
 describe('auctionmanager.js', function () {
   describe('getKeyValueTargetingPairs', function () {
@@ -400,164 +404,138 @@ describe('auctionmanager.js', function () {
   });
 
   describe('addBidResponse', () => {
+    let createAuctionStub;
+    let adUnits;
+    let adUnitCodes;
+    let spec;
     let auction;
+    let ajaxStub;
+    const BIDDER_CODE = 'sampleBidder';
+    let makeRequestsStub;
+    let bids = [{
+      'ad': 'creative',
+      'cpm': '1.99',
+      'width': 300,
+      'height': 250,
+      'bidderCode': BIDDER_CODE,
+      'requestId': '4d0a6829338a07'
+    }];
+
+    let bidRequests = [{
+      'bidderCode': BIDDER_CODE,
+      'auctionId': '20882439e3238c',
+      'bidderRequestId': '331f3cf3f1d9c8',
+      'bids': [
+        {
+          'bidder': BIDDER_CODE,
+          'params': {
+            'placementId': 'id'
+          },
+          'adUnitCode': 'adUnit-code',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '4d0a6829338a07',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'auctionId': '20882439e3238c'
+        }
+      ],
+      'auctionStart': 1505250713622,
+      'timeout': 3000
+    }];
+
     before(() => {
-      let adUnits = fixtures.getAdUnits();
-      let adUnitCodes = fixtures.getAdUnits().map(unit => unit.code);
-      auction = auctionManager.createAuction({adUnits, adUnitCodes});
-      // $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
+      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
+        return function(url, callback) {
+          callback.success('response body');
+        }
+      });
     });
 
-    it('should return proper price bucket increments for dense mode', () => {
-      sinon.stub(auction, 'getBidRequests', () => ([{
-        bids: [{
-          requestId: '1863e370099523',
-          startTime: 1462918897462,
-          bidder: 'brealtime',
-          adUnitCode: '/19968336/header-bid-tag-0',
-          sizes: [[300, 250]],
-        }]
-      }]));
+    after(() => {
+      ajaxStub.restore();
+      adaptermanager.makeBidRequests.restore();
+    });
 
-      const bid = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[5]
-      );
+    beforeEach(() => {
+      adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }];
+      adUnitCodes = ['adUnit-code'];
+      auction = auctionModule.createAuction({adUnits, adUnitCodes});
+      createAuctionStub = sinon.stub(auctionModule, 'createAuction');
+      createAuctionStub.returns(auction);
 
-      // 0 - 3 dollars
-      bid.cpm = '1.99';
-      let expectedIncrement = '1.99';
-      auction.addBidResponse(bid.adUnitCode, bid, auction.getAuctionId());
-      // pop this bid because another test relies on global $$PREBID_GLOBAL$$._bidsReceived
+      spec = {
+        code: BIDDER_CODE,
+        areParamsValid: sinon.stub(),
+        buildRequests: sinon.stub(),
+        interpretResponse: sinon.stub(),
+        getUserSyncs: sinon.stub()
+      };
+    });
+
+    afterEach(() => {
+      auctionModule.createAuction.restore();
+    });
+
+    it('should return proper price bucket increments for dense mode when cpm is in range 0-3', () => {
+      bids[0].cpm = '1.99';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
+      assert.equal(registeredBid.pbDg, '1.99', '0 - 3 hits at to 1 cent increment');
+    });
 
-      // 3 - 8 dollars
-      bid.cpm = '4.39';
-      expectedIncrement = '4.35';
-      auction.addBidResponse(bid.adUnitCode, bid, auction.getAuctionId());
-      registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
+    it('should return proper price bucket increments for dense mode when cpm is in range 3-8', () => {
+      bids[0].cpm = '4.39';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
+      let registeredBid = auction.getBidsReceived().pop();
+      assert.equal(registeredBid.pbDg, '4.35', '3 - 8 hits at 5 cent increment');
+    });
 
-      // 8 - 20 dollars
-      bid.cpm = '19.99';
-      expectedIncrement = '19.50';
-      auction.addBidResponse(bid.adUnitCode, bid, auction.getAuctionId());
-      registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
+    it('should return proper price bucket increments for dense mode when cpm is in range 8-20', () => {
+      bids[0].cpm = '19.99';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
+      let registeredBid = auction.getBidsReceived().pop();
+      assert.equal(registeredBid.pbDg, '19.50', '8 - 20 hits at 50 cent increment');
+    });
 
-      // 20+ dollars
-      bid.cpm = '73.07';
-      expectedIncrement = '20.00';
-      auction.addBidResponse(bid.adUnitCode, bid, auction.getAuctionId());
-      registeredBid = auction.getBidsReceived().pop();
-      assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
-
-      auction.getBidRequests.restore();
+    it('should return proper price bucket increments for dense mode when cpm is 20+', () => {
+      bids[0].cpm = '73.07';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
+      let registeredBid = auction.getBidsReceived().pop();
+      assert.equal(registeredBid.pbDg, '20.00', '20+ caps at 20.00');
     });
 
     it('should place dealIds in adserver targeting', () => {
-      const bid = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[0]
-      );
-
-      bid.dealId = 'test deal';
-      auction.addBidResponse(bid.adUnitCode, bid, auction.getAuctionId());
-      const addedBid = auction.getBidsReceived().pop();
-      assert.equal(addedBid.adserverTargeting[`hb_deal`], bid.dealId, 'dealId placed in adserverTargeting');
-    });
-
-    it('should not alter bid adID', () => {
-      const bid1 = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[1]
-      );
-      const bid2 = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[3]
-      );
-
-      auction.addBidResponse(bid1.adUnitCode, Object.assign({}, bid1), auction.getAuctionId());
-      auction.addBidResponse(bid2.adUnitCode, Object.assign({}, bid2), auction.getAuctionId());
-
-      const addedBid2 = auction.getBidsReceived().pop();
-      assert.equal(addedBid2.adId, bid2.adId);
-      const addedBid1 = auction.getBidsReceived().pop();
-      assert.equal(addedBid1.adId, bid1.adId);
-    });
-
-    it('should not add banner bids that have no width or height', () => {
-      const bid1 = Object.assign({},
-        bidfactory.createBid(2),
-        fixtures.getBidResponses()[1]
-      );
-      auction.addBidResponse(bid1.adUnitCode, Object.assign({}, bid1), auction.getAuctionId());
-
-      const bid2 = Object.assign({},
-        bidfactory.createBid(1),
-        {
-          width: undefined,
-          height: undefined
-        }
-      );
-      auction.addBidResponse('adUnitCode', bid2, auction.getAuctionId());
-
-      const addedBid = auction.getBidsReceived().pop();
-      assert.notEqual(bid2.adId, addedBid.adId);
-    });
-
-    it('should add banner bids that have no width or height but single adunit size', () => {
-      sinon.stub(auction, 'getBidRequests', () => ([{
-        bids: [{
-          bidder: '',
-          adUnitCode: 'adUnitCode',
-          sizes: [[300, 250]],
-        }]
-      }]));
-
-      const bid = Object.assign({},
-        bidfactory.createBid(1),
-        {
-          width: undefined,
-          height: undefined
-        }
-      );
-
-      auction.addBidResponse('adUnitCode', bid, auction.getAuctionId());
-
-      const addedBid = auction.getBidsReceived().pop();
-
-      assert.equal(bid.adId, addedBid.adId);
-      assert.equal(addedBid.width, 300);
-      assert.equal(addedBid.height, 250);
-
-      auction.getBidRequests.restore();
-    });
-
-    it('should not add native bids that do not have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
-        bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
-        },
-        mediaType: 'native',
-      }));
-
-      const bid = Object.assign({},
-        bidfactory.createBid(1),
-        {
-          bidderCode: 'appnexusAst',
-          mediaType: 'native',
-          native: {title: undefined}
-        }
-      );
-
-      const bidsRecCount = auction.getBidsReceived().length;
-      auction.addBidResponse('adUnit-code', bid, auction.getAuctionId());
-      assert.equal(bidsRecCount, auction.getBidsReceived().length);
-
-      utils.getBidRequest.restore();
+      bids[0].dealId = 'test deal';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
+      let registeredBid = auction.getBidsReceived().pop();
+      assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
     });
 
     it('should add native bids that do have required assets', () => {
@@ -569,44 +547,309 @@ describe('auctionmanager.js', function () {
         mediaType: 'native',
       }));
 
-      const bid = Object.assign({},
-        bidfactory.createBid(1),
+      let bids1 = Object.assign({},
+        bids[0],
         {
-          bidderCode: 'appnexusAst',
           mediaType: 'native',
           native: {title: 'foo'}
         }
       );
 
       const bidsRecCount = auction.getBidsReceived().length;
-      auction.addBidResponse('adUnit-code', bid, auction.getAuctionId());
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids1);
+      auction.callBids(3000);
       assert.equal(bidsRecCount + 1, auction.getBidsReceived().length);
 
       utils.getBidRequest.restore();
     });
 
+    it('should not add native bids that do not have required assets', () => {
+      sinon.stub(utils, 'getBidRequest', () => ({
+        bidder: 'appnexusAst',
+        nativeParams: {
+          title: {'required': true},
+        },
+        mediaType: 'native',
+      }));
+
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: 'appnexusAst',
+          mediaType: 'native',
+          native: {title: undefined}
+        }
+      );
+
+      const bidsRecCount = auction.getBidsReceived().length;
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids1);
+      auction.callBids(3000);
+      assert.equal(bidsRecCount, auction.getBidsReceived().length);
+
+      utils.getBidRequest.restore();
+    });
+
     it('installs publisher-defined renderers on bids', () => {
-      sinon.stub(auction, 'getBidRequests', () => ([{
-        bids: [{
-          bidder: 'appnexusAst',
-          adUnitCode: 'adUnitCode',
-          renderer: {
-            url: 'renderer.js',
-            render: (bid) => bid
+      let bidRequests = [{
+        'bidderCode': BIDDER_CODE,
+        'auctionId': '20882439e3238c',
+        'bidderRequestId': '331f3cf3f1d9c8',
+        'bids': [
+          {
+            'bidder': BIDDER_CODE,
+            'params': {
+              'placementId': 'id'
+            },
+            'adUnitCode': 'adUnit-code',
+            'sizes': [[300, 250], [300, 600]],
+            'bidId': '4d0a6829338a07',
+            'bidderRequestId': '331f3cf3f1d9c8',
+            'auctionId': '20882439e3238c',
+            'renderer': {
+              url: 'renderer.js',
+              render: (bid) => bid
+            }
           }
-        }]
-      }]));
+        ],
+        'auctionStart': 1505250713622,
+        'timeout': 3000
+      }];
 
-      const bid = Object.assign({}, bidfactory.createBid(1), {
-        bidderCode: 'appnexusAst',
-        mediaType: 'video-outstream',
-      });
-
-      auction.addBidResponse('adUnitCode', bid, auction.getAuctionId());
+      makeRequestsStub.returns(bidRequests);
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: BIDDER_CODE,
+          mediaType: 'video-outstream',
+        }
+      );
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids1);
+      auction.callBids(3000);
       const addedBid = auction.getBidsReceived().pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
+    });
 
-      auction.getBidRequests.restore();
+    it('should add banner bids that have no width or height but single adunit size', () => {
+      let bidRequests = [{
+        'bidderCode': BIDDER_CODE,
+        'auctionId': '20882439e3238c',
+        'bidderRequestId': '331f3cf3f1d9c8',
+        'bids': [
+          {
+            'bidder': BIDDER_CODE,
+            'params': {
+              'placementId': 'id'
+            },
+            'adUnitCode': 'adUnit-code',
+            'sizes': [[300, 250]],
+            'bidId': '4d0a6829338a07',
+            'bidderRequestId': '331f3cf3f1d9c8',
+            'auctionId': '20882439e3238c',
+            'renderer': {
+              url: 'renderer.js',
+              render: (bid) => bid
+            }
+          }
+        ],
+        'auctionStart': 1505250713622,
+        'timeout': 3000
+      }];
+
+      makeRequestsStub.returns(bidRequests);
+
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          width: undefined,
+          height: undefined
+        }
+      );
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids1);
+      auction.callBids(3000);
+      const addedBid = auction.getBidsReceived().pop();
+
+      assert.equal(addedBid.width, 300);
+      assert.equal(addedBid.height, 250);
+    });
+  });
+
+  describe('addBidResponse', () => {
+    let createAuctionStub;
+    let adUnits;
+    let adUnitCodes;
+    let spec;
+    let spec1;
+    let auction;
+    let ajaxStub;
+    const BIDDER_CODE = 'sampleBidder';
+    const BIDDER_CODE1 = 'sampleBidder1';
+
+    let makeRequestsStub;
+    let bids = [{
+      'ad': 'creative',
+      'cpm': '1.99',
+      'width': 300,
+      'height': 250,
+      'bidderCode': BIDDER_CODE,
+      'requestId': '4d0a6829338a07'
+    }];
+
+    let bids1 = [{
+      'ad': 'creative',
+      'cpm': '1.99',
+      'width': 300,
+      'height': 250,
+      'bidderCode': BIDDER_CODE1,
+      'requestId': '5d0a6829338a07'
+    }];
+
+    let bidRequests = [{
+      'bidderCode': BIDDER_CODE,
+      'auctionId': '20882439e3238c',
+      'bidderRequestId': '331f3cf3f1d9c8',
+      'bids': [
+        {
+          'bidder': BIDDER_CODE,
+          'params': {
+            'placementId': 'id'
+          },
+          'adUnitCode': 'adUnit-code',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '4d0a6829338a07',
+          'bidderRequestId': '331f3cf3f1d9c8',
+          'auctionId': '20882439e3238c'
+        }
+      ],
+      'auctionStart': 1505250713622,
+      'timeout': 3000
+    }, {
+      'bidderCode': BIDDER_CODE1,
+      'auctionId': '20882439e3238c',
+      'bidderRequestId': '661f3cf3f1d9c8',
+      'bids': [
+        {
+          'bidder': BIDDER_CODE1,
+          'params': {
+            'placementId': 'id'
+          },
+          'adUnitCode': 'adUnit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '5d0a6829338a07',
+          'bidderRequestId': '661f3cf3f1d9c8',
+          'auctionId': '20882439e3238c'
+        }
+      ],
+      'auctionStart': 1505250713623,
+      'timeout': 3000
+    }];
+
+    before(() => {
+      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
+        return function(url, callback) {
+          callback.success('response body');
+        }
+      });
+    });
+
+    after(() => {
+      ajaxStub.restore();
+      adaptermanager.makeBidRequests.restore();
+    });
+
+    beforeEach(() => {
+      adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }, {
+        code: 'adUnit-code-1',
+        bids: [
+          {bidder: BIDDER_CODE1, params: {placementId: 'id'}},
+        ]
+      }];
+      adUnitCodes = ['adUnit-code', 'adUnit-code-1'];
+      auction = auctionModule.createAuction({adUnits, adUnitCodes});
+      createAuctionStub = sinon.stub(auctionModule, 'createAuction');
+      createAuctionStub.returns(auction);
+
+      spec = {
+        code: BIDDER_CODE,
+        areParamsValid: sinon.stub(),
+        buildRequests: sinon.stub(),
+        interpretResponse: sinon.stub(),
+        getUserSyncs: sinon.stub()
+      };
+
+      spec1 = {
+        code: BIDDER_CODE1,
+        areParamsValid: sinon.stub(),
+        buildRequests: sinon.stub(),
+        interpretResponse: sinon.stub(),
+        getUserSyncs: sinon.stub()
+      };
+    });
+
+    afterEach(() => {
+      auctionModule.createAuction.restore();
+    });
+
+    it('should not alter bid adID', () => {
+      registerBidder(spec);
+      registerBidder(spec1);
+
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+
+      spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec1.areParamsValid.returns(true);
+      spec1.interpretResponse.returns(bids1);
+
+      auction.callBids(3000);
+
+      const addedBid2 = auction.getBidsReceived().pop();
+      assert.equal(addedBid2.adId, bids1[0].requestId);
+      const addedBid1 = auction.getBidsReceived().pop();
+      assert.equal(addedBid1.adId, bids[0].requestId);
+    });
+
+    it('should not add banner bids that have no width or height', () => {
+      bids1[0].width = undefined;
+      bids1[0].height = undefined;
+
+      registerBidder(spec);
+      registerBidder(spec1);
+
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.areParamsValid.returns(true);
+      spec.interpretResponse.returns(bids);
+
+      spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec1.areParamsValid.returns(true);
+      spec1.interpretResponse.returns(bids1);
+
+      auction.callBids(3000);
+
+      let length = auction.getBidsReceived().length;
+      const addedBid2 = auction.getBidsReceived().pop();
+      assert.notEqual(addedBid2.adId, bids1[0].requestId);
+      assert.equal(length, 1);
     });
   });
 });
