@@ -88,7 +88,11 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   });
   let bucket = config.buckets.find(bucket => {
     if (cpm > cap.max * granularityMultiplier) {
-      const precision = bucket.precision || _defaultPrecision;
+      // cpm exceeds cap, just return the cap.
+      let precision = bucket.precision;
+      if (typeof precision === 'undefined') {
+        precision = _defaultPrecision;
+      }
       cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
     } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucket.min * granularityMultiplier) {
       return bucket;
@@ -114,7 +118,7 @@ function isValidPriceConfig(config) {
 }
 
 function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
-  if (!precision) {
+  if (typeof precision === 'undefined') {
     precision = _defaultPrecision;
   }
   let bucketSize = 1 / (increment * granularityMultiplier);
