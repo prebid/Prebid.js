@@ -1,5 +1,4 @@
 import { getBidRequest } from 'src/utils';
-import Adapter from 'src/adapter';
 
 let CONSTANTS = require('src/constants');
 let bidmanager = require('src/bidmanager');
@@ -7,6 +6,7 @@ let bidfactory = require('src/bidfactory');
 let adloader = require('src/adloader');
 let utils = require('src/utils');
 let adaptermanager = require('src/adaptermanager');
+let Adapter = require('src/adapter').default;
 
 let ORBITSOFT_BIDDERCODE = 'orbitsoft';
 let styleParamsToFieldsMap = {
@@ -31,7 +31,9 @@ let styleParamsToFieldsMap = {
 };
 
 let OrbitsoftAdapter = function OrbitsoftAdapter() {
-  function _callBids (params) {
+  let baseAdapter = new Adapter(ORBITSOFT_BIDDERCODE);
+
+  baseAdapter.callBids = function(params) {
     let bids = params.bids || [];
 
     for (let i = 0; i < bids.length; i++) {
@@ -214,15 +216,11 @@ let OrbitsoftAdapter = function OrbitsoftAdapter() {
     }
   };
 
-  return Object.assign(new Adapter(ORBITSOFT_BIDDERCODE), {
-    callBids: _callBids,
-    buildJPTCall: buildJPTCall,
-    createNew: OrbitsoftAdapter.createNew
+  return Object.assign(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode,
+    buildJPTCall: buildJPTCall
   });
-};
-
-OrbitsoftAdapter.createNew = function() {
-  return new OrbitsoftAdapter();
 };
 
 adaptermanager.registerBidAdapter(new OrbitsoftAdapter(), ORBITSOFT_BIDDERCODE);

@@ -1,7 +1,7 @@
 describe('Orbitsoft Adapter tests', function () {
   const expect = require('chai').expect;
   const assert = require('chai').assert;
-  const adapter = require('modules/orbitsoftBidAdapter');
+  const OrbitsoftAdapter = require('modules/orbitsoftBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const CONSTANTS = require('src/constants.json');
@@ -19,6 +19,7 @@ describe('Orbitsoft Adapter tests', function () {
 
     it('should add empty bid responses if no bids returned', function () {
       let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+      let adapter = new OrbitsoftAdapter();
 
       let bidderRequest = {
         bidderCode: 'orbitsoft',
@@ -43,9 +44,6 @@ describe('Orbitsoft Adapter tests', function () {
       };
 
       pbjs._bidsRequested.push(bidderRequest);
-      // Adapter needs to be called, in order for the stub to register.
-      adapter();
-
       pbjs.handleOASCB(response);
 
       let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -58,6 +56,7 @@ describe('Orbitsoft Adapter tests', function () {
 
     it('should add empty bid responses if no bidId returned', function () {
       let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+      let adapter = new OrbitsoftAdapter();
 
       let bidderRequest = {
         bidderCode: 'orbitsoft',
@@ -81,9 +80,6 @@ describe('Orbitsoft Adapter tests', function () {
       };
 
       pbjs._bidsRequested.push(bidderRequest);
-      // Adapter needs to be called, in order for the stub to register.
-      adapter();
-
       pbjs.handleOASCB(response);
 
       expect(stubAddBidResponse.getCall(0)).to.equal(null);
@@ -93,6 +89,7 @@ describe('Orbitsoft Adapter tests', function () {
 
   it('should add bid responses if bids are returned', function () {
     let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+    let adapter = new OrbitsoftAdapter();
 
     let bidderRequest = {
       bidderCode: 'orbitsoft',
@@ -120,9 +117,6 @@ describe('Orbitsoft Adapter tests', function () {
     };
 
     pbjs._bidsRequested.push(bidderRequest);
-    // Adapter needs to be called, in order for the stub to register.
-    adapter();
-
     pbjs.handleOASCB(response);
 
     let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
@@ -142,6 +136,7 @@ describe('Orbitsoft Adapter tests', function () {
   });
 
   it('should call loadscript with the correct params', function () {
+    let adapter = new OrbitsoftAdapter();
     let spyLoadScript = sinon.spy(adloader, 'loadScript');
     let params = {
       bids: [
@@ -154,7 +149,7 @@ describe('Orbitsoft Adapter tests', function () {
         }
       ]
     };
-    adapter().callBids(params);
+    adapter.callBids(params);
 
     sinon.assert.calledOnce(spyLoadScript);
 
@@ -168,13 +163,15 @@ describe('Orbitsoft Adapter tests', function () {
 
   describe('test orbitsoft callback with params', function () {
     it('should not call loadscript when inputting with empty params', function () {
+      let adapter = new OrbitsoftAdapter();
       let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      adapter().callBids({});
+      adapter.callBids({});
       assert(!spyLoadScript.called);
       spyLoadScript.restore();
     });
 
     it('should not call loadscript when inputting without requestUrl param ', function () {
+      let adapter = new OrbitsoftAdapter();
       let spyLoadScript = sinon.spy(adloader, 'loadScript');
       let params = {
         bids: [
@@ -185,19 +182,21 @@ describe('Orbitsoft Adapter tests', function () {
           }
         ]
       };
-      adapter().callBids(params);
+      adapter.callBids(params);
       assert(!spyLoadScript.called);
       spyLoadScript.restore();
     });
 
     it('should not call loadscript when inputting with empty params by string ', function () {
+      let adapter = new OrbitsoftAdapter();
       let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      adapter().callBids('');
+      adapter.callBids('');
       assert(!spyLoadScript.called);
       spyLoadScript.restore();
     });
 
     it('should call loadscript without size in params', function () {
+      let adapter = new OrbitsoftAdapter();
       let spyLoadScript = sinon.spy(adloader, 'loadScript');
       let params = {
         bids: [
@@ -209,7 +208,7 @@ describe('Orbitsoft Adapter tests', function () {
           }
         ]
       };
-      adapter().callBids(params);
+      adapter.callBids(params);
 
       sinon.assert.calledOnce(spyLoadScript);
 
@@ -223,6 +222,7 @@ describe('Orbitsoft Adapter tests', function () {
 
     it('should add style params to adUrl if bids are returned', function () {
       let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+      let adapter = new OrbitsoftAdapter();
 
       let bidderRequest = {
         bidderCode: 'orbitsoft',
@@ -278,8 +278,6 @@ describe('Orbitsoft Adapter tests', function () {
       };
 
       pbjs._bidsRequested.push(bidderRequest);
-      // Adapter needs to be called, in order for the stub to register.
-      adapter();
 
       pbjs.handleOASCB(response);
 
@@ -311,6 +309,7 @@ describe('Orbitsoft Adapter tests', function () {
 
     it('should add custom params to adUrl if bids are returned', function () {
       let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+      let adapter = new OrbitsoftAdapter();
 
       let bidderRequest = {
         bidderCode: 'orbitsoft',
@@ -341,9 +340,6 @@ describe('Orbitsoft Adapter tests', function () {
       };
 
       pbjs._bidsRequested.push(bidderRequest);
-      // Adapter needs to be called, in order for the stub to register.
-      adapter();
-
       pbjs.handleOASCB(response);
 
       let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
