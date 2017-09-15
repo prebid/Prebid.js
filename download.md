@@ -122,6 +122,9 @@ To improve the speed and load time of your site, build Prebid.js for only the he
 <h4>Bidder Adapters</h4>
 
 {% for page in bidder_pages %}
+  {% if page.s2s_only == true %}  
+    {% continue %}
+  {% endif %}
 <div class="col-md-4">
  <div class="checkbox">
   <label>

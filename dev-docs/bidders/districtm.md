@@ -12,6 +12,7 @@ biddercode: districtm
 
 biddercode_longer_than_12: false
 
+s2s_only: true
 
 ---
 
