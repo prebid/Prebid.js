@@ -32,8 +32,6 @@ var eventValidators = {
 };
 
 /* Public vars */
-// _adUnitCodes stores the current filter to use for adUnits as an array of adUnitCodes
-$$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 

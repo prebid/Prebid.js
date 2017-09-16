@@ -1,3 +1,53 @@
+/**
+ * Module for auction instances.
+ *
+ * In Prebid 0.x, $$PREBID_GLOBAL$$ had _bidsRequested and _bidsReceived as public properties.
+ * Starting 1.0, Prebid will support concurrent auctions. Each auction instance will store private properties, bidsRequested and bidsReceived.
+ *
+ * AuctionManager will create instance of auction and will store all the auctions.
+ *
+ */
+
+/**
+  * @typedef {Object} AdUnit An object containing the adUnit configuration.
+  *
+  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+  *   one as is used in the call to registerBidAdapter
+  * @property {Array.<size>} sizes A list of size for adUnit.
+  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+  *   This is guaranteed to have passed the spec.areParamsValid() test.
+  */
+
+/**
+ * @typedef {Array.<number>} size
+ */
+
+/**
+ * @typedef {Array.<string>} AdUnitCode
+ */
+
+/**
+ * @typedef {Object} BidRequest
+ * //TODO add all properties
+ */
+
+/**
+ * @typedef {Object} BidReceived
+ * //TODO add all properties
+ */
+
+/**
+ * @typedef {Object} Auction
+ *
+ * @property {function(): string} getAuctionStatus - returns the auction status which can be any one of 'started', 'in progress' or 'completed'
+ * @property {function(): AdUnit[]} getAdUnits - return the adUnits for this auction instance
+ * @property {function(): AdUnitCode[]} getAdUnitCodes - return the adUnitCodes for this auction instance
+ * @property {function(): BidRequest[]} getBidRequests - get all bid requests for this auction instance
+ * @property {function(): BidReceived[]} getBidsReceived - get all bid received for this auction instance
+ * @property {function(): void} startAuctionTimer - sets the bidsBackHandler callback and starts the timer for auction
+ * @property {function(): void} callBids - sends requests to all adapters for bids
+ */
+
 import { uniques, timestamp, adUnitsFilter, delayExecution } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { NATIVE_KEYS, nativeBidIsValid } from './native';
