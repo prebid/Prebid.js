@@ -568,4 +568,23 @@ describe('Utils', function () {
       assert.equal(value, undefined);
     });
   });
+
+  describe('getDefinedParams', () => {
+    it('builds an object consisting of defined params', () => {
+      const adUnit = {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+        notNeeded: 'do not include',
+      };
+
+      const builtObject = utils.getDefinedParams(adUnit, [
+        'mediaType', 'comeWithMe'
+      ]);
+
+      assert.deepEqual(builtObject, {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+      });
+    });
+  });
 });
