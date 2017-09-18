@@ -863,6 +863,7 @@ describe('Unit: Prebid Module', function () {
       const adUnits = [{
         code: 'adUnit-code',
         nativeParams: {type: 'image'},
+        sizes: [[970, 90]],
         bids: [
           {bidder: 'appnexusAst', params: {placementId: 'id'}}
         ]
