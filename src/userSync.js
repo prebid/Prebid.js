@@ -1,6 +1,5 @@
 import * as utils from 'src/utils';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from './storagemanager';
 
 /**
  * Factory function which creates a new UserSyncPool.
@@ -94,15 +93,6 @@ export function newUserSync(userSyncDependencies) {
       // Create image object and add the src url
       utils.insertUserSyncIframe(iframeUrl);
     });
-  }
-
-  /**
-   * @function setBidderSynced
-   * @summary track that bidder has been synced in storagemanager
-   * @private
-   */
-  function setBidderSynced(bidder) {
-    StorageManager.add(pbjsSyncsKey, bidder, true);
   }
 
   /**
