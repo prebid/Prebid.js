@@ -212,7 +212,9 @@ function PrebidServer() {
    */
   baseAdapter.queueSync = function({bidderCodes}) {
     let syncedList = StorageManager.get(pbjsSyncsKey) || [];
-    if (_cookiesQueued || syncedList.length === bidderCodes.length) {
+    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
+    syncList = bidderCodes.filter(bidder => !syncList.includes(bidder));
+    if (_cookiesQueued || syncedList.length === 0) {
       return;
     }
     _cookiesQueued = true;
