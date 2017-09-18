@@ -1,14 +1,14 @@
 pbjsChunk([23],{
 
-/***/ 201:
+/***/ 209:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(202);
+module.exports = __webpack_require__(210);
 
 
 /***/ }),
 
-/***/ 202:
+/***/ 210:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -99,8 +99,9 @@ function Spotx() {
       bid.url = adServerKVPs.spotx_ad_key;
       bid.cur = 'USD';
       bid.bidderCode = 'spotx';
-      bid.height = bidReq.sizes[0][1];
-      bid.width = bidReq.sizes[0][0];
+      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
+      bid.height = sizes[1];
+      bid.width = sizes[0];
       resp.bids.push(bid);
       KVP_Object = adServerKVPs;
       handleResponse(resp);
@@ -128,8 +129,9 @@ function Spotx() {
       bid.vastUrl = url;
       bid.ad = url;
 
-      bid.width = bidReq.sizes[0][0];
-      bid.height = bidReq.sizes[0][1];
+      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
+      bid.height = sizes[1];
+      bid.width = sizes[0];
     }
 
     return bid;
@@ -170,4 +172,4 @@ module.exports = Spotx;
 
 /***/ })
 
-},[201]);
+},[209]);

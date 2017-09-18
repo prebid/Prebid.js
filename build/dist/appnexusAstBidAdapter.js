@@ -1,14 +1,14 @@
-pbjsChunk([82],{
+pbjsChunk([84],{
 
-/***/ 70:
+/***/ 74:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(71);
+module.exports = __webpack_require__(75);
 
 
 /***/ }),
 
-/***/ 71:
+/***/ 75:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -67,6 +67,7 @@ var NATIVE_MAPPING = {
   },
   sponsoredBy: 'sponsored_by'
 };
+var SOURCE = 'pbjs';
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -184,7 +185,14 @@ function AppnexusAstAdapter() {
     }));
 
     if (!utils.isEmpty(tags)) {
-      var payloadJson = { tags: [].concat(_toConsumableArray(tags)), user: userObj };
+      var payloadJson = {
+        tags: [].concat(_toConsumableArray(tags)),
+        user: userObj,
+        sdk: {
+          source: SOURCE,
+          version: '0.28.0'
+        }
+      };
       if (member > 0) {
         payloadJson.member_id = member;
       }
@@ -438,4 +446,4 @@ module.exports = AppnexusAstAdapter;
 
 /***/ })
 
-},[70]);
+},[74]);

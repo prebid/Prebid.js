@@ -1,14 +1,14 @@
 pbjsChunk([22],{
 
-/***/ 203:
+/***/ 211:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(204);
+module.exports = __webpack_require__(212);
 
 
 /***/ }),
 
-/***/ 204:
+/***/ 212:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -132,10 +132,10 @@ SpringServeAdapter = function SpringServeAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SpringServeAdapter(), 'springserveg');
+adaptermanager.registerBidAdapter(new SpringServeAdapter(), 'springserve');
 
 module.exports = SpringServeAdapter;
 
 /***/ })
 
-},[203]);
+},[211]);

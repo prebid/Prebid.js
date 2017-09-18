@@ -1,6 +1,14 @@
-pbjsChunk([69],{
+pbjsChunk([70],{
 
-/***/ 100:
+/***/ 105:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(106);
+
+
+/***/ }),
+
+/***/ 106:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -65,14 +73,6 @@ adaptermanager.registerBidAdapter(new DistrictmAdaptor(), 'districtmDMX');
 
 module.exports = DistrictmAdaptor;
 
-/***/ }),
-
-/***/ 99:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(100);
-
-
 /***/ })
 
-},[99]);
+},[105]);

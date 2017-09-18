@@ -1,53 +1,6 @@
 pbjsChunk([6],{
 
-/***/ 68:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(69);
-
-
-/***/ }),
-
-/***/ 69:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _AnalyticsAdapter = __webpack_require__(9);
-
-var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-/**
- * appnexus.js - AppNexus Prebid Analytics Adapter
- */
-
-var appnexusAdapter = (0, _AnalyticsAdapter2['default'])({
-  global: 'AppNexusPrebidAnalytics',
-  handler: 'on',
-  analyticsType: 'bundle'
-});
-
-_adaptermanager2['default'].registerAnalyticsAdapter({
-  adapter: appnexusAdapter,
-  code: 'appnexus'
-});
-
-exports['default'] = appnexusAdapter;
-
-/***/ }),
-
-/***/ 9:
+/***/ 10:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -73,7 +26,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var events = __webpack_require__(8);
+var events = __webpack_require__(9);
 var utils = __webpack_require__(0);
 
 var AUCTION_INIT = _constants2['default'].EVENTS.AUCTION_INIT;
@@ -250,6 +203,53 @@ function AnalyticsAdapter(_ref) {
   }
 }
 
+/***/ }),
+
+/***/ 72:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(73);
+
+
+/***/ }),
+
+/***/ 73:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _AnalyticsAdapter = __webpack_require__(10);
+
+var _AnalyticsAdapter2 = _interopRequireDefault(_AnalyticsAdapter);
+
+var _adaptermanager = __webpack_require__(1);
+
+var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+/**
+ * appnexus.js - AppNexus Prebid Analytics Adapter
+ */
+
+var appnexusAdapter = (0, _AnalyticsAdapter2['default'])({
+  global: 'AppNexusPrebidAnalytics',
+  handler: 'on',
+  analyticsType: 'bundle'
+});
+
+_adaptermanager2['default'].registerAnalyticsAdapter({
+  adapter: appnexusAdapter,
+  code: 'appnexus'
+});
+
+exports['default'] = appnexusAdapter;
+
 /***/ })
 
-},[68]);
+},[72]);

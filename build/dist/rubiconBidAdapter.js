@@ -1,14 +1,14 @@
 pbjsChunk([31],{
 
-/***/ 183:
+/***/ 191:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(184);
+module.exports = __webpack_require__(192);
 
 
 /***/ }),
 
-/***/ 184:
+/***/ 192:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -450,7 +450,7 @@ function syncEmily(hasSynced) {
   }
 
   var defaultUserSyncConfig = {
-    enabled: true,
+    enabled: false,
     delay: 5000
   };
   var iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
@@ -482,4 +482,4 @@ module.exports = RubiconAdapter;
 
 /***/ })
 
-},[183]);
+},[191]);

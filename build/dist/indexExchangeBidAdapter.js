@@ -1,14 +1,14 @@
 pbjsChunk([57],{
 
-/***/ 123:
+/***/ 131:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(124);
+module.exports = __webpack_require__(132);
 
 
 /***/ }),
 
-/***/ 124:
+/***/ 132:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -314,11 +314,24 @@ var cygnus_index_start = function cygnus_index_start() {
     this.siteID = siteID;
     this.impressions = [];
     this._parseFnName = undefined;
+
+    // Get page URL
+    this.sitePage = undefined;
+    try {
+      this.sitePage = utils.getTopWindowUrl();
+    } catch (e) {}
+    // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
+    if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
+      if (top === self) {
+        this.sitePage = location.href;
+      } else {
+        this.sitePage = document.referrer;
+      }
+    }
+
     if (top === self) {
-      this.sitePage = location.href;
       this.topframe = 1;
     } else {
-      this.sitePage = document.referrer;
       this.topframe = 0;
     }
 
@@ -452,7 +465,7 @@ var cygnus_index_start = function cygnus_index_start() {
     } else {
       scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
     }
-    var prebidVersion = encodeURIComponent('0.28.0-pre');
+    var prebidVersion = encodeURIComponent('0.28.0');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -1160,4 +1173,4 @@ module.exports = IndexExchangeAdapter;
 
 /***/ })
 
-},[123]);
+},[131]);

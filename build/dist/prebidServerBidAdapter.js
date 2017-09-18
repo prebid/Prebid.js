@@ -1,14 +1,14 @@
 pbjsChunk([39],{
 
-/***/ 161:
+/***/ 169:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(162);
+module.exports = __webpack_require__(170);
 
 
 /***/ }),
 
-/***/ 162:
+/***/ 170:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -42,7 +42,7 @@ var _adaptermanager = __webpack_require__(1);
 
 var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 var _storagemanager = __webpack_require__(18);
 
@@ -153,7 +153,7 @@ function PrebidServer() {
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
-      prebid_version: '0.28.0-pre',
+      prebid_version: '0.28.0',
       ad_units: bidRequest.ad_units.filter(hasSizes),
       is_debug: isDebug
     };
@@ -301,4 +301,4 @@ module.exports = PrebidServer;
 
 /***/ })
 
-},[161]);
+},[169]);

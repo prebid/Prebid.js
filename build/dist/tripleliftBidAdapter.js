@@ -1,14 +1,14 @@
 pbjsChunk([17],{
 
-/***/ 213:
+/***/ 221:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(214);
+module.exports = __webpack_require__(222);
 
 
 /***/ }),
 
-/***/ 214:
+/***/ 222:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -54,7 +54,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.28.0-pre');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.28.0');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
     tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
@@ -170,4 +170,4 @@ module.exports = TripleLiftAdapter;
 
 /***/ })
 
-},[213]);
+},[221]);

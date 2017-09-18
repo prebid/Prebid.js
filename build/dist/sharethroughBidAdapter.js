@@ -1,14 +1,14 @@
 pbjsChunk([28],{
 
-/***/ 191:
+/***/ 199:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(192);
+module.exports = __webpack_require__(200);
 
 
 /***/ }),
 
-/***/ 192:
+/***/ 200:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -64,6 +64,20 @@ var SharethroughAdapter = function SharethroughAdapter() {
   function _strcallback(bidObj, bidResponse) {
     try {
       bidResponse = JSON.parse(bidResponse);
+    } catch (e) {
+      _handleInvalidBid(bidObj);
+      return;
+    }
+
+    if (bidResponse.creatives && bidResponse.creatives.length > 0) {
+      _handleBid(bidObj, bidResponse);
+    } else {
+      _handleInvalidBid(bidObj);
+    }
+  }
+
+  function _handleBid(bidObj, bidResponse) {
+    try {
       var bidId = bidResponse.bidId;
       var bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = STR_BIDDER_CODE;
@@ -91,11 +105,12 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   function _handleInvalidBid(bidObj) {
     var bid = bidfactory.createBid(2, bidObj);
+    bid.bidderCode = STR_BIDDER_CODE;
     bidmanager.addBidResponse(bidObj.placementCode, bid);
   }
 
   function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.28.0-pre');
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.28.0');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
 
@@ -114,4 +129,4 @@ module.exports = SharethroughAdapter;
 
 /***/ })
 
-},[191]);
+},[199]);

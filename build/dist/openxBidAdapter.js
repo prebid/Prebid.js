@@ -1,20 +1,20 @@
 pbjsChunk([43],{
 
-/***/ 153:
+/***/ 161:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(154);
+module.exports = __webpack_require__(162);
 
 
 /***/ }),
 
-/***/ 154:
+/***/ 162:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 var bidfactory = __webpack_require__(3);
 var bidmanager = __webpack_require__(2);
@@ -283,4 +283,4 @@ module.exports = OpenxAdapter;
 
 /***/ })
 
-},[153]);
+},[161]);

@@ -1,4 +1,4 @@
-pbjsChunk([89],{
+pbjsChunk([93],{
 
 /***/ 54:
 /***/ (function(module, exports, __webpack_require__) {
@@ -14,17 +14,20 @@ module.exports = __webpack_require__(55);
 "use strict";
 
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var utils = __webpack_require__(0);
 var adloader = __webpack_require__(5);
 var bidmanager = __webpack_require__(2);
 var bidfactory = __webpack_require__(3);
 var STATUSCODES = __webpack_require__(4).STATUS;
 var adaptermanager = __webpack_require__(1);
+var Adapter = __webpack_require__(7)['default'];
+
+var ADFORM_BIDDER_CODE = 'adform';
 
 function AdformAdapter() {
-  return {
-    callBids: _callBids
-  };
+  var baseAdapter = new Adapter(ADFORM_BIDDER_CODE);
 
   function _callBids(params) {
     var bid, _value, _key, i, j, k, l, reqParams;
@@ -63,7 +66,7 @@ function AdformAdapter() {
     pbjs[callbackName] = handleCallback(bids);
 
     adloader.loadScript(request.join('&'));
-  }
+  };
 
   function formRequestUrl(reqData) {
     var key;
@@ -81,7 +84,7 @@ function AdformAdapter() {
   function handleCallback(bids) {
     return function handleResponse(adItems) {
       var bidObject;
-      var bidder = 'adform';
+      var bidder = baseAdapter.getBidderCode();
       var adItem;
       var bid;
       for (var i = 0, l = adItems.length; i < l; i++) {
@@ -180,10 +183,13 @@ function AdformAdapter() {
 
     return utftext;
   }
+
+  return _extends(this, baseAdapter, {
+    callBids: _callBids
+  });
 }
 
-adaptermanager.registerBidAdapter(new AdformAdapter(), 'adform');
-
+adaptermanager.registerBidAdapter(new AdformAdapter(), ADFORM_BIDDER_CODE);
 module.exports = AdformAdapter;
 
 /***/ })

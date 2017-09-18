@@ -1,5 +1,5 @@
-/* prebid.js v0.28.0-pre
-Updated : 2017-08-24 */
+/* prebid.js v0.28.0
+Updated : 2017-09-18 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// install a JSONP callback for chunk loading
 /******/ 	var parentJsonpFunction = window["pbjsChunk"];
@@ -36,7 +36,7 @@ Updated : 2017-08-24 */
 /******/
 /******/ 	// objects to store loaded and loading chunks
 /******/ 	var installedChunks = {
-/******/ 		95: 0
+/******/ 		99: 0
 /******/ 	};
 /******/
 /******/ 	// The require function
@@ -108,7 +108,7 @@ Updated : 2017-08-24 */
 /******/ 	__webpack_require__.oe = function(err) { console.error(err); throw err; };
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 235);
+/******/ 	return __webpack_require__(__webpack_require__.s = 243);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -144,8 +144,9 @@ exports.replaceAuctionPrice = replaceAuctionPrice;
 exports.getBidderRequestAllAdUnits = getBidderRequestAllAdUnits;
 exports.getBidderRequest = getBidderRequest;
 exports.groupBy = groupBy;
+exports.deepAccess = deepAccess;
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 var CONSTANTS = __webpack_require__(4);
 
@@ -305,6 +306,8 @@ function parseGPTSingleSizeArray(singleSize) {
 exports.getTopWindowLocation = function () {
   var location = void 0;
   try {
+    // force an exception in x-domain enviornments. #1509
+    window.top.location.toString();
     location = window.top.location;
   } catch (e) {
     location = window.location;
@@ -843,6 +846,23 @@ function groupBy(xs, key) {
   }), {});
 }
 
+/**
+ * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+ * @param {object} obj The object containing the values you would like to access.
+ * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+ * @returns {*} The value found at the specified object path, or undefined if path is not found.
+ */
+function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (var i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
+}
+
 /***/ })),
 /* 1 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -862,7 +882,7 @@ var _storagemanager = __webpack_require__(18);
 
 var utils = __webpack_require__(0);
 var CONSTANTS = __webpack_require__(4);
-var events = __webpack_require__(8);
+var events = __webpack_require__(9);
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -1159,12 +1179,12 @@ var _videoCache = __webpack_require__(44);
 
 var _Renderer = __webpack_require__(17);
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 var CONSTANTS = __webpack_require__(4);
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 var utils = __webpack_require__(0);
-var events = __webpack_require__(8);
+var events = __webpack_require__(9);
 
 var externalCallbacks = { byAdUnit: [], all: [], oneTime: null, timer: false };
 var defaultBidderSettingsMap = {};
@@ -1272,8 +1292,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
     }
-    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastPayload)) {
-      utils.logError(errorMessage('Video bid has no vastUrl or vastPayload property.'));
+    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastXml)) {
+      utils.logError(errorMessage('Video bid has no vastUrl or vastXml property.'));
       return false;
     }
     if (bid.mediaType === 'banner' && !validBidSize(bid)) {
@@ -1346,7 +1366,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    var priceStringsObj = (0, _cpmBucketManager.getPriceBucketString)(bid.cpm, _config.config.getConfig('customPriceBucket'));
+    var priceStringsObj = (0, _cpmBucketManager.getPriceBucketString)(bid.cpm, _config.config.getConfig('customPriceBucket'), _config.config.getConfig('currency.granularityMultiplier'));
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -1714,76 +1734,15 @@ function Bid(statusCode, bidRequest) {
 }
 
 // Bid factory function.
-exports.createBid = function () {
-  return new (Function.prototype.bind.apply(Bid, [null].concat(Array.prototype.slice.call(arguments))))();
+exports.createBid = function (statusCode, bidRequest) {
+  return new Bid(statusCode, bidRequest);
 };
 
 /***/ }),
 /* 4 */
 /***/ (function(module, exports) {
 
-module.exports = {
-	"JSON_MAPPING": {
-		"PL_CODE": "code",
-		"PL_SIZE": "sizes",
-		"PL_BIDS": "bids",
-		"BD_BIDDER": "bidder",
-		"BD_ID": "paramsd",
-		"BD_PL_ID": "placementId",
-		"ADSERVER_TARGETING": "adserverTargeting",
-		"BD_SETTING_STANDARD": "standard"
-	},
-	"REPO_AND_VERSION": "prebid_prebid_0.28.0-pre",
-	"DEBUG_MODE": "pbjs_debug",
-	"STATUS": {
-		"GOOD": 1,
-		"NO_BID": 2
-	},
-	"CB": {
-		"TYPE": {
-			"ALL_BIDS_BACK": "allRequestedBidsBack",
-			"AD_UNIT_BIDS_BACK": "adUnitBidsBack",
-			"BID_WON": "bidWon",
-			"REQUEST_BIDS": "requestBids"
-		}
-	},
-	"EVENTS": {
-		"AUCTION_INIT": "auctionInit",
-		"AUCTION_END": "auctionEnd",
-		"BID_ADJUSTMENT": "bidAdjustment",
-		"BID_TIMEOUT": "bidTimeout",
-		"BID_REQUESTED": "bidRequested",
-		"BID_RESPONSE": "bidResponse",
-		"BID_WON": "bidWon",
-		"SET_TARGETING": "setTargeting",
-		"REQUEST_BIDS": "requestBids"
-	},
-	"EVENT_ID_PATHS": {
-		"bidWon": "adUnitCode"
-	},
-	"GRANULARITY_OPTIONS": {
-		"LOW": "low",
-		"MEDIUM": "medium",
-		"HIGH": "high",
-		"AUTO": "auto",
-		"DENSE": "dense",
-		"CUSTOM": "custom"
-	},
-	"TARGETING_KEYS": [
-		"hb_bidder",
-		"hb_adid",
-		"hb_pb",
-		"hb_size",
-		"hb_deal"
-	],
-	"S2S": {
-		"DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/auction",
-		"SRC": "s2s",
-		"ADAPTER": "prebidServer",
-		"SYNC_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/cookie_sync",
-		"SYNCED_BIDDERS_KEY": "pbjsSyncs"
-	}
-};
+module.exports = {"JSON_MAPPING":{"PL_CODE":"code","PL_SIZE":"sizes","PL_BIDS":"bids","BD_BIDDER":"bidder","BD_ID":"paramsd","BD_PL_ID":"placementId","ADSERVER_TARGETING":"adserverTargeting","BD_SETTING_STANDARD":"standard"},"REPO_AND_VERSION":"prebid_prebid_0.28.0","DEBUG_MODE":"pbjs_debug","STATUS":{"GOOD":1,"NO_BID":2},"CB":{"TYPE":{"ALL_BIDS_BACK":"allRequestedBidsBack","AD_UNIT_BIDS_BACK":"adUnitBidsBack","BID_WON":"bidWon","REQUEST_BIDS":"requestBids"}},"EVENTS":{"AUCTION_INIT":"auctionInit","AUCTION_END":"auctionEnd","BID_ADJUSTMENT":"bidAdjustment","BID_TIMEOUT":"bidTimeout","BID_REQUESTED":"bidRequested","BID_RESPONSE":"bidResponse","BID_WON":"bidWon","SET_TARGETING":"setTargeting","REQUEST_BIDS":"requestBids"},"EVENT_ID_PATHS":{"bidWon":"adUnitCode"},"GRANULARITY_OPTIONS":{"LOW":"low","MEDIUM":"medium","HIGH":"high","AUTO":"auto","DENSE":"dense","CUSTOM":"custom"},"TARGETING_KEYS":["hb_bidder","hb_adid","hb_pb","hb_size","hb_deal"],"S2S":{"DEFAULT_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/auction","SRC":"s2s","ADAPTER":"prebidServer","SYNC_ENDPOINT":"https://prebid.adnxs.com/pbs/v1/cookie_sync","SYNCED_BIDDERS_KEY":"pbjsSyncs"}}
 
 /***/ }),
 /* 5 */
@@ -2037,6 +1996,276 @@ function Adapter(code) {
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.config = undefined;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /*
+                                                                                                                                                                                                                                                                               * Module for getting and setting Prebid configuration.
+                                                                                                                                                                                                                                                                               *
+                                                                                                                                                                                                                                                                               * Prebid previously defined these properties directly on the global object:
+                                                                                                                                                                                                                                                                               * pbjs.logging = true;
+                                                                                                                                                                                                                                                                               *
+                                                                                                                                                                                                                                                                               * Defining and access properties in this way is now deprecated, but these will
+                                                                                                                                                                                                                                                                               * continue to work during a deprecation window.
+                                                                                                                                                                                                                                                                               */
+
+
+exports.newConfig = newConfig;
+
+var _cpmBucketManager = __webpack_require__(26);
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var utils = __webpack_require__(0);
+
+var DEFAULT_DEBUG = false;
+var DEFAULT_BIDDER_TIMEOUT = 3000;
+var DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
+var DEFAULT_COOKIESYNC_DELAY = 100;
+var DEFAULT_ENABLE_SEND_ALL_BIDS = false;
+
+var GRANULARITY_OPTIONS = {
+  'LOW': 'low',
+  'MEDIUM': 'medium',
+  'HIGH': 'high',
+  'AUTO': 'auto',
+  'DENSE': 'dense',
+  'CUSTOM': 'custom'
+};
+
+var ALL_TOPICS = '*';
+
+/**
+ * @typedef {object} PrebidConfig
+ *
+ * @property {bool} usePrebidCache True if we should use prebid-cache to store video bids before adding
+ *   bids to the auction, and false otherwise. **NOTE** This must be true if you want to use the
+ *   dfpAdServerVideo module.
+ */
+
+function newConfig() {
+  var listeners = [];
+
+  var config = {
+    // `debug` is equivalent to legacy `pbjs.logging` property
+    _debug: DEFAULT_DEBUG,
+    get debug() {
+      if (pbjs.logging || pbjs.logging === false) {
+        return pbjs.logging;
+      }
+      return this._debug;
+    },
+    set debug(val) {
+      this._debug = val;
+    },
+
+    // default timeout for all bids
+    _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
+    get bidderTimeout() {
+      return pbjs.bidderTimeout || this._bidderTimeout;
+    },
+    set bidderTimeout(val) {
+      this._bidderTimeout = val;
+    },
+
+    // domain where prebid is running for cross domain iframe communication
+    _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
+    get publisherDomain() {
+      return pbjs.publisherDomain || this._publisherDomain;
+    },
+    set publisherDomain(val) {
+      this._publisherDomain = val;
+    },
+
+    // delay to request cookie sync to stay out of critical path
+    _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
+    get cookieSyncDelay() {
+      return pbjs.cookieSyncDelay || this._cookieSyncDelay;
+    },
+    set cookieSyncDelay(val) {
+      this._cookieSyncDelay = val;
+    },
+
+    // calls existing function which may be moved after deprecation
+    _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
+    set priceGranularity(val) {
+      if (validatePriceGranularity(val)) {
+        if (typeof val === 'string') {
+          this._priceGranularity = hasGranularity(val) ? val : GRANULARITY_OPTIONS.MEDIUM;
+        } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+          this._customPriceBucket = val;
+          this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
+          utils.logMessage('Using custom price granularity');
+        }
+      }
+    },
+    get priceGranularity() {
+      return this._priceGranularity;
+    },
+
+    _customPriceBucket: {},
+    get customPriceBucket() {
+      return this._customPriceBucket;
+    },
+
+    _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
+    get enableSendAllBids() {
+      return this._sendAllBids;
+    },
+    set enableSendAllBids(val) {
+      this._sendAllBids = val;
+    },
+
+    // calls existing function which may be moved after deprecation
+    set bidderSequence(val) {
+      pbjs.setBidderSequence(val);
+    },
+
+    // calls existing function which may be moved after deprecation
+    set s2sConfig(val) {
+      pbjs.setS2SConfig(val);
+    }
+
+  };
+
+  function hasGranularity(val) {
+    return Object.keys(GRANULARITY_OPTIONS).find((function (option) {
+      return val === GRANULARITY_OPTIONS[option];
+    }));
+  }
+
+  function validatePriceGranularity(val) {
+    if (!val) {
+      utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
+      return false;
+    }
+    if (typeof val === 'string') {
+      if (!hasGranularity(val)) {
+        utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
+      }
+    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+      if (!(0, _cpmBucketManager.isValidPriceConfig)(val)) {
+        utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /*
+   * Returns configuration object if called without parameters,
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
+   *
+   * If called with callback parameter, or a string and a callback parameter,
+   * subscribes to configuration updates. See `subscribe` function for usage.
+   */
+  function getConfig() {
+    if (arguments.length <= 1 && typeof (arguments.length <= 0 ? undefined : arguments[0]) !== 'function') {
+      var option = arguments.length <= 0 ? undefined : arguments[0];
+      return option ? utils.deepAccess(config, option) : config;
+    }
+
+    return subscribe.apply(undefined, arguments);
+  }
+
+  /*
+   * Sets configuration given an object containing key-value pairs and calls
+   * listeners that were added by the `subscribe` function
+   */
+  function setConfig(options) {
+    if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) !== 'object') {
+      utils.logError('setConfig options must be an object');
+    }
+
+    _extends(config, options);
+    callSubscribers(options);
+  }
+
+  /*
+   * Adds a function to a set of listeners that are invoked whenever `setConfig`
+   * is called. The subscribed function will be passed the options object that
+   * was used in the `setConfig` call. Topics can be subscribed to to only get
+   * updates when specific properties are updated by passing a topic string as
+   * the first parameter.
+   *
+   * Returns an `unsubscribe` function for removing the subscriber from the
+   * set of listeners
+   *
+   * Example use:
+   * // subscribe to all configuration changes
+   * subscribe((config) => console.log('config set:', config));
+   *
+   * // subscribe to only 'logging' changes
+   * subscribe('logging', (config) => console.log('logging set:', config));
+   *
+   * // unsubscribe
+   * const unsubscribe = subscribe(...);
+   * unsubscribe(); // no longer listening
+   */
+  function subscribe(topic, listener) {
+    var callback = listener;
+
+    if (typeof topic !== 'string') {
+      // first param should be callback function in this case,
+      // meaning it gets called for any config change
+      callback = topic;
+      topic = ALL_TOPICS;
+    }
+
+    if (typeof callback !== 'function') {
+      utils.logError('listener must be a function');
+      return;
+    }
+
+    listeners.push({ topic: topic, callback: callback });
+
+    // save and call this function to remove the listener
+    return function unsubscribe() {
+      listeners.splice(listeners.indexOf(listener), 1);
+    };
+  }
+
+  /*
+   * Calls listeners that were added by the `subscribe` function
+   */
+  function callSubscribers(options) {
+    var TOPICS = Object.keys(options);
+
+    // call subscribers of a specific topic, passing only that configuration
+    listeners.filter((function (listener) {
+      return TOPICS.includes(listener.topic);
+    })).forEach((function (listener) {
+      listener.callback(_defineProperty({}, listener.topic, options[listener.topic]));
+    }));
+
+    // call subscribers that didn't give a topic, passing everything that was set
+    listeners.filter((function (listener) {
+      return listener.topic === ALL_TOPICS;
+    })).forEach((function (listener) {
+      return listener.callback(options);
+    }));
+  }
+
+  return {
+    getConfig: getConfig,
+    setConfig: setConfig
+  };
+}
+
+var config = exports.config = newConfig();
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 /**
@@ -2191,277 +2420,7 @@ module.exports = (function () {
 })();
 
 /***/ }),
-/* 9 */,
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.config = undefined;
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /*
-                                                                                                                                                                                                                                                                               * Module for getting and setting Prebid configuration.
-                                                                                                                                                                                                                                                                               *
-                                                                                                                                                                                                                                                                               * Prebid previously defined these properties directly on the global object:
-                                                                                                                                                                                                                                                                               * pbjs.logging = true;
-                                                                                                                                                                                                                                                                               *
-                                                                                                                                                                                                                                                                               * Defining and access properties in this way is now deprecated, but these will
-                                                                                                                                                                                                                                                                               * continue to work during a deprecation window.
-                                                                                                                                                                                                                                                                               */
-
-
-exports.newConfig = newConfig;
-
-var _cpmBucketManager = __webpack_require__(26);
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var utils = __webpack_require__(0);
-
-var DEFAULT_DEBUG = false;
-var DEFAULT_BIDDER_TIMEOUT = 3000;
-var DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
-var DEFAULT_COOKIESYNC_DELAY = 100;
-var DEFAULT_ENABLE_SEND_ALL_BIDS = false;
-
-var GRANULARITY_OPTIONS = {
-  'LOW': 'low',
-  'MEDIUM': 'medium',
-  'HIGH': 'high',
-  'AUTO': 'auto',
-  'DENSE': 'dense',
-  'CUSTOM': 'custom'
-};
-
-var ALL_TOPICS = '*';
-
-/**
- * @typedef {object} PrebidConfig
- *
- * @property {bool} usePrebidCache True if we should use prebid-cache to store video bids before adding
- *   bids to the auction, and false otherwise. **NOTE** This must be true if you want to use the
- *   dfpAdServerVideo module.
- */
-
-function newConfig() {
-  var listeners = [];
-
-  var config = {
-    // `debug` is equivalent to legacy `pbjs.logging` property
-    _debug: DEFAULT_DEBUG,
-    get debug() {
-      if (pbjs.logging || pbjs.logging === false) {
-        return pbjs.logging;
-      }
-      return this._debug;
-    },
-    set debug(val) {
-      this._debug = val;
-    },
-
-    // default timeout for all bids
-    _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
-    get bidderTimeout() {
-      return pbjs.bidderTimeout || this._bidderTimeout;
-    },
-    set bidderTimeout(val) {
-      this._bidderTimeout = val;
-    },
-
-    // domain where prebid is running for cross domain iframe communication
-    _publisherDomain: DEFAULT_PUBLISHER_DOMAIN,
-    get publisherDomain() {
-      return pbjs.publisherDomain || this._publisherDomain;
-    },
-    set publisherDomain(val) {
-      this._publisherDomain = val;
-    },
-
-    // delay to request cookie sync to stay out of critical path
-    _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-    get cookieSyncDelay() {
-      return pbjs.cookieSyncDelay || this._cookieSyncDelay;
-    },
-    set cookieSyncDelay(val) {
-      this._cookieSyncDelay = val;
-    },
-
-    // calls existing function which may be moved after deprecation
-    _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
-    set priceGranularity(val) {
-      if (validatePriceGranularity(val)) {
-        if (typeof val === 'string') {
-          this._priceGranularity = hasGranularity(val) ? val : GRANULARITY_OPTIONS.MEDIUM;
-        } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-          this._customPriceBucket = val;
-          this._priceGranularity = GRANULARITY_OPTIONS.MEDIUM;
-          utils.logMessage('Using custom price granularity');
-        }
-      }
-    },
-    get priceGranularity() {
-      return this._priceGranularity;
-    },
-
-    _customPriceBucket: {},
-    get customPriceBucket() {
-      return this._customPriceBucket;
-    },
-
-    _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
-    get enableSendAllBids() {
-      return this._sendAllBids;
-    },
-    set enableSendAllBids(val) {
-      this._sendAllBids = val;
-    },
-
-    // calls existing function which may be moved after deprecation
-    set bidderSequence(val) {
-      pbjs.setBidderSequence(val);
-    },
-
-    // calls existing function which may be moved after deprecation
-    set s2sConfig(val) {
-      pbjs.setS2SConfig(val);
-    }
-
-  };
-
-  function hasGranularity(val) {
-    return Object.keys(GRANULARITY_OPTIONS).find((function (option) {
-      return val === GRANULARITY_OPTIONS[option];
-    }));
-  }
-
-  function validatePriceGranularity(val) {
-    if (!val) {
-      utils.logError('Prebid Error: no value passed to `setPriceGranularity()`');
-      return false;
-    }
-    if (typeof val === 'string') {
-      if (!hasGranularity(val)) {
-        utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
-      }
-    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-      if (!(0, _cpmBucketManager.isValidePriceConfig)(val)) {
-        utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /*
-   * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuartion
-   * property name.
-   *
-   * If called with callback parameter, or a string and a callback parameter,
-   * subscribes to configuration updates. See `subscribe` function for usage.
-   */
-  function getConfig() {
-    if (arguments.length <= 1 && typeof (arguments.length <= 0 ? undefined : arguments[0]) !== 'function') {
-      var option = arguments.length <= 0 ? undefined : arguments[0];
-      return option ? config[option] : config;
-    }
-
-    return subscribe.apply(undefined, arguments);
-  }
-
-  /*
-   * Sets configuration given an object containing key-value pairs and calls
-   * listeners that were added by the `subscribe` function
-   */
-  function setConfig(options) {
-    if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) !== 'object') {
-      utils.logError('setConfig options must be an object');
-    }
-
-    _extends(config, options);
-    callSubscribers(options);
-  }
-
-  /*
-   * Adds a function to a set of listeners that are invoked whenever `setConfig`
-   * is called. The subscribed function will be passed the options object that
-   * was used in the `setConfig` call. Topics can be subscribed to to only get
-   * updates when specific properties are updated by passing a topic string as
-   * the first parameter.
-   *
-   * Returns an `unsubscribe` function for removing the subscriber from the
-   * set of listeners
-   *
-   * Example use:
-   * // subscribe to all configuration changes
-   * subscribe((config) => console.log('config set:', config));
-   *
-   * // subscribe to only 'logging' changes
-   * subscribe('logging', (config) => console.log('logging set:', config));
-   *
-   * // unsubscribe
-   * const unsubscribe = subscribe(...);
-   * unsubscribe(); // no longer listening
-   */
-  function subscribe(topic, listener) {
-    var callback = listener;
-
-    if (typeof topic !== 'string') {
-      // first param should be callback function in this case,
-      // meaning it gets called for any config change
-      callback = topic;
-      topic = ALL_TOPICS;
-    }
-
-    if (typeof callback !== 'function') {
-      utils.logError('listener must be a function');
-      return;
-    }
-
-    listeners.push({ topic: topic, callback: callback });
-
-    // save and call this function to remove the listener
-    return function unsubscribe() {
-      listeners.splice(listeners.indexOf(listener), 1);
-    };
-  }
-
-  /*
-   * Calls listeners that were added by the `subscribe` function
-   */
-  function callSubscribers(options) {
-    var TOPICS = Object.keys(options);
-
-    // call subscribers of a specific topic, passing only that configuration
-    listeners.filter((function (listener) {
-      return TOPICS.includes(listener.topic);
-    })).forEach((function (listener) {
-      listener.callback(_defineProperty({}, listener.topic, options[listener.topic]));
-    }));
-
-    // call subscribers that didn't give a topic, passing everything that was set
-    listeners.filter((function (listener) {
-      return listener.topic === ALL_TOPICS;
-    })).forEach((function (listener) {
-      return listener.callback(options);
-    }));
-  }
-
-  return {
-    getConfig: getConfig,
-    setConfig: setConfig
-  };
-}
-
-var config = exports.config = newConfig();
-
-/***/ }),
+/* 10 */,
 /* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2526,8 +2485,9 @@ function format(obj) {
 /* 12 */
 /***/ (function(module, exports) {
 
-var core = module.exports = {version: '2.4.0'};
-if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
+var core = module.exports = { version: '2.5.0' };
+if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
+
 
 /***/ }),
 /* 13 */
@@ -2662,32 +2622,35 @@ function fireNativeImpressions(adObject) {
 
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 var global = module.exports = typeof window != 'undefined' && window.Math == Math
-  ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
-if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
+  ? window : typeof self != 'undefined' && self.Math == Math ? self
+  // eslint-disable-next-line no-new-func
+  : Function('return this')();
+if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
+
 
 /***/ }),
 /* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global    = __webpack_require__(14)
-  , core      = __webpack_require__(12)
-  , hide      = __webpack_require__(20)
-  , redefine  = __webpack_require__(247)
-  , ctx       = __webpack_require__(31)
-  , PROTOTYPE = 'prototype';
+var global = __webpack_require__(14);
+var core = __webpack_require__(12);
+var hide = __webpack_require__(20);
+var redefine = __webpack_require__(255);
+var ctx = __webpack_require__(31);
+var PROTOTYPE = 'prototype';
 
-var $export = function(type, name, source){
-  var IS_FORCED = type & $export.F
-    , IS_GLOBAL = type & $export.G
-    , IS_STATIC = type & $export.S
-    , IS_PROTO  = type & $export.P
-    , IS_BIND   = type & $export.B
-    , target    = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE]
-    , exports   = IS_GLOBAL ? core : core[name] || (core[name] = {})
-    , expProto  = exports[PROTOTYPE] || (exports[PROTOTYPE] = {})
-    , key, own, out, exp;
-  if(IS_GLOBAL)source = name;
-  for(key in source){
+var $export = function (type, name, source) {
+  var IS_FORCED = type & $export.F;
+  var IS_GLOBAL = type & $export.G;
+  var IS_STATIC = type & $export.S;
+  var IS_PROTO = type & $export.P;
+  var IS_BIND = type & $export.B;
+  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE];
+  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
+  var expProto = exports[PROTOTYPE] || (exports[PROTOTYPE] = {});
+  var key, own, out, exp;
+  if (IS_GLOBAL) source = name;
+  for (key in source) {
     // contains in native
     own = !IS_FORCED && target && target[key] !== undefined;
     // export native or passed
@@ -2695,10 +2658,10 @@ var $export = function(type, name, source){
     // bind timers to global for call from export context
     exp = IS_BIND && own ? ctx(out, global) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
     // extend global
-    if(target)redefine(target, key, out, type & $export.U);
+    if (target) redefine(target, key, out, type & $export.U);
     // export
-    if(exports[key] != out)hide(exports, key, exp);
-    if(IS_PROTO && expProto[key] != out)expProto[key] = out;
+    if (exports[key] != out) hide(exports, key, exp);
+    if (IS_PROTO && expProto[key] != out) expProto[key] = out;
   }
 };
 global.core = core;
@@ -2710,16 +2673,18 @@ $export.P = 8;   // proto
 $export.B = 16;  // bind
 $export.W = 32;  // wrap
 $export.U = 64;  // safe
-$export.R = 128; // real proto method for `library` 
+$export.R = 128; // real proto method for `library`
 module.exports = $export;
+
 
 /***/ }),
 /* 16 */
 /***/ (function(module, exports) {
 
-module.exports = function(it){
+module.exports = function (it) {
   return typeof it === 'object' ? it !== null : typeof it === 'function';
 };
+
 
 /***/ }),
 /* 17 */
@@ -2897,7 +2862,7 @@ var StorageManager = exports.StorageManager = newStorageManager();
 
 var _utils = __webpack_require__(0);
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 var _native = __webpack_require__(13);
 
@@ -3113,45 +3078,49 @@ function getEmptyBid(adUnitCode) {
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var dP         = __webpack_require__(241)
-  , createDesc = __webpack_require__(246);
-module.exports = __webpack_require__(21) ? function(object, key, value){
+var dP = __webpack_require__(249);
+var createDesc = __webpack_require__(254);
+module.exports = __webpack_require__(21) ? function (object, key, value) {
   return dP.f(object, key, createDesc(1, value));
-} : function(object, key, value){
+} : function (object, key, value) {
   object[key] = value;
   return object;
 };
+
 
 /***/ }),
 /* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // Thank's IE8 for his funny defineProperty
-module.exports = !__webpack_require__(22)((function(){
-  return Object.defineProperty({}, 'a', {get: function(){ return 7; }}).a != 7;
+module.exports = !__webpack_require__(22)((function () {
+  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
 }));
+
 
 /***/ }),
 /* 22 */
 /***/ (function(module, exports) {
 
-module.exports = function(exec){
+module.exports = function (exec) {
   try {
     return !!exec();
-  } catch(e){
+  } catch (e) {
     return true;
   }
 };
+
 
 /***/ }),
 /* 23 */
 /***/ (function(module, exports) {
 
-var id = 0
-  , px = Math.random();
-module.exports = function(key){
+var id = 0;
+var px = Math.random();
+module.exports = function (key) {
   return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
 };
+
 
 /***/ }),
 /* 24 */
@@ -3159,21 +3128,24 @@ module.exports = function(key){
 
 // fallback for non-array-like ES3 and non-enumerable old V8 strings
 var cof = __webpack_require__(33);
-module.exports = Object('z').propertyIsEnumerable(0) ? Object : function(it){
+// eslint-disable-next-line no-prototype-builtins
+module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
   return cof(it) == 'String' ? it.split('') : Object(it);
 };
+
 
 /***/ }),
 /* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 22.1.3.31 Array.prototype[@@unscopables]
-var UNSCOPABLES = __webpack_require__(38)('unscopables')
-  , ArrayProto  = Array.prototype;
-if(ArrayProto[UNSCOPABLES] == undefined)__webpack_require__(20)(ArrayProto, UNSCOPABLES, {});
-module.exports = function(key){
+var UNSCOPABLES = __webpack_require__(38)('unscopables');
+var ArrayProto = Array.prototype;
+if (ArrayProto[UNSCOPABLES] == undefined) __webpack_require__(20)(ArrayProto, UNSCOPABLES, {});
+module.exports = function (key) {
   ArrayProto[UNSCOPABLES][key] = true;
 };
+
 
 /***/ }),
 /* 26 */
@@ -3241,25 +3213,26 @@ var _autoPriceConfig = {
 };
 
 function getPriceBucketString(cpm, customConfig) {
-  var cpmFloat = 0;
-  cpmFloat = parseFloat(cpm);
+  var granularityMultiplier = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+
+  var cpmFloat = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
     cpmFloat = '';
   }
 
   return {
-    low: cpmFloat === '' ? '' : getCpmStringValue(cpm, _lgPriceConfig),
-    med: cpmFloat === '' ? '' : getCpmStringValue(cpm, _mgPriceConfig),
-    high: cpmFloat === '' ? '' : getCpmStringValue(cpm, _hgPriceConfig),
-    auto: cpmFloat === '' ? '' : getCpmStringValue(cpm, _autoPriceConfig),
-    dense: cpmFloat === '' ? '' : getCpmStringValue(cpm, _densePriceConfig),
-    custom: cpmFloat === '' ? '' : getCpmStringValue(cpm, customConfig)
+    low: cpmFloat === '' ? '' : getCpmStringValue(cpm, _lgPriceConfig, granularityMultiplier),
+    med: cpmFloat === '' ? '' : getCpmStringValue(cpm, _mgPriceConfig, granularityMultiplier),
+    high: cpmFloat === '' ? '' : getCpmStringValue(cpm, _hgPriceConfig, granularityMultiplier),
+    auto: cpmFloat === '' ? '' : getCpmStringValue(cpm, _autoPriceConfig, granularityMultiplier),
+    dense: cpmFloat === '' ? '' : getCpmStringValue(cpm, _densePriceConfig, granularityMultiplier),
+    custom: cpmFloat === '' ? '' : getCpmStringValue(cpm, customConfig, granularityMultiplier)
   };
 }
 
-function getCpmStringValue(cpm, config) {
+function getCpmStringValue(cpm, config, granularityMultiplier) {
   var cpmStr = '';
-  if (!isValidePriceConfig(config)) {
+  if (!isValidPriceConfig(config)) {
     return cpmStr;
   }
   var cap = config.buckets.reduce((function (prev, curr) {
@@ -3271,20 +3244,20 @@ function getCpmStringValue(cpm, config) {
     'max': 0
   });
   var bucket = config.buckets.find((function (bucket) {
-    if (cpm > cap.max) {
+    if (cpm > cap.max * granularityMultiplier) {
       var precision = bucket.precision || _defaultPrecision;
-      cpmStr = bucket.max.toFixed(precision);
-    } else if (cpm <= bucket.max && cpm >= bucket.min) {
+      cpmStr = (bucket.max * granularityMultiplier).toFixed(precision);
+    } else if (cpm <= bucket.max * granularityMultiplier && cpm >= bucket.min * granularityMultiplier) {
       return bucket;
     }
   }));
   if (bucket) {
-    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision);
+    cpmStr = getCpmTarget(cpm, bucket.increment, bucket.precision, granularityMultiplier);
   }
   return cpmStr;
 }
 
-function isValidePriceConfig(config) {
+function isValidPriceConfig(config) {
   if (utils.isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
@@ -3297,16 +3270,16 @@ function isValidePriceConfig(config) {
   return isValid;
 }
 
-function getCpmTarget(cpm, increment, precision) {
+function getCpmTarget(cpm, increment, precision, granularityMultiplier) {
   if (!precision) {
     precision = _defaultPrecision;
   }
-  var bucketSize = 1 / increment;
+  var bucketSize = 1 / (increment * granularityMultiplier);
   return (Math.floor(cpm * bucketSize) / bucketSize).toFixed(precision);
 }
 
 exports.getPriceBucketString = getPriceBucketString;
-exports.isValidePriceConfig = isValidePriceConfig;
+exports.isValidPriceConfig = isValidPriceConfig;
 
 /***/ }),
 /* 27 */
@@ -3435,34 +3408,36 @@ cookie.cookieSet = function (cookieSetUrl) {
 /***/ (function(module, exports) {
 
 var hasOwnProperty = {}.hasOwnProperty;
-module.exports = function(it, key){
+module.exports = function (it, key) {
   return hasOwnProperty.call(it, key);
 };
+
 
 /***/ }),
 /* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // optional / simple context binding
-var aFunction = __webpack_require__(248);
-module.exports = function(fn, that, length){
+var aFunction = __webpack_require__(256);
+module.exports = function (fn, that, length) {
   aFunction(fn);
-  if(that === undefined)return fn;
-  switch(length){
-    case 1: return function(a){
+  if (that === undefined) return fn;
+  switch (length) {
+    case 1: return function (a) {
       return fn.call(that, a);
     };
-    case 2: return function(a, b){
+    case 2: return function (a, b) {
       return fn.call(that, a, b);
     };
-    case 3: return function(a, b, c){
+    case 3: return function (a, b, c) {
       return fn.call(that, a, b, c);
     };
   }
-  return function(/* ...args */){
+  return function (/* ...args */) {
     return fn.apply(that, arguments);
   };
 };
+
 
 /***/ }),
 /* 32 */
@@ -3475,43 +3450,44 @@ module.exports = function(fn, that, length){
 // 4 -> Array#every
 // 5 -> Array#find
 // 6 -> Array#findIndex
-var ctx      = __webpack_require__(31)
-  , IObject  = __webpack_require__(24)
-  , toObject = __webpack_require__(34)
-  , toLength = __webpack_require__(36)
-  , asc      = __webpack_require__(249);
-module.exports = function(TYPE, $create){
-  var IS_MAP        = TYPE == 1
-    , IS_FILTER     = TYPE == 2
-    , IS_SOME       = TYPE == 3
-    , IS_EVERY      = TYPE == 4
-    , IS_FIND_INDEX = TYPE == 6
-    , NO_HOLES      = TYPE == 5 || IS_FIND_INDEX
-    , create        = $create || asc;
-  return function($this, callbackfn, that){
-    var O      = toObject($this)
-      , self   = IObject(O)
-      , f      = ctx(callbackfn, that, 3)
-      , length = toLength(self.length)
-      , index  = 0
-      , result = IS_MAP ? create($this, length) : IS_FILTER ? create($this, 0) : undefined
-      , val, res;
-    for(;length > index; index++)if(NO_HOLES || index in self){
+var ctx = __webpack_require__(31);
+var IObject = __webpack_require__(24);
+var toObject = __webpack_require__(34);
+var toLength = __webpack_require__(36);
+var asc = __webpack_require__(257);
+module.exports = function (TYPE, $create) {
+  var IS_MAP = TYPE == 1;
+  var IS_FILTER = TYPE == 2;
+  var IS_SOME = TYPE == 3;
+  var IS_EVERY = TYPE == 4;
+  var IS_FIND_INDEX = TYPE == 6;
+  var NO_HOLES = TYPE == 5 || IS_FIND_INDEX;
+  var create = $create || asc;
+  return function ($this, callbackfn, that) {
+    var O = toObject($this);
+    var self = IObject(O);
+    var f = ctx(callbackfn, that, 3);
+    var length = toLength(self.length);
+    var index = 0;
+    var result = IS_MAP ? create($this, length) : IS_FILTER ? create($this, 0) : undefined;
+    var val, res;
+    for (;length > index; index++) if (NO_HOLES || index in self) {
       val = self[index];
       res = f(val, index, O);
-      if(TYPE){
-        if(IS_MAP)result[index] = res;            // map
-        else if(res)switch(TYPE){
-          case 3: return true;                    // some
-          case 5: return val;                     // find
-          case 6: return index;                   // findIndex
-          case 2: result.push(val);               // filter
-        } else if(IS_EVERY)return false;          // every
+      if (TYPE) {
+        if (IS_MAP) result[index] = res;   // map
+        else if (res) switch (TYPE) {
+          case 3: return true;             // some
+          case 5: return val;              // find
+          case 6: return index;            // findIndex
+          case 2: result.push(val);        // filter
+        } else if (IS_EVERY) return false; // every
       }
     }
     return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
   };
 };
+
 
 /***/ }),
 /* 33 */
@@ -3519,9 +3495,10 @@ module.exports = function(TYPE, $create){
 
 var toString = {}.toString;
 
-module.exports = function(it){
+module.exports = function (it) {
   return toString.call(it).slice(8, -1);
 };
+
 
 /***/ }),
 /* 34 */
@@ -3529,68 +3506,74 @@ module.exports = function(it){
 
 // 7.1.13 ToObject(argument)
 var defined = __webpack_require__(35);
-module.exports = function(it){
+module.exports = function (it) {
   return Object(defined(it));
 };
+
 
 /***/ }),
 /* 35 */
 /***/ (function(module, exports) {
 
 // 7.2.1 RequireObjectCoercible(argument)
-module.exports = function(it){
-  if(it == undefined)throw TypeError("Can't call method on  " + it);
+module.exports = function (it) {
+  if (it == undefined) throw TypeError("Can't call method on  " + it);
   return it;
 };
+
 
 /***/ }),
 /* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.15 ToLength
-var toInteger = __webpack_require__(37)
-  , min       = Math.min;
-module.exports = function(it){
+var toInteger = __webpack_require__(37);
+var min = Math.min;
+module.exports = function (it) {
   return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 };
+
 
 /***/ }),
 /* 37 */
 /***/ (function(module, exports) {
 
 // 7.1.4 ToInteger
-var ceil  = Math.ceil
-  , floor = Math.floor;
-module.exports = function(it){
+var ceil = Math.ceil;
+var floor = Math.floor;
+module.exports = function (it) {
   return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
 };
+
 
 /***/ }),
 /* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var store      = __webpack_require__(39)('wks')
-  , uid        = __webpack_require__(23)
-  , Symbol     = __webpack_require__(14).Symbol
-  , USE_SYMBOL = typeof Symbol == 'function';
+var store = __webpack_require__(39)('wks');
+var uid = __webpack_require__(23);
+var Symbol = __webpack_require__(14).Symbol;
+var USE_SYMBOL = typeof Symbol == 'function';
 
-var $exports = module.exports = function(name){
+var $exports = module.exports = function (name) {
   return store[name] || (store[name] =
     USE_SYMBOL && Symbol[name] || (USE_SYMBOL ? Symbol : uid)('Symbol.' + name));
 };
 
 $exports.store = store;
 
+
 /***/ }),
 /* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var global = __webpack_require__(14)
-  , SHARED = '__core-js_shared__'
-  , store  = global[SHARED] || (global[SHARED] = {});
-module.exports = function(key){
+var global = __webpack_require__(14);
+var SHARED = '__core-js_shared__';
+var store = global[SHARED] || (global[SHARED] = {});
+module.exports = function (key) {
   return store[key] || (store[key] = {});
 };
+
 
 /***/ }),
 /* 40 */
@@ -3598,36 +3581,40 @@ module.exports = function(key){
 
 // false -> Array#indexOf
 // true  -> Array#includes
-var toIObject = __webpack_require__(41)
-  , toLength  = __webpack_require__(36)
-  , toIndex   = __webpack_require__(256);
-module.exports = function(IS_INCLUDES){
-  return function($this, el, fromIndex){
-    var O      = toIObject($this)
-      , length = toLength(O.length)
-      , index  = toIndex(fromIndex, length)
-      , value;
+var toIObject = __webpack_require__(41);
+var toLength = __webpack_require__(36);
+var toAbsoluteIndex = __webpack_require__(264);
+module.exports = function (IS_INCLUDES) {
+  return function ($this, el, fromIndex) {
+    var O = toIObject($this);
+    var length = toLength(O.length);
+    var index = toAbsoluteIndex(fromIndex, length);
+    var value;
     // Array#includes uses SameValueZero equality algorithm
-    if(IS_INCLUDES && el != el)while(length > index){
+    // eslint-disable-next-line no-self-compare
+    if (IS_INCLUDES && el != el) while (length > index) {
       value = O[index++];
-      if(value != value)return true;
-    // Array#toIndex ignores holes, Array#includes - not
-    } else for(;length > index; index++)if(IS_INCLUDES || index in O){
-      if(O[index] === el)return IS_INCLUDES || index || 0;
+      // eslint-disable-next-line no-self-compare
+      if (value != value) return true;
+    // Array#indexOf ignores holes, Array#includes - not
+    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
+      if (O[index] === el) return IS_INCLUDES || index || 0;
     } return !IS_INCLUDES && -1;
   };
 };
+
 
 /***/ }),
 /* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // to indexed object, toObject with fallback for non-array-like ES3 strings
-var IObject = __webpack_require__(24)
-  , defined = __webpack_require__(35);
-module.exports = function(it){
+var IObject = __webpack_require__(24);
+var defined = __webpack_require__(35);
+module.exports = function (it) {
   return IObject(defined(it));
 };
+
 
 /***/ }),
 /* 42 */,
@@ -3655,7 +3642,7 @@ var BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache';
 
 /**
  * @typedef {object} CacheablePayloadBid
- * @property {string} vastPayload Some VAST XML which loads an ad in a video player.
+ * @property {string} vastXml Some VAST XML which loads an ad in a video player.
  */
 
 /**
@@ -3695,7 +3682,7 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  var vastValue = bid.vastPayload ? bid.vastPayload : wrapURI(bid.vastUrl);
+  var vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl);
   return {
     type: 'xml',
     value: vastValue
@@ -4037,14 +4024,22 @@ exports.setWindow = setWindow;
 /* 232 */,
 /* 233 */,
 /* 234 */,
-/* 235 */
+/* 235 */,
+/* 236 */,
+/* 237 */,
+/* 238 */,
+/* 239 */,
+/* 240 */,
+/* 241 */,
+/* 242 */,
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(236);
+module.exports = __webpack_require__(244);
 
 
 /***/ }),
-/* 236 */
+/* 244 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4058,15 +4053,15 @@ var _prebidGlobal = __webpack_require__(28);
 
 var _utils = __webpack_require__(0);
 
-var _video = __webpack_require__(237);
+var _video = __webpack_require__(245);
 
 var _native = __webpack_require__(13);
 
-__webpack_require__(238);
+__webpack_require__(246);
 
 var _url = __webpack_require__(11);
 
-var _secureCreatives = __webpack_require__(266);
+var _secureCreatives = __webpack_require__(274);
 
 var _cookie = __webpack_require__(29);
 
@@ -4074,7 +4069,7 @@ var _adloader = __webpack_require__(5);
 
 var _ajax = __webpack_require__(6);
 
-var _config = __webpack_require__(10);
+var _config = __webpack_require__(8);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; } /** @module pbjs */
 
@@ -4085,8 +4080,8 @@ var utils = __webpack_require__(0);
 var bidmanager = __webpack_require__(2);
 var adaptermanager = __webpack_require__(1);
 var bidfactory = __webpack_require__(3);
-var events = __webpack_require__(8);
-var adserver = __webpack_require__(267);
+var events = __webpack_require__(9);
+var adserver = __webpack_require__(275);
 var targeting = __webpack_require__(19);
 
 /* private variables */
@@ -4131,8 +4126,8 @@ pbjs.publisherDomain = pbjs.publisherDomain;
 pbjs.libLoaded = true;
 
 // version auto generated from build
-pbjs.version = 'v0.28.0-pre';
-utils.logInfo('Prebid.js v0.28.0-pre loaded');
+pbjs.version = 'v0.28.0';
+utils.logInfo('Prebid.js v0.28.0 loaded');
 
 // create adUnit array
 pbjs.adUnits = pbjs.adUnits || [];
@@ -4185,7 +4180,7 @@ function setRenderSize(doc, width, height) {
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param  {string} [adunitCode] adUnitCode to get the bid responses for
  * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
- * @return {array}  returnObj return bids array
+ * @return {Array}  returnObj return bids array
  */
 pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
   utils.logInfo('Invoking pbjs.getAdserverTargetingForAdUnitCodeStr', arguments);
@@ -4202,7 +4197,7 @@ pbjs.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
- * @returns {object}  returnObj return bids
+ * @returns {Object}  returnObj return bids
  */
 pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   return pbjs.getAdserverTargeting(adUnitCode)[adUnitCode];
@@ -4210,7 +4205,7 @@ pbjs.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
 
 /**
  * returns all ad server targeting for all ad units
- * @return {object} Map of adUnitCodes and targeting values []
+ * @return {Object} Map of adUnitCodes and targeting values []
  * @alias module:pbjs.getAdserverTargeting
  */
 
@@ -4232,7 +4227,7 @@ pbjs.getAdserverTargeting = function (adUnitCode) {
 /**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
- * @return {object}            map | object that contains the bidResponses
+ * @return {Object}            map | object that contains the bidResponses
  */
 
 pbjs.getBidResponses = function () {
@@ -4259,7 +4254,7 @@ pbjs.getBidResponses = function () {
 
 /**
  * Returns bidResponses for the specified adUnitCode
- * @param  {String} adUnitCode adUnitCode
+ * @param  {string} adUnitCode adUnitCode
  * @alias module:pbjs.getBidResponsesForAdUnitCode
  * @return {Object}            bidResponse object
  */
@@ -4394,7 +4389,7 @@ pbjs.renderAd = function (doc, id) {
 
 /**
  * Remove adUnit from the pbjs configuration
- * @param  {String} adUnitCode the adUnitCode to remove
+ * @param  {string} adUnitCode the adUnitCode to remove
  * @alias module:pbjs.removeAdUnit
  */
 pbjs.removeAdUnit = function (adUnitCode) {
@@ -4418,11 +4413,11 @@ pbjs.clearAuction = function () {
 };
 
 /**
- *
- * @param bidsBackHandler
- * @param timeout
- * @param adUnits
- * @param adUnitCodes
+ * @param {Object} requestOptions
+ * @param {function} requestOptions.bidsBackHandler
+ * @param {number} requestOptions.timeout
+ * @param {Array} requestOptions.adUnits
+ * @param {Array} requestOptions.adUnitCodes
  */
 pbjs.requestBids = function () {
   var _ref4 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -4534,9 +4529,9 @@ pbjs.addAdUnits = function (adUnitArr) {
 };
 
 /**
- * @param {String} event the name of the event
+ * @param {string} event the name of the event
  * @param {Function} handler a callback to set on event
- * @param {String} id an identifier in the context of the event
+ * @param {string} id an identifier in the context of the event
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -4564,9 +4559,9 @@ pbjs.onEvent = function (event, handler, id) {
 };
 
 /**
- * @param {String} event the name of the event
+ * @param {string} event the name of the event
  * @param {Function} handler a callback to remove from the event
- * @param {String} id an identifier in the context of the event (see `pbjs.onEvent`)
+ * @param {string} id an identifier in the context of the event (see `pbjs.onEvent`)
  */
 pbjs.offEvent = function (event, handler, id) {
   utils.logInfo('Invoking pbjs.offEvent', arguments);
@@ -4579,10 +4574,10 @@ pbjs.offEvent = function (event, handler, id) {
 
 /**
  * Add a callback event
- * @param {String} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
+ * @param {string} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
  * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
  * @alias module:pbjs.addCallback
- * @returns {String} id for callback
+ * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Please use onEvent instead.
@@ -4605,7 +4600,7 @@ pbjs.addCallback = function (eventStr, func) {
  * Remove a callback event
  * //@param {string} cbId id of the callback to remove
  * @alias module:pbjs.removeCallback
- * @returns {String} id for callback
+ * @returns {string} id for callback
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Please use offEvent instead.
@@ -4618,9 +4613,8 @@ pbjs.removeCallback = function () /* cbId */{
 
 /**
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
- * @param  {[type]} bidderAdaptor [description]
- * @param  {[type]} bidderCode    [description]
- * @return {[type]}               [description]
+ * @param  {Function} bidderAdaptor [description]
+ * @param  {string} bidderCode [description]
  */
 pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking pbjs.registerBidAdapter', arguments);
@@ -4633,7 +4627,7 @@ pbjs.registerBidAdapter = function (bidderAdaptor, bidderCode) {
 
 /**
  * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
- * @param  {[type]} options [description]
+ * @param  {Object} options [description]
  */
 pbjs.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking pbjs.registerAnalyticsAdapter', arguments);
@@ -4661,8 +4655,8 @@ pbjs.bidsAvailableForAdapter = function (bidderCode) {
 
 /**
  * Wrapper to bidfactory.createBid()
- * @param  {[type]} statusCode [description]
- * @return {[type]}            [description]
+ * @param  {string} statusCode [description]
+ * @return {Object} bidResponse [description]
  */
 pbjs.createBid = function (statusCode) {
   utils.logInfo('Invoking pbjs.createBid', arguments);
@@ -4671,8 +4665,8 @@ pbjs.createBid = function (statusCode) {
 
 /**
  * Wrapper to bidmanager.addBidResponse
- * @param {[type]} adUnitCode [description]
- * @param {[type]} bid        [description]
+ * @param {string} adUnitCode [description]
+ * @param {Object} bid [description]
  *
  * @deprecated This function will be removed in Prebid 1.0
  * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
@@ -4686,9 +4680,8 @@ pbjs.addBidResponse = function (adUnitCode, bid) {
 
 /**
  * Wrapper to adloader.loadScript
- * @param  {[type]}   tagSrc   [description]
+ * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
- * @return {[type]}            [description]
  */
 pbjs.loadScript = function (tagSrc, callback, useCache) {
   utils.logInfo('Invoking pbjs.loadScript', arguments);
@@ -4697,7 +4690,7 @@ pbjs.loadScript = function (tagSrc, callback, useCache) {
 
 /**
  * Will enable sending a prebid.js to data provider specified
- * @param  {object} config object {provider : 'string', options : {}}
+ * @param  {Object} config object {provider : 'string', options : {}}
  */
 pbjs.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -4719,7 +4712,7 @@ pbjs.aliasBidder = function (bidderCode, alias) {
 
 /**
  * Sets a default price granularity scheme.
- * @param {String|Object} granularity - the granularity scheme.
+ * @param {string|Object} granularity - the granularity scheme.
  * @deprecated - use pbjs.setConfig({ priceGranularity: <granularity> })
  * "low": $0.50 increments, capped at $5 CPM
  * "medium": $0.10 increments, capped at $20 CPM (the default)
@@ -4749,7 +4742,7 @@ pbjs.getAllWinningBids = function () {
 /**
  * Build master video tag from publishers adserver tag
  * @param {string} adserverTag default url
- * @param {object} options options for video tag
+ * @param {Object} options options for video tag
  *
  * @deprecated Include the dfpVideoSupport module in your build, and use the pbjs.adservers.dfp.buildVideoAdUrl function instead.
  * This function will be removed in Prebid 1.0.
@@ -4796,7 +4789,7 @@ pbjs.setBidderSequence = adaptermanager.setBidderSequence;
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
- * @return {array} array containing highest cpm bid object(s)
+ * @return {Array} array containing highest cpm bid object(s)
  */
 pbjs.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
@@ -4841,13 +4834,13 @@ pbjs.setS2SConfig = function (options) {
 
 /**
  * Get Prebid config options
- * @param {object} options
+ * @param {Object} options
  */
 pbjs.getConfig = _config.config.getConfig;
 
 /**
  * Set Prebid config options
- * @param {object} options
+ * @param {Object} options
  */
 pbjs.setConfig = _config.config.setConfig;
 
@@ -4870,14 +4863,15 @@ pbjs.que.push((function () {
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @param  {function} cmd A function which takes no arguments. This is guaranteed to run exactly once, and only after
- *                        the Prebid script has been fully loaded.
+ * @memberof pbjs
+ * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
+ *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push
  */
-pbjs.cmd.push = function (cmd) {
-  if (typeof cmd === 'function') {
+pbjs.cmd.push = function (command) {
+  if (typeof command === 'function') {
     try {
-      cmd.call();
+      command.call();
     } catch (e) {
       utils.logError('Error processing command :' + e.message);
     }
@@ -4907,7 +4901,7 @@ pbjs.processQueue = function () {
 };
 
 /***/ }),
-/* 237 */
+/* 245 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4934,7 +4928,7 @@ var hasNonVideoBidder = exports.hasNonVideoBidder = function hasNonVideoBidder(a
 };
 
 /***/ }),
-/* 238 */
+/* 246 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4943,10 +4937,10 @@ var hasNonVideoBidder = exports.hasNonVideoBidder = function hasNonVideoBidder(a
 /** @module polyfill
 Misc polyfills
 */
-__webpack_require__(239);
-__webpack_require__(252);
-__webpack_require__(254);
-__webpack_require__(257);
+__webpack_require__(247);
+__webpack_require__(260);
+__webpack_require__(262);
+__webpack_require__(265);
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
 Number.isInteger = Number.isInteger || function (value) {
@@ -4954,366 +4948,390 @@ Number.isInteger = Number.isInteger || function (value) {
 };
 
 /***/ }),
-/* 239 */
+/* 247 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(240);
+__webpack_require__(248);
 module.exports = __webpack_require__(12).Array.find;
 
+
 /***/ }),
-/* 240 */
+/* 248 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 22.1.3.8 Array.prototype.find(predicate, thisArg = undefined)
-var $export = __webpack_require__(15)
-  , $find   = __webpack_require__(32)(5)
-  , KEY     = 'find'
-  , forced  = true;
+var $export = __webpack_require__(15);
+var $find = __webpack_require__(32)(5);
+var KEY = 'find';
+var forced = true;
 // Shouldn't skip holes
-if(KEY in [])Array(1)[KEY]((function(){ forced = false; }));
+if (KEY in []) Array(1)[KEY]((function () { forced = false; }));
 $export($export.P + $export.F * forced, 'Array', {
-  find: function find(callbackfn/*, that = undefined */){
+  find: function find(callbackfn /* , that = undefined */) {
     return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
   }
 });
 __webpack_require__(25)(KEY);
 
+
 /***/ }),
-/* 241 */
+/* 249 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var anObject       = __webpack_require__(242)
-  , IE8_DOM_DEFINE = __webpack_require__(243)
-  , toPrimitive    = __webpack_require__(245)
-  , dP             = Object.defineProperty;
+var anObject = __webpack_require__(250);
+var IE8_DOM_DEFINE = __webpack_require__(251);
+var toPrimitive = __webpack_require__(253);
+var dP = Object.defineProperty;
 
-exports.f = __webpack_require__(21) ? Object.defineProperty : function defineProperty(O, P, Attributes){
+exports.f = __webpack_require__(21) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
   anObject(O);
   P = toPrimitive(P, true);
   anObject(Attributes);
-  if(IE8_DOM_DEFINE)try {
+  if (IE8_DOM_DEFINE) try {
     return dP(O, P, Attributes);
-  } catch(e){ /* empty */ }
-  if('get' in Attributes || 'set' in Attributes)throw TypeError('Accessors not supported!');
-  if('value' in Attributes)O[P] = Attributes.value;
+  } catch (e) { /* empty */ }
+  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
+  if ('value' in Attributes) O[P] = Attributes.value;
   return O;
 };
 
+
 /***/ }),
-/* 242 */
+/* 250 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(16);
-module.exports = function(it){
-  if(!isObject(it))throw TypeError(it + ' is not an object!');
+module.exports = function (it) {
+  if (!isObject(it)) throw TypeError(it + ' is not an object!');
   return it;
 };
 
+
 /***/ }),
-/* 243 */
+/* 251 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = !__webpack_require__(21) && !__webpack_require__(22)((function(){
-  return Object.defineProperty(__webpack_require__(244)('div'), 'a', {get: function(){ return 7; }}).a != 7;
+module.exports = !__webpack_require__(21) && !__webpack_require__(22)((function () {
+  return Object.defineProperty(__webpack_require__(252)('div'), 'a', { get: function () { return 7; } }).a != 7;
 }));
 
+
 /***/ }),
-/* 244 */
+/* 252 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var isObject = __webpack_require__(16)
-  , document = __webpack_require__(14).document
-  // in old IE typeof document.createElement is 'object'
-  , is = isObject(document) && isObject(document.createElement);
-module.exports = function(it){
+var isObject = __webpack_require__(16);
+var document = __webpack_require__(14).document;
+// typeof document.createElement is 'object' in old IE
+var is = isObject(document) && isObject(document.createElement);
+module.exports = function (it) {
   return is ? document.createElement(it) : {};
 };
 
+
 /***/ }),
-/* 245 */
+/* 253 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 7.1.1 ToPrimitive(input [, PreferredType])
 var isObject = __webpack_require__(16);
 // instead of the ES6 spec version, we didn't implement @@toPrimitive case
 // and the second argument - flag - preferred type is a string
-module.exports = function(it, S){
-  if(!isObject(it))return it;
+module.exports = function (it, S) {
+  if (!isObject(it)) return it;
   var fn, val;
-  if(S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it)))return val;
-  if(typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it)))return val;
-  if(!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it)))return val;
+  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
+  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
   throw TypeError("Can't convert object to primitive value");
 };
 
-/***/ }),
-/* 246 */
-/***/ (function(module, exports) {
-
-module.exports = function(bitmap, value){
-  return {
-    enumerable  : !(bitmap & 1),
-    configurable: !(bitmap & 2),
-    writable    : !(bitmap & 4),
-    value       : value
-  };
-};
-
-/***/ }),
-/* 247 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var global    = __webpack_require__(14)
-  , hide      = __webpack_require__(20)
-  , has       = __webpack_require__(30)
-  , SRC       = __webpack_require__(23)('src')
-  , TO_STRING = 'toString'
-  , $toString = Function[TO_STRING]
-  , TPL       = ('' + $toString).split(TO_STRING);
-
-__webpack_require__(12).inspectSource = function(it){
-  return $toString.call(it);
-};
-
-(module.exports = function(O, key, val, safe){
-  var isFunction = typeof val == 'function';
-  if(isFunction)has(val, 'name') || hide(val, 'name', key);
-  if(O[key] === val)return;
-  if(isFunction)has(val, SRC) || hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
-  if(O === global){
-    O[key] = val;
-  } else {
-    if(!safe){
-      delete O[key];
-      hide(O, key, val);
-    } else {
-      if(O[key])O[key] = val;
-      else hide(O, key, val);
-    }
-  }
-// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
-})(Function.prototype, TO_STRING, (function toString(){
-  return typeof this == 'function' && this[SRC] || $toString.call(this);
-}));
-
-/***/ }),
-/* 248 */
-/***/ (function(module, exports) {
-
-module.exports = function(it){
-  if(typeof it != 'function')throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-/***/ }),
-/* 249 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
-var speciesConstructor = __webpack_require__(250);
-
-module.exports = function(original, length){
-  return new (speciesConstructor(original))(length);
-};
-
-/***/ }),
-/* 250 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var isObject = __webpack_require__(16)
-  , isArray  = __webpack_require__(251)
-  , SPECIES  = __webpack_require__(38)('species');
-
-module.exports = function(original){
-  var C;
-  if(isArray(original)){
-    C = original.constructor;
-    // cross-realm fallback
-    if(typeof C == 'function' && (C === Array || isArray(C.prototype)))C = undefined;
-    if(isObject(C)){
-      C = C[SPECIES];
-      if(C === null)C = undefined;
-    }
-  } return C === undefined ? Array : C;
-};
-
-/***/ }),
-/* 251 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// 7.2.2 IsArray(argument)
-var cof = __webpack_require__(33);
-module.exports = Array.isArray || function isArray(arg){
-  return cof(arg) == 'Array';
-};
-
-/***/ }),
-/* 252 */
-/***/ (function(module, exports, __webpack_require__) {
-
-__webpack_require__(253);
-module.exports = __webpack_require__(12).Array.findIndex;
-
-/***/ }),
-/* 253 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-// 22.1.3.9 Array.prototype.findIndex(predicate, thisArg = undefined)
-var $export = __webpack_require__(15)
-  , $find   = __webpack_require__(32)(6)
-  , KEY     = 'findIndex'
-  , forced  = true;
-// Shouldn't skip holes
-if(KEY in [])Array(1)[KEY]((function(){ forced = false; }));
-$export($export.P + $export.F * forced, 'Array', {
-  findIndex: function findIndex(callbackfn/*, that = undefined */){
-    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-__webpack_require__(25)(KEY);
 
 /***/ }),
 /* 254 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-__webpack_require__(255);
-module.exports = __webpack_require__(12).Array.includes;
+module.exports = function (bitmap, value) {
+  return {
+    enumerable: !(bitmap & 1),
+    configurable: !(bitmap & 2),
+    writable: !(bitmap & 4),
+    value: value
+  };
+};
+
 
 /***/ }),
 /* 255 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var global = __webpack_require__(14);
+var hide = __webpack_require__(20);
+var has = __webpack_require__(30);
+var SRC = __webpack_require__(23)('src');
+var TO_STRING = 'toString';
+var $toString = Function[TO_STRING];
+var TPL = ('' + $toString).split(TO_STRING);
+
+__webpack_require__(12).inspectSource = function (it) {
+  return $toString.call(it);
+};
+
+(module.exports = function (O, key, val, safe) {
+  var isFunction = typeof val == 'function';
+  if (isFunction) has(val, 'name') || hide(val, 'name', key);
+  if (O[key] === val) return;
+  if (isFunction) has(val, SRC) || hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
+  if (O === global) {
+    O[key] = val;
+  } else if (!safe) {
+    delete O[key];
+    hide(O, key, val);
+  } else if (O[key]) {
+    O[key] = val;
+  } else {
+    hide(O, key, val);
+  }
+// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
+})(Function.prototype, TO_STRING, (function toString() {
+  return typeof this == 'function' && this[SRC] || $toString.call(this);
+}));
+
+
+/***/ }),
+/* 256 */
+/***/ (function(module, exports) {
+
+module.exports = function (it) {
+  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+  return it;
+};
+
+
+/***/ }),
+/* 257 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
+var speciesConstructor = __webpack_require__(258);
+
+module.exports = function (original, length) {
+  return new (speciesConstructor(original))(length);
+};
+
+
+/***/ }),
+/* 258 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__(16);
+var isArray = __webpack_require__(259);
+var SPECIES = __webpack_require__(38)('species');
+
+module.exports = function (original) {
+  var C;
+  if (isArray(original)) {
+    C = original.constructor;
+    // cross-realm fallback
+    if (typeof C == 'function' && (C === Array || isArray(C.prototype))) C = undefined;
+    if (isObject(C)) {
+      C = C[SPECIES];
+      if (C === null) C = undefined;
+    }
+  } return C === undefined ? Array : C;
+};
+
+
+/***/ }),
+/* 259 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// 7.2.2 IsArray(argument)
+var cof = __webpack_require__(33);
+module.exports = Array.isArray || function isArray(arg) {
+  return cof(arg) == 'Array';
+};
+
+
+/***/ }),
+/* 260 */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(261);
+module.exports = __webpack_require__(12).Array.findIndex;
+
+
+/***/ }),
+/* 261 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// 22.1.3.9 Array.prototype.findIndex(predicate, thisArg = undefined)
+var $export = __webpack_require__(15);
+var $find = __webpack_require__(32)(6);
+var KEY = 'findIndex';
+var forced = true;
+// Shouldn't skip holes
+if (KEY in []) Array(1)[KEY]((function () { forced = false; }));
+$export($export.P + $export.F * forced, 'Array', {
+  findIndex: function findIndex(callbackfn /* , that = undefined */) {
+    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+__webpack_require__(25)(KEY);
+
+
+/***/ }),
+/* 262 */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(263);
+module.exports = __webpack_require__(12).Array.includes;
+
+
+/***/ }),
+/* 263 */
+/***/ (function(module, exports, __webpack_require__) {
+
 "use strict";
 
 // https://github.com/tc39/Array.prototype.includes
-var $export   = __webpack_require__(15)
-  , $includes = __webpack_require__(40)(true);
+var $export = __webpack_require__(15);
+var $includes = __webpack_require__(40)(true);
 
 $export($export.P, 'Array', {
-  includes: function includes(el /*, fromIndex = 0 */){
+  includes: function includes(el /* , fromIndex = 0 */) {
     return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
   }
 });
 
 __webpack_require__(25)('includes');
 
+
 /***/ }),
-/* 256 */
+/* 264 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var toInteger = __webpack_require__(37)
-  , max       = Math.max
-  , min       = Math.min;
-module.exports = function(index, length){
+var toInteger = __webpack_require__(37);
+var max = Math.max;
+var min = Math.min;
+module.exports = function (index, length) {
   index = toInteger(index);
   return index < 0 ? max(index + length, 0) : min(index, length);
 };
 
+
 /***/ }),
-/* 257 */
+/* 265 */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(258);
+__webpack_require__(266);
 module.exports = __webpack_require__(12).Object.assign;
 
+
 /***/ }),
-/* 258 */
+/* 266 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.3.1 Object.assign(target, source)
 var $export = __webpack_require__(15);
 
-$export($export.S + $export.F, 'Object', {assign: __webpack_require__(259)});
+$export($export.S + $export.F, 'Object', { assign: __webpack_require__(267) });
+
 
 /***/ }),
-/* 259 */
+/* 267 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
-var getKeys  = __webpack_require__(260)
-  , gOPS     = __webpack_require__(264)
-  , pIE      = __webpack_require__(265)
-  , toObject = __webpack_require__(34)
-  , IObject  = __webpack_require__(24)
-  , $assign  = Object.assign;
+var getKeys = __webpack_require__(268);
+var gOPS = __webpack_require__(272);
+var pIE = __webpack_require__(273);
+var toObject = __webpack_require__(34);
+var IObject = __webpack_require__(24);
+var $assign = Object.assign;
 
 // should work with symbols and should have deterministic property order (V8 bug)
-module.exports = !$assign || __webpack_require__(22)((function(){
-  var A = {}
-    , B = {}
-    , S = Symbol()
-    , K = 'abcdefghijklmnopqrst';
+module.exports = !$assign || __webpack_require__(22)((function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var S = Symbol();
+  var K = 'abcdefghijklmnopqrst';
   A[S] = 7;
-  K.split('').forEach((function(k){ B[k] = k; }));
+  K.split('').forEach((function (k) { B[k] = k; }));
   return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-})) ? function assign(target, source){ // eslint-disable-line no-unused-vars
-  var T     = toObject(target)
-    , aLen  = arguments.length
-    , index = 1
-    , getSymbols = gOPS.f
-    , isEnum     = pIE.f;
-  while(aLen > index){
-    var S      = IObject(arguments[index++])
-      , keys   = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S)
-      , length = keys.length
-      , j      = 0
-      , key;
-    while(length > j)if(isEnum.call(S, key = keys[j++]))T[key] = S[key];
+})) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = toObject(target);
+  var aLen = arguments.length;
+  var index = 1;
+  var getSymbols = gOPS.f;
+  var isEnum = pIE.f;
+  while (aLen > index) {
+    var S = IObject(arguments[index++]);
+    var keys = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
   } return T;
 } : $assign;
 
+
 /***/ }),
-/* 260 */
+/* 268 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // 19.1.2.14 / 15.2.3.14 Object.keys(O)
-var $keys       = __webpack_require__(261)
-  , enumBugKeys = __webpack_require__(263);
+var $keys = __webpack_require__(269);
+var enumBugKeys = __webpack_require__(271);
 
-module.exports = Object.keys || function keys(O){
+module.exports = Object.keys || function keys(O) {
   return $keys(O, enumBugKeys);
 };
 
+
 /***/ }),
-/* 261 */
+/* 269 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var has          = __webpack_require__(30)
-  , toIObject    = __webpack_require__(41)
-  , arrayIndexOf = __webpack_require__(40)(false)
-  , IE_PROTO     = __webpack_require__(262)('IE_PROTO');
+var has = __webpack_require__(30);
+var toIObject = __webpack_require__(41);
+var arrayIndexOf = __webpack_require__(40)(false);
+var IE_PROTO = __webpack_require__(270)('IE_PROTO');
 
-module.exports = function(object, names){
-  var O      = toIObject(object)
-    , i      = 0
-    , result = []
-    , key;
-  for(key in O)if(key != IE_PROTO)has(O, key) && result.push(key);
+module.exports = function (object, names) {
+  var O = toIObject(object);
+  var i = 0;
+  var result = [];
+  var key;
+  for (key in O) if (key != IE_PROTO) has(O, key) && result.push(key);
   // Don't enum bug & hidden keys
-  while(names.length > i)if(has(O, key = names[i++])){
+  while (names.length > i) if (has(O, key = names[i++])) {
     ~arrayIndexOf(result, key) || result.push(key);
   }
   return result;
 };
 
+
 /***/ }),
-/* 262 */
+/* 270 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var shared = __webpack_require__(39)('keys')
-  , uid    = __webpack_require__(23);
-module.exports = function(key){
+var shared = __webpack_require__(39)('keys');
+var uid = __webpack_require__(23);
+module.exports = function (key) {
   return shared[key] || (shared[key] = uid(key));
 };
 
+
 /***/ }),
-/* 263 */
+/* 271 */
 /***/ (function(module, exports) {
 
 // IE 8- don't enum bug keys
@@ -5321,20 +5339,23 @@ module.exports = (
   'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
 ).split(',');
 
+
 /***/ }),
-/* 264 */
+/* 272 */
 /***/ (function(module, exports) {
 
 exports.f = Object.getOwnPropertySymbols;
 
+
 /***/ }),
-/* 265 */
+/* 273 */
 /***/ (function(module, exports) {
 
 exports.f = {}.propertyIsEnumerable;
 
+
 /***/ }),
-/* 266 */
+/* 274 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5345,7 +5366,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.listenMessagesFromCreative = listenMessagesFromCreative;
 
-var _events = __webpack_require__(8);
+var _events = __webpack_require__(9);
 
 var _events2 = _interopRequireDefault(_events);
 
@@ -5435,7 +5456,7 @@ function resizeRemoteCreative(_ref) {
 }
 
 /***/ }),
-/* 267 */
+/* 275 */
 /***/ ((function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5500,17 +5521,17 @@ exports.dfpAdserver = function (options, urlComponents) {
 
 /***/ }))
 /******/ ]);
-pbjsChunk([84],{
+pbjsChunk([87],{
 
-/***/ 64:
+/***/ 66:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(65);
+module.exports = __webpack_require__(67);
 
 
 /***/ }),
 
-/***/ 65:
+/***/ 67:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5746,18 +5767,18 @@ module.exports = AdyoulikeAdapter;
 
 /***/ })
 
-},[64]);
-pbjsChunk([83],{
+},[66]);
+pbjsChunk([85],{
 
-/***/ 66:
+/***/ 70:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(67);
+module.exports = __webpack_require__(71);
 
 
 /***/ }),
 
-/***/ 67:
+/***/ 71:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6111,18 +6132,18 @@ module.exports = AolAdapter;
 
 /***/ })
 
-},[66]);
-pbjsChunk([82],{
+},[70]);
+pbjsChunk([84],{
 
-/***/ 70:
+/***/ 74:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(71);
+module.exports = __webpack_require__(75);
 
 
 /***/ }),
 
-/***/ 71:
+/***/ 75:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6181,6 +6202,7 @@ var NATIVE_MAPPING = {
   },
   sponsoredBy: 'sponsored_by'
 };
+var SOURCE = 'pbjs';
 
 /**
  * Bidder adapter for /ut endpoint. Given the list of all ad unit tag IDs,
@@ -6298,7 +6320,14 @@ function AppnexusAstAdapter() {
     }));
 
     if (!utils.isEmpty(tags)) {
-      var payloadJson = { tags: [].concat(_toConsumableArray(tags)), user: userObj };
+      var payloadJson = {
+        tags: [].concat(_toConsumableArray(tags)),
+        user: userObj,
+        sdk: {
+          source: SOURCE,
+          version: '0.28.0'
+        }
+      };
       if (member > 0) {
         payloadJson.member_id = member;
       }
@@ -6552,278 +6581,18 @@ module.exports = AppnexusAstAdapter;
 
 /***/ })
 
-},[70]);
+},[74]);
 pbjsChunk([81],{
 
-/***/ 72:
+/***/ 80:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(73);
+module.exports = __webpack_require__(81);
 
 
 /***/ }),
 
-/***/ 73:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _utils = __webpack_require__(0);
-
-var _adaptermanager = __webpack_require__(1);
-
-var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var CONSTANTS = __webpack_require__(4);
-var utils = __webpack_require__(0);
-var adloader = __webpack_require__(5);
-var bidmanager = __webpack_require__(2);
-var bidfactory = __webpack_require__(3);
-var Adapter = __webpack_require__(7)['default'];
-
-var AppNexusAdapter;
-AppNexusAdapter = function AppNexusAdapter() {
-  var baseAdapter = new Adapter('appnexus');
-  var usersync = false;
-
-  baseAdapter.callBids = function (params) {
-    // var bidCode = baseAdapter.getBidderCode();
-
-    var anArr = params.bids;
-
-    // var bidsCount = anArr.length;
-
-    // set expected bids count for callback execution
-    // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
-
-    for (var i = 0; i < anArr.length; i++) {
-      var bidRequest = anArr[i];
-      var callbackId = bidRequest.bidId;
-      adloader.loadScript(buildJPTCall(bidRequest, callbackId));
-
-      // store a reference to the bidRequest from the callback id
-      // bidmanager.pbCallbackMap[callbackId] = bidRequest;
-    }
-  };
-
-  function buildJPTCall(bid, callbackId) {
-    // determine tag params
-    var placementId = utils.getBidIdParameter('placementId', bid.params);
-
-    // memberId will be deprecated, use member instead
-    var memberId = utils.getBidIdParameter('memberId', bid.params);
-    var member = utils.getBidIdParameter('member', bid.params);
-    var inventoryCode = utils.getBidIdParameter('invCode', bid.params);
-    var query = utils.getBidIdParameter('query', bid.params);
-    var referrer = utils.getBidIdParameter('referrer', bid.params);
-    var altReferrer = utils.getBidIdParameter('alt_referrer', bid.params);
-    var jptCall = '//ib.adnxs.com/jpt?';
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', 'pbjs.handleAnCB');
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
-    jptCall = utils.tryAppendQueryString(jptCall, 'psa', '0');
-    jptCall = utils.tryAppendQueryString(jptCall, 'id', placementId);
-    if (member) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member', member);
-    } else if (memberId) {
-      jptCall = utils.tryAppendQueryString(jptCall, 'member', memberId);
-      utils.logMessage('appnexus.callBids: "memberId" will be deprecated soon. Please use "member" instead');
-    }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'code', inventoryCode);
-    jptCall = utils.tryAppendQueryString(jptCall, 'traffic_source_code', utils.getBidIdParameter('trafficSourceCode', bid.params));
-
-    // sizes takes a bit more logic
-    var sizeQueryString = '';
-    var parsedSizes = utils.parseSizesInput(bid.sizes);
-
-    // combine string into proper querystring for impbus
-    var parsedSizesLength = parsedSizes.length;
-    if (parsedSizesLength > 0) {
-      // first value should be "size"
-      sizeQueryString = 'size=' + parsedSizes[0];
-      if (parsedSizesLength > 1) {
-        // any subsequent values should be "promo_sizes"
-        sizeQueryString += '&promo_sizes=';
-        for (var j = 1; j < parsedSizesLength; j++) {
-          sizeQueryString += parsedSizes[j] += ',';
-        }
-
-        // remove trailing comma
-        if (sizeQueryString && sizeQueryString.charAt(sizeQueryString.length - 1) === ',') {
-          sizeQueryString = sizeQueryString.slice(0, sizeQueryString.length - 1);
-        }
-      }
-    }
-
-    if (sizeQueryString) {
-      jptCall += sizeQueryString + '&';
-    }
-
-    // this will be deprecated soon
-    var targetingParams = utils.parseQueryStringParameters(query);
-
-    if (targetingParams) {
-      // don't append a & here, we have already done it in parseQueryStringParameters
-      jptCall += targetingParams;
-    }
-
-    // append custom attributes:
-    var paramsCopy = _extends({}, bid.params);
-
-    // delete attributes already used
-    delete paramsCopy.placementId;
-    delete paramsCopy.memberId;
-    delete paramsCopy.invCode;
-    delete paramsCopy.query;
-    delete paramsCopy.referrer;
-    delete paramsCopy.alt_referrer;
-    delete paramsCopy.member;
-
-    // get the reminder
-    var queryParams = utils.parseQueryStringParameters(paramsCopy);
-
-    // append
-    if (queryParams) {
-      jptCall += queryParams;
-    }
-
-    // append referrer
-    if (referrer === '') {
-      referrer = utils.getTopWindowUrl();
-    }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'referrer', referrer);
-    jptCall = utils.tryAppendQueryString(jptCall, 'alt_referrer', altReferrer);
-
-    // remove the trailing "&"
-    if (jptCall.lastIndexOf('&') === jptCall.length - 1) {
-      jptCall = jptCall.substring(0, jptCall.length - 1);
-    }
-
-    // @if NODE_ENV='debug'
-    utils.logMessage('jpt request built: ' + jptCall);
-
-    // @endif
-
-    // append a timer here to track latency
-    bid.startTime = new Date().getTime();
-
-    return jptCall;
-  }
-
-  // expose the callback to the global object:
-  pbjs.handleAnCB = function (jptResponseObj) {
-    var bidCode;
-
-    if (jptResponseObj && jptResponseObj.callback_uid) {
-      var responseCPM;
-      var id = jptResponseObj.callback_uid;
-      var placementCode = '';
-      var bidObj = (0, _utils.getBidRequest)(id);
-      if (bidObj) {
-        bidCode = bidObj.bidder;
-
-        placementCode = bidObj.placementCode;
-
-        // set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
-      }
-
-      // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for ad ID: ' + id);
-
-      // @endif
-      var bid = [];
-      if (jptResponseObj.result && jptResponseObj.result.cpm && jptResponseObj.result.cpm !== 0) {
-        responseCPM = parseInt(jptResponseObj.result.cpm, 10);
-
-        // CPM response from /jpt is dollar/cent multiplied by 10000
-        // in order to avoid using floats
-        // switch CPM to "dollar/cent"
-        responseCPM = responseCPM / 10000;
-
-        // store bid response
-        // bid status is good (indicating 1)
-        var adId = jptResponseObj.result.creative_id;
-        bid = bidfactory.createBid(1, bidObj);
-        bid.creative_id = adId;
-        bid.bidderCode = bidCode;
-        bid.cpm = responseCPM;
-        bid.adUrl = jptResponseObj.result.ad;
-        bid.width = jptResponseObj.result.width;
-        bid.height = jptResponseObj.result.height;
-        bid.dealId = jptResponseObj.result.deal_id;
-
-        bidmanager.addBidResponse(placementCode, bid);
-      } else {
-        // no response data
-        // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-
-        // @endif
-        // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bid);
-      }
-
-      if (!usersync) {
-        var iframe = utils.createInvisibleIframe();
-        iframe.src = '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html';
-        try {
-          document.body.appendChild(iframe);
-        } catch (error) {
-          utils.logError(error);
-        }
-        usersync = true;
-      }
-    } else {
-      // no response data
-      // @if NODE_ENV='debug'
-      utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-
-      // @endif
-    }
-  };
-
-  return _extends(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    buildJPTCall: buildJPTCall
-  });
-};
-
-_adaptermanager2['default'].registerBidAdapter(new AppNexusAdapter(), 'appnexus');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'brealtime');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'pagescience');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'defymedia');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'gourmetads');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'matomy');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'featureforward');
-_adaptermanager2['default'].aliasBidAdapter('appnexus', 'oftmedia');
-
-module.exports = AppNexusAdapter;
-
-/***/ })
-
-},[72]);
-pbjsChunk([79],{
-
-/***/ 76:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(77);
-
-
-/***/ }),
-
-/***/ 77:
+/***/ 81:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7118,10 +6887,18 @@ module.exports = AudienceNetwork;
 
 /***/ })
 
-},[76]);
-pbjsChunk([69],{
+},[80]);
+pbjsChunk([70],{
 
-/***/ 100:
+/***/ 105:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(106);
+
+
+/***/ }),
+
+/***/ 106:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7186,28 +6963,20 @@ adaptermanager.registerBidAdapter(new DistrictmAdaptor(), 'districtmDMX');
 
 module.exports = DistrictmAdaptor;
 
-/***/ }),
-
-/***/ 99:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(100);
-
-
 /***/ })
 
-},[99]);
+},[105]);
 pbjsChunk([57],{
 
-/***/ 123:
+/***/ 131:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(124);
+module.exports = __webpack_require__(132);
 
 
 /***/ }),
 
-/***/ 124:
+/***/ 132:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7513,11 +7282,24 @@ var cygnus_index_start = function cygnus_index_start() {
     this.siteID = siteID;
     this.impressions = [];
     this._parseFnName = undefined;
+
+    // Get page URL
+    this.sitePage = undefined;
+    try {
+      this.sitePage = utils.getTopWindowUrl();
+    } catch (e) {}
+    // Fallback to old logic if utils.getTopWindowUrl() fails to return site.page
+    if (typeof this.sitePage === 'undefined' || this.sitePage === '') {
+      if (top === self) {
+        this.sitePage = location.href;
+      } else {
+        this.sitePage = document.referrer;
+      }
+    }
+
     if (top === self) {
-      this.sitePage = location.href;
       this.topframe = 1;
     } else {
-      this.sitePage = document.referrer;
       this.topframe = 0;
     }
 
@@ -7651,7 +7433,7 @@ var cygnus_index_start = function cygnus_index_start() {
     } else {
       scriptSrc = utils.getTopWindowLocation().protocol === 'http:' ? 'http://as.casalemedia.com' : 'https://as-sec.casalemedia.com';
     }
-    var prebidVersion = encodeURIComponent('0.28.0-pre');
+    var prebidVersion = encodeURIComponent('0.28.0');
     scriptSrc += '/cygnus?v=7&fn=cygnus_index_parse_res&s=' + this.siteID + '&r=' + jsonURI + '&pid=pb' + prebidVersion;
     if (typeof this.timeoutDelay === 'number' && this.timeoutDelay % 1 === 0 && this.timeoutDelay >= 0) {
       scriptSrc += '&t=' + this.timeoutDelay;
@@ -8359,222 +8141,18 @@ module.exports = IndexExchangeAdapter;
 
 /***/ })
 
-},[123]);
-pbjsChunk([45],{
-
-/***/ 149:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(150);
-
-
-/***/ }),
-
-/***/ 150:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-var bidfactory = __webpack_require__(3);
-var bidmanager = __webpack_require__(2);
-var ajax = __webpack_require__(6);
-var CONSTANTS = __webpack_require__(4);
-var utils = __webpack_require__(0);
-var adaptermanager = __webpack_require__(1);
-
-function MobfoxAdapter() {
-  var BIDDER_CODE = 'mobfox';
-  var BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
-
-  // request
-  function buildQueryStringFromParams(params) {
-    for (var key in params) {
-      if (params.hasOwnProperty(key)) {
-        if (params[key] === undefined) {
-          delete params[key];
-        } else {
-          params[key] = encodeURIComponent(params[key]);
-        }
-      }
-    }
-
-    return utils._map(Object.keys(params), (function (key) {
-      return key + '=' + params[key];
-    })).join('&');
-  }
-
-  function buildBidRequest(bid) {
-    var bidParams = bid.params;
-
-    var requestParams = {
-      // -------------------- Mandatory Parameters ------------------
-      rt: bidParams.rt || 'api-fetchip',
-      r_type: bidParams.r_type || 'banner',
-      r_resp: bidParams.r_resp || 'json', // string | vast20
-      //  i: bidParams.i || undefined , // string | 69.197.148.18
-      s: bidParams.s, // string | 80187188f458cfde788d961b6882fd53
-      u: bidParams.u || window.navigator.userAgent, // string
-
-      // ------------------- Global Parameters ----------------------
-      adspace_width: bidParams.adspace_width || bid.sizes[0][0], // integer | 320
-      adspace_height: bidParams.adspace_height || bid.sizes[0][1], // integer | 48
-      r_floor: bidParams.r_floor || undefined, // 0.8
-
-      o_andadvid: bidParams.o_andadvid || undefined, // 'c6292267-56ad-4326-965d-deef6fcd5er9'
-      longitude: bidParams.longitude || undefined, // 12.12
-      latitude: bidParams.latitude || undefined, // 280.12
-      demo_age: bidParams.demo_age || undefined, // 1978
-
-      // ------------------- banner / interstitial ----------------------
-      adspace_strict: bidParams.adspace_strict || undefined,
-
-      // ------------------- interstitial / video ----------------------
-      imp_instl: bidParams.imp_instl || undefined, // integer | 1
-
-      // ------------------- mraid ----------------------
-      c_mraid: bidParams.c_mraid || undefined, // integer | 1
-
-      // ------------------- video ----------------------
-      v_dur_min: bidParams.v_dur_min || undefined, // integer | 0
-      v_dur_max: bidParams.v_dur_max || undefined, // integer | 999
-      v_autoplay: bidParams.v_autoplay || undefined, // integer | 1
-      v_startmute: bidParams.v_startmute || undefined, // integer | 0
-      v_rewarded: bidParams.v_rewarded || undefined, // integer | 0
-      v_api: bidParams.v_api || undefined, // string | vpaid20
-      n_ver: bidParams.n_ver || undefined, //
-      n_adunit: bidParams.n_adunit || undefined, //
-      n_layout: bidParams.n_layout || undefined, //
-      n_context: bidParams.n_context || undefined, //
-      n_plcmttype: bidParams.n_plcmttype || undefined, //
-      n_img_icon_req: bidParams.n_img_icon_req || undefined, // boolean0
-      n_img_icon_size: bidParams.n_img_icon_size || undefined, // string80
-      n_img_large_req: bidParams.n_img_large_req || undefined, // boolean0
-      n_img_large_w: bidParams.n_img_large_w || undefined, // integer1200
-      n_img_large_h: bidParams.n_img_large_h || undefined, // integer627
-      n_title_req: bidParams.n_title_req || undefined, // boolean0
-      n_title_len: bidParams.n_title_len || undefined, // string25
-      n_desc_req: bidParams.n_desc_req || undefined, // boolean0
-      n_desc_len: bidParams.n_desc_len || undefined, // string140
-      n_rating_req: bidParams.n_rating_req || undefined
-    };
-
-    return requestParams;
-  }
-
-  function sendBidRequest(bid) {
-    var requestParams = buildBidRequest(bid);
-    var queryString = buildQueryStringFromParams(requestParams);
-
-    ajax.ajax(BID_REQUEST_BASE_URL + '?' + queryString, {
-      success: function success(resp, xhr) {
-        if (xhr.getResponseHeader('Content-Type') == 'application/json') {
-          try {
-            resp = JSON.parse(resp);
-          } catch (e) {
-            resp = { error: resp };
-          }
-        }
-        onBidResponse({
-          data: resp,
-          xhr: xhr
-        }, bid);
-      },
-      error: function error(err) {
-        if (xhr.getResponseHeader('Content-Type') == 'application/json') {
-          try {
-            err = JSON.parse(err);
-          } catch (e) {}
-          ;
-        }
-        onBidResponseError(bid, [err]);
-      }
-    });
-  }
-
-  // response
-  function onBidResponseError(bid, err) {
-    utils.logError.apply(utils, ['Bid Response Error', bid].concat(_toConsumableArray(err)));
-    var bidResponse = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  function onBidResponse(bidderResponse, bid) {
-    // transform the response to a valid prebid response
-    try {
-      var bidResponse = transformResponse(bidderResponse, bid);
-      bidmanager.addBidResponse(bid.placementCode, bidResponse);
-    } catch (e) {
-      onBidResponseError(bid, [e]);
-    }
-  }
-
-  function transformResponse(bidderResponse, bid) {
-    var responseBody = bidderResponse.data;
-
-    // Validate Request
-    var err = responseBody.error;
-    if (err) {
-      throw err;
-    }
-
-    var htmlString = responseBody.request && responseBody.request.htmlString;
-    if (!htmlString) {
-      throw ['htmlString is missing', responseBody];
-    }
-
-    var cpm = void 0;
-    var cpmHeader = bidderResponse.xhr.getResponseHeader('X-Pricing-CPM');
-    try {
-      cpm = Number(cpmHeader);
-    } catch (e) {
-      throw ['Invalid CPM value:', cpmHeader];
-    }
-
-    // Validations passed - Got bid
-    var bidResponse = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
-
-    bidResponse.ad = htmlString;
-    bidResponse.cpm = cpm;
-
-    bidResponse.width = bid.sizes[0][0];
-    bidResponse.height = bid.sizes[0][1];
-
-    return bidResponse;
-  }
-
-  // prebid api
-  function callBids(params) {
-    var bids = params.bids || [];
-    bids.forEach(sendBidRequest);
-  }
-
-  return {
-    callBids: callBids
-  };
-}
-
-adaptermanager.registerBidAdapter(new MobfoxAdapter(), 'mobfox');
-module.exports = MobfoxAdapter;
-
-/***/ })
-
-},[149]);
+},[131]);
 pbjsChunk([31],{
 
-/***/ 183:
+/***/ 191:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(184);
+module.exports = __webpack_require__(192);
 
 
 /***/ }),
 
-/***/ 184:
+/***/ 192:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9016,7 +8594,7 @@ function syncEmily(hasSynced) {
   }
 
   var defaultUserSyncConfig = {
-    enabled: true,
+    enabled: false,
     delay: 5000
   };
   var iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
@@ -9048,18 +8626,18 @@ module.exports = RubiconAdapter;
 
 /***/ })
 
-},[183]);
+},[191]);
 pbjsChunk([24],{
 
-/***/ 199:
+/***/ 207:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(200);
+module.exports = __webpack_require__(208);
 
 
 /***/ }),
 
-/***/ 200:
+/***/ 208:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9222,18 +8800,18 @@ module.exports = SovrnAdapter;
 
 /***/ })
 
-},[199]);
+},[207]);
 pbjsChunk([17],{
 
-/***/ 213:
+/***/ 221:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(214);
+module.exports = __webpack_require__(222);
 
 
 /***/ }),
 
-/***/ 214:
+/***/ 222:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9279,7 +8857,7 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
     tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.28.0-pre');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '0.28.0');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
     tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
@@ -9395,5 +8973,5 @@ module.exports = TripleLiftAdapter;
 
 /***/ })
 
-},[213]);
+},[221]);
 pbjs.processQueue();
