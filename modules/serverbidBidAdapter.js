@@ -5,7 +5,8 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
-const ServerBidAdapter = function ServerBidAdapter() {
+var ServerBidAdapter;
+ServerBidAdapter = function ServerBidAdapter() {
   const baseAdapter = new Adapter('serverbid');
 
   const CONFIG = {
@@ -15,7 +16,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
     },
     'connectad': {
       'BASE_URI': 'https://i.connectad.io/api/v2',
-      'SMARTSYNC_BASE_URI': 'https://s.connectad.io/ss'
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
     }
   };
 
@@ -186,9 +187,10 @@ const ServerBidAdapter = function ServerBidAdapter() {
 
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
-  return {
-    callBids: baseAdapter.callBids
-  };
+  return Object.assign(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode
+  });
 };
 
 ServerBidAdapter.createNew = function() {
@@ -197,6 +199,5 @@ ServerBidAdapter.createNew = function() {
 
 adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 adaptermanager.aliasBidAdapter('serverbid', 'connectad');
-adaptermanager.aliasBidAdapter('serverbid', 'oft-media');
 
 module.exports = ServerBidAdapter;
