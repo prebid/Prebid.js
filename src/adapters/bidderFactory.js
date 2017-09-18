@@ -1,9 +1,11 @@
 import Adapter from 'src/adapter';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
 import { ajax } from 'src/ajax';
 import bidmanager from 'src/bidmanager';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
+import { userSync } from 'src/userSync';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution } from 'src/utils';
 
@@ -162,9 +164,30 @@ export function newBidder(spec) {
           });
       }
 
+      // After all the responses have come back, fill up the "no bid" bids and
+      // register any required usersync pixels.
+      const responses = [];
+      function afterAllResponses() {
+        fillNoBids();
+        if (spec.getUserSyncs) {
+          let syncs = spec.getUserSyncs({
+            iframeEnabled: config.getConfig('userSync.iframeEnabled'),
+            pixelEnabled: config.getConfig('userSync.pixelEnabled'),
+          }, responses);
+          if (syncs) {
+            if (!Array.isArray(syncs)) {
+              syncs = [syncs];
+            }
+            syncs.forEach((sync) => {
+              userSync.registerSync(sync.type, spec.code, sync.url)
+            });
+          }
+        }
+      }
+
       const bidRequests = bidderRequest.bids.filter(filterAndWarn);
       if (bidRequests.length === 0) {
-        fillNoBids();
+        afterAllResponses();
         return;
       }
       const bidRequestMap = {};
@@ -174,25 +197,11 @@ export function newBidder(spec) {
 
       let requests = spec.buildRequests(bidRequests);
       if (!requests || requests.length === 0) {
-        fillNoBids();
+        afterAllResponses();
         return;
       }
       if (!Array.isArray(requests)) {
         requests = [requests];
-      }
-
-      // After all the responses have come back, fill up the "no bid" bids and
-      // register any required usersync pixels.
-      const responses = [];
-      function afterAllResponses() {
-        fillNoBids();
-
-        if (spec.getUserSyncs) {
-          // TODO: Before merge, replace this empty object with the real config values.
-          // Then register them with the UserSync pool. This is waiting on the UserSync PR
-          // to be merged first, though.
-          spec.getUserSyncs({ }, responses);
-        }
       }
 
       // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the

@@ -4,6 +4,7 @@ import adaptermanager from 'src/adaptermanager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
 import { STATUS } from 'src/constants';
+import { userSync } from 'src/userSync'
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -58,6 +59,8 @@ describe('bidders created by newBidder', () => {
 
     it('should handle bad bid requests gracefully', () => {
       const bidder = newBidder(spec);
+
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids({});
       bidder.callBids({ bids: 'nothing useful' });
@@ -188,19 +191,39 @@ describe('bidders created by newBidder', () => {
 
       expect(ajaxStub.calledTwice).to.equal(true);
     });
+
+    it('should add bids for each placement code if no requests are given', () => {
+      const bidder = newBidder(spec);
+
+      spec.areParamsValid.returns(true);
+      spec.buildRequests.returns([]);
+      spec.interpretResponse.returns([]);
+      spec.getUserSyncs.returns([]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
+      const placementsWithBids =
+        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
+      expect(placementsWithBids).to.contain('mock/placement');
+      expect(placementsWithBids).to.contain('mock/placement2');
+    });
   });
 
   describe('when the ajax call succeeds', () => {
     let ajaxStub;
+    let userSyncStub;
 
     beforeEach(() => {
       ajaxStub = sinon.stub(ajax, 'ajax', function(url, callbacks) {
         callbacks.success('response body');
       });
+      userSyncStub = sinon.stub(userSync, 'registerSync')
     });
 
     afterEach(() => {
       ajaxStub.restore();
+      userSyncStub.restore();
     });
 
     it('should call spec.interpretResponse() with the response body content', () => {
@@ -212,6 +235,7 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
@@ -235,6 +259,7 @@ describe('bidders created by newBidder', () => {
           data: {}
         },
       ]);
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
@@ -258,6 +283,8 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      spec.getUserSyncs.returns([]);
+
       spec.interpretResponse.returns(bid);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
@@ -278,11 +305,30 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
       expect(spec.getUserSyncs.calledOnce).to.equal(true);
       expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal(['response body']);
+    });
+
+    it('should register usersync pixels', () => {
+      const bidder = newBidder(spec);
+
+      spec.areParamsValid.returns(false);
+      spec.buildRequests.returns([]);
+      spec.getUserSyncs.returns([{
+        type: 'iframe',
+        url: 'usersync.com'
+      }]);
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(userSyncStub.called).to.equal(true);
+      expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
+      expect(userSyncStub.firstCall.args[1]).to.equal(spec.code);
+      expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
     });
   });
 
@@ -308,6 +354,7 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
@@ -324,6 +371,7 @@ describe('bidders created by newBidder', () => {
         data: {}
       });
       spec.interpretResponse.returns([]);
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
@@ -343,6 +391,7 @@ describe('bidders created by newBidder', () => {
         url: 'test.url.com',
         data: {}
       });
+      spec.getUserSyncs.returns([]);
 
       bidder.callBids(MOCK_BIDS_REQUEST);
 
