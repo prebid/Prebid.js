@@ -12,8 +12,11 @@ biddercode: c1x
 
 biddercode_longer_than_12: false
 
-
 ---
+
+### Note:
+
+The C1X Header Bidding adaptor requires approval from the C1X team. Please reach out to  <header-bidding@c1exchange.com> for more information.
 
 ### bid params
 
