@@ -75,8 +75,6 @@ export function newUserSync(userSyncDependencies) {
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
       utils.triggerPixel(trackingPixelUrl);
-      // track that bidder has been synced
-      setBidderSynced(bidderName);
     });
   }
 
@@ -95,8 +93,6 @@ export function newUserSync(userSyncDependencies) {
       utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
       utils.insertUserSyncIframe(iframeUrl);
-      // track that bidder has been synced
-      setBidderSynced(bidderName);
     });
   }
 
