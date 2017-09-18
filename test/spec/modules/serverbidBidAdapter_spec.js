@@ -3,7 +3,8 @@ import Adapter from 'modules/serverbidBidAdapter';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 
-const ENDPOINT = '//e.serverbid.com/api/v2';
+const ENDPOINT = 'https://e.serverbid.com/api/v2';
+const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
 const REQUEST = {
   'bidderCode': 'serverbid',
@@ -37,15 +38,15 @@ const RESPONSE = {
       'creativeId': 1950991,
       'flightId': 2788300,
       'campaignId': 542982,
-      'clickUrl': 'http://e.serverbid.com/r',
-      'impressionUrl': 'http://e.serverbid.com/i.gif',
+      'clickUrl': 'https://e.serverbid.com/r',
+      'impressionUrl': 'https://e.serverbid.com/i.gif',
       'contents': [{
         'type': 'html',
         'body': '<html></html>',
         'data': {
           'height': 90,
           'width': 728,
-          'imageUrl': 'http://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+          'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
           'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
         },
         'template': 'image'
@@ -134,6 +135,69 @@ describe('serverbidAdapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm');
       expect(response.cpm).to.be.above(0);
+    });
+
+    describe('with SMARTSYNC=true', () => {
+      it('registers bids when callback is called promptly by smartsync', (done) => {
+        window.SMARTSYNC = true;
+        server.respondWith(JSON.stringify(RESPONSE));
+
+        adapter.callBids(REQUEST);
+
+        setTimeout(() => {
+          window[SMARTSYNC_CALLBACK]();
+          server.respond();
+          sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+          const response = bidmanager.addBidResponse.firstCall.args[1];
+          expect(response).to.have.property('statusMessage', 'Bid available');
+          expect(response).to.have.property('cpm');
+          expect(response.cpm).to.be.above(0);
+          window.SMARTSYNC = false;
+          done();
+        }, 0);
+      });
+
+      it('registers bids when callback is never called by smartsync', (done) => {
+        window.SMARTSYNC = true;
+        window.SMARTSYNC_TIMEOUT = 100;
+
+        server.respondWith(JSON.stringify(RESPONSE));
+
+        adapter.callBids(REQUEST);
+        setTimeout(() => {
+          server.respond();
+          sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+          const response = bidmanager.addBidResponse.firstCall.args[1];
+          expect(response).to.have.property('statusMessage', 'Bid available');
+          expect(response).to.have.property('cpm');
+          expect(response.cpm).to.be.above(0);
+          window.SMARTSYNC = false;
+          done();
+        }, window.SMARTSYNC_TIMEOUT * 2);
+      });
+
+      it('registers bids when callback is called (but late) by smartsync', (done) => {
+        window.SMARTSYNC = true;
+        window.SMARTSYNC_TIMEOUT = 100;
+
+        server.respondWith(JSON.stringify(RESPONSE));
+
+        adapter.callBids(REQUEST);
+        setTimeout(() => {
+          window[SMARTSYNC_CALLBACK]();
+          server.respond();
+          sinon.assert.calledOnce(bidmanager.addBidResponse);
+
+          const response = bidmanager.addBidResponse.firstCall.args[1];
+          expect(response).to.have.property('statusMessage', 'Bid available');
+          expect(response).to.have.property('cpm');
+          expect(response.cpm).to.be.above(0);
+          window.SMARTSYNC = false;
+          done();
+        }, window.SMARTSYNC_TIMEOUT * 2);
+      });
     });
 
     it('handles nobid responses', () => {

@@ -157,6 +157,8 @@ export function parseGPTSingleSizeArray(singleSize) {
 exports.getTopWindowLocation = function () {
   let location;
   try {
+    // force an exception in x-domain enviornments. #1509
+    window.top.location.toString();
     location = window.top.location;
   } catch (e) {
     location = window.location;
@@ -676,4 +678,21 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
+}
+
+/**
+ * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+ * @param {object} obj The object containing the values you would like to access.
+ * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+ * @returns {*} The value found at the specified object path, or undefined if path is not found.
+ */
+export function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (let i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
 }

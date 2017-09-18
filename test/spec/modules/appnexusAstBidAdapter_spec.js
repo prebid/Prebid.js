@@ -129,6 +129,17 @@ describe('AppNexusAdapter', () => {
       delete REQUEST.bids[0].params.user;
     });
 
+    it('should add source and verison to the tag', () => {
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody);
+      expect(request.sdk).to.exist;
+      expect(request.sdk).to.deep.equal({
+        source: 'pbjs',
+        version: '$prebid.version$'
+      });
+    });
+
     it('attaches native params to the request', () => {
       REQUEST.bids[0].mediaType = 'native';
       REQUEST.bids[0].nativeParams = {
