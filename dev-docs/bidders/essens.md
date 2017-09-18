@@ -1,7 +1,7 @@
 ---
 layout: bidder
-title: AdBund
-description: Prebid AdBund Bidder Adaptor
+title: Essens
+description: Prebid Essens Bidder Adaptor
 
 top_nav_section: dev_docs
 nav_section: reference
