@@ -33,6 +33,20 @@ describe('config API', () => {
     expect(getConfig('baz')).to.equal('qux');
   });
 
+  it('sets multiple config properties', () => {
+    setConfig({ foo: 'bar' });
+    setConfig({ biz: 'buz' });
+    var config = getConfig();
+    expect(config.foo).to.equal('bar');
+    expect(config.biz).to.equal('buz');
+  });
+
+  it('overwrites existing config properties', () => {
+    setConfig({ foo: {biz: 'buz'} });
+    setConfig({ foo: {baz: 'qux'} });
+    expect(getConfig('foo')).to.eql({baz: 'qux'});
+  });
+
   it('sets debugging', () => {
     setConfig({ debug: true });
     expect(getConfig('debug')).to.be.true;
@@ -64,6 +78,15 @@ describe('config API', () => {
   it('gets legacy publisherDomain in deprecation window', () => {
     $$PREBID_GLOBAL$$.publisherDomain = 'ad.example.com';
     expect(getConfig('publisherDomain')).to.equal('ad.example.com');
+  });
+
+  it('gets default userSync config', () => {
+    expect(getConfig('userSync')).to.eql({
+      syncEnabled: true,
+      pixelEnabled: true,
+      syncsPerBidder: 5,
+      syncDelay: 3000
+    });
   });
 
   it('has subscribe functionality for adding listeners to config updates', () => {
