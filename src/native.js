@@ -1,4 +1,4 @@
-import { getBidRequest, logError, triggerPixel } from './utils';
+import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
 
 export const nativeAdapters = [];
 
@@ -59,7 +59,11 @@ function typeIsSupported(type) {
  * TODO: abstract this and the video helper functions into general
  * adunit validation helper functions
  */
-export const nativeAdUnit = adUnit => adUnit.mediaType === 'native';
+export const nativeAdUnit = adUnit => {
+  const mediaType = adUnit.mediaType === 'native';
+  const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
+  return mediaType || mediaTypes;
+}
 export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;

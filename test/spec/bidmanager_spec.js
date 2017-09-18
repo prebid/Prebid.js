@@ -549,10 +549,11 @@ describe('bidmanager.js', function () {
       sinon.stub(utils, 'getBidRequest', () => ({
         start: timestamp(),
         bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
+        mediaTypes: {
+          native: {
+            title: {required: true},
+          }
         },
-        mediaType: 'native',
       }));
 
       const bid = Object.assign({},
@@ -575,10 +576,11 @@ describe('bidmanager.js', function () {
       const bidRequest = () => ({
         start: timestamp(),
         bidder: 'appnexusAst',
-        nativeParams: {
-          title: {'required': true},
+        mediaTypes: {
+          native: {
+            title: {required: true},
+          }
         },
-        mediaType: 'native',
       });
       sinon.stub(utils, 'getBidRequest', bidRequest);
       sinon.stub(utils, 'getBidderRequest', bidRequest);
