@@ -26,6 +26,7 @@ var optimizejs = require('gulp-optimize-js');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
+var through = require('through2');
 var fs = require('fs');
 
 var prebid = require('./package.json');
@@ -52,8 +53,25 @@ gulp.task('clean', function () {
     .pipe(clean());
 });
 
-function bundle(dev) {
-  var modules = helpers.getArgModules(),
+function gulpBundle(dev) {
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+function nodeBundle(modules) {
+  return new Promise((resolve, reject) => {
+    bundle(false, modules)
+      .on('error', (err) => {
+        reject(err);
+      })
+      .pipe(through.obj(function(file, enc, done) {
+        resolve(file.contents.toString(enc));
+        done();
+      }));
+  });
+}
+
+function bundle(dev, moduleArr) {
+  var modules = moduleArr || helpers.getArgModules(),
       allModules = helpers.getModuleNames(modules);
 
   if(modules.length === 0) {
@@ -82,8 +100,7 @@ function bundle(dev) {
         global: prebid.globalVarName
       }
     )))
-    .pipe(gulpif(dev, sourcemaps.write('.')))
-    .pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+    .pipe(gulpif(dev, sourcemaps.write('.')));
 }
 
 // Workaround for incompatibility between Karma & gulp callbacks.
@@ -98,9 +115,13 @@ function newKarmaCallback(done) {
   }
 }
 
-gulp.task('build-bundle-dev', ['devpack'], bundle.bind(null, true));
-gulp.task('build-bundle-prod', ['webpack'], bundle.bind(null, false));
-gulp.task('bundle', bundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+gulp.task('build-bundle-dev', ['devpack'], gulpBundle.bind(null, true));
+gulp.task('build-bundle-prod', ['webpack'], gulpBundle.bind(null, false));
+gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+gulp.task('bundle-to-stdout', function() {
+  nodeBundle().then(file => console.log(file));
+});
 
 gulp.task('devpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
@@ -275,3 +296,5 @@ gulp.task('build-postbid', function() {
     .pipe(uglify())
     .pipe(gulp.dest('build/dist'));
 });
+
+module.exports = nodeBundle;
