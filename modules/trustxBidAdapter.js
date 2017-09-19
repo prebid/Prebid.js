@@ -1,14 +1,15 @@
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader');
-var adaptermanager = require('src/adaptermanager');
+const utils = require('src/utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const adloader = require('src/adloader');
+const adaptermanager = require('src/adaptermanager');
+const CONSTANTS = require('src/constants.json');
 
 var TrustxAdapter = function TrustxAdapter() {
-  var bidderCode = 'trustx';
-  var reqHost = '//sofia.trustx.org';
-  var reqPath = '/hb?';
-  var LOG_ERROR_MESS = {
+  const bidderCode = 'trustx';
+  const reqHost = '//sofia.trustx.org';
+  const reqPath = '/hb?';
+  const LOG_ERROR_MESS = {
     noAuid: 'Bid from response has no auid parameter - ',
     noAdm: 'Bid from response has no adm parameter - ',
     noBid: 'Array of bid objects is empty',
@@ -33,13 +34,10 @@ var TrustxAdapter = function TrustxAdapter() {
   function _sendRequest(auids, placementMap) {
     var query = [];
     var path = reqPath;
-    var needToSendStat = Math.random() < 0.1;
-    $$PREBID_GLOBAL$$.needToSendTrustxStat = needToSendStat;
     query.push('u=' + encodeURIComponent(location.href));
     query.push('auids=' + encodeURIComponent(auids.join(',')));
     query.push('cb=' + _makeHandler(auids, placementMap));
     query.push('pt=' + (window.globalPrebidTrustxPriceType === 'net' ? 'net' : 'gross'));
-    query.push('hbstat=' + (needToSendStat ? '1' : '0'));
 
     adloader.loadScript(reqHost + path + query.join('&'));
   }
@@ -86,9 +84,9 @@ var TrustxAdapter = function TrustxAdapter() {
   function _forEachPlacement(error, bid, placementCode) {
     var bidObject;
     if (error) {
-      bidObject = bidfactory.createBid(2);
+      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
     } else {
-      bidObject = bidfactory.createBid(1);
+      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
       bidObject.cpm = bid.price;
       bidObject.ad = bid.adm;
       bidObject.width = bid.w;
@@ -147,7 +145,7 @@ var TrustxAdapter = function TrustxAdapter() {
       if (placementMap.hasOwnProperty(auid) && placementMap[auid]) {
         n = placementMap[auid].length;
         while (n--) {
-          bidObj = bidfactory.createBid(2);
+          bidObj = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
           bidObj.bidderCode = bidderCode;
           bidmanager.addBidResponse(placementMap[auid][n], bidObj);
         }
