@@ -213,11 +213,10 @@ function PrebidServer() {
   baseAdapter.queueSync = function({bidderCodes}) {
     let syncedList = StorageManager.get(pbjsSyncsKey) || [];
     // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
-    syncList = bidderCodes.filter(bidder => !syncList.includes(bidder));
-    if (_cookiesQueued || syncedList.length === 0) {
+    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
+    if (syncedList.length === 0) {
       return;
     }
-    _cookiesQueued = true;
     const payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes

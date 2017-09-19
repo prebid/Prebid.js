@@ -5,6 +5,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
+import { StorageManager } from 'src/storagemanager';
 
 let CONFIG = {
   accountId: '1',
@@ -156,6 +157,37 @@ describe('S2S Adapter', () => {
   let adapter;
 
   beforeEach(() => adapter = new Adapter());
+
+  describe('queue sync function', () => {
+    let server;
+    let storageManagerAddStub;
+
+    beforeEach(() => {
+      server = sinon.fakeServer.create();
+      storageManagerAddStub = sinon.stub(StorageManager, 'add');
+    });
+
+    afterEach(() => {
+      server.restore();
+      storageManagerAddStub.restore();
+      localStorage.removeItem('pbjsSyncs');
+    });
+
+    it('exists and is a function', () => {
+      expect(adapter.queueSync).to.exist.and.to.be.a('function');
+    });
+
+    it('requests only bidders that are not already synced', () => {
+      server.respondWith(JSON.stringify({status: 'ok', bidderCodes: ['rubicon'] }));
+      const reqBidderCodes = ['appnexus', 'newBidder'];
+      const syncedBidders = ['appnexus', 'rubicon'];
+      localStorage.setItem('pbjsSyncs', JSON.stringify(syncedBidders));
+      adapter.setConfig(CONFIG);
+      adapter.queueSync({bidderCodes: reqBidderCodes});
+      server.respond();
+      sinon.assert.calledTwice(storageManagerAddStub);
+    });
+  });
 
   describe('request function', () => {
     let xhr;
