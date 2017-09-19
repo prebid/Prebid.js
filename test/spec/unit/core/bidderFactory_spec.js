@@ -195,7 +195,7 @@ describe('bidders created by newBidder', () => {
     it('should add bids for each placement code if no requests are given', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([]);
       spec.interpretResponse.returns([]);
       spec.getUserSyncs.returns([]);
@@ -321,7 +321,7 @@ describe('bidders created by newBidder', () => {
     it('should register usersync pixels', () => {
       const bidder = newBidder(spec);
 
-      spec.areParamsValid.returns(false);
+      spec.isBidRequestValid.returns(false);
       spec.buildRequests.returns([]);
       spec.getUserSyncs.returns([{
         type: 'iframe',
