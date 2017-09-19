@@ -5,7 +5,6 @@ var events = require('src/events');
 var CONSTANTS = require('src/constants.json');
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 
-//var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('s2sTesting', function () {
@@ -18,48 +17,48 @@ describe('s2sTesting', function () {
 
     it('returns undefined if no sources', () => {
       expect(getExpectedSource(0, {})).to.be.undefined;
-      expect(getExpectedSource(.5, {})).to.be.undefined;
-      expect(getExpectedSource(.9999, {})).to.be.undefined;
+      expect(getExpectedSource(0.5, {})).to.be.undefined;
+      expect(getExpectedSource(0.9999, {})).to.be.undefined;
     });
     it('returns undefined if no weights', () => {
       expect(getExpectedSource(0, {server: 0, client: 0})).to.be.undefined;
-      expect(getExpectedSource(.5, {both: 0})).to.be.undefined;
+      expect(getExpectedSource(0.5, {both: 0})).to.be.undefined;
     });
     it('gets the expected source from 3 sources', () => {
       expect(getExpectedSource(0, {server: 1, client: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(.2499999, {server: 1, client: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(.25, {server: 1, client: 1, both: 2})).to.equal('client');
-      expect(getExpectedSource(.49999, {server: 1, client: 1, both: 2})).to.equal('client');
-      expect(getExpectedSource(.5, {server: 1, client: 1, both: 2})).to.equal('both');
-      expect(getExpectedSource(.99999, {server: 1, client: 1, both: 2})).to.equal('both');
+      expect(getExpectedSource(0.2499999, {server: 1, client: 1, both: 2})).to.equal('server');
+      expect(getExpectedSource(0.25, {server: 1, client: 1, both: 2})).to.equal('client');
+      expect(getExpectedSource(0.49999, {server: 1, client: 1, both: 2})).to.equal('client');
+      expect(getExpectedSource(0.5, {server: 1, client: 1, both: 2})).to.equal('both');
+      expect(getExpectedSource(0.99999, {server: 1, client: 1, both: 2})).to.equal('both');
     });
     it('gets the expected source from 2 sources', () => {
       expect(getExpectedSource(0, {server: 2, client: 3})).to.equal('server');
-      expect(getExpectedSource(.39999, {server: 2, client: 3})).to.equal('server');
-      expect(getExpectedSource(.4, {server: 2, client: 3})).to.equal('client');
-      expect(getExpectedSource(.9, {server: 2, client: 3})).to.equal('client');
+      expect(getExpectedSource(0.39999, {server: 2, client: 3})).to.equal('server');
+      expect(getExpectedSource(0.4, {server: 2, client: 3})).to.equal('client');
+      expect(getExpectedSource(0.9, {server: 2, client: 3})).to.equal('client');
     });
     it('gets the expected source from 1 source', () => {
       expect(getExpectedSource(0, {both: 2})).to.equal('both');
-      expect(getExpectedSource(.5, {both: 2})).to.equal('both');
-      expect(getExpectedSource(.99999, {both: 2})).to.equal('both');
+      expect(getExpectedSource(0.5, {both: 2})).to.equal('both');
+      expect(getExpectedSource(0.99999, {both: 2})).to.equal('both');
     });
     it('ignores an invalid source', () => {
       expect(getExpectedSource(0, {both: 2, cache: 2})).to.equal('both');
-      expect(getExpectedSource(.3333, {server: 1, cache: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(.34, {server: 1, cache: 1, both: 2})).to.equal('both');
+      expect(getExpectedSource(0.3333, {server: 1, cache: 1, both: 2})).to.equal('server');
+      expect(getExpectedSource(0.34, {server: 1, cache: 1, both: 2})).to.equal('both');
     });
     it('ignores order of sources', () => {
       expect(getExpectedSource(0, {client: 1, server: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(.2499999, {both: 2, client: 1, server: 1})).to.equal('server');
-      expect(getExpectedSource(.25, {client: 1, both: 2, server: 1})).to.equal('client');
-      expect(getExpectedSource(.49999, {server: 1, both: 2, client: 1})).to.equal('client');
-      expect(getExpectedSource(.5, {both: 2, server: 1, client: 1})).to.equal('both');
+      expect(getExpectedSource(0.2499999, {both: 2, client: 1, server: 1})).to.equal('server');
+      expect(getExpectedSource(0.25, {client: 1, both: 2, server: 1})).to.equal('client');
+      expect(getExpectedSource(0.49999, {server: 1, both: 2, client: 1})).to.equal('client');
+      expect(getExpectedSource(0.5, {both: 2, server: 1, client: 1})).to.equal('both');
     });
     it('accepts an array of sources', () => {
-      expect(getExpectedSource(.3333, {second: 2, first: 1}, ['first', 'second'])).to.equal('first');
-      expect(getExpectedSource(.34, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
-      expect(getExpectedSource(.9999, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
+      expect(getExpectedSource(0.3333, {second: 2, first: 1}, ['first', 'second'])).to.equal('first');
+      expect(getExpectedSource(0.34, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
+      expect(getExpectedSource(0.9999, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
     });
   });
 
@@ -67,13 +66,14 @@ describe('s2sTesting', function () {
     describe('setting source through s2sConfig', () => {
       beforeEach(() => {
         // set random number for testing
-        setRandom(.7);
+        setRandom(0.7);
       });
 
       it('does not work if testing is "false"', () => {
-        config.setConfig({s2sConfig: {testing: false, bidderControl: {
-          rubicon: {bidSource: {server: 1, client: 1}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: false,
+          bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
+        }});
         expect(getSourceBidderMap()).to.eql({
           server: [],
           client: []
@@ -81,9 +81,10 @@ describe('s2sTesting', function () {
       });
 
       it('sets one client bidder', () => {
-        config.setConfig({s2sConfig: {testing: true, bidderControl: {
-          rubicon: {bidSource: {server: 1, client: 1}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: true,
+          bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
+        }});
         expect(getSourceBidderMap()).to.eql({
           server: [],
           client: ['rubicon']
@@ -91,9 +92,10 @@ describe('s2sTesting', function () {
       });
 
       it('sets one bidder with "both"', () => {
-        config.setConfig({s2sConfig: {testing: true, bidderControl: {
-          rubicon: {bidSource: {server: 1, client: 1, both: 2}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: true,
+          bidderControl: {rubicon: {bidSource: {server: 1, client: 1, both: 2}}}
+        }});
         expect(getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: ['rubicon']
@@ -101,9 +103,10 @@ describe('s2sTesting', function () {
       });
 
       it('sets one server bidder', () => {
-        config.setConfig({s2sConfig: {testing: true, bidderControl: {
-          rubicon: {bidSource: {server: 4, client: 1}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: true,
+          bidderControl: {rubicon: {bidSource: {server: 4, client: 1}}}
+        }});
         expect(getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: []
@@ -111,22 +114,24 @@ describe('s2sTesting', function () {
       });
 
       it('sets two bidders', () => {
-        config.setConfig({s2sConfig: {testing: true, bidderControl: {
-          rubicon: {bidSource: {server: 2, client: 2, both: 1}},
-          appnexus: {bidSource: {server: 1, client: 1, both: 2}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: true,
+          bidderControl: {
+            rubicon: {bidSource: {server: 2, client: 2, both: 1}},
+            appnexus: {bidSource: {server: 1, client: 1, both: 2}}
+          }}});
         var serverClientBidders = getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
       });
-    });        
+    });
 
     describe('setting source through adUnits', () => {
       beforeEach(() => {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        setRandom(.7);
+        setRandom(0.7);
       });
 
       it('sets one bidder source from one adUnit', () => {
@@ -225,7 +230,7 @@ describe('s2sTesting', function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        setRandom(.7);
+        setRandom(0.7);
       });
 
       it('should get sources from  both', () => {
@@ -238,10 +243,13 @@ describe('s2sTesting', function () {
         ];
 
         // set rubicon: client and appnexus: server
-        config.setConfig({s2sConfig: {testing: true, bidderControl: {
-          rubicon: {bidSource: {server: 2, client: 2, both: 1}},
-          appnexus: {bidSource: {server: 1}}
-        }}});
+        config.setConfig({s2sConfig: {
+          testing: true,
+          bidderControl: {
+            rubicon: {bidSource: {server: 2, client: 2, both: 1}},
+            appnexus: {bidSource: {server: 1}}
+          }
+        }});
 
         var serverClientBidders = getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);
@@ -255,7 +263,7 @@ describe('s2sTesting', function () {
 
     function checkTargeting(bidder) {
       var targeting = window.pbjs.bidderSettings[bidder][AST];
-      var srcTargeting = targeting[targeting.length-1];
+      var srcTargeting = targeting[targeting.length - 1];
       expect(srcTargeting.key).to.equal(`hb_source_${bidder}`);
       expect(srcTargeting.val).to.be.a('function');
     }
@@ -274,7 +282,7 @@ describe('s2sTesting', function () {
 
     function checkTargetingVal(requestId, bidderCode, expectedVal) {
       var targeting = window.pbjs.bidderSettings[bidderCode][AST];
-      var targetingFunc = targeting[targeting.length-1].val;
+      var targetingFunc = targeting[targeting.length - 1].val;
       expect(targetingFunc({requestId, bidderCode})).to.equal(expectedVal);
     }
 
@@ -290,27 +298,38 @@ describe('s2sTesting', function () {
       config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true}});
       expect(window.pbjs.bidderSettings).to.eql({});
 
-      config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true, bidderControl: {
-        rubicon: {bidSource: {server: 2, client: 2, both: 1}},
-        appnexus: {bidSource: {server: 1}}
-      }}});
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true,
+        bidderControl: {
+          rubicon: {bidSource: {server: 2, client: 2, both: 1}},
+          appnexus: {bidSource: {server: 1}}
+        }
+      }});
       expect(window.pbjs.bidderSettings).to.eql({});
 
-      config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: false, bidderControl: {
-        rubicon: {includeSourceKvp: true},
-        appnexus: {includeSourceKvp: true}
-      }}});
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: false,
+        bidderControl: {
+          rubicon: {includeSourceKvp: true},
+          appnexus: {includeSourceKvp: true}
+        }
+      }});
       expect(window.pbjs.bidderSettings).to.eql({});
     });
 
     it('should set hb_source_<bidder> if includeSourceKvp is set', () => {
-      config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true, bidderControl: {
-        rubicon: {includeSourceKvp: true},
-        appnexus: {includeSourceKvp: true}
-      }}});
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true,
+        bidderControl: {
+          rubicon: {includeSourceKvp: true},
+          appnexus: {includeSourceKvp: true}
+        }
+      }});
       checkTargeting('rubicon');
       checkTargeting('appnexus');
-      
 
       events.emit(BID_RESPONSE, {requestId: 1234, bidder: 'rubicon', src: 'server'});
       checkTargetingVal(1234, 'rubicon', 'server');
@@ -319,10 +338,14 @@ describe('s2sTesting', function () {
       checkTargetingVal(1234, 'appnexus', 'client');
 
       // turn off appnexus
-      config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true, bidderControl: {
-        rubicon: {includeSourceKvp: true},
-        appnexus: {includeSourceKvp: false}
-      }}});
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true,
+        bidderControl: {
+          rubicon: {includeSourceKvp: true},
+          appnexus: {includeSourceKvp: false}
+        }
+      }});
       checkTargeting('rubicon');
       checkNoTargeting('appnexus');
 
@@ -339,10 +362,14 @@ describe('s2sTesting', function () {
     it('should reset adServerTargeting when new a config is set', () => {});
 
     it('should handle "both" client and server requests from the same bidder', () => {
-      config.setConfig({s2sConfig: {bidders: ['rubicon', 'appnexus'], testing: true, bidderControl: {
-        rubicon: {includeSourceKvp: true},
-        appnexus: {includeSourceKvp: true}
-      }}});
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true,
+        bidderControl: {
+          rubicon: {includeSourceKvp: true},
+          appnexus: {includeSourceKvp: true}
+        }
+      }});
       checkTargeting('rubicon');
       checkTargeting('appnexus');
 

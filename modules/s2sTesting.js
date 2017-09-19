@@ -13,8 +13,8 @@ var bidSource = {}; // store bidder sources determined from s2sConfing bidderCon
 
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
-    addBidderSourceTargeting(config.s2sConfig)
-    calculateBidSources(config.s2sConfig);
+  addBidderSourceTargeting(config.s2sConfig)
+  calculateBidSources(config.s2sConfig);
 });
 
 // function to add hb_source_<bidder> adServerTargeting (AST) kvp to bidder settings
@@ -58,7 +58,7 @@ events.on(BID_RESPONSE, (bid) => {
   var prevSrc = adUnitBidderResponseSrc[bid.requestId][bid.bidder];
   // if prevSrc is same as current src, there is a problem
   if (prevSrc === src) {
-    logError("bidder with multiple bids from the same source", bid.bidder, src);
+    logError('bidder with multiple bids from the same source', bid.bidder, src);
   } else if (prevSrc) {
     // if there's a previous source, set to "both"
     adUnitBidderResponseSrc[bid.requestId][bid.bidder] = BOTH;
@@ -147,7 +147,7 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT, BOTH
   if (!totWeight) return; // bail if no source weights
   // choose a source randomly based on weights (randNumber for testing)
   var rndWeight = ((randNumber || randNumber === 0) ? randNumber : Math.random()) * totWeight;
-  for (var i=0; i<bidSources.length; i++) {
+  for (var i = 0; i < bidSources.length; i++) {
     let source = bidSources[i];
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;
@@ -160,10 +160,10 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT, BOTH
  */
 export function setRandom(number) {
   // verify the number is in range 0 <= number < 1, or undefined
-  if (typeof number === 'undefined' || number >= 0 && number < 1) {
+  if (typeof number === 'undefined' || (number >= 0 && number < 1)) {
     // set the random number
     randNumber = number;
   } else {
-    throw "random number in setRandom(<number>) out of range (0 <= number < 1): " + number;
+    throw 'random number in setRandom(<number>) out of range (0 <= number < 1): ' + number;
   }
 }

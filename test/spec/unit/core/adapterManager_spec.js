@@ -120,7 +120,7 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       var requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(numAdUnits);
-      for (let i=0; i<numAdUnits; i++) {
+      for (let i = 0; i < numAdUnits; i++) {
         expect(requestObj.ad_units[i].bids.filter((bid) => {
           return bid.bidder === 'appnexus' || bid.bidder === 'adequant';
         }).length).to.equal(numBids);
