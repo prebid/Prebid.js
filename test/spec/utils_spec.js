@@ -521,7 +521,91 @@ describe('Utils', function () {
       for (var key in arr) {
         count++;
       }
-      assert.equal(arr.length, count, 'Polyfill test fails')
+      assert.equal(arr.length, count, 'Polyfill test fails');
+    });
+  });
+
+  describe('cookie support', function () {
+    // store original cookie getter and setter so we can reset later
+    var origCookieSetter = document.__lookupSetter__('cookie');
+    var origCookieGetter = document.__lookupGetter__('cookie');
+
+    // store original cookieEnabled getter and setter so we can reset later
+    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
+    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
+
+    // Replace the document cookie set function with the output of a custom function for testing
+    let setCookie = (v) => v;
+
+    beforeEach(() => {
+      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
+      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = v;
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
+
+      // Reset the setCookie cookie function before each test
+      setCookie = (v) => v;
+      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
+      Object.defineProperty(window.document, 'cookie', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = setCookie(v);
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
+    });
+
+    afterEach(() => {
+      // redefine window.navigator.cookieEnabled to original getter and setter
+      Object.defineProperty(window.navigator, 'cookieEnabled', {
+        get: origCookieEnabledGetter,
+        set: origCookieEnabledSetter,
+        configurable: true
+      });
+      // redefine document.cookie to original getter and setter
+      Object.defineProperty(document, 'cookie', {
+        get: origCookieGetter,
+        set: origCookieSetter,
+        configurable: true
+      });
+    });
+
+    it('should be detected', function() {
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
+    });
+
+    it('should be not available', function() {
+      setCookie = () => '';
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
+    });
+
+    it('should be available', function() {
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = 'key=value';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should already be set');
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should settable');
+      setCookie = () => '';
+      window.navigator.cookieEnabled = true;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be on via on window.navigator');
+      // Reset the setCookie
+      setCookie = (v) => v;
     });
   });
 

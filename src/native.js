@@ -1,4 +1,4 @@
-import { getBidRequest, logError, insertPixel } from './utils';
+import { getBidRequest, logError, triggerPixel } from './utils';
 import { auctionManager } from './auctionManager';
 
 export const nativeAdapters = [];
@@ -93,6 +93,6 @@ export function fireNativeImpressions(adObject) {
     adObject.native.impressionTrackers;
 
   (impressionTrackers || []).forEach(tracker => {
-    insertPixel(tracker);
+    triggerPixel(tracker);
   });
 }

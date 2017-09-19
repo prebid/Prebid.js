@@ -31,11 +31,11 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bidParams The params to validate.
+   * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  areParamsValid: function(bidParams) {
-    return !!(bidParams.placementId || (bidParams.member && bidParams.invCode));
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
 
   /**
@@ -119,7 +119,7 @@ function newRenderer(adUnitCode, rtbBid) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarning('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   renderer.setEventHandlers({

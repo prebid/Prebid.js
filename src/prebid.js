@@ -7,7 +7,7 @@ import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from './cookie';
+import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
@@ -21,6 +21,7 @@ var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
+const { triggerUserSyncs } = userSync;
 
 /* private variables */
 
@@ -62,8 +63,8 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-/** @deprecated - use pbjs.setConfig({ cookieSyncDelay: <domain> ) */
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
+// Allow publishers who enable user sync override to trigger their sync
+$$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
   var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
@@ -542,7 +543,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * @param {string} order One of the valid orders, described above.
  * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
-$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
+$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence;
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
