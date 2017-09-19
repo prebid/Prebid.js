@@ -7,7 +7,7 @@
  * Defining and access properties in this way is now deprecated, but these will
  * continue to work during a deprecation window.
  */
-import { isValidePriceConfig } from './cpmBucketManager';
+import { isValidPriceConfig } from './cpmBucketManager';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -15,6 +15,12 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = false;
+const DEFAULT_USERSYNC = {
+  syncEnabled: true,
+  pixelEnabled: true,
+  syncsPerBidder: 5,
+  syncDelay: 3000
+};
 
 const GRANULARITY_OPTIONS = {
   'LOW': 'low',
@@ -86,7 +92,7 @@ export function newConfig() {
           this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
         } else if (typeof val === 'object') {
           this._customPriceBucket = val;
-          this._priceGranularity = GRANULARITY_OPTIONS.MEDIUM;
+          this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
           utils.logMessage('Using custom price granularity');
         }
       }
@@ -118,6 +124,8 @@ export function newConfig() {
       $$PREBID_GLOBAL$$.setS2SConfig(val);
     },
 
+    // userSync defaults
+    userSync: DEFAULT_USERSYNC
   };
 
   function hasGranularity(val) {
@@ -134,7 +142,7 @@ export function newConfig() {
         utils.logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
       }
     } else if (typeof val === 'object') {
-      if (!isValidePriceConfig(val)) {
+      if (!isValidPriceConfig(val)) {
         utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
         return false;
       }
@@ -144,8 +152,8 @@ export function newConfig() {
 
   /*
    * Returns configuration object if called without parameters,
-   * or single configuration property if given a string matching a configuartion
-   * property name.
+   * or single configuration property if given a string matching a configuration
+   * property name.  Allows deep access e.g. getConfig('currency.adServerCurrency')
    *
    * If called with callback parameter, or a string and a callback parameter,
    * subscribes to configuration updates. See `subscribe` function for usage.
@@ -153,7 +161,7 @@ export function newConfig() {
   function getConfig(...args) {
     if (args.length <= 1 && typeof args[0] !== 'function') {
       const option = args[0];
-      return option ? config[option] : config;
+      return option ? utils.deepAccess(config, option) : config;
     }
 
     return subscribe(...args);

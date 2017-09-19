@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import Adapter from 'modules/appnexusAstBidAdapter';
+import { spec } from 'modules/appnexusAstBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 import bidmanager from 'src/bidmanager';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
@@ -61,9 +62,7 @@ const RESPONSE = {
 };
 
 describe('AppNexusAdapter', () => {
-  let adapter;
-
-  beforeEach(() => adapter = new Adapter());
+  const adapter = newBidder(spec);
 
   describe('request function', () => {
     let xhr;
@@ -127,6 +126,17 @@ describe('AppNexusAdapter', () => {
       });
 
       delete REQUEST.bids[0].params.user;
+    });
+
+    it('should add source and verison to the tag', () => {
+      adapter.callBids(REQUEST);
+
+      const request = JSON.parse(requests[0].requestBody);
+      expect(request.sdk).to.exist;
+      expect(request.sdk).to.deep.equal({
+        source: 'pbjs',
+        version: '$prebid.version$'
+      });
     });
 
     it('attaches native params to the request', () => {
