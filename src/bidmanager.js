@@ -87,10 +87,9 @@ exports.addBidResponse = function (adUnitCode, bid) {
     prepareBidForAuction();
 
     if (bid.mediaType === 'video') {
-      tryAddVideoBid(bid);
+      tryAddVideoBid();
     } else {
-      doCallbacksIfNeeded();
-      addBidToAuction(bid);
+      addBidToAuction();
     }
   }
 
@@ -208,11 +207,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
   }
 
-  function doCallbacksIfNeeded() {
-    if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
-      const timedOut = true;
-      exports.executeCallback(timedOut);
-    }
+  function hasTimedOut() {
+    return bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer;
   }
 
   // Add a bid to the auction.
@@ -225,29 +221,33 @@ exports.addBidResponse = function (adUnitCode, bid) {
       triggerAdUnitCallbacks(bid.adUnitCode);
     }
 
-    if (bidsBackAll()) {
-      exports.executeCallback();
+    const timedOut = hasTimedOut();
+    if (timedOut || bidsBackAll()) {
+      exports.executeCallback(timedOut);
     }
   }
 
   // Video bids may fail if the cache is down, or there's trouble on the network.
-  function tryAddVideoBid(bid) {
+  function tryAddVideoBid() {
     if (config.getConfig('usePrebidCache')) {
       store([bid], function(error, cacheIds) {
         if (error) {
           utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+
+          const timedOut = hasTimedOut();
+          if (timedOut) {
+            exports.executeCallback(timedOut);
+          }
         } else {
           bid.videoCacheKey = cacheIds[0].uuid;
           if (!bid.vastUrl) {
             bid.vastUrl = getCacheUrl(bid.videoCacheKey);
           }
-          addBidToAuction(bid);
+          addBidToAuction();
         }
-        doCallbacksIfNeeded();
       });
     } else {
-      addBidToAuction(bid);
-      doCallbacksIfNeeded();
+      addBidToAuction();
     }
   }
 };
