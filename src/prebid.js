@@ -7,7 +7,7 @@ import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
 import { parse as parseURL, format as formatURL } from './url';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { syncCookies } from './cookie';
+import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { setAjaxTimeout } from './ajax';
 import { config } from './config';
@@ -22,6 +22,7 @@ var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
 var targeting = require('./targeting.js');
+const { syncUsers, triggerUserSyncs } = userSync;
 
 /* private variables */
 
@@ -71,8 +72,8 @@ utils.logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 
-/** @deprecated - use pbjs.setConfig({ cookieSyncDelay: <domain> ) */
-$$PREBID_GLOBAL$$.cookieSyncDelay = $$PREBID_GLOBAL$$.cookieSyncDelay;
+// Allow publishers who enable user sync override to trigger their sync
+$$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
   var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
@@ -334,7 +335,13 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.clearAuction = function() {
   auctionRunning = false;
-  syncCookies(config.getConfig('cookieSyncDelay'));
+  // Only automatically sync if the publisher has not chosen to "enableOverride"
+  let userSyncConfig = config.getConfig('userSync') || {};
+  if (!userSyncConfig.enableOverride) {
+    // Delay the auto sync by the config delay
+    syncUsers(userSyncConfig.syncDelay);
+  }
+
   utils.logMessage('Prebid auction cleared');
   if (bidRequestQueue.length) {
     bidRequestQueue.shift()();
@@ -695,7 +702,7 @@ $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, op
  * @param {string} order One of the valid orders, described above.
  * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
  */
-$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence
+$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence;
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid

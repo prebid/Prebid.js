@@ -4,7 +4,8 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { queueSync, cookieSet } from 'src/cookie';
+import { userSync } from 'src/userSync.js';
+import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
 import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
@@ -144,7 +145,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
+              userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
             }
           });
         }
@@ -168,6 +169,7 @@ function PrebidServer() {
             bidObject.ad = bidObj.adm;
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
+            bidObject.adserverTargeting = bidObj.ad_server_targeting;
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
@@ -233,7 +235,7 @@ function PrebidServer() {
       contentType: 'text/plain',
       withCredentials: true
     });
-  }
+  };
 
   return Object.assign(this, {
     queueSync: baseAdapter.queueSync,

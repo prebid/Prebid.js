@@ -85,6 +85,12 @@ function UnrulyAdapter() {
         return
       }
 
+      const videoMediaType = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video')
+      const context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context')
+      if (videoMediaType && context !== 'outstream') {
+        return
+      }
+
       const payload = {
         bidRequests: bidRequestBids
       }
@@ -106,6 +112,8 @@ function UnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly')
+adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = UnrulyAdapter
