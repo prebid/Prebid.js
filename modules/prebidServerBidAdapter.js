@@ -167,6 +167,9 @@ function PrebidServer() {
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
             bidObject.ad = bidObj.adm;
+            if (bidObj.nurl) {
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            }
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
