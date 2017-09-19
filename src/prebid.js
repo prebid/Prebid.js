@@ -649,7 +649,7 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
 
 /**
  * The bid response object returned by an external bidder adapter during the auction.
- * @typedef {Object} Bid
+ * @typedef {Object} AdapterBidResponse
  * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
  * @property {string} pbCg Custom price bucket.  For example setup, see {@link setPriceGranularity}.  Example: `"0.84"`.
  * @property {string} pbDg Dense granularity price bucket; CPM <= 3 ? increment = 0.01 : CPM > 3 && CPM <= 8 ? increment = 0.05 : CPM > 8 && CPM <= 20 ? increment = 0.50 : CPM > 20? priceCap = 20.00.  Example: `"0.84"`.
@@ -684,7 +684,7 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
 
 /**
  * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<Bid>} A list of bids that have won their respective auctions.
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
