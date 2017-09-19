@@ -112,25 +112,25 @@ Prebid Mobile will immediately tell your app whether it has a bid or not without
 | MoPub             | Interstitial   | `MoPubInterstitial`        | `public void load()`                               |
 
 ## Enable Prebid With Auto Refresh On
-Prebid Mobile Android does not update the bids automatically for auto refesh, the following code integration is required when you have auto refresh turned on for your ad units.
+Prebid Mobile Android does not update the bids automatically like iOS implementation. To enable prebid with auto refesh, the following code integration is required.
 
 ### Primary Ad Server is MoPub
 For MoPub banner, in the banner ad listener implementation, add the following API usage.
 ```
-   // MoPub Banner Listener Implementation
-    @Override
-    public void onBannerLoaded(MoPubView banner) {
-        Prebid.attachBids(banner, YOUR-AD-UNIT-ID-HERE, Context);
-    }
+// MoPub Banner Listener Implementation
+@Override
+public void onBannerLoaded(MoPubView banner) {
+    Prebid.attachBids(banner, YOUR-AD-UNIT-ID-HERE, Context);
+}
 
-    @Override
-    public void onBannerFailed(MoPubView banner, MoPubErrorCode errorCode) {
-        Prebid.attachBids(banner, YOUR-AD-UNIT-ID-HERE, Context);
-    }
+@Override
+public void onBannerFailed(MoPubView banner, MoPubErrorCode errorCode) {
+    Prebid.attachBids(banner, YOUR-AD-UNIT-ID-HERE, Context);
+}
  ```
 
- ### Primary Ad Server is DFP
- For DFP banner, the `loadAd(AdRequest)` has to be called again with updated bids info. We recommend doing client side auto refresh yourself using code like the following:
+### Primary Ad Server is DFP
+For DFP banner, the `loadAd(AdRequest)` has to be called again with updated bids info. If not, same set of bids will be used repeatedly until `loadAd()` is called with a new `AdRequest`. We recommend doing client side auto refresh yourself using code like the following:
  ```
 final Handler handler = new Handler(Looper.getMainLooper());
 Runnable refreshRunnable = new Runnable() {
@@ -151,7 +151,6 @@ if(conditionToStopRefresh) {
     adView.destroy();
 }
  ```
-
 
 
 
