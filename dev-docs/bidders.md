@@ -76,15 +76,20 @@ The following parameters in the `bidResponse` object are common across all bidde
 |-----------------+-----------------------|
 | adkernel        | 'video'               |
 | admixer         | 'video'               |
+| adxcg           | 'video', 'native'     |
+| aerserv         | 'video'               |
 | appnexusAst     | 'video', 'native'     |
 | audienceNetwork | 'video'               |
 | beachfront      | 'video'               |
 | conversant      | 'video'               |
 | getintent       | 'video'               |
+| indexExchange   | 'video'               |
 | pulsepointLite  | 'native'              |
 | rhythmone       | 'video'               |
 | rubicon         | 'video'               |
 | spotx           | 'video'               |
+| tremor          | 'video'               |
+| unruly          | 'video'               |
 | vertamedia      | 'video'               |
 
 <a name="prebid-server-bidders"></a>
