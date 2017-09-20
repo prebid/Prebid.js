@@ -188,6 +188,56 @@ The required parameters to add into `bidObject` are:
 | `height`     | Required  | The height of the returned creative.                                     | 250                                  |
 | `ad`         | Required  | The creative payload of the returned bid                                 | `"<html><h3>I am an ad</h3></html>"` |
 
+## Step 6: Register User Sync Pixels
+
+In order to protect page performance, user ID sync logic within Prebid adapters should
+be queued using the userSync.registerSync() function. Both image pixels and iframe sync methods are supported, but
+publishers may control which method(s) are allowed.
+
+At some point after the auctions are complete, Prebid will write out the registered userSyncs. See the userSync section of the Publisher API Reference for information about how Publishers can control which syncs are allowed.
+
+Add a user sync in an adapter in two steps:
+
+1. Load the userSync module in the adapter file
+2. Register the sync
+
+{% highlight js %}
+import { userSync } from 'src/userSync.js';
+
+   // ... code ...
+   if ($$PREBID_GLOBAL$$.userSync.iframeEnabled) {
+     userSync.registerSync('iframe', 'exampleAdapter', 'http://example.com/iframe-url');
+   } else {
+     userSync.registerSync('image', 'exampleAdapter', 'http://example.com/pixel');
+   }
+   // ... code ...
+{% endhighlight %}
+
+The general syntax for the userSync.registerSync() function:
+{% highlight js %}
+userSync.registerSync(type, adapterName, url);
+{% endhighlight %}
+
+Note that the userSync object contains the registerSync function. The example above shows a destructed import, which 
+eliminates the need to refer the to function through its object.
+
+Parameters for registerSync:
+
+{: .table .table-bordered .table-striped }
+| Param | Type | Description |
+| ----- | ---- | ----------- |
+| `type` | string enum | The type of sync, either 'image' or 'iframe'. |
+| `adapterName` | string | The name of the adapter. Used for logging. |
+| `url` | string | The fully qualified URL.|
+
+{: .alert.alert-success :}
+See the [Publisher API Reference]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.userSync) for more information about how this feature works.
+
+<div class="alert alert-danger" role="alert">
+<p>
+Note that in Prebid 1.0, use of the registerSync() function will be required for all user ID activity.
+</p>
+</div>
 
 ## Helper functions
 
