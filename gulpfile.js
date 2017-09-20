@@ -45,6 +45,7 @@ gulp.task('serve-nw', ['lint', 'watch', 'e2etest']);
 gulp.task('run-tests', ['lint', 'test-coverage']);
 
 gulp.task('build', ['build-bundle-prod']);
+gulp.task('str-build', ['str-build-bundle-prod']);
 
 gulp.task('clean', function () {
   return gulp.src(['build'], {
@@ -55,6 +56,10 @@ gulp.task('clean', function () {
 
 function gulpBundle(dev) {
   return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+}
+
+function strGulpBundle(dev) {
+  return strBundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
 function nodeBundle(modules) {
@@ -103,6 +108,44 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
 
+function strBundle(dev, moduleArr) {
+  var modules = moduleArr || helpers.getArgModules(),
+      allModules = helpers.getModuleNames(modules);
+
+  if(modules.length === 0) {
+    modules = allModules;
+  } else {
+    var diff = _.difference(modules, allModules);
+    if(diff.length !== 0) {
+      throw new gutil.PluginError({
+        plugin: 'bundle',
+        message: 'invalid modules: ' + diff.join(', ')
+      });
+    }
+  }
+
+  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+
+  let prebidFileName = 'prebid.js';
+  if (argv.tag && argv.tag.length) {
+    prebidFileName = 'prebid.' + argv.tag + '.js';
+  }
+
+  return gulp.src(
+      entries
+    )
+    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(concat(argv.bundleName ? argv.bundleName : prebidFileName))
+    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
+        global: prebid.globalVarName
+      }
+    )))
+    .pipe(gulpif(dev, sourcemaps.write('.')));
+}
+
 // Workaround for incompatibility between Karma & gulp callbacks.
 // See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
 function newKarmaCallback(done) {
@@ -117,7 +160,9 @@ function newKarmaCallback(done) {
 
 gulp.task('build-bundle-dev', ['devpack'], gulpBundle.bind(null, true));
 gulp.task('build-bundle-prod', ['webpack'], gulpBundle.bind(null, false));
+gulp.task('str-build-bundle-prod', ['str-webpack']);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+gulp.task('str-bundle', strGulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
 gulp.task('bundle-to-stdout', function() {
   nodeBundle().then(file => console.log(file));
@@ -158,8 +203,36 @@ gulp.task('webpack', ['clean'], function () {
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(replace('$prebid.version$', prebid.version))
-    .pipe(uglify())
+    // .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
+    .pipe(optimizejs())
+    .pipe(gulp.dest('build/dist'))
+    .pipe(connect.reload());
+});
+
+gulp.task('str-webpack', ['clean'], function () {
+  var cloned = _.cloneDeep(webpackConfig);
+
+  delete cloned.devtool;
+
+  var externalModules = helpers.getArgModules();
+
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const moduleSources = helpers.getModulePaths(externalModules);
+  let modulesWanted = [];
+  if (argv.modules) {
+    modulesWanted = argv.modules.split(',');
+  }
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    // creates a stream of files at these paths
+    .pipe(helpers.nameModules(externalModules, modulesWanted))
+    // names each file and outputs it as a new file
+    .pipe(webpackStream(cloned, webpack))
+    // triggers webpack configurations to each file
+    .pipe(replace('$prebid.version$', prebid.version))
+    // .pipe(uglify())
+    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
+    // includes package.json and a banner on top of prebid-core.js
     .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'))
     .pipe(connect.reload());
