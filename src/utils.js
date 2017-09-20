@@ -452,20 +452,9 @@ exports.insertElement = function(elm, doc, target) {
   } catch (e) {}
 };
 
-exports.insertPixel = function (url) {
+exports.triggerPixel = function (url) {
   const img = new Image();
-  img.id = _getUniqueIdentifierStr();
   img.src = url;
-  img.height = 0;
-  img.width = 0;
-  img.style.display = 'none';
-  img.onload = function() {
-    try {
-      this.parentNode.removeChild(this);
-    } catch (e) {
-    }
-  };
-  exports.insertElement(img);
 };
 
 /**
@@ -473,8 +462,8 @@ exports.insertPixel = function (url) {
  * @param  {string} url URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
-exports.insertCookieSyncIframe = function(url, encodeUri) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url, encodeUri);
+exports.insertUserSyncIframe = function(url) {
+  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
@@ -501,17 +490,29 @@ exports.createTrackPixelHtml = function (url) {
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
  * @param  {string} url plain URL to be requested
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
  * @return {string}     HTML snippet that contains the iframe src = set to `url`
  */
-exports.createTrackPixelIframeHtml = function (url, encodeUri = true) {
+exports.createTrackPixelIframeHtml = function (url, encodeUri = true, sandbox = '') {
   if (!url) {
     return '';
   }
   if (encodeUri) {
     url = encodeURI(url);
   }
+  if (sandbox) {
+    sandbox = `sandbox="${sandbox}"`;
+  }
 
-  return `<iframe frameborder="0" allowtransparency="true" marginheight="0" marginwidth="0" width="0" hspace="0" vspace="0" height="0" style="height:0p;width:0p;display:none;" scrolling="no" src="${url}"></iframe>`;
+  return `<iframe ${sandbox} id="${exports.getUniqueIdentifierStr()}"
+      frameborder="0"
+      allowtransparency="true"
+      marginheight="0" marginwidth="0"
+      width="0" hspace="0" vspace="0" height="0"
+      style="height:0p;width:0p;display:none;"
+      scrolling="no"
+      src="${url}">
+    </iframe>`;
 };
 
 /**
@@ -665,8 +666,40 @@ export function getBidderRequest(bidder, adUnitCode) {
   }) || { start: null, requestId: null };
 }
 
+export function cookiesAreEnabled() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
+  }
+  window.document.cookie = 'prebid.cookieTest';
+  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+}
+
 /**
+ * Given a function, return a function which only executes the original after
+ * it's been called numRequiredCalls times.
  *
+ * Note that the arguments from the previous calls will *not* be forwarded to the original function.
+ * Only the final call's arguments matter.
+ *
+ * @param {function} func The function which should be executed, once the returned function has been executed
+ *   numRequiredCalls times.
+ * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ *   func is.
+ */
+export function delayExecution(func, numRequiredCalls) {
+  if (numRequiredCalls < 1) {
+    throw new Error(`numRequiredCalls must be a positive number. Got ${numRequiredCalls}`);
+  }
+  let numCalls = 0;
+  return function () {
+    numCalls++;
+    if (numCalls === numRequiredCalls) {
+      func.apply(null, arguments);
+    }
+  }
+}
+
+/**
  * https://stackoverflow.com/a/34890276/428704
  * @export
  * @param {array} xs
@@ -678,4 +711,63 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
+}
+
+/**
+ * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+ * @param {object} obj The object containing the values you would like to access.
+ * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+ * @returns {*} The value found at the specified object path, or undefined if path is not found.
+ */
+export function deepAccess(obj, path) {
+  path = String(path).split('.');
+  for (let i = 0; i < path.length; i++) {
+    obj = obj[path[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+  return obj;
+}
+
+/**
+ * Build an object consisting of only defined parameters to avoid creating an
+ * object with defined keys and undefined values.
+ * @param {object} object The object to pick defined params out of
+ * @param {string[]} params An array of strings representing properties to look for in the object
+ * @returns {object} An object containing all the specified values that are defined
+ */
+export function getDefinedParams(object, params) {
+  return params
+    .filter(param => object[param])
+    .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
+}
+
+/**
+ * @typedef {Object} MediaTypes
+ * @property {Object} banner banner configuration
+ * @property {Object} native native configuration
+ * @property {Object} video video configuration
+ */
+
+/**
+ * Validates an adunit's `mediaTypes` parameter
+ * @param {MediaTypes} mediaTypes mediaTypes parameter to validate
+ * @return {boolean} If object is valid
+ */
+export function isValidMediaTypes(mediaTypes) {
+  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
+
+  const types = Object.keys(mediaTypes);
+
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
+    return false;
+  }
+
+  if (mediaTypes.video && mediaTypes.video.context) {
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
+  }
+
+  return true;
 }

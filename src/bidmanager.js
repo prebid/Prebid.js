@@ -1,6 +1,7 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { NATIVE_KEYS, nativeBidIsValid } from './native';
+import { isValidVideoBid } from './video';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
@@ -88,8 +89,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.mediaType === 'video') {
       tryAddVideoBid(bid);
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction(bid);
+      doCallbacksIfNeeded();
     }
   }
 
@@ -109,12 +110,19 @@ exports.addBidResponse = function (adUnitCode, bid) {
       utils.logError(errorMessage('No adUnitCode was supplied to addBidResponse.'));
       return false;
     }
+
+    const bidRequest = getBidderRequest(bid.bidderCode, adUnitCode);
+    if (!bidRequest.start) {
+      utils.logError(errorMessage('Cannot find valid matching bid request.'));
+      return false;
+    }
+
     if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
       utils.logError(errorMessage('Native bid missing some required properties.'));
       return false;
     }
-    if (bid.mediaType === 'video' && !(bid.vastUrl || bid.vastPayload)) {
-      utils.logError(errorMessage(`Video bid has no vastUrl or vastPayload property.`));
+    if (bid.mediaType === 'video' && !isValidVideoBid(bid)) {
+      utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
       return false;
     }
     if (bid.mediaType === 'banner' && !validBidSize(bid)) {
@@ -178,7 +186,11 @@ exports.addBidResponse = function (adUnitCode, bid) {
       bid.renderer.setRender(adUnitRenderer.render);
     }
 
-    const priceStringsObj = getPriceBucketString(bid.cpm, config.getConfig('customPriceBucket'));
+    const priceStringsObj = getPriceBucketString(
+      bid.cpm,
+      config.getConfig('customPriceBucket'),
+      config.getConfig('currency.granularityMultiplier')
+    );
     bid.pbLg = priceStringsObj.low;
     bid.pbMg = priceStringsObj.med;
     bid.pbHg = priceStringsObj.high;
@@ -187,12 +199,13 @@ exports.addBidResponse = function (adUnitCode, bid) {
     bid.pbCg = priceStringsObj.custom;
 
     // if there is any key value pairs to map do here
-    var keyValues = {};
+    var keyValues;
     if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
       keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
     }
 
-    bid.adserverTargeting = keyValues;
+    // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
+    bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
   }
 
   function doCallbacksIfNeeded() {
