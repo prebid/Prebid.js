@@ -1,0 +1,202 @@
+[
+  "oftmedia",
+  "aardvark",
+  "adblade",
+  "adbund",
+  "adbutler",
+  "adform",
+  "adkernel",
+  "admedia",
+  "admixer",
+  "adsupply",
+  "adxcg",
+  "adyoulike",
+  "aerserv",
+  "aol",
+  "appnexusAst",
+  "appnexus",
+  "atomx",
+  "audienceNetwork",
+  "beachfront",
+  "bidfluence",
+  "brightcom",
+  "c1x",
+  "conversant",
+  "cox",
+  "criteo",
+  "districtm",
+  "districtmDMX",
+  "eplanning",
+  "essens",
+  "fidelity",
+  "getintent",
+  "gumgum",
+  "hiromedia",
+  "imonomy",
+  "indexExchange",
+  "inneractive",
+  "innity",
+  "jcm",
+  "justpremium",
+  "kargo",
+  "komoona",
+  "lifestreet",
+  "mantis",
+  "matomy",
+  "memeglobal",
+  "mobfox",
+  "nginad",
+  "openx",
+  "piximedia",
+  "platformio",
+  "pollux",
+  "pubmatic",
+  "pulsepoint",
+  "quantcast",
+  "rhythmone",
+  "roxot",
+  "rubicon",
+  "sekindoUM",
+  "sharethrough",
+  "smartadserver",
+  "smartyads",
+  "stickyadstv",
+  "sonobi",
+  "sovrn",
+  "spotx",
+  "springserve",
+  "tapsense",
+  "thoughtleadr",
+  "trion",
+  "triplelift",
+  "twenga",
+  "ucfunnel",
+  "underdogmedia",
+  "unruly",
+  "vertamedia",
+  "vertoz",
+  "wideorbit",
+  "widespace",
+  "xhb",
+  "yieldbot",
+  {
+    "appnexus": {
+      "alias": "brealtime"
+    }
+  },
+  {
+    "appnexus": {
+      "alias": "defymedia"
+    }
+  },
+  {
+    "appnexus": {
+      "alias": "featureforward"
+    }
+  },
+  {
+    "adkernel": {
+      "alias": "headbidding"
+    }
+  },
+  {
+    "aol": {
+      "alias": "onedisplay"
+    }
+  },
+  {
+    "aol": {
+      "alias": "onemobile"
+    }
+  },
+  {
+    "appnexus": {
+      "alias": "pagescience"
+    }
+  },
+  {
+    "adkernel": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "admixer": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "appnexusAst": {
+      "supportedMediaTypes": [
+        "video",
+        "native"
+      ]
+    }
+  },
+  {
+    "audienceNetwork": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "beachfront": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "conversant": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "getintent": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "pulsepointLite": {
+      "supportedMediaTypes": [
+        "native"
+      ]
+    }
+  },
+  {
+    "rhythmone": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "rubicon": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "spotx": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  },
+  {
+    "vertamedia": {
+      "supportedMediaTypes": [
+        "video"
+      ]
+    }
+  }
+]
