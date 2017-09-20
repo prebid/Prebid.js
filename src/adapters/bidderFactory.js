@@ -276,7 +276,7 @@ export function newBidder(spec) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
               const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-              addBidWithCode(bidRequest.placementCode, prebidBid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }

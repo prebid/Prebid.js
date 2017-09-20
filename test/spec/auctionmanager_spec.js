@@ -472,7 +472,7 @@ describe('auctionmanager.js', function () {
 
       spec = {
         code: BIDDER_CODE,
-        areParamsValid: sinon.stub(),
+        isBidRequestValid: sinon.stub(),
         buildRequests: sinon.stub(),
         interpretResponse: sinon.stub(),
         getUserSyncs: sinon.stub()
@@ -487,7 +487,7 @@ describe('auctionmanager.js', function () {
       bids[0].cpm = '1.99';
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
       auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
@@ -498,7 +498,7 @@ describe('auctionmanager.js', function () {
       bids[0].cpm = '4.39';
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
       auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
@@ -509,7 +509,7 @@ describe('auctionmanager.js', function () {
       bids[0].cpm = '19.99';
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
       auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
@@ -520,7 +520,7 @@ describe('auctionmanager.js', function () {
       bids[0].cpm = '73.07';
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
       auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
@@ -531,7 +531,7 @@ describe('auctionmanager.js', function () {
       bids[0].dealId = 'test deal';
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
       auction.callBids(3000);
       let registeredBid = auction.getBidsReceived().pop();
@@ -558,7 +558,7 @@ describe('auctionmanager.js', function () {
       const bidsRecCount = auction.getBidsReceived().length;
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
       auction.callBids(3000);
       assert.equal(bidsRecCount + 1, auction.getBidsReceived().length);
@@ -587,7 +587,7 @@ describe('auctionmanager.js', function () {
       const bidsRecCount = auction.getBidsReceived().length;
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
       auction.callBids(3000);
       assert.equal(bidsRecCount, auction.getBidsReceived().length);
@@ -631,7 +631,7 @@ describe('auctionmanager.js', function () {
       );
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
       auction.callBids(3000);
       const addedBid = auction.getBidsReceived().pop();
@@ -675,7 +675,7 @@ describe('auctionmanager.js', function () {
       );
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
       auction.callBids(3000);
       const addedBid = auction.getBidsReceived().pop();
@@ -790,7 +790,7 @@ describe('auctionmanager.js', function () {
 
       spec = {
         code: BIDDER_CODE,
-        areParamsValid: sinon.stub(),
+        isBidRequestValid: sinon.stub(),
         buildRequests: sinon.stub(),
         interpretResponse: sinon.stub(),
         getUserSyncs: sinon.stub()
@@ -798,7 +798,7 @@ describe('auctionmanager.js', function () {
 
       spec1 = {
         code: BIDDER_CODE1,
-        areParamsValid: sinon.stub(),
+        isBidRequestValid: sinon.stub(),
         buildRequests: sinon.stub(),
         interpretResponse: sinon.stub(),
         getUserSyncs: sinon.stub()
@@ -814,11 +814,11 @@ describe('auctionmanager.js', function () {
       registerBidder(spec1);
 
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
       spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec1.areParamsValid.returns(true);
+      spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
       auction.callBids(3000);
@@ -837,11 +837,11 @@ describe('auctionmanager.js', function () {
       registerBidder(spec1);
 
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.areParamsValid.returns(true);
+      spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
       spec1.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec1.areParamsValid.returns(true);
+      spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
       auction.callBids(3000);

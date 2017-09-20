@@ -348,8 +348,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
         bidsBackHandler();
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
-      } finally {
-        syncCookies(config.getConfig('cookieSyncDelay'));
       }
     }
     return;

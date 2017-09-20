@@ -201,11 +201,11 @@ describe('bidders created by newBidder', () => {
       spec.interpretResponse.returns([]);
       spec.getUserSyncs.returns([]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(bidmanager.addBidResponse.calledTwice).to.equal(true);
+      expect(addBidResponseStub.calledTwice).to.equal(true);
       const placementsWithBids =
-        [bidmanager.addBidResponse.firstCall.args[0], bidmanager.addBidResponse.secondCall.args[0]];
+        [addBidResponseStub.firstCall.args[0], addBidResponseStub.secondCall.args[0]];
       expect(placementsWithBids).to.contain('mock/placement');
       expect(placementsWithBids).to.contain('mock/placement2');
     });
@@ -335,7 +335,7 @@ describe('bidders created by newBidder', () => {
         url: 'usersync.com'
       }]);
 
-      bidder.callBids(MOCK_BIDS_REQUEST);
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
       expect(userSyncStub.called).to.equal(true);
       expect(userSyncStub.firstCall.args[0]).to.equal('iframe');

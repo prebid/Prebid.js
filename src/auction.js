@@ -54,8 +54,9 @@ import { NATIVE_KEYS, nativeBidIsValid } from './native';
 import { store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
-import { syncCookies } from './cookie';
+import { userSync } from 'src/userSync.js';
 
+const { syncUsers } = userSync;
 const utils = require('./utils');
 const adaptermanager = require('./adaptermanager');
 const events = require('./events');
@@ -117,7 +118,12 @@ function newAuction({adUnits, adUnitCodes}) {
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
-        syncCookies(config.getConfig('cookieSyncDelay'));
+        // Only automatically sync if the publisher has not chosen to "enableOverride"
+        let userSyncConfig = config.getConfig('userSync') || {};
+        if (!userSyncConfig.enableOverride) {
+          // Delay the auto sync by the config delay
+          syncUsers(userSyncConfig.syncDelay);
+        }
       }
       _callback = null;
 
