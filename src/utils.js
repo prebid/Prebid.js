@@ -764,3 +764,10 @@ export function isValidMediaTypes(mediaTypes) {
 
   return true;
 }
+
+export function getBidderRequest(bidRequests, bidder, adUnitCode) {
+  return bidRequests.find(request => {
+    return request.bids
+      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
+}

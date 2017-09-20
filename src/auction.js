@@ -48,10 +48,11 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, timestamp, adUnitsFilter, delayExecution } from './utils';
+import { uniques, timestamp, adUnitsFilter, delayExecution, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { NATIVE_KEYS, nativeBidIsValid } from './native';
-import { store } from './videoCache';
+import { isValidVideoBid } from './video';
+import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync.js';
@@ -131,14 +132,14 @@ function newAuction({adUnits, adUnitCodes}) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
         const timedOutBidders = getTimedOutBidders();
         if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, { timedOutBidders, auctionId: _auctionId });
         }
       }
     }
   }
 
   function getTimedOutBidders() {
-    return _bidsReceived
+    return _bidderRequests
       .map((bidSet) => {
         return bidSet.bidderCode;
       })
@@ -189,6 +190,13 @@ function newAuction({adUnits, adUnitCodes}) {
         utils.logWarn('No adUnitCode was supplied to addBidResponse.');
         return false;
       }
+
+      const bidRequest = getBidderRequest(_bidderRequests, bid.bidderCode, adUnitCode);
+      if (!bidRequest.start) {
+        utils.logError(errorMessage('Cannot find valid matching bid request.'));
+        return false;
+      }
+
       if (!bid) {
         utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
         return false;
@@ -197,11 +205,10 @@ function newAuction({adUnits, adUnitCodes}) {
         utils.logError(errorMessage('Native bid missing some required properties.'));
         return false;
       }
-      if (bid.mediaType === 'video' && !bid.vastUrl) {
-        utils.logError(errorMessage(`Video bid does not have required vastUrl property.`));
+      if (bid.mediaType === 'video' && !isValidVideoBid(bid)) {
+        utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
         return false;
       }
-
       if (bid.mediaType === 'banner' && !validBidSize(bid)) {
         utils.logError(errorMessage(`Banner bids require a width and height`));
         return false;
@@ -215,10 +222,8 @@ function newAuction({adUnits, adUnitCodes}) {
       if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
         return true;
       }
-      const adUnit = _bidderRequests.find(request => {
-        return request.bids
-          .filter(rbid => rbid.bidder === bid.bidderCode && rbid.adUnitCode === adUnitCode).length > 0;
-      }) || {start: null};
+
+      const adUnit = getBidderRequest(_bidderRequests, bid.bidderCode, adUnitCode);
 
       const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
       const parsedSizes = utils.parseSizesInput(sizes);
@@ -272,7 +277,11 @@ function newAuction({adUnits, adUnitCodes}) {
         bid.renderer.setRender(adUnitRenderer.render);
       }
 
-      const priceStringsObj = getPriceBucketString(bid.cpm, config.getConfig('customPriceBucket'));
+      const priceStringsObj = getPriceBucketString(
+        bid.cpm,
+        config.getConfig('customPriceBucket'),
+        config.getConfig('currency.granularityMultiplier')
+      );
       bid.pbLg = priceStringsObj.low;
       bid.pbMg = priceStringsObj.med;
       bid.pbHg = priceStringsObj.high;
@@ -281,12 +290,13 @@ function newAuction({adUnits, adUnitCodes}) {
       bid.pbCg = priceStringsObj.custom;
 
       // if there is any key value pairs to map do here
-      var keyValues = {};
+      var keyValues;
       if (bid.bidderCode && (bid.cpm > 0 || bid.dealId)) {
         keyValues = getKeyValueTargetingPairs(bid.bidderCode, bid);
       }
 
-      bid.adserverTargeting = keyValues;
+      // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
+      bid.adserverTargeting = Object.assign(bid.adserverTargeting || {}, keyValues);
     }
 
     function doCallbacksIfNeeded() {
@@ -309,13 +319,16 @@ function newAuction({adUnits, adUnitCodes}) {
             utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
           } else {
             bid.videoCacheKey = cacheIds[0].uuid;
+            if (!bid.vastUrl) {
+              bid.vastUrl = getCacheUrl(bid.videoCacheKey);
+            }
             addBidToAuction(bid);
           }
           doCallbacksIfNeeded();
         });
       } else {
-        addBidToAuction(bid);
         doCallbacksIfNeeded();
+        addBidToAuction(bid);
       }
     }
   }

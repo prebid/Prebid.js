@@ -16,6 +16,10 @@ var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 var adaptermanager = require('src/adaptermanager');
 
+function timestamp() {
+  return new Date().getTime();
+}
+
 describe('auctionmanager.js', function () {
   describe('getKeyValueTargetingPairs', function () {
     var bid = {};
@@ -538,8 +542,22 @@ describe('auctionmanager.js', function () {
       assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
     });
 
+    it('should pass through default adserverTargeting sent from adapter', () => {
+      bids[0].adserverTargeting = {};
+      bids[0].adserverTargeting.extra = 'stuff';
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.isBidRequestValid.returns(true);
+      spec.interpretResponse.returns(bids);
+      auction.callBids(3000);
+      let registeredBid = auction.getBidsReceived().pop();
+      assert.equal(registeredBid.adserverTargeting.hb_bidder, 'sampleBidder');
+      assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
+    });
+
     it('should add native bids that do have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
@@ -568,6 +586,7 @@ describe('auctionmanager.js', function () {
 
     it('should not add native bids that do not have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
@@ -593,6 +612,39 @@ describe('auctionmanager.js', function () {
       assert.equal(bidsRecCount, auction.getBidsReceived().length);
 
       utils.getBidRequest.restore();
+    });
+
+    it('requires a renderer on outstream bids', () => {
+      const bidRequest = () => ({
+        start: timestamp(),
+        bidder: 'sampleBidder',
+        mediaTypes: {
+          video: {context: 'outstream'}
+        },
+      });
+
+      sinon.stub(utils, 'getBidRequest', bidRequest);
+      sinon.stub(utils, 'getBidderRequest', bidRequest);
+
+      let bids1 = Object.assign({},
+        bids[0],
+        {
+          bidderCode: 'sampleBidder',
+          mediaType: 'video',
+          renderer: {render: () => true, url: 'render.js'},
+        }
+      );
+
+      const bidsRecCount = auction.getBidsReceived().length;
+      registerBidder(spec);
+      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
+      spec.isBidRequestValid.returns(true);
+      spec.interpretResponse.returns(bids1);
+      auction.callBids(3000);
+      assert.equal(bidsRecCount + 1, auction.getBidsReceived().length);
+
+      utils.getBidRequest.restore();
+      utils.getBidderRequest.restore();
     });
 
     it('installs publisher-defined renderers on bids', () => {
