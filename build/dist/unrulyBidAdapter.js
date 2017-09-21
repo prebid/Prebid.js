@@ -1,14 +1,14 @@
-pbjsChunk([13],{
+pbjsChunk([16],{
 
-/***/ 229:
+/***/ 241:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(230);
+module.exports = __webpack_require__(242);
 
 
 /***/ }),
 
-/***/ 230:
+/***/ 242:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -32,7 +32,7 @@ var utils = _interopRequireWildcard(_utils);
 
 var _constants = __webpack_require__(4);
 
-var _Renderer = __webpack_require__(17);
+var _Renderer = __webpack_require__(18);
 
 var _adaptermanager = __webpack_require__(1);
 
@@ -121,6 +121,12 @@ function UnrulyAdapter() {
         return;
       }
 
+      var videoMediaType = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video');
+      var context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context');
+      if (videoMediaType && context !== 'outstream') {
+        return;
+      }
+
       var payload = {
         bidRequests: bidRequestBids
       };
@@ -137,10 +143,12 @@ function UnrulyAdapter() {
   return adapter;
 }
 
-_adaptermanager2['default'].registerBidAdapter(new UnrulyAdapter(), 'unruly');
+_adaptermanager2['default'].registerBidAdapter(new UnrulyAdapter(), 'unruly', {
+  supportedMediaTypes: ['video']
+});
 
 module.exports = UnrulyAdapter;
 
 /***/ })
 
-},[229]);
+},[241]);

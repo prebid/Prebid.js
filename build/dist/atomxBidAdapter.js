@@ -1,14 +1,14 @@
-pbjsChunk([82],{
+pbjsChunk([88],{
 
-/***/ 78:
+/***/ 81:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(79);
+module.exports = __webpack_require__(82);
 
 
 /***/ }),
 
-/***/ 79:
+/***/ 82:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -50,7 +50,7 @@ var AtomxAdapter = function AtomxAdapter() {
             id: bid.params.id,
             size: sizes[j],
             prebid: bid.placementCode
-          }, { method: 'GET' });
+          }, { method: 'GET', noDecodeWholeURL: true });
         }
       } else {
         var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
@@ -100,4 +100,4 @@ module.exports = AtomxAdapter;
 
 /***/ })
 
-},[78]);
+},[81]);

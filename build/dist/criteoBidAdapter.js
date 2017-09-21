@@ -1,14 +1,14 @@
-pbjsChunk([72],{
+pbjsChunk([78],{
 
-/***/ 98:
+/***/ 101:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(99);
+module.exports = __webpack_require__(102);
 
 
 /***/ }),
 
-/***/ 99:
+/***/ 102:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -25,6 +25,7 @@ var CriteoAdapter = function CriteoAdapter() {
   var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
   var _profileId = 125;
+  var _adapterVersion = 1;
 
   function _callBids(params) {
     if (!window.criteo_pubtag || window.criteo_pubtag instanceof Array) {
@@ -72,7 +73,7 @@ var CriteoAdapter = function CriteoAdapter() {
       }
 
       var biddingEvent = new Criteo.PubTag.DirectBidding.DirectBiddingEvent(_profileId, new Criteo.PubTag.DirectBidding.DirectBiddingUrlBuilder(isAudit), slots, _callbackSuccess(slots), _callbackError(slots), _callbackError(slots), // timeout handled as error
-      undefined, networkid, integrationMode);
+      undefined, networkid, integrationMode, _adapterVersion);
 
       // process the event as soon as possible
       window.criteo_pubtag.push(biddingEvent);
@@ -179,4 +180,4 @@ module.exports = CriteoAdapter;
 
 /***/ })
 
-},[98]);
+},[101]);

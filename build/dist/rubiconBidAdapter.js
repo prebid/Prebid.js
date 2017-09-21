@@ -1,14 +1,14 @@
-pbjsChunk([31],{
+pbjsChunk([36],{
 
-/***/ 191:
+/***/ 199:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(192);
+module.exports = __webpack_require__(200);
 
 
 /***/ }),
 
-/***/ 192:
+/***/ 200:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -43,6 +43,8 @@ var utils = _interopRequireWildcard(_utils);
 var _ajax = __webpack_require__(6);
 
 var _constants = __webpack_require__(4);
+
+var _userSync = __webpack_require__(15);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -431,15 +433,16 @@ RubiconAdapter.masSizeOrdering = function (sizes) {
 /**
  * syncEmily
  * @summary A user sync dependency for the Rubicon Project adapter
- * When enabled, creates an user sync iframe after a delay once the first auction is complete.
- * Only fires once except that with each winning creative there will be additional, similar calls to the same service.
- * @example
- *  // Config example for Rubicon user sync
- *  pbjs.setConfig({ rubicon: {
- *    userSync: {
- *      enabled: true,
- *      delay: 1000
- *    }
+ * Registers an Emily iframe user sync to be called/created later by Prebid
+ * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs which are off by default
+@example
+ *  // Config example for iframe user sync
+ *  pbjs.setConfig({ userSync: {
+ *    syncEnabled: true,
+ *    pixelEnabled: true,
+ *    syncsPerBidder: 5,
+ *    syncDelay: 3000,
+ *    iframeEnabled: true
  *  }});
  * @return {boolean} Whether or not Emily synced
  */
@@ -449,27 +452,11 @@ function syncEmily(hasSynced) {
     return true;
   }
 
-  var defaultUserSyncConfig = {
-    enabled: false,
-    delay: 5000
-  };
   var iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
-  var rubiConfig = pbjs.getConfig('rubicon');
-  var publisherUserSyncConfig = rubiConfig && rubiConfig.userSync;
+  // register the sync with the Prebid (to be called later)
+  _userSync.userSync.registerSync('iframe', 'rubicon', iframeUrl);
 
-  // Merge publisher user sync config with the defaults
-  var userSyncConfig = _extends(defaultUserSyncConfig, publisherUserSyncConfig);
-
-  // Check that user sync is enabled
-  if (!userSyncConfig.enabled) {
-    return false;
-  }
-
-  // Delay inserting the Emily iframe
-  setTimeout((function () {
-    return utils.insertCookieSyncIframe(iframeUrl);
-  }), Number(userSyncConfig.delay));
   return true;
 }
 
@@ -482,4 +469,4 @@ module.exports = RubiconAdapter;
 
 /***/ })
 
-},[191]);
+},[199]);

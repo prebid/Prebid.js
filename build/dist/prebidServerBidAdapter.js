@@ -1,14 +1,14 @@
-pbjsChunk([39],{
+pbjsChunk([5],{
 
-/***/ 169:
+/***/ 176:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(170);
+module.exports = __webpack_require__(177);
 
 
 /***/ }),
 
-/***/ 170:
+/***/ 177:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36,7 +36,9 @@ var _ajax = __webpack_require__(6);
 
 var _constants = __webpack_require__(4);
 
-var _cookie = __webpack_require__(29);
+var _userSync = __webpack_require__(15);
+
+var _cookie = __webpack_require__(178);
 
 var _adaptermanager = __webpack_require__(1);
 
@@ -44,7 +46,7 @@ var _adaptermanager2 = _interopRequireDefault(_adaptermanager);
 
 var _config = __webpack_require__(8);
 
-var _storagemanager = __webpack_require__(18);
+var _storagemanager = __webpack_require__(28);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
@@ -153,7 +155,7 @@ function PrebidServer() {
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
-      prebid_version: '0.28.0',
+      prebid_version: '0.29.0',
       ad_units: bidRequest.ad_units.filter(hasSizes),
       is_debug: isDebug
     };
@@ -189,7 +191,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach((function (bidder) {
             if (bidder.no_cookie && !_cookiesQueued) {
-              (0, _cookie.queueSync)({ bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type });
+              _userSync.userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
             }
           }));
         }
@@ -211,8 +213,12 @@ function PrebidServer() {
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
             bidObject.ad = bidObj.adm;
+            if (bidObj.nurl) {
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            }
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
+            bidObject.adserverTargeting = bidObj.ad_server_targeting;
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
@@ -258,10 +264,13 @@ function PrebidServer() {
     var bidderCodes = _ref.bidderCodes;
 
     var syncedList = _storagemanager.StorageManager.get(_storagemanager.pbjsSyncsKey) || [];
-    if (_cookiesQueued || syncedList.length === bidderCodes.length) {
+    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
+    syncedList = bidderCodes.filter((function (bidder) {
+      return !syncedList.includes(bidder);
+    }));
+    if (syncedList.length === 0) {
       return;
     }
-    _cookiesQueued = true;
     var payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
@@ -275,7 +284,7 @@ function PrebidServer() {
           }));
         }
         response.bidder_status.forEach((function (bidder) {
-          return (0, _cookie.queueSync)({ bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type });
+          return queueSync({ bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type });
         }));
       } catch (e) {
         utils.logError(e);
@@ -299,6 +308,35 @@ _adaptermanager2['default'].registerBidAdapter(new PrebidServer(), 'prebidServer
 
 module.exports = PrebidServer;
 
+/***/ }),
+
+/***/ 178:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _utils = __webpack_require__(0);
+
+var utils = _interopRequireWildcard(_utils);
+
+var _adloader = __webpack_require__(5);
+
+var _adloader2 = _interopRequireDefault(_adloader);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+var cookie = exports;
+
+cookie.cookieSet = function (cookieSetUrl) {
+  if (!utils.isSafariBrowser()) {
+    return;
+  }
+  _adloader2['default'].loadScript(cookieSetUrl, null, true);
+};
+
 /***/ })
 
-},[169]);
+},[176]);

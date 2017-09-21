@@ -1,14 +1,14 @@
-pbjsChunk([62],{
+pbjsChunk([68],{
 
-/***/ 121:
+/***/ 124:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(122);
+module.exports = __webpack_require__(125);
 
 
 /***/ }),
 
-/***/ 122:
+/***/ 125:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -185,8 +185,8 @@ var GumgumAdapter = function GumgumAdapter() {
 adaptermanager.registerBidAdapter(new GumgumAdapter(), 'gumgum');
 
 module.exports = GumgumAdapter;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(29)))
 
 /***/ })
 
-},[121]);
+},[124]);

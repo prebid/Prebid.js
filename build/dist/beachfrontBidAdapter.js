@@ -1,14 +1,14 @@
-pbjsChunk([80],{
+pbjsChunk([86],{
 
-/***/ 82:
+/***/ 85:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(83);
+module.exports = __webpack_require__(86);
 
 
 /***/ }),
 
-/***/ 83:
+/***/ 86:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -172,8 +172,8 @@ _adaptermanager2['default'].registerBidAdapter(new BeachfrontAdapter(), 'beachfr
 });
 
 module.exports = BeachfrontAdapter;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(29)))
 
 /***/ })
 
-},[82]);
+},[85]);

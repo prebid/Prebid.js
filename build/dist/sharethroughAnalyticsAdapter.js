@@ -1,4 +1,4 @@
-pbjsChunk([0],{
+pbjsChunk([1],{
 
 /***/ 10:
 /***/ (function(module, exports, __webpack_require__) {
@@ -36,6 +36,7 @@ var BID_TIMEOUT = _constants2['default'].EVENTS.BID_TIMEOUT;
 var BID_RESPONSE = _constants2['default'].EVENTS.BID_RESPONSE;
 var BID_WON = _constants2['default'].EVENTS.BID_WON;
 var BID_ADJUSTMENT = _constants2['default'].EVENTS.BID_ADJUSTMENT;
+var SET_TARGETING = _constants2['default'].EVENTS.SET_TARGETING;
 
 var LIBRARY = 'library';
 var ENDPOINT = 'endpoint';
@@ -159,6 +160,8 @@ function AnalyticsAdapter(_ref) {
         return _this2.enqueue({ eventType: BID_WON, args: args });
       })), _defineProperty(_handlers2, BID_ADJUSTMENT, (function (args) {
         return _this2.enqueue({ eventType: BID_ADJUSTMENT, args: args });
+      })), _defineProperty(_handlers2, SET_TARGETING, (function (args) {
+        return _this2.enqueue({ eventType: SET_TARGETING, args: args });
       })), _defineProperty(_handlers2, AUCTION_END, (function (args) {
         return _this2.enqueue({ eventType: AUCTION_END, args: args });
       })), _defineProperty(_handlers2, AUCTION_INIT, (function (args) {
@@ -205,15 +208,15 @@ function AnalyticsAdapter(_ref) {
 
 /***/ }),
 
-/***/ 197:
+/***/ 205:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(198);
+module.exports = __webpack_require__(206);
 
 
 /***/ }),
 
-/***/ 198:
+/***/ 206:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -284,7 +287,7 @@ var sharethroughAdapter = _extends((0, _AnalyticsAdapter2['default'])({
     this.fireBeacon(loseBeaconUrl);
   },
   appendEnvFields: function appendEnvFields(url) {
-    url = utils.tryAppendQueryString(url, 'hbVersion', '0.28.0');
+    url = utils.tryAppendQueryString(url, 'hbVersion', '0.29.0');
     url = utils.tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = utils.tryAppendQueryString(url, 'hbSource', 'prebid');
 
@@ -305,4 +308,4 @@ exports['default'] = sharethroughAdapter;
 
 /***/ })
 
-},[197]);
+},[205]);

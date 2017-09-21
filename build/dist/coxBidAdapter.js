@@ -1,14 +1,6 @@
-pbjsChunk([73],{
+pbjsChunk([79],{
 
-/***/ 96:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(97);
-
-
-/***/ }),
-
-/***/ 97:
+/***/ 100:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -273,6 +265,14 @@ adaptermanager.registerBidAdapter(new CoxAdapter(), 'cox');
 
 module.exports = CoxAdapter;
 
+/***/ }),
+
+/***/ 99:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(100);
+
+
 /***/ })
 
-},[96]);
+},[99]);

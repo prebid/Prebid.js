@@ -1,14 +1,14 @@
-pbjsChunk([45],{
+pbjsChunk([55],{
 
-/***/ 172:
+/***/ 150:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(173);
+module.exports = __webpack_require__(151);
 
 
 /***/ }),
 
-/***/ 173:
+/***/ 151:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -21,11 +21,11 @@ var utils = __webpack_require__(0);
 var CONSTANTS = __webpack_require__(4);
 var adaptermanager = __webpack_require__(1);
 
-var PlatformIOAdapter = function PlatformIOAdapter() {
+var KummaAdapter = function KummaAdapter() {
   function _callBids(params) {
     var bidURL;
     var bids = params.bids || [];
-    var requestURL = window.location.protocol + '//js.adx1.com/pb_ortb.js?cb=' + new Date().getTime() + '&ver=1&';
+    var requestURL = window.location.protocol + '//cdn.kumma.com/pb_ortb.js?cb=' + new Date().getTime() + '&ver=1&';
 
     for (var i = 0; i < bids.length; i++) {
       var requestParams = {};
@@ -40,16 +40,16 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
 
       requestParams.width = arrSize[0];
       requestParams.height = arrSize[1];
-      requestParams.callback = 'pbjs._doPlatformIOCallback';
+      requestParams.callback = 'pbjs._doKummaCallback';
       requestParams.callback_uid = bid.bidId;
       bidURL = requestURL + utils.parseQueryStringParameters(requestParams);
 
-      utils.logMessage('PlatformIO.prebid, Bid ID: ' + bid.bidId + ', Pub ID: ' + bid.params.pubId);
+      utils.logMessage('Kumma.prebid, Bid ID: ' + bid.bidId + ', Pub ID: ' + bid.params.pubId);
       adloader.loadScript(bidURL);
     }
   }
 
-  pbjs._doPlatformIOCallback = function (response) {
+  pbjs._doKummaCallback = function (response) {
     var bidObject;
     var bidRequest;
     var callbackID;
@@ -57,15 +57,15 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
     bidRequest = utils.getBidRequest(callbackID);
     if (response.cpm > 0) {
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
-      bidObject.bidderCode = 'platformio';
+      bidObject.bidderCode = 'kumma';
       bidObject.cpm = response.cpm;
       bidObject.ad = response.tag;
       bidObject.width = response.width;
       bidObject.height = response.height;
     } else {
       bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-      bidObject.bidderCode = 'platformio';
-      utils.logMessage('No Bid response from Platformio request: ' + callbackID);
+      bidObject.bidderCode = 'kumma';
+      utils.logMessage('No Bid response from Kumma request: ' + callbackID);
     }
     bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
   };
@@ -74,10 +74,10 @@ var PlatformIOAdapter = function PlatformIOAdapter() {
     callBids: _callBids
   };
 };
-adaptermanager.registerBidAdapter(new PlatformIOAdapter(), 'platformio');
+adaptermanager.registerBidAdapter(new KummaAdapter(), 'kumma');
 
-module.exports = PlatformIOAdapter;
+module.exports = KummaAdapter;
 
 /***/ })
 
-},[172]);
+},[150]);

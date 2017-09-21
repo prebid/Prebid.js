@@ -1,14 +1,14 @@
-pbjsChunk([70],{
+pbjsChunk([76],{
 
-/***/ 105:
+/***/ 108:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(106);
+module.exports = __webpack_require__(109);
 
 
 /***/ }),
 
-/***/ 106:
+/***/ 109:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -37,7 +37,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
   this.handlerRes = function (response, bidObject) {
     var bid = void 0;
     if (parseFloat(response.result.cpm) > 0) {
-      bid = bidfactory.createBid(1);
+      bid = bidfactory.createBid(1, bidObject);
       bid.bidderCode = bidObject.bidder;
       bid.cpm = response.result.cpm;
       bid.width = response.result.width;
@@ -45,7 +45,7 @@ var DistrictmAdaptor = function districtmAdaptor() {
       bid.ad = response.result.banner;
       bidmanager.addBidResponse(bidObject.placementCode, bid);
     } else {
-      bid = bidfactory.createBid(2);
+      bid = bidfactory.createBid(2, bidObject);
       bid.bidderCode = bidObject.bidder;
       bidmanager.addBidResponse(bidObject.placementCode, bid);
     }
@@ -75,4 +75,4 @@ module.exports = DistrictmAdaptor;
 
 /***/ })
 
-},[105]);
+},[108]);

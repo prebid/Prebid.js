@@ -1,14 +1,14 @@
-pbjsChunk([5],{
+pbjsChunk([7],{
 
-/***/ 102:
+/***/ 105:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(103);
+module.exports = __webpack_require__(106);
 
 
 /***/ }),
 
-/***/ 103:
+/***/ 106:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -24,7 +24,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 exports['default'] = buildDfpVideoUrl;
 
-var _adServerManager = __webpack_require__(104);
+var _adServerManager = __webpack_require__(107);
 
 var _targeting = __webpack_require__(19);
 
@@ -107,7 +107,7 @@ function buildDfpVideoUrl(options) {
 
 /***/ }),
 
-/***/ 104:
+/***/ 107:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -118,7 +118,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.registerVideoSupport = registerVideoSupport;
 
-var _prebidGlobal = __webpack_require__(28);
+var _prebidGlobal = __webpack_require__(30);
 
 var _utils = __webpack_require__(0);
 
@@ -176,4 +176,4 @@ function registerVideoSupport(name, videoSupport) {
 
 /***/ })
 
-},[102]);
+},[105]);

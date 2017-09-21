@@ -1,14 +1,14 @@
-pbjsChunk([29],{
+pbjsChunk([34],{
 
-/***/ 195:
+/***/ 203:
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(196);
+module.exports = __webpack_require__(204);
 
 
 /***/ }),
 
-/***/ 196:
+/***/ 204:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -42,29 +42,45 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var ServerBidAdapter = function ServerBidAdapter() {
+var ServerBidAdapter;
+ServerBidAdapter = function ServerBidAdapter() {
   var baseAdapter = new _adapter2['default']('serverbid');
 
-  var SERVERBID_BASE_URI = 'https://e.serverbid.com/api/v2';
-  var SMARTSYNC_BASE_URI = 'https://s.zkcdn.net/ss';
+  var CONFIG = {
+    'serverbid': {
+      'BASE_URI': 'https://e.serverbid.com/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    },
+    'connectad': {
+      'BASE_URI': 'https://i.connectad.io/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    }
+  };
+
   var SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
   var sizeMap = [null, '120x90', '120x90', '468x60', '728x90', '300x250', '160x600', '120x600', '300x100', '180x150', '336x280', '240x400', '234x60', '88x31', '120x60', '120x240', '125x125', '220x250', '250x250', '250x90', '0x0', '200x90', '300x50', '320x50', '320x480', '185x185', '620x45', '300x125', '800x250'];
 
+  sizeMap[77] = '970x90';
+  sizeMap[123] = '970x250';
+  sizeMap[43] = '300x600';
+
   var bidIds = [];
 
   baseAdapter.callBids = function (params) {
-    if (params && params.bids && utils.isArray(params.bids) && params.bids.length) {
+    if (params && params.bids && utils.isArray(params.bids) && params.bids.length && CONFIG[params.bidderCode]) {
+      var config = CONFIG[params.bidderCode];
+      config.request = window[params.bidderCode.toUpperCase() + '_CONFIG'];
       if (!window.SMARTSYNC) {
-        _callBids(params);
+        _callBids(config, params);
       } else {
         window[SMARTSYNC_CALLBACK] = function () {
           window[SMARTSYNC_CALLBACK] = function () {};
-          _callBids(params);
+          _callBids(config, params);
         };
 
         var siteId = params.bids[0].params.siteId;
-        _appendScript(SMARTSYNC_BASE_URI + '/' + siteId + '.js');
+        _appendScript(config.SMARTSYNC_BASE_URI + '/' + siteId + '.js');
 
         var sstimeout = window.SMARTSYNC_TIMEOUT || (params.timeout || 500) / 2;
         setTimeout((function () {
@@ -83,8 +99,8 @@ var ServerBidAdapter = function ServerBidAdapter() {
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 
-  function _callBids(params) {
-    var data = {
+  function _callBids(config, params) {
+    var data = _extends({
       placements: [],
       time: Date.now(),
       user: {},
@@ -92,7 +108,7 @@ var ServerBidAdapter = function ServerBidAdapter() {
       referrer: document.referrer,
       enableBotFiltering: true,
       includePricingData: true
-    };
+    }, config.request);
 
     var bids = params.bids || [];
 
@@ -112,7 +128,7 @@ var ServerBidAdapter = function ServerBidAdapter() {
     }
 
     if (data.placements.length) {
-      (0, _ajax.ajax)(SERVERBID_BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+      (0, _ajax.ajax)(config.BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
     }
   }
 
@@ -175,15 +191,21 @@ var ServerBidAdapter = function ServerBidAdapter() {
 
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
-  return {
-    callBids: baseAdapter.callBids
-  };
+  return _extends(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode
+  });
+};
+
+ServerBidAdapter.createNew = function () {
+  return new ServerBidAdapter();
 };
 
 _adaptermanager2['default'].registerBidAdapter(new ServerBidAdapter(), 'serverbid');
+_adaptermanager2['default'].aliasBidAdapter('serverbid', 'connectad');
 
 module.exports = ServerBidAdapter;
 
 /***/ })
 
-},[195]);
+},[203]);
