@@ -120,7 +120,7 @@ module.exports = function(codeCoverage, browserstack, watchMode) {
 
     // TODO: This will be removed once we decide about modules
     exclude: [
-      'test/spec/modules/*.js',
+      'test/spec/modules/!(appnexusAstBidAdapter_spec.js)',
       'test/**/bidmanager_spec.js'
     ],
 
