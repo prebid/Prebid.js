@@ -5,11 +5,21 @@ import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import adaptermanager from 'src/adaptermanager';
 
-const ServerBidAdapter = function ServerBidAdapter() {
+var ServerBidAdapter;
+ServerBidAdapter = function ServerBidAdapter() {
   const baseAdapter = new Adapter('serverbid');
 
-  const SERVERBID_BASE_URI = 'https://e.serverbid.com/api/v2';
-  const SMARTSYNC_BASE_URI = 'https://s.zkcdn.net/ss';
+  const CONFIG = {
+    'serverbid': {
+      'BASE_URI': 'https://e.serverbid.com/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    },
+    'connectad': {
+      'BASE_URI': 'https://i.connectad.io/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    }
+  };
+
   const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
   const sizeMap = [
@@ -44,20 +54,29 @@ const ServerBidAdapter = function ServerBidAdapter() {
     '800x250'
   ];
 
+  sizeMap[77] = '970x90';
+  sizeMap[123] = '970x250';
+  sizeMap[43] = '300x600';
+
   const bidIds = [];
 
   baseAdapter.callBids = function(params) {
-    if (params && params.bids && utils.isArray(params.bids) && params.bids.length) {
+    if (params && params.bids &&
+        utils.isArray(params.bids) &&
+        params.bids.length &&
+        CONFIG[params.bidderCode]) {
+      const config = CONFIG[params.bidderCode];
+      config.request = window[params.bidderCode.toUpperCase() + '_CONFIG'];
       if (!window.SMARTSYNC) {
-        _callBids(params);
+        _callBids(config, params);
       } else {
         window[SMARTSYNC_CALLBACK] = function() {
           window[SMARTSYNC_CALLBACK] = function() {};
-          _callBids(params);
+          _callBids(config, params);
         };
 
         const siteId = params.bids[0].params.siteId;
-        _appendScript(SMARTSYNC_BASE_URI + '/' + siteId + '.js');
+        _appendScript(config.SMARTSYNC_BASE_URI + '/' + siteId + '.js');
 
         const sstimeout = window.SMARTSYNC_TIMEOUT || ((params.timeout || 500) / 2);
         setTimeout(function() {
@@ -76,8 +95,8 @@ const ServerBidAdapter = function ServerBidAdapter() {
     document.getElementsByTagName('head')[0].appendChild(script);
   }
 
-  function _callBids(params) {
-    const data = {
+  function _callBids(config, params) {
+    const data = Object.assign({
       placements: [],
       time: Date.now(),
       user: {},
@@ -85,7 +104,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
       referrer: document.referrer,
       enableBotFiltering: true,
       includePricingData: true
-    };
+    }, config.request);
 
     const bids = params.bids || [];
 
@@ -105,7 +124,7 @@ const ServerBidAdapter = function ServerBidAdapter() {
     }
 
     if (data.placements.length) {
-      ajax(SERVERBID_BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+      ajax(config.BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
     }
   }
 
@@ -168,11 +187,17 @@ const ServerBidAdapter = function ServerBidAdapter() {
 
   // Export the `callBids` function, so that Prebid.js can execute
   // this function when the page asks to send out bid requests.
-  return {
-    callBids: baseAdapter.callBids
-  };
+  return Object.assign(this, {
+    callBids: baseAdapter.callBids,
+    setBidderCode: baseAdapter.setBidderCode
+  });
+};
+
+ServerBidAdapter.createNew = function() {
+  return new ServerBidAdapter();
 };
 
 adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
+adaptermanager.aliasBidAdapter('serverbid', 'connectad');
 
 module.exports = ServerBidAdapter;
