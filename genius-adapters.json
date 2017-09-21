@@ -7,6 +7,5 @@
   "districtmDMXBidAdapter",
   "indexExchangeBidAdapter",
   "rubiconBidAdapter",
-  "sovrnBidAdapter",
   "tripleliftBidAdapter"
 ]
