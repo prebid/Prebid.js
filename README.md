@@ -96,7 +96,14 @@ done | sort -d -k 2
 
 ## The Downloads Page
 
-Please don't submit PRs to the Prebid.org downloads page. That page gets updated as part of the Prebid.js release process and requires some updates to backend code that builds the library download for users.
+Please don't submit PRs to the Prebid.org downloads page. That page gets updated in tandem with the Prebid.js release process.
+
+The Downloads page is generated from [the Markdown bidder adapter docs](https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders), so the process for updating is:
+
+1. Your adapter code is merged into Prebid.js
+2. Your bidder docs PR is submitted over here to the docs site
+3. Your adapter code is included with a release
+4. Once your adapter code is actually released, we merge the adapter docs PR, and the Downloads page is automagically updated with a checkbox to include your adapter.
 
 This means an adaptor is not available to download from Prebid.org as soon as the code gets merged into Prebid.js - it will be available after the next release (usually in a couple of weeks).
 
