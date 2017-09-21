@@ -1,5 +1,5 @@
 /* prebid.js v0.28.0
-Updated : 2017-09-18 */
+Updated : 2017-09-21 */
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// install a JSONP callback for chunk loading
 /******/ 	var parentJsonpFunction = window["pbjsChunk"];

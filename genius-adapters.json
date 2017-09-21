@@ -3,6 +3,7 @@
   "aolBidAdapter",
   "appnexusAstBidAdapter",
   "audienceNetworkBidAdapter",
+  "criteoBidAdapter",
   "districtmDMXBidAdapter",
   "indexExchangeBidAdapter",
   "rubiconBidAdapter",
