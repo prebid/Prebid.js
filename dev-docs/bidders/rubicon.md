@@ -15,11 +15,8 @@ biddercode_longer_than_12: false
 ---
 
 
-
 ### Note:
-The Rubicon Fastlane adapter requires setup and approval from the Rubicon Project team, even for existing Rubicon Project publishers. Please reach out to your account team or globalsupport@rubiconproject.com for more information and to enable using this adapter.
-
-For multiple zoneIds support for one given adunit, is necessary duplicate bidder configurations per adUnit.
+The Rubicon Project adapter requires setup and approval from the Rubicon Project team, even for existing Rubicon Project publishers. Please reach out to your account team or globalsupport@rubiconproject.com for more information.
 
 ### bid params
 
@@ -36,7 +33,7 @@ For multiple zoneIds support for one given adunit, is necessary duplicate bidder
 | `position` | 0.6.0 | optional | Set the page position. Valid values are "atf" and "btf". | `"atf"` |
 | `userId` | 0.6.0 | optional | Site-specific user ID may be reflected back in creatives for analysis. Note that userId needs to be the same for all slots. | `"12345abc"` |
 | `floor` | 0.19.0 | optional | Sets the global floor -- no bids will be made under this value. | `0.50` |
-| `video` | 0.19.0 | optional | Video targeting parameters. See the [video section below](#rubicon-video). | `{"language": "en", "playerHeight": "360", "playerWidth": "640", "size_id": "201"}` |
+| `video` | 0.19.0 | optional | Video targeting parameters. See the [video section below](#rubicon-video). | `{"language": "en", "playerHeight": "360", "playerWidth": "640", "size_id": "201"}` |
 
 <a name="rubicon-video"></a>
 
@@ -60,10 +57,8 @@ The following video parameters are supported as of 0.19.0:
 
 ### Configuration
 
-As of Prebid 0.27, the Rubicon adapter has the ability to initiate user-sync requests that will improve DSP user ID match rate,
-with the aim of generating higher bid prices.
-
-By default, sync requests are off. To improve monetization, we recommend firing user syncs 5 seconds after the auction is complete with a call to setConfig():
+The Rubicon adapter has the ability to initiate user-sync requests that will improve DSP user ID match rate,
+with the aim of generating higher bid prices. By default, sync requests are off. To improve monetization, we recommend firing user syncs 5 seconds after the auction is complete with a call to setConfig():
 
 ```javascript
 $$PREBID_GLOBAL$$.setConfig({ rubicon: {
@@ -73,3 +68,7 @@ $$PREBID_GLOBAL$$.setConfig({ rubicon: {
     }
  }});
 ```
+
+### Notes
+
+There can only be one siteId and zoneId in an AdUnit. To get bids on multiple sitesIds or zoneIds, just add more 'rubicon' entries in the bids array.
