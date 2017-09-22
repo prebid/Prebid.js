@@ -22,7 +22,7 @@ export function newUserSync(userSyncDependencies) {
   let usConfig = userSyncDependencies.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
-      usConfig = Object.assign(usConfig, conf.userSync);
+    usConfig = Object.assign(usConfig, conf.userSync);
   });
 
   /**
