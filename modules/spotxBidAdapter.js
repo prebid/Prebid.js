@@ -85,7 +85,7 @@ function Spotx() {
 
       bid.cpm = KVP_Object.spotx_bid;
       bid.vastUrl = url;
-      bid.ad = url;
+      bid.ad = KVP_Object.spotx_ad_key;
 
       var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
       bid.height = sizes[1];
