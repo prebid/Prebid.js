@@ -175,4 +175,39 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.native.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
     expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
+
+  it('Verifies bidder code', () => {
+    expect(spec.code).to.equal('pulseLite');
+  });
+
+  it('Verifies bidder aliases', () => {
+    expect(spec.aliases).to.have.lengthOf(1);
+    expect(spec.aliases[0]).to.equal('pulsepointLite');
+  });
+
+  it('Verifies supported media types', () => {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(1);
+    expect(spec.supportedMediaTypes[0]).to.equal('native');
+  });
+
+  it('Verifies if bid request valid', () => {
+    expect(spec.isBidRequestValid(slotConfigs[0])).to.equal(true);
+    expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
+    expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
+    expect(spec.isBidRequestValid({})).to.equal(false);
+    expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { ct: 123 } })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { cp: 123 } })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { ct: 123, cp: 234 }})).to.equal(true);
+  });
+
+  it('Verifies sync options', () => {
+    expect(spec.getUserSyncs({})).to.be.undefined;
+    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
+    const options = spec.getUserSyncs({ iframeEnabled: true});
+    expect(options).to.not.be.undefined;
+    expect(options).to.have.lengthOf(1);
+    expect(options[0].type).to.equal('iframe');
+    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+  });
 });

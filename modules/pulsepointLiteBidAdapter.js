@@ -26,7 +26,7 @@ export const spec = {
   supportedMediaTypes: ['native'],
 
   isBidRequestValid: bid => {
-    return bid.params.cp && bid.params.ct;
+    return !!(bid && bid.params && bid.params.cp && bid.params.ct);
   },
 
   buildRequests: bidRequest => {
