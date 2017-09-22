@@ -5,41 +5,49 @@ import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('PulsePoint Lite Adapter Tests', () => {
-  let slotConfigs;
-  let nativeSlotConfig;
-
-  beforeEach(() => {
-    slotConfigs = [{
-      placementCode: '/DfpAccount1/slot1',
-      bidId: 'bid12345',
-      params: {
-        cp: 'p10000',
-        ct: 't10000',
-        cf: '300x250'
+  const slotConfigs = [{
+    placementCode: '/DfpAccount1/slot1',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '300x250'
+    }
+  }, {
+    placementCode: '/DfpAccount2/slot2',
+    bidId: 'bid23456',
+    params: {
+      cp: 'p10000',
+      ct: 't20000',
+      cf: '728x90'
+    }
+  }];
+  const nativeSlotConfig = [{
+    placementCode: '/DfpAccount1/slot3',
+    bidId: 'bid12345',
+    nativeParams: {
+      title: { required: true, len: 200 },
+      image: { wmin: 100 },
+      sponsoredBy: { }
+    },
+    params: {
+      cp: 'p10000',
+      ct: 't10000'
+    }
+  }];
+  const appSlotConfig = [{
+    placementCode: '/DfpAccount1/slot3',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      app: {
+        bundle: 'com.pulsepoint.apps',
+        storeUrl: 'http://pulsepoint.com/apps',
+        domain: 'pulsepoint.com',
       }
-    }, {
-      placementCode: '/DfpAccount2/slot2',
-      bidId: 'bid23456',
-      params: {
-        cp: 'p10000',
-        ct: 't20000',
-        cf: '728x90'
-      }
-    }];
-    nativeSlotConfig = [{
-      placementCode: '/DfpAccount1/slot3',
-      bidId: 'bid12345',
-      nativeParams: {
-        title: { required: true, len: 200 },
-        image: { wmin: 100 },
-        sponsoredBy: { }
-      },
-      params: {
-        cp: 'p10000',
-        ct: 't10000'
-      }
-    }];
-  });
+    }
+  }];
 
   it('Verify build request', () => {
     const request = spec.buildRequests(slotConfigs);
@@ -209,5 +217,18 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+  });
+
+  it('Verify app requests', () => {
+    const request = spec.buildRequests(appSlotConfig);
+    const ortbRequest = JSON.parse(request.data);
+    // site object
+    expect(ortbRequest.site).to.equal(null);
+    expect(ortbRequest.app).to.not.be.null;
+    expect(ortbRequest.app.publisher).to.not.equal(null);
+    expect(ortbRequest.app.publisher.id).to.equal('p10000');
+    expect(ortbRequest.app.bundle).to.equal('com.pulsepoint.apps');
+    expect(ortbRequest.app.storeurl).to.equal('http://pulsepoint.com/apps');
+    expect(ortbRequest.app.domain).to.equal('pulsepoint.com');
   });
 });

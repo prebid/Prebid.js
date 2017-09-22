@@ -33,6 +33,7 @@ export const spec = {
     const request = {
       imp: bidRequest.map(slot => impression(slot)),
       site: site(bidRequest),
+      app: app(bidRequest),
       device: device(),
     };
     return {
@@ -197,13 +198,36 @@ function dataAsset(id, params, type, defaultLen) {
  */
 function site(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
-  return {
-    publisher: {
-      id: pubId.toString(),
-    },
-    ref: referrer(),
-    page: getTopWindowLocation().href,
+  const appParams = bidderRequest[0].params.app;
+  if(!appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      ref: referrer(),
+      page: getTopWindowLocation().href,
+    }
   };
+  return null;
+}
+
+/**
+ * Produces an OpenRTB App object.
+ */
+function app(bidderRequest) {
+  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
+  const appParams = bidderRequest[0].params.app;
+  if(appParams) {
+    return {
+      publisher: {
+        id: pubId.toString(),
+      },
+      bundle: appParams.bundle,
+      storeurl: appParams.storeUrl,
+      domain: appParams.domain,
+    };
+  }
+  return null;
 }
 
 /**
