@@ -423,9 +423,9 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
  * syncEmily
  * @summary A user sync dependency for the Rubicon Project adapter
  * Registers an Emily iframe user sync to be called/created later by Prebid
- * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs which are off by default
+ * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs globally and rubicon syncs specifically, both of which are off by default
 @example
- *  // Config example for iframe user sync
+ *  // Config example to turn on iframe user sync globally
  *  $$PREBID_GLOBAL$$.setConfig({ userSync: {
  *    syncEnabled: true,
  *    pixelEnabled: true,
@@ -433,12 +433,24 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
  *    syncDelay: 3000,
  *    iframeEnabled: true
  *  }});
+ *  // Config example to enable rubicon sync
+ *  $$PREBID_GLOBAL$$.setConfig({ rubicon: {
+ *    userSync: {
+ *      enabled: true
+ *    }
+ *  }});
  * @return {boolean} Whether or not Emily synced
  */
 function syncEmily(hasSynced) {
   // Check that it has not already been triggered - only meant to fire once
   if (hasSynced) {
     return true;
+  }
+
+  // only do sync if enabled through config
+  var userSyncConfig = $$PREBID_GLOBAL$$.getConfig('rubicon.userSync') || {};
+  if (!userSyncConfig.enabled) {
+    return;
   }
 
   const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
