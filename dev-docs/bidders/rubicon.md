@@ -58,16 +58,16 @@ The following video parameters are supported as of 0.19.0:
 ### Configuration
 
 The Rubicon adapter has the ability to initiate user-sync requests that will improve DSP user ID match rate,
-with the aim of generating higher bid prices. By default, sync requests are off. To improve monetization, we recommend firing user syncs 5 seconds after the auction is complete with a call to setConfig():
+with the aim of generating higher bid prices. By default, Rubicon Project sync requests are off. To improve monetization, we recommend firing user syncs 5 seconds after the auction is complete with a call to setConfig().
 
 ```javascript
-$$PREBID_GLOBAL$$.setConfig({ rubicon: {
-    userSync: {
-      enabled: true,  // set enabled to false to turn off user-sync
-      delay: 5000     // milliseconds after auction is complete
-    }
+$$PREBID_GLOBAL$$.setConfig({ 
+   userSync: {
+    enabledBidders: ['rubicon'],
+    iframeEnabled: true
  }});
 ```
+Note: this config should be combined with any other UserSync config calls, as subsequent calls to setConfig for the same attribute overwrite each other.
 
 ### Notes
 
