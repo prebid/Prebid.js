@@ -9,6 +9,7 @@ const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
   bids: [
     {
+      bidId: 1,
       requestId: 'first-bid-id',
       adUnitCode: 'mock/placement',
       params: {
@@ -16,6 +17,7 @@ const MOCK_BIDS_REQUEST = {
       }
     },
     {
+      bidId: 2,
       requestId: 'second-bid-id',
       adUnitCode: 'mock/placement2',
       params: {
@@ -79,7 +81,6 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.calledTwice).to.equal(true);
       expect(ajaxStub.called).to.equal(false);
       expect(spec.isBidRequestValid.calledTwice).to.equal(true);
       expect(spec.buildRequests.calledOnce).to.equal(true);
@@ -193,7 +194,7 @@ describe('bidders created by newBidder', () => {
       expect(ajaxStub.calledTwice).to.equal(true);
     });
 
-    it('should add bids for each placement code if no requests are given', () => {
+    it('should not add bids for each placement code if no requests are given', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -203,11 +204,7 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [addBidResponseStub.firstCall.args[0], addBidResponseStub.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.callCount).to.equal(0);
     });
   });
 
@@ -276,11 +273,11 @@ describe('bidders created by newBidder', () => {
       expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it("should add bids for each placement code into the bidmanager, even if the bidder doesn't bid on all of them", () => {
+    it("should only add bids for valid adUnit code into the auction, even if the bidder doesn't bid on all of them", () => {
       const bidder = newBidder(spec);
 
       const bid = {
-        requestId: 'some-id',
+        requestId: '1',
         ad: 'ad-url.com',
         cpm: 0.5,
         height: 200,
@@ -299,11 +296,8 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [addBidResponseStub.firstCall.args[0], addBidResponseStub.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       expect(doneStub.calledOnce).to.equal(true);
     });
 
@@ -376,7 +370,7 @@ describe('bidders created by newBidder', () => {
       expect(doneStub.calledOnce).to.equal(true);
     });
 
-    it('should add bids for each placement code into the bidmanager', () => {
+    it('should not add bids for each adunit code into the auction', () => {
       const bidder = newBidder(spec);
 
       spec.isBidRequestValid.returns(true);
@@ -390,11 +384,7 @@ describe('bidders created by newBidder', () => {
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub);
 
-      expect(addBidResponseStub.calledTwice).to.equal(true);
-      const placementsWithBids =
-        [addBidResponseStub.firstCall.args[0], addBidResponseStub.secondCall.args[0]];
-      expect(placementsWithBids).to.contain('mock/placement');
-      expect(placementsWithBids).to.contain('mock/placement2');
+      expect(addBidResponseStub.callCount).to.equal(0);
       expect(doneStub.calledOnce).to.equal(true);
     });
 

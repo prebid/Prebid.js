@@ -139,35 +139,17 @@ export function newBidder(spec) {
         return;
       }
 
-      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
-      // end properly. This map stores placement codes which we've made _real_ bids on.
-      //
-      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
-      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
-      // will end the auction.
-      //
-      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
         addBidResponse(adUnitCode, bid);
       }
-      function fillNoBids() {
-        bidderRequest.bids
-          .map(bidRequest => bidRequest.adUnitCode)
-          .forEach(adUnitCode => {
-            if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-              addBidResponse(adUnitCode, newEmptyBid());
-            }
-          });
-        done();
-      }
 
-      // After all the responses have come back, fill up the "no bid" bids and
+      // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses() {
-        fillNoBids();
+        done();
         if (spec.getUserSyncs) {
           let syncs = spec.getUserSyncs({
             iframeEnabled: config.getConfig('userSync.iframeEnabled'),
@@ -203,7 +185,7 @@ export function newBidder(spec) {
         requests = [requests];
       }
 
-      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
+      // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(afterAllResponses, requests.length)
@@ -247,7 +229,7 @@ export function newBidder(spec) {
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        // sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response) {
           try {
             response = JSON.parse(response);
@@ -284,7 +266,7 @@ export function newBidder(spec) {
         }
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling fillNoBids().
+        // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
           onResponse();
@@ -299,12 +281,5 @@ export function newBidder(spec) {
       return false;
     }
     return true;
-  }
-
-  function newEmptyBid() {
-    const bid = bidfactory.createBid(STATUS.NO_BID);
-    bid.code = spec.code;
-    bid.bidderCode = spec.code;
-    return bid;
   }
 }
