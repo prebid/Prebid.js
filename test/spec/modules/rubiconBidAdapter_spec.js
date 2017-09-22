@@ -1035,6 +1035,7 @@ describe('the rubicon adapter', () => {
     let rubiconAdapter;
     let userSyncStub;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+    let rubiConfig = $$PREBID_GLOBAL$$.getConfig('rubicon');
 
     beforeEach(() => {
       bids = [];
@@ -1099,17 +1100,32 @@ describe('the rubicon adapter', () => {
     afterEach(() => {
       server.restore();
       userSyncStub.restore();
+      $$PREBID_GLOBAL$$.setConfig({rubicon: rubiConfig});
     });
 
-    it('should register the Emily iframe', () => {
+    it('should not register the Emily iframe by default', () => {
+      expect(userSyncStub.notCalled).to.be.true;
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(userSyncStub.notCalled).to.be.true;
+      // run another auction, should still not have been called
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(userSyncStub.notCalled).to.be.true;
+    });
+
+    it('should register the Emily iframe when enabled', () => {
+      // enable rubicon sync
+      $$PREBID_GLOBAL$$.setConfig({ rubicon: { userSync: { enabled: true }}});
       expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
       expect(userSyncStub.calledOnce).to.be.true;
-      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
     });
 
     it('should not register the Emily iframe more than once', () => {
+      // enable rubicon sync
+      $$PREBID_GLOBAL$$.setConfig({ rubicon: { userSync: { enabled: true }}});
       expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
