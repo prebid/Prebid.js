@@ -176,8 +176,10 @@ describe('user sync', () => {
   });
 
   it('should register config set after instantiation', () => {
+    // start with userSync off
     const userSync = newTestUserSync({syncEnabled: false});
-    config.setConfig({userSync: getUserSyncConfig({syncEnabled: true})});
+    // turn it on with setConfig()
+    config.setConfig({userSync: {syncEnabled: true}});
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
