@@ -237,7 +237,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
     try {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
-      // const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
       if (bid) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);

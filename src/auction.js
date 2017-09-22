@@ -55,7 +55,7 @@ import { isValidVideoBid } from './video';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
-import { userSync } from 'src/userSync.js';
+import { userSync } from 'src/userSync';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
