@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import RubiconAdapter from 'modules/rubiconBidAdapter';
-import {parse as parseQuery} from 'querystring';
+import { parse as parseQuery } from 'querystring';
+import { userSync } from 'src/userSync';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -428,16 +429,16 @@ describe('the rubicon adapter', () => {
             window.DigiTrust = {
               getUser: sinon.spy()
             };
-            origGetConfig = window.pbjs.getConfig;
+            origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
           });
 
           afterEach(() => {
             delete window.DigiTrust;
-            window.pbjs.getConfig = origGetConfig;
+            window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
           });
 
           it('should send digiTrustId config params', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -474,7 +475,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to optout', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: true,
@@ -507,7 +508,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params due to failure', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {
                 digiTrustId: {
                   success: false,
@@ -540,7 +541,7 @@ describe('the rubicon adapter', () => {
           });
 
           it('should not send digiTrustId config params if they do not exist', () => {
-            sinon.stub(window.pbjs, 'getConfig', (key) => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
               var config = {};
               return config[key];
             });
@@ -1032,13 +1033,15 @@ describe('the rubicon adapter', () => {
     let server;
     let addBidResponseAction;
     let rubiconAdapter;
+    let userSyncStub;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
-    let origGetConfig = window.pbjs.getConfig;
 
     beforeEach(() => {
       bids = [];
 
       server = sinon.fakeServer.create();
+      // monitor userSync registrations
+      userSyncStub = sinon.stub(userSync, 'registerSync');
 
       sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
         bids.push(bid);
@@ -1047,8 +1050,6 @@ describe('the rubicon adapter', () => {
           addBidResponseAction = undefined;
         }
       });
-
-      sinon.spy(window, 'setTimeout');
 
       server.respondWith(JSON.stringify({
         'status': 'ok',
@@ -1097,97 +1098,26 @@ describe('the rubicon adapter', () => {
 
     afterEach(() => {
       server.restore();
-      window.setTimeout.restore();
-      window.pbjs.getConfig = origGetConfig;
+      userSyncStub.restore();
     });
 
-    it('should add the Emily iframe by default', (done) => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {delay: 0} // Use 0 so we don't have to wait in our tests
-        }};
-        return config[key];
-      });
-
+    it('should register the Emily iframe', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
+      expect(userSyncStub.calledOnce).to.be.true;
+      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
     });
 
-    it('should add the Emily iframe when enabled', (done) => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: true, delay: 0}
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-
-      server.respond();
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
-    });
-
-    it('should not fire more than once', (done) => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: true, delay: 0}
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-
-      server.respond();
-      // Fire again
+    it('should not register the Emily iframe more than once', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(1);
-        done();
-      }, 0);
-    });
-
-    it('should not add the Emily iframe when disabled', (done) => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: false, delay: 0}
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-
-      server.respond();
-
-      setTimeout(() => {
-        let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-        expect(iframes.length).to.equal(0);
-        done();
-      }, 0);
-    });
-
-    it('should delay adding Emily based on config', () => {
-      sinon.stub(window.pbjs, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {
-            enabled: true,
-            delay: 999
-          }
-        }};
-        return config[key];
-      });
+      expect(userSyncStub.calledOnce).to.be.true;
+      // run another auction, should still have only been called once
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-      expect(window.setTimeout.getCall(0).args[1]).to.equal(999);
+      expect(userSyncStub.calledOnce).to.be.true;
     });
   });
 });

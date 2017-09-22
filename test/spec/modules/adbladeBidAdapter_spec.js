@@ -26,8 +26,8 @@ describe('adblade adapter', () => {
   };
 
   beforeEach(() => {
-    bidsRequestedOriginal = pbjs._bidsRequested;
-    pbjs._bidsRequested = [];
+    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
+    $$PREBID_GLOBAL$$._bidsRequested = [];
 
     adapter = new Adapter();
     sandbox = sinon.sandbox.create();
@@ -36,7 +36,7 @@ describe('adblade adapter', () => {
   afterEach(() => {
     sandbox.restore();
 
-    pbjs._bidsRequested = bidsRequestedOriginal;
+    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
   });
 
   describe('sizes', () => {
@@ -99,7 +99,7 @@ describe('adblade adapter', () => {
 
   describe('adbladeResponse', () => {
     it('should exist and be a function', () => {
-      expect(pbjs.adbladeResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.adbladeResponse).to.exist.and.to.be.a('function');
     });
   });
 
@@ -109,7 +109,7 @@ describe('adblade adapter', () => {
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
       let bidderReponse = {
@@ -137,7 +137,7 @@ describe('adblade adapter', () => {
           }
         ]
       };
-      pbjs.adbladeResponse(bidderReponse);
+      $$PREBID_GLOBAL$$.adbladeResponse(bidderReponse);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
     });
@@ -176,11 +176,11 @@ describe('adblade adapter', () => {
     beforeEach(() => {
       sandbox.stub(bidManager, 'addBidResponse');
 
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
 
       // respond
       let bidderReponse = {};
-      pbjs.adbladeResponse(bidderReponse);
+      $$PREBID_GLOBAL$$.adbladeResponse(bidderReponse);
 
       firstBid = bidManager.addBidResponse.firstCall.args[1];
     });

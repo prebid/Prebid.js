@@ -104,7 +104,7 @@ describe('mobfox adapter tests', function () {
       let requestParams = utils.cloneJson(mockRequestsParams.banner);
       requestParams.adspace_width = 1231564; // should return an error
       bidderRequest.bids[0].params = requestParams;
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter().callBids(bidderRequest);
 
@@ -144,7 +144,7 @@ describe('mobfox adapter tests', function () {
 
       let requestParams = utils.cloneJson(mockRequestsParams.banner);
       bidderRequest.bids[0].params = requestParams;
-      pbjs._bidsRequested.push(bidderRequest);
+      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
       // adapter needs to be called, in order for the stub to register.
       adapter().callBids(bidderRequest);
 

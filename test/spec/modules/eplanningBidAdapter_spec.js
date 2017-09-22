@@ -61,12 +61,12 @@ describe('eplanning adapter tests', function () {
     });
 
     it('callback function should exist', function() {
-      expect(pbjs.processEPlanningResponse).to.exist.and.to.be.a('function');
+      expect($$PREBID_GLOBAL$$.processEPlanningResponse).to.exist.and.to.be.a('function');
     });
 
     it('creates a bid response if bid exists', function() {
       adapter().callBids(DEFAULT_PARAMS);
-      pbjs.processEPlanningResponse(RESPONSE_AD);
+      $$PREBID_GLOBAL$$.processEPlanningResponse(RESPONSE_AD);
 
       var bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
       var bidObject = stubAddBidResponse.getCall(0).args[1];
@@ -82,7 +82,7 @@ describe('eplanning adapter tests', function () {
 
     it('creates an empty bid response if there is no bid', function() {
       adapter().callBids(DEFAULT_PARAMS);
-      pbjs.processEPlanningResponse(RESPONSE_EMPTY);
+      $$PREBID_GLOBAL$$.processEPlanningResponse(RESPONSE_EMPTY);
 
       var bidPlacementCode = stubAddBidResponse.getCall(0).args[0];
       var bidObject = stubAddBidResponse.getCall(0).args[1];

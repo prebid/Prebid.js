@@ -9,6 +9,7 @@ var CriteoAdapter = function CriteoAdapter() {
   var _publisherTagUrl = sProt + '//static.criteo.net/js/ld/publishertag.js';
   var _bidderCode = 'criteo';
   var _profileId = 125;
+  var _adapterVersion = 1;
 
   function _callBids(params) {
     if (!window.criteo_pubtag || window.criteo_pubtag instanceof Array) {
@@ -77,7 +78,8 @@ var CriteoAdapter = function CriteoAdapter() {
         _callbackError(slots), // timeout handled as error
         undefined,
         networkid,
-        integrationMode
+        integrationMode,
+        _adapterVersion
       );
 
       // process the event as soon as possible
@@ -176,8 +178,7 @@ var CriteoAdapter = function CriteoAdapter() {
         bidObject.height = bidResponse.height;
         bidObject.ad = bidResponse.creative;
       }
-    }
-    else {
+    } else {
       bidObject = _invalidBidResponse();
     }
     return bidObject;

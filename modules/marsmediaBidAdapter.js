@@ -86,8 +86,7 @@ var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
 
     if (typeof bidRequest.params.floor === 'undefined') {
       throw 'No floor';
-    }
-    else if (isNaN(Number(bidRequest.params.floor))) {
+    } else if (isNaN(Number(bidRequest.params.floor))) {
       throw 'Floor must be numeric value';
     }
 
