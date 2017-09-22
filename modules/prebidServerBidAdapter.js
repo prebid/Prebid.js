@@ -230,7 +230,7 @@ function PrebidServer() {
         if (response.status === 'ok') {
           bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
         }
-        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+        response.bidder_status.forEach(bidder => userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url));
       } catch (e) {
         utils.logError(e);
       }
