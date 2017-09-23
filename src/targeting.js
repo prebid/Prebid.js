@@ -5,66 +5,113 @@ const bidmanager = require('./bidmanager');
 const utils = require('./utils');
 var CONSTANTS = require('./constants');
 
-var targeting = exports;
 var pbTargetingKeys = [];
 
-targeting.resetPresetTargeting = function(adUnitCode) {
-  if (isGptPubadsDefined()) {
+export function newTargeting() {
+  let targeting = {};
+  targeting.resetPresetTargeting = function(adUnitCode) {
+    if (isGptPubadsDefined()) {
+      const adUnitCodes = getAdUnitCodes(adUnitCode);
+      const adUnits = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
+      window.googletag.pubads().getSlots().forEach(slot => {
+        pbTargetingKeys.forEach(function(key) {
+          // reset only registered adunits
+          adUnits.forEach(function(unit) {
+            if (unit.code === slot.getAdUnitPath() ||
+                unit.code === slot.getSlotElementId()) {
+              slot.setTargeting(key, null);
+            }
+          });
+        });
+      });
+    }
+  };
+
+  targeting.getAllTargeting = function(adUnitCode) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
-    const adUnits = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnitCodes.includes(adUnit.code));
-    window.googletag.pubads().getSlots().forEach(slot => {
-      pbTargetingKeys.forEach(function(key) {
-        // reset only registered adunits
-        adUnits.forEach(function(unit) {
-          if (unit.code === slot.getAdUnitPath() ||
-              unit.code === slot.getSlotElementId()) {
-            slot.setTargeting(key, null);
+
+    // Get targeting for the winning bid. Add targeting for any bids that have
+    // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
+    var targeting = getWinningBidTargeting(adUnitCodes)
+      .concat(getAlwaysUseBidTargeting(adUnitCodes))
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
+
+    // store a reference of the targeting keys
+    targeting.map(adUnitCode => {
+      Object.keys(adUnitCode).map(key => {
+        adUnitCode[key].map(targetKey => {
+          if (pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
+            pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
           }
         });
       });
     });
-  }
-};
+    return targeting;
+  };
 
-targeting.getAllTargeting = function(adUnitCode) {
-  const adUnitCodes = getAdUnitCodes(adUnitCode);
-
-  // Get targeting for the winning bid. Add targeting for any bids that have
-  // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-  var targeting = getWinningBidTargeting(adUnitCodes)
-    .concat(getAlwaysUseBidTargeting(adUnitCodes))
-    .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
-
-  // store a reference of the targeting keys
-  targeting.map(adUnitCode => {
-    Object.keys(adUnitCode).map(key => {
-      adUnitCode[key].map(targetKey => {
-        if (pbTargetingKeys.indexOf(Object.keys(targetKey)[0]) === -1) {
-          pbTargetingKeys = Object.keys(targetKey).concat(pbTargetingKeys);
-        }
-      });
+  targeting.setTargeting = function(targetingConfig) {
+    window.googletag.pubads().getSlots().forEach(slot => {
+      targetingConfig.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
+        Object.keys(targeting)[0] === slot.getSlotElementId())
+        .forEach(targeting => targeting[Object.keys(targeting)[0]]
+          .forEach(key => {
+            key[Object.keys(key)[0]]
+              .map((value) => {
+                utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
+                return value;
+              })
+              .forEach(value => {
+                slot.setTargeting(Object.keys(key)[0], value);
+              });
+          }));
     });
-  });
+  };
+
+  /**
+   * Returns top bids for a given adUnit or set of adUnits.
+   * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
+   * @return {[type]}            [description]
+   */
+  targeting.getWinningBids = function(adUnitCode) {
+    const adUnitCodes = getAdUnitCodes(adUnitCode);
+
+    return $$PREBID_GLOBAL$$._bidsReceived
+      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+      .filter(bid => bid.cpm > 0)
+      .map(bid => bid.adUnitCode)
+      .filter(uniques)
+      .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
+        .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
+        .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
+  };
+
+  targeting.setTargetingForAst = function() {
+    let targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
+    Object.keys(targeting).forEach(targetId =>
+      Object.keys(targeting[targetId]).forEach(key => {
+        utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`);
+        // setKeywords supports string and array as value
+        if (utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
+          let keywordsObj = {};
+          let input = 'hb_adid';
+          let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
+          keywordsObj[nKey] = targeting[targetId][key];
+          window.apntag.setKeywords(targetId, keywordsObj);
+        }
+      })
+    );
+  };
+
+  targeting.isApntagDefined = function() {
+    if (window.apntag && utils.isFn(window.apntag.setKeywords)) {
+      return true;
+    }
+  };
+
   return targeting;
 };
 
-targeting.setTargeting = function(targetingConfig) {
-  window.googletag.pubads().getSlots().forEach(slot => {
-    targetingConfig.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
-      Object.keys(targeting)[0] === slot.getSlotElementId())
-      .forEach(targeting => targeting[Object.keys(targeting)[0]]
-        .forEach(key => {
-          key[Object.keys(key)[0]]
-            .map((value) => {
-              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
-              return value;
-            })
-            .forEach(value => {
-              slot.setTargeting(Object.keys(key)[0], value);
-            });
-        }));
-  });
-};
+export const targeting = newTargeting();
 
 /**
  * normlizes input to a `adUnit.code` array
@@ -79,41 +126,6 @@ function getAdUnitCodes(adUnitCode) {
   }
   return $$PREBID_GLOBAL$$._adUnitCodes || [];
 }
-
-/**
- * Returns top bids for a given adUnit or set of adUnits.
- * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
- * @return {[type]}            [description]
- */
-targeting.getWinningBids = function(adUnitCode) {
-  const adUnitCodes = getAdUnitCodes(adUnitCode);
-
-  return $$PREBID_GLOBAL$$._bidsReceived
-    .filter(bid => adUnitCodes.includes(bid.adUnitCode))
-    .filter(bid => bid.cpm > 0)
-    .map(bid => bid.adUnitCode)
-    .filter(uniques)
-    .map(adUnitCode => $$PREBID_GLOBAL$$._bidsReceived
-      .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-      .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
-};
-
-targeting.setTargetingForAst = function() {
-  let targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
-  Object.keys(targeting).forEach(targetId =>
-    Object.keys(targeting[targetId]).forEach(key => {
-      utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`);
-      // setKeywords supports string and array as value
-      if (utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
-        let keywordsObj = {};
-        let input = 'hb_adid';
-        let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
-        keywordsObj[nKey] = targeting[targetId][key];
-        window.apntag.setKeywords(targetId, keywordsObj);
-      }
-    })
-  );
-};
 
 function getWinningBidTargeting(adUnitCodes) {
   let winners = targeting.getWinningBids(adUnitCodes);
@@ -193,12 +205,6 @@ function getTargetingMap(bid, keys) {
     };
   });
 }
-
-targeting.isApntagDefined = function() {
-  if (window.apntag && utils.isFn(window.apntag.setKeywords)) {
-    return true;
-  }
-};
 
 function getEmptyBid(adUnitCode) {
   return {
