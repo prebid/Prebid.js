@@ -148,13 +148,13 @@ var CriteoAdapter = function CriteoAdapter() {
       bidObject.cpm = bidResponse.cpm;
 
       // in case of native
-      if (slot.nativeCallback && bidResponse.native) {
+      if (slot.nativeCallback && bidResponse['native']) {
         if (typeof slot.nativeCallback !== 'function') {
           utils.logError('Criteo bid: nativeCallback parameter is not a function');
         } else {
           // store the callbacks in a global object
           window.criteo_pubtag.native_slots = window.criteo_pubtag.native_slots || {};
-          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse.native };
+          window.criteo_pubtag.native_slots['' + bidObject.adId] = { callback: slot.nativeCallback, nativeResponse: bidResponse['native'] };
 
           // this code is executed in an iframe, we need to get a reference to the
           // publishertag in the main window to retrieve native responses and callbacks.
