@@ -77,11 +77,17 @@ function createBidResponseHandler(bidRequestBids) {
   }
 }
 
-function createUnrulyAdapter() {
+function UnrulyAdapter() {
   const adapter = {
     exchangeUrl: 'https://targeting.unrulymedia.com/prebid',
     callBids({ bids: bidRequestBids }) {
       if (!bidRequestBids || bidRequestBids.length === 0) {
+        return
+      }
+
+      const videoMediaType = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video')
+      const context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context')
+      if (videoMediaType && context !== 'outstream') {
         return
       }
 
@@ -106,6 +112,8 @@ function createUnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new createUnrulyAdapter, 'unruly')
+adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly', {
+  supportedMediaTypes: ['video']
+});
 
-module.exports = createUnrulyAdapter
+module.exports = UnrulyAdapter

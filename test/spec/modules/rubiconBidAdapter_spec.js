@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import RubiconAdapter from 'modules/rubiconBidAdapter';
-import {parse as parseQuery} from 'querystring';
+import { parse as parseQuery } from 'querystring';
+import { userSync } from 'src/userSync';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -329,7 +330,8 @@ describe('the rubicon adapter', () => {
 
           let expectedQuery = {
             'dt.id': 'testId',
-            'dt.keyv': 'testKeyV'
+            'dt.keyv': 'testKeyV',
+            'dt.pref': '0'
           };
 
           // test that all values above are both present and correct
@@ -357,7 +359,7 @@ describe('the rubicon adapter', () => {
           });
         });
 
-        it('should send not digitrust params due to optout', () => {
+        it('should not send digitrust params due to optout', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
@@ -389,7 +391,7 @@ describe('the rubicon adapter', () => {
           delete window.DigiTrust;
         });
 
-        it('should send not digitrust params due to failure', () => {
+        it('should not send digitrust params due to failure', () => {
           window.DigiTrust = {
             getUser: function() {}
           };
@@ -419,6 +421,148 @@ describe('the rubicon adapter', () => {
           });
 
           delete window.DigiTrust;
+        });
+
+        describe('digiTrustId config', () => {
+          var origGetConfig;
+          beforeEach(() => {
+            window.DigiTrust = {
+              getUser: sinon.spy()
+            };
+            origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
+          });
+
+          afterEach(() => {
+            delete window.DigiTrust;
+            window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
+          });
+
+          it('should send digiTrustId config params', () => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: true,
+                  identity: {
+                    privacy: {optout: false},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
+              };
+              return config[key];
+            });
+
+            rubiconAdapter.callBids(bidderRequest);
+
+            let request = xhr.requests[0];
+
+            let query = request.url.split('?')[1];
+            query = parseQuery(query);
+
+            let expectedQuery = {
+              'dt.id': 'testId',
+              'dt.keyv': 'testKeyV'
+            };
+
+            // test that all values above are both present and correct
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(query[key]).to.equal(value);
+            });
+
+            // should not have called DigiTrust.getUser()
+            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          });
+
+          it('should not send digiTrustId config params due to optout', () => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: true,
+                  identity: {
+                    privacy: {optout: true},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
+              }
+              return config[key];
+            });
+
+            rubiconAdapter.callBids(bidderRequest);
+
+            let request = xhr.requests[0];
+
+            let query = request.url.split('?')[1];
+            query = parseQuery(query);
+
+            let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+            // Test that none of the DigiTrust keys are part of the query
+            undefinedKeys.forEach(key => {
+              expect(typeof query[key]).to.equal('undefined');
+            });
+
+            // should not have called DigiTrust.getUser()
+            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          });
+
+          it('should not send digiTrustId config params due to failure', () => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+              var config = {
+                digiTrustId: {
+                  success: false,
+                  identity: {
+                    privacy: {optout: false},
+                    id: 'testId',
+                    keyv: 'testKeyV'
+                  }
+                }
+              }
+              return config[key];
+            });
+
+            rubiconAdapter.callBids(bidderRequest);
+
+            let request = xhr.requests[0];
+
+            let query = request.url.split('?')[1];
+            query = parseQuery(query);
+
+            let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+            // Test that none of the DigiTrust keys are part of the query
+            undefinedKeys.forEach(key => {
+              expect(typeof query[key]).to.equal('undefined');
+            });
+
+            // should not have called DigiTrust.getUser()
+            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          });
+
+          it('should not send digiTrustId config params if they do not exist', () => {
+            sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
+              var config = {};
+              return config[key];
+            });
+
+            rubiconAdapter.callBids(bidderRequest);
+
+            let request = xhr.requests[0];
+
+            let query = request.url.split('?')[1];
+            query = parseQuery(query);
+
+            let undefinedKeys = ['dt.id', 'dt.keyv'];
+
+            // Test that none of the DigiTrust keys are part of the query
+            undefinedKeys.forEach(key => {
+              expect(typeof query[key]).to.equal('undefined');
+            });
+
+            // should have called DigiTrust.getUser() once
+            expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+          });
         });
       });
 
@@ -593,7 +737,7 @@ describe('the rubicon adapter', () => {
                 'ad_id': '6',
                 'advertiser': 7,
                 'network': 8,
-                'creative_id': 9,
+                'creative_id': 'crid-9',
                 'type': 'script',
                 'script': 'alert(\'foo\')',
                 'campaign_id': 10,
@@ -614,7 +758,7 @@ describe('the rubicon adapter', () => {
                 'ad_id': '7',
                 'advertiser': 7,
                 'network': 8,
-                'creative_id': 9,
+                'creative_id': 'crid-9',
                 'type': 'script',
                 'script': 'alert(\'foo\')',
                 'campaign_id': 10,
@@ -644,6 +788,7 @@ describe('the rubicon adapter', () => {
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
+          expect(bids[0].creative_id).to.equal('crid-9');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
@@ -655,6 +800,7 @@ describe('the rubicon adapter', () => {
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
+          expect(bids[1].creative_id).to.equal('crid-9');
           expect(bids[1].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
@@ -688,6 +834,35 @@ describe('the rubicon adapter', () => {
           expect(bidManager.addBidResponse.calledOnce).to.equal(true);
           expect(bids).to.be.lengthOf(1);
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+        });
+
+        it('should return currency "USD"', () => {
+          server.respondWith(JSON.stringify({
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+              'status': 'ok',
+              'cpm': 0,
+              'size_id': 15
+            }]
+          }));
+
+          rubiconAdapter.callBids(bidderRequest);
+
+          server.respond();
+
+          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          expect(bids).to.be.lengthOf(1);
+          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+          expect(bids[0].currency).to.equal('USD');
         });
 
         it('should handle an error with no ads returned', () => {
@@ -821,6 +996,7 @@ describe('the rubicon adapter', () => {
                   'creative_type': 'video',
                   'creative_depot_url': 'https://fastlane-adv.rubiconproject.com/v1/creative/a40fe16e-d08d-46a9-869d-2e1573599e0c.xml',
                   'ad_id': 999999,
+                  'creative_id': 'crid-999999',
                   'size_id': 201,
                   'advertiser': 12345
                 }
@@ -840,7 +1016,7 @@ describe('the rubicon adapter', () => {
 
           expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
           expect(bids[0].bidderCode).to.equal('rubicon');
-          expect(bids[0].creative_id).to.equal(999999);
+          expect(bids[0].creative_id).to.equal('crid-999999');
           expect(bids[0].cpm).to.equal(1);
           expect(bids[0].descriptionUrl).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
           expect(bids[0].vastUrl).to.equal(
@@ -849,6 +1025,99 @@ describe('the rubicon adapter', () => {
           expect(bids[0].impression_id).to.equal('a40fe16e-d08d-46a9-869d-2e1573599e0c');
         });
       });
+    });
+  });
+
+  describe('user sync', () => {
+    let bids;
+    let server;
+    let addBidResponseAction;
+    let rubiconAdapter;
+    let userSyncStub;
+    const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+
+    beforeEach(() => {
+      bids = [];
+
+      server = sinon.fakeServer.create();
+      // monitor userSync registrations
+      userSyncStub = sinon.stub(userSync, 'registerSync');
+
+      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
+        bids.push(bid);
+        if (addBidResponseAction) {
+          addBidResponseAction();
+          addBidResponseAction = undefined;
+        }
+      });
+
+      server.respondWith(JSON.stringify({
+        'status': 'ok',
+        'account_id': 14062,
+        'site_id': 70608,
+        'zone_id': 530022,
+        'size_id': 15,
+        'alt_size_ids': [
+          43
+        ],
+        'tracking': '',
+        'inventory': {},
+        'ads': [
+          {
+            'status': 'ok',
+            'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+            'size_id': '15',
+            'ad_id': '6',
+            'advertiser': 7,
+            'network': 8,
+            'creative_id': 9,
+            'type': 'script',
+            'script': 'alert(\'foo\')',
+            'campaign_id': 10,
+            'cpm': 0.811,
+            'targeting': [
+              {
+                'key': 'rpfl_14062',
+                'values': [
+                  '15_tier_all_test'
+                ]
+              }
+            ]
+          }
+        ]
+      }));
+
+      // Remove all Emily iframes for a fresh start
+      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
+      for (let i = 0; i < iframes.length; i += 1) {
+        iframes[i].outerHTML = '';
+      }
+
+      rubiconAdapter = new RubiconAdapter();
+    });
+
+    afterEach(() => {
+      server.restore();
+      userSyncStub.restore();
+    });
+
+    it('should register the Emily iframe', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(userSyncStub.calledOnce).to.be.true;
+      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
+    });
+
+    it('should not register the Emily iframe more than once', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(userSyncStub.calledOnce).to.be.true;
+      // run another auction, should still have only been called once
+      rubiconAdapter.callBids(bidderRequest);
+      server.respond();
+      expect(userSyncStub.calledOnce).to.be.true;
     });
   });
 });

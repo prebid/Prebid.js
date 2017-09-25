@@ -214,9 +214,5 @@
     "browser": "iphone",
     "device": "iPhone 6S",
     "browser_version": null
-  },
-  "Chrome_travis_ci": {
-    "base": "Chrome",
-    "flags": ["--no-sandbox"]
   }
 }

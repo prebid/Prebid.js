@@ -1,11 +1,11 @@
-import * as Adapter from 'src/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import adaptermanager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS } from 'src/constants';
-
+import { userSync } from 'src/userSync';
 const RUBICON_BIDDER_CODE = 'rubicon';
 
 // use deferred function call since version isn't defined yet at this point
@@ -29,6 +29,7 @@ var sizeMap = {
   8: '120x600',
   9: '160x600',
   10: '300x600',
+  13: '200x200',
   14: '250x250',
   15: '300x250',
   16: '336x280',
@@ -66,11 +67,15 @@ var sizeMap = {
   113: '1000x300',
   117: '320x100',
   125: '800x250',
-  126: '200x600'
+  126: '200x600',
+  195: '600x300'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 function RubiconAdapter() {
+  var baseAdapter = new Adapter(RUBICON_BIDDER_CODE);
+  var hasUserSyncFired = false;
+
   function _callBids(bidderRequest) {
     var bids = bidderRequest.bids || [];
 
@@ -128,7 +133,7 @@ function RubiconAdapter() {
 
       function addErrorBid() {
         let badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-        badBid.bidderCode = bid.bidder;
+        badBid.bidderCode = baseAdapter.getBidderCode();
         bidmanager.addBidResponse(bid.placementCode, badBid);
       }
     });
@@ -140,17 +145,18 @@ function RubiconAdapter() {
 
   function _getDigiTrustQueryParams() {
     function getDigiTrustId() {
-      let digiTrustUser = window.DigiTrust && window.DigiTrust.getUser({member: 'T9QSFKPDN9'});
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || null;
+      let digiTrustUser = window.DigiTrust && ($$PREBID_GLOBAL$$.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
     }
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return [];
     }
     return [
       'dt.id', digiTrustId.id,
-      'dt.keyv', digiTrustId.keyv
+      'dt.keyv', digiTrustId.keyv,
+      'dt.pref', 0
     ];
   }
 
@@ -170,7 +176,7 @@ function RubiconAdapter() {
         params.video.playerHeight
       ];
     } else if (
-        Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
+      Array.isArray(bid.sizes) && bid.sizes.length > 0 &&
         Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1
     ) {
       size = bid.sizes[0];
@@ -293,7 +299,7 @@ function RubiconAdapter() {
     return queryString.reduce(
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
-        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo,
       FASTLANE_ENDPOINT + '?'
     ).slice(0, -1); // remove trailing &
   }
@@ -309,9 +315,9 @@ function RubiconAdapter() {
 </html>`;
 
   function handleRpCB(responseText, bidRequest) {
-    var responseObj = JSON.parse(responseText), // can throw
-      ads = responseObj.ads,
-      adResponseKey = bidRequest.placementCode;
+    const responseObj = JSON.parse(responseText); // can throw
+    let ads = responseObj.ads;
+    const adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
@@ -339,8 +345,9 @@ function RubiconAdapter() {
       // store bid response
       // bid status is good (indicating 1)
       var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-      bid.creative_id = ad.ad_id;
-      bid.bidderCode = bidRequest.bidder;
+      bid.currency = 'USD';
+      bid.creative_id = ad.creative_id;
+      bid.bidderCode = baseAdapter.getBidderCode();
       bid.cpm = ad.cpm || 0;
       bid.dealId = ad.deal;
       if (bidRequest.mediaType === 'video') {
@@ -367,15 +374,16 @@ function RubiconAdapter() {
         utils.logError('Error from addBidResponse', null, err);
       }
     });
+    // Run the Emily user sync
+    hasUserSyncFired = syncEmily(hasUserSyncFired);
   }
 
   function _adCpmSort(adA, adB) {
     return (adB.cpm || 0.0) - (adA.cpm || 0.0);
   }
 
-  return Object.assign(Adapter.createNew(RUBICON_BIDDER_CODE), {
-    callBids: _callBids,
-    createNew: RubiconAdapter.createNew
+  return Object.assign(this, baseAdapter, {
+    callBids: _callBids
   });
 }
 
@@ -393,8 +401,8 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
     }, [])
     .sort((first, second) => {
       // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
       if (firstPriority > -1 || secondPriority > -1) {
         if (firstPriority === -1) {
@@ -411,14 +419,39 @@ RubiconAdapter.masSizeOrdering = function(sizes) {
     });
 };
 
-RubiconAdapter.createNew = function() {
-  return new RubiconAdapter();
-};
+/**
+ * syncEmily
+ * @summary A user sync dependency for the Rubicon Project adapter
+ * Registers an Emily iframe user sync to be called/created later by Prebid
+ * Only registers once except that with each winning creative there will be additional, similar calls to the same service.  Must enable iframe syncs which are off by default
+@example
+ *  // Config example for iframe user sync
+ *  $$PREBID_GLOBAL$$.setConfig({ userSync: {
+ *    syncEnabled: true,
+ *    pixelEnabled: true,
+ *    syncsPerBidder: 5,
+ *    syncDelay: 3000,
+ *    iframeEnabled: true
+ *  }});
+ * @return {boolean} Whether or not Emily synced
+ */
+function syncEmily(hasSynced) {
+  // Check that it has not already been triggered - only meant to fire once
+  if (hasSynced) {
+    return true;
+  }
 
-adaptermanager.registerBidAdapter(new RubiconAdapter, RUBICON_BIDDER_CODE, {
+  const iframeUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
+
+  // register the sync with the Prebid (to be called later)
+  userSync.registerSync('iframe', 'rubicon', iframeUrl);
+
+  return true;
+}
+
+adaptermanager.registerBidAdapter(new RubiconAdapter(), RUBICON_BIDDER_CODE, {
   supportedMediaTypes: ['video']
 });
 adaptermanager.aliasBidAdapter(RUBICON_BIDDER_CODE, 'rubiconLite');
 
 module.exports = RubiconAdapter;
-

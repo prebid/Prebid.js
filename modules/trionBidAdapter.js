@@ -3,14 +3,14 @@ var utils = require('src/utils.js');
 var adloader = require('src/adloader.js');
 var bidmanager = require('src/bidmanager.js');
 var bidfactory = require('src/bidfactory.js');
-var Adapter = require('src/adapter.js');
+var Adapter = require('src/adapter.js').default;
 var adaptermanager = require('src/adaptermanager');
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 function TrionAdapter() {
-  var baseAdapter = Adapter.createNew('trion');
+  var baseAdapter = new Adapter('trion');
   var userTag = null;
 
   baseAdapter.callBids = function (params) {
@@ -27,8 +27,7 @@ function TrionAdapter() {
         userTag.sectionId = utils.getBidIdParameter('sectionId', bids[0].params);
         if (!userTag.to) {
           getBids(bids);
-        }
-        else {
+        } else {
           setTimeout(function () {
             getBids(bids);
           }, userTag.to);
@@ -118,18 +117,13 @@ function TrionAdapter() {
     bidmanager.addBidResponse(placementCode, bid);
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: TrionAdapter.createNew,
     buildTrionUrl: buildTrionUrl
-  };
-};
+  });
+}
 
-TrionAdapter.createNew = function () {
-  return new TrionAdapter();
-};
-
-adaptermanager.registerBidAdapter(new TrionAdapter, 'trion');
+adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');
 
 module.exports = TrionAdapter;

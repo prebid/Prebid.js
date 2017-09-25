@@ -48,6 +48,20 @@ var SharethroughAdapter = function SharethroughAdapter() {
   function _strcallback(bidObj, bidResponse) {
     try {
       bidResponse = JSON.parse(bidResponse);
+    } catch (e) {
+      _handleInvalidBid(bidObj);
+      return;
+    }
+
+    if (bidResponse.creatives && bidResponse.creatives.length > 0) {
+      _handleBid(bidObj, bidResponse);
+    } else {
+      _handleInvalidBid(bidObj);
+    }
+  }
+
+  function _handleBid(bidObj, bidResponse) {
+    try {
       const bidId = bidResponse.bidId;
       const bid = bidfactory.createBid(1, bidObj);
       bid.bidderCode = STR_BIDDER_CODE;
@@ -65,20 +79,24 @@ var SharethroughAdapter = function SharethroughAdapter() {
       bid.ad = `<div data-str-native-key="${bid.pkey}" data-stx-response-name='${windowLocation}'>
                 </div>
                 <script>var ${windowLocation} = ${bidJsonString}</script>
-                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>
-                <script type='text/javascript'>
-                (function() {
-                    var sfp_js = document.createElement('script');
-                    sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
-                    sfp_js.type = 'text/javascript';
-                    sfp_js.charset = 'utf-8';
-                    try {
-                        window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
-                    } catch (e) {
-                      console.log(e);
-                    }
-                })();
-                </script>`;
+                <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>`
+      if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
+        let sfpScriptTag = `
+          <script>
+          (function() {
+            const sfp_js = document.createElement('script');
+            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
+            sfp_js.type = 'text/javascript';
+            sfp_js.charset = 'utf-8';
+            try {
+                window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
+            } catch (e) {
+              console.log(e);
+            }
+          })()
+          </script>`
+        bid.ad += sfpScriptTag;
+      }
       bidmanager.addBidResponse(bidObj.placementCode, bid);
     } catch (e) {
       _handleInvalidBid(bidObj);
@@ -87,6 +105,7 @@ var SharethroughAdapter = function SharethroughAdapter() {
 
   function _handleInvalidBid(bidObj) {
     const bid = bidfactory.createBid(2, bidObj);
+    bid.bidderCode = STR_BIDDER_CODE;
     bidmanager.addBidResponse(bidObj.placementCode, bid);
   }
 
@@ -104,6 +123,6 @@ var SharethroughAdapter = function SharethroughAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new SharethroughAdapter, 'sharethrough');
+adaptermanager.registerBidAdapter(new SharethroughAdapter(), 'sharethrough');
 
 module.exports = SharethroughAdapter;

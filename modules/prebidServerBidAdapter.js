@@ -4,33 +4,68 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { queueSync, cookieSet } from 'src/cookie';
+import { userSync } from 'src/userSync.js';
+import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
+import { config } from 'src/config';
+import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
+
+const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
 
+/**
+ * Try to convert a value to a type.
+ * If it can't be done, the value will be returned.
+ *
+ * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
+ * @param {*} value The value to be converted into typeToConvert.
+ */
+function tryConvertType(typeToConvert, value) {
+  if (typeToConvert === 'string') {
+    return value && value.toString();
+  } else if (typeToConvert === 'number') {
+    return Number(value);
+  } else {
+    return value;
+  }
+}
+
+const tryConvertString = tryConvertType.bind(null, 'string');
+const tryConvertNumber = tryConvertType.bind(null, 'number');
+
 const paramTypes = {
   'appnexus': {
-    'member': 'string',
-    'invCode': 'string',
-    'placementId': 'number'
+    'member': tryConvertString,
+    'invCode': tryConvertString,
+    'placementId': tryConvertNumber
   },
   'rubicon': {
-    'accountId': 'number',
-    'siteId': 'number',
-    'zoneId': 'number'
+    'accountId': tryConvertNumber,
+    'siteId': tryConvertNumber,
+    'zoneId': tryConvertNumber
   },
   'indexExchange': {
-    'siteID': 'number'
+    'siteID': tryConvertNumber
   },
   'audienceNetwork': {
-    'placementId': 'string'
+    'placementId': tryConvertString
   },
   'pubmatic': {
-    'publisherId': 'string',
-    'adSlot': 'string'
-  }
+    'publisherId': tryConvertString,
+    'adSlot': tryConvertString
+  },
+  'districtm': {
+    'member': tryConvertString,
+    'invCode': tryConvertString,
+    'placementId': tryConvertNumber
+  },
+  'pulsepoint': {
+    'cf': tryConvertString,
+    'cp': tryConvertNumber,
+    'ct': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
@@ -39,7 +74,7 @@ let _cookiesQueued = false;
  * Bidder adapter for Prebid Server
  */
 function PrebidServer() {
-  let baseAdapter = Adapter.createNew('prebidServer');
+  let baseAdapter = new Adapter('prebidServer');
   let config;
 
   baseAdapter.setConfig = function(s2sconfig) {
@@ -51,10 +86,13 @@ function PrebidServer() {
       adUnit.bids.forEach(bid => {
         const types = paramTypes[bid.bidder] || [];
         Object.keys(types).forEach(key => {
-          if (bid.params[key] && typeof bid.params[key] !== types[key]) {
-            // mismatch type. Try to fix
-            utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
-            bid.params[key] = tryConvertType(types[key], bid.params[key]);
+          if (bid.params[key]) {
+            const converted = types[key](bid.params[key]);
+            if (converted !== bid.params[key]) {
+              utils.logMessage(`Mismatched type for Prebid Server : ${bid.bidder} : ${key}. Required Type:${types[key]}`);
+            }
+            bid.params[key] = converted;
+
             // don't send invalid values
             if (isNaN(bid.params[key])) {
               delete bid.params.key;
@@ -65,18 +103,9 @@ function PrebidServer() {
     });
   }
 
-  function tryConvertType(typeToConvert, value) {
-    if (typeToConvert === 'string') {
-      return value && value.toString();
-    }
-    if (typeToConvert === 'number') {
-      return Number(value);
-    }
-  }
-
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
-    const isDebug = !!$$PREBID_GLOBAL$$.logging;
+    const isDebug = !!getConfig('debug');
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
@@ -89,8 +118,13 @@ function PrebidServer() {
       is_debug: isDebug
     };
 
+    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
+    const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
+    function processResponse(response) {
+      handleResponse(response, requestedBidders);
+    }
     const payload = JSON.stringify(requestJson);
-    ajax(config.endpoint, handleResponse, payload, {
+    ajax(config.endpoint, processResponse, payload, {
       contentType: 'text/plain',
       withCredentials: true
     });
@@ -102,7 +136,7 @@ function PrebidServer() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
+  function handleResponse(response, requestedBidders) {
     let result;
     try {
       result = JSON.parse(response);
@@ -111,7 +145,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type});
+              userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
             }
           });
         }
@@ -133,8 +167,12 @@ function PrebidServer() {
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
             bidObject.ad = bidObj.adm;
+            if (bidObj.nurl) {
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            }
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
+            bidObject.adserverTargeting = bidObj.ad_server_targeting;
             if (bidObj.deal_id) {
               bidObject.dealId = bidObj.deal_id;
             }
@@ -146,7 +184,7 @@ function PrebidServer() {
         const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
 
         // issue a no-bid response for every bid request that can not be matched with received bids
-        config.bidders.forEach(bidder => {
+        requestedBidders.forEach(bidder => {
           utils
             .getBidderRequestAllAdUnits(bidder)
             .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
@@ -168,7 +206,7 @@ function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || result.status && result.status.includes('Error')) {
+    if (!result || (result.status && result.status.includes('Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
   }
@@ -176,41 +214,41 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    if (!_cookiesQueued) {
-      _cookiesQueued = true;
-      const payload = JSON.stringify({
-        uuid: utils.generateUUID(),
-        bidders: bidderCodes
-      });
-      ajax(config.syncEndpoint, (response) => {
-        try {
-          response = JSON.parse(response);
-          response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
-        }
-        catch (e) {
-          utils.logError(e);
-        }
-      },
-      payload, {
-        contentType: 'text/plain',
-        withCredentials: true
-      });
+    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
+    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
+    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
+    if (syncedList.length === 0) {
+      return;
     }
-  }
+    const payload = JSON.stringify({
+      uuid: utils.generateUUID(),
+      bidders: bidderCodes
+    });
+    ajax(config.syncEndpoint, (response) => {
+      try {
+        response = JSON.parse(response);
+        if (response.status === 'ok') {
+          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
+        }
+        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+      } catch (e) {
+        utils.logError(e);
+      }
+    },
+    payload, {
+      contentType: 'text/plain',
+      withCredentials: true
+    });
+  };
 
-  return {
+  return Object.assign(this, {
     queueSync: baseAdapter.queueSync,
     setConfig: baseAdapter.setConfig,
-    createNew: PrebidServer.createNew,
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
-  };
+  });
 }
-
-PrebidServer.createNew = function() {
-  return new PrebidServer();
-};
 
 adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
 

@@ -26,7 +26,6 @@ module.exports = {
     "no-unused-expressions": "off",
     "import/no-duplicates": "off",
     "no-template-curly-in-string": "off",
-    "new-cap": "off",
     "no-global-assign": "off",
     "no-path-concat": "off",
     "no-redeclare": "off",

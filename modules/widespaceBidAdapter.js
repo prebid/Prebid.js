@@ -4,21 +4,21 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const adaptermanager = require('src/adaptermanager');
-const WS_ADAPTER_VERSION = '1.0.2';
+const WS_ADAPTER_VERSION = '1.0.3';
 
 function WidespaceAdapter() {
-  let useSSL = document.location.protocol === 'https:',
-    baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?',
-    callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+  const useSSL = document.location.protocol === 'https:';
+  const baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?';
+  const callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
 
   function _callBids(params) {
-    let bids = params && params.bids || [];
+    let bids = (params && params.bids) || [];
 
     for (var i = 0; i < bids.length; i++) {
-      const bid = bids[i],
-        callbackUid = bid.bidId,
-        sid = bid.params.sid,
-        currency = bid.params.cur || bid.params.currency;
+      const bid = bids[i];
+      const callbackUid = bid.bidId;
+      const sid = bid.params.sid;
+      const currency = bid.params.cur || bid.params.currency;
 
       // Handle Sizes string
       let sizeQueryString = '';
@@ -41,6 +41,16 @@ function WidespaceAdapter() {
         'sid': sid
       };
 
+      if (bid.params.demo) {
+        let demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+        for (let i = 0; i < demoFields.length; i++) {
+          if (!bid.params.demo[demoFields[i]]) {
+            continue;
+          }
+          params['hb.demo.' + demoFields[i]] = bid.params.demo[demoFields[i]];
+        }
+      }
+
       requestURL += '#';
 
       var paramKeys = Object.keys(params);
@@ -61,13 +71,13 @@ function WidespaceAdapter() {
   var handleCallback = function handleCallback(bidsArray) {
     if (!bidsArray) { return; }
 
-    var bidObject,
-      bidCode = 'widespace';
+    let bidObject;
+    let bidCode = 'widespace';
 
     for (var i = 0, l = bidsArray.length; i < l; i++) {
-      var bid = bidsArray[i],
-        placementCode = '',
-        validSizes = [];
+      const bid = bidsArray[i];
+      let placementCode = '';
+      let validSizes = [];
 
       bid.sizes = {height: bid.height, width: bid.width};
 
@@ -112,6 +122,6 @@ function WidespaceAdapter() {
   };
 }
 
-adaptermanager.registerBidAdapter(new WidespaceAdapter, 'widespace');
+adaptermanager.registerBidAdapter(new WidespaceAdapter(), 'widespace');
 
 module.exports = WidespaceAdapter;

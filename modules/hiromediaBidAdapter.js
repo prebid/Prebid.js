@@ -335,7 +335,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
     callBids: _callBids
   };
 
-
   // JSDoc typedefs
 
   /**
@@ -370,6 +369,6 @@ var HiroMediaAdapter = function HiroMediaAdapter() {
    */
 };
 
-adaptermanager.registerBidAdapter(new HiroMediaAdapter, 'hiromedia');
+adaptermanager.registerBidAdapter(new HiroMediaAdapter(), 'hiromedia');
 
 module.exports = HiroMediaAdapter;
