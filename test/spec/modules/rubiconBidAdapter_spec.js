@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import adapterManager from 'src/adaptermanager';
 import bidManager from 'src/bidmanager';
 import RubiconAdapter from 'modules/rubiconBidAdapter';
-import {parse as parseQuery} from 'querystring';
+import { parse as parseQuery } from 'querystring';
+import { userSync } from 'src/userSync';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -1030,17 +1031,17 @@ describe('the rubicon adapter', () => {
   describe('user sync', () => {
     let bids;
     let server;
-    let clock;
     let addBidResponseAction;
     let rubiconAdapter;
+    let userSyncStub;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
-    let origGetConfig = window.$$PREBID_GLOBAL$$.getConfig;
 
     beforeEach(() => {
       bids = [];
 
       server = sinon.fakeServer.create();
-      clock = sinon.useFakeTimers();
+      // monitor userSync registrations
+      userSyncStub = sinon.stub(userSync, 'registerSync');
 
       sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
         bids.push(bid);
@@ -1097,95 +1098,26 @@ describe('the rubicon adapter', () => {
 
     afterEach(() => {
       server.restore();
-      clock.restore();
-      window.$$PREBID_GLOBAL$$.getConfig = origGetConfig;
+      userSyncStub.restore();
     });
 
-    it('should not add the Emily iframe by default', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {delay: 10}
-        }};
-        return config[key];
-      });
-
+    it('should register the Emily iframe', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-
-      // move clock to just before the usersync delay, should be no iframe
-      clock.tick(9);
-      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(0);
-      // move clock to usersync delay, iframe should still not have been added
-      clock.tick(1);
-      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(0);
+      expect(userSyncStub.calledOnce).to.be.true;
+      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
     });
 
-    it('should add the Emily iframe when enabled', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: true, delay: 20}
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-
-      server.respond();
-
-      // move clock to just before the usersync delay, should be no iframe
-      clock.tick(19);
-      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(0);
-      // move clock to usersync delay, iframe should have been added
-      clock.tick(1);
-      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(1);
-    });
-
-    it('should not fire more than once', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: true, delay: 100}
-        }};
-        return config[key];
-      });
-      rubiconAdapter.callBids(bidderRequest);
-
-      server.respond();
-      // move clock to just before the usersync delay, should be no iframe
-      clock.tick(99);
-      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(0);
-      // move clock to usersync delay, iframe should have been added
-      clock.tick(1);
-      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(1);
-
-      // Fire again
+    it('should not register the Emily iframe more than once', () => {
+      expect(userSyncStub.calledOnce).to.be.false;
       rubiconAdapter.callBids(bidderRequest);
       server.respond();
-      // move clock to usersync delay, new iframe should not have been added
-      clock.tick(100);
-      iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(1);
-    });
-
-    it('should not add the Emily iframe when disabled', () => {
-      sinon.stub(window.$$PREBID_GLOBAL$$, 'getConfig', (key) => {
-        var config = { rubicon: {
-          userSync: {enabled: false, delay: 50}
-        }};
-        return config[key];
-      });
+      expect(userSyncStub.calledOnce).to.be.true;
+      // run another auction, should still have only been called once
       rubiconAdapter.callBids(bidderRequest);
-
       server.respond();
-
-      // move clock to usersync delay, iframe should have been added
-      clock.tick(50);
-      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      expect(iframes.length).to.equal(0);
+      expect(userSyncStub.calledOnce).to.be.true;
     });
   });
 });

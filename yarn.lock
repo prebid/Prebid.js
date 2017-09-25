@@ -2233,7 +2233,7 @@ d@1:
   dependencies:
     es5-ext "^0.10.9"
 
-"dargs@github:christian-bromann/dargs":
+dargs@christian-bromann/dargs:
   version "4.0.1"
   resolved "https://codeload.github.com/christian-bromann/dargs/tar.gz/7d6d4164a7c4106dbd14ef39ed8d95b7b5e9b770"
   dependencies:
