@@ -562,8 +562,8 @@ export function flatten(a, b) {
   return a.concat(b);
 }
 
-export function getBidRequest(id) {
-  return $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
+export function getBidRequest(id, bidsRequested) {
+  return bidsRequested.map(bidSet => bidSet.bids.find(bid => bid.bidId === id)).find(bid => bid);
 }
 
 export function getKeys(obj) {
@@ -621,7 +621,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return filter.includes((bid && bid.placementCode) || (bid && bid.adUnitCode));
+  return filter.includes(bid && bid.adUnitCode);
 }
 
 /**
@@ -655,15 +655,8 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
-export function getBidderRequestAllAdUnits(bidder) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(request => request.bidderCode === bidder);
-}
-
-export function getBidderRequest(bidder, adUnitCode) {
-  return $$PREBID_GLOBAL$$._bidsRequested.find(request => {
-    return request.bids
-      .filter(bid => bid.bidder === bidder && bid.placementCode === adUnitCode).length > 0;
-  }) || { start: null, requestId: null };
+export function timestamp() {
+  return new Date().getTime();
 }
 
 export function cookiesAreEnabled() {
@@ -770,4 +763,11 @@ export function isValidMediaTypes(mediaTypes) {
   }
 
   return true;
+}
+
+export function getBidderRequest(bidRequests, bidder, adUnitCode) {
+  return bidRequests.find(request => {
+    return request.bids
+      .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
+  }) || { start: null, requestId: null };
 }
