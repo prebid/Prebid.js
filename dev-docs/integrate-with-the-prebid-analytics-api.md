@@ -13,6 +13,9 @@ hide: false
 # Integrate with the Prebid Analytics API
 {:.no_toc}
 
+{: .alert.alert-warning :}
+This page has been updated for Prebid 1.0. It adds the requirement for a markdown file containing the maintainer's contact info. Note also that there are a couple of new bidResponse attributes that may be of interest to analytics providers: bid currency and bid gross-vs-net.
+
 The Prebid Analytics API provides a way to get analytics data from `Prebid.js` and send it to the analytics provider of your choice, such as Google Analytics.  Because it's an open source API, you can write an adapter to send analytics data to any provider you like.  Integrating with the Prebid Analytics API has the following benefits:
 
 + It decouples your analytics from the `Prebid.js` library so you can choose the analytics provider you like, based on your needs.
@@ -96,16 +99,27 @@ pbjs.que.push(function () {
 
 ### Create the `Prebid.js` analytics module
 
-#### Step 1: Prepare prerequisites for a pull request
+#### Step 1: Add a markdown file describing the module
 
-In your PR to add the new adapter, please provide the following information:
+1. Create a markdown file under `modules` with the name of the bidder suffixed with 'AnalyticsAdapter', e.g., `exAnalyticsAdapter.md`
 
-- The contact email of the adapter's maintainer.
-- Any other information listed as required in [CONTRIBUTING.md](https://github.com/prebid/Prebid.js/blob/master/CONTRIBUTING.md).
+Example markdown file:
+{% highlight text %}
+# Overview
 
-#### Step 2: Add a new analytics JS file
+Module Name: Ex Analytics Adapter
+Module Type: Analytics Adapter
+Maintainer: prebid@example.com
 
-1. Create a JS file under `modules` with the name of the bidder suffixed with 'AnalyticsAdapter', e.g., `abcAnalyticsAdapter.js`
+# Description
+
+Analytics adapter for Example.com. Contact prebid@example.com for information.
+
+{% endhighlight %}
+
+#### Step 2: Add analytics source code
+
+1. Create a JS file under `modules` with the name of the bidder suffixed with 'AnalyticsAdapter', e.g., `exAnalyticsAdapter.js`
 
 2. Create an analytics adapter to listen for Prebid events and call the analytics library or server. See the existing *AnalyticsAdapter.js files in the repo under [modules](https://github.com/prebid/Prebid.js/tree/master/modules).
 
@@ -130,22 +144,22 @@ import adaptermanager from 'src/adaptermanager';
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
 
-let abcAnalytics = Object.assign(adapter({url, analyticsType}), {
+let exAnalytics = Object.assign(adapter({url, analyticsType}), {
   // ... code ...
 });
 
 // save the base class function
-abcAnalytics.originEnableAnalytics = roxotAdapter.enableAnalytics;
+exAnalytics.originEnableAnalytics = exAdapter.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
-abcAnalytics.enableAnalytics = function (config) {
+exAnalytics.enableAnalytics = function (config) {
   initOptions = config.options;
-  abcAnalytics.originEnableAnalytics(config);  // call the base class function
+  exAnalytics.originEnableAnalytics(config);  // call the base class function
 };
 
 adaptermanager.registerAnalyticsAdapter({
-  adapter: abcAnalytics,
-  code: 'abc'
+  adapter: exAnalytics,
+  code: 'exAnalytic'
 });
 {% endhighlight %}
 
@@ -161,7 +175,7 @@ Analytics adapter best practices:
 To add the new analyticsAdapter into a prebid package, use a command like this:
 
 {% highlight js %}
-gulp bundle --modules=abcAnalyticsAdapter,xyzBidAdapter
+gulp bundle --modules=exAnalyticsAdapter,xyzBidAdapter
 {% endhighlight %}
 
 ## Further Reading
