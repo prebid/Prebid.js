@@ -63,9 +63,9 @@ const adaptermanager = require('./adaptermanager');
 const events = require('./events');
 const CONSTANTS = require('./constants.json');
 
-const AUCTION_STARTED = 'started';
-const AUCTION_IN_PROGRESS = 'inProgress';
-const AUCTION_COMPLETED = 'completed';
+export const AUCTION_STARTED = 'started';
+export const AUCTION_IN_PROGRESS = 'inProgress';
+export const AUCTION_COMPLETED = 'completed';
 
 // register event for bid adjustment
 events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {

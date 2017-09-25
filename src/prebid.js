@@ -25,6 +25,7 @@ const { triggerUserSyncs } = userSync;
 
 /* private variables */
 
+const RENDERED = 'rendered';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
@@ -238,6 +239,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
       if (bid) {
+        bid.status = RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.url = utils.replaceAuctionPrice(bid.url, bid.cpm);

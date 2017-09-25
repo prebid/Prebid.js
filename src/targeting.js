@@ -8,6 +8,8 @@ var CONSTANTS = require('./constants.json');
 
 var pbTargetingKeys = [];
 
+export const BID_TARGETING_SET = 'targetingSet';
+
 export function newTargeting(auctionManager) {
   let targeting = {};
   targeting.resetPresetTargeting = function(adUnitCode) {
@@ -119,6 +121,10 @@ export function newTargeting(auctionManager) {
 
   function getWinningBidTargeting(adUnitCodes) {
     let winners = targeting.getWinningBids(adUnitCodes);
+    winners.forEach((winner) => {
+      winner.status = BID_TARGETING_SET;
+    });
+
     // TODO : Add losing bids to pool from here ?
     let standardKeys = getStandardKeys();
 

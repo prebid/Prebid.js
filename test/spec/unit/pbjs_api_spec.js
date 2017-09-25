@@ -41,14 +41,14 @@ var auction = auctionManager.createAuction({adUnits, adUnitCodes});
 auction.getBidRequests = getBidRequests;
 auction.getBidsReceived = getBidResponses;
 auction.getAdUnits = getAdUnits;
-// auction.setAdUnitCodes(auction.getAdUnits().map(unit => unit.code));
+auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
 
 function resetAuction() {
   $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
   auction.getBidRequests = getBidRequests;
   auction.getBidsReceived = getBidResponses;
   auction.getAdUnits = getAdUnits;
-  // auction.setAdUnitCodes(auction.getAdUnits().map(unit => unit.code));
+  auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
 }
 
 var Slot = function Slot(elementId, pathId) {
@@ -408,19 +408,6 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       currentPriceBucket = configObj.getConfig('priceGranularity');
       configObj.setConfig({ priceGranularity: customConfigObject });
-      let adUnits = [{
-        code: 'div-gpt-ad-1460505748561-0',
-        sizes: [[300, 250], [300, 600]],
-        bids: [{
-          bidder: 'appnexusAst',
-          params: {
-            placementId: '10433394'
-          }
-        }]
-      }];
-      let adUnitCodes = ['div-gpt-ad-1460505748561-0'];
-      auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
-
       sinon.stub(adaptermanager, 'makeBidRequests', () => ([{
         'bidderCode': 'appnexusAst',
         'auctionId': '20882439e3238c',
@@ -459,6 +446,18 @@ describe('Unit: Prebid Module', function () {
     })
 
     beforeEach(() => {
+      let adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        sizes: [[300, 250], [300, 600]],
+        bids: [{
+          bidder: 'appnexusAst',
+          params: {
+            placementId: '10433394'
+          }
+        }]
+      }];
+      let adUnitCodes = ['div-gpt-ad-1460505748561-0'];
+      auction = auctionManagerInstance.createAuction({adUnits, adUnitCodes});
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder', function() {
         return function(url, callback) {
           callback.success(JSON.stringify(RESPONSE));
