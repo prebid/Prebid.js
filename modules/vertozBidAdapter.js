@@ -33,7 +33,8 @@ function VertozAdapter() {
         _rqsrc: reqSrc,
         _cb: cb,
         _slotBidId: slotBidId,
-        _cpm: cpm
+        _cpm: cpm,
+        _cbn: '$$PREBID_GLOBAL$$'
       };
 
       let queryParamValue = JSON.stringify(vzReq);
@@ -42,7 +43,7 @@ function VertozAdapter() {
     }
   }
 
-  $$PREBID_GLOBAL$$.vzResponse = function (vertozResponse) {
+  $$PREBID_GLOBAL$$.vzResponse = function(vertozResponse) {
     var bidRespObj = vertozResponse;
     var bidObject;
     var reqBidObj = utils.getBidRequest(bidRespObj.slotBidId);
