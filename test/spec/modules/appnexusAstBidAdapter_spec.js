@@ -83,50 +83,67 @@ describe('AppNexusAdapter', () => {
     });
 
     it('should attach valid video params to the tag', () => {
-      bidRequests[0].params.video = {
-        id: 123,
-        minduration: 100,
-        foobar: 'invalid'
-      };
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            video: {
+              id: 123,
+              minduration: 100,
+              foobar: 'invalid'
+            }
+          }
+        }
+      );
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         id: 123,
         minduration: 100
       });
-
-      delete bidRequests[0].params.video;
     });
 
     it('should attach valid user params to the tag', () => {
-      bidRequests[0].params.user = {
-        external_uid: '123',
-        foobar: 'invalid'
-      };
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            user: {
+              external_uid: '123',
+              foobar: 'invalid'
+            }
+          }
+        }
+      );
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
       });
-
-      delete bidRequests[0].params.user;
     });
 
     it('should attache native params to the request', () => {
-      bidRequests[0].mediaType = 'native';
-      bidRequests[0].nativeParams = {
-        title: {required: true},
-        body: {required: true},
-        image: {required: true, sizes: [{ width: 100, height: 100 }] },
-        cta: {required: false},
-        sponsoredBy: {required: true}
-      };
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'native',
+          nativeParams: {
+            title: {required: true},
+            body: {required: true},
+            image: {required: true, sizes: [{ width: 100, height: 100 }] },
+            cta: {required: false},
+            sponsoredBy: {required: true}
+          }
+        }
+      );
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
@@ -136,39 +153,46 @@ describe('AppNexusAdapter', () => {
         ctatext: {required: false},
         sponsored_by: {required: true}
       });
-
-      delete bidRequests[0].mediaType;
-      delete bidRequests[0].params.nativeParams;
     });
 
     it('should set required native asset params when not provided on adunit', () => {
-      bidRequests[0].mediaType = 'native';
-      bidRequests[0].nativeParams = {
-        image: {required: true},
-      };
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'native',
+          nativeParams: {
+            image: {required: true},
+          }
+        }
+      );
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
         main_image: {required: true, sizes: [{}] },
       });
-
-      delete bidRequests[0].mediaType;
-      delete bidRequests[0].params.nativeParams;
     });
 
     it('should convert keyword params to proper form and attaches to request', () => {
-      bidRequests[0].params.keywords = {
-        single: 'val',
-        singleArr: ['val'],
-        singleArrNum: [5],
-        multiValMixed: ['value1', 2, 'value3'],
-        singleValNum: 123,
-        badValue: {'foo': 'bar'} // should be dropped
-      };
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              badValue: {'foo': 'bar'} // should be dropped
+            }
+          }
+        }
+      );
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].keywords).to.deep.equal([{
@@ -187,8 +211,6 @@ describe('AppNexusAdapter', () => {
         'key': 'singleValNum',
         'value': ['123']
       }]);
-
-      delete bidRequests[0].params.keywords;
     });
   })
 
@@ -271,7 +293,6 @@ describe('AppNexusAdapter', () => {
     });
 
     it('handles non-banner media responses', () => {
-      // debugger; // eslint-disable-line
       let response = {
         'tags': [{
           'uuid': '84ab500420319d',
@@ -294,8 +315,9 @@ describe('AppNexusAdapter', () => {
     });
 
     it('handles native responses', () => {
-      response.tags[0].ads[0].ad_type = 'native';
-      response.tags[0].ads[0].rtb.native = {
+      let response1 = Object.assign({}, response);
+      response1.tags[0].ads[0].ad_type = 'native';
+      response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
         'desc': 'Cool description great stuff',
         'ctatext': 'Do it',
@@ -318,13 +340,11 @@ describe('AppNexusAdapter', () => {
         'impression_trackers': ['http://example.com'],
       };
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response1);
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
       expect(result[0].native.image).to.equal('http://cdn.adnxs.com/img.png');
-
-      response.tags[0].ads[0].ad_type = 'banner';
     });
   });
 });
