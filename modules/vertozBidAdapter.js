@@ -43,7 +43,7 @@ function VertozAdapter() {
     }
   }
 
-  $$PREBID_GLOBAL$$.vzResponse = function(vertozResponse) {
+  $$PREBID_GLOBAL$$.vzResponse = function (vertozResponse) {
     var bidRespObj = vertozResponse;
     var bidObject;
     var reqBidObj = utils.getBidRequest(bidRespObj.slotBidId);
