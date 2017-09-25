@@ -155,7 +155,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
           { img: { type: 3, url: 'http://images.cdn.brand.com/123' } }
         ],
         link: { url: 'http://brand.clickme.com/' },
-        imptrackers: [ 'http://imp1.trackme.com/', 'http://imp1.contextweb.com/' ]
+        imptrackers: ['http://imp1.trackme.com/', 'http://imp1.contextweb.com/']
       }
     };
     const ortbResponse = {

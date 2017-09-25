@@ -1,6 +1,4 @@
-import {createBid} from 'src/bidfactory';
 import {logError, getTopWindowLocation} from 'src/utils';
-import {STATUS} from 'src/constants';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const NATIVE_DEFAULTS = {
@@ -25,12 +23,13 @@ export const spec = {
 
   supportedMediaTypes: ['native'],
 
-  isBidRequestValid: bid => {
-    return !!(bid && bid.params && bid.params.cp && bid.params.ct);
-  },
+  isBidRequestValid: bid => (
+    !!(bid && bid.params && bid.params.cp && bid.params.ct)
+  ),
 
   buildRequests: bidRequest => {
     const request = {
+      id: bidRequest[0].bidderRequestId,
       imp: bidRequest.map(slot => impression(slot)),
       site: site(bidRequest),
       app: app(bidRequest),
@@ -43,9 +42,9 @@ export const spec = {
     };
   },
 
-  interpretResponse: (response, request) => {
-    return bidResponseAvailable(request, response);
-  },
+  interpretResponse: (response, request) => (
+    bidResponseAvailable(request, response)
+  ),
 
   getUserSyncs: syncOptions => {
     if (syncOptions.iframeEnabled) {
@@ -66,16 +65,16 @@ function bidResponseAvailable(bidRequest, bidResponse) {
   const idToBidMap = {};
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = parse(bidRequest.data);
-  ortbRequest.imp.forEach((imp) => {
+  ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
   if (bidResponse) {
-    bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach((bid) => {
+    bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
       idToBidMap[bid.impid] = bid;
     }));
   }
   const bids = [];
-  Object.keys(idToImpMap).forEach((id) => {
+  Object.keys(idToImpMap).forEach(id => {
     if (idToBidMap[id]) {
       const bid = {
         requestId: id,
@@ -154,7 +153,7 @@ function addAsset(assets, asset) {
 function titleAsset(id, params, defaultLen) {
   if (params) {
     return {
-      id: id,
+      id,
       required: params.required ? 1 : 0,
       title: {
         len: params.len || defaultLen,
@@ -169,7 +168,7 @@ function titleAsset(id, params, defaultLen) {
  */
 function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
   return params ? {
-    id: id,
+    id,
     required: params.required ? 1 : 0,
     img: {
       type,
@@ -184,7 +183,7 @@ function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
  */
 function dataAsset(id, params, type, defaultLen) {
   return params ? {
-    id: id,
+    id,
     required: params.required ? 1 : 0,
     data: {
       type,
@@ -199,7 +198,7 @@ function dataAsset(id, params, type, defaultLen) {
 function site(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
   const appParams = bidderRequest[0].params.app;
-  if(!appParams) {
+  if (!appParams) {
     return {
       publisher: {
         id: pubId.toString(),
@@ -207,7 +206,7 @@ function site(bidderRequest) {
       ref: referrer(),
       page: getTopWindowLocation().href,
     }
-  };
+  }
   return null;
 }
 
@@ -217,7 +216,7 @@ function site(bidderRequest) {
 function app(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
   const appParams = bidderRequest[0].params.app;
-  if(appParams) {
+  if (appParams) {
     return {
       publisher: {
         id: pubId.toString(),
@@ -225,7 +224,7 @@ function app(bidderRequest) {
       bundle: appParams.bundle,
       storeurl: appParams.storeUrl,
       domain: appParams.domain,
-    };
+    }
   }
   return null;
 }
@@ -287,7 +286,7 @@ function nativeResponse(imp, bid) {
     const nativeAd = parse(bid.adm);
     const keys = {};
     if (nativeAd && nativeAd.native && nativeAd.native.assets) {
-      nativeAd.native.assets.forEach((asset) => {
+      nativeAd.native.assets.forEach(asset => {
         keys.title = asset.title ? asset.title.text : keys.title;
         keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
         keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
@@ -302,13 +301,6 @@ function nativeResponse(imp, bid) {
     }
   }
   return null;
-}
-
-/**
- * Parses the native response from the Bid given.
- */
-function isNative(slot) {
-  return !!slot.nativeParams;
 }
 
 registerBidder(spec);
