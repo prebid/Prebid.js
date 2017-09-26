@@ -9,39 +9,31 @@ import { parse as parseURL, format as formatURL } from './url';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
-import { setAjaxTimeout } from './ajax';
 import { config } from './config';
+import { auctionManager } from './auctionManager';
+import { targeting } from './targeting';
 
 var $$PREBID_GLOBAL$$ = getGlobal();
 
 var CONSTANTS = require('./constants.json');
 var utils = require('./utils.js');
-var bidmanager = require('./bidmanager.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var events = require('./events');
 var adserver = require('./adserver.js');
-var targeting = require('./targeting.js');
-const { syncUsers, triggerUserSyncs } = userSync;
+const { triggerUserSyncs } = userSync;
 
 /* private variables */
 
+const RENDERED = 'rendered';
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
-
-var auctionRunning = false;
-var bidRequestQueue = [];
 
 var eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
 /* Public vars */
-
-$$PREBID_GLOBAL$$._bidsRequested = [];
-$$PREBID_GLOBAL$$._bidsReceived = [];
-// _adUnitCodes stores the current filter to use for adUnits as an array of adUnitCodes
-$$PREBID_GLOBAL$$._adUnitCodes = [];
 $$PREBID_GLOBAL$$._winningBids = [];
 $$PREBID_GLOBAL$$._adsReceived = [];
 
@@ -76,28 +68,16 @@ $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
 $$PREBID_GLOBAL$$.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
-  var placementCodes = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.map(bid => bid.placementCode))
+  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
-  if (!utils.contains(placementCodes, id)) {
+  if (!utils.contains(adUnitCodes, id)) {
     utils.logError('The "' + id + '" placement is not defined.');
     return;
   }
 
   return true;
-}
-
-/**
- * When a request for bids is made any stale bids remaining will be cleared for
- * a placement included in the outgoing bid request.
- */
-function clearPlacements() {
-  $$PREBID_GLOBAL$$._bidsRequested = [];
-
-  // leave bids received for ad slots not in this bid request
-  $$PREBID_GLOBAL$$._bidsReceived = $$PREBID_GLOBAL$$._bidsReceived
-    .filter(bid => !$$PREBID_GLOBAL$$._adUnitCodes.includes(bid.adUnitCode));
 }
 
 function setRenderSize(doc, width, height) {
@@ -174,8 +154,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 $$PREBID_GLOBAL$$.getBidResponses = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = $$PREBID_GLOBAL$$._bidsReceived
-    .filter(adUnitsFilter.bind(this, $$PREBID_GLOBAL$$._adUnitCodes));
+  const responses = auctionManager.getBidsReceived()
+    .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last requested id to get responses for most recent auction only
   const currentRequestId = responses && responses.length && responses[responses.length - 1].requestId;
@@ -200,7 +180,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
  */
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  const bids = $$PREBID_GLOBAL$$._bidsReceived.filter(bid => bid.adUnitCode === adUnitCode);
+  const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
   return {
     bids: bids
   };
@@ -245,21 +225,6 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
 };
 
 /**
- * Returns a bool if all the bids have returned or timed out
- * @alias module:$$PREBID_GLOBAL$$.allBidsAvailable
- * @return {bool} all bids available
- *
- * @deprecated This function will be removed in Prebid 1.0
- * Alternative solution is in progress.
- * See https://github.com/prebid/Prebid.js/issues/1087 for more details.
- */
-$$PREBID_GLOBAL$$.allBidsAvailable = function () {
-  utils.logWarn('$$PREBID_GLOBAL$$.allBidsAvailable will be removed in Prebid 1.0. Alternative solution is in progress. See https://github.com/prebid/Prebid.js/issues/1087 for more details.');
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.allBidsAvailable', arguments);
-  return bidmanager.bidsBackAll();
-};
-
-/**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
  * @param  {HTMLDocument} doc document
@@ -272,8 +237,9 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
   if (doc && id) {
     try {
       // lookup ad by ad Id
-      const bid = $$PREBID_GLOBAL$$._bidsReceived.find(bid => bid.adId === id);
+      const bid = auctionManager.findBidByAdId(id);
       if (bid) {
+        bid.status = RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.url = utils.replaceAuctionPrice(bid.url, bid.cpm);
@@ -333,21 +299,6 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 };
 
-$$PREBID_GLOBAL$$.clearAuction = function() {
-  auctionRunning = false;
-  // Only automatically sync if the publisher has not chosen to "enableOverride"
-  let userSyncConfig = config.getConfig('userSync') || {};
-  if (!userSyncConfig.enableOverride) {
-    // Delay the auto sync by the config delay
-    syncUsers(userSyncConfig.syncDelay);
-  }
-
-  utils.logMessage('Prebid auction cleared');
-  if (bidRequestQueue.length) {
-    bidRequestQueue.shift()();
-  }
-};
-
 /**
  * @param {Object} requestOptions
  * @param {function} requestOptions.bidsBackHandler
@@ -390,43 +341,24 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     adUnit.bids = adUnit.bids.filter(nativeBidder);
   });
 
-  if (auctionRunning) {
-    bidRequestQueue.push(() => {
-      $$PREBID_GLOBAL$$.requestBids({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes });
-    });
-    return;
-  }
-
-  auctionRunning = true;
-
-  // we will use adUnitCodes for filtering the current auction
-  $$PREBID_GLOBAL$$._adUnitCodes = adUnitCodes;
-
-  bidmanager.externalCallbackReset();
-  clearPlacements();
-
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
     if (typeof bidsBackHandler === 'function') {
-      bidmanager.addOneTimeCallback(bidsBackHandler, false);
+      // executeCallback, this will only be called in case of first request
+      try {
+        bidsBackHandler();
+      } catch (e) {
+        utils.logError('Error executing bidsBackHandler', null, e);
+      }
     }
-    bidmanager.executeCallback();
     return;
   }
 
-  // set timeout for all bids
-  const timedOut = true;
-  const timeoutCallback = bidmanager.executeCallback.bind(bidmanager, timedOut);
-  const timer = setTimeout(timeoutCallback, cbTimeout);
-  setAjaxTimeout(cbTimeout);
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes});
   if (typeof bidsBackHandler === 'function') {
-    bidmanager.addOneTimeCallback(bidsBackHandler, timer);
+    auction.startAuctionTimer(bidsBackHandler, cbTimeout);
   }
-
-  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
-  if ($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
-    bidmanager.executeCallback();
-  }
+  auction.callBids(cbTimeout);
 };
 
 /**
@@ -493,46 +425,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
   events.off(event, handler, id);
 };
 
-/**
- * Add a callback event
- * @param {string} eventStr event to attach callback to Options: "allRequestedBidsBack" | "adUnitBidsBack"
- * @param {Function} func  function to execute. Parameters passed into the function: (bidResObj), [adUnitCode]);
- * @alias module:$$PREBID_GLOBAL$$.addCallback
- * @returns {string} id for callback
- *
- * @deprecated This function will be removed in Prebid 1.0
- * Please use onEvent instead.
- */
-$$PREBID_GLOBAL$$.addCallback = function (eventStr, func) {
-  utils.logWarn('$$PREBID_GLOBAL$$.addCallback will be removed in Prebid 1.0. Please use onEvent instead');
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.addCallback', arguments);
-  var id = null;
-  if (!eventStr || !func || typeof func !== 'function') {
-    utils.logError('error registering callback. Check method signature');
-    return id;
-  }
-
-  id = utils.getUniqueIdentifierStr;
-  bidmanager.addCallback(id, func, eventStr);
-  return id;
-};
-
-/**
- * Remove a callback event
- * //@param {string} cbId id of the callback to remove
- * @alias module:$$PREBID_GLOBAL$$.removeCallback
- * @returns {string} id for callback
- *
- * @deprecated This function will be removed in Prebid 1.0
- * Please use offEvent instead.
- */
-$$PREBID_GLOBAL$$.removeCallback = function (/* cbId */) {
-  // todo
-  utils.logWarn('$$PREBID_GLOBAL$$.removeCallback will be removed in Prebid 1.0. Please use offEvent instead.');
-  return null;
-};
-
-/**
+/*
  * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
@@ -559,19 +452,6 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   }
 };
 
-$$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.bidsAvailableForAdapter', arguments);
-
-  $$PREBID_GLOBAL$$._bidsRequested.find(bidderRequest => bidderRequest.bidderCode === bidderCode).bids
-    .map(bid => {
-      return Object.assign(bid, bidfactory.createBid(1), {
-        bidderCode,
-        adUnitCode: bid.placementCode
-      });
-    })
-    .map(bid => $$PREBID_GLOBAL$$._bidsReceived.push(bid));
-};
-
 /**
  * Wrapper to bidfactory.createBid()
  * @param  {string} statusCode [description]
@@ -580,21 +460,6 @@ $$PREBID_GLOBAL$$.bidsAvailableForAdapter = function (bidderCode) {
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
   return bidfactory.createBid(statusCode);
-};
-
-/**
- * Wrapper to bidmanager.addBidResponse
- * @param {string} adUnitCode [description]
- * @param {Object} bid [description]
- *
- * @deprecated This function will be removed in Prebid 1.0
- * Each bidder will be passed a reference to addBidResponse function in callBids as an argument.
- * See https://github.com/prebid/Prebid.js/issues/1087 for more details.
- */
-$$PREBID_GLOBAL$$.addBidResponse = function (adUnitCode, bid) {
-  utils.logWarn('$$PREBID_GLOBAL$$.addBidResponse will be removed in Prebid 1.0. Each bidder will be passed a reference to addBidResponse function in callBids as an argument. See https://github.com/prebid/Prebid.js/issues/1087 for more details.');
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.addBidResponse', arguments);
-  bidmanager.addBidResponse(adUnitCode, bid);
 };
 
 /**
@@ -627,31 +492,6 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   } else {
     utils.logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
   }
-};
-
-/**
- * Sets a default price granularity scheme.
- * @param {string|Object} granularity - the granularity scheme.
- * @deprecated - use pbjs.setConfig({ priceGranularity: <granularity> })
- * "low": $0.50 increments, capped at $5 CPM
- * "medium": $0.10 increments, capped at $20 CPM (the default)
- * "high": $0.01 increments, capped at $20 CPM
- * "auto": Applies a sliding scale to determine granularity
- * "dense": Like "auto", but the bid price granularity uses smaller increments, especially at lower CPMs
- *
- * Alternatively a custom object can be specified:
- * { "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]};
- * See http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity for more details
- */
-$$PREBID_GLOBAL$$.setPriceGranularity = function (granularity) {
-  utils.logWarn('$$PREBID_GLOBAL$$.setPriceGranularity will be removed in Prebid 1.0. Use $$PREBID_GLOBAL$$.setConfig({ priceGranularity: <granularity> }) instead.')
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.setPriceGranularity', arguments);
-  config.setConfig({ priceGranularity: granularity });
-};
-
-/** @deprecated - use pbjs.setConfig({ enableSendAllBids: <true|false> }) */
-$$PREBID_GLOBAL$$.enableSendAllBids = function () {
-  config.setConfig({ enableSendAllBids: true });
 };
 
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
