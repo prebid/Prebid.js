@@ -79,6 +79,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
  * @property {string} currency The currency code for the cpm value
  * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
+ * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
  *
@@ -152,16 +154,24 @@ export function newBidder(spec) {
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        bidmanager.addBidResponse(adUnitCode, bid);
+        addBid(adUnitCode, bid);
       }
       function fillNoBids() {
         bidderRequest.bids
           .map(bidRequest => bidRequest.placementCode)
           .forEach(adUnitCode => {
             if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-              bidmanager.addBidResponse(adUnitCode, newEmptyBid());
+              addBid(adUnitCode, newEmptyBid());
             }
           });
+      }
+
+      function addBid(code, bid) {
+        try {
+          bidmanager.addBidResponse(code, bid);
+        } catch (err) {
+          logError('Error adding bid', code, err);
+        }
       }
 
       // After all the responses have come back, fill up the "no bid" bids and
