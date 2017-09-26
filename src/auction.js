@@ -56,6 +56,7 @@ import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
 import { userSync } from 'src/userSync';
+import { addBidResponseDecorator } from 'modules/currency';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -351,7 +352,7 @@ function newAuction({adUnits, adUnitCodes}) {
     });
 
     _auctionStatus = AUCTION_IN_PROGRESS;
-    adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(this), done.bind(this));
+    adaptermanager.callBids(_adUnits, bidRequests, addBidResponseDecorator(addBidResponse.bind(this)), done.bind(this));
   };
 
   return {

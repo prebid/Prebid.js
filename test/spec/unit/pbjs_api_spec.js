@@ -30,7 +30,6 @@ var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
 require('modules/appnexusAstBidAdapter');
-require('modules/adequantBidAdapter');
 
 var config = require('test/fixtures/config.json');
 
