@@ -301,7 +301,7 @@ function newAuction({adUnits, adUnitCodes}) {
     }
 
     function doCallbacksIfNeeded() {
-      if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
+      if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + config.getConfig('timeoutBuffer')) {
         executeCallback(true);
       }
     }
