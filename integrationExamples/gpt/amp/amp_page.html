@@ -13,7 +13,7 @@
       -->
     <meta charset="utf-8">
     <title>Hello, AMPs</title>
-    <link rel="canonical" href="http://example.ampproject.org/article-metadata.html" />
+    <link rel="canonical" href="https://example.ampproject.org/article-metadata.html" />
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
 
       <!-- The following meta tag specifies the path to the publisher-hosted file to use as the
@@ -22,7 +22,7 @@
         domains and ports are:
             https://publisher.com:9999/amp_page.html
                 and
-            https://amp.publisher.com:5000/remote.html
+            https://amp.publisher.com:9999/remote.html
 
             Further reading
             AMP documentation <amp-ad> spec
@@ -30,7 +30,7 @@
             See sections on "Running ads from a custom domain" and "Enhance incoming ad
             configuration" for more details on techniques used here.
          -->
-    <meta name="amp-3p-iframe-src" content="https://amp.publisher.com:5000/remote.html">
+    <meta name="amp-3p-iframe-src" content="https://amp.publisher.com:9999/integrationExamples/gpt/amp/remote.html">
 
     <script async custom-element="amp-ad" src="https://cdn.ampproject.org/v0/amp-ad-0.1.js"></script>
     <script type="application/ld+json">
@@ -55,7 +55,7 @@
       height="250"
       layout="fixed"
       type="doubleclick"
-      json='{"prebid":{"requestBidsDuration":1000,"adUnits":[{"code":"/19968336/header-bid-tag-1","sizes":[[300,250],[300,600],[300,250],[100,100]],"bids":[{"bidder":"appnexusAst","params":{"placementId":"10433394","dealId":"some deal!"}},{"bidder":"aol","params":{"network":"10077.1","placement":3671670}},{"bidder":"sovrn","params":{"tagid":"315045"}}]},{"code":"/19968336/header-bid-tag-2","sizes":[[300,250],[300,600],[300,250],[100,100]],"bids":[{"bidder":"appnexusAst","params":{"placementId":"10433394","dealId":"some deal!"}},{"bidder":"aol","params":{"network":"10077.1","placement":3671670}},{"bidder":"sovrn","params":{"tagid":"315045"}}]}]}}'
+      json='{"prebid": {"requestBidsDuration": 1000,"adUnits": [{"code": "/19968336/header-bid-tag-1","sizes": [[300, 250],[300, 600],[300, 250],[100, 100]],"bids": [{"bidder": "appnexus","params": {"placementId": "10433394","dealId": "some deal!"}}]}, {"code": "/19968336/header-bid-tag-2","sizes": [[300, 250],[300, 600],[300, 250],[100, 100]],"bids": [{"bidder": "appnexus","params": {"placementId": "10433394","dealId": "some deal!"}}]}]}}'
       data-slot="/19968336/header-bid-tag-1">
     </amp-ad>
 
@@ -64,7 +64,7 @@
       height="250"
       layout="fixed"
       type="doubleclick"
-      json='{"prebid":{"requestBidsDuration":1000,"adUnits":[{"code":"/19968336/header-bid-tag-1","sizes":[[300,250],[300,600],[300,250],[100,100]],"bids":[{"bidder":"appnexusAst","params":{"placementId":"10433394","dealId":"some deal!"}},{"bidder":"aol","params":{"network":"10077.1","placement":3671670}},{"bidder":"sovrn","params":{"tagid":"315045"}}]},{"code":"/19968336/header-bid-tag-2","sizes":[[300,250],[300,600],[300,250],[100,100]],"bids":[{"bidder":"appnexusAst","params":{"placementId":"10433394","dealId":"some deal!"}},{"bidder":"aol","params":{"network":"10077.1","placement":3671670}},{"bidder":"sovrn","params":{"tagid":"315045"}}]}]}}'
+      json='{"prebid": {"requestBidsDuration": 1000,"adUnits": [{"code": "/19968336/header-bid-tag-1","sizes": [[300, 250],[300, 600],[300, 250],[100, 100]],"bids": [{"bidder": "appnexus","params": {"placementId": "10433394","dealId": "some deal!"}}]}, {"code": "/19968336/header-bid-tag-2","sizes": [[300, 250],[300, 600],[300, 250],[100, 100]],"bids": [{"bidder": "appnexus","params": {"placementId": "10433394","dealId": "some deal!"}}]}]}}'
       data-slot="/19968336/header-bid-tag-2">
     </amp-ad>
 

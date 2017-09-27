@@ -5,7 +5,7 @@ import { NATIVE, VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'appnexusAst';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
-const SUPPORTED_AD_TYPES = ['banner', 'video', 'video-outstream', 'native'];
+const SUPPORTED_AD_TYPES = ['banner', 'video', 'native'];
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -31,11 +31,11 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bidParams The params to validate.
+   * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  areParamsValid: function(bidParams) {
-    return !!(bidParams.placementId || (bidParams.member && bidParams.invCode));
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
 
   /**
@@ -119,7 +119,7 @@ function newRenderer(adUnitCode, rtbBid) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarning('Prebid Error calling setRender on renderer', err);
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
   }
 
   renderer.setEventHandlers({
@@ -218,6 +218,7 @@ function newBid(serverBid, rtbBid) {
 
   return bid;
 }
+
 function bidToTag(bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
@@ -289,7 +290,13 @@ function bidToTag(bid) {
     }
   }
 
-  if (bid.mediaType === 'video') { tag.require_asset_url = true; }
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+
+  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+    tag.require_asset_url = true;
+  }
+
   if (bid.params.video) {
     tag.video = {};
     // place any valid video params on the tag
@@ -356,9 +363,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
 
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
-  if (rtbBid.renderer_url) {
-    return 'video-outstream';
-  } else if (adType === 'video') {
+  if (adType === 'video') {
     return 'video';
   } else if (adType === 'native') {
     return 'native';
