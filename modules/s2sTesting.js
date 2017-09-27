@@ -2,7 +2,7 @@ import { config } from 'src/config';
 
 var events = require('src/events');
 var CONSTANTS = require('src/constants.json');
-const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
+const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
 const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 export const SERVER = 'server';
 export const CLIENT = 'client';
@@ -40,20 +40,22 @@ function addBidderSourceTargeting(s2sConfig = {}) {
       bidderSettings[bidder][AST].push({
         key: `hb_source_${bidder}`,
         val: function (bidResponse) {
-          return adUnitBidderResponseSrc[bidResponse.requestId][bidResponse.bidderCode];
+          return adUnitBidderResponseSrc[bidResponse.requestId] && adUnitBidderResponseSrc[bidResponse.requestId][bidResponse.bidderCode];
         }
       });
+      // make sure "alwaysUseBid" is set so targeting is set
+      bidderSettings[bidder].alwaysUseBid = true;
     }
   });
 }
 
-// on BID_RESPONSE store bidder response sources by requestId
+// on BID_ADJUSTMENT store bidder response sources by requestId
 var adUnitBidderResponseSrc = {};
-events.on(BID_RESPONSE, (bid) => {
+events.on(BID_ADJUSTMENT, (bid) => {
   // initialize data structure for this request
   adUnitBidderResponseSrc[bid.requestId] = adUnitBidderResponseSrc[bid.requestId] || {};
   // get current source of this bid response (currently only S2S sets this)
-  var src = bid.src || CLIENT; // default to client
+  var src = bid.source || CLIENT; // default to client
   // get previous source for this bid, if one exists
   var prevSrc = adUnitBidderResponseSrc[bid.requestId][bid.bidder];
   // if prevSrc is same as current src, there is a problem
@@ -92,8 +94,7 @@ export function getSourceBidderMap(adUnits = []) {
     });
   });
 
-  // TODO: this part may not be needed now, since we use bidSource above
-  // add bidSource bidders to sourceBidders
+  // make sure all bidders in bidSource are in sourceBidders
   for (var bidder in bidSource) {
     if (bidSource.hasOwnProperty(bidder)) {
       addSourceBidder(bidSource[bidder], bidder);

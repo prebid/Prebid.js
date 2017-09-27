@@ -3,7 +3,7 @@ import { config } from 'src/config';
 
 var events = require('src/events');
 var CONSTANTS = require('src/constants.json');
-const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
+const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
 
 var expect = require('chai').expect;
 
@@ -266,6 +266,7 @@ describe('s2sTesting', function () {
       var srcTargeting = targeting[targeting.length - 1];
       expect(srcTargeting.key).to.equal(`hb_source_${bidder}`);
       expect(srcTargeting.val).to.be.a('function');
+      expect(window.pbjs.bidderSettings[bidder].alwaysUseBid).to.be.true;
     }
 
     function checkNoTargeting(bidder) {
@@ -331,10 +332,10 @@ describe('s2sTesting', function () {
       checkTargeting('rubicon');
       checkTargeting('appnexus');
 
-      events.emit(BID_RESPONSE, {requestId: 1234, bidder: 'rubicon', src: 'server'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1234, bidder: 'rubicon', source: 'server'});
       checkTargetingVal(1234, 'rubicon', 'server');
 
-      events.emit(BID_RESPONSE, {requestId: 1234, bidder: 'appnexus', src: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1234, bidder: 'appnexus', source: 'client'});
       checkTargetingVal(1234, 'appnexus', 'client');
 
       // turn off appnexus
@@ -349,8 +350,8 @@ describe('s2sTesting', function () {
       checkTargeting('rubicon');
       checkNoTargeting('appnexus');
 
-      events.emit(BID_RESPONSE, {requestId: 4321, bidder: 'rubicon', src: 'client'});
-      events.emit(BID_RESPONSE, {requestId: 4321, bidder: 'appnexus', src: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 4321, bidder: 'rubicon', source: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 4321, bidder: 'appnexus', source: 'client'});
       checkTargetingVal(4321, 'rubicon', 'client');
       checkNoTargeting('appnexus');
     });
@@ -373,10 +374,10 @@ describe('s2sTesting', function () {
       checkTargeting('rubicon');
       checkTargeting('appnexus');
 
-      events.emit(BID_RESPONSE, {requestId: 1111, bidder: 'rubicon', src: 's2s'});
-      events.emit(BID_RESPONSE, {requestId: 1111, bidder: 'appnexus', src: 'client'});
-      events.emit(BID_RESPONSE, {requestId: 1111, bidder: 'rubicon', src: 'client'});
-      events.emit(BID_RESPONSE, {requestId: 1111, bidder: 'appnexus', src: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'rubicon', source: 's2s'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'appnexus', source: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'rubicon', source: 'client'});
+      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'appnexus', source: 'client'});
 
       checkTargetingVal(1111, 'rubicon', 'both');
       checkTargetingVal(1111, 'appnexus', 'client');
