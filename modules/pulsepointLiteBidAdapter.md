@@ -1,8 +1,8 @@
 # Overview
 
-Module Name: PulsePoint Lite Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: ExchangeTeam@pulsepoint.com
+**Module Name**: PulsePoint Lite Bidder Adapter  
+**Module Type**: Bidder Adapter  
+**Maintainer**: ExchangeTeam@pulsepoint.com  
 
 # Description
 
