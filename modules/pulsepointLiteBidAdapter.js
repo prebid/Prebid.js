@@ -72,7 +72,7 @@ function PulsePointLiteAdapter() {
         bid.cpm = idToBidMap[id].price;
         bid.adId = id;
         if (isNative(idToSlotMap[id])) {
-          bid.native = nativeResponse(idToSlotMap[id], idToBidMap[id]);
+          bid['native'] = nativeResponse(idToSlotMap[id], idToBidMap[id]);
           bid.mediaType = 'native';
         } else {
           bid.ad = idToBidMap[id].adm;
@@ -96,7 +96,7 @@ function PulsePointLiteAdapter() {
     return {
       id: slot.bidId,
       banner: banner(slot),
-      native: native(slot),
+      'native': nativeImpression(slot),
       tagid: slot.params.ct.toString(),
     };
   }
@@ -115,7 +115,7 @@ function PulsePointLiteAdapter() {
   /**
    * Produces an OpenRTB Native object for the slot given.
    */
-  function native(slot) {
+  function nativeImpression(slot) {
     if (slot.nativeParams) {
       const assets = [];
       addAsset(assets, titleAsset(assets.length + 1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
@@ -255,18 +255,18 @@ function PulsePointLiteAdapter() {
     if (slot.nativeParams) {
       const nativeAd = parse(bid.adm);
       const keys = {};
-      if (nativeAd && nativeAd.native && nativeAd.native.assets) {
-        nativeAd.native.assets.forEach((asset) => {
+      if (nativeAd && nativeAd['native'] && nativeAd['native'].assets) {
+        nativeAd['native'].assets.forEach((asset) => {
           keys.title = asset.title ? asset.title.text : keys.title;
           keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
           keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
           keys.image = asset.img && asset.img.type === 3 ? asset.img.url : keys.image;
           keys.icon = asset.img && asset.img.type === 1 ? asset.img.url : keys.icon;
         });
-        if (nativeAd.native.link) {
-          keys.clickUrl = encodeURIComponent(nativeAd.native.link.url);
+        if (nativeAd['native'].link) {
+          keys.clickUrl = encodeURIComponent(nativeAd['native'].link.url);
         }
-        keys.impressionTrackers = nativeAd.native.imptrackers;
+        keys.impressionTrackers = nativeAd['native'].imptrackers;
         return keys;
       }
     }

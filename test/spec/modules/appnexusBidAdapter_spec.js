@@ -30,12 +30,23 @@ describe('AppNexus Adapter', () => {
     'start': 1469479810130
   };
 
-  sinon.stub(bidManager, 'addBidResponse');
-  const adLoaderStub = sinon.stub(adLoader, 'loadScript');
+  let sandbox;
+  let adLoaderStub;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(bidManager, 'addBidResponse');
+    adLoaderStub = sandbox.stub(adLoader, 'loadScript');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
 
   describe('callBids', () => {
-    adapter = new Adapter();
-    adapter.callBids(REQUEST);
-    expect(adLoaderStub.getCall(0).args[0]).to.contain('traffic_source_code=source');
+    it('should contain traffic_source_code', () => {
+      adapter = new Adapter();
+      adapter.callBids(REQUEST);
+      expect(adLoaderStub.getCall(0).args[0]).to.contain('traffic_source_code=source');
+    });
   });
 });

@@ -89,8 +89,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.mediaType === 'video') {
       tryAddVideoBid(bid);
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction(bid);
+      doCallbacksIfNeeded();
     }
   }
 
@@ -276,10 +276,10 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   // set native key value targeting
-  if (custBidObj.native) {
-    Object.keys(custBidObj.native).forEach(asset => {
+  if (custBidObj['native']) {
+    Object.keys(custBidObj['native']).forEach(asset => {
       const key = NATIVE_KEYS[asset];
-      const value = custBidObj.native[asset];
+      const value = custBidObj['native'][asset];
       if (key) { keyValues[key] = value; }
     });
   }

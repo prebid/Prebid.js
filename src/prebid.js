@@ -758,8 +758,50 @@ $$PREBID_GLOBAL$$.setS2SConfig = function(options) {
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
 /**
- * Set Prebid config options
- * @param {Object} options
+ * Set Prebid config options.
+ * (Added in version 0.27.0).
+ *
+ * `setConfig` is designed to allow for advanced configuration while
+ * reducing the surface area of the public API.  For more information
+ * about the move to `setConfig` (and the resulting deprecations of
+ * some other public methods), see [the Prebid 1.0 public API
+ * proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
+ *
+ * #### Troubleshooting your configuration
+ *
+ * If you call `pbjs.setConfig` without an object, e.g.,
+ *
+ * `pbjs.setConfig('debug', 'true'))`
+ *
+ * then Prebid.js will print an error to the console that says:
+ *
+ * ```
+ * ERROR: setConfig options must be an object
+ * ```
+ *
+ * If you don't see that message, you can assume the config object is valid.
+ *
+ * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @param {string} options.bidderSequence The order in which bidders are called.  Example: `pbjs.setConfig({ bidderSequence: "fixed" })`.  Allowed values: `"fixed"` (order defined in `adUnit.bids` array on page), `"random"`.
+ * @param {boolean} options.debug Turn debug logging on/off. Example: `pbjs.setConfig({ debug: true })`.
+ * @param {string} options.priceGranularity The bid price granularity to use.  Example: `pbjs.setConfig({ priceGranularity: "medium" })`. Allowed values: `"low"` ($0.50), `"medium"` ($0.10), `"high"` ($0.01), `"auto"` (sliding scale), `"dense"` (like `"auto"`, with smaller increments at lower CPMs), or a custom price bucket object, e.g., `{ "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]}`.
+ * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
+ * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
+ * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
+ * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
+ * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
+ * ```
+ * pbjs.setConfig({
+ *     s2sConfig: {
+ *         accountId: '1',
+ *         enabled: true,
+ *         bidders: ['appnexus', 'pubmatic'],
+ *         timeout: 1000,
+ *         adapter: 'prebidServer',
+ *         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+ *     }
+ * })
+ * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 
