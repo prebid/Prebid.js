@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter.js';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -95,11 +95,11 @@ function SmartyadsAdapter() {
       secure = 0;
     }
 
-    var host = window.location.host,
-      page = window.location.pathname,
-      language = navigator.language,
-      deviceWidth = window.screen.width,
-      deviceHeight = window.screen.height;
+    const host = window.location.host;
+    const page = window.location.pathname;
+    const language = navigator.language;
+    const deviceWidth = window.screen.width;
+    const deviceHeight = window.screen.height;
 
     var queryString = [
       'banner_id', bid.params.banner_id,
@@ -118,7 +118,7 @@ function SmartyadsAdapter() {
     return queryString.reduce(
       (memo, curr, index) =>
         index % 2 === 0 && queryString[index + 1] !== undefined
-        ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
+          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
           : memo,
       '//ssp-nj.webtradehub.com/?'
     ).slice(0, -1);
@@ -139,9 +139,8 @@ function SmartyadsAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(Adapter.createNew(SMARTYADS_BIDDER_CODE), {      // SMARTYADS_BIDDER_CODE smartyads
-    callBids: _callBids,
-    createNew: SmartyadsAdapter.createNew
+  return Object.assign(new Adapter(SMARTYADS_BIDDER_CODE), { // SMARTYADS_BIDDER_CODE smartyads
+    callBids: _callBids
   });
 }
 
@@ -159,8 +158,8 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
     }, [])
     .sort((first, second) => {
       // sort by MAS_SIZE_PRIORITY priority order
-      let firstPriority = MAS_SIZE_PRIORITY.indexOf(first),
-        secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+      const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
+      const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
 
       if (firstPriority > -1 || secondPriority > -1) {
         if (firstPriority === -1) {
@@ -176,10 +175,6 @@ SmartyadsAdapter.masSizeOrdering = function (sizes) {
     });
 };
 
-SmartyadsAdapter.createNew = function () {
-  return new SmartyadsAdapter();
-};
-
-adaptermanager.registerBidAdapter(new SmartyadsAdapter, 'smartyads');
+adaptermanager.registerBidAdapter(new SmartyadsAdapter(), 'smartyads');
 
 module.exports = SmartyadsAdapter;

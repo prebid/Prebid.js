@@ -32,12 +32,12 @@ const GumgumAdapter = function GumgumAdapter() {
   function _getDigiTrustQueryParams() {
     function getDigiTrustId () {
       var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(dtCredentials) : {};
-      return digiTrustUser && digiTrustUser.success && digiTrustUser.identity || '';
+      return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
     };
 
     let digiTrustId = getDigiTrustId();
     // Verify there is an ID and this user has not opted out
-    if (!digiTrustId || digiTrustId.privacy && digiTrustId.privacy.optout) {
+    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
       return {};
     }
     return {
@@ -58,12 +58,12 @@ const GumgumAdapter = function GumgumAdapter() {
 
     utils._each(bids, bidRequest => {
       const { bidId
-            , params = {}
-            , placementCode
-            } = bidRequest;
+        , params = {}
+        , placementCode
+      } = bidRequest;
       const timestamp = _getTimeStamp();
       const trackingId = params.inScreen;
-      const nativeId = params.native;
+      const nativeId = params['native'];
       const slotId = params.inSlot;
       const bid = { tmax: $$PREBID_GLOBAL$$.cbTimeout };
 
@@ -72,7 +72,7 @@ const GumgumAdapter = function GumgumAdapter() {
         case !!(params.inImage): bid.pi = 1; break;
         case !!(params.inScreen): bid.pi = 2; break;
         case !!(params.inSlot): bid.pi = 3; break;
-        case !!(params.native): bid.pi = 5; break;
+        case !!(params['native']): bid.pi = 5; break;
         default: return utils.logWarn(
           `[GumGum] No product selected for the placement ${placementCode}` +
           ', please check your implementation.'
@@ -118,11 +118,11 @@ const GumgumAdapter = function GumgumAdapter() {
 
   const _handleGumGumResponse = cachedBidRequest => (bidResponse = {}) => {
     const { pi: productId
-          } = cachedBidRequest;
+    } = cachedBidRequest;
     const { ad = {}
-          , pag = {}
-          , thms: throttle
-          } = bidResponse;
+      , pag = {}
+      , thms: throttle
+    } = bidResponse;
     /* cache the pageViewId */
     if (pag && pag.pvid) pageViewId = pag.pvid;
     if (ad && ad.id) {
@@ -131,7 +131,7 @@ const GumgumAdapter = function GumgumAdapter() {
       /* create the bid */
       const bid = bidfactory.createBid(1);
       const { t: trackingId
-            } = pag;
+      } = pag;
       bidResponse.request = cachedBidRequest;
       const encodedResponse = encodeURIComponent(JSON.stringify(bidResponse));
       const gumgumAdLoader = `<script>
@@ -144,7 +144,7 @@ const GumgumAdapter = function GumgumAdapter() {
           if (G) {
             loadAd();
           } else {
-            topWindow.$$PREBID_GLOBAL$$.loadScript("https://g2.gumgum.com/javascripts/ggv2.js", loadAd);
+            topWindow.$$PREBID_GLOBAL$$.loadScript("https://js.gumgum.com/services.js", loadAd);
           }
         }(window, top));
       </script>`;
@@ -171,6 +171,6 @@ const GumgumAdapter = function GumgumAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new GumgumAdapter, 'gumgum');
+adaptermanager.registerBidAdapter(new GumgumAdapter(), 'gumgum');
 
 module.exports = GumgumAdapter;

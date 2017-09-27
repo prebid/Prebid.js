@@ -8,20 +8,20 @@ import adaptermanager from 'src/adaptermanager'
 
 function createRenderHandler({ bidResponseBid, rendererConfig }) {
   function createApi() {
-    parent.window.unruly.native.prebid = parent.window.unruly.native.prebid || {}
-    parent.window.unruly.native.prebid.uq = parent.window.unruly.native.prebid.uq || []
+    parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {}
+    parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
 
     return {
       render(bidResponseBid) {
-        parent.window.unruly.native.prebid.uq.push(['render', bidResponseBid])
+        parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
       },
       onLoaded(bidResponseBid) {}
     }
   }
 
   parent.window.unruly = parent.window.unruly || {}
-  parent.window.unruly.native = parent.window.unruly.native || {}
-  parent.window.unruly.native.siteId = parent.window.unruly.native.siteId || rendererConfig.siteId
+  parent.window.unruly['native'] = parent.window.unruly['native'] || {}
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || rendererConfig.siteId
 
   const api = createApi()
   return {
@@ -77,11 +77,17 @@ function createBidResponseHandler(bidRequestBids) {
   }
 }
 
-function createUnrulyAdapter() {
+function UnrulyAdapter() {
   const adapter = {
     exchangeUrl: 'https://targeting.unrulymedia.com/prebid',
     callBids({ bids: bidRequestBids }) {
       if (!bidRequestBids || bidRequestBids.length === 0) {
+        return
+      }
+
+      const videoMediaType = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video')
+      const context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context')
+      if (videoMediaType && context !== 'outstream') {
         return
       }
 
@@ -106,6 +112,8 @@ function createUnrulyAdapter() {
   return adapter
 }
 
-adaptermanager.registerBidAdapter(new createUnrulyAdapter, 'unruly')
+adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly', {
+  supportedMediaTypes: ['video']
+});
 
-module.exports = createUnrulyAdapter
+module.exports = UnrulyAdapter

@@ -9,6 +9,8 @@ var adaptermanager = require('src/adaptermanager');
 */
 
 var TripleLiftAdapter = function TripleLiftAdapter() {
+  var usersync = false;
+
   function _callBids(params) {
     var tlReq = params.bids;
     var bidsCount = tlReq.length;
@@ -114,6 +116,20 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
         bid.bidderCode = 'triplelift';
         bidmanager.addBidResponse(placementCode, bid);
       }
+
+      // run usersyncs
+      if (!usersync) {
+        var iframe = utils.createInvisibleIframe();
+        iframe.src = '//ib.3lift.com/sync';
+        try {
+          document.body.appendChild(iframe);
+        } catch (error) {
+          utils.logError(error);
+        }
+        usersync = true;
+        // suppress TL ad tag from running additional usersyncs
+        window._tlSyncDone = true;
+      }
     } else {
       // no response data
       // @if NODE_ENV='debug'
@@ -128,6 +144,6 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new TripleLiftAdapter, 'triplelift');
+adaptermanager.registerBidAdapter(new TripleLiftAdapter(), 'triplelift');
 
 module.exports = TripleLiftAdapter;

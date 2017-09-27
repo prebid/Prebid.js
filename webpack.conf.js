@@ -13,41 +13,43 @@ var neverBundle = [
 module.exports = {
   devtool: 'source-map',
   resolve: {
-    root: [
-      path.resolve('.')
+    modules: [
+      path.resolve('.'),
+      'node_modules'
     ],
-    modulesDirectories: ['', 'node_modules']
-  },
-  resolveLoader: {
-    root: [
-      path.resolve('./loaders'),
-      path.resolve('./node_modules')
-    ]
   },
   output: {
     jsonpFunction: 'pbjsChunk'
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.js$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
-        loader: 'babel',
-        query: {
-          presets: ['es2015']
-        }
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['es2015']
+            }
+          }
+        ]
       },
       { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
         test: /\.js$/,
         include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
-        loader: 'babel',
-        query: {
-          presets: ['es2015']
-        }
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['es2015']
+            }
+          }
+        ],
       },
       {
         test: /\.json$/,
-        loader: 'json'
+        loader: 'json-loader'
       },
       {
         test: /constants.json$/,
@@ -63,20 +65,20 @@ module.exports = {
           ]
         })
       },
-        {
-          test: /\.js$/,
-          include: /(src|test|modules|integrationExamples)/,
-          loader: StringReplacePlugin.replace({
-            replacements: [
-              {
-                pattern: /\$\$PREBID_GLOBAL\$\$/g,
-                replacement: function (match, p1, offset, string) {
-                    return prebid.globalVarName;
-                }
+      {
+        test: /\.js$/,
+        include: /(src|test|modules|integrationExamples)/,
+        loader: StringReplacePlugin.replace({
+          replacements: [
+            {
+              pattern: /\$\$PREBID_GLOBAL\$\$/g,
+              replacement: function (match, p1, offset, string) {
+                return prebid.globalVarName;
               }
-            ]
-          })
-        }
+            }
+          ]
+        })
+      }
     ]
   },
   plugins: [

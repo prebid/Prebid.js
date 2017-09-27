@@ -28,9 +28,11 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ cd Prebid.js
     $ yarn install
 
-Prebid also supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
 
 For more info, see [the Yarn documentation](https://yarnpkg.com).
+
+*Note:* You need to have `NodeJS` 4.x or greater installed.
 
 <a name="Build"></a>
 
@@ -46,8 +48,6 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 + `./build/dev/prebid.js.map` - Source map for dev and debug
 + `./build/dist/prebid.js` - Minified production code
 + `./prebid.js_<version>.zip` - Distributable zip archive
-
-*Note:* You need to have `node.js` 4.x or greater installed to be able to run the `gulp build` commands.
 
 ### Build Optimization
 
@@ -102,7 +102,26 @@ Having said that, you are probably safe to check your custom bundle into your pr
 
 ## Test locally
 
-To configure Prebid.js to run locally, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+To lint the code:
+
+```bash
+gulp lint
+```
+
+To run the unit tests:
+
+```bash
+gulp test
+```
+
+To generate and view the code coverage reports:
+
+```bash
+gulp test-coverage
+gulp view-coverage
+```
+
+For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
 
 1. Change `{id}` values appropriately to set up ad units and bidders
 2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
@@ -131,21 +150,21 @@ For deployment:
 })();
 ```
 
-To run the project locally, use:
+Build and run the project locally with:
 
-    $ gulp serve
+```bash
+gulp serve
+```
 
-This runs code quality checks, generates all the necessary files and starts a web server at `http://localhost:9999` serving from the project root. Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev` directory you will have sourcemaps available in your browser's developer tools.
+This runs `lint` and `test`, then starts a web server at `http://localhost:9999` serving from the project root.
+Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev`
+directory you will have sourcemaps available in your browser's developer tools.
 
 To run the example file, go to:
 
 + `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
 
-To view a test coverage report, go to:
-
-+ `http://localhost:9999/build/coverage/karma_html/report`
-
-A watch is also in place that will run continuous tests in the terminal as you edit code and tests.
+As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
 
 <a name="Contribute"></a>
 
@@ -171,7 +190,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
 ### Unit Testing with Karma
 
-        $ gulp test --watch
+        $ gulp test --watch --browsers=chrome
 
 This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
 
