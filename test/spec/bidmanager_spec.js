@@ -8,6 +8,10 @@ var bidmanager = require('../../src/bidmanager');
 var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 
+function timestamp() {
+  return new Date().getTime();
+}
+
 describe('replaceTokenInString', function () {
   it('should replace all given tokens in a String', function () {
     var tokensToReplace = {
@@ -465,6 +469,20 @@ describe('bidmanager.js', function () {
       assert.equal(addedBid.adserverTargeting[`hb_deal`], bid.dealId, 'dealId placed in adserverTargeting');
     });
 
+    it('should pass through default adserverTargeting sent from adapter', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[0]
+      );
+
+      bid.adserverTargeting.extra = 'stuff';
+
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid.adserverTargeting.hb_bidder, 'triplelift');
+      assert.equal(addedBid.adserverTargeting.extra, 'stuff');
+    });
+
     it('should not alter bid adID', () => {
       const bid1 = Object.assign({},
         bidfactory.createBid(2),
@@ -502,6 +520,7 @@ describe('bidmanager.js', function () {
 
     it('should add banner bids that have no width or height but single adunit size', () => {
       sinon.stub(utils, 'getBidderRequest', () => ({
+        start: timestamp(),
         bids: [{
           sizes: [[300, 250]],
         }]
@@ -528,6 +547,7 @@ describe('bidmanager.js', function () {
 
     it('should not add native bids that do not have required assets', () => {
       sinon.stub(utils, 'getBidRequest', () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
@@ -552,13 +572,16 @@ describe('bidmanager.js', function () {
     });
 
     it('should add native bids that do have required assets', () => {
-      sinon.stub(utils, 'getBidRequest', () => ({
+      const bidRequest = () => ({
+        start: timestamp(),
         bidder: 'appnexusAst',
         nativeParams: {
           title: {'required': true},
         },
         mediaType: 'native',
-      }));
+      });
+      sinon.stub(utils, 'getBidRequest', bidRequest);
+      sinon.stub(utils, 'getBidderRequest', bidRequest);
 
       const bid = Object.assign({},
         bidfactory.createBid(1),
@@ -574,10 +597,12 @@ describe('bidmanager.js', function () {
       assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
 
       utils.getBidRequest.restore();
+      utils.getBidderRequest.restore();
     });
 
     it('installs publisher-defined renderers on bids', () => {
       sinon.stub(utils, 'getBidderRequest', () => ({
+        start: timestamp(),
         bids: [{
           renderer: {
             url: 'renderer.js',
@@ -595,6 +620,35 @@ describe('bidmanager.js', function () {
       const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
 
+      utils.getBidderRequest.restore();
+    });
+
+    it('requires a renderer on outstream bids', () => {
+      const bidRequest = () => ({
+        start: timestamp(),
+        bidder: 'appnexusAst',
+        mediaTypes: {
+          video: {context: 'outstream'}
+        },
+      });
+
+      sinon.stub(utils, 'getBidRequest', bidRequest);
+      sinon.stub(utils, 'getBidderRequest', bidRequest);
+
+      const bid = Object.assign({},
+        bidfactory.createBid(1),
+        {
+          bidderCode: 'appnexusAst',
+          mediaType: 'video',
+          renderer: {render: () => true, url: 'render.js'},
+        }
+      );
+
+      const bidsRecCount = $$PREBID_GLOBAL$$._bidsReceived.length;
+      bidmanager.addBidResponse('adUnit-code', bid);
+      assert.equal(bidsRecCount + 1, $$PREBID_GLOBAL$$._bidsReceived.length);
+
+      utils.getBidRequest.restore();
       utils.getBidderRequest.restore();
     });
   });

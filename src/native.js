@@ -1,4 +1,4 @@
-import { getBidRequest, logError, insertPixel } from './utils';
+import { getBidRequest, logError, triggerPixel } from './utils';
 
 export const nativeAdapters = [];
 
@@ -9,6 +9,7 @@ export const NATIVE_KEYS = {
   image: 'hb_native_image',
   icon: 'hb_native_icon',
   clickUrl: 'hb_native_linkurl',
+  cta: 'hb_native_cta',
 };
 
 export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
@@ -91,6 +92,6 @@ export function fireNativeImpressions(adObject) {
     adObject.native.impressionTrackers;
 
   (impressionTrackers || []).forEach(tracker => {
-    insertPixel(tracker);
+    triggerPixel(tracker);
   });
 }

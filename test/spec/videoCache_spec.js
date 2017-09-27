@@ -1,6 +1,6 @@
 import 'mocha';
 import chai from 'chai';
-import { store } from 'src/videoCache';
+import { getCacheUrl, store } from 'src/videoCache';
 
 const should = chai.should();
 
@@ -92,9 +92,9 @@ describe('The video cache', () => {
       assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
     });
 
-    it('should make the expected request when store() is called on an ad with a vastPayload', () => {
-      const vastPaload = '<VAST version="3.0"></VAST>';
-      assertRequestMade({ vastPayload: vastPaload }, vastPaload);
+    it('should make the expected request when store() is called on an ad with vastXml', () => {
+      const vastXml = '<VAST version="3.0"></VAST>';
+      assertRequestMade({ vastXml: vastXml }, vastXml);
     });
 
     function assertRequestMade(bid, expectedValue) {
@@ -126,3 +126,11 @@ describe('The video cache', () => {
     }
   });
 });
+
+describe('The getCache function', () => {
+  it('should return the expected URL', () => {
+    const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
+    const url = getCacheUrl(uuid);
+    url.should.equal(`https://prebid.adnxs.com/pbc/v1/cache?uuid=${uuid}`);
+  });
+})
