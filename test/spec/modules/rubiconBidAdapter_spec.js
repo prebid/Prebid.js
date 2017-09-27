@@ -114,7 +114,8 @@ describe('the rubicon adapter', () => {
           sizes: [[300, 250], [320, 50]],
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
-          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a'
+          requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
       start: 1472239426002,
@@ -234,6 +235,7 @@ describe('the rubicon adapter', () => {
             'rp_floor': '0.01',
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
+            'tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',

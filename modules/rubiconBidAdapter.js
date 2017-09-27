@@ -188,6 +188,7 @@ export const spec = {
         'rp_floor', floor,
         'rp_secure', isSecure() ? '1' : '0',
         'tk_flint', getIntegration(),
+        'tid', bidRequest.transactionId,
         'p_screen_res', _getScreenResolution(),
         'kw', keywords,
         'tk_user_key', userId
