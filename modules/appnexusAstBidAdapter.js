@@ -189,17 +189,17 @@ function newBid(serverBid, rtbBid) {
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb.native) {
-    const native = rtbBid.rtb.native;
-    bid.native = {
-      title: native.title,
-      body: native.desc,
-      cta: native.ctatext,
-      sponsoredBy: native.sponsored,
-      image: native.main_img && native.main_img.url,
-      icon: native.icon && native.icon.url,
-      clickUrl: native.link.url,
-      impressionTrackers: native.impression_trackers,
+  } else if (rtbBid.rtb['native']) {
+    const nativeAd = rtbBid.rtb['native'];
+    bid['native'] = {
+      title: nativeAd.title,
+      body: nativeAd.desc,
+      cta: nativeAd.ctatext,
+      sponsoredBy: nativeAd.sponsored,
+      image: nativeAd.main_img && nativeAd.main_img.url,
+      icon: nativeAd.icon && nativeAd.icon.url,
+      clickUrl: nativeAd.link.url,
+      impressionTrackers: nativeAd.impression_trackers,
     };
   } else {
     Object.assign(bid, {
@@ -286,7 +286,7 @@ function bidToTag(bid) {
         );
       });
 
-      tag.native = {layouts: [nativeRequest]};
+      tag['native'] = {layouts: [nativeRequest]};
     }
   }
 
