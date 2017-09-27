@@ -80,6 +80,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         requestId: id,
         cpm: idToBidMap[id].price,
         creative_id: id,
+        creativeId: id,
         adId: id,
       };
       if (idToImpMap[id].native) {

@@ -97,6 +97,8 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.adId).to.equal('bid12345');
+    expect(bid.creative_id).to.equal('bid12345');
+    expect(bid.creativeId).to.equal('bid12345');
   });
 
   it('Verify full passback', () => {
