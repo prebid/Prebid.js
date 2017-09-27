@@ -56,8 +56,8 @@ var CriteoAdapter = function CriteoAdapter() {
               var w = parseInt(sizeString.substring(0, xIndex));
               var h = parseInt(sizeString.substring(xIndex + 1, sizeString.length))
               return new Criteo.PubTag.DirectBidding.Size(w, h);
-            }
-            )
+            }),
+            bid.params.publisherSubId
           )
         );
 
