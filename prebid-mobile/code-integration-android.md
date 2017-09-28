@@ -152,6 +152,15 @@ if(conditionToStopRefresh) {
 }
  ```
 
+## If proguard is ON
+
+### Primary Ad Server is DFP
+To avoid dfp class being obfuscated and prebid not working, add the following lines to your proguard file:
+```
+-keep class com.google.android.gms.ads.doubleclick.PublisherAdRequest {
+   public *;
+}
+```
 
 
 </div>
