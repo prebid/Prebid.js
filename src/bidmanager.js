@@ -89,8 +89,8 @@ exports.addBidResponse = function (adUnitCode, bid) {
     if (bid.mediaType === 'video') {
       tryAddVideoBid(bid);
     } else {
-      doCallbacksIfNeeded();
       addBidToAuction(bid);
+      doCallbacksIfNeeded();
     }
   }
 

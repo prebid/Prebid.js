@@ -23,7 +23,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   code: 'myBidderCode',
  *   aliases: ['alias1', 'alias2'],
  *   supportedMediaTypes: ['video', 'native'],
- *   areParamsValid: function(paramsObject) { return true/false },
+ *   isBidRequestValid: function(paramsObject) { return true/false },
  *   buildRequests: function(bidRequests) { return some ServerRequest(s) },
  *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
  * });
@@ -39,14 +39,14 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   one as is used in the call to registerBidAdapter
  * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
  * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
- * @property {function(object): boolean} areParamsValid Determines whether or not the given object has all the params
+ * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
  *   needed to make a valid request.
- * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server which
- *   requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   a "params" property which has passed the areParamsValid() test
- * @property {function(*): Bid[]} interpretResponse Given a successful response from the Server, interpret it
- *   and return the Bid objects. This function will be run inside a try/catch. If it throws any errors, your
- *   bids will be discarded.
+ * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
+ *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
+ *   passed the isBidRequestValid() test.
+ * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
+ *   interpret it and return the Bid objects. This function will be run inside a try/catch.
+ *   If it throws any errors, your bids will be discarded.
  * @property {function(SyncOptions, Array): UserSync[]} [getUserSyncs] Given an array of all the responses
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
@@ -58,7 +58,6 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *
  * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- *   This is guaranteed to have passed the spec.areParamsValid() test.
  */
 
 /**
@@ -78,6 +77,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should correspond to one of the
  * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
+ * @property {string} currency The currency code for the cpm value
  * @property {number} cpm The bid price, in US cents per thousand impressions.
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
@@ -195,7 +195,7 @@ export function newBidder(spec) {
         bidRequestMap[bid.bidId] = bid;
       });
 
-      let requests = spec.buildRequests(bidRequests);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
         afterAllResponses();
         return;
@@ -214,7 +214,7 @@ export function newBidder(spec) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}?${parseQueryStringParameters(request.data)}`,
+              `${request.url}?${typeof request.data === 'object' ? parseQueryStringParameters(request.data) : request.data}`,
               {
                 success: onSuccess,
                 error: onFailure
@@ -245,57 +245,57 @@ export function newBidder(spec) {
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
             onResponse();
         }
-      }
 
-      // If the server responds successfully, use the adapter code to unpack the Bids from it.
-      // If the adapter code fails, no bids should be added. After all the bids have been added, make
-      // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
-      function onSuccess(response) {
-        try {
-          response = JSON.parse(response);
-        } catch (e) { /* response might not be JSON... that's ok. */ }
-        responses.push(response);
+        // If the server responds successfully, use the adapter code to unpack the Bids from it.
+        // If the adapter code fails, no bids should be added. After all the bids have been added, make
+        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        function onSuccess(response) {
+          try {
+            response = JSON.parse(response);
+          } catch (e) { /* response might not be JSON... that's ok. */ }
+          responses.push(response);
 
-        let bids;
-        try {
-          bids = spec.interpretResponse(response);
-        } catch (err) {
-          logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+          let bids;
+          try {
+            bids = spec.interpretResponse(response, request);
+          } catch (err) {
+            logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+            onResponse();
+            return;
+          }
+
+          if (bids) {
+            if (bids.forEach) {
+              bids.forEach(addBidUsingRequestMap);
+            } else {
+              addBidUsingRequestMap(bids);
+            }
+          }
           onResponse();
-          return;
-        }
 
-        if (bids) {
-          if (bids.forEach) {
-            bids.forEach(addBidUsingRequestMap);
-          } else {
-            addBidUsingRequestMap(bids);
+          function addBidUsingRequestMap(bid) {
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.placementCode, prebidBid);
+            } else {
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            }
           }
         }
-        onResponse();
 
-        function addBidUsingRequestMap(bid) {
-          const bidRequest = bidRequestMap[bid.requestId];
-          if (bidRequest) {
-            const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-            addBidWithCode(bidRequest.placementCode, prebidBid);
-          } else {
-            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-          }
+        // If the server responds with an error, there's not much we can do. Log it, and make sure to
+        // call onResponse() so that we're one step closer to calling fillNoBids().
+        function onFailure(err) {
+          logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          onResponse();
         }
-      }
-
-      // If the server responds with an error, there's not much we can do. Log it, and make sure to
-      // call onResponse() so that we're one step closer to calling fillNoBids().
-      function onFailure(err) {
-        logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
-        onResponse();
       }
     }
   });
 
   function filterAndWarn(bid) {
-    if (!spec.areParamsValid(bid.params)) {
+    if (!spec.isBidRequestValid(bid)) {
       logWarn(`Invalid bid sent to bidder ${spec.code}: ${JSON.stringify(bid)}`);
       return false;
     }
