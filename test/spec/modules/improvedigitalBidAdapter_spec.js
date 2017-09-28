@@ -524,7 +524,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\" style=\\\"display:none\\\"/><img src=\\\"http:\\/\\/link2\\\" style=\\\"display:none\\\"/><img src=\\\"http:\\/\\/link3\\\" style=\\\"display:none\\\"/>\")</script>', cpm: 1.85185185185185, adId: '1a2b3c'}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");</script>', cpm: 1.85185185185185, adId: '1a2b3c'}));
     });
   });
 
@@ -558,7 +558,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledTwice(bidmanager.addBidResponse);
-      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, adId: '1a2b3c', statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");document.writeln(\"<img src=\\\"http:\\/\\/link\\\" style=\\\"display:none\\\"/><img src=\\\"http:\\/\\/link2\\\" style=\\\"display:none\\\"/><img src=\\\"http:\\/\\/link3\\\" style=\\\"display:none\\\"/>\")</script>', cpm: 1.85185185185185}));
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, adId: '1a2b3c', statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");</script>', cpm: 1.85185185185185}));
       sinon.assert.calledWith(bidmanager.addBidResponse, 'placement2', sinon.match({bidderCode: 'improvedigital', width: 0, height: 0, adId: '4d5e6f', statusMessage: 'Bid returned empty or error response'}));
     });
   });
