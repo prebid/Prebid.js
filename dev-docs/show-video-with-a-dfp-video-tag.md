@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Show Video Ads with a DFP Video Tag
+title: Show Video Ads with DFP
 description:
 pid: 0
 is_top_nav: yeah
@@ -10,53 +10,46 @@ nav_section: prebid-video
 
 <div class="bs-docs-section" markdown="1">
 
-# Show Video Ads with a DFP Video Tag (Beta)
+# Show Video Ads with DFP (Beta)
 {: .no_toc}
 
 In this tutorial, we'll show how to set up Prebid to show a video ad
 from DFP.  We'll use the [Video.js](http://videojs.com/) player and
-the AppNexus AST bidder, but this should work similarly with other
-video players.
-
-Note that you'll need to make sure to work with video-enabled bidders
-(In the registerBidAdapter() call, the supportedMediaTypes array contains `"video"`.)
+the AppNexus AST bidder, but the principles are the same across
+different video players and video-enabled bidders.
 
 * TOC
 {:toc }
 
 ## Prerequisites
 
-The code below was built with access to the following libraries:
+The code example below was built using the following libraries:
 
-+ video.js version 5.9.2
-+ MailOnline videojs-vast-vpaid plugin version 2.0.2
++ [video.js](http://videojs.com/) version 5.9.2
++ MailOnline's [videojs-vast-vpaid plugin](https://github.com/MailOnline/videojs-vast-vpaid) version 2.0.2
 
-Also, you need to make sure to include the code below in your
-adapter's call to registerBidAdapter().  If you don't build Prebid.js
-with support for at least one video-enabled bidder, you will not be
-able to show any video ads.
+Also, you need to make sure to build Prebid.js with:
 
-{% highlight js %}
-adaptermanager.registerBidAdapter(new XYZBidAdapter, 'xyz', {
-  supportedMediaTypes: ['video']
-});
-{% endhighlight %}
++ Support for at least one video-enabled bidder
++ Support for the `dfpAdServerVideo` ad server adapter, which will provide the video ad support
+
+For example, to build with the AppNexus AST bidder adapter and the DFP
+Video ad server adapter, use the following command:
+
+```bash
+gulp build --modules=dfpAdServerVideo,appnexusAstBidAdapter
+```
+
+For more information about how to build with modules, see the [Prebid.js project README](https://github.com/prebid/Prebid.js/blob/master/README.md#build-optimization).
+
+Finally, your ad ops team needs to have set up line items in DFP
+following the instructions at
+[Setting up Prebid Video in DFP]({{site.baseurl}}/setting-up-prebid-video-in-dfp.html).
 
 ## Implementation
 
 This section will take you through the code you need to write to show
 video ads using Prebid.js and Video.js.
-
-At a high level, we'll:
-
-+ create a video ad unit
-+ add the video ad unit to our list of ad units
-+ request bids
-+ build a video tag from the DFP ad server tag
-+ invoke the video player with the video tag you just built
-
-Along the way we'll log a few things to the browser console to make sure
-everything is working.
 
 ### 1. Create a video ad unit
 
@@ -65,126 +58,87 @@ Don't forget to add your own valid placement ID.
 
 ```javascript
 var videoAdUnit = {
-  code: 'video',
-  sizes: [640,480],
-  mediaType: 'video',
-  bids: [
-    {
-      bidder: 'appnexusAst',
-      params: {
-        placementId: '123456'  // <-- Replace this!
+    code: 'video',
+    sizes: [640, 480],
+    mediaType: 'video',
+    bids: [{
+        bidder: 'appnexusAst',
+        params: {
+            placementId: '9333431',
             video: {
-              skippable: true
+                skippable: true,
+                playback_methods: ['auto_play_sound_off']
             }
-      }
-    }
-  ]
+        }
+    }]
 };
 ```
 
-### 2. Implement Custom Price Buckets to work around the default CPM cap of $20
+### 2. Implement Custom Price Buckets
 
-By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs over $20.  In order to receive those bids, you'll need to implement custom price buckets using the [`setPriceGranularity`]({{site.github.url}}/dev-docs/publisher-api-reference.html#customCPMObject) method.
+By default, Prebid.js caps all CPMs at $20.  As a video seller, you may expect to see CPMs over $20.  In order to receive those bids, you'll need to implement custom price buckets using the [`setPriceGranularity`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#customCPMObject) method.
 
-For instructions, see [Custom Price Bucket with `setPriceGranularity`]({{site.github.url}}/dev-docs/examples/custom-price-bucket-using-setpricegranularity.html).
+For instructions, see [Custom Price Bucket with `setPriceGranularity`]({{site.baseurl}}/dev-docs/examples/custom-price-bucket-using-setpricegranularity.html).
 
-### 3. Request bids, build a video tag, and invoke the player
+### 3. Request bids, build video URL
 
-Next, do the standard Prebid "add ad units and request bids" dance.
-In the example below, we've added some code that is not strictly
-necessary, but was helpful during development.  Specifically, we log:
+Next, we need to do the standard Prebid "add ad units and request bids" dance.  In the example below, our callback builds the video URL the player needs using the `buildVideoUrl` method from the DFP ad server module that we built into our copy of Prebid.js in the **Prerequisites** section.
 
-+ the `bids` object we got back from our demand sources
-+ a notice telling us whether there was video demand
-+ the URL of the VAST creative, if any (this is also helpful if you
-  don't necessarily use DFP)
-
-To optimize setup for low latency, we recommend that this code (and that referenced above in step #1) be added to the page header.
+{: .alert.alert-info :}
+**All DFP Parameters are supported**  
+The `params` key in the argument to `buildVideoUrl` supports any parameters from the [DFP API](https://support.google.com/dfp_premium/answer/1068325?hl=en).
 
 ```javascript
-pbjs.que.push(function(){
-  pbjs.addAdUnits(videoAdUnit);
-
-  pbjs.requestBids({
-    timeout : 700,
-    bidsBackHandler : function(bids) {
-      console.log('got bids back: ');
-      console.log(bids);
-      if (!bids.video) {
-        console.log('no video demand');
-      }
-      else {
-        console.log('we got video demand!');
-      }
-
-      // Log the VAST URL, if there is one
-      try {
-        url = bids.video.bids[0].vastUrl;
-        console.log('VAST URL: ');
-        console.log(url);
-      } catch (e) {} // ignore
-
-      // This is the example tag from https://support.google.com/dfp_premium/answer/1068325
-      var adserverTag = 'http://pubads.g.doubleclick.net/gampad/ads?env=vp&gdfp_req=1&impl=s&output=vast&iu=/6062/video-demo&sz=400x300&unviewed_position_start=1&url=http://www.simplevideoad.com&ciu_szs=728x90,300x250&correlator=7105';
-
-      var options = {
-        'adserver': 'dfp',
-        'code': 'video' // Must match the code from the `videoAdUnit` above
-      };
-
-      // Generate DFP Video Ad Server Tag URL
-      var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
-
-      console.log('buildMasterVideoTagFromAdserverTag: ' + masterTagUrl);
-
-      // Send masterTagUrl to the video player
-      invokeVideoPlayer(masterTagUrl);
-    }
-  });
+pbjs.que.push(function() {
+    pbjs.addAdUnits(videoAdUnit);
+    pbjs.requestBids({
+        bidsBackHandler: function(bids) {
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                adUnit: videoAdUnit,
+                params: {
+                    iu: '/19968336/prebid_cache_video_adunit'
+                }
+            });
+            invokeVideoPlayer(videoUrl);
+        }
+    });
 });
 ```
 
-### 4. Add the video player code to the page body
+### 4. Invoke video player on Prebid video URL
 
-In the body of the page, some HTML and JS like the following will show
-the ad -- this is where `invokeVideoPlayer` is defined:
+In the body of the page, the following HTML and JS will show the ad:
 
 ```html
 <div class="example-video-container">
   <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
     data-setup='{}'
     width='640'
-    height='480'
-  >
+    height='480'>
     <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'/>
     <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm'/>
-    <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>    
+    <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>
   </video>
 </div>
 
 <script>
-
-var vid1 = videojs('vid1');
-
-function invokeVideoPlayer(url) {
-  videojs("vid1").ready(function() {
-    var player = this;
-    var vastAd = player.vastClient({
-      adTagUrl: url,
-      playAdAlways: true,
-      vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-      autoplay: true
+  function invokeVideoPlayer(url) {
+    videojs("vid1").ready(function() {
+      this.vastClient({
+        adTagUrl: url,
+        playAdAlways: true,
+        verbosity: 0,
+        vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
+        autoplay: true
+      });
+      this.muted(true);
+      this.play();
     });
-    player.muted(true);
-    player.play();
-  });
-}
-
+  }
 </script>
 ```
 
-If you have [set up your adserver line items/ creatives]({{site.github.url}}/adops/setting-up-prebid-video-in-dfp.html) correctly, you should see
-an instream pre-roll video ad followed by the oceans video from the [video.js homepage](http://videojs.com/).
+If you have [set up your ad server line items and creatives correctly]({{site.baseurl}}/adops/setting-up-prebid-video-in-dfp.html), you should see an instream pre-roll video ad followed by the oceans video from the [video.js homepage](http://videojs.com/).
 
 ## Working Examples
 
@@ -197,5 +151,9 @@ Below, find links to end-to-end "working examples" integrating Prebid.js demand 
 + [Brightcove]({{site.github.url}}/examples/video/bc-demo.html)
 + [Kaltura]({{site.github.url}}/examples/video/klt-demo.html)
 + [Ooyala]({{site.github.url}}/examples/video/ooyala-demo.html)
+
+## Related Topics
+
++ [Setting up Prebid Video in DFP]({{site.baseurl}}/adops/setting-up-prebid-video-in-dfp.html)
 
 </div>
