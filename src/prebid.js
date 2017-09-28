@@ -486,39 +486,6 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
 };
 
 /**
- * Build master video tag from publishers adserver tag
- * @param {string} adserverTag default url
- * @param {Object} options options for video tag
- *
- * @deprecated Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead.
- * This function will be removed in Prebid 1.0.
- */
-$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
-  utils.logWarn('$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag will be removed in Prebid 1.0. Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead');
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
-  var urlComponents = parseURL(adserverTag);
-
-  // return original adserverTag if no bids received
-  if ($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
-    return adserverTag;
-  }
-
-  var masterTag = '';
-  if (options.adserver.toLowerCase() === 'dfp') {
-    var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
-    if (!dfpAdserverObj.verifyAdserverTag()) {
-      utils.logError('Invalid adserverTag, required google params are missing in query string');
-    }
-    dfpAdserverObj.appendQueryParams();
-    masterTag = formatURL(dfpAdserverObj.urlComponents);
-  } else {
-    utils.logError('Only DFP adserver is supported');
-    return;
-  }
-  return masterTag;
-};
-
-/**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
