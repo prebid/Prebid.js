@@ -139,7 +139,7 @@ The new code will reside under the modules directory with the name of the bidder
 Compared to previous versions of Prebid, the new BaseAdapter model saves the adapter from having to make the AJAX call and provides consistency in how adapters are structured. Instead of a single entry point, the BaseAdapter approach defines 4 entry points:
 
 * `isBidRequestValid` - Verify the the `AdUnits.bids`, respond with `true` (valid) or `false` (invalid)
-* `buildRequests` - Convert `AdUnit[].bids[]` into bidder-specific URL(s)
+* `buildRequests` - Takes an array of validBidRequests, if of which is guaranteed to have passed the isBidRequestValid() test.
 * `interpretResponse` - Parse the response and generate one or more bid objects
 * `getUserSyncs` - If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.
 
@@ -155,7 +155,7 @@ export const spec = {
     code: BIDDER_CODE,
     aliases: ['ex'], // short code
     isBidRequestValid: function(bid) {},
-    buildRequests: function(bidderRequest) {},
+    buildRequests: function(validBidRequests[]) {},
     interpretResponse: function(serverResponse, request) {},
     getUserSyncs: function(syncOptions) {}
 }
@@ -394,10 +394,10 @@ export const spec = {
         /**
          * Make a server request from the list of BidRequests.
          *
-         * @param {bidderRequest} - bidderRequest.bids[] is an array of AdUnits and bids
+         * @param {validBidRequests[]} - an array of bids
          * @return ServerRequest Info describing the request to the server.
          */
-        buildRequests: function(bidderRequest) {
+        buildRequests: function(validBidRequests) {
             const payload = {
                 // use bidderRequest.bids[] to get bidder-dependent request info
 
