@@ -131,6 +131,10 @@ describe('criteo adapter test', () => {
       server.respondWith(JSON.stringify(validResponse));
     });
 
+    afterEach(() => {
+      server.restore();
+    });
+
     it('adds bid for valid request', (done) => {
       stubAddBidResponse = sinon.stub(bidManager, 'addBidResponse', function (adUnitCode, bid) {
         expect(bid).to.satisfy(bid => { return bid.getStatusCode() == CONSTANTS.STATUS.GOOD });
@@ -185,6 +189,10 @@ describe('criteo adapter test', () => {
       server.respondWith(JSON.stringify(validNativeResponse));
     });
 
+    afterEach(() => {
+      server.restore();
+    });
+
     it('adds creative to the response of a native valid request', (done) => {
       stubAddBidResponse = sinon.stub(
         bidManager, 'addBidResponse',
@@ -213,6 +221,10 @@ describe('criteo adapter test', () => {
 
     beforeEach(() => {
       server = sinon.fakeServer.create({ autoRespond: true, respondImmediately: true });
+    });
+
+    afterEach(() => {
+      server.restore();
     });
 
     it('no bid if cdb handler responds with no bid empty string response', (done) => {
