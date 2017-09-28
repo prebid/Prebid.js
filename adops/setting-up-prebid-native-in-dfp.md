@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Setting up Prebid Native in DFP
+title: Setting up Prebid Native in DFP (Alpha)
 head_title: Setting up Prebid Native in DFP
 description: Setting up Prebid Native in DFP
 pid: 3
