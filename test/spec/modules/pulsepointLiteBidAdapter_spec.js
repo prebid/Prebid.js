@@ -1,3 +1,4 @@
+/* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointLiteBidAdapter';
 import bidManager from 'src/bidmanager';
@@ -115,11 +116,12 @@ describe('PulsePoint Lite Adapter Tests', () => {
     // native impression
     expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.equal(null);
-    expect(ortbRequest.imp[0].native).to.not.equal(null);
-    expect(ortbRequest.imp[0].native.ver).to.equal('1.1');
-    expect(ortbRequest.imp[0].native.request).to.not.equal(null);
+    const nativePart = ortbRequest.imp[0]['native'];
+    expect(nativePart).to.not.equal(null);
+    expect(nativePart.ver).to.equal('1.1');
+    expect(nativePart.request).to.not.equal(null);
     // native request assets
-    const nativeRequest = JSON.parse(ortbRequest.imp[0].native.request);
+    const nativeRequest = JSON.parse(ortbRequest.imp[0]['native'].request);
     expect(nativeRequest).to.not.equal(null);
     expect(nativeRequest.assets).to.have.lengthOf(3);
     // title asset
@@ -150,7 +152,7 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     const nativeResponse = {
-      native: {
+      'native': {
         assets: [
           { title: { text: 'Ad Title'} },
           { data: { type: 1, value: 'Sponsored By: Brand' }},
@@ -176,14 +178,15 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(bid.adId).to.equal('bid12345');
     expect(bid.ad).to.be.undefined;
     expect(bid.mediaType).to.equal('native');
-    expect(bid.native).to.not.equal(null);
-    expect(bid.native.title).to.equal('Ad Title');
-    expect(bid.native.sponsoredBy).to.equal('Sponsored By: Brand');
-    expect(bid.native.image).to.equal('http://images.cdn.brand.com/123');
-    expect(bid.native.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
-    expect(bid.native.impressionTrackers).to.have.lengthOf(2);
-    expect(bid.native.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
-    expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
+    const nativeBid = bid['native'];
+    expect(nativeBid).to.not.equal(null);
+    expect(nativeBid.title).to.equal('Ad Title');
+    expect(nativeBid.sponsoredBy).to.equal('Sponsored By: Brand');
+    expect(nativeBid.image).to.equal('http://images.cdn.brand.com/123');
+    expect(nativeBid.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
+    expect(nativeBid.impressionTrackers).to.have.lengthOf(2);
+    expect(nativeBid.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
+    expect(nativeBid.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
 
   it('Verifies bidder code', () => {

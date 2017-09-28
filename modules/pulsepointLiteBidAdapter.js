@@ -84,7 +84,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creativeId: id,
         adId: id,
       };
-      if (idToImpMap[id].native) {
+      if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
       } else {
