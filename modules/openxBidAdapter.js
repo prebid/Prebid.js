@@ -6,6 +6,8 @@ const CONSTANTS = require('src/constants.json');
 const utils = require('src/utils.js');
 const adaptermanager = require('src/adaptermanager');
 
+const realvuAnalyticsAdapter = require('modules/realvuAnalyticsAdapter');
+
 const OpenxAdapter = function OpenxAdapter() {
   const BIDDER_CODE = 'openx';
   const BIDDER_CONFIG = 'hb_pb';
@@ -53,6 +55,16 @@ const OpenxAdapter = function OpenxAdapter() {
         bt: Math.min(timeout, window.PREBID_TIMEOUT || config.getConfig('bidderTimeout')),
         bs: window.location.hostname
       };
+      // not in view :(
+      /*
+      if (top && top.realvu_boost) {
+        let v = top.realvu_boost.addUnitById({unit_id: bid.placementCode, partner_id: 'DVJC', size: bid.sizes});
+        if (v != 'yes') {
+          addBidResponse(null, bid);
+          continue;
+        }
+      }
+      */
       // no fill :(
       if (!auid || !adUnit.pub_rev) {
         addBidResponse(null, bid);
@@ -192,7 +204,7 @@ const OpenxAdapter = function OpenxAdapter() {
     params.aus = utils._map(bids, bid => {
       return utils.parseSizesInput(bid.sizes).join(',');
     }).join('|');
-
+    /*
     bids.forEach(function (bid) {
       for (let customParam in bid.params.customParams) {
         if (bid.params.customParams.hasOwnProperty(customParam)) {
@@ -210,6 +222,32 @@ const OpenxAdapter = function OpenxAdapter() {
     } catch (err) {
       utils.logMessage(`Ajax call failed due to ${err}`);
     }
+    */
+    var rvaa = realvuAnalyticsAdapter;
+    rvaa.queue(function () {
+      params['realvu'] = '';
+      bids.forEach(function (bid) {
+        for (let customParam in bid.params.customParams) {
+          if (bid.params.customParams.hasOwnProperty(customParam)) {
+            params['c.' + customParam] = bid.params.customParams[customParam];
+          }
+        }
+        if (params['realvu'] != '') {
+          params['realvu'] += '%2C';
+        }
+        params['realvu'] += rvaa.inView(bid, 'DVJC');
+      });
+
+      try {
+        let queryString = buildQueryStringFromParams(params);
+        let url = `//${delDomain}/w/1.0/arj?${queryString}`;
+        ajax.ajax(url, oxARJResponse, void (0), {
+          withCredentials: true
+        });
+      } catch (err) {
+        utils.logMessage(`Ajax call failed due to ${err}`);
+      }
+    });
   }
 
   function callBids(params) {
