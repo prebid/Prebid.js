@@ -54,6 +54,11 @@ Be sure to duplicate your line item and video creative for each Prebid price buc
 
 4. Set the **duration** to **1**
 
+The resulting creative should look something like the following:
+
+{: .pb-img.pb-md-img :}
+![DFP Video Creative Setup]({{site.baseurl}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-04.png)
+
 {: .alert.alert-warning :}
 **VAST creative URL warning**  
 DFP will show you a warning that fetching VAST from the creative URL failed.  This is expected, since the creative URL above points to a cache hosted by Prebid Server.  Why do we do this caching?  For several reasons:  
@@ -64,7 +69,7 @@ That's it as far as Prebid setup is concerned.  At this point you can add any ot
 
 ## Further Reading
 
-+ [Show Video Ads with a DFP Video Tag]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html) (Engineering setup)
++ [Show Video Ads with DFP]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html) (Engineering setup)
 
 + [Create a Master Video Tag Manually](https://support.google.com/dfp_premium/answer/1068325?hl=en&ref_topic=2480647) (DFP)
 
