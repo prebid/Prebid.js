@@ -17,6 +17,23 @@ This document describes the changes to the Publisher API for version 1.0.
 * TOC
 {:toc}
 
+## Deprecations 
+The following functions/variables are removed as part of 1.0.
+
+- All `pbjs._*` varaibles will be depracated as part of 1.0. This includes the following
+  - `pbjs._winningBids`
+  - `pbjs._bidsReceived`
+  - `pbjs._bidsRequested`
+  - `pbjs._adUnitCodes`
+  - `pbjs._adsReceived`
+  - `pbjs.cbTimeout`
+- `pbjs.addCallback` & `pbjs.removeCallback` in favor of [onEvent API](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.onEvent). 
+- `pbjs.allBidsAvailable`
+- `pbjs.buildMasterVideoTagFromAdserverTag` in favor of `pbjs.adServers.dfp.buildVideoUrl`
+- `adUnit.sizeMapping` - see below for [details on sizeConfig]({{site.baseurl}}/dev-docs/prebid-1.0-API.html#size-mapping-changes) 
+
+Other methods are removed as part of the `setConfig` API -  see below `pbjs.setConfig` for details. 
+
 ## New API - `pbjs.setConfig`
 
 For 1.0, we're **deprecating** the following APIs in favor of a generic "options" param object passed to the [`pbjs.setConfig`]({{site.baseurl}}/dev-docs/publisher-api-reference.html#module_pbjs.setConfig) method:
@@ -29,6 +46,7 @@ For 1.0, we're **deprecating** the following APIs in favor of a generic "options
 - `pbjs.enableSendAllBids` (* [2](#options-footnotes))
 - `pbjs.setBidderSequence`
 - `pbjs.setS2SConfig`
+- `pbjs.timeoutBuffer`
 
 Mapping will be straightforward with the name of the param being the same, except dropping the `set` prefix where appropriate.
 
