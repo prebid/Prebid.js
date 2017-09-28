@@ -71,6 +71,7 @@ describe('s2sTesting', function () {
 
       it('does not work if testing is "false"', () => {
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon'],
           testing: false,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
         }});
@@ -82,6 +83,7 @@ describe('s2sTesting', function () {
 
       it('sets one client bidder', () => {
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon'],
           testing: true,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
         }});
@@ -93,6 +95,7 @@ describe('s2sTesting', function () {
 
       it('sets one bidder with "both"', () => {
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon'],
           testing: true,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1, both: 2}}}
         }});
@@ -104,6 +107,7 @@ describe('s2sTesting', function () {
 
       it('sets one server bidder', () => {
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon'],
           testing: true,
           bidderControl: {rubicon: {bidSource: {server: 4, client: 1}}}
         }});
@@ -113,8 +117,20 @@ describe('s2sTesting', function () {
         });
       });
 
+      it('defaults to server', () => {
+        config.setConfig({s2sConfig: {
+          bidders: ['rubicon'],
+          testing: true
+        }});
+        expect(getSourceBidderMap()).to.eql({
+          server: ['rubicon'],
+          client: []
+        });
+      });
+
       it('sets two bidders', () => {
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
             rubicon: {bidSource: {server: 2, client: 2, both: 1}},
@@ -160,6 +176,21 @@ describe('s2sTesting', function () {
         // should have saved the source on the bid
         expect(adUnits[0].bids[0].calcSource).to.equal('both');
         expect(adUnits[0].bids[0].finalSource).to.equal('both');
+      });
+
+      it('defaults to client if no bidSource', () => {
+        var adUnits = [
+          {bids: [
+            {bidder: 'rubicon', bidSource: {}}
+          ]}
+        ];
+        expect(getSourceBidderMap(adUnits)).to.eql({
+          server: [],
+          client: ['rubicon']
+        });
+        // should have saved the source on the bid
+        expect(adUnits[0].bids[0].calcSource).to.be.undefined;
+        expect(adUnits[0].bids[0].finalSource).to.equal('client');
       });
 
       it('sets multiple bidders sources from one adUnit', () => {
@@ -244,6 +275,7 @@ describe('s2sTesting', function () {
 
         // set rubicon: client and appnexus: server
         config.setConfig({s2sConfig: {
+          bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
             rubicon: {bidSource: {server: 2, client: 2, both: 1}},
@@ -354,6 +386,23 @@ describe('s2sTesting', function () {
       events.emit(BID_ADJUSTMENT, {requestId: 4321, bidder: 'appnexus', source: 'client'});
       checkTargetingVal(4321, 'rubicon', 'client');
       checkNoTargeting('appnexus');
+
+      // should default to "client"
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true,
+        bidderControl: {
+          rubicon: {includeSourceKvp: true},
+          appnexus: {includeSourceKvp: true}
+        }
+      }});
+      checkTargeting('rubicon');
+      checkTargeting('appnexus');
+
+      events.emit(BID_ADJUSTMENT, {requestId: 5678, bidder: 'rubicon'});
+      events.emit(BID_ADJUSTMENT, {requestId: 5678, bidder: 'appnexus', source: ''});
+      checkTargetingVal(5678, 'rubicon', 'client');
+      checkTargetingVal(5678, 'appnexus', 'client');
     });
 
     it('should keep requests separate', () => {});

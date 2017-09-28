@@ -95,11 +95,9 @@ export function getSourceBidderMap(adUnits = []) {
   });
 
   // make sure all bidders in bidSource are in sourceBidders
-  for (var bidder in bidSource) {
-    if (bidSource.hasOwnProperty(bidder)) {
-      addSourceBidder(bidSource[bidder], bidder);
-    }
-  }
+  Object.keys(bidSource).forEach((bidder) => {
+    addSourceBidder(bidSource[bidder], bidder);
+  });
 
   // return map of source => array of bidders
   return {
@@ -118,17 +116,11 @@ function calculateBidSources(s2sConfig = {}) {
     return;
   }
   bidSource = {}; // reset bid sources
-  // default each bidder to "server"
-  (s2sConfig.bidders || []).forEach((bidder) => {
-    bidSource[bidder] = SERVER;
-  });
-  // calculate bid source (server/client/both) for each bidder
+  // calculate bid source (server/client/both) for each s2s bidder
   var bidderControl = s2sConfig.bidderControl || {};
-  for (var bidder in bidderControl) {
-    if (bidderControl.hasOwnProperty(bidder)) {
-      bidSource[bidder] = getSource(bidderControl[bidder].bidSource);
-    }
-  }
+  (s2sConfig.bidders || []).forEach((bidder) => {
+    bidSource[bidder] = getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
+  });
 }
 
 /**
