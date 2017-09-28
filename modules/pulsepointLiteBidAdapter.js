@@ -1,3 +1,4 @@
+/* eslint dot-notation:0, quote-props:0 */
 import {logError, getTopWindowLocation} from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
@@ -27,12 +28,12 @@ export const spec = {
     !!(bid && bid.params && bid.params.cp && bid.params.ct)
   ),
 
-  buildRequests: bidRequest => {
+  buildRequests: bidRequests => {
     const request = {
-      id: bidRequest[0].bidderRequestId,
-      imp: bidRequest.map(slot => impression(slot)),
-      site: site(bidRequest),
-      app: app(bidRequest),
+      id: bidRequests[0].bidderRequestId,
+      imp: bidRequests.map(slot => impression(slot)),
+      site: site(bidRequests),
+      app: app(bidRequests),
       device: device(),
     };
     return {
@@ -84,7 +85,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         adId: id,
       };
       if (idToImpMap[id].native) {
-        bid.native = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
       } else {
         bid.ad = idToBidMap[id].adm;
@@ -104,7 +105,7 @@ function impression(slot) {
   return {
     id: slot.bidId,
     banner: banner(slot),
-    native: native(slot),
+    'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
   };
 }
@@ -123,7 +124,7 @@ function banner(slot) {
 /**
  * Produces an OpenRTB Native object for the slot given.
  */
-function native(slot) {
+function nativeImpression(slot) {
   if (slot.nativeParams) {
     const assets = [];
     addAsset(assets, titleAsset(assets.length + 1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
@@ -283,21 +284,21 @@ function adSize(slot) {
  * Parses the native response from the Bid given.
  */
 function nativeResponse(imp, bid) {
-  if (imp.native) {
+  if (imp['native']) {
     const nativeAd = parse(bid.adm);
     const keys = {};
-    if (nativeAd && nativeAd.native && nativeAd.native.assets) {
-      nativeAd.native.assets.forEach(asset => {
+    if (nativeAd && nativeAd['native'] && nativeAd['native'].assets) {
+      nativeAd['native'].assets.forEach(asset => {
         keys.title = asset.title ? asset.title.text : keys.title;
         keys.body = asset.data && asset.data.type === 2 ? asset.data.value : keys.body;
         keys.sponsoredBy = asset.data && asset.data.type === 1 ? asset.data.value : keys.sponsoredBy;
         keys.image = asset.img && asset.img.type === 3 ? asset.img.url : keys.image;
         keys.icon = asset.img && asset.img.type === 1 ? asset.img.url : keys.icon;
       });
-      if (nativeAd.native.link) {
-        keys.clickUrl = encodeURIComponent(nativeAd.native.link.url);
+      if (nativeAd['native'].link) {
+        keys.clickUrl = encodeURIComponent(nativeAd['native'].link.url);
       }
-      keys.impressionTrackers = nativeAd.native.imptrackers;
+      keys.impressionTrackers = nativeAd['native'].imptrackers;
       return keys;
     }
   }

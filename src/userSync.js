@@ -19,7 +19,11 @@ export function newUserSync(userSyncDependencies) {
   let numAdapterBids = {};
 
   // Use what is in config by default
-  const config = userSyncDependencies.config;
+  let usConfig = userSyncDependencies.config;
+  // Update if it's (re)set
+  config.getConfig('userSync', (conf) => {
+    usConfig = Object.assign(usConfig, conf.userSync);
+  });
 
   /**
    * @function getDefaultQueue
@@ -40,7 +44,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!config.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
       return;
     }
 
@@ -63,7 +67,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireImagePixels() {
-    if (!config.pixelEnabled) {
+    if (!usConfig.pixelEnabled) {
       return;
     }
     // Randomize the order of the pixels before firing
@@ -83,7 +87,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function loadIframes() {
-    if (!config.iframeEnabled) {
+    if (!usConfig.iframeEnabled) {
       return;
     }
     // Randomize the order of these syncs just like the pixels above
@@ -125,18 +129,18 @@ export function newUserSync(userSyncDependencies) {
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
   publicApi.registerSync = (type, bidder, url) => {
-    if (!config.syncEnabled || !utils.isArray(queue[type])) {
+    if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "{$type}" not supported`);
     }
     if (!bidder) {
       return utils.logWarn(`Bidder is required for registering sync`);
     }
-    if (Number(numAdapterBids[bidder]) >= config.syncsPerBidder) {
+    if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
       return utils.logWarn(`Number of user syncs exceeded for "{$bidder}"`);
     }
     // All bidders are enabled by default. If specified only register for enabled bidders.
-    let hasEnabledBidders = config.enabledBidders && config.enabledBidders.length;
-    if (hasEnabledBidders && config.enabledBidders.indexOf(bidder) < 0) {
+    let hasEnabledBidders = usConfig.enabledBidders && usConfig.enabledBidders.length;
+    if (hasEnabledBidders && usConfig.enabledBidders.indexOf(bidder) < 0) {
       return utils.logWarn(`Bidder "${bidder}" not supported`);
     }
     queue[type].push([bidder, url]);
@@ -162,7 +166,7 @@ export function newUserSync(userSyncDependencies) {
    * @public
    */
   publicApi.triggerUserSyncs = () => {
-    if (config.enableOverride) {
+    if (usConfig.enableOverride) {
       publicApi.syncUsers();
     }
   };

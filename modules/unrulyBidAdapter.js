@@ -8,20 +8,20 @@ import adaptermanager from 'src/adaptermanager'
 
 function createRenderHandler({ bidResponseBid, rendererConfig }) {
   function createApi() {
-    parent.window.unruly.native.prebid = parent.window.unruly.native.prebid || {}
-    parent.window.unruly.native.prebid.uq = parent.window.unruly.native.prebid.uq || []
+    parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {}
+    parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
 
     return {
       render(bidResponseBid) {
-        parent.window.unruly.native.prebid.uq.push(['render', bidResponseBid])
+        parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
       },
       onLoaded(bidResponseBid) {}
     }
   }
 
   parent.window.unruly = parent.window.unruly || {}
-  parent.window.unruly.native = parent.window.unruly.native || {}
-  parent.window.unruly.native.siteId = parent.window.unruly.native.siteId || rendererConfig.siteId
+  parent.window.unruly['native'] = parent.window.unruly['native'] || {}
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || rendererConfig.siteId
 
   const api = createApi()
   return {
