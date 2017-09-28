@@ -134,6 +134,13 @@ function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
+  /**
+   * Run a cookie sync for the given type, url, and bidder
+   *
+   * @param {string} type the type of sync, "image", "redirect", "iframe"
+   * @param {string} url the url to sync
+   * @param {string} bidder name of bidder doing sync for
+   */
   function doBidderSync(type, url, bidder) {
     if (!url) {
       utils.logError(`No sync url for bidder "${bidder}": ${url}`);
