@@ -17,12 +17,12 @@ export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
 );
 
 const IMAGE = {
-  image: {required: true},
-  title: {required: true},
-  sponsoredBy: {required: true},
-  clickUrl: {required: true},
-  body: {required: false},
-  icon: {required: false},
+  image: { required: true },
+  title: { required: true },
+  sponsoredBy: { required: true },
+  clickUrl: { required: true },
+  body: { required: false },
+  icon: { required: false },
 };
 
 const SUPPORTED_TYPES = {
@@ -70,15 +70,21 @@ export const hasNonNativeBidder = adUnit =>
  */
 export function nativeBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) { return false; }
+  if (!bidRequest) {
+    return false;
+  }
 
   const requestedAssets = bidRequest.nativeParams;
-  if (!requestedAssets) { return true; }
+  if (!requestedAssets) {
+    return true;
+  }
 
   const requiredAssets = Object.keys(requestedAssets).filter(
     key => requestedAssets[key].required
   );
-  const returnedAssets = Object.keys(bid.native).filter(key => bid.native[key]);
+  const returnedAssets = Object.keys(bid['native']).filter(
+    key => bid['native'][key]
+  );
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
 }
@@ -88,8 +94,8 @@ export function nativeBidIsValid(bid) {
  * impression tracker urls for the given ad object and fires them.
  */
 export function fireNativeImpressions(adObject) {
-  const impressionTrackers = adObject.native &&
-    adObject.native.impressionTrackers;
+  const impressionTrackers =
+    adObject['native'] && adObject['native'].impressionTrackers;
 
   (impressionTrackers || []).forEach(tracker => {
     triggerPixel(tracker);
