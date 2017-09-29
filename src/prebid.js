@@ -308,7 +308,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
-  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.getConfig('bidderTimeout');
+  const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -354,11 +354,11 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes});
-  if (typeof bidsBackHandler === 'function') {
-    auction.startAuctionTimer(bidsBackHandler, cbTimeout);
-  }
-  auction.callBids(cbTimeout);
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout});
+  // if (typeof bidsBackHandler === 'function') {
+  //   auction.startAuctionTimer(bidsBackHandler, cbTimeout);
+  // }
+  auction.callBids();
 };
 
 /**

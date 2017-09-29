@@ -17,7 +17,7 @@
  */
 
 import { uniques, flatten } from './utils';
-import { createAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
 
 const CONSTANTS = require('./constants.json');
 
@@ -60,8 +60,10 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  _public.createAuction = function({ adUnits, adUnitCodes }) {
-    return _createAuction({ adUnits, adUnitCodes });
+  _public.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout }) {
+    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout })
+    _addAuction(auction);
+    return auction;
   };
 
   _public.findBidByAdId = function(adId) {
@@ -73,12 +75,6 @@ export function newAuctionManager() {
   _public.getStandardBidderAdServerTargeting = function() {
     return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   };
-
-  function _createAuction({ adUnits, adUnitCodes }) {
-    const auction = createAuction({ adUnits, adUnitCodes })
-    _addAuction(auction);
-    return auction;
-  }
 
   function _addAuction(auction) {
     _auctions.push(auction);
