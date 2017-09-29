@@ -1138,8 +1138,7 @@ const customGranularity = {
   'buckets': [{
       'min': 0,
       'max': 3,
-      'increment': 0.01,
-      'cap': true
+      'increment': 0.01
   }]
 };
 
