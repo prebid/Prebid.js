@@ -42,9 +42,6 @@ $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 /** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> }) */
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
 
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
-
 // timeout buffer to adjust for bidder CDN latency
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
@@ -355,9 +352,6 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout});
-  // if (typeof bidsBackHandler === 'function') {
-  //   auction.startAuctionTimer(bidsBackHandler, cbTimeout);
-  // }
   auction.callBids();
 };
 
