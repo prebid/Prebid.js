@@ -13,10 +13,19 @@ var RealVuAdapter = function RealVuAdapter() {
     // utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
     var pbids = params.bids;
     var boost_back = function() {
+      var top1 = window;
+      realvu_frm = 0;
+      try {
+        var wnd = window;
+        while ((top1 != top) && (typeof (wnd.document) != 'undefined')) {
+          top1 = wnd;
+          wnd = wnd.parent;
+        }
+      } catch (e) { };
       for (var i = 0; i < pbids.length; i++) {
         var bid_rq = pbids[i];
         var sizes = utils.parseSizesInput(bid_rq.sizes);
-        top.realvu_boost.addUnitById({
+        top1.realvu_boost.addUnitById({
           partner_id: bid_rq.params.partnerId,
           unit_id: bid_rq.placementCode,
           callback: baseAdapter.boostCall,
