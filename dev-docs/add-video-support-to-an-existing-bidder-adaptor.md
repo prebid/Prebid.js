@@ -12,6 +12,12 @@ nav_section: adapters
 # Add Video Support to an Existing Bidder Adapter
 {:.no_toc}
 
+{: .alert.alert-warning :}
+This page contains legacy instructions on how to update a Prebid adapter before Prebid 1.0.  Adapter writers should use the [Prebid 1.0 adapter guidelines.]({{site.baseurl}}/dev-docs/bidder-adapter-1.html)
+
+{: .alert.alert-danger :}
+As of October 1st, 2017, we will no longer be accepting pull requests for adapters that are not compliant with Prebid 1.0 conventions.
+
 This page has instructions for updating your existing bidder adapter with support for  video bidding.
 
 When in doubt, use an adapter that already has support for video for reference, such as [the AppNexus AST adapter in the Github repo](https://github.com/prebid/Prebid.js/blob/master/modules/appnexusAstBidAdapter.js).  (The code samples and descriptions below are based on it.)

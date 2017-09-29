@@ -12,6 +12,12 @@ nav_section: adapters
 # How to Add a New Video Bidder Adapter
 {:.no_toc}
 
+{: .alert.alert-warning :}
+This page contains legacy instructions on how to build a Prebid adapter before Prebid 1.0.  Adapter writers should use the [Prebid 1.0 adapter guidelines.]({{site.baseurl}}/dev-docs/bidder-adapter-1.html)
+
+{: .alert.alert-danger :}
+As of October 1st, 2017, we will no longer be accepting pull requests for adapters that are not compliant with Prebid 1.0 conventions.
+
 At a high level, a bidder adapter is responsible for:
 
 1. Sending out bid requests to the ad server

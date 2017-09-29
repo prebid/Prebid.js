@@ -22,6 +22,9 @@ At a high level, a bidder adapter is responsible for:
 
 This page has instructions for writing your own bidder adapter.  The instructions here try to walk you through some of the code you'll need to write for your adapter.  When in doubt, use [the working adapters in the Github repo](https://github.com/prebid/Prebid.js/tree/master/modules) for reference.
 
+{: .alert.alert-danger :}
+As of October 1st, 2017, we will no longer be accepting pull requests for adapters that are not compliant with Prebid 1.0 conventions.
+
 * TOC
 {:toc}
 
