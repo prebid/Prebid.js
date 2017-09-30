@@ -232,10 +232,13 @@ describe('bidmanager.js', function () {
 
         }
       };
+
+      var expected = { 'hb_bidder': bidderCode, 'hb_adid': adId, 'hb_pb': 10.0 };
+      var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+      assert.deepEqual(response, expected);
     });
 
-    it('Standard bidCpmAdjustment should change the bid of any bidder', function () {
-
+    it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
         bidfactory.createBid(2),
         fixtures.getBidResponses()[5]
