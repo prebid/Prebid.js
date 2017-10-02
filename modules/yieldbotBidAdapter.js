@@ -23,7 +23,6 @@ function YieldbotAdapter() {
       AVAILABLE: 1,
       EMPTY: 2
     },
-    definedSlots: [],
     pageLevelOption: false,
     /**
      * Builds the Yieldbot creative tag.
@@ -72,6 +71,29 @@ function YieldbotAdapter() {
       return bid;
     },
     /**
+     * Unique'ify slot sizes for a Yieldbot bid request<br>
+     * Bids may refer to a slot and dimension multiple times on a page, but should exist once in the request.
+     * @param {Array} sizes An array of sizes to deduplicate
+     * @private
+     */
+    getUniqueSlotSizes: function(sizes) {
+      var newSizes = [];
+      var hasSize = {};
+      if (utils.isArray(sizes)) {
+        for (var idx = 0; idx < sizes.length; idx++) {
+          var bidSize = sizes[idx] || '';
+          if (bidSize && utils.isStr(bidSize) && !hasSize[bidSize]) {
+            var nSize = bidSize.split('x');
+            if (nSize.length > 1) {
+              newSizes.push([nSize[0], nSize[1]]);
+            }
+            hasSize[bidSize] = true;
+          }
+        }
+      }
+      return newSizes;
+    },
+    /**
      * Yieldbot implementation of {@link module:adaptermanger.callBids}
      * @param {Object} params - Adapter bid configuration object
      * @private
@@ -84,8 +106,9 @@ function YieldbotAdapter() {
 
       ybotq.push(function () {
         var yieldbot = window.yieldbot;
-        // Empty defined slots bidId array
-        ybotlib.definedSlots = [];
+        // Empty defined slot bids object
+        ybotlib.bids = {};
+        ybotlib.parsedBidSizes = {};
         // Iterate through bids to obtain Yieldbot slot config
         // - Slot config can be different between initial and refresh requests
         var psn = 'ERROR_PREBID_DEFINE_YB_PSN';
@@ -94,23 +117,33 @@ function YieldbotAdapter() {
           var bid = v;
           // bidder params config: http://prebid.org/dev-docs/bidders/yieldbot.html
           // - last psn wins
-          psn = (bid.params && bid.params.psn) || psn;
-          var slotName = (bid.params && bid.params.slot) || 'ERROR_PREBID_DEFINE_YB_SLOT';
-
-          slots[slotName] = bid.sizes || [];
-          ybotlib.definedSlots.push(bid.bidId);
+          psn = bid.params && bid.params.psn ? bid.params.psn : psn;
+          var slotName = bid.params && bid.params.slot ? bid.params.slot : 'ERROR_PREBID_DEFINE_YB_SLOT';
+          var parsedSizes = utils.parseSizesInput(bid.sizes) || [];
+          slots[slotName] = slots[slotName] || [];
+          slots[slotName] = slots[slotName].concat(parsedSizes);
+          ybotlib.bids[bid.bidId] = bid;
+          ybotlib.parsedBidSizes[bid.bidId] = parsedSizes;
         });
+
+        for (var bidSlots in slots) {
+          if (slots.hasOwnProperty(bidSlots)) {
+            // The same slot name and size may be used for multiple bids. Get unique sizes
+            // for the request.
+            slots[bidSlots] = ybotlib.getUniqueSlotSizes(slots[bidSlots]);
+          }
+        }
 
         if (yieldbot._initialized !== true) {
           yieldbot.pub(psn);
           for (var slotName in slots) {
             if (slots.hasOwnProperty(slotName)) {
-              yieldbot.defineSlot(slotName, { sizes: slots[slotName] || [] });
+              yieldbot.defineSlot(slotName, { sizes: slots[slotName] });
             }
           }
           yieldbot.enableAsync();
           yieldbot.go();
-        } else {
+        } else if (!utils.isEmpty(slots)) {
           yieldbot.nextPageview(slots);
         }
       });
@@ -128,27 +161,37 @@ function YieldbotAdapter() {
      */
     handleUpdateState: function () {
       var yieldbot = window.yieldbot;
-      utils._each(ybotlib.definedSlots, function (v) {
-        var ybRequest;
-        var adapterConfig;
+      var slotUsed = {};
 
-        ybRequest = $$PREBID_GLOBAL$$._bidsRequested
-          .find(bidderRequest => bidderRequest.bidderCode === 'yieldbot');
+      for (var bidId in ybotlib.bids) {
+        if (ybotlib.bids.hasOwnProperty(bidId)) {
+          var bidRequest = ybotlib.bids[bidId] || null;
 
-        adapterConfig = ybRequest && ybRequest.bids ? ybRequest.bids.find(bid => bid.bidId === v) : null;
+          if (bidRequest && bidRequest.params && bidRequest.params.slot) {
+            var placementCode = bidRequest.placementCode || 'ERROR_YB_NO_PLACEMENT';
+            var criteria = yieldbot.getSlotCriteria(bidRequest.params.slot);
+            var requestedSizes = ybotlib.parsedBidSizes[bidId] || [];
 
-        if (adapterConfig && adapterConfig.params && adapterConfig.params.slot) {
-          var placementCode = adapterConfig.placementCode || 'ERROR_YB_NO_PLACEMENT';
-          var criteria = yieldbot.getSlotCriteria(adapterConfig.params.slot);
-          var bid = ybotlib.buildBid(criteria);
+            var slotSizeOk = false;
+            for (var idx = 0; idx < requestedSizes.length; idx++) {
+              var requestedSize = requestedSizes[idx];
 
-          bidmanager.addBidResponse(placementCode, bid);
+              if (!slotUsed[criteria.ybot_slot] && requestedSize === criteria.ybot_size) {
+                slotSizeOk = true;
+                slotUsed[criteria.ybot_slot] = true;
+                break;
+              }
+            }
+            var bid = ybotlib.buildBid(slotSizeOk ? criteria : { ybot_ad: 'n' });
+            bidmanager.addBidResponse(placementCode, bid);
+          }
         }
-      });
+      }
     }
   };
   return {
-    callBids: ybotlib.callBids
+    callBids: ybotlib.callBids,
+    getUniqueSlotSizes: ybotlib.getUniqueSlotSizes
   };
 }
 

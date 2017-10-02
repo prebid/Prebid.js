@@ -32,7 +32,7 @@ var AtomxAdapter = function AtomxAdapter() {
             id: bid.params.id,
             size: sizes[j],
             prebid: bid.placementCode
-          }, {method: 'GET'});
+          }, {method: 'GET', noDecodeWholeURL: true});
         }
       } else {
         var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
