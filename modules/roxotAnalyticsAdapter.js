@@ -1,17 +1,24 @@
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import * as adaptermanager from 'src/adaptermanager';
+import {parse} from 'src/url'
 
 const utils = require('src/utils');
 
 const url = '//pa.rxthdr.com/analytic';
 const analyticsType = 'endpoint';
 
+// noinspection JSUnresolvedVariable
 let auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
+// noinspection JSUnresolvedVariable
 let auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
+// noinspection JSUnresolvedVariable
 let bidWonConst = CONSTANTS.EVENTS.BID_WON;
+// noinspection JSUnresolvedVariable
 let bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
+// noinspection JSUnresolvedVariable
 let bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+// noinspection JSUnresolvedVariable
 let bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
 
 let initOptions = {publisherIds: [], utmTagData: [], adUnits: []};
@@ -24,249 +31,242 @@ let localStoragePrefix = 'roxot_analytics_';
 let utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 let utmTimeoutKey = 'utm_timeout';
 let utmTimeout = 60 * 60 * 1000;
-let sessionTimeout = 60 * 60 * 1000;
-let sessionIdStorageKey = 'session_id';
-let sessionTimeoutKey = 'session_timeout';
 
-function getParameterByName (param) {
-  let vars = {};
-  window.location.href.replace(location.hash, '').replace(
-    /[?&]+([^=&]+)=?([^&]*)?/gi,
-    function (m, key, value) {
-      vars[key] = value !== undefined ? value : '';
+
+function updateSessionId(options) {
+    let sessionTimeout = 60 * 60 * 1000;
+    let sessionIdStorageKey = 'session_id';
+    let sessionTimeoutKey = 'session_timeout';
+
+    if (isSessionIdTimeoutExpired()) {
+        let newSessionId = utils.generateUUID();
+        localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
     }
-  );
+    options.sessionId = getSessionId();
+    updateSessionIdTimeout();
 
-  return vars[param] ? vars[param] : '';
-}
 
-function buildSessionIdLocalStorageKey () {
-  return localStoragePrefix.concat(sessionIdStorageKey);
-}
-
-function buildSessionIdTimeoutLocalStorageKey () {
-  return localStoragePrefix.concat(sessionTimeoutKey);
-}
-
-function updateSessionId () {
-  if (isSessionIdTimeoutExpired()) {
-    let newSessionId = utils.generateUUID();
-    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
-  }
-  initOptions.sessionId = getSessionId();
-  updateSessionIdTimeout();
-}
-
-function updateSessionIdTimeout () {
-  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
-}
-
-function isSessionIdTimeoutExpired () {
-  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
-  return Date.now() - cpmSessionTimestamp > sessionTimeout;
-}
-
-function getSessionId () {
-  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
-}
-
-function updateUtmTimeout () {
-  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
-}
-
-function isUtmTimeoutExpired () {
-  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
-  return (Date.now() - utmTimestamp) > utmTimeout;
-}
-
-function buildUtmLocalStorageTimeoutKey () {
-  return localStoragePrefix.concat(utmTimeoutKey);
-}
-
-function buildUtmLocalStorageKey (utmMarkKey) {
-  return localStoragePrefix.concat(utmMarkKey);
-}
-
-function checkOptions () {
-  if (typeof initOptions.publisherIds === 'undefined') {
-    return false;
-  }
-
-  return initOptions.publisherIds.length > 0;
-}
-
-function checkAdUnitConfig () {
-  if (typeof initOptions.adUnits === 'undefined') {
-    return false;
-  }
-
-  return initOptions.adUnits.length > 0;
-}
-
-function buildBidWon (eventType, args) {
-  bidWon.options = initOptions;
-  if (checkAdUnitConfig()) {
-    if (initOptions.adUnits.includes(args.adUnitCode)) {
-      bidWon.events = [{args: args, eventType: eventType}];
+    function buildSessionIdLocalStorageKey() {
+        return localStoragePrefix.concat(sessionIdStorageKey);
     }
-  } else {
-    bidWon.events = [{args: args, eventType: eventType}];
-  }
-}
 
-function buildEventStack () {
-  eventStack.options = initOptions;
-}
-
-function filterBidsByAdUnit (bids) {
-  let filteredBids = [];
-  bids.forEach(function (bid) {
-    if (initOptions.adUnits.includes(bid.placementCode)) {
-      filteredBids.push(bid);
+    function buildSessionIdTimeoutLocalStorageKey() {
+        return localStoragePrefix.concat(sessionTimeoutKey);
     }
-  });
-  return filteredBids;
-}
 
-function isValidEvent (eventType, adUnitCode) {
-  if (checkAdUnitConfig()) {
-    let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
-    if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
-      return false;
+    function getSessionId() {
+        return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
     }
-  }
-  return true;
+
+    function updateSessionIdTimeout() {
+        localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+    }
+
+    function isSessionIdTimeoutExpired() {
+        let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+        return Date.now() - cpmSessionTimestamp > sessionTimeout;
+    }
+
 }
 
-function isValidEventStack () {
-  if (eventStack.events.length > 0) {
-    return eventStack.events.some(function (event) {
-      return bidRequestConst === event.eventType || bidWonConst === event.eventType;
+
+function updateUtmTimeout() {
+    localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+}
+
+function isUtmTimeoutExpired() {
+    let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+    return (Date.now() - utmTimestamp) > utmTimeout;
+}
+
+function buildUtmLocalStorageTimeoutKey() {
+    return localStoragePrefix.concat(utmTimeoutKey);
+}
+
+function buildUtmLocalStorageKey(utmMarkKey) {
+    return localStoragePrefix.concat(utmMarkKey);
+}
+
+function checkOptions() {
+    if (typeof initOptions.publisherIds === 'undefined') {
+        return false;
+    }
+
+    return initOptions.publisherIds.length > 0;
+}
+
+function checkAdUnitConfig() {
+    if (typeof initOptions.adUnits === 'undefined') {
+        return false;
+    }
+
+    return initOptions.adUnits.length > 0;
+}
+
+function buildBidWon(eventType, args) {
+    bidWon.options = initOptions;
+    if (checkAdUnitConfig()) {
+        if (initOptions.adUnits.includes(args.adUnitCode)) {
+            bidWon.events = [{args: args, eventType: eventType}];
+        }
+    } else {
+        bidWon.events = [{args: args, eventType: eventType}];
+    }
+}
+
+function buildEventStack() {
+    eventStack.options = initOptions;
+}
+
+function filterBidsByAdUnit(bids) {
+    let filteredBids = [];
+    bids.forEach(function (bid) {
+        if (initOptions.adUnits.includes(bid.placementCode)) {
+            filteredBids.push(bid);
+        }
     });
-  }
-  return false;
+    return filteredBids;
 }
 
-function isValidBidWon () {
-  return bidWon.events.length > 0;
+function isValidEvent(eventType, adUnitCode) {
+    if (checkAdUnitConfig()) {
+        let validationEvents = [bidAdjustmentConst, bidResponseConst, bidWonConst];
+        if (!initOptions.adUnits.includes(adUnitCode) && validationEvents.includes(eventType)) {
+            return false;
+        }
+    }
+    return true;
 }
 
-function flushEventStack () {
-  eventStack.events = [];
+function isValidEventStack() {
+    if (eventStack.events.length > 0) {
+        return eventStack.events.some(function (event) {
+            return bidRequestConst === event.eventType || bidWonConst === event.eventType;
+        });
+    }
+    return false;
 }
 
-function flushBidWon () {
-  bidWon.events = [];
+function isValidBidWon() {
+    return bidWon.events.length > 0;
+}
+
+function flushEventStack() {
+    eventStack.events = [];
+}
+
+function flushBidWon() {
+    bidWon.events = [];
 }
 
 let roxotAdapter = Object.assign(adapter({url, analyticsType}),
-  {
-    track({eventType, args}) {
-      if (!checkOptions()) {
-        return;
-      }
+    {
+        track({eventType, args}) {
+            if (!checkOptions()) {
+                return;
+            }
 
-      let info = Object.assign({}, args);
+            let info = Object.assign({}, args);
 
-      if (info && info.ad) {
-        info.ad = '';
-      }
+            if (info && info.ad) {
+                info.ad = '';
+            }
 
-      if (eventType === auctionInitConst) {
-        auctionStatus = 'started';
-        flushEventStack();
-      }
+            if (eventType === auctionInitConst) {
+                auctionStatus = 'started';
+                flushEventStack();
+            }
 
-      if (eventType === bidWonConst && auctionStatus === 'not_started') {
-        updateSessionId();
-        buildBidWon(eventType, info);
-        if (isValidBidWon()) {
-          send(eventType, bidWon, 'bidWon');
-        }
-        flushBidWon();
-        return;
-      }
+            if (eventType === bidWonConst && auctionStatus === 'not_started') {
+                updateSessionId(initOptions);
+                buildBidWon(eventType, info);
+                if (isValidBidWon()) {
+                    send(eventType, bidWon, 'bidWon');
+                }
+                flushBidWon();
+                return;
+            }
 
-      if (eventType === auctionEndConst) {
-        updateSessionId();
-        buildEventStack(eventType);
-        if (isValidEventStack()) {
-          send(eventType, eventStack, 'eventStack');
-        }
-        flushEventStack();
-        auctionStatus = 'not_started';
-      } else {
-        pushEvent(eventType, info);
-      }
-    },
+            if (eventType === auctionEndConst) {
+                updateSessionId(initOptions);
+                buildEventStack(eventType);
+                if (isValidEventStack()) {
+                    send(eventType, eventStack, 'eventStack');
+                }
+                flushEventStack();
+                auctionStatus = 'not_started';
+            } else {
+                pushEvent(eventType, info);
+            }
+        },
 
-  });
+    });
 
 roxotAdapter.originEnableAnalytics = roxotAdapter.enableAnalytics;
 
 roxotAdapter.enableAnalytics = function (config) {
-  initOptions = config.options;
-  initOptions.utmTagData = this.buildUtmTagData();
-  utils.logInfo('Roxot Analytics enabled with config', initOptions);
-  roxotAdapter.originEnableAnalytics(config);
+    initOptions = config.options;
+    initOptions.utmTagData = this.buildUtmTagData();
+    utils.logInfo('Roxot Analytics enabled with config', initOptions);
+    roxotAdapter.originEnableAnalytics(config);
 };
 
 roxotAdapter.buildUtmTagData = function () {
-  let utmTagData = {};
-  let utmTagsDetected = false;
-  utmTags.forEach(function (utmTagKey) {
-    let utmTagValue = getParameterByName(utmTagKey);
-    if (utmTagValue !== '') {
-      utmTagsDetected = true;
-    }
-    utmTagData[utmTagKey] = utmTagValue;
-  });
-  utmTags.forEach(function (utmTagKey) {
-    if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
-      updateUtmTimeout();
+    let utmTagData = {};
+    let utmTagsDetected = false;
+    utmTags.forEach(function (utmTagKey) {
+        let utmTagValue = parse(window.location).search[utmTagKey];
+        if (utmTagValue !== '') {
+            utmTagsDetected = true;
+        }
+        utmTagData[utmTagKey] = utmTagValue;
+    });
+    utmTags.forEach(function (utmTagKey) {
+        if (utmTagsDetected) {
+            localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+            updateUtmTimeout();
+        } else {
+            if (!isUtmTimeoutExpired()) {
+                utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+                updateUtmTimeout();
+            }
+        }
+    });
+    return utmTagData;
+};
+
+function send(eventType, data, sendDataType) {
+    let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', fullUrl, true);
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    xhr.withCredentials = true;
+    xhr.onreadystatechange = function (result) {
+        if (this.readyState !== 4) return;
+
+        utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
+    };
+    xhr.send(JSON.stringify(data));
+}
+
+function pushEvent(eventType, args) {
+    if (eventType === bidRequestConst) {
+        if (checkAdUnitConfig()) {
+            args.bids = filterBidsByAdUnit(args.bids);
+        }
+        if (args.bids.length > 0) {
+            eventStack.events.push({eventType: eventType, args: args});
+        }
     } else {
-      if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
-        updateUtmTimeout();
-      }
+        if (isValidEvent(eventType, args.adUnitCode)) {
+            eventStack.events.push({eventType: eventType, args: args});
+        }
     }
-  });
-  return utmTagData;
-};
-
-function send (eventType, data, sendDataType) {
-  let fullUrl = url + '?publisherIds[]=' + initOptions.publisherIds.join('&publisherIds[]=') + '&host=' + window.location.hostname;
-  let xhr = new XMLHttpRequest();
-  xhr.open('POST', fullUrl, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.withCredentials = true;
-  xhr.onreadystatechange = function (result) {
-    if (this.readyState != 4) return;
-
-    utils.logInfo('Event ' + eventType + ' sent ' + sendDataType + ' to roxot prebid analytic with result' + result);
-  };
-  xhr.send(JSON.stringify(data));
-};
-
-function pushEvent (eventType, args) {
-  if (eventType === bidRequestConst) {
-    if (checkAdUnitConfig()) {
-      args.bids = filterBidsByAdUnit(args.bids);
-    }
-    if (args.bids.length > 0) {
-      eventStack.events.push({eventType: eventType, args: args});
-    }
-  } else {
-    if (isValidEvent(eventType, args.adUnitCode)) {
-      eventStack.events.push({eventType: eventType, args: args});
-    }
-  }
 }
 
 adaptermanager.registerAnalyticsAdapter({
-  adapter: roxotAdapter,
-  code: 'roxot'
+    adapter: roxotAdapter,
+    code: 'roxot'
 });
 
 export default roxotAdapter;
