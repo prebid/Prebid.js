@@ -1,6 +1,6 @@
 describe('a4g adapter tests', function () {
   const expect = require('chai').expect;
-  const a4gBidFactory = require('modules/adapters/a4g');
+  const a4gBidFactory = require('modules/a4gBidAdapter');
   const bidmanager = require('src/bidmanager');
   const adloader = require('src/adloader');
   const constants = require('src/constants.json');
