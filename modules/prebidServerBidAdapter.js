@@ -114,7 +114,7 @@ function PrebidServer() {
       timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
-      ad_units: bidRequest.ad_units.filter(hasSizes),,
+      ad_units: bidRequest.ad_units.filter(hasSizes),
       is_debug: isDebug
     };
 
