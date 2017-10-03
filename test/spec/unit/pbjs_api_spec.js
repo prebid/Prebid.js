@@ -12,6 +12,7 @@ import { targeting, newTargeting } from 'src/targeting';
 import { config as configObj } from 'src/config';
 import * as ajaxLib from 'src/ajax';
 import * as auctionModule from 'src/auction';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -1319,6 +1320,18 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('aliasBidder', () => {
+    let spec;
+    const CODE = 'sampleBidder';
+    before(() => {
+      spec = {
+        code: CODE,
+        isBidRequestValid: () => {},
+        buildRequests: () => {},
+        interpretResponse: () => {},
+        getUserSyncs: () => {}
+      };
+    });
+
     it('should call adaptermanager.aliasBidder', () => {
       const aliasBidAdapterSpy = sinon.spy(adaptermanager, 'aliasBidAdapter');
       const bidderCode = 'testcode';
@@ -1336,6 +1349,22 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.aliasBidder();
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       utils.logError.restore();
+    });
+
+    it('should add alias to registry', () => {
+      const bidderCode = 'appnexusAst';
+      const alias = 'testalias';
+      $$PREBID_GLOBAL$$.aliasBidder(bidderCode, alias);
+      expect(adaptermanager.bidderRegistry).to.have.property(alias);
+    });
+
+    it('should add alias to registry when original adapter is using bidderFactory', function() {
+      const thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
+      registerBidder(thisSpec);
+      const alias = 'aliasBidder';
+      $$PREBID_GLOBAL$$.aliasBidder(CODE, alias);
+      expect(adaptermanager.bidderRegistry).to.have.property(alias);
+      expect(adaptermanager.videoAdapters).to.include(alias);
     });
   });
 
