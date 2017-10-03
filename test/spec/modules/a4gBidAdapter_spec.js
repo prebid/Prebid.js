@@ -1,10 +1,10 @@
-describe('a4g adapter tests', function () {
-  const expect = require('chai').expect;
-  const a4gBidFactory = require('modules/a4gBidAdapter');
-  const bidmanager = require('src/bidmanager');
-  const adloader = require('src/adloader');
-  const constants = require('src/constants.json');
+import { expect } from 'chai';
+import a4gBidFactory from 'modules/a4gBidAdapter';
+import bidmanager from 'src/bidmanager';
+import adloader from 'src/adloader';
+import { STATUS } from 'src/constants';
 
+describe('a4g adapter tests', function () {
   function readJsonpCallbackName(url) {
     return /&jsonp=([_a-zA-Z0-9]+)/.exec(url)[1];
   }
@@ -94,7 +94,7 @@ describe('a4g adapter tests', function () {
       window[jsonpCallbackName]({status: 400, response: []});
       let [placementCode, bid] = spyAddBidResponse.lastCall.args;
       expect(placementCode).to.equal('pc1');
-      expect(bid.getStatusCode()).to.equal(constants.STATUS.NO_BID);
+      expect(bid.getStatusCode()).to.equal(STATUS.NO_BID);
     });
 
     it('should set all responses as good with appropriate values if ok', () => {
@@ -102,7 +102,7 @@ describe('a4g adapter tests', function () {
       let [placementCode, bid] = spyAddBidResponse.lastCall.args;
       expect(placementCode).to.equal('pc1');
 
-      expect(bid.getStatusCode()).to.equal(constants.STATUS.GOOD);
+      expect(bid.getStatusCode()).to.equal(STATUS.GOOD);
       expect(bid.cpm).to.equal(1);
       expect(bid.ad).to.equal('test');
       expect(bid.width).to.equal(1);
