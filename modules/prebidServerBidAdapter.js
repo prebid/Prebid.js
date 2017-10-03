@@ -217,6 +217,7 @@ function PrebidServer() {
     if (_synced) {
       return;
     }
+    _synced = true;
     const payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
