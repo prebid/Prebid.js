@@ -8,12 +8,12 @@ import { userSync } from 'src/userSync.js';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
+let _synced = false;
 
 /**
  * Try to convert a value to a type.
@@ -106,6 +106,13 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
+    let adUnits = bidRequest.ad_units.filter(hasSizes);
+    adUnits.forEach(adUnit => {
+      adUnit.media_types = ['video'];
+      adUnit.video = {};
+      adUnit.video.mimes = ['video/mp4'];
+      adUnit.video.protocols = [1, 2, 3, 4, 5, 6, 7, 8];
+    })
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
@@ -114,7 +121,7 @@ function PrebidServer() {
       timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
-      ad_units: bidRequest.ad_units.filter(hasSizes),
+      ad_units: adUnits,
       is_debug: isDebug
     };
 
@@ -214,10 +221,7 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
-    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
-    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
-    if (syncedList.length === 0) {
+    if (_synced) {
       return;
     }
     const payload = JSON.stringify({
