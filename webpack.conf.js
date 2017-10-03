@@ -52,6 +52,10 @@ module.exports = {
         loader: 'json-loader'
       },
       {
+        test: /\.md$/,
+        loader: 'ignore-loader'
+      },
+      {
         test: /constants.json$/,
         include: /(src)/,
         loader: StringReplacePlugin.replace({
