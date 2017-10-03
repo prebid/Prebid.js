@@ -3,7 +3,6 @@ import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
-import { StorageManager } from 'src/storagemanager';
 
 const CONFIG = {
   enabled: true,
@@ -29,21 +28,7 @@ describe('adapterManager tests', () => {
       AdapterManager.setS2SConfig(CONFIG);
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
 
-      stubGetStorageItem = sinon.stub(StorageManager, 'get');
-      stubSetStorageItem = sinon.stub(StorageManager, 'set');
-      stubSetStorageItem = sinon.stub(StorageManager, 'add');
-      stubSetStorageItem = sinon.stub(StorageManager, 'remove');
-
-      stubGetStorageItem.returns(['appnexus']);
-
       prebidServerAdapterMock.callBids.reset();
-    });
-
-    afterEach(() => {
-      StorageManager.get.restore();
-      StorageManager.set.restore();
-      StorageManager.add.restore();
-      StorageManager.remove.restore();
     });
 
     it('invokes callBids on the S2S adapter', () => {

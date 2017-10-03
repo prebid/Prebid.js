@@ -7,12 +7,12 @@ import { STATUS, S2S } from 'src/constants';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
+let _synced = false;
 
 /**
  * Try to convert a value to a type.
@@ -234,12 +234,10 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
-    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
-    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
-    if (syncedList.length === 0) {
+    if (_synced) {
       return;
     }
+    _synced = true;
     const payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
