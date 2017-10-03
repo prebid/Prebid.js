@@ -51,6 +51,10 @@ var YieldmoAdapter = function YieldmoAdapter() {
       placement.placement_id = bid.placementCode;
       placement.sizes = bid.sizes;
 
+      if (bid.params && bid.params.placementId) {
+        placement.ym_placement_id = bid.params.placementId;
+      }
+
       placements.push(placement);
     }
 

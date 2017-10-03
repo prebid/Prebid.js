@@ -4,7 +4,6 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { userSync } from 'src/userSync.js';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
@@ -135,6 +134,27 @@ function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
+  /**
+   * Run a cookie sync for the given type, url, and bidder
+   *
+   * @param {string} type the type of sync, "image", "redirect", "iframe"
+   * @param {string} url the url to sync
+   * @param {string} bidder name of bidder doing sync for
+   */
+  function doBidderSync(type, url, bidder) {
+    if (!url) {
+      utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+    } else if (type === 'image' || type === 'redirect') {
+      utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
+      utils.triggerPixel(url);
+    } else if (type == 'iframe') {
+      utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
+      utils.insertUserSyncIframe(url);
+    } else {
+      utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+    }
+  }
+
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response, requestedBidders) {
     let result;
@@ -145,7 +165,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
+              doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
             }
           });
         }
@@ -230,7 +250,7 @@ function PrebidServer() {
         if (response.status === 'ok') {
           bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
         }
-        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
       } catch (e) {
         utils.logError(e);
       }

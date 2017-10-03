@@ -94,7 +94,7 @@ export function newUserSync(userSyncDependencies) {
     utils.shuffle(queue.iframe).forEach((sync) => {
       let [bidderName, iframeUrl] = sync;
       utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
-      // Create image object and add the src url
+      // Insert iframe into DOM
       utils.insertUserSyncIframe(iframeUrl);
     });
   }
@@ -130,7 +130,7 @@ export function newUserSync(userSyncDependencies) {
    */
   publicApi.registerSync = (type, bidder, url) => {
     if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
-      return utils.logWarn(`User sync type "{$type}" not supported`);
+      return utils.logWarn(`User sync type "${type}" not supported`);
     }
     if (!bidder) {
       return utils.logWarn(`Bidder is required for registering sync`);
