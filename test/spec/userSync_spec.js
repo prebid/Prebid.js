@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 let { newUserSync } = require('../../src/userSync');

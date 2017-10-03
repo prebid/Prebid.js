@@ -3,7 +3,6 @@
 import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { StorageManager, pbjsSyncsKey } from './storagemanager';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -42,12 +41,6 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           sizes = sizeMapping;
         }
 
-        if (adUnit.nativeParams) {
-          bid = Object.assign({}, bid, {
-            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
-          });
-        }
-
         if (adUnit.mediaTypes) {
           if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
             bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
@@ -56,6 +49,14 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
               `mediaTypes is not correctly configured for adunit ${adUnit.code}`
             );
           }
+        }
+
+        const nativeParams =
+          adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+        if (nativeParams) {
+          bid = Object.assign({}, bid, {
+            nativeParams: processNativeAdUnitParams(nativeParams),
+          });
         }
 
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [
@@ -88,7 +89,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  const syncedBidders = StorageManager.get(pbjsSyncsKey);
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
@@ -101,7 +101,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
+    let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
