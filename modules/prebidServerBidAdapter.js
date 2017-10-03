@@ -106,13 +106,6 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
-    let adUnits = bidRequest.ad_units.filter(hasSizes);
-    adUnits.forEach(adUnit => {
-      adUnit.media_types = ['video'];
-      adUnit.video = {};
-      adUnit.video.mimes = ['video/mp4'];
-      adUnit.video.protocols = [1, 2, 3, 4, 5, 6, 7, 8];
-    })
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
@@ -121,7 +114,7 @@ function PrebidServer() {
       timeout_millis: config.timeout,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
-      ad_units: adUnits,
+      ad_units: bidRequest.ad_units.filter(hasSizes),,
       is_debug: isDebug
     };
 
