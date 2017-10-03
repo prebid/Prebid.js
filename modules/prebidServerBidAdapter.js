@@ -167,6 +167,9 @@ function PrebidServer() {
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
             bidObject.ad = bidObj.adm;
+            if (bidObj.nurl) {
+              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            }
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
@@ -212,10 +215,11 @@ function PrebidServer() {
    */
   baseAdapter.queueSync = function({bidderCodes}) {
     let syncedList = StorageManager.get(pbjsSyncsKey) || [];
-    if (_cookiesQueued || syncedList.length === bidderCodes.length) {
+    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
+    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
+    if (syncedList.length === 0) {
       return;
     }
-    _cookiesQueued = true;
     const payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
