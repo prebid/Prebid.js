@@ -153,6 +153,26 @@ const RESPONSE_NO_PBS_COOKIE = {
   }]
 };
 
+const RESPONSE_NO_PBS_COOKIE_ERROR = {
+  'tid': '882fe33e-2981-4257-bd44-bd3b0394545f',
+  'status': 'no_cookie',
+  'bidder_status': [{
+    'bidder': 'rubicon',
+    'no_cookie': true,
+    'usersync': {
+      'url': 'https://pixel.rubiconproject.com/exchange/sync.php?p=prebid',
+      'type': 'jsonp'
+    }
+  }, {
+    'bidder': 'pubmatic',
+    'no_cookie': true,
+    'usersync': {
+      'url': '',
+      'type': 'iframe'
+    }
+  }]
+};
+
 describe('S2S Adapter', () => {
   let adapter;
 
@@ -219,7 +239,9 @@ describe('S2S Adapter', () => {
 
     beforeEach(() => {
       server = sinon.fakeServer.create();
-      sinon.stub(userSync, 'registerSync');
+      sinon.stub(utils, 'triggerPixel');
+      sinon.stub(utils, 'insertUserSyncIframe');
+      sinon.stub(utils, 'logError');
       sinon.stub(cookie, 'cookieSet');
       sinon.stub(bidmanager, 'addBidResponse');
       sinon.stub(utils, 'getBidderRequestAllAdUnits').returns({
@@ -238,7 +260,9 @@ describe('S2S Adapter', () => {
       bidmanager.addBidResponse.restore();
       utils.getBidderRequestAllAdUnits.restore();
       utils.getBidRequest.restore();
-      userSync.registerSync.restore();
+      utils.triggerPixel.restore();
+      utils.insertUserSyncIframe.restore();
+      utils.logError.restore();
       cookie.cookieSet.restore();
     });
 
@@ -379,13 +403,29 @@ describe('S2S Adapter', () => {
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('queue cookie sync when no_cookie response', () => {
+    it('does cookie sync when no_cookie response', () => {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       adapter.setConfig(CONFIG);
       adapter.callBids(REQUEST);
       server.respond();
-      sinon.assert.calledTwice(userSync.registerSync);
+
+      sinon.assert.calledOnce(utils.triggerPixel);
+      sinon.assert.calledWith(utils.triggerPixel, 'https://pixel.rubiconproject.com/exchange/sync.php?p=prebid');
+      sinon.assert.calledOnce(utils.insertUserSyncIframe);
+      sinon.assert.calledWith(utils.insertUserSyncIframe, '//ads.pubmatic.com/AdServer/js/user_sync.html?predirect=https%3A%2F%2Fprebid.adnxs.com%2Fpbs%2Fv1%2Fsetuid%3Fbidder%3Dpubmatic%26uid%3D');
+    });
+
+    it('logs error when no_cookie response is missing type or url', () => {
+      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE_ERROR));
+
+      adapter.setConfig(CONFIG);
+      adapter.callBids(REQUEST);
+      server.respond();
+
+      sinon.assert.notCalled(utils.triggerPixel);
+      sinon.assert.notCalled(utils.insertUserSyncIframe);
+      sinon.assert.calledTwice(utils.logError);
     });
 
     it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
