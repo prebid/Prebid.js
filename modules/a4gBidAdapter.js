@@ -1,8 +1,8 @@
-const bidfactory = require('src/bidfactory.js'),
-  bidmanager = require('src/bidmanager.js'),
-  constants = require('src/constants.json'),
-  adloader = require('src/adloader'),
-  utils = require('src/utils.js');
+const bidfactory = require('src/bidfactory.js');
+const bidmanager = require('src/bidmanager.js');
+const constants = require('src/constants.json');
+const adloader = require('src/adloader');
+const utils = require('src/utils.js');
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
@@ -28,8 +28,8 @@ const SIZE_SEPARATOR = 'x';
 const JSONP_PARAM_NAME = 'jsonp';
 
 function appendUrlParam(url, paramName, paramValue) {
-  const isQueryParams = url.indexOf('?') !== -1,
-    separator = isQueryParams ? '&' : '?';
+  const isQueryParams = url.indexOf('?') !== -1;
+  const separator = isQueryParams ? '&' : '?';
   return url + separator + encodeURIComponent(paramName) + '=' + encodeURIComponent(paramValue);
 }
 
@@ -38,10 +38,10 @@ function isInIframe(windowObj) {
 }
 
 function getIframeInfo(window) {
-  let currentWindow = window,
-    iframeNestingLevel = 0,
-    hasExternalMeet = false,
-    hostHref = window.location.href;
+  let currentWindow = window;
+  let iframeNestingLevel = 0;
+  let hasExternalMeet = false;
+  let hostHref = window.location.href;
 
   while (isInIframe(currentWindow)) {
     currentWindow = currentWindow.parent;
@@ -72,9 +72,9 @@ function isValidStatus(status) {
 function bidParamsToQuery(params) {
   return A4G_SUPPORTED_PARAMS
     .reduce((url, paramName) => paramName in params
-        ? appendUrlParam(url, paramName, params[paramName])
-        : url,
-      '');
+      ? appendUrlParam(url, paramName, params[paramName])
+      : url,
+    '');
 }
 
 function buildBidRequestUrl(bidDeliveryUrl, params) {
@@ -126,14 +126,13 @@ function extractBidParams(bids) {
 }
 
 function a4gBidFactory() {
-
   function generateJsonpCallbackName() {
     return '__A4G' + Date.now();
   }
 
   function jsonp(url, callback) {
-    const callbackName = generateJsonpCallbackName(),
-      jsnopUrl = appendUrlParam(url, JSONP_PARAM_NAME, callbackName);
+    const callbackName = generateJsonpCallbackName();
+    const jsnopUrl = appendUrlParam(url, JSONP_PARAM_NAME, callbackName);
 
     window[callbackName] = ({ status, response }) => {
       !isValidStatus(status)
@@ -155,14 +154,15 @@ function a4gBidFactory() {
 
       jsonp(bidsRequestUrl, (error, bidsResponse) => {
         for (let i = 0; i < bidRequests.length; i++) {
-          const bidRequest = bidRequests[i],
-            placementCode = bids[i].placementCode;
+          const bidRequest = bidRequests[i];
+          const placementCode = bids[i].placementCode;
 
           bidmanager.addBidResponse(placementCode,
             error
               ? mapBidErrorToPrebid(bidRequest)
               : mapBidToPrebidFormat(bidRequest, bidsResponse[i]));
-        }});
+        }
+      });
     }
   };
 }
