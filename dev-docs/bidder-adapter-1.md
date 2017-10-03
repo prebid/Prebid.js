@@ -170,10 +170,27 @@ registerBidder(spec);
 
 When the page asks Prebid.js for bids, your module's `buildRequests` function will be executed. Building the request will use data from several places:
 
-* *AdUnit params*: The arguments provided by the page are in `bidderRequest.bids[]`.
+* *AdUnit params*: The arguments provided by the page are in `validBidRequests` as illustrated below.
 * *Transaction ID*: `bidderRequest.bids[].transactionId` should be sent to your server and forwarded to any Demand Side Platforms your server communicates with.
 * *Ad Server Currency*: If your service supports bidding in more than one currency, your adapter should call `config.getConfig(currency)` to see if the page has defined which currency it needs for the ad server.
 * *Referrer*: Referrer should be passed into your server and utilized there. This is important in contexts like AMP where the original page referrer isn't available directly to the adapter. We suggest using the `utils.getTopWindowUrl()` function to obtain the referrer.
+
+Sample array entry for validBidRequests[]:
+{% highlight js %}
+[{
+  "bidder": "example",
+  "bidId": "51ef8751f9aead",
+  "params": {
+    "cId": "59ac1da80784890004047d89",
+    ...
+  },
+  "adUnitCode": "div-gpt-ad-1460505748561-0",
+  "transactionId": "d7b773de-ceaa-484d-89ca-d9f51b8d61ec",
+  "sizes": [[320,50],[300,250],[300,600]],
+  "bidderRequestId": "418b37f85e772c",
+  "auctionId": "18fd8b8b0bd757"
+}]
+{% endhighlight %}
 
 {: .alert.alert-warning :}
 **Prebid 1.0:** Some of these bid request recommendations are new.
@@ -248,12 +265,13 @@ The parameters of the `bidObject` are:
 | `width`      | Required                                    | The width of the returned creative. For video, this is the player width.                                                                        | 300                                  |
 | `height`     | Required                                    | The height of the returned creative. For video, this is the player height.                                                                      | 250                                  |
 | `ad`         | Required                                    | The creative payload of the returned bid.                                                                                                       | `"<html><h3>I am an ad</h3></html>"` |
-| `ttl`        | Required                                    | Time-to-Live - how long (in seconds) Prebid can use this bid. Default value is 5 minutes.                                                       | 360                                  |
+| `ttl`        | Required                                    | Time-to-Live - how long (in seconds) Prebid can use this bid.                                                       | 360                                  |
 | `creativeId` | Required                                    | A bidder-specific unique code that supports tracing the ad creative back to the source.                                                         | `"123abc"`                           |
-| `netRevenue` | Required                                    | Boolean defining whether the bid is Net or Gross. The default is true (Net). Bidders responding with Gross-price bids should set this to false. | `false`                              |
-| `currency`   | Required                                    | 3-letter code defining the currency of the bid. Defaults to USD.                                                                                | `"EUR"`                              |
+| `netRevenue` | Required                                    | Boolean defining whether the bid is Net or Gross. The value `true` is Net. Bidders responding with Gross-price bids should set this to false. | `false`                              |
+| `currency`   | Required                                    | 3-letter ISO 4217 code defining the currency of the bid.                                                                               | `"EUR"`                              |
 | `vastUrl`    | Either this or `vastXml` required for video | URL where the VAST document can be retrieved when ready for display.                                                                            | `"http://vid.example.com/9876`       |
 | `vastXml`    | Either this or `vastUrl` required for video | XML for VAST document to be cached for later retrieval.                                                                                         | `<VAST version="3.0">...`            |
+| `dealId`     | Optional                                    | Deal ID | `"123abc"` |
 
 ### Register User Syncs
 
