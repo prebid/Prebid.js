@@ -1,7 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
-import { mapSizes } from './sizeMapping';
+import { resolveSizesFromLabels } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 
 var utils = require('./utils.js');
@@ -30,17 +30,9 @@ let _bidderSequence = RANDOM;
 
 function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
+    let sizes = resolveSizesFromLabels(adUnit.labels, adUnit.sizes);
     return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .map(bid => {
-        let sizes = adUnit.sizes;
-        if (adUnit.sizeMapping) {
-          let sizeMapping = mapSizes(adUnit);
-          if (sizeMapping === '') {
-            return '';
-          }
-          sizes = sizeMapping;
-        }
-
+      .reduce((bids, bid) => {
         if (adUnit.nativeParams) {
           bid = Object.assign({}, bid, {
             nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
@@ -62,15 +54,21 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           'renderer'
         ]));
 
-        return Object.assign({}, bid, {
-          placementCode: adUnit.code,
-          transactionId: adUnit.transactionId,
-          sizes: sizes,
-          bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
-          bidderRequestId,
-          requestId
-        });
-      }
+        sizes = resolveSizesFromLabels(bid.labels, sizes);
+
+        if (sizes.length > 0) {
+          bids.push(Object.assign({}, bid, {
+            placementCode: adUnit.code,
+            transactionId: adUnit.transactionId,
+            sizes: sizes,
+            bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
+            bidderRequestId,
+            requestId
+          }));
+        }
+
+        return bids;
+      }, []
       );
   }).reduce(flatten, []).filter(val => val !== '');
 }
