@@ -111,6 +111,7 @@ function PrebidServer() {
       tid: bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
+      secure: config.secure,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: bidRequest.ad_units.filter(hasSizes),
