@@ -41,12 +41,6 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           sizes = sizeMapping;
         }
 
-        if (adUnit.nativeParams) {
-          bid = Object.assign({}, bid, {
-            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
-          });
-        }
-
         if (adUnit.mediaTypes) {
           if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
             bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
@@ -55,6 +49,14 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
               `mediaTypes is not correctly configured for adunit ${adUnit.code}`
             );
           }
+        }
+
+        const nativeParams =
+          adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+        if (nativeParams) {
+          bid = Object.assign({}, bid, {
+            nativeParams: processNativeAdUnitParams(nativeParams),
+          });
         }
 
         bid = Object.assign({}, bid, getDefinedParams(adUnit, [

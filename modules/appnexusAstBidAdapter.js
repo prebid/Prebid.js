@@ -262,7 +262,7 @@ function bidToTag(bid) {
     tag.keywords = getKeywords(bid.params.keywords);
   }
 
-  if (bid.mediaType === 'native') {
+  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
     tag.ad_types = ['native'];
 
     if (bid.nativeParams) {
