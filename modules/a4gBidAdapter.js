@@ -1,8 +1,8 @@
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const constants = require('src/constants.json');
-const adloader = require('src/adloader');
-const utils = require('src/utils.js');
+import bidfactory from 'src/bidfactory';
+import bidmanager from 'src/bidmanager';
+import { STATUS } from 'src/constants';
+import adloader from 'src/adloader';
+import * as utils from 'src/utils';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
@@ -86,7 +86,7 @@ function createBidRequest(bidRequest) {
 }
 
 function mapBidToPrebidFormat(bidRequest, bid) {
-  const bidResponse = bidRequest(constants.STATUS.GOOD);
+  const bidResponse = bidRequest(STATUS.GOOD);
 
   bidResponse.bidderCode = A4G_BIDDER_CODE;
   bidResponse.cpm = bid.cpm;
@@ -98,7 +98,7 @@ function mapBidToPrebidFormat(bidRequest, bid) {
 }
 
 function mapBidErrorToPrebid(bidRequest) {
-  return bidRequest(constants.STATUS.NO_BID);
+  return bidRequest(STATUS.NO_BID);
 }
 
 function extractBidParams(bids) {
