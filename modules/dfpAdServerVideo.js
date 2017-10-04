@@ -4,8 +4,9 @@
 
 import { registerVideoSupport } from '../src/adServerManager';
 import { getWinningBids } from '../src/targeting';
-import { formatQS, format as buildUrl } from '../src/url';
-import { parseSizesInput } from '../src/utils';
+import { formatQS, format as buildUrl, parse } from '../src/url';
+import { deepAccess, logError, parseSizesInput } from '../src/utils';
+import { config } from '../src/config';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -58,6 +59,10 @@ export default function buildDfpVideoUrl(options) {
   const adUnit = options.adUnit;
   const bid = options.bid || getWinningBids(adUnit.code)[0];
 
+  if (options.url) {
+    return buildUrlFromAdserverUrl(options.url, bid);
+  }
+
   const derivedParams = {
     correlator: Date.now(),
     sz: parseSizesInput(adUnit.sizes).join('|'),
@@ -75,7 +80,16 @@ export default function buildDfpVideoUrl(options) {
     defaultParamConstants,
     derivedParams,
     options.params,
-    { cust_params: encodeURIComponent(formatQS(customParams)) });
+    { cust_params: encodeURIComponent(formatQS(customParams)) }
+  );
+
+  if (!config.getConfig('usePrebidCache')) {
+    if (!deepAccess(options, 'params.description_url')) {
+      queryParams.description_url = encodeURIComponent(bid.vastUrl);
+    } else {
+      logError(`input object cannot contain description_url`);
+    }
+  }
 
   return buildUrl({
     protocol: 'https',
@@ -83,6 +97,30 @@ export default function buildDfpVideoUrl(options) {
     pathname: '/gampad/ads',
     search: queryParams
   });
+}
+
+/**
+ * Builds a video url from a base dfp video url and a winning bid, appending
+ * Prebid-specific key-values.
+ * @param {string} url base video adserver url
+ * @param {Object} bid winning bid object to append parameters from
+ * @return {string} video url
+ */
+function buildUrlFromAdserverUrl(url, bid) {
+  const components = parse(url);
+
+  if (!components.search.description_url) {
+    components.search.description_url = encodeURIComponent(bid.vastUrl);
+  } else {
+    logError(`input url cannnot contain description_url`);
+  }
+
+  const customParams = Object.assign({},
+    bid.adserverTargeting,
+  );
+  components.search.cust_params = encodeURIComponent(formatQS(customParams));
+
+  return buildUrl(components);
 }
 
 registerVideoSupport('dfp', {
