@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { resolveSizesFromLabels, setLabels, setSizeConfig } from 'src/sizeMapping';
+import { resolveStatus, setSizeConfig } from 'src/sizeMapping';
 
 describe('sizeMapping', () => {
-  var testSizes = [[970, 90], [728, 90], [300, 250], [300, 100]];
+  var testSizes = [[970, 90], [728, 90], [300, 250], [300, 100], [80, 80]];
 
   var sizeConfig = [{
     'mediaQuery': '(min-width: 1200px)',
@@ -10,7 +10,21 @@ describe('sizeMapping', () => {
       [970, 90],
       [728, 90],
       [300, 250]
-    ],
+    ]
+  }, {
+    'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+    'sizesSupported': [
+      [728, 90],
+      [300, 250],
+      [300, 100]
+    ]
+  }, {
+    'mediaQuery': '(min-width: 0px) and (max-width: 767px)',
+    'sizesSupported': []
+  }];
+
+  var sizeConfigWithLabels = [{
+    'mediaQuery': '(min-width: 1200px)',
     'labels': ['desktop']
   }, {
     'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
@@ -20,7 +34,7 @@ describe('sizeMapping', () => {
     ],
     'labels': ['tablet', 'phone']
   }, {
-    'mediaQuery': '(min-width: 0px)',
+    'mediaQuery': '(min-width: 0px) and (max-width: 767px)',
     'sizesSupported': [
       [300, 250],
       [300, 100]
@@ -28,78 +42,153 @@ describe('sizeMapping', () => {
     'labels': ['phone']
   }];
 
-  let matchMediaResult = {};
+  let sandbox,
+    matchMediaOverride;
 
   beforeEach(() => {
-    setLabels([]);
     setSizeConfig(sizeConfig);
 
-    sinon.stub(window, 'matchMedia', () => matchMediaResult);
+    sandbox = sinon.sandbox.create();
+
+    matchMediaOverride = {matches: false};
+
+    sandbox.stub(window, 'matchMedia', (...args) => {
+      if (typeof matchMediaOverride === 'function') {
+        return matchMediaOverride.apply(window, args);
+      }
+      return matchMediaOverride;
+    });
   });
 
   afterEach(() => {
-    setLabels([]);
     setSizeConfig([]);
 
-    window.matchMedia.restore();
+    sandbox.restore();
   });
 
-  it('should return back all sizes if there are no labels', () => {
-    let sizes = resolveSizesFromLabels(undefined, testSizes);
+  describe('when handling sizes', () => {
+    it('when one mediaQuery block matches, it should filter the adUnit.sizes passed in', () => {
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
-    expect(sizes).to.deep.equal(testSizes);
+      let status = resolveStatus(undefined, testSizes, sizeConfig);
+
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: [[970, 90], [728, 90], [300, 250]]
+      })
+    });
+
+    it('when multiple mediaQuery block matches, it should filter a union of the matched sizesSupported', () => {
+      matchMediaOverride = (str) => [
+        '(min-width: 1200px)',
+        '(min-width: 768px) and (max-width: 1199px)'
+      ].includes(str) ? {matches: true} : {matches: false};
+
+      let status = resolveStatus(undefined, testSizes, sizeConfig);
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: [[970, 90], [728, 90], [300, 250], [300, 100]]
+      })
+    });
+
+    it('if no mediaQueries match, it should allow all sizes specified', () => {
+      matchMediaOverride = () => ({matches: false});
+
+      let status = resolveStatus(undefined, testSizes, sizeConfig);
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: testSizes
+      })
+    });
+
+    it('if a mediaQuery matches and has sizesSupported: [], it should filter all sizes', () => {
+      matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? {matches: true} : {matches: false};
+
+      let status = resolveStatus(undefined, testSizes, sizeConfig);
+      expect(status).to.deep.equal({
+        active: false,
+        sizes: []
+      })
+    });
+
+    it('if a mediaQuery matches and no sizesSupported specified, it should not effect adUnit.sizes', () => {
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
+
+      let status = resolveStatus(undefined, testSizes, sizeConfigWithLabels);
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: testSizes
+      })
+    });
   });
 
-  it('should pass all sizes for custom labels that match passed-in labels', () => {
-    setLabels(['uk-user']);
+  describe('when handling labels', () => {
+    it('should activate/deactivate adUnits/bidders based on sizeConfig.labels', () => {
+      matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
-    let sizes = resolveSizesFromLabels(['uk-user'], testSizes);
+      let status = resolveStatus({
+        labels: ['desktop']
+      }, testSizes, sizeConfigWithLabels);
 
-    expect(sizes).to.deep.equal(testSizes);
-  });
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: testSizes
+      });
 
-  it('should return no sizes for custom labels that do not match passed in labels', () => {
-    setLabels(['uk-user']);
+      status = resolveStatus({
+        labels: ['tablet']
+      }, testSizes, sizeConfigWithLabels);
 
-    let sizes = resolveSizesFromLabels(['us-user'], testSizes);
+      expect(status).to.deep.equal({
+        active: false,
+        sizes: testSizes
+      });
+    });
 
-    expect(sizes).to.deep.equal([]);
-  });
+    it('should active/deactivate adUnits/bidders based on requestBids labels', () => {
+      let requestLabels = ['us-visitor', 'desktop', 'smart'];
 
-  it('should filter sizes to correct sizesSupported if supplied and mediaQuery matches', () => {
-    matchMediaResult = {matches: true};
+      let status = resolveStatus({
+        labels: ['uk-visitor'],
+        requestLabels
+      }, testSizes, sizeConfigWithLabels);
 
-    let sizes;
+      expect(status).to.deep.equal({
+        active: false,
+        sizes: testSizes
+      });
 
-    sizes = resolveSizesFromLabels(['desktop'], testSizes);
+      status = resolveStatus({
+        labels: ['us-visitor'],
+        requestLabels
+      }, testSizes, sizeConfigWithLabels);
 
-    expect(sizes).to.deep.equal([
-      [970, 90],
-      [728, 90],
-      [300, 250]
-    ]);
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: testSizes
+      });
 
-    sizes = resolveSizesFromLabels(['tablet'], testSizes);
+      status = resolveStatus({
+        labels: ['us-visitor', 'tablet'],
+        labelAll: true,
+        requestLabels
+      }, testSizes, sizeConfigWithLabels);
 
-    expect(sizes).to.deep.equal([
-      [728, 90],
-      [300, 250]
-    ]);
+      expect(status).to.deep.equal({
+        active: false,
+        sizes: testSizes
+      });
 
-    sizes = resolveSizesFromLabels(['phone'], testSizes);
+      status = resolveStatus({
+        labels: ['us-visitor', 'desktop'],
+        labelAll: true,
+        requestLabels
+      }, testSizes, sizeConfigWithLabels);
 
-    expect(sizes).to.deep.equal([
-      [300, 250]
-    ]);
-  });
-
-  it('should filter sizes to correctly if mediaQuery does not match', () => {
-    matchMediaResult = {matches: false};
-
-    let sizes;
-
-    sizes = resolveSizesFromLabels(['desktop'], testSizes);
-
-    expect(sizes).to.deep.equal([]);
+      expect(status).to.deep.equal({
+        active: true,
+        sizes: testSizes
+      });
+    });
   });
 });

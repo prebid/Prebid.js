@@ -1,7 +1,7 @@
 /** @module adaptermanger */
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
-import { resolveSizesFromLabels } from './sizeMapping';
+import { resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { StorageManager, pbjsSyncsKey } from './storagemanager';
 
@@ -29,52 +29,64 @@ VALID_ORDERS[FIXED] = true;
 var _analyticsRegistry = {};
 let _bidderSequence = RANDOM;
 
-function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
-  return adUnits.map(adUnit => {
-    let sizes = resolveSizesFromLabels(adUnit.labels, adUnit.sizes);
-    return adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .reduce((bids, bid) => {
-        if (adUnit.nativeParams) {
-          bid = Object.assign({}, bid, {
-            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
-          });
-        }
+function getBids({bidderCode, requestId, bidderRequestId, adUnits, labels}) {
+  function getLabels(obj, requestLabels) {
+    if (obj.labelAll) {
+      return {labelAll: true, labels: obj.labelAll, requestLabels};
+    }
+    return {labelAll: false, labels: obj.labelAny, requestLabels};
+  }
 
-        if (adUnit.mediaTypes) {
-          if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
-            bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
-          } else {
-            utils.logError(
-              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
-            );
+  return adUnits.reduce((result, adUnit) => {
+    let {active, sizes: filteredAdUnitSizes} = resolveStatus(getLabels(adUnit, labels), adUnit.sizes);
+
+    if (active) {
+      result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
+        .reduce((bids, bid) => {
+          if (adUnit.nativeParams) {
+            bid = Object.assign({}, bid, {
+              nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
+            });
           }
-        }
 
-        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-          'mediaType',
-          'renderer'
-        ]));
+          if (adUnit.mediaTypes) {
+            if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
+              bid = Object.assign({}, bid, {mediaTypes: adUnit.mediaTypes});
+            } else {
+              utils.logError(
+                `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+              );
+            }
+          }
 
-        sizes = resolveSizesFromLabels(bid.labels, sizes);
+          bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'mediaType',
+            'renderer'
+          ]));
 
-        if (sizes.length > 0) {
-          bids.push(Object.assign({}, bid, {
-            placementCode: adUnit.code,
-            transactionId: adUnit.transactionId,
-            sizes: sizes,
-            bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
-            bidderRequestId,
-            requestId
-          }));
-        }
+          let {active, sizes} = resolveStatus(getLabels(bid, labels), filteredAdUnitSizes);
 
-        return bids;
-      }, []
+          if (active) {
+            bids.push(Object.assign({}, bid, {
+              placementCode: adUnit.code,
+              transactionId: adUnit.transactionId,
+              sizes: sizes,
+              bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
+              bidderRequestId,
+              requestId
+            }));
+          }
+
+          return bids;
+        }, [])
       );
-  }).reduce(flatten, []).filter(val => val !== '');
+    }
+    
+    return result;
+  }, []).reduce(flatten, []).filter(val => val !== '');
 }
 
-exports.callBids = ({adUnits, cbTimeout}) => {
+exports.callBids = ({adUnits, cbTimeout, labels}) => {
   const requestId = utils.generateUUID();
   const auctionStart = Date.now();
 
@@ -135,7 +147,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         requestId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
+        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy, labels}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
@@ -161,7 +173,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
+        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits, labels}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout

@@ -1,6 +1,5 @@
 import { config } from 'src/config';
 
-let configuredLabels = [];
 let sizeConfig = [];
 
 /**
@@ -15,14 +14,6 @@ let sizeConfig = [];
  */
 
 /**
- * @param {Array<string>} labels
- */
-export function setLabels(labels) {
-  configuredLabels = labels;
-}
-config.getConfig('labels', config => setLabels(config.labels));
-
-/**
  *
  * @param {Array<SizeConfig>} config
  */
@@ -32,45 +23,62 @@ export function setSizeConfig(config) {
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**
- * This function will return all relevant sizes when resolving the labels passed in vs active labels (active labels
- * being either those enabled manually or specified and enabled by matchMedia queries)
- *
- * @param {Array} labels The set of labels
- * @param {Array<Array>} initialSizes starting set of sizes
- * @returns {Array<Array>} filtered set of sizes after resolving passed in labels against active labels
+ * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
+ * @param {Array<string>} labels Labels specified on adUnit or bidder
+ * @param {boolean} labelAll if true, all labels must match to be enabled
+ * @param {Array<string>} requestLabels Labels passed in through requestBids
+ * @param {Array<Array<number>>} sizes Sizes specified on adUnit
+ * @param {Array<SizeConfig>} configs
+ * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
  */
-export function resolveSizesFromLabels(labels, initialSizes = []) {
-  if (!Array.isArray(labels)) {
-    return initialSizes;
+export function resolveStatus({labels = [], labelAll = false, requestLabels = []} = {}, sizes = [], configs = sizeConfig) {
+  let maps = evaluateSizeConfig(configs);
+
+  let filteredSizes;
+  if (maps.shouldFilter) {
+    filteredSizes = sizes.filter(size => maps.sizesSupported[size]);
+  } else {
+    filteredSizes = sizes;
   }
-  let hasMatch = false;
-  let filteredSizes = configuredLabels
-    .map(label => ({
-      sizesSupported: initialSizes, // configured labels support all sizes that are passed in by default
-      labels: [label]
-    }))
-    .concat(sizeConfig)
-    .reduce((sizes, config) => {
-      // does this sizeMapping config match passed-in labels?
-      if (Array.isArray(config.labels) && labels.some(label => config.labels.includes(label))) {
-        if (typeof config.mediaQuery !== 'string') {
-          hasMatch = true;
-        } else {
-          // if no mediaQuery criteria or if matchMedia matches, filter sizes with sizesSupported
-          if (matchMedia(config.mediaQuery).matches) {
-            hasMatch = true;
-            sizes = sizes.filter(
-              size => (config.sizesSupported || initialSizes)
-                .map(size => size.toString())
-                .includes(size.toString())
-            );
-          }
-        }
+
+  return {
+    active: filteredSizes.length > 0 && (
+      labels.length === 0 || (
+        (!labelAll && (
+          labels.some(label => maps.labels[label]) ||
+          labels.some(label => requestLabels.includes(label))
+        )) ||
+        (labelAll && (
+          labels.reduce((result, label) => !result ? result : (
+            maps.labels[label] || requestLabels.includes(label)
+          ), true)
+        ))
+      )
+    ),
+    sizes: filteredSizes
+  };
+}
+
+function evaluateSizeConfig(configs) {
+  return configs.reduce((results, config) => {
+    if (
+      typeof config === 'object' &&
+      typeof config.mediaQuery === 'string' &&
+      matchMedia(config.mediaQuery).matches
+    ) {
+      if (Array.isArray(config.sizesSupported)) {
+        results.shouldFilter = true;
       }
-
-      return sizes;
-    }, initialSizes);
-
-  // if none of the labels match, return no sizes to disable bidder; otherwise return supported sizes
-  return hasMatch ? filteredSizes : [];
+      ['labels', 'sizesSupported'].forEach(
+        type => (config[type] || []).forEach(
+          thing => results[type][thing] = true
+        )
+      );
+    }
+    return results;
+  }, {
+    labels: {},
+    sizesSupported: {},
+    shouldFilter: false
+  });
 }

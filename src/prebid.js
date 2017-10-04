@@ -348,7 +348,7 @@ $$PREBID_GLOBAL$$.clearAuction = function() {
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
  */
-$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
+$$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit('requestBids');
   const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -416,7 +416,7 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     bidmanager.addOneTimeCallback(bidsBackHandler, timer);
   }
 
-  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout });
+  adaptermanager.callBids({ adUnits, adUnitCodes, cbTimeout, labels });
   if ($$PREBID_GLOBAL$$._bidsRequested.length === 0) {
     bidmanager.executeCallback();
   }
