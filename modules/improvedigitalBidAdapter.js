@@ -1,4 +1,4 @@
-const LIB_VERSION_GLOBAL = '3.0.8';
+const LIB_VERSION_GLOBAL = '3.0.9';
 
 const CONSTANTS = require('src/constants');
 const utils = require('src/utils');
@@ -109,7 +109,7 @@ const ImproveDigitalAdapter = function () {
             bid.cpm = parseFloat(bidObject.price);
             bid.width = bidObject.w;
             bid.height = bidObject.h;
-            bid.dealId = bidObject.lid;
+            bid.dealId = utils.isArray(bidObject.lid) ? bidObject.lid[0] : bidObject.lid;
 
             bidmanager.addBidResponse(bidRequest.placementCode, bid);
           }

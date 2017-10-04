@@ -192,6 +192,31 @@ describe('improvedigital adapter tests', function () {
     ]
   };
 
+  const simpleResponseLidArray = {
+    id: '701903620',
+    site_id: 191642,
+    bid: [
+      {
+        price: 1.85185185185185,
+        lid: [268514],
+        advid: '5279',
+        id: '1a2b3c',
+        sync: [
+          'http://link',
+          'http://link2',
+          'http://link3'
+        ],
+        nurl: 'http://nurl',
+        h: 300,
+        pid: 1053687,
+        crid: '422030',
+        w: 300,
+        cid: '99005',
+        adm: 'document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");'
+      }
+    ]
+  };
+
   const zeroPriceResponse = {
     id: '701903620',
     site_id: 191642,
@@ -521,6 +546,22 @@ describe('improvedigital adapter tests', function () {
       $$PREBID_GLOBAL$$._bidsRequested.push(simpleBidRequest);
       improveDigitalAdapter.callBids(simpleBidRequest);
       $$PREBID_GLOBAL$$.improveDigitalResponse(simpleResponse);
+    });
+    it('should call bidmanager.addBidResponse once with correct parameters', () => {
+      sinon.assert.calledOnce(bidmanager.addBidResponse);
+      sinon.assert.calledWith(bidmanager.addBidResponse, 'placement1', sinon.match({bidderCode: 'improvedigital', width: 300, height: 300, statusMessage: 'Bid available', ad: '<img src=\"http://nurl\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/creativelink\\/\");</script>', cpm: 1.85185185185185, adId: '1a2b3c'}));
+    });
+  });
+
+  describe('improveDigitalResponse simpleResponse Lid Array', () => {
+    beforeEach(() => {
+      sandbox.stub(
+        bidmanager,
+        'addBidResponse'
+      );
+      $$PREBID_GLOBAL$$._bidsRequested.push(simpleBidRequest);
+      improveDigitalAdapter.callBids(simpleBidRequest);
+      $$PREBID_GLOBAL$$.improveDigitalResponse(simpleResponseLidArray);
     });
     it('should call bidmanager.addBidResponse once with correct parameters', () => {
       sinon.assert.calledOnce(bidmanager.addBidResponse);
