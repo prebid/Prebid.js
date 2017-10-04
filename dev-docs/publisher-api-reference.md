@@ -44,6 +44,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.aliasBidder(adapterName, aliasedName)](#module_pbjs.aliasBidder)
   * [.setConfig(options)](#module_pbjs.setConfig)
   * [.getConfig([string])](#module_pbjs.getConfig)
+  * [.adServers.dfp.buildVideoUrl(options)](#module_pbjs.adServers.dfp.buildVideoUrl) ⇒ `String`
 
 <a name="module_pbjs.getAdserverTargeting"></a>
 
@@ -317,7 +318,7 @@ Set query string targeting on all GPT ad units. The logic for deciding query str
 {: .table .table-bordered .table-striped }
 | Param | Scope | Type | Description |
 | --- | --- | --- | -- |
-| [codeArr] | Optional | `array` | an array of adUnitodes to set targeting for. |
+| [codeArr] | Optional | `array` | an array of adUnitCodes to set targeting for. |
 
 <hr class="full-rule">
 
@@ -616,7 +617,7 @@ bid along with all non-CPM bids, just specify this flag and the adapter-specific
 As described in the [AdOps documentation]({{site.baseurl}}/adops.html), Prebid has a recommended standard
 set of ad server targeting that works across bidders. This standard targeting approach is
 defined in the adserverTargeting attribute in the 'standard' section, but can be overridden
-per adapter as needed. Both secenarios are described below.
+per adapter as needed. Both scenarios are described below.
 
 **Keyword targeting for all bidders**
 
@@ -901,7 +902,7 @@ Remove a callback event
 ### pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options) ⇒ `String`
 
 {: .alert.alert-danger :}
-This method is deprecated as of version [0.26.0](https://github.com/prebid/Prebid.js/releases/tag/0.26.0).  To show video ads, include the `dfpVideoSupport` module in your build, and use `pbjs.adServers.dfp.buildVideoUrl`.  For more information, see [Show Video Ads with DFP]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html).
+This method is deprecated as of version [0.26.0](https://github.com/prebid/Prebid.js/releases/tag/0.26.0).  Please use [`pbjs.adServers.dfp.buildVideoUrl`](#module_pbjs.adServers.dfp.buildVideoUrl) instead.
 
 **Kind**: static method of [pbjs](#module_pbjs)
 
@@ -1214,5 +1215,68 @@ const unsubscribe = getConfig(...);
 unsubscribe(); // no longer listening
 
 {% endhighlight %}
+
+<a name="module_pbjs.adServers.dfp.buildVideoUrl"></a>
+
+### pbjs.adServers.dfp.buildVideoUrl(options) ⇒ `String`
+
+{: .alert.alert-info :}
+This method was added in 0.26.0.  For a usage example and instructions showing how to build Prebid.js to include this method, see [Show Video Ads with DFP]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html).
+
+This method returns a DFP video ad tag URL which is built by combining publisher-provided URL parameters with Prebid.js key-values.
+
+This method takes a single `options` object as an argument, described below:
+
+{: .table .table-bordered .table-striped }
+| Field  | Type   | Description                                                                                                                                     |
+|--------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| adUnit | object | (Required) The Prebid adUnit to which the returned URL will map.                                                                                |
+| bid    | object | (Optional) The Prebid bid for which targeting will be set. If this is not defined, Prebid will use the bid with the highest CPM for the adUnit. |
+| params | object | (Required) Querystring parameters that will be used to construct the DFP video ad tag URL.                                                      |
+
+The `options.params` object is described below:
+
+{: .table .table-bordered .table-striped }
+| Field          | Type   | Description                                                                                                                                                                                                                                                                                                          | Example                                       |
+|----------------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
+| iu             | string | (Required) DFP adUnit ID.  For more information, see the [DFP documentation on `iu`](https://support.google.com/dfp_premium/answer/1068325?hl=en#iu)                                                                                                                                                                 | `/19968336/prebid_cache_video_adunit`         |
+| cust_params    | object | (Optional) Key-value pairs that will be sent to DFP on the video ad tag URL.  If present, any key-values here will be merged with Prebid standard targeting key-values.  For more information, see the [DFP documentation on `cust_params`](https://support.google.com/dfp_premium/answer/1068325?hl=en#cust_params) | {section: "blog", anotherKey: "anotherValue"} |
+| "arbitraryKey" | string | (Optional) Any additional querystring parameters that will be used to construct the DFP video ad tag URL.                                                                                                                                                                                                            | `output: "vast"`                              |
+
+{: .alert.alert-info :}
+Note: Prebid.js will choose reasonable default values for any required DFP URL parameters that are not included in the `options.params` object.
+
+For more information about the options supported by the DFP API, see [the DFP API docs](https://support.google.com/dfp_premium/answer/1068325?hl=en#env).
+
+#### Example Usage
+
+For a usage example in context, see [Show Video Ads with DFP]({{site.baseurl}}/dev-docs/show-video-with-a-dfp-video-tag.html).
+
+```javascript
+pbjs.requestBids({
+    bidsBackHandler: function(bids) {
+        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+            adUnit: videoAdUnit,
+            params: {
+                iu: '/19968336/prebid_cache_video_adunit',
+                cust_params: {
+                  section: "blog",
+                  anotherKey: "anotherValue"
+                },
+                hl: "en",
+                output: "vast",
+                url: "http://www.referer-url.com"
+            }
+        });
+        invokeVideoPlayer(videoUrl);
+    }
+});
+```
+
+This call returns the following DFP video ad tag URL:
+
+```
+https://pubads.g.doubleclick.net/gampad/ads?env=vp&gdfp_req=1&output=vast&unviewed_position_start=1&correlator=1507127916397&sz=640x480&url=http://www.referer-url.com&iu=/19968336/prebid_cache_video_adunit&cust_params=hb_bidder%3DappnexusAst%26hb_adid%3D26d4996ee83709%26hb_pb%3D10.00%26hb_size%3D640x480%26hb_uuid%3D16c887cf-9986-4cb2-a02f-8e9bd025f875%26section%3Dblog%26anotherKey%3DanotherValue&hl=en
+```
 
 </div>
