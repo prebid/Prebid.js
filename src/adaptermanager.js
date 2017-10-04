@@ -258,8 +258,8 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
           newAdapter = new bidAdaptor.constructor();
           newAdapter.setBidderCode(alias);
         } else {
-          let spec = Object.assign({}, bidAdaptor, { code: alias });
-          newAdapter = newBidder(spec);
+          let spec = bidAdaptor.getSpec();
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
         }
         this.registerBidAdapter(newAdapter, alias, {
           supportedMediaTypes
