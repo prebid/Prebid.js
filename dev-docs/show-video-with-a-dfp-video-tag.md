@@ -161,7 +161,7 @@ If you have [set up your ad server line items and creatives correctly]({{site.ba
 
 Below, find links to end-to-end "working examples" integrating Prebid.js demand with various video players:
 
-+ [video.js]({{site.github.url}}/examples/video/prebid_video_videojs_new.html)
++ [video.js]({{site.github.url}}/examples/video/videojs-demo.html)
 + [JWPlayer]({{site.github.url}}/examples/video/jwPlayerPrebid.html)
 + [Brightcove]({{site.github.url}}/examples/video/bc-demo.html)
 + [Kaltura]({{site.github.url}}/examples/video/klt-demo.html)

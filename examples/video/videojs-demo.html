@@ -28,7 +28,11 @@
     var videoAdUnit = {
       code: 'video1',
       sizes: [640,480],
-      mediaType: 'video',
+      mediaTypes: {
+        video: {
+          context: "instream"
+        }
+      },
       bids: [
         {
           bidder: 'appnexusAst',
@@ -45,24 +49,26 @@
 
     pbjs.que.push(function(){
       pbjs.addAdUnits(videoAdUnit);
+
+      pbjs.setConfig({ 
+        usePrebidCache: true 
+      });
+
       pbjs.requestBids({
-        timeout : 700,
-        bidsBackHandler : function(bids) {
-
-          var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
-          adserverTag = adserverTag + '&correlator=' + Date.now();
-
-          var options = {
-            'adserver': 'dfp',
-            'code': 'video1' //code that matches the video adUnit declared above
-           };
-
-          //generate URL
-          var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
-
-          //send masterTagUrl to the video player
-          invokeVideoPlayer(masterTagUrl);
-        }
+          bidsBackHandler: function(bids) {
+              var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                  adUnit: videoAdUnit,
+                  params: {
+                      iu: '/19968336/prebid_cache_video_adunit',
+                      cust_params: {
+                        section: "blog",
+                        anotherKey: "anotherValue"
+                      },
+                      output: "vast"
+                  }
+              });
+              invokeVideoPlayer(videoUrl);
+          }
       });
     });
 

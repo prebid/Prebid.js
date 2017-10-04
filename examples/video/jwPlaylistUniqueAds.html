@@ -27,7 +27,11 @@
     var videoAdUnit = {
       code: 'video1',
       sizes: [640,480],
-      mediaType: 'video',
+      mediaTypes: {
+        video: {
+          context: "instream"
+        }
+      },
       bids: [
         {
           bidder: 'appnexusAst',
@@ -63,27 +67,32 @@
     }
 
     var requestVideoAd = function(){
-      pbjs.requestBids({
-        timeout : PREBID_TIMEOUT,
-        // this function will be called once bids are returned from pbjs.requestBids()
-        bidsBackHandler : function(bids){
-          logBids(bids);
-          var adserverTag = 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/19968336/prebid_video_adunit&impl=s&gdfp_req=1&env=vp&output=xml_vast2&unviewed_position_start=1&url=www.test.com';
-          adserverTag = adserverTag + '&correlator=' + Date.now()
-          var options = {
-            'adserver': 'dfp',
-            'code': 'video1' //this code name must match the code name defined in the videoAdUnit json above
-          };
-          //generate the URL to pass into the video player
-          var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
 
-          invokeVideoPlayer(masterTagUrl);
-        }
+      pbjs.requestBids({
+          bidsBackHandler: function(bids) {
+              var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                  adUnit: videoAdUnit,
+                  params: {
+                      iu: '/19968336/prebid_cache_video_adunit',
+                      cust_params: {
+                        section: "blog",
+                        anotherKey: "anotherValue"
+                      },
+                      output: "vast"
+                  }
+              });
+              invokeVideoPlayer(videoUrl);
+          }
       });
     }
 
     pbjs.que.push(function(){
       pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request
+
+      pbjs.setConfig({ 
+        usePrebidCache: true 
+      });
+
       requestVideoAd();
     });
 
@@ -141,6 +150,8 @@
       if(firstPlay){
         playerInstance.setup({
           "playlist": "https://content.jwplatform.com/feeds/ae4tmw2D.json",
+          "width": 640,
+          "height": 480,
           "advertising": {
             "client": "vast",
           },
