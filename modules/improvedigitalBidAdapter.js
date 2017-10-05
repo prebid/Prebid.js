@@ -1,4 +1,4 @@
-const LIB_VERSION_GLOBAL = '3.0.9';
+const LIB_VERSION_GLOBAL = '3.0.10';
 
 const CONSTANTS = require('src/constants');
 const utils = require('src/utils');
