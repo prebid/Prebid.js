@@ -109,7 +109,11 @@ const ImproveDigitalAdapter = function () {
             bid.cpm = parseFloat(bidObject.price);
             bid.width = bidObject.w;
             bid.height = bidObject.h;
-            bid.dealId = utils.isArray(bidObject.lid) ? bidObject.lid[0] : bidObject.lid;
+            if (utils.isNumber(bidObject.lid)) {
+              bid.dealId = bidObject.lid;
+            } else if (bidObject.lid['1']) {
+              bid.dealId = bidObject.lid['1'];
+            }
 
             bidmanager.addBidResponse(bidRequest.placementCode, bid);
           }
