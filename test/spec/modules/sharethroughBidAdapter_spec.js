@@ -120,7 +120,6 @@ describe('sharethrough adapter', () => {
 
     afterEach(() => {
       server.restore();
-      stubAddBidResponse.reset();
     });
 
     it('should add a bid object for each bid', () => {
