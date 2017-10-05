@@ -8,41 +8,41 @@ describe('Publisher API _ AdUnits', function () {
       code: '/1996833/slot-1',
       sizes: [[300, 250], [728, 90]],
       bids: [
-            {
-              bidder: 'openx',
-              params: {
-                pgid: '2342353',
-                unit: '234234',
-                jstag_url: 'http://'
-              }
-            }, {
-              bidder: 'appnexus',
-              params: {
-                placementId: '234235'
-              }
-            }
-        ]
+        {
+          bidder: 'openx',
+          params: {
+            pgid: '2342353',
+            unit: '234234',
+            jstag_url: 'http://'
+          }
+        }, {
+          bidder: 'appnexus',
+          params: {
+            placementId: '234235'
+          }
+        }
+      ]
     }, {
       code: '/1996833/slot-2',
       sizes: [[468, 60]],
       bids: [
-                {
-                  bidder: 'rubicon',
-                  params: {
-                    rp_account: '4934',
-                    rp_site: '13945',
-                    rp_zonesize: '23948-15'
-                  }
-                }, {
-                  bidder: 'appnexus',
-                  params: {
-                    placementId: '827326'
-                  }
-                }
-            ]
+        {
+          bidder: 'rubicon',
+          params: {
+            rp_account: '4934',
+            rp_site: '13945',
+            rp_zonesize: '23948-15'
+          }
+        }, {
+          bidder: 'appnexus',
+          params: {
+            placementId: '827326'
+          }
+        }
+      ]
     }];
-
-    pbjs.addAdUnits(adUnits);
+    pbjsTestOnly.clearAllAdUnits();
+    $$PREBID_GLOBAL$$.addAdUnits(adUnits);
   });
 
   after(function () {
@@ -50,7 +50,6 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('addAdUnits', function () {
-
     var adUnits, adUnit1, bids1, adUnit2, bids2;
 
     it('should have two adUnits', function () {
@@ -61,7 +60,7 @@ describe('Publisher API _ AdUnits', function () {
       bids2 = adUnit2.bids;
     });
 
-    it('the first adUnits value should be same with the adUnits that is added by pbjs.addAdUnits();', function () {
+    it('the first adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
       assert.strictEqual(adUnit1.code, '/1996833/slot-1', 'adUnit1 code');
       assert.deepEqual(adUnit1.sizes, [[300, 250], [728, 90]], 'adUnit1 sizes');
       assert.strictEqual(bids1[0].bidder, 'openx', 'adUnit1 bids1 bidder');
@@ -83,8 +82,14 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
 
-    it('the second adUnits value should be same with the adUnits that is added by pbjs.addAdUnits();', function () {
+    it('both add unit should contains a transactionid.'), function() {
+      assert.exist(adUnit1.transationId)
+      assert.exist(adUnit2.transationId)
 
+      assert.strictEqual(false, adUnit1.transationId === adUnit2.transationId)
+    }
+
+    it('the second adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
       assert.strictEqual(bids2[0].bidder, 'rubicon', 'adUnit2 bids1 bidder');
@@ -98,11 +103,10 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('removeAdUnit', function () {
-
     var adUnits, adUnit2, bids2;
 
     it('the first adUnit should be not existed', function () {
-      pbjs.removeAdUnit('/1996833/slot-1');
+      $$PREBID_GLOBAL$$.removeAdUnit('/1996833/slot-1');
       adUnits = pbjsTestOnly.getAdUnits();
       adUnit2 = adUnits[0];
       bids2 = adUnit2.bids;
@@ -121,5 +125,4 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
   });
-
 });

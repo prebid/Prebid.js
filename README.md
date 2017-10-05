@@ -2,198 +2,219 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
 [![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
+[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
+[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
 
-Prebid.js
-========
+# Prebid.js
 
-> Setup and manage header bidding advertising partners without writing code or confusing line items. Prebid.js is open source and free.
+> A free and open source library for publishers to quickly implement header bidding.
 
-Many SSPs, bidders, and publishers have all contributed to this project.
-
-Check out the overview and documentation at http://prebid.org.
-
-No more week-long development. Header bidding is made easy by prebid.js :)
+This README is for developers who want to contribute to Prebid.js.
+Additional documentation can be found at [the Prebid homepage](http://prebid.org).
+Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
 **Table of Contents**
 
-- [Prebid.js](#)
-    - [Usage](#usage)
-        - [Download the latest released code](#download-the-latest-released-code)
-        - [Example code](#example-code)
-    - [API](#api)
-    - [Contribute](#contribute)
-        - [Add a Bidder Adapter](#add-a-bidder-adapter)
-        - [install](#install)
-        - [Build](#build)
-        - [Configure](#configure)
-        - [Run](#run)
+- [Install](#Install)
+- [Build](#Build)
+- [Run](#Run)
+- [Contribute](#Contribute)
 
+<a name="Install"></a>
 
-Usage
-----------
-Download the integration example [here](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/pbjs_example_gpt.html).
+## Install
 
-### Download the latest released code ###
-[See the releases page here](https://github.com/prebid/Prebid.js/releases) and download a copy.
+    $ git clone https://github.com/prebid/Prebid.js.git
+    $ cd Prebid.js
+    $ yarn install
 
-### Example code ###
+Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
 
-**Include the prebid.js library**
-Note that you need to host `prebid.js` locally or on a CDN and update the reference in the code snippet below for `cdn.host.com/prebid.min.js
-```javascript
-(function () {
-    var d = document;
-    var pbs = d.createElement('script');
-    pbs.type = 'text/javascript';
-    //replace with your CDN hosted version. HTTPS is strongly recommended.
-    pbs.src = '//cdn.host.com/prebid.min.js';
-    var target = d.getElementsByTagName('script')[0];
-    target.parentNode.insertBefore(pbs, target);
-})();
-```
+For more info, see [the Yarn documentation](https://yarnpkg.com).
 
-**Setup ad units**
-```javascript
-pbjs.que.push(function(){
-    var adUnits = [{
-        code: '{id}',
-        sizes: [[300, 250], [300, 600]],
-        bids: [
-            {
-                bidder: 'appnexus',
-                params: {
-                    placementId: '{id}'
-                }
-            }
-        ]
-    }];
-    //add the adUnits
-    pbjs.addAdUnits(adUnits);
-});
-```
+*Note:* You need to have `NodeJS` 4.x or greater installed.
 
-**Request Bids**
-```javascript
-pbjs.que.push(function(){
-    pbjs.requestBids({
-        bidsBackHandler: function(bidResponses) {
-            //do stuff when the bids are back
-        }
-    })
-});
-```
+<a name="Build"></a>
 
-**See Console Debug Errors during testing**
-By default console errors are suppressed. To enabled add `?pbjs_debug=true` to the end of the URL
- for testing.
+## Build for Development
 
-API
-----------
-Full Developer API reference:
-
-[Click here to access the API](http://prebid.org/dev-docs/publisher-api-reference.html)
-
-Contribute
-----------
-**Note:** You need to have at least `node.js 4.x` or greater installed to be able to run the gulp build commands.
-
-### Add a Bidder Adapter ###
-Follow the [guide outlined here](http://prebid.org/dev-docs/bidder-adaptor.html) to add an adapter.
-
-### Install ###
-    $ npm install
-
-If you experience errors, after a version update, try a fresh install:
-
-    $ rm -rf ./node_modules && npm cache clean && npm install
-
-### Build ###
-    $ gulp build
-
-Runs code quality checks, generates prebid.js files and creates zip archive distributable:
-
-   `./build/dev/prebid.js` Full source code for dev and debug
-    `./build/dev/prebid.js.map` Source map for dev and debug
-    `./build/dist/prebid.js` Minified production code
-    `./prebid.js_<version>.zip` Distributable
-
-Code quality is defined by `./.jscs` and `./.jshint` files and errors are reported in the
-terminal. The build will continue with quality errors, however. If you are contributing code
-you can configure your editor with the provided .jscs and .jshint settings.
-
-### Configure ###
-Edit example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
-
-1. Change `{id}` values appropriately to set up ad units and bidders.
-
-1. Set path for prebid.js in your example file:
-   #####Development `pbs.src = './build/dev/prebid.js';` #####
-    ```javascript
-    (function() {
-            var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-            pbs.type = 'text/javascript';
-            pbs.src = ((pro === 'https:') ? 'https' : 'http') + ':./build/dev/prebid.js';
-            var target = document.getElementsByTagName('head')[0];
-            target.insertBefore(pbs, target.firstChild);
-    })();
-    ```
-   #####Test/Deploy (default) `pbs.src = './build/dist/prebid.js';`#####
-    ```javascript
-    (function() {
-            var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
-            pbs.type = 'text/javascript';
-            pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
-            var target = document.getElementsByTagName('head')[0];
-            target.insertBefore(pbs, target.firstChild);
-    })();
-    ```
-1. (optional optimization) Edit `./package.json` to set the adapters you want to build with:
-
-    ```json
-        "adapters": [
-            "adform",
-            "aol",
-            "appnexus",
-            "indexExchange",
-            "openx",
-            "pubmatic",
-            "pulsepoint",
-            "rubicon",
-            "rubiconLegacy",
-            "sovrn",
-            "springserve",
-            "yieldbot"
-  ]
-    ```
-
-### Run ###
+To build the project on your local machine, run:
 
     $ gulp serve
 
-This runs code quality checks, generates prebid files and starts a webserver at
-`http://localhost:9999` serving from project root. Navigate to your example implementation to test,
-and if your prebid.js file is sourced from the `./build/dev` directory you will have sourcemaps
-available in browser developer tools.
+This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
 
-Navigate to `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html` to run the
-example file.
++ `./build/dev/prebid.js` - Full source code for dev and debug
++ `./build/dev/prebid.js.map` - Source map for dev and debug
++ `./build/dist/prebid.js` - Minified production code
++ `./prebid.js_<version>.zip` - Distributable zip archive
 
-Navigate to `http://localhost:9999/build/coverage/karma_html/report` to view a test coverage report.
+### Build Optimization
 
-A watch is also in place that will run continuous tests in the terminal as you edit code and
-tests.
+The standard build output contains all the available modules from within the `modules` folder.
 
-### Unit Test In the Browser ###
-    $ gulp test --watch
+You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
-This will run tests and keep the Karma test browser open. If your prebid.js file is sourced from
-the build/dev directory you will also have sourcemaps available when viewing browser developer
-tools. Access the Karma debug page at:
-`http://localhost:9876/debug.html`
-View console for test results and developer tools to set breakpoints in source code.
+For example, when running the serve command: `gulp serve --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter`
 
-Detailed code coverage reporting can be generated explicitly with `$ gulp test --coverage` and
-results found in `./build/coverage`.
+Building with just these adapters will result in a smaller bundle which should allow your pages to load faster.
 
-### Supported Browsers ###
-Prebid.js is supported on IE9+ and modern browsers.
+**Build standalone prebid.js**
+Prebid now supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+
+For more info about yarn see https://yarnpkg.com
+
+- Clone the repo, run `yarn install`
+- Then run the build:
+
+        $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
+        
+Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
+
+    $ gulp build --modules=modules.json
+        
+With `modules.json` containing the following
+```json modules.json
+[
+  "openxBidAdapter",
+  "rubiconBidAdapter",
+  "sovrnBidAdapter"
+]
+```
+
+**Build prebid.js using Yarn for bundling**
+
+In case you'd like to explicitly show that your project uses `prebid.js` and want a reproducible build, consider adding it as an `yarn` dependency.
+
+- Add `prebid.js` as a `yarn` dependency of your project: `yarn add prebid.js`
+- Run the `prebid.js` build under the `node_modules/prebid.js/` folder
+
+        $ gulp build --modules=path/to/your/list-of-modules.json
+
+Most likely your custom `prebid.js` will only change when there's:
+
+- A change in your list of modules
+- A new release of `prebid.js`
+
+Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
+
+<a name="Run"></a>
+
+## Test locally
+
+To lint the code:
+
+```bash
+gulp lint
+```
+
+To run the unit tests:
+
+```bash
+gulp test
+```
+
+To generate and view the code coverage reports:
+
+```bash
+gulp test-coverage
+gulp view-coverage
+```
+
+For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+
+1. Change `{id}` values appropriately to set up ad units and bidders
+2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+
+For development:
+
+```javascript
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dev/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
+```
+
+For deployment:
+
+```javascript
+(function() {
+    var d = document, pbs = d.createElement('script'), pro = d.location.protocol;
+    pbs.type = 'text/javascript';
+    pbs.src = ((pro === 'https:') ? 'https' : 'http') + './build/dist/prebid.js';
+    var target = document.getElementsByTagName('head')[0];
+    target.insertBefore(pbs, target.firstChild);
+})();
+```
+
+Build and run the project locally with:
+
+```bash
+gulp serve
+```
+
+This runs `lint` and `test`, then starts a web server at `http://localhost:9999` serving from the project root.
+Navigate to your example implementation to test, and if your `prebid.js` file is sourced from the `./build/dev`
+directory you will have sourcemaps available in your browser's developer tools.
+
+To run the example file, go to:
+
++ `http://localhost:9999/integrationExamples/gpt/pbjs_example_gpt.html`
+
+As you make code changes, the bundles will be rebuilt and the page reloaded automatically.
+
+<a name="Contribute"></a>
+
+## Contribute
+
+Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+
+For guidelines, see [Contributing](./CONTRIBUTING.md).
+
+Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tree/master/pr_review.md).
+
+### Add a Bidder Adapter
+
+To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
+
+Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
+
+### Code Quality
+
+Code quality is defined by `.eslintrc` and errors are reported in the terminal.
+
+If you are contributing code, you should [configure your editor](http://eslint.org/docs/user-guide/integrations#editors) with the provided `.eslintrc` settings.
+
+### Unit Testing with Karma
+
+        $ gulp test --watch --browsers=chrome
+
+This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
+
++ To access the Karma debug page, go to `http://localhost:9876/debug.html`
+
++ For test results, see the console
+
++ To set breakpoints in source code, see the developer tools
+
+Detailed code coverage reporting can be generated explicitly with
+
+        $ gulp test --coverage
+
+The results will be in
+
+        ./build/coverage
+
+*Note*: Starting in June 2016, all pull requests to Prebid.js need to include tests with greater than 80% code coverage before they can be merged.  For more information, see [#421](https://github.com/prebid/Prebid.js/issues/421).
+
+For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://prebid.org/dev-docs/testing-prebid.html).
+
+### Supported Browsers
+
+Prebid.js is supported on IE10+ and modern browsers.
+
+### Governance
+Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

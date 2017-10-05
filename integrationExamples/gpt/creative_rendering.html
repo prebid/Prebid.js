@@ -1,16 +1,16 @@
 <!-- #1 deprecated method - use preferred method below  instead-->
 <script>
-    try{ window.top.pbjs.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
+    try{ window.top.$$PREBID_GLOBAL$$.renderAd(document, '%%PATTERN:hb_adid%%'); } catch(e) {/*ignore*/}
 </script>
 
-<!-- #2 preferred method for showing ad - handles cases when pbjs is not in the top window -->
+<!-- #2 preferred method for showing ad - handles cases when $$PREBID_GLOBAL$$ is not in the top window -->
 <script>
 var w = window;
 for (i = 0; i < 10; i++) {
   w = w.parent;
-  if (w.pbjs) {
+  if (w.$$PREBID_GLOBAL$$) {
     try {
-      w.pbjs.renderAd(document, '%%PATTERN:hb_adid%%');
+      w.$$PREBID_GLOBAL$$.renderAd(document, '%%PATTERN:hb_adid%%');
       break;
     } catch (e) {
       continue;
