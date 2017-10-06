@@ -42,8 +42,8 @@ describe('AdButler adapter', () => {
         {
           bidder: 'adbutler',
           params: {
-            accountID: "167283",
-            zoneID: "210093",
+            accountID: '167283',
+            zoneID: '210093',
             keyword: 'red',
             minCPM: '1.00',
             maxCPM: '5.00'
@@ -67,7 +67,6 @@ describe('AdButler adapter', () => {
   });
 
   describe('implementation', () => {
-
     let adapter,
       bids,
       addBidResponseAction;
@@ -83,29 +82,22 @@ describe('AdButler adapter', () => {
           addBidResponseAction = undefined;
         }
       });
-
     });
 
     describe('for requests', () => {
-
       let validateBidsSpy;
 
       beforeEach(() => {
-
         validateBidsSpy = sandbox.spy(spec, 'isBidRequestValid');
-
       });
 
       it('should validate bids', () => {
-
         adapter.callBids(bidderRequest);
 
         sinon.assert.called(validateBidsSpy);
-
       });
 
       it('should reject invalid bid', () => {
-
         let invalidBid = {
             bidder: 'adbutler',
             params: {
@@ -115,7 +107,6 @@ describe('AdButler adapter', () => {
           isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
-
       });
 
       it('should use custom domain string', () => {
@@ -144,31 +135,26 @@ describe('AdButler adapter', () => {
         expect(requestURL).to.have.string('.dan.test');
       });
 
-      it('should set default domain', () =>{
-
+      it('should set default domain', () => {
         adapter.callBids(bidderRequest);
 
         let request = sandbox.server.requests[0];
         let [domain] = request.url.split('/adserve/');
 
         expect(domain).to.equal('http://servedbyadbutler.com');
-
       });
 
-      it('should set the keyword parameter', () =>{
+      it('should set the keyword parameter', () => {
         adapter.callBids(bidderRequest);
 
         let requestURL = sandbox.server.requests[0].url;
 
         expect(requestURL).to.have.string(';kw=red;');
       });
-
     });
 
-    describe('bid responses', () =>{
-
-      it('should return complete bid response', () =>{
-
+    describe('bid responses', () => {
+      it('should return complete bid response', () => {
         let response = {
           status: 'SUCCESS',
           account_id: 167283,
@@ -199,10 +185,9 @@ describe('AdButler adapter', () => {
         expect(bids[0].netRevenue).to.equal(true);
         expect(bids[0].ad).to.have.length.above(1);
         expect(bids[0].ad).to.have.string('http://tracking.pixel.com/params=info');
-
       });
 
-      it('should return empty bid response', () =>{
+      it('should return empty bid response', () => {
         let response = {
           status: 'NO_ELIGIBLE_ADS',
           zone_id: 210083,
@@ -220,11 +205,9 @@ describe('AdButler adapter', () => {
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
         expect(bids[0].bidderCode).to.equal('adbutler');
-
       });
 
       it('should return empty bid response on incorrect size', () => {
-
         let response = {
           status: 'SUCCESS',
           account_id: 167283,
@@ -246,7 +229,6 @@ describe('AdButler adapter', () => {
       });
 
       it('should return empty bid response with CPM too low', () => {
-
         let response = {
           status: 'SUCCESS',
           account_id: 167283,
@@ -268,7 +250,6 @@ describe('AdButler adapter', () => {
       });
 
       it('should return empty bid response with CPM too high', () => {
-
         let response = {
           status: 'SUCCESS',
           account_id: 167283,
@@ -288,9 +269,6 @@ describe('AdButler adapter', () => {
         expect(bids).to.be.lengthOf(1);
         expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
       });
-
     });
-
   });
-
 });
