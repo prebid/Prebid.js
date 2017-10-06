@@ -20,41 +20,55 @@ describe('s2sTesting', function () {
       expect(getExpectedSource(0.5, {})).to.be.undefined;
       expect(getExpectedSource(0.9999, {})).to.be.undefined;
     });
+
     it('returns undefined if no weights', () => {
       expect(getExpectedSource(0, {server: 0, client: 0})).to.be.undefined;
-      expect(getExpectedSource(0.5, {both: 0})).to.be.undefined;
+      expect(getExpectedSource(0.5, {client: 0})).to.be.undefined;
     });
+
     it('gets the expected source from 3 sources', () => {
-      expect(getExpectedSource(0, {server: 1, client: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(0.2499999, {server: 1, client: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(0.25, {server: 1, client: 1, both: 2})).to.equal('client');
-      expect(getExpectedSource(0.49999, {server: 1, client: 1, both: 2})).to.equal('client');
-      expect(getExpectedSource(0.5, {server: 1, client: 1, both: 2})).to.equal('both');
-      expect(getExpectedSource(0.99999, {server: 1, client: 1, both: 2})).to.equal('both');
+      var sources = ['server', 'client', 'both'];
+      expect(getExpectedSource(0, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
+      expect(getExpectedSource(0.2499999, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
+      expect(getExpectedSource(0.25, {server: 1, client: 1, both: 2}, sources)).to.equal('client');
+      expect(getExpectedSource(0.49999, {server: 1, client: 1, both: 2}, sources)).to.equal('client');
+      expect(getExpectedSource(0.5, {server: 1, client: 1, both: 2}, sources)).to.equal('both');
+      expect(getExpectedSource(0.99999, {server: 1, client: 1, both: 2}, sources)).to.equal('both');
     });
+
     it('gets the expected source from 2 sources', () => {
       expect(getExpectedSource(0, {server: 2, client: 3})).to.equal('server');
       expect(getExpectedSource(0.39999, {server: 2, client: 3})).to.equal('server');
       expect(getExpectedSource(0.4, {server: 2, client: 3})).to.equal('client');
       expect(getExpectedSource(0.9, {server: 2, client: 3})).to.equal('client');
+      var sources = ['server', 'client', 'both'];
+      expect(getExpectedSource(0, {server: 2, client: 3}, sources)).to.equal('server');
+      expect(getExpectedSource(0.39999, {server: 2, client: 3}, sources)).to.equal('server');
+      expect(getExpectedSource(0.4, {server: 2, client: 3}, sources)).to.equal('client');
+      expect(getExpectedSource(0.9, {server: 2, client: 3}, sources)).to.equal('client');
     });
+
     it('gets the expected source from 1 source', () => {
-      expect(getExpectedSource(0, {both: 2})).to.equal('both');
-      expect(getExpectedSource(0.5, {both: 2})).to.equal('both');
-      expect(getExpectedSource(0.99999, {both: 2})).to.equal('both');
+      expect(getExpectedSource(0, {client: 2})).to.equal('client');
+      expect(getExpectedSource(0.5, {client: 2})).to.equal('client');
+      expect(getExpectedSource(0.99999, {client: 2})).to.equal('client');
     });
+
     it('ignores an invalid source', () => {
-      expect(getExpectedSource(0, {both: 2, cache: 2})).to.equal('both');
-      expect(getExpectedSource(0.3333, {server: 1, cache: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(0.34, {server: 1, cache: 1, both: 2})).to.equal('both');
+      expect(getExpectedSource(0, {client: 2, cache: 2})).to.equal('client');
+      expect(getExpectedSource(0.3333, {server: 1, cache: 1, client: 2})).to.equal('server');
+      expect(getExpectedSource(0.34, {server: 1, cache: 1, client: 2})).to.equal('client');
     });
+
     it('ignores order of sources', () => {
-      expect(getExpectedSource(0, {client: 1, server: 1, both: 2})).to.equal('server');
-      expect(getExpectedSource(0.2499999, {both: 2, client: 1, server: 1})).to.equal('server');
-      expect(getExpectedSource(0.25, {client: 1, both: 2, server: 1})).to.equal('client');
-      expect(getExpectedSource(0.49999, {server: 1, both: 2, client: 1})).to.equal('client');
-      expect(getExpectedSource(0.5, {both: 2, server: 1, client: 1})).to.equal('both');
+      var sources = ['server', 'client', 'both'];
+      expect(getExpectedSource(0, {client: 1, server: 1, both: 2}, sources)).to.equal('server');
+      expect(getExpectedSource(0.2499999, {both: 2, client: 1, server: 1}, sources)).to.equal('server');
+      expect(getExpectedSource(0.25, {client: 1, both: 2, server: 1}, sources)).to.equal('client');
+      expect(getExpectedSource(0.49999, {server: 1, both: 2, client: 1}, sources)).to.equal('client');
+      expect(getExpectedSource(0.5, {both: 2, server: 1, client: 1}, sources)).to.equal('both');
     });
+
     it('accepts an array of sources', () => {
       expect(getExpectedSource(0.3333, {second: 2, first: 1}, ['first', 'second'])).to.equal('first');
       expect(getExpectedSource(0.34, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
@@ -93,18 +107,6 @@ describe('s2sTesting', function () {
         });
       });
 
-      it('sets one bidder with "both"', () => {
-        config.setConfig({s2sConfig: {
-          bidders: ['rubicon'],
-          testing: true,
-          bidderControl: {rubicon: {bidSource: {server: 1, client: 1, both: 2}}}
-        }});
-        expect(getSourceBidderMap()).to.eql({
-          server: ['rubicon'],
-          client: ['rubicon']
-        });
-      });
-
       it('sets one server bidder', () => {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon'],
@@ -133,12 +135,12 @@ describe('s2sTesting', function () {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
-            rubicon: {bidSource: {server: 2, client: 2, both: 1}},
-            appnexus: {bidSource: {server: 1, client: 1, both: 2}}
+            rubicon: {bidSource: {server: 3, client: 1}},
+            appnexus: {bidSource: {server: 1, client: 1}}
           }}});
         var serverClientBidders = getSourceBidderMap();
-        expect(serverClientBidders.server).to.eql(['appnexus']);
-        expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
+        expect(serverClientBidders.server).to.eql(['rubicon']);
+        expect(serverClientBidders.client).to.have.members(['appnexus']);
       });
     });
 
@@ -166,16 +168,16 @@ describe('s2sTesting', function () {
 
         adUnits = [
           {bids: [
-            {bidder: 'rubicon', bidSource: {server: 1, both: 1}}
+            {bidder: 'rubicon', bidSource: {server: 1, client: 1}}
           ]}
         ];
         expect(getSourceBidderMap(adUnits)).to.eql({
-          server: ['rubicon'],
+          server: [],
           client: ['rubicon']
         });
         // should have saved the source on the bid
-        expect(adUnits[0].bids[0].calcSource).to.equal('both');
-        expect(adUnits[0].bids[0].finalSource).to.equal('both');
+        expect(adUnits[0].bids[0].calcSource).to.equal('client');
+        expect(adUnits[0].bids[0].finalSource).to.equal('client');
       });
 
       it('defaults to client if no bidSource', () => {
@@ -196,39 +198,40 @@ describe('s2sTesting', function () {
       it('sets multiple bidders sources from one adUnit', () => {
         var adUnits = [
           {bids: [
-            {bidder: 'rubicon', bidSource: {server: 2, client: 2, both: 1}},
-            {bidder: 'appnexus', bidSource: {server: 1, client: 1, both: 2}}
+            {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
+            {bidder: 'appnexus', bidSource: {server: 3, client: 1}}
           ]}
         ];
         var serverClientBidders = getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.eql(['appnexus']);
-        expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
+        expect(serverClientBidders.client).to.have.members(['rubicon']);
         // should have saved the source on the bid
         expect(adUnits[0].bids[0].calcSource).to.equal('client');
         expect(adUnits[0].bids[0].finalSource).to.equal('client');
-        expect(adUnits[0].bids[1].calcSource).to.equal('both');
-        expect(adUnits[0].bids[1].finalSource).to.equal('both');
+        expect(adUnits[0].bids[1].calcSource).to.equal('server');
+        expect(adUnits[0].bids[1].finalSource).to.equal('server');
       });
 
       it('sets multiple bidders sources from multiple adUnits', () => {
         var adUnits = [
           {bids: [
-            {bidder: 'rubicon', bidSource: {server: 2, client: 2, both: 1}},
-            {bidder: 'appnexus', bidSource: {server: 1, client: 1, both: 2}}
+            {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
+            {bidder: 'appnexus', bidSource: {server: 1, client: 1}}
           ]},
           {bids: [
-            {bidder: 'rubicon', bidSource: {server: 4, both: 1}},
+            {bidder: 'rubicon', bidSource: {server: 4, client: 1}},
             {bidder: 'bidder3', bidSource: {client: 1}}
           ]}
         ];
         var serverClientBidders = getSourceBidderMap(adUnits);
-        expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);
+        expect(serverClientBidders.server).to.have.members(['rubicon']);
+        expect(serverClientBidders.server).to.not.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus', 'bidder3']);
         // should have saved the source on the bid
         expect(adUnits[0].bids[0].calcSource).to.equal('client');
         expect(adUnits[0].bids[0].finalSource).to.equal('client');
-        expect(adUnits[0].bids[1].calcSource).to.equal('both');
-        expect(adUnits[0].bids[1].finalSource).to.equal('both');
+        expect(adUnits[0].bids[1].calcSource).to.equal('client');
+        expect(adUnits[0].bids[1].finalSource).to.equal('client');
         expect(adUnits[1].bids[0].calcSource).to.equal('server');
         expect(adUnits[1].bids[0].finalSource).to.equal('server');
         expect(adUnits[1].bids[1].calcSource).to.equal('client');
@@ -238,19 +241,22 @@ describe('s2sTesting', function () {
       it('should reuse calculated sources', () => {
         var adUnits = [
           {bids: [
-            {bidder: 'rubicon', calcSource: 'both', bidSource: {server: 4, client: 1}},
-            {bidder: 'appnexus', calcSource: 'client', bidSource: {server: 4, client: 1}},
+            {bidder: 'rubicon', calcSource: 'client', bidSource: {server: 4, client: 1}},
+            {bidder: 'appnexus', calcSource: 'server', bidSource: {server: 1, client: 1}},
             {bidder: 'bidder3', calcSource: 'server', bidSource: {client: 1}}
           ]}
         ];
         var serverClientBidders = getSourceBidderMap(adUnits);
-        expect(serverClientBidders.server).to.have.members(['rubicon', 'bidder3']);
-        expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
+
+        expect(serverClientBidders.server).to.have.members(['appnexus', 'bidder3']);
+        expect(serverClientBidders.server).to.not.have.members(['rubicon']);
+        expect(serverClientBidders.client).to.have.members(['rubicon']);
+        expect(serverClientBidders.client).to.not.have.members(['appnexus', 'bidder3']);
         // should have saved the source on the bid
-        expect(adUnits[0].bids[0].calcSource).to.equal('both');
-        expect(adUnits[0].bids[0].finalSource).to.equal('both');
-        expect(adUnits[0].bids[1].calcSource).to.equal('client');
-        expect(adUnits[0].bids[1].finalSource).to.equal('client');
+        expect(adUnits[0].bids[0].calcSource).to.equal('client');
+        expect(adUnits[0].bids[0].finalSource).to.equal('client');
+        expect(adUnits[0].bids[1].calcSource).to.equal('server');
+        expect(adUnits[0].bids[1].finalSource).to.equal('server');
         expect(adUnits[0].bids[2].calcSource).to.equal('server');
         expect(adUnits[0].bids[2].finalSource).to.equal('server');
       });
@@ -278,7 +284,7 @@ describe('s2sTesting', function () {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
-            rubicon: {bidSource: {server: 2, client: 2, both: 1}},
+            rubicon: {bidSource: {server: 2, client: 1}},
             appnexus: {bidSource: {server: 1}}
           }
         }});
@@ -313,10 +319,10 @@ describe('s2sTesting', function () {
       })).to.be.undefined;
     }
 
-    function checkTargetingVal(requestId, bidderCode, expectedVal) {
-      var targeting = window.pbjs.bidderSettings[bidderCode][AST];
+    function checkTargetingVal(bidResponse, expectedVal) {
+      var targeting = window.pbjs.bidderSettings[bidResponse.bidderCode][AST];
       var targetingFunc = targeting[targeting.length - 1].val;
-      expect(targetingFunc({requestId, bidderCode})).to.equal(expectedVal);
+      expect(targetingFunc(bidResponse)).to.equal(expectedVal);
     }
 
     beforeEach(() => {
@@ -335,7 +341,7 @@ describe('s2sTesting', function () {
         bidders: ['rubicon', 'appnexus'],
         testing: true,
         bidderControl: {
-          rubicon: {bidSource: {server: 2, client: 2, both: 1}},
+          rubicon: {bidSource: {server: 2, client: 1}},
           appnexus: {bidSource: {server: 1}}
         }
       }});
@@ -363,12 +369,8 @@ describe('s2sTesting', function () {
       }});
       checkTargeting('rubicon');
       checkTargeting('appnexus');
-
-      events.emit(BID_ADJUSTMENT, {requestId: 1234, bidder: 'rubicon', source: 'server'});
-      checkTargetingVal(1234, 'rubicon', 'server');
-
-      events.emit(BID_ADJUSTMENT, {requestId: 1234, bidder: 'appnexus', source: 'client'});
-      checkTargetingVal(1234, 'appnexus', 'client');
+      checkTargetingVal({bidderCode: 'rubicon', source: 'server'}, 'server');
+      checkTargetingVal({bidderCode: 'appnexus', source: 'client'}, 'client');
 
       // turn off appnexus
       config.setConfig({s2sConfig: {
@@ -381,11 +383,7 @@ describe('s2sTesting', function () {
       }});
       checkTargeting('rubicon');
       checkNoTargeting('appnexus');
-
-      events.emit(BID_ADJUSTMENT, {requestId: 4321, bidder: 'rubicon', source: 'client'});
-      events.emit(BID_ADJUSTMENT, {requestId: 4321, bidder: 'appnexus', source: 'client'});
-      checkTargetingVal(4321, 'rubicon', 'client');
-      checkNoTargeting('appnexus');
+      checkTargetingVal({bidderCode: 'rubicon', source: 'client'}, 'client');
 
       // should default to "client"
       config.setConfig({s2sConfig: {
@@ -398,20 +396,12 @@ describe('s2sTesting', function () {
       }});
       checkTargeting('rubicon');
       checkTargeting('appnexus');
-
-      events.emit(BID_ADJUSTMENT, {requestId: 5678, bidder: 'rubicon'});
-      events.emit(BID_ADJUSTMENT, {requestId: 5678, bidder: 'appnexus', source: ''});
-      checkTargetingVal(5678, 'rubicon', 'client');
-      checkTargetingVal(5678, 'appnexus', 'client');
+      checkTargetingVal({bidderCode: 'rubicon'}, 'client');
+      checkTargetingVal({bidderCode: 'appnexus'}, 'client');
     });
 
-    it('should keep requests separate', () => {});
-
-    it('should log an error if there are multiple requests with the same src', () => {});
-
-    it('should reset adServerTargeting when new a config is set', () => {});
-
-    it('should handle "both" client and server requests from the same bidder', () => {
+    it('should reset adServerTargeting when a new config is set', () => {
+      // set config with targeting
       config.setConfig({s2sConfig: {
         bidders: ['rubicon', 'appnexus'],
         testing: true,
@@ -423,13 +413,13 @@ describe('s2sTesting', function () {
       checkTargeting('rubicon');
       checkTargeting('appnexus');
 
-      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'rubicon', source: 's2s'});
-      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'appnexus', source: 'client'});
-      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'rubicon', source: 'client'});
-      events.emit(BID_ADJUSTMENT, {requestId: 1111, bidder: 'appnexus', source: 'client'});
-
-      checkTargetingVal(1111, 'rubicon', 'both');
-      checkTargetingVal(1111, 'appnexus', 'client');
+      // set config without targeting
+      config.setConfig({s2sConfig: {
+        bidders: ['rubicon', 'appnexus'],
+        testing: true
+      }});
+      checkNoTargeting('rubicon');
+      checkNoTargeting('appnexus');
     });
   });
 });
