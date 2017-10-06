@@ -3,6 +3,7 @@ import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
 const CONFIG = {
   enabled: true,
@@ -81,4 +82,58 @@ describe('adapterManager tests', () => {
       expect(spy.called).to.equal(false);
     });
   })
+
+  describe('aliasBidderAdaptor', function() {
+    const CODE = 'sampleBidder';
+
+    // Note: remove this describe once Prebid is 1.0
+    describe('old way', function() {
+      let originalRegistry;
+
+      function SampleAdapter() {
+        return Object.assign(this, {
+          callBids: sinon.stub(),
+          setBidderCode: sinon.stub()
+        });
+      }
+
+      before(() => {
+        originalRegistry = AdapterManager.bidderRegistry;
+        AdapterManager.bidderRegistry[CODE] = new SampleAdapter();
+      });
+
+      after(() => {
+        AdapterManager.bidderRegistry = originalRegistry;
+      });
+
+      it('should add alias to registry', () => {
+        const alias = 'testalias';
+        AdapterManager.aliasBidAdapter(CODE, alias);
+        expect(AdapterManager.bidderRegistry).to.have.property(alias);
+      });
+    });
+
+    describe('using bidderFactory', function() {
+      let spec;
+
+      beforeEach(() => {
+        spec = {
+          code: CODE,
+          isBidRequestValid: () => {},
+          buildRequests: () => {},
+          interpretResponse: () => {},
+          getUserSyncs: () => {}
+        };
+      });
+
+      it('should add alias to registry when original adapter is using bidderFactory', function() {
+        let thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
+        registerBidder(thisSpec);
+        const alias = 'aliasBidder';
+        AdapterManager.aliasBidAdapter(CODE, alias);
+        expect(AdapterManager.bidderRegistry).to.have.property(alias);
+        expect(AdapterManager.videoAdapters).to.include(alias);
+      });
+    });
+  });
 });
