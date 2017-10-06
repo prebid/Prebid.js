@@ -1,71 +1,60 @@
+/* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
-import PulsePointAdapter from 'modules/pulsepointLiteBidAdapter';
+import {spec} from 'modules/pulsepointLiteBidAdapter';
 import bidManager from 'src/bidmanager';
 import {getTopWindowLocation} from 'src/utils';
-import * as ajax from 'src/ajax';
+import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('PulsePoint Lite Adapter Tests', () => {
-  let pulsepointAdapter = new PulsePointAdapter();
-  let slotConfigs;
-  let nativeSlotConfig;
-  let ajaxStub;
+  const slotConfigs = [{
+    placementCode: '/DfpAccount1/slot1',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '300x250'
+    }
+  }, {
+    placementCode: '/DfpAccount2/slot2',
+    bidId: 'bid23456',
+    params: {
+      cp: 'p10000',
+      ct: 't20000',
+      cf: '728x90'
+    }
+  }];
+  const nativeSlotConfig = [{
+    placementCode: '/DfpAccount1/slot3',
+    bidId: 'bid12345',
+    nativeParams: {
+      title: { required: true, len: 200 },
+      image: { wmin: 100 },
+      sponsoredBy: { }
+    },
+    params: {
+      cp: 'p10000',
+      ct: 't10000'
+    }
+  }];
+  const appSlotConfig = [{
+    placementCode: '/DfpAccount1/slot3',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      app: {
+        bundle: 'com.pulsepoint.apps',
+        storeUrl: 'http://pulsepoint.com/apps',
+        domain: 'pulsepoint.com',
+      }
+    }
+  }];
 
-  beforeEach(() => {
-    sinon.stub(bidManager, 'addBidResponse');
-    ajaxStub = sinon.stub(ajax, 'ajax');
-
-    slotConfigs = {
-      bidderCode: 'pulseLite',
-      bids: [
-        {
-          placementCode: '/DfpAccount1/slot1',
-          bidId: 'bid12345',
-          params: {
-            cp: 'p10000',
-            ct: 't10000',
-            cf: '300x250'
-          }
-        }, {
-          placementCode: '/DfpAccount2/slot2',
-          bidId: 'bid23456',
-          params: {
-            cp: 'p10000',
-            ct: 't20000',
-            cf: '728x90'
-          }
-        }
-      ]
-    };
-    nativeSlotConfig = {
-      bidderCode: 'pulseLite',
-      bids: [
-        {
-          placementCode: '/DfpAccount1/slot3',
-          bidId: 'bid12345',
-          nativeParams: {
-            title: { required: true, len: 200 },
-            image: { wmin: 100 },
-            sponsoredBy: { }
-          },
-          params: {
-            cp: 'p10000',
-            ct: 't10000'
-          }
-        }
-      ]
-    };
-  });
-
-  afterEach(() => {
-    bidManager.addBidResponse.restore();
-    ajaxStub.restore();
-  });
-
-  it('Verify requests sent to PulsePoint', () => {
-    pulsepointAdapter.callBids(slotConfigs);
-    expect(ajaxStub.callCount).to.equal(1);
-    expect(ajaxStub.firstCall.args[0]).to.equal('http://bid.contextweb.com/header/ortb');
-    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
+  it('Verify build request', () => {
+    const request = spec.buildRequests(slotConfigs);
+    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
@@ -88,11 +77,10 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
   });
 
-  it('Verify bid', () => {
-    pulsepointAdapter.callBids(slotConfigs);
-    // trigger a mock ajax callback with bid.
-    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
-    ajaxStub.firstCall.args[1](JSON.stringify({
+  it('Verify parse response', () => {
+    const request = spec.buildRequests(slotConfigs);
+    const ortbRequest = JSON.parse(request.data);
+    const ortbResponse = {
       seatbid: [{
         bid: [{
           impid: ortbRequest.imp[0].id,
@@ -100,65 +88,40 @@ describe('PulsePoint Lite Adapter Tests', () => {
           adm: 'This is an Ad'
         }]
       }]
-    }));
-    expect(bidManager.addBidResponse.callCount).to.equal(2);
+    };
+    const bids = spec.interpretResponse(ortbResponse, request);
+    expect(bids).to.have.lengthOf(1);
     // verify first bid
-    let placement = bidManager.addBidResponse.firstCall.args[0];
-    let bid = bidManager.addBidResponse.firstCall.args[1];
-    expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('pulseLite');
+    const bid = bids[0];
     expect(bid.cpm).to.equal(1.25);
     expect(bid.ad).to.equal('This is an Ad');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.adId).to.equal('bid12345');
-    // verify passback on 2nd impression.
-    placement = bidManager.addBidResponse.secondCall.args[0];
-    bid = bidManager.addBidResponse.secondCall.args[1];
-    expect(placement).to.equal('/DfpAccount2/slot2');
-    expect(bid.adId).to.equal('bid23456');
-    expect(bid.bidderCode).to.equal('pulseLite');
-    expect(bid.cpm).to.be.undefined;
+    expect(bid.creative_id).to.equal('bid12345');
+    expect(bid.creativeId).to.equal('bid12345');
   });
 
   it('Verify full passback', () => {
-    pulsepointAdapter.callBids(slotConfigs);
-    // trigger a mock ajax callback with no bid.
-    ajaxStub.firstCall.args[1](null);
-    let placement = bidManager.addBidResponse.firstCall.args[0];
-    let bid = bidManager.addBidResponse.firstCall.args[1];
-    expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('pulseLite');
-    expect(bid).to.not.have.property('ad');
-    expect(bid).to.not.have.property('cpm');
-    expect(bid.adId).to.equal('bid12345');
-  });
-
-  it('Verify passback when ajax call fails', () => {
-    ajaxStub.throws();
-    pulsepointAdapter.callBids(slotConfigs);
-    let placement = bidManager.addBidResponse.firstCall.args[0];
-    let bid = bidManager.addBidResponse.firstCall.args[1];
-    expect(placement).to.equal('/DfpAccount1/slot1');
-    expect(bid.bidderCode).to.equal('pulseLite');
-    expect(bid).to.not.have.property('ad');
-    expect(bid).to.not.have.property('cpm');
-    expect(bid.adId).to.equal('bid12345');
+    const request = spec.buildRequests(slotConfigs);
+    const bids = spec.interpretResponse(null, request)
+    expect(bids).to.have.lengthOf(0);
   });
 
   it('Verify Native request', () => {
-    pulsepointAdapter.callBids(nativeSlotConfig);
-    expect(ajaxStub.callCount).to.equal(1);
-    expect(ajaxStub.firstCall.args[0]).to.equal('http://bid.contextweb.com/header/ortb');
-    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
+    const request = spec.buildRequests(nativeSlotConfig);
+    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
     // native impression
     expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.equal(null);
-    expect(ortbRequest.imp[0].native).to.not.equal(null);
-    expect(ortbRequest.imp[0].native.ver).to.equal('1.1');
-    expect(ortbRequest.imp[0].native.request).to.not.equal(null);
+    const nativePart = ortbRequest.imp[0]['native'];
+    expect(nativePart).to.not.equal(null);
+    expect(nativePart.ver).to.equal('1.1');
+    expect(nativePart.request).to.not.equal(null);
     // native request assets
-    const nativeRequest = JSON.parse(ortbRequest.imp[0].native.request);
+    const nativeRequest = JSON.parse(ortbRequest.imp[0]['native'].request);
     expect(nativeRequest).to.not.equal(null);
     expect(nativeRequest.assets).to.have.lengthOf(3);
     // title asset
@@ -184,22 +147,22 @@ describe('PulsePoint Lite Adapter Tests', () => {
   });
 
   it('Verify Native response', () => {
-    pulsepointAdapter.callBids(nativeSlotConfig);
-    expect(ajaxStub.callCount).to.equal(1);
-    expect(ajaxStub.firstCall.args[0]).to.equal('http://bid.contextweb.com/header/ortb');
-    const ortbRequest = JSON.parse(ajaxStub.firstCall.args[2]);
+    const request = spec.buildRequests(nativeSlotConfig);
+    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
     const nativeResponse = {
-      native: {
+      'native': {
         assets: [
           { title: { text: 'Ad Title'} },
           { data: { type: 1, value: 'Sponsored By: Brand' }},
           { img: { type: 3, url: 'http://images.cdn.brand.com/123' } }
         ],
         link: { url: 'http://brand.clickme.com/' },
-        imptrackers: [ 'http://imp1.trackme.com/', 'http://imp1.contextweb.com/' ]
+        imptrackers: ['http://imp1.trackme.com/', 'http://imp1.contextweb.com/']
       }
     };
-    ajaxStub.firstCall.args[1](JSON.stringify({
+    const ortbResponse = {
       seatbid: [{
         bid: [{
           impid: ortbRequest.imp[0].id,
@@ -207,28 +170,70 @@ describe('PulsePoint Lite Adapter Tests', () => {
           adm: JSON.stringify(nativeResponse)
         }]
       }]
-    }));
+    };
+    const bids = spec.interpretResponse(ortbResponse, request);
     // verify bid
-    let placement = bidManager.addBidResponse.firstCall.args[0];
-    let bid = bidManager.addBidResponse.firstCall.args[1];
-    expect(placement).to.equal('/DfpAccount1/slot3');
-    expect(bid.bidderCode).to.equal('pulseLite');
+    const bid = bids[0];
     expect(bid.cpm).to.equal(1.25);
     expect(bid.adId).to.equal('bid12345');
     expect(bid.ad).to.be.undefined;
     expect(bid.mediaType).to.equal('native');
-    expect(bid.native).to.not.equal(null);
-    expect(bid.native.title).to.equal('Ad Title');
-    expect(bid.native.sponsoredBy).to.equal('Sponsored By: Brand');
-    expect(bid.native.image).to.equal('http://images.cdn.brand.com/123');
-    expect(bid.native.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
-    expect(bid.native.impressionTrackers).to.have.lengthOf(2);
-    expect(bid.native.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
-    expect(bid.native.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
+    const nativeBid = bid['native'];
+    expect(nativeBid).to.not.equal(null);
+    expect(nativeBid.title).to.equal('Ad Title');
+    expect(nativeBid.sponsoredBy).to.equal('Sponsored By: Brand');
+    expect(nativeBid.image).to.equal('http://images.cdn.brand.com/123');
+    expect(nativeBid.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
+    expect(nativeBid.impressionTrackers).to.have.lengthOf(2);
+    expect(nativeBid.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
+    expect(nativeBid.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
 
-  it('Verify adapter interface', function () {
-    const adapter = new PulsePointAdapter();
-    expect(adapter).to.have.property('callBids');
+  it('Verifies bidder code', () => {
+    expect(spec.code).to.equal('pulseLite');
+  });
+
+  it('Verifies bidder aliases', () => {
+    expect(spec.aliases).to.have.lengthOf(1);
+    expect(spec.aliases[0]).to.equal('pulsepointLite');
+  });
+
+  it('Verifies supported media types', () => {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(1);
+    expect(spec.supportedMediaTypes[0]).to.equal('native');
+  });
+
+  it('Verifies if bid request valid', () => {
+    expect(spec.isBidRequestValid(slotConfigs[0])).to.equal(true);
+    expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
+    expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
+    expect(spec.isBidRequestValid({})).to.equal(false);
+    expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { ct: 123 } })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { cp: 123 } })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { ct: 123, cp: 234 }})).to.equal(true);
+  });
+
+  it('Verifies sync options', () => {
+    expect(spec.getUserSyncs({})).to.be.undefined;
+    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
+    const options = spec.getUserSyncs({ iframeEnabled: true});
+    expect(options).to.not.be.undefined;
+    expect(options).to.have.lengthOf(1);
+    expect(options[0].type).to.equal('iframe');
+    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+  });
+
+  it('Verify app requests', () => {
+    const request = spec.buildRequests(appSlotConfig);
+    const ortbRequest = JSON.parse(request.data);
+    // site object
+    expect(ortbRequest.site).to.equal(null);
+    expect(ortbRequest.app).to.not.be.null;
+    expect(ortbRequest.app.publisher).to.not.equal(null);
+    expect(ortbRequest.app.publisher.id).to.equal('p10000');
+    expect(ortbRequest.app.bundle).to.equal('com.pulsepoint.apps');
+    expect(ortbRequest.app.storeurl).to.equal('http://pulsepoint.com/apps');
+    expect(ortbRequest.app.domain).to.equal('pulsepoint.com');
   });
 });

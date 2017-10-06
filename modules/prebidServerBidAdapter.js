@@ -4,16 +4,15 @@ import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 import { ajax } from 'src/ajax';
 import { STATUS, S2S } from 'src/constants';
-import { userSync } from 'src/userSync.js';
 import { cookieSet } from 'src/cookie.js';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 const cookieSetUrl = 'https://acdn.adnxs.com/cookieset/cs.js';
+let _synced = false;
 
 /**
  * Try to convert a value to a type.
@@ -112,6 +111,7 @@ function PrebidServer() {
       tid: bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
+      secure: config.secure,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: bidRequest.ad_units.filter(hasSizes),
@@ -135,6 +135,27 @@ function PrebidServer() {
     return unit.sizes && unit.sizes.length;
   }
 
+  /**
+   * Run a cookie sync for the given type, url, and bidder
+   *
+   * @param {string} type the type of sync, "image", "redirect", "iframe"
+   * @param {string} url the url to sync
+   * @param {string} bidder name of bidder doing sync for
+   */
+  function doBidderSync(type, url, bidder) {
+    if (!url) {
+      utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+    } else if (type === 'image' || type === 'redirect') {
+      utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
+      utils.triggerPixel(url);
+    } else if (type == 'iframe') {
+      utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
+      utils.insertUserSyncIframe(url);
+    } else {
+      utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+    }
+  }
+
   /* Notify Prebid of bid responses so bids can get in the auction */
   function handleResponse(response, requestedBidders) {
     let result;
@@ -145,7 +166,7 @@ function PrebidServer() {
         if (result.bidder_status) {
           result.bidder_status.forEach(bidder => {
             if (bidder.no_cookie && !_cookiesQueued) {
-              userSync.registerSync(bidder.usersync.type, bidder.bidder, bidder.usersync.url);
+              doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder);
             }
           });
         }
@@ -214,12 +235,10 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
-    // filter synced bidders - https://github.com/prebid/Prebid.js/issues/1582
-    syncedList = bidderCodes.filter(bidder => !syncedList.includes(bidder));
-    if (syncedList.length === 0) {
+    if (_synced) {
       return;
     }
+    _synced = true;
     const payload = JSON.stringify({
       uuid: utils.generateUUID(),
       bidders: bidderCodes
@@ -230,7 +249,7 @@ function PrebidServer() {
         if (response.status === 'ok') {
           bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
         }
-        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
       } catch (e) {
         utils.logError(e);
       }
