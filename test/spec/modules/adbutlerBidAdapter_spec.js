@@ -1,516 +1,296 @@
-describe('adbutler adapter tests', function () {
-  var expect = require('chai').expect;
-  var adapter = require('modules/adbutlerBidAdapter');
-  var adLoader = require('src/adloader');
-  var bidmanager = require('src/bidmanager');
+import {expect} from 'chai';
+import adapterManager from 'src/adaptermanager';
+import bidManager from 'src/bidmanager';
+import {spec} from 'modules/adbutlerBidAdapter';
+import {parse as parseQuery} from 'querystring';
+import {newBidder} from 'src/adapters/bidderFactory';
 
-  describe('creation of bid url', function () {
-    var stubLoadScript;
+var CONSTANTS = require('src/constants.json');
 
-    beforeEach(function () {
-      stubLoadScript = sinon.stub(adLoader, 'loadScript');
-    });
+describe('AdButler adapter', () => {
+  let sandbox,
+    adUnit,
+    bidderRequest;
 
-    afterEach(function () {
-      stubLoadScript.restore();
-    });
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
 
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
+    sandbox.useFakeServer();
 
-    it('should be called', function () {
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
+    adUnit = {
+      code: '/19968336/header-bid-tag-1',
+      sizes: [[300, 250], [320, 50]],
+      bids: [
+        {
+          bidder: 'adbutler',
+          params: {
+            accountID: '167283',
+            zoneID: '210093',
+            keyword: 'red',
+            minCPM: '1.00',
+            maxCPM: '5.00'
           }
-
-        ]
-      };
-
-      adapter().callBids(params);
-
-      sinon.assert.called(stubLoadScript);
-    });
-
-    it('should populate the keyword', function() {
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093',
-              keyword: 'fish'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      adapter().callBids(params);
-
-      var requestURI = stubLoadScript.getCall(0).args[0];
-
-      expect(requestURI).to.have.string(';kw=fish;');
-    });
-
-    it('should use custom domain string', function() {
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '107878',
-              zoneID: '86133',
-              domain: 'servedbyadbutler.com.dan.test'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-        ]
-      };
-
-      adapter().callBids(params);
-
-      var requestURI = stubLoadScript.getCall(0).args[0];
-
-      expect(requestURI).to.have.string('.dan.test');
-    });
-  });
-  describe('bid responses', function() {
-    it('should return complete bid response', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var params = {
-        bidderCode: 'adbutler',
-        bidder: 'adbutler',
-        bids: [
-          {
-            bidId: '3c94018cdbf2f68-1',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093',
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210093,
-        cpm: 1.5,
-        width: 300,
-        height: 250,
-        place: 0
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/123456/header-bid-tag-1');
-      expect(bidObject1.getStatusCode()).to.equal(1);
-      expect(bidObject1.bidderCode).to.equal('adbutler');
-      expect(bidObject1.cpm).to.equal(1.5);
-      expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.height).to.equal(250);
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should return empty bid response', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-2',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210085',
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'NO_ELIGIBLE_ADS',
-        zone_id: 210085,
-        width: 728,
-        height: 90,
-        place: 0
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/123456/header-bid-tag-1');
-      expect(bidObject1.getStatusCode()).to.equal(2);
-      expect(bidObject1.bidderCode).to.equal('adbutler');
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should return empty bid response on incorrect size', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-3',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210085',
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210085,
-        cpm: 1.5,
-        width: 728,
-        height: 90,
-        place: 0
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject1.getStatusCode()).to.equal(2);
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should return empty bid response with CPM too low', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-4',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093',
-              minCPM: '5.00'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210093,
-        cpm: 1.5,
-        width: 300,
-        height: 250,
-        place: 0
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject1.getStatusCode()).to.equal(2);
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should return empty bid response with CPM too high', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-5',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093',
-              maxCPM: '1.00'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210093,
-        cpm: 1.5,
-        width: 300,
-        height: 250,
-        place: 0
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject1.getStatusCode()).to.equal(2);
-
-      stubAddBidResponse.restore();
-    });
+        }
+      ]
+    };
+
+    bidderRequest = {
+      bidderCode: 'adbutler',
+      requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+      bidderRequestId: '1c56ad30b9b8ca8',
+      bids: [
+        {
+          bidder: 'adbutler',
+          params: {
+            accountID: "167283",
+            zoneID: "210093",
+            keyword: 'red',
+            minCPM: '1.00',
+            maxCPM: '5.00'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        }
+      ],
+      start: 1472239426002,
+      auctionStart: 1472239426000,
+      timeout: 5000
+    };
   });
 
-  describe('ad code', function() {
-    it('should be populated', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-6',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210093,
-        cpm: 1.5,
-        width: 300,
-        height: 250,
-        place: 0,
-        ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">'
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject1.getStatusCode()).to.equal(1);
-      expect(bidObject1.ad).to.have.length.above(1);
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should contain tracking pixels', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var params = {
-        bidderCode: 'adbutler',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68-7',
-            sizes: [[300, 250]],
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093'
-            },
-            requestId: '10b327aa396609',
-            placementCode: '/123456/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      var response = {
-        status: 'SUCCESS',
-        account_id: 167283,
-        zone_id: 210093,
-        cpm: 1.5,
-        width: 300,
-        height: 250,
-        place: 0,
-        ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
-        tracking_pixels: [
-          'http://tracking.pixel.com/params=info'
-        ]
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.adbutlerCB(response);
-
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject1.getStatusCode()).to.equal(1);
-      expect(bidObject1.ad).to.have.string('http://tracking.pixel.com/params=info');
-
-      stubAddBidResponse.restore();
-    });
+  afterEach(() => {
+    sandbox.restore();
   });
+
+  describe('implementation', () => {
+
+    let adapter,
+      bids,
+      addBidResponseAction;
+
+    beforeEach(() => {
+      adapter = newBidder(spec);
+      bids = [];
+
+      sandbox.stub(bidManager, 'addBidResponse', (el, bid) => {
+        bids.push(bid);
+        if (typeof addBidResponseAction === 'function') {
+          addBidResponseAction();
+          addBidResponseAction = undefined;
+        }
+      });
+
+    });
+
+    describe('for requests', () => {
+
+      let validateBidsSpy;
+
+      beforeEach(() => {
+
+        validateBidsSpy = sandbox.spy(spec, 'isBidRequestValid');
+
+      });
+
+      it('should validate bids', () => {
+
+        adapter.callBids(bidderRequest);
+
+        sinon.assert.called(validateBidsSpy);
+
+      });
+
+      it('should reject invalid bid', () => {
+
+        let invalidBid = {
+            bidder: 'adbutler',
+            params: {
+              accountID: '167283',
+            }
+          },
+          isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+
+      });
+
+      it('should use custom domain string', () => {
+        var bidderRequest = {
+          bidderCode: 'adbutler',
+          bids: [
+            {
+              bidId: '3c9408cdbf2f68',
+              sizes: [[300, 250]],
+              bidder: 'adbutler',
+              params: {
+                accountID: '107878',
+                zoneID: '86133',
+                domain: 'servedbyadbutler.com.dan.test'
+              },
+              requestId: '10b327aa396609',
+              placementCode: '/123456/header-bid-tag-1'
+            }
+          ]
+        };
+
+        adapter.callBids(bidderRequest);
+
+        let requestURL = sandbox.server.requests[0].url;
+
+        expect(requestURL).to.have.string('.dan.test');
+      });
+
+      it('should set default domain', () =>{
+
+        adapter.callBids(bidderRequest);
+
+        let request = sandbox.server.requests[0];
+        let [domain] = request.url.split('/adserve/');
+
+        expect(domain).to.equal('http://servedbyadbutler.com');
+
+      });
+
+      it('should set the keyword parameter', () =>{
+        adapter.callBids(bidderRequest);
+
+        let requestURL = sandbox.server.requests[0].url;
+
+        expect(requestURL).to.have.string(';kw=red;');
+      });
+
+    });
+
+    describe('bid responses', () =>{
+
+      it('should return complete bid response', () =>{
+
+        let response = {
+          status: 'SUCCESS',
+          account_id: 167283,
+          zone_id: 210093,
+          cpm: 1.5,
+          width: 300,
+          height: 250,
+          place: 0,
+          ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+          tracking_pixels: [
+            'http://tracking.pixel.com/params=info'
+          ]
+        };
+        sandbox.server.respondWith(JSON.stringify(response));
+
+        adapter.callBids(bidderRequest);
+
+        sandbox.server.respond();
+
+        expect(bids).to.be.lengthOf(1);
+
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
+        expect(bids[0].bidderCode).to.equal('adbutler');
+        expect(bids[0].cpm).to.equal(1.5);
+        expect(bids[0].width).to.equal(300);
+        expect(bids[0].height).to.equal(250);
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].ad).to.have.string('http://tracking.pixel.com/params=info');
+
+      });
+
+      it('should return empty bid response', () =>{
+        let response = {
+          status: 'NO_ELIGIBLE_ADS',
+          zone_id: 210083,
+          width: 300,
+          height: 250,
+          place: 0
+        };
+
+        sandbox.server.respondWith(JSON.stringify(response));
+
+        adapter.callBids(bidderRequest);
+
+        sandbox.server.respond();
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+        expect(bids[0].bidderCode).to.equal('adbutler');
+
+      });
+
+      it('should return empty bid response on incorrect size', () => {
+
+        let response = {
+          status: 'SUCCESS',
+          account_id: 167283,
+          zone_id: 210083,
+          cpm: 1.5,
+          width: 728,
+          height: 90,
+          place: 0
+        };
+
+        sandbox.server.respondWith(JSON.stringify(response));
+
+        adapter.callBids(bidderRequest);
+
+        sandbox.server.respond();
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      });
+
+      it('should return empty bid response with CPM too low', () => {
+
+        let response = {
+          status: 'SUCCESS',
+          account_id: 167283,
+          zone_id: 210093,
+          cpm: 0.75,
+          width: 300,
+          height: 250,
+          place: 0
+        };
+
+        sandbox.server.respondWith(JSON.stringify(response));
+
+        adapter.callBids(bidderRequest);
+
+        sandbox.server.respond();
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      });
+
+      it('should return empty bid response with CPM too high', () => {
+
+        let response = {
+          status: 'SUCCESS',
+          account_id: 167283,
+          zone_id: 210093,
+          cpm: 7.00,
+          width: 300,
+          height: 250,
+          place: 0
+        };
+
+        sandbox.server.respondWith(JSON.stringify(response));
+
+        adapter.callBids(bidderRequest);
+
+        sandbox.server.respond();
+
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+      });
+
+    });
+
+  });
+
 });
