@@ -42,9 +42,6 @@ $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 /** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> }) */
 $$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
 
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
-
 // timeout buffer to adjust for bidder CDN latency
 $$PREBID_GLOBAL$$.timeoutBuffer = 200;
 
@@ -308,7 +305,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  */
 $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, adUnitCodes } = {}) {
   events.emit('requestBids');
-  const cbTimeout = $$PREBID_GLOBAL$$.cbTimeout = timeout || config.getConfig('bidderTimeout');
+  const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -354,11 +351,8 @@ $$PREBID_GLOBAL$$.requestBids = function ({ bidsBackHandler, timeout, adUnits, a
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes});
-  if (typeof bidsBackHandler === 'function') {
-    auction.startAuctionTimer(bidsBackHandler, cbTimeout);
-  }
-  auction.callBids(cbTimeout);
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout});
+  auction.callBids();
 };
 
 /**
