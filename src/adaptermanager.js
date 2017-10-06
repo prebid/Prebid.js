@@ -3,6 +3,7 @@
 import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
+import { newBidder } from './adapters/bidderFactory';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -194,6 +195,13 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
+function getSupportedMediaTypes(bidderCode) {
+  let result = [];
+  if (exports.videoAdapters.includes(bidderCode)) result.push('video');
+  if (nativeAdapters.includes(bidderCode)) result.push('native');
+  return result;
+}
+
 exports.videoAdapters = []; // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
@@ -220,14 +228,24 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
   if (typeof existingAlias === 'undefined') {
     var bidAdaptor = _bidderRegistry[bidderCode];
-
     if (typeof bidAdaptor === 'undefined') {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        let newAdapter = new bidAdaptor.constructor();
-        newAdapter.setBidderCode(alias);
-        this.registerBidAdapter(newAdapter, alias);
+        let newAdapter;
+        let supportedMediaTypes = getSupportedMediaTypes(bidderCode);
+        // Have kept old code to support backward compatibilitiy.
+        // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
+        if (bidAdaptor.constructor.prototype != Object.prototype) {
+          newAdapter = new bidAdaptor.constructor();
+          newAdapter.setBidderCode(alias);
+        } else {
+          let spec = bidAdaptor.getSpec();
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+        }
+        this.registerBidAdapter(newAdapter, alias, {
+          supportedMediaTypes
+        });
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }

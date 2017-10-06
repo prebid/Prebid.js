@@ -111,6 +111,7 @@ function PrebidServer() {
       tid: bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
+      secure: config.secure,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
       ad_units: bidRequest.ad_units.filter(hasSizes),
@@ -245,9 +246,6 @@ function PrebidServer() {
     ajax(config.syncEndpoint, (response) => {
       try {
         response = JSON.parse(response);
-        if (response.status === 'ok') {
-          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
-        }
         response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
       } catch (e) {
         utils.logError(e);

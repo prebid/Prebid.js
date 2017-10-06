@@ -19,8 +19,9 @@ const REQUEST = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
   'max_bids': 1,
   'timeout_millis': 1000,
+  'secure': 0,
   'url': '',
-  'prebid_version': '0.21.0-pre',
+  'prebid_version': '0.30.0-pre',
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
