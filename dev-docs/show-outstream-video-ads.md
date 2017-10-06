@@ -20,43 +20,18 @@ Other than using a slightly different ad unit in your Prebid code on the page, y
 
 There should be no changes required on the ad ops side, since the outstream units use the standard Prebid creative, line item targeting setup, etc.
 
-Note that you have the option to show outstream ads with or without an ad server.  For more information, see the instructions below.
-
 * TOC
 {:toc }
 
 ## Prerequisites
 
-+ Demand from a bidder adapter that supports the `"video-outstream"` media type, and returns a renderer for outstream video in its bid response
-+ For more technical information about renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082)
++ Inclusion of at least one demand adapter that supports the `"video"` media type
 
-## Option 1. With an ad server
+## Step 1: Set up ad units with the video media type and outstream context
 
-This section will take you through the code you need to write to show outstream video ads using Prebid.js.
+Use the `adUnit.mediaTypes` object to set up your ad units with the `video` media type and assign the appropriate context
 
-### Step 1. Set up outstream video slot sizes
-{: .no_toc}
-
-In your standard Prebid preamble in the header, configure slot sizes to suit your page layout and/or the available demand for those sizes.
-
-{% highlight js %}
-
-var pbjs = pbjs || {};
-
-// ...
-
-var rightSlotSizes = [[ 300, 250 ], [ 300, 600 ], [ 300, 250 ], [ 100, 100 ]];
-
-// ...
-
-{% endhighlight %}
-
-### Step 2. Set up your ad units with the outstream video media type
-{: .no_toc}
-
-Still in the header, set up your ad units with the `video-outstream` media type.
-
-As far as what fields are supported in the `video` object, that will depend on the rendering options supported by your preferred bidder adaptor(s).  For more information, see [Bidders' Params]({{site.github.url}}/dev-docs/bidders.html).
+The fields supported in a given `bid.params.video` object will vary based on the rendering options supported by each bidder.  For more information, see [Bidders' Params]({{site.github.url}}/dev-docs/bidders.html).
 
 {% highlight js %}
 
@@ -64,24 +39,11 @@ var videoAdUnits = [
   {
     code: 'video1',
     sizes: [ 640, 480 ],
-    mediaType: 'video-outstream',
-    bids: [
-      {
-        bidder: 'appnexusAst',
-        params: {
-          placementId: '5768085',
-          video: {
-            skippable: true,
-            playback_method: [ 'auto_play_sound_off' ]
-          }
-        }
+    mediaTypes: {
+      video: {
+        context: 'outstream'
       }
-    ]
-  },
-  {
-    code: 'video2',
-    sizes: [ 640, 480 ],
-    mediaType: 'video-outstream',
+    },
     bids: [
       {
         bidder: 'appnexusAst',
@@ -99,10 +61,59 @@ var videoAdUnits = [
 
 {% endhighlight %}
 
-### Step 3. Show ads on the page as normal
-{: .no_toc}
+### Renderers
 
-In the body of the page, insert your ads as usual:
+To display an outstream video, two things are needed:
+
+1. A VAST URL or VAST XML document, provided by the Prebid video demand partner.
+2. A Client-side player environment capable of playing a VAST creative.  We will refer to this as the `renderer`.
+
+Prebid.js will select the `renderer` used to display the outstream video in the following way:
+
+1. If a `renderer` is associated with the Prebid adUnit, it will be used to display any outstream demand associated with that adUnit.  Below, we will provide an example of an adUnit with an associated `renderer`.
+2. If no `renderer` is specified on the Prebid adUnit, Prebid will invoke the renderer associated with the winning (or selected) demand partner video bid.
+
+{: .alert.alert-warning :}
+At this time, since not all demand partners return a renderer with their video bid responses, we recommend that publishers associate a `renderer` with their Prebid video adUnits, if possible.  By doing so, any Prebid adapter that supports video will be able to provide demand for a given outstream slot.
+
+Renderers are associated with adUnits through the `adUnit.renderer` object.  This object contains two fields:
+
+1. `url` -- Points to a file containing the renderer script.
+2. `render` -- A function that tells Prebid.js how to invoke the renderer script.
+
+{% highlight js %}
+
+pbjs.addAdUnit({
+    code: 'video1',
+    sizes: [640, 480],
+    mediaTypes: {
+      video: {
+        context: 'outstream'
+      }
+    },
+    renderer: {
+        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+        render: function(bid) {
+            ANOutstreamVideo.renderAd({
+                targetId: bid.adUnitCode,
+                adResponse: bid.adResponse,
+            });
+        }
+    },
+    ...
+});
+
+{% endhighlight %}
+
+For more technical information about renderers, see [the pull request adding the 'Renderer' type](https://github.com/prebid/Prebid.js/pull/1082)
+
+## Step 2: Show ads in the page body
+
+### Option 1: Serving through a primary ad server
+
+Invoke your ad server for the outstream adUnit from the body of the page in the same way that you would for a display adUnit
+
+For a live example, see [Outstream with an Ad Server]({{site.github.url}}/examples/video/outstream/outstream-dfp-two-adapters-demo.html).
 
 {% highlight html %}
 
@@ -110,53 +121,24 @@ In the body of the page, insert your ads as usual:
   <p>Prebid Outstream Video Ad</p>
   <script type='text/javascript'>
     googletag.cmd.push(function () {
-      googletag.display('video2');
+      googletag.display('video1');
     });
   </script>
 </div>
 
 {% endhighlight %}
 
-## Option 2. Without an Ad Server
+### Option 2: Serving without an ad server
 
-You can show outstream video ads directly from a demand partner without going through an ad server.
+Prebid can serve outstream demand directly without going through a primary ad server.
 
-In this section we'll explain the setup at a high level. For a live example showing all the details, see [Outstream without an Ad Server](http://acdn.adnxs.com/prebid/demos/outstream-without-adserver/).
-
-### Step 1. Set up ad units with the outstream video media type
-{: .no_toc}
-
-Set up your video ad units with the outstream video media type as shown below.  Note that the `code` in your video ad unit must match a div ID in your page's body where the ad will be inserted.
-
-{% highlight js %}
-// Prebid outstream video adUnit
-var videoAdUnits = [{
-    code: 'video1',
-    sizes: [ 640, 480 ],
-    mediaType: 'video-outstream',
-    bids: [
-        {
-            bidder: 'appnexusAst',
-            params: {
-                placementId: '5768085',
-                video: {
-                    skippable: true,
-                    playback_method: [ 'auto_play_sound_off' ]
-                }
-            }
-        }
-    ]
-}];
-{% endhighlight %}
-
-### Step 2. Request bids, and render the returned ad in a callback
-{: .no_toc}
+For a live example, see [Outstream without an Ad Server]({{site.github.url}}/examples/video/outstream/outstream-no-adserver-demo.html).
 
 In the Prebid.js event queue, you'll need to add a function that:
 
 1. Adds your video ad units
 2. Requests bids, adding a callback that:
-    1. Gets the targeting for your ad unit
+    1. Selects the bid that will serve for the appropriate adUnit
     2. Renders the ad
 
 {% highlight js %}
@@ -165,13 +147,8 @@ pbjs.que.push(function () {
     pbjs.requestBids({
         timeout: 3000,
         bidsBackHandler: function (bids) {
-            /*
-            `getAdServerTargetingForAdUnitCode` is used as an easy
-            way to get the ad ID, it doesn't actually require you
-            to use an ad server.
-            */
-            var video1 = pbjs.getAdserverTargetingForAdUnitCode('video1');
-            pbjs.renderAd(document, video1.hb_adid);
+            var highestCpmBids = pbjs.getHighestCpmBids('video1');
+            pbjs.renderAd(document, highestCpmBids[0].adId);
         }
     });
 });
@@ -179,57 +156,16 @@ pbjs.que.push(function () {
 
 For more information, see the API documentation for:
 
-+ [requestBids]()
-+ [getAdserverTargetingForAdUnitCode]()
-+ [renderAd]()
-
-## Option 3. With a Publisher-defined Renderer
-
-An outstream bid response is accompanied by a video renderer in the form of a URL that points to a script containing the renderer software.  This software is used by Prebid.js to load and play the winning outstream bid.
-
-If you would prefer to use a different renderer than the one provided in the bid response, you can specify that renderer on a per-outstream-ad-unit basis.  This renderer will be used to load and play the outstream ad, instead of the renderer that is supplied with the bid.  If both a publisher-supplied ad unit renderer and a bid renderer are present, the publisher-supplied renderer will be used.
-
-To use a publisher-defined renderer, add a `renderer` property to your outstream ad unit as shown below.  Other than the ad unit, the rest of the setup will be the same as for [Option 1. With an ad server](#option-1-with-an-ad-server).
-
-{% highlight js %}
-
-pbjs.addAdUnit({
-    code: 'video1',
-    sizes: [640, 480],
-    mediaType: 'video-outstream',
-    renderer: {
-        /* URL pointing to the render script */
-        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
-
-        /* Function that tells Prebid.js how to use the script from
-        `url` to render the ad */
-        render: function(bid) {
-            ANOutstreamVideo.renderAd({
-                targetId: bid.adUnitCode,
-                adResponse: bid.adResponse,
-            });
-        }
-    },
-    bids: [{
-        bidder: 'appnexusAst',
-        params: {
-            placementId: '5768085',
-            video: {
-                skippable: true,
-                playback_method: ['auto_play_sound_off']
-            }
-        }
-    }]
-});
-
-{% endhighlight %}
++ [requestBids]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.requestBids)
++ [getHighestCpmBids]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.getHighestCpmBids)
++ [renderAd]({{site.github.url}}/dev-docs/publisher-api-reference.html#module_pbjs.renderAd)
 
 ## Working Examples
 
 Below, find links to end-to-end "working examples" demonstrating Prebid Outstream:
 
-+ [AppNexus vs. Unruly](http://acdn.adnxs.com/prebid/alpha/unrulydemo.html)
-+ [Outstream without an Ad Server](http://acdn.adnxs.com/prebid/demos/outstream-without-adserver/)
++ [Outstream with two adapters]({{site.github.url}}/examples/video/outstream/outstream-dfp-two-adapters-demo.html)
++ [Outstream without an Ad Server]({{site.github.url}}/examples/video/outstream/outstream-no-adserver-demo.html)
 
 ## Related Topics
 
