@@ -5,6 +5,7 @@ import { isValidVideoBid } from './video';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
 import { config } from 'src/config';
+import { createHook } from 'src/hook';
 
 var CONSTANTS = require('./constants.json');
 var AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
@@ -82,7 +83,7 @@ exports.bidsBackAll = function () {
 /*
  *   This function should be called to by the bidder adapter to register a bid response
  */
-exports.addBidResponse = function (adUnitCode, bid) {
+exports.addBidResponse = createHook('asyncSeries', function (adUnitCode, bid) {
   if (isValid()) {
     prepareBidForAuction();
 
@@ -250,7 +251,7 @@ exports.addBidResponse = function (adUnitCode, bid) {
       doCallbacksIfNeeded();
     }
   }
-};
+});
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   var keyValues = {};
