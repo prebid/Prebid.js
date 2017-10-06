@@ -135,7 +135,7 @@ export function registerBidder(spec) {
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
     getSpec: function() {
-      return spec;
+      return Object.freeze(spec);
     },
     callBids: function(bidderRequest, addBidResponse, done, ajax) {
       if (!Array.isArray(bidderRequest.bids)) {
