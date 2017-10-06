@@ -3,6 +3,9 @@ import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
+
+require('modules/appnexusAstBidAdapter');
 
 const CONFIG = {
   enabled: true,
@@ -81,4 +84,35 @@ describe('adapterManager tests', () => {
       expect(spy.called).to.equal(false);
     });
   })
+
+  describe('aliasBidderAdaptor', function() {
+    let spec;
+    const CODE = 'sampleBidder';
+    beforeEach(() => {
+      spec = {
+        code: CODE,
+        isBidRequestValid: () => {},
+        buildRequests: () => {},
+        interpretResponse: () => {},
+        getUserSyncs: () => {}
+      };
+    });
+
+    // Note remove this test case once Prebid is 1.0
+    it('should add alias to registry', () => {
+      const bidderCode = 'appnexusAst';
+      const alias = 'testalias';
+      AdapterManager.aliasBidAdapter(bidderCode, alias);
+      expect(AdapterManager.bidderRegistry).to.have.property(alias);
+    });
+
+    it('should add alias to registry when original adapter is using bidderFactory', function() {
+      let thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
+      registerBidder(thisSpec);
+      const alias = 'aliasBidder';
+      AdapterManager.aliasBidAdapter(CODE, alias);
+      expect(AdapterManager.bidderRegistry).to.have.property(alias);
+      expect(AdapterManager.videoAdapters).to.include(alias);
+    });
+  });
 });
