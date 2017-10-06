@@ -1,15 +1,15 @@
-'use strict';
 import * as utils from 'src/utils';
-// import {config} from 'src/config';
 import {registerBidder} from 'src/adapters/bidderFactory';
+import { VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
-const URL = '//cmedia102.dev2.vcmedia.com/s2s/header/24';
+const URL = '//media.msg.dotomi.com/s2s/header/24';
 const VERSION = '2.2.0';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['cnvr'], // short code
+  supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    * 
@@ -18,6 +18,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
+    // console.log('did we get called?', JSON.stringify(bid));
     return !!(bid.params.site_id);
   },
   /**
@@ -37,16 +38,12 @@ export const spec = {
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      const tagId = utils.getBidIdParameter('tag_id', bid.params);
-      const pos = utils.getBidIdParameter('position', bid.params);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
       secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
       requestId = bid.requestId;
 
-      const format = bid.sizes.map(function(d) {
-        return {w: d[0], h: d[1]};
-      });
+      const format = convertSizes(bid.sizes);
 
       const imp = {
         id: bid.bidId,
@@ -56,20 +53,25 @@ export const spec = {
         displaymanaerver: VERSION
       };
 
-      if (tagId != '') {
-        imp.tagid = tagId;
+      copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
+
+      if (isVideoRequest(bid)) {
+        const video = {format: format};
+
+        copyOptProperty(bid.params, 'position', video, 'pos');
+        copyOptProperty(bid.params, 'mimes', video);
+        copyOptProperty(bid.params, 'maxduration', video);
+        copyOptProperty(bid.params, 'protocols', video);
+        copyOptProperty(bid.params, 'api', video);
+
+        imp.video = video;
+      } else {
+        const banner = {format: format};
+
+        copyOptProperty(bid.params, 'position', banner, 'pos');
+
+        imp.banner = banner;
       }
-
-      const banner = {
-        format: format
-      };
-
-      if (pos != '') {
-        banner.pos = pos;
-      }
-
-      imp.banner = banner;
-
       // console.log(JSON.stringify(imp));
 
       return imp;
@@ -93,6 +95,7 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: payloadString,
+      payload: payload
     };
   },
   /**
@@ -104,13 +107,46 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     let bidResponses = [];
+    const requestMap = {};
+
+    bidRequest.payload.imp.forEach(imp => requestMap[imp.id] = imp);
 
     // console.log('response', JSON.stringify(serverResponse));
     // console.log('request', JSON.stringify(bidRequest));
+    // console.log('map', JSON.stringify(requestMap));
 
     if (serverResponse && serverResponse.id) {
       // console.log('processing serverResponse');
-      serverResponse.seatbid.forEach(bidList => bidResponses = bidList.bid.reduce(parseBid, []));
+      serverResponse.seatbid.forEach(bidList => bidList.bid.forEach(conversantBid => {
+        const responseCPM = parseFloat(conversantBid.price);
+        if (responseCPM > 0.0 && conversantBid.impid) {
+          const responseAd = conversantBid.adm || '';
+          const responseNurl = conversantBid.nurl || '';
+          const request = requestMap[conversantBid.impid];
+
+          const bid = {
+            requestId: conversantBid.impid,
+            bidderCode: BIDDER_CODE,
+            currency: 'USD',
+            cpm: responseCPM,
+            creativeId: conversantBid.crid || ''
+          };
+
+          if (request.video) {
+            bid.vastUrl = responseAd;
+            // bid.descriptionUrl = responseAd;
+            bid.mediaType = 'video';
+          } else {
+            bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+          }
+
+          bid.width = conversantBid.w;
+          bid.height = conversantBid.h;
+
+          // console.log('bid', JSON.stringify(bid));
+          bidResponses.push(bid);
+        }
+      }));
     }
 
     // console.log('response', JSON.stringify(bidResponses));
@@ -143,30 +179,28 @@ function getDevice() {
   };
 }
 
-function parseBid(bidResponses, conversantBid) {
-  // console.log('parseBid called');
-  const responseCPM = parseFloat(conversantBid.price);
-  if (responseCPM > 0.0 && conversantBid.impid) {
-    const responseAd = conversantBid.adm || '';
-    const responseNurl = conversantBid.nurl || '';
+function convertSizes(bidSizes) {
+  let format;
 
-    const bid = {
-      requestId: conversantBid.impid,
-      bidderCode: BIDDER_CODE,
-      currency: 'USD',
-      cpm: responseCPM,
-      creativeId: conversantBid.crid || ''
-    };
-
-    bid.ad = responseAd + '<img src="' + responseNurl + '" />';
-    bid.width = conversantBid.w;
-    bid.height = conversantBid.h;
-
-    // console.log('bid', JSON.stringify(bid));
-    bidResponses.push(bid);
+  if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+    format = [{w: bidSizes[0], h: bidSizes[1]}];
+  } else {
+    format = bidSizes.map(d => { return {w: d[0], h: d[1]}; });
   }
 
-  return bidResponses;
+  return format;
+}
+
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+function copyOptProperty(src, srcName, dst, dstName) {
+  dstName = dstName || srcName;
+  const obj = utils.getBidIdParameter(srcName, src);
+  if (obj !== '') {
+    dst[dstName] = obj;
+  }
 }
 
 registerBidder(spec);
