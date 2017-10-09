@@ -44,7 +44,7 @@ For more information about how to build with modules, see the [Prebid.js project
 
 Finally, your ad ops team needs to have set up line items in DFP
 following the instructions at
-[Setting up Prebid Video in DFP]({{site.baseurl}}/setting-up-prebid-video-in-dfp.html).
+[Setting up Prebid Video in DFP]({{site.baseurl}}/adops/setting-up-prebid-video-in-dfp.html).
 
 ## Implementation
 
