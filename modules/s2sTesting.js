@@ -6,10 +6,12 @@ const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 export const SERVER = 'server';
 export const CLIENT = 'client';
 
+var testing = false; // whether testing is turned on
 var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
 
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
+  testing = config.s2sConfig && config.s2sConfig.testing;
   addBidderSourceTargeting(config.s2sConfig)
   calculateBidSources(config.s2sConfig);
 });
@@ -17,7 +19,7 @@ config.getConfig('s2sConfig', config => {
 // function to add hb_source_<bidder> adServerTargeting (AST) kvp to bidder settings
 function addBidderSourceTargeting(s2sConfig = {}) {
   // bail if testing is not turned on
-  if (!s2sConfig.testing) {
+  if (!testing) {
     return;
   }
   var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -50,6 +52,11 @@ function addBidderSourceTargeting(s2sConfig = {}) {
 export function getSourceBidderMap(adUnits = []) {
   var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
 
+  // bail if testing is not turned on
+  if (!testing) {
+    return {[SERVER]: [], [CLIENT]: []};
+  }
+
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
     (adUnit.bids || []).forEach((bid) => {
@@ -80,7 +87,7 @@ export function getSourceBidderMap(adUnits = []) {
  */
 function calculateBidSources(s2sConfig = {}) {
   // bail if testing is not turned on
-  if (!s2sConfig.testing) {
+  if (!testing) {
     return;
   }
   bidSource = {}; // reset bid sources
