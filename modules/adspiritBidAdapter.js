@@ -7,7 +7,7 @@ var Ajax = require('src/ajax.js');
 
 function AdSpiritAdapter() {
   var rtbUrl = '/rtb/getbid.php?rtbprovider=prebid';
-  var scriptUrl = '/adasync.min.js';	//
+  var scriptUrl = '/adasync.min.js';
 
   function _responseCallback(bid, data) {
     var bidObject;
