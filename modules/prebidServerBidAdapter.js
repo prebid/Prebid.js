@@ -246,9 +246,6 @@ function PrebidServer() {
     ajax(config.syncEndpoint, (response) => {
       try {
         response = JSON.parse(response);
-        if (response.status === 'ok') {
-          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
-        }
         response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
       } catch (e) {
         utils.logError(e);
