@@ -1,9 +1,9 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, shuffle } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle } from './utils';
 import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { StorageManager, pbjsSyncsKey } from './storagemanager';
+import { newBidder } from './adapters/bidderFactory';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -42,16 +42,31 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits}) {
           sizes = sizeMapping;
         }
 
-        if (adUnit.nativeParams) {
+        if (adUnit.mediaTypes) {
+          if (utils.isValidMediaTypes(adUnit.mediaTypes)) {
+            bid = Object.assign({}, bid, { mediaTypes: adUnit.mediaTypes });
+          } else {
+            utils.logError(
+              `mediaTypes is not correctly configured for adunit ${adUnit.code}`
+            );
+          }
+        }
+
+        const nativeParams =
+          adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
+        if (nativeParams) {
           bid = Object.assign({}, bid, {
-            nativeParams: processNativeAdUnitParams(adUnit.nativeParams),
+            nativeParams: processNativeAdUnitParams(nativeParams),
           });
         }
 
+        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+          'mediaType',
+          'renderer'
+        ]));
+
         return Object.assign({}, bid, {
           placementCode: adUnit.code,
-          mediaType: adUnit.mediaType,
-          renderer: adUnit.renderer,
           transactionId: adUnit.transactionId,
           sizes: sizes,
           bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
@@ -75,7 +90,6 @@ exports.callBids = ({adUnits, cbTimeout}) => {
   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
   let bidderCodes = getBidderCodes(adUnits);
-  const syncedBidders = StorageManager.get(pbjsSyncsKey);
   if (_bidderSequence === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
@@ -88,7 +102,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
 
   if (_s2sConfig.enabled) {
     // these are called on the s2s adapter
-    let adaptersServerSide = _s2sConfig.bidders.filter(bidder => syncedBidders.includes(bidder));
+    let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side
     bidderCodes = bidderCodes.filter((elm) => {
@@ -181,6 +195,13 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
+function getSupportedMediaTypes(bidderCode) {
+  let result = [];
+  if (exports.videoAdapters.includes(bidderCode)) result.push('video');
+  if (nativeAdapters.includes(bidderCode)) result.push('native');
+  return result;
+}
+
 exports.videoAdapters = []; // added by adapterLoader for now
 
 exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
@@ -207,14 +228,24 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
 
   if (typeof existingAlias === 'undefined') {
     var bidAdaptor = _bidderRegistry[bidderCode];
-
     if (typeof bidAdaptor === 'undefined') {
       utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
     } else {
       try {
-        let newAdapter = new bidAdaptor.constructor();
-        newAdapter.setBidderCode(alias);
-        this.registerBidAdapter(newAdapter, alias);
+        let newAdapter;
+        let supportedMediaTypes = getSupportedMediaTypes(bidderCode);
+        // Have kept old code to support backward compatibilitiy.
+        // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
+        if (bidAdaptor.constructor.prototype != Object.prototype) {
+          newAdapter = new bidAdaptor.constructor();
+          newAdapter.setBidderCode(alias);
+        } else {
+          let spec = bidAdaptor.getSpec();
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+        }
+        this.registerBidAdapter(newAdapter, alias, {
+          supportedMediaTypes
+        });
       } catch (e) {
         utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
       }
