@@ -1,12 +1,12 @@
 import { getBidRequest } from 'src/utils';
 import adaptermanager from 'src/adaptermanager';
 
-var CONSTANTS = require('src/constants');
-var utils = require('src/utils.js');
-var adloader = require('src/adloader.js');
-var bidmanager = require('src/bidmanager.js');
-var bidfactory = require('src/bidfactory.js');
-var Adapter = require('src/adapter.js').default;
+const CONSTANTS = require('src/constants');
+const utils = require('src/utils.js');
+const adloader = require('src/adloader.js');
+const bidmanager = require('src/bidmanager.js');
+const bidfactory = require('src/bidfactory.js');
+const Adapter = require('src/adapter.js').default;
 // var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
 var RealVuAdapter = function RealVuAdapter() {
