@@ -1,4 +1,4 @@
-import { getSourceBidderMap, calculateBidSources, getSource, setRandom } from 'modules/s2sTesting';
+import { getSourceBidderMap, calculateBidSources, getSource } from 'modules/s2sTesting';
 import { config } from 'src/config';
 
 var events = require('src/events');
@@ -8,10 +8,22 @@ const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
 var expect = require('chai').expect;
 
 describe('s2sTesting', function () {
+  let mathRandomStub;
+  let randomNumber = 0;
+
+  beforeEach(() => {
+    mathRandomStub = sinon.stub(Math, 'random', () => { return randomNumber; });
+  });
+
+  afterEach(() => {
+    mathRandomStub.restore();
+  });
+
   describe('getSource', () => {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
-      setRandom(randNumber);
+      // set random number for testing
+      randomNumber = randNumber;
       return getSource(sourceWeights, sources);
     }
 
@@ -80,7 +92,7 @@ describe('s2sTesting', function () {
     describe('setting source through s2sConfig', () => {
       beforeEach(() => {
         // set random number for testing
-        setRandom(0.7);
+        randomNumber = 0.7;
       });
 
       it('does not work if testing is "false"', () => {
@@ -149,7 +161,7 @@ describe('s2sTesting', function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        setRandom(0.7);
+        randomNumber = 0.7;
       });
 
       it('sets one bidder source from one adUnit', () => {
@@ -267,7 +279,7 @@ describe('s2sTesting', function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        setRandom(0.7);
+        randomNumber = 0.7;
       });
 
       it('should get sources from  both', () => {

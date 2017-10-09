@@ -1,11 +1,11 @@
 import { config } from 'src/config';
+import { setS2STestingModule } from 'src/adaptermanager';
 
 var CONSTANTS = require('src/constants.json');
 const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 export const SERVER = 'server';
 export const CLIENT = 'client';
 
-var randNumber; // define random number for testing
 var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
 
 // load s2sConfig
@@ -106,8 +106,8 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
     srcIncWeight[source] = totWeight;
   });
   if (!totWeight) return; // bail if no source weights
-  // choose a source randomly based on weights (randNumber for testing)
-  var rndWeight = ((randNumber || randNumber === 0) ? randNumber : Math.random()) * totWeight;
+  // choose a source randomly based on weights
+  var rndWeight = Math.random() * totWeight;
   for (var i = 0; i < bidSources.length; i++) {
     let source = bidSources[i];
     // choose the first source with an incremental weight > random weight
@@ -115,16 +115,6 @@ export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   }
 }
 
-/*
- * overrides random number used in getSource() for testing
- * @param number the "random" number to use in the range 0 <= number < 1, or undefined to reset
- */
-export function setRandom(number) {
-  // verify the number is in range 0 <= number < 1, or undefined
-  if (typeof number === 'undefined' || (number >= 0 && number < 1)) {
-    // set the random number
-    randNumber = number;
-  } else {
-    throw 'random number in setRandom(<number>) out of range (0 <= number < 1): ' + number;
-  }
-}
+// inject the s2sTesting module into the adaptermanager rather than importing it
+// importing it causes the packager to include it even when it's not explicitly included in the build
+setS2STestingModule(exports);
