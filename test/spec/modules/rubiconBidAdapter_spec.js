@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import adapterManager from 'src/adaptermanager';
-import bidManager from 'src/bidmanager';
 import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter';
 import { parse as parseQuery } from 'querystring';
 import { newBidder } from 'src/adapters/bidderFactory';
@@ -194,21 +193,8 @@ describe('the rubicon adapter', () => {
   describe('callBids implementation', () => {
     let rubiconAdapter;
 
-    let bids,
-      addBidResponseAction;
-
     beforeEach(() => {
       rubiconAdapter = newBidder(spec);
-
-      bids = [];
-
-      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
-        bids.push(bid);
-        if (typeof addBidResponseAction === 'function') {
-          addBidResponseAction();
-          addBidResponseAction = undefined;
-        }
-      });
     });
 
     describe('for requests', () => {
@@ -271,29 +257,29 @@ describe('the rubicon adapter', () => {
           expect(query['alt_size_ids']).to.equal('57,59');
         });
 
-        it('should not send a request and register an error bid if no valid sizes', () => {
+        it('should not send a request if no valid sizes', () => {
           var sizesBidderRequest = clone(bidderRequest);
           sizesBidderRequest.bids[0].sizes = [[620, 250], [300, 251]];
+
+          sandbox.stub(spec, 'buildRequests');
 
           rubiconAdapter.callBids(sizesBidderRequest);
 
           expect(sandbox.server.requests.length).to.equal(0);
 
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+          expect(spec.buildRequests.notCalled).to.equal(true);
         });
 
         it('should not send a request and register an error if no account id is present', () => {
           var noAccountBidderRequest = clone(bidderRequest);
           delete noAccountBidderRequest.bids[0].params.accountId;
 
+          sandbox.stub(spec, 'buildRequests');
+
           rubiconAdapter.callBids(noAccountBidderRequest);
 
           expect(sandbox.server.requests.length).to.equal(0);
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+          expect(spec.buildRequests.notCalled).to.equal(true);
         });
 
         it('should allow a floor override', () => {
@@ -687,7 +673,7 @@ describe('the rubicon adapter', () => {
     describe('response handler', () => {
       describe('for fastlane', () => {
         it('should handle a success response and sort by cpm', () => {
-          sandbox.server.respondWith(JSON.stringify({
+          let response = {
             'status': 'ok',
             'account_id': 14062,
             'site_id': 70608,
@@ -742,34 +728,32 @@ describe('the rubicon adapter', () => {
                 ]
               }
             ]
-          }));
+          };
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledTwice).to.equal(true);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
           expect(bids).to.be.lengthOf(2);
 
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].creative_id).to.equal('crid-9');
+          expect(bids[0].currency).to.equal('USD');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
           expect(bids[0].rubiconTargeting.rpfl_elemid).to.equal('/19968336/header-bid-tag-0');
           expect(bids[0].rubiconTargeting.rpfl_14062).to.equal('43_tier_all_test');
 
-          expect(bids[1].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
           expect(bids[1].bidderCode).to.equal('rubicon');
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].creative_id).to.equal('crid-9');
+          expect(bids[1].currency).to.equal('USD');
           expect(bids[1].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374c'>`);
@@ -778,7 +762,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should be fine with a CPM of 0', () => {
-          sandbox.server.respondWith(JSON.stringify({
+          let response = {
             'status': 'ok',
             'account_id': 14062,
             'site_id': 70608,
@@ -794,48 +778,18 @@ describe('the rubicon adapter', () => {
               'cpm': 0,
               'size_id': 15
             }]
-          }));
+          };
 
-          rubiconAdapter.callBids(bidderRequest);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
           expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-        });
-
-        it('should return currency "USD"', () => {
-          sandbox.server.respondWith(JSON.stringify({
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0,
-              'size_id': 15
-            }]
-          }));
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-          expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].cpm).to.be.equal(0);
         });
 
         it('should handle an error with no ads returned', () => {
-          sandbox.server.respondWith(JSON.stringify({
+          let response = {
             'status': 'ok',
             'account_id': 14062,
             'site_id': 70608,
@@ -847,19 +801,17 @@ describe('the rubicon adapter', () => {
             'tracking': '',
             'inventory': {},
             'ads': []
-          }));
+          };
 
-          rubiconAdapter.callBids(bidderRequest);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+          expect(bids).to.be.lengthOf(0);
         });
 
-        it('should handle an error with bad status', () => {
-          sandbox.server.respondWith(JSON.stringify({
+        it('should handle an error', () => {
+          let response = {
             'status': 'ok',
             'account_id': 14062,
             'site_id': 70608,
@@ -873,71 +825,23 @@ describe('the rubicon adapter', () => {
             'ads': [{
               'status': 'not_ok',
             }]
-          }));
+          };
 
-          rubiconAdapter.callBids(bidderRequest);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
+          expect(bids).to.be.lengthOf(0);
         });
 
         it('should handle an error because of malformed json response', () => {
-          sandbox.server.respondWith('{test{');
+          let response = '{test{';
 
-          rubiconAdapter.callBids(bidderRequest);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-        });
-
-        it('should handle error contacting endpoint', () => {
-          sandbox.server.respondWith([404, {}, '']);
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          sandbox.server.respond();
-
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-        });
-
-        it('should not register an error bid when a success call to addBidResponse throws an error', () => {
-          sandbox.server.respondWith(JSON.stringify({
-            'status': 'ok',
-            'account_id': 14062,
-            'site_id': 70608,
-            'zone_id': 530022,
-            'size_id': 15,
-            'alt_size_ids': [
-              43
-            ],
-            'tracking': '',
-            'inventory': {},
-            'ads': [{
-              'status': 'ok',
-              'cpm': 0.8,
-              'size_id': 15
-            }]
-          }));
-
-          addBidResponseAction = function() {
-            throw new Error('test error');
-          };
-
-          rubiconAdapter.callBids(bidderRequest);
-
-          sandbox.server.respond();
-
-          // was calling twice for same bid, but should only call once
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
-          expect(bids).to.be.lengthOf(1);
+          expect(bids).to.be.lengthOf(0);
         });
       });
 
@@ -947,7 +851,7 @@ describe('the rubicon adapter', () => {
         });
 
         it('should register a successful bid', () => {
-          sandbox.server.respondWith(JSON.stringify({
+          let response = {
             'status': 'ok',
             'ads': {
               '/19968336/header-bid-tag-0': [
@@ -972,18 +876,14 @@ describe('the rubicon adapter', () => {
               ]
             },
             'account_id': 7780
-          }));
+          };
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          sandbox.server.respond();
-
-          // was calling twice for same bid, but should only call once
-          expect(bidManager.addBidResponse.calledOnce).to.equal(true);
+          let bids = spec.interpretResponse(response, {
+            bidRequest: bidderRequest.bids[0]
+          });
 
           expect(bids).to.be.lengthOf(1);
 
-          expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].creative_id).to.equal('crid-999999');
           expect(bids[0].cpm).to.equal(1);
@@ -1005,7 +905,6 @@ describe('the rubicon adapter', () => {
     beforeEach(() => {
       // monitor userSync registrations
       userSyncStub = sandbox.stub(userSync, 'registerSync');
-      sandbox.stub(bidManager, 'addBidResponse');
 
       sandbox.server.respondWith(JSON.stringify({
         'status': 'ok',
