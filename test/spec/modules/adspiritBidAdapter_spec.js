@@ -19,9 +19,19 @@ describe('Adspirit adapter tests', function () {
   var validData_2 = {
     bids: [
       {
-        bidder: 'adspirit',
+        bidder: 'connectad',
         bidId: 'bid_id',
-        params: {placementId: 2, host: '-'},
+        params: {placementId: 1},
+        placementCode: 'ad-1',
+      }
+    ]
+  };
+  var validData_3 = {
+    bids: [
+      {
+        bidder: 'xapadsmedia',
+        bidId: 'bid_id',
+        params: {placementId: 1},
         placementCode: 'ad-1',
       }
     ]
@@ -63,12 +73,16 @@ describe('Adspirit adapter tests', function () {
     afterEach(function () {
       stubAjax.restore();
     });
-    it('bid request should be called.', function () {
+    it('bid request should be called (adspirit).', function () {
       Adapter.callBids(validData_1);
       sinon.assert.calledOnce(stubAjax);
     });
-    it('bid request should be called.', function () {
+    it('bid request should be called (connectad).', function () {
       Adapter.callBids(validData_2);
+      sinon.assert.calledOnce(stubAjax);
+    });
+    it('bid request should be called (xapadsmedia).', function () {
+      Adapter.callBids(validData_3);
       sinon.assert.calledOnce(stubAjax);
     });
   });
