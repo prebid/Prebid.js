@@ -127,43 +127,6 @@ describe('the rubicon adapter', () => {
     sandbox.restore();
   });
 
-  describe('callBids public interface', () => {
-    let rubiconAdapter = adapterManager.bidderRegistry['rubicon'];
-
-    it('should receive a well-formed bidRequest from the adaptermanager', () => {
-      sandbox.stub(rubiconAdapter, 'callBids');
-
-      adapterManager.callBids({
-        adUnits: [clone(adUnit)]
-      });
-
-      let bidderRequest = rubiconAdapter.callBids.getCall(0).args[0];
-
-      expect(bidderRequest).to.have.property('bids')
-        .that.is.an('array')
-        .with.lengthOf(1);
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .to.have.property('bidder', 'rubicon');
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .to.have.property('mediaType', 'video');
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .to.have.property('placementCode', adUnit.code);
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .with.property('sizes')
-        .that.is.an('array')
-        .with.lengthOf(2)
-        .that.deep.equals(adUnit.sizes);
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .with.property('params')
-        .that.deep.equals(adUnit.bids[0].params);
-    });
-  });
-
   describe('MAS mapping / ordering', () => {
     it('should not include values without a proper mapping', () => {
       // two invalid sizes included: [42, 42], [1, 1]
@@ -190,7 +153,7 @@ describe('the rubicon adapter', () => {
     });
   });
 
-  describe('callBids implementation', () => {
+  describe('buildRequests implementation', () => {
     let rubiconAdapter;
 
     beforeEach(() => {
@@ -199,17 +162,13 @@ describe('the rubicon adapter', () => {
 
     describe('for requests', () => {
       describe('to fastlane', () => {
-        it('should make a well-formed request', () => {
-          rubiconAdapter.callBids(bidderRequest);
+        it('should make a well-formed request objects', () => {
+          sandbox.stub(Math, 'random', () => 0.1);
 
-          let request = sandbox.server.requests[0];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
-          let [path, query] = request.url.split('?');
-          query = parseQuery(query);
-
-          expect(path).to.equal(
-            '//fastlane.rubiconproject.com/a/api/fastlane.json'
-          );
+          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
 
           let expectedQuery = {
             'account_id': '14062',
@@ -220,6 +179,7 @@ describe('the rubicon adapter', () => {
             'p_pos': 'atf',
             'rp_floor': '0.01',
             'rp_secure': /[01]/,
+            'rand': '0.1',
             'tk_flint': INTEGRATION,
             'tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
@@ -236,61 +196,50 @@ describe('the rubicon adapter', () => {
           Object.keys(expectedQuery).forEach(key => {
             let value = expectedQuery[key];
             if (value instanceof RegExp) {
-              expect(query[key]).to.match(value);
+              expect(data[key]).to.match(value);
             } else {
-              expect(query[key]).to.equal(value);
+              expect(data[key]).to.equal(value);
             }
           });
-
-          expect(query).to.have.property('rand');
         });
 
         it('should use rubicon sizes if present', () => {
           var sizesBidderRequest = clone(bidderRequest);
           sizesBidderRequest.bids[0].params.sizes = [55, 57, 59];
 
-          rubiconAdapter.callBids(sizesBidderRequest);
+          let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
+          let data = parseQuery(request.data);
 
-          let query = parseQuery(sandbox.server.requests[0].url.split('?')[1]);
-
-          expect(query['size_id']).to.equal('55');
-          expect(query['alt_size_ids']).to.equal('57,59');
+          expect(data['size_id']).to.equal('55');
+          expect(data['alt_size_ids']).to.equal('57,59');
         });
 
-        it('should not send a request if no valid sizes', () => {
+        it('should not validate bid request if no valid sizes', () => {
           var sizesBidderRequest = clone(bidderRequest);
           sizesBidderRequest.bids[0].sizes = [[620, 250], [300, 251]];
 
-          sandbox.stub(spec, 'buildRequests');
+          let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
 
-          rubiconAdapter.callBids(sizesBidderRequest);
-
-          expect(sandbox.server.requests.length).to.equal(0);
-
-          expect(spec.buildRequests.notCalled).to.equal(true);
+          expect(result).to.equal(false);
         });
 
-        it('should not send a request and register an error if no account id is present', () => {
+        it('should not validate bid request if no account id is present', () => {
           var noAccountBidderRequest = clone(bidderRequest);
           delete noAccountBidderRequest.bids[0].params.accountId;
 
-          sandbox.stub(spec, 'buildRequests');
+          let result = spec.isBidRequestValid(noAccountBidderRequest.bids[0]);
 
-          rubiconAdapter.callBids(noAccountBidderRequest);
-
-          expect(sandbox.server.requests.length).to.equal(0);
-          expect(spec.buildRequests.notCalled).to.equal(true);
+          expect(result).to.equal(false);
         });
 
         it('should allow a floor override', () => {
           var floorBidderRequest = clone(bidderRequest);
           floorBidderRequest.bids[0].params.floor = 2;
 
-          rubiconAdapter.callBids(floorBidderRequest);
+          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
+          let data = parseQuery(request.data);
 
-          let query = parseQuery(sandbox.server.requests[0].url.split('?')[1]);
-
-          expect(query['rp_floor']).to.equal('2');
+          expect(data['rp_floor']).to.equal('2');
         });
 
         it('should send digitrust params', () => {
@@ -308,12 +257,8 @@ describe('the rubicon adapter', () => {
             })
           );
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          let request = sandbox.server.requests[0];
-
-          let query = request.url.split('?')[1];
-          query = parseQuery(query);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
           let expectedQuery = {
             'dt.id': 'testId',
@@ -324,25 +269,21 @@ describe('the rubicon adapter', () => {
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
             let value = expectedQuery[key];
-            expect(query[key]).to.equal(value);
+            expect(data[key]).to.equal(value);
           });
 
           delete window.DigiTrust;
         });
 
         it('should not send digitrust params when DigiTrust not loaded', () => {
-          rubiconAdapter.callBids(bidderRequest);
-
-          let request = sandbox.server.requests[0];
-
-          let query = request.url.split('?')[1];
-          query = parseQuery(query);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
           let undefinedKeys = ['dt.id', 'dt.keyv'];
 
           // Test that none of the DigiTrust keys are part of the query
           undefinedKeys.forEach(key => {
-            expect(typeof query[key]).to.equal('undefined');
+            expect(typeof data[key]).to.equal('undefined');
           });
         });
 
@@ -361,18 +302,14 @@ describe('the rubicon adapter', () => {
             })
           );
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          let request = sandbox.server.requests[0];
-
-          let query = request.url.split('?')[1];
-          query = parseQuery(query);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
           let undefinedKeys = ['dt.id', 'dt.keyv'];
 
           // Test that none of the DigiTrust keys are part of the query
           undefinedKeys.forEach(key => {
-            expect(typeof query[key]).to.equal('undefined');
+            expect(typeof data[key]).to.equal('undefined');
           });
 
           delete window.DigiTrust;
@@ -393,18 +330,14 @@ describe('the rubicon adapter', () => {
             })
           );
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          let request = sandbox.server.requests[0];
-
-          let query = request.url.split('?')[1];
-          query = parseQuery(query);
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
 
           let undefinedKeys = ['dt.id', 'dt.keyv'];
 
           // Test that none of the DigiTrust keys are part of the query
           undefinedKeys.forEach(key => {
-            expect(typeof query[key]).to.equal('undefined');
+            expect(typeof data[key]).to.equal('undefined');
           });
 
           delete window.DigiTrust;
@@ -439,12 +372,8 @@ describe('the rubicon adapter', () => {
               return config[key];
             });
 
-            rubiconAdapter.callBids(bidderRequest);
-
-            let request = sandbox.server.requests[0];
-
-            let query = request.url.split('?')[1];
-            query = parseQuery(query);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
 
             let expectedQuery = {
               'dt.id': 'testId',
@@ -454,7 +383,7 @@ describe('the rubicon adapter', () => {
             // test that all values above are both present and correct
             Object.keys(expectedQuery).forEach(key => {
               let value = expectedQuery[key];
-              expect(query[key]).to.equal(value);
+              expect(data[key]).to.equal(value);
             });
 
             // should not have called DigiTrust.getUser()
@@ -476,18 +405,14 @@ describe('the rubicon adapter', () => {
               return config[key];
             });
 
-            rubiconAdapter.callBids(bidderRequest);
-
-            let request = sandbox.server.requests[0];
-
-            let query = request.url.split('?')[1];
-            query = parseQuery(query);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
 
             let undefinedKeys = ['dt.id', 'dt.keyv'];
 
             // Test that none of the DigiTrust keys are part of the query
             undefinedKeys.forEach(key => {
-              expect(typeof query[key]).to.equal('undefined');
+              expect(typeof data[key]).to.equal('undefined');
             });
 
             // should not have called DigiTrust.getUser()
@@ -509,18 +434,14 @@ describe('the rubicon adapter', () => {
               return config[key];
             });
 
-            rubiconAdapter.callBids(bidderRequest);
-
-            let request = sandbox.server.requests[0];
-
-            let query = request.url.split('?')[1];
-            query = parseQuery(query);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
 
             let undefinedKeys = ['dt.id', 'dt.keyv'];
 
             // Test that none of the DigiTrust keys are part of the query
             undefinedKeys.forEach(key => {
-              expect(typeof query[key]).to.equal('undefined');
+              expect(typeof data[key]).to.equal('undefined');
             });
 
             // should not have called DigiTrust.getUser()
@@ -533,18 +454,14 @@ describe('the rubicon adapter', () => {
               return config[key];
             });
 
-            rubiconAdapter.callBids(bidderRequest);
-
-            let request = sandbox.server.requests[0];
-
-            let query = request.url.split('?')[1];
-            query = parseQuery(query);
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
 
             let undefinedKeys = ['dt.id', 'dt.keyv'];
 
             // Test that none of the DigiTrust keys are part of the query
             undefinedKeys.forEach(key => {
-              expect(typeof query[key]).to.equal('undefined');
+              expect(typeof data[key]).to.equal('undefined');
             });
 
             // should have called DigiTrust.getUser() once
@@ -561,12 +478,10 @@ describe('the rubicon adapter', () => {
             bidderRequest.auctionStart + 100
           );
 
-          rubiconAdapter.callBids(bidderRequest);
-
-          let request = sandbox.server.requests[0];
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
 
           let url = request.url;
-          let post = JSON.parse(request.requestBody);
 
           expect(url).to.equal('//fastlane-adv.rubiconproject.com/v1/auction/video');
 
@@ -628,17 +543,15 @@ describe('the rubicon adapter', () => {
           // enter an explicit floor price //
           floorBidderRequest.bids[0].params.floor = 3.25;
 
-          rubiconAdapter.callBids(floorBidderRequest);
-
-          let request = sandbox.server.requests[0];
-          let post = JSON.parse(request.requestBody);
+          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
+          let post = request.data;
 
           let floor = post.slots[0].floor;
 
           expect(floor).to.equal(3.25);
         });
 
-        it('should trap when no video object is passed in', () => {
+        it('should not validate bid request when no video object is passed in', () => {
           createVideoBidderRequestNoVideo();
           sandbox.stub(Date, 'now', () =>
             bidderRequest.auctionStart + 100
@@ -646,9 +559,9 @@ describe('the rubicon adapter', () => {
 
           var floorBidderRequest = clone(bidderRequest);
 
-          rubiconAdapter.callBids(floorBidderRequest);
+          let result = spec.isBidRequestValid(floorBidderRequest.bids[0]);
 
-          expect(sandbox.server.requests.length).to.equal(0);
+          expect(result).to.equal(false);
         });
 
         it('should get size from bid.sizes too', () => {
@@ -659,10 +572,8 @@ describe('the rubicon adapter', () => {
 
           var floorBidderRequest = clone(bidderRequest);
 
-          rubiconAdapter.callBids(floorBidderRequest);
-
-          let request = sandbox.server.requests[0];
-          let post = JSON.parse(request.requestBody);
+          let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
+          let post = request.data;
 
           expect(post.slots[0].width).to.equal(300);
           expect(post.slots[0].height).to.equal(250);
@@ -670,7 +581,7 @@ describe('the rubicon adapter', () => {
       });
     });
 
-    describe('response handler', () => {
+    describe('interpretResponse', () => {
       describe('for fastlane', () => {
         it('should handle a success response and sort by cpm', () => {
           let response = {
@@ -953,22 +864,18 @@ describe('the rubicon adapter', () => {
     });
 
     it('should register the Emily iframe', () => {
-      expect(userSyncStub.calledOnce).to.be.false;
-      rubiconAdapter.callBids(bidderRequest);
-      sandbox.server.respond();
-      expect(userSyncStub.calledOnce).to.be.true;
-      expect(userSyncStub.getCall(0).args).to.eql(['iframe', 'rubicon', emilyUrl]);
+      let syncs = spec.getUserSyncs();
+
+      expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
     });
 
     it('should not register the Emily iframe more than once', () => {
-      expect(userSyncStub.calledOnce).to.be.false;
-      rubiconAdapter.callBids(bidderRequest);
-      sandbox.server.respond();
-      expect(userSyncStub.calledOnce).to.be.true;
-      // run another auction, should still have only been called once
-      rubiconAdapter.callBids(bidderRequest);
-      sandbox.server.respond();
-      expect(userSyncStub.calledOnce).to.be.true;
+      let syncs = spec.getUserSyncs();
+      expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
+
+      // when called again, should still have only been called once
+      syncs = spec.getUserSyncs();
+      expect(syncs).to.equal(undefined);
     });
   });
 });
