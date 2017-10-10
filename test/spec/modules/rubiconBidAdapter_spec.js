@@ -11,7 +11,6 @@ const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be s
 
 describe('the rubicon adapter', () => {
   let sandbox,
-    adUnit,
     bidderRequest;
 
   function createVideoBidderRequest() {
@@ -54,36 +53,6 @@ describe('the rubicon adapter', () => {
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-
-    sandbox.useFakeServer();
-
-    adUnit = {
-      code: '/19968336/header-bid-tag-0',
-      sizes: [[300, 250], [320, 50]],
-      mediaType: 'video',
-      bids: [
-        {
-          bidder: 'rubicon',
-          params: {
-            accountId: '14062',
-            siteId: '70608',
-            zoneId: '335918',
-            userId: '12346',
-            keywords: ['a', 'b', 'c'],
-            inventory: {
-              rating: '5-star',
-              prodtype: 'tech'
-            },
-            visitor: {
-              ucat: 'new',
-              lastsearch: 'iphone'
-            },
-            position: 'atf',
-            referrer: 'localhost'
-          }
-        }
-      ]
-    };
 
     bidderRequest = {
       bidderCode: 'rubicon',
@@ -154,12 +123,6 @@ describe('the rubicon adapter', () => {
   });
 
   describe('buildRequests implementation', () => {
-    let rubiconAdapter;
-
-    beforeEach(() => {
-      rubiconAdapter = newBidder(spec);
-    });
-
     describe('for requests', () => {
       describe('to fastlane', () => {
         it('should make a well-formed request objects', () => {
@@ -809,57 +772,9 @@ describe('the rubicon adapter', () => {
   });
 
   describe('user sync', () => {
-    let rubiconAdapter;
-    let userSyncStub;
     const emilyUrl = 'https://tap-secure.rubiconproject.com/partner/scripts/rubicon/emily.html?rtb_ext=1';
 
     beforeEach(() => {
-      // monitor userSync registrations
-      userSyncStub = sandbox.stub(userSync, 'registerSync');
-
-      sandbox.server.respondWith(JSON.stringify({
-        'status': 'ok',
-        'account_id': 14062,
-        'site_id': 70608,
-        'zone_id': 530022,
-        'size_id': 15,
-        'alt_size_ids': [
-          43
-        ],
-        'tracking': '',
-        'inventory': {},
-        'ads': [
-          {
-            'status': 'ok',
-            'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
-            'size_id': '15',
-            'ad_id': '6',
-            'advertiser': 7,
-            'network': 8,
-            'creative_id': 9,
-            'type': 'script',
-            'script': 'alert(\'foo\')',
-            'campaign_id': 10,
-            'cpm': 0.811,
-            'targeting': [
-              {
-                'key': 'rpfl_14062',
-                'values': [
-                  '15_tier_all_test'
-                ]
-              }
-            ]
-          }
-        ]
-      }));
-
-      // Remove all Emily iframes for a fresh start
-      let iframes = document.querySelectorAll('[src="' + emilyUrl + '"]');
-      for (let i = 0; i < iframes.length; i += 1) {
-        iframes[i].outerHTML = '';
-      }
-
-      rubiconAdapter = newBidder(spec);
       resetUserSync();
     });
 
