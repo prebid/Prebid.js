@@ -470,8 +470,8 @@ describe('auctionmanager.js', function () {
         ]
       }];
       adUnitCodes = ['adUnit-code'];
-      auction = auctionModule.createAuction({adUnits, adUnitCodes});
-      createAuctionStub = sinon.stub(auctionModule, 'createAuction');
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
       spec = {
@@ -484,7 +484,7 @@ describe('auctionmanager.js', function () {
     });
 
     afterEach(() => {
-      auctionModule.createAuction.restore();
+      auctionModule.newAuction.restore();
     });
 
     it('should return proper price bucket increments for dense mode when cpm is in range 0-3', () => {
@@ -493,7 +493,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, '1.99', '0 - 3 hits at to 1 cent increment');
     });
@@ -504,7 +504,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, '4.35', '3 - 8 hits at 5 cent increment');
     });
@@ -515,7 +515,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, '19.50', '8 - 20 hits at 50 cent increment');
     });
@@ -526,7 +526,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.pbDg, '20.00', '20+ caps at 20.00');
     });
@@ -537,7 +537,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.adserverTargeting[`hb_deal`], 'test deal', 'dealId placed in adserverTargeting');
     });
@@ -549,7 +549,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
-      auction.callBids(3000);
+      auction.callBids();
       let registeredBid = auction.getBidsReceived().pop();
       assert.equal(registeredBid.adserverTargeting.hb_bidder, 'sampleBidder');
       assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
@@ -578,7 +578,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
-      auction.callBids(3000);
+      auction.callBids();
       assert.equal(bidsRecCount + 1, auction.getBidsReceived().length);
 
       utils.getBidRequest.restore();
@@ -608,7 +608,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
-      auction.callBids(3000);
+      auction.callBids();
       assert.equal(bidsRecCount, auction.getBidsReceived().length);
 
       utils.getBidRequest.restore();
@@ -640,7 +640,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
-      auction.callBids(3000);
+      auction.callBids();
       assert.equal(bidsRecCount + 1, auction.getBidsReceived().length);
 
       utils.getBidRequest.restore();
@@ -685,7 +685,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
-      auction.callBids(3000);
+      auction.callBids();
       const addedBid = auction.getBidsReceived().pop();
       assert.equal(addedBid.renderer.url, 'renderer.js');
     });
@@ -729,7 +729,7 @@ describe('auctionmanager.js', function () {
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids1);
-      auction.callBids(3000);
+      auction.callBids();
       const addedBid = auction.getBidsReceived().pop();
 
       assert.equal(addedBid.width, 300);
@@ -836,8 +836,8 @@ describe('auctionmanager.js', function () {
         ]
       }];
       adUnitCodes = ['adUnit-code', 'adUnit-code-1'];
-      auction = auctionModule.createAuction({adUnits, adUnitCodes});
-      createAuctionStub = sinon.stub(auctionModule, 'createAuction');
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
       spec = {
@@ -858,7 +858,7 @@ describe('auctionmanager.js', function () {
     });
 
     afterEach(() => {
-      auctionModule.createAuction.restore();
+      auctionModule.newAuction.restore();
     });
 
     it('should not alter bid adID', () => {
@@ -873,7 +873,7 @@ describe('auctionmanager.js', function () {
       spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
-      auction.callBids(3000);
+      auction.callBids();
 
       const addedBid2 = auction.getBidsReceived().pop();
       assert.equal(addedBid2.adId, bids1[0].requestId);
@@ -896,7 +896,7 @@ describe('auctionmanager.js', function () {
       spec1.isBidRequestValid.returns(true);
       spec1.interpretResponse.returns(bids1);
 
-      auction.callBids(3000);
+      auction.callBids();
 
       let length = auction.getBidsReceived().length;
       const addedBid2 = auction.getBidsReceived().pop();
