@@ -2,7 +2,7 @@
 
 - Module Name: Conversant Bidder Adapter
 - Module Type: Bidder Adapter
-- Maintainer: pyang@conversantmedia.com
+- Maintainer: mediapsr@conversantmedia.com
 
 # Description
 
