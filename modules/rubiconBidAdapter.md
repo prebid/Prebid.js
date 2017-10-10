@@ -1,12 +1,16 @@
 # Overview
 
-Module Name: Rubicon Project Bid Adapter
-Module Type: Bidder Adapter
-Maintainer: header-bidding@rubiconproject.com
+| **Module Name:** | Rubicon Project Bid Adapter |
+| **Module Type:** | Bidder Adapter |
+| **Maintainer:**  | header-bidding@rubiconproject.com |
 
 # Description
 
-Connects to Rubicon Project's exchange for bids.
+Connect to Rubicon Project's exchange for bids.
+
+The Rubicon Project adapter requires setup and approval from the
+Rubicon Project team. Please reach out to your account team or
+globalsupport@rubiconproject.com for more information.
 
 # Test Parameters
 ```
