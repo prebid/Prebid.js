@@ -1,9 +1,9 @@
 # Overview
 
 ```
-**Module Name:**  Rubicon Project Bid Adapter
-**Module Type:**  Bidder Adapter
-**Maintainer:**   header-bidding@rubiconproject.com
+Module Name:  Rubicon Project Bid Adapter
+Module Type:  Bidder Adapter
+Maintainer:   header-bidding@rubiconproject.com
 ```
 
 # Description
