@@ -19,7 +19,7 @@ player_notes:
 - If you're using a cloud-hosted player, <b>do not enable advertising in the platform</b>. We'll do it on page so that we can use the vast url from prebid.
 - You can set up most of your player's settings in the platform. The platform settings will be used unless overridden on the page in the setup call.
 jsfiddle_link: jsfiddle.net/prebid/zt70zj9z/11/embedded/html/
-demo_link: video-demo.appnexus.com/pbjs/JWPlayerDemo/jwPlatformPrebidDemo.html
+demo_link: prebid.org/examples/video/jwPlatformPrebidDemo.html
 code_lines: 137
 code_height: 3540
 
