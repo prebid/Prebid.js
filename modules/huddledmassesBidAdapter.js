@@ -81,15 +81,22 @@ function HuddledMassesAdapter() {
     }
 
     var secure = 0;
-    if (window.location.protocol !== 'http:') {
+    var win;
+    try {
+      win = window.top;
+    } catch (e) {
+      win = window;
+    }
+
+    if (win.location.protocol !== 'http:') {
       secure = 1;
     }
 
-    var host = window.location.host;
-    var page = window.location.pathname;
+    var host = win.location.host;
+    var page = win.location.pathname;
     var language = navigator.language;
-    var deviceWidth = window.screen.width;
-    var deviceHeight = window.screen.height;
+    var deviceWidth = win.screen.width;
+    var deviceHeight = win.screen.height;
 
     var queryString = [
       'banner_id', bid.params.placement_id,

@@ -76,7 +76,7 @@ export function ajax(url, callback, data, options = {}) {
     }
 
     if (method === 'GET' && data) {
-      let urlInfo = parseURL(url);
+      let urlInfo = parseURL(url, options);
       Object.assign(urlInfo.search, data);
       url = formatURL(urlInfo);
     }
