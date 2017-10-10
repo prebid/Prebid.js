@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
-export const ENDPOINT = '//test.bfmio.com/bid.json?exchange_id='; // TODO : revert
+export const ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 
 export const spec = {
   code: 'beachfront',
