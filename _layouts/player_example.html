@@ -80,6 +80,7 @@
 
 <div class="row">
 
+{% unless page.use_old_example_style == false %}
 <div class="col-sm-6">
 
 
@@ -105,6 +106,7 @@
 
 
 </div>
+{% endunless %}
 
 <div class="col-sm-6">
 
@@ -114,11 +116,15 @@
 {{content}}
 
 </div>
-<br><br>
 
 </div>
 
-  </div>
+{% if page.use_old_example_style == false %}
+  <br />
+  <iframe width="100%" height="{{page.code_height}}" src="//{{page.jsfiddle_link}}" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+{% endif %}
+
+</div>
 
 
 {% include foot.html %}
