@@ -5,6 +5,7 @@ import { mapSizes } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { StorageManager, pbjsSyncsKey } from './storagemanager';
 import { ajaxBuilder } from 'src/ajax';
+import { config, RANDOM } from 'src/config';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -13,22 +14,9 @@ var events = require('./events');
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
 
-// create s2s settings objectType_function
-let _s2sConfig = {
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
-  adapter: CONSTANTS.S2S.ADAPTER,
-  syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT
-};
-
-const RANDOM = 'random';
-const FIXED = 'fixed';
-
-const VALID_ORDERS = {};
-VALID_ORDERS[RANDOM] = true;
-VALID_ORDERS[FIXED] = true;
+let _s2sConfig = config.getConfig('s2sConfig');
 
 var _analyticsRegistry = {};
-let _bidderSequence = RANDOM;
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits}) {
   return adUnits.map(adUnit => {
@@ -107,7 +95,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
   let bidRequests = [];
   let bidderCodes = getBidderCodes(adUnits);
   const syncedBidders = StorageManager.get(pbjsSyncsKey);
-  if (_bidderSequence === RANDOM) {
+  if (config.getConfig('bidderSequence') === RANDOM) {
     bidderCodes = shuffle(bidderCodes);
   }
 
@@ -283,16 +271,4 @@ exports.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
-};
-
-exports.setBidderSequence = function (order) {
-  if (VALID_ORDERS[order]) {
-    _bidderSequence = order;
-  } else {
-    utils.logWarn(`Invalid order: ${order}. Bidder Sequence was not set.`);
-  }
-};
-
-exports.setS2SConfig = function (config) {
-  _s2sConfig = config;
 };

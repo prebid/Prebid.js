@@ -5,7 +5,6 @@ import { flatten, uniques, isGptPubadsDefined, adUnitsFilter } from './utils';
 import { videoAdUnit, hasNonVideoBidder } from './video';
 import { nativeAdUnit, nativeBidder, hasNonNativeBidder } from './native';
 import './polyfill';
-import { parse as parseURL, format as formatURL } from './url';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
@@ -20,7 +19,6 @@ var utils = require('./utils.js');
 var adaptermanager = require('./adaptermanager');
 var bidfactory = require('./bidfactory');
 var events = require('./events');
-var adserver = require('./adserver.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -35,21 +33,11 @@ var eventValidators = {
 
 /* Public vars */
 $$PREBID_GLOBAL$$._winningBids = [];
-$$PREBID_GLOBAL$$._adsReceived = [];
 
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
 
-/** @deprecated - use pbjs.setConfig({ bidderTimeout: <timeout> }) */
-$$PREBID_GLOBAL$$.bidderTimeout = $$PREBID_GLOBAL$$.bidderTimeout;
-
-// timeout buffer to adjust for bidder CDN latency
-$$PREBID_GLOBAL$$.timeoutBuffer = 200;
-
-/** @deprecated - use pbjs.setConfig({ debug: <true|false> }) */
-$$PREBID_GLOBAL$$.logging = $$PREBID_GLOBAL$$.logging;
-
-/** @deprecated - use pbjs.setConfig({ publisherDomain: <domain> ) */
-$$PREBID_GLOBAL$$.publisherDomain = $$PREBID_GLOBAL$$.publisherDomain;
+// current timeout set in `requestBids` or to default `bidderTimeout`
+$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -493,52 +481,6 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
 };
 
 /**
- * Build master video tag from publishers adserver tag
- * @param {string} adserverTag default url
- * @param {Object} options options for video tag
- *
- * @deprecated Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead.
- * This function will be removed in Prebid 1.0.
- */
-$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag = function (adserverTag, options) {
-  utils.logWarn('$$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag will be removed in Prebid 1.0. Include the dfpVideoSupport module in your build, and use the $$PREBID_GLOBAL$$.adservers.dfp.buildVideoAdUrl function instead');
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.buildMasterVideoTagFromAdserverTag', arguments);
-  var urlComponents = parseURL(adserverTag);
-
-  // return original adserverTag if no bids received
-  if ($$PREBID_GLOBAL$$._bidsReceived.length === 0) {
-    return adserverTag;
-  }
-
-  var masterTag = '';
-  if (options.adserver.toLowerCase() === 'dfp') {
-    var dfpAdserverObj = adserver.dfpAdserver(options, urlComponents);
-    if (!dfpAdserverObj.verifyAdserverTag()) {
-      utils.logError('Invalid adserverTag, required google params are missing in query string');
-    }
-    dfpAdserverObj.appendQueryParams();
-    masterTag = formatURL(dfpAdserverObj.urlComponents);
-  } else {
-    utils.logError('Only DFP adserver is supported');
-    return;
-  }
-  return masterTag;
-};
-
-/**
- * Set the order bidders are called in. Valid values are:
- *
- * "fixed": Bidders will be called in the order in which they were defined within the adUnit.bids array.
- * "random": Bidders will be called in random order.
- *
- * If never called, Prebid will use "random" as the default.
- *
- * @param {string} order One of the valid orders, described above.
- * @deprecated - use pbjs.setConfig({ bidderSequence: <order> })
- */
-$$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence;
-
-/**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
  * @param {string} adUnitCode - optional ad unit code
@@ -546,43 +488,6 @@ $$PREBID_GLOBAL$$.setBidderSequence = adaptermanager.setBidderSequence;
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
-};
-
-/**
- * Set config for server to server header bidding
- * @deprecated - use pbjs.setConfig({ s2sConfig: <options> })
- * @typedef {Object} options - required
- * @property {boolean} enabled enables S2S bidding
- * @property {string[]} bidders bidders to request S2S
- *  === optional params below ===
- * @property {string} [endpoint] endpoint to contact
- * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
- * @property {string} [adapter] adapter code to use for S2S
- * @property {string} [syncEndpoint] endpoint URL for syncing cookies
- * @property {boolean} [cookieSet] enables cookieSet functionality
- */
-$$PREBID_GLOBAL$$.setS2SConfig = function(options) {
-  if (!utils.contains(Object.keys(options), 'accountId')) {
-    utils.logError('accountId missing in Server to Server config');
-    return;
-  }
-
-  if (!utils.contains(Object.keys(options), 'bidders')) {
-    utils.logError('bidders missing in Server to Server config');
-    return;
-  }
-
-  const config = Object.assign({
-    enabled: false,
-    endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
-    timeout: 1000,
-    maxBids: 1,
-    adapter: CONSTANTS.S2S.ADAPTER,
-    syncEndpoint: CONSTANTS.S2S.SYNC_ENDPOINT,
-    cookieSet: true,
-    bidders: []
-  }, options);
-  adaptermanager.setS2SConfig(config);
 };
 
 /**
