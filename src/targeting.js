@@ -36,7 +36,7 @@ export function newTargeting(auctionManager) {
     // Get targeting for the winning bid. Add targeting for any bids that have
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
     var targeting = getWinningBidTargeting(adUnitCodes)
-      .concat(getAlwaysUseBidTargeting(adUnitCodes))
+      .concat(getCustomBidTargeting(adUnitCodes))
       .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes) : []);
 
     // store a reference of the targeting keys
@@ -135,7 +135,9 @@ export function newTargeting(auctionManager) {
             typeof winner.sendStandardTargeting === 'undefined' ||
             winner.sendStandardTargeting ||
             standardKeys.indexOf(key) === -1)
-          .map(key => ({ [key.substring(0, 20)]: [winner.adserverTargeting[key]] }))
+          .map(key => ({
+            [(key === 'hb_deal' || key === 'hb_adid') ? `${key}_${winner.bidderCode}`.substring(0, 20) : key.substring(0, 20)]: [winner.adserverTargeting[key]]
+          }))
       };
     });
 
@@ -149,27 +151,25 @@ export function newTargeting(auctionManager) {
   }
 
   /**
-   * Get custom targeting keys for bids that have `alwaysUseBid=true`.
+   * Get custom targeting keys for bids`.
    */
-  function getAlwaysUseBidTargeting(adUnitCodes) {
+  function getCustomBidTargeting(adUnitCodes) {
     let standardKeys = getStandardKeys();
 
     return auctionManager.getBidsReceived()
-      .filter(adUnitsFilter.bind(this, adUnitCodes))
+      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
       .map(bid => {
-        if (bid.alwaysUseBid) {
-          return {
-            [bid.adUnitCode]: Object.keys(bid.adserverTargeting).map(key => {
-              // Get only the non-standard keys of the losing bids, since we
-              // don't want to override the standard keys of the winning bid.
-              if (standardKeys.indexOf(key) > -1) {
-                return;
-              }
-
-              return { [key.substring(0, 20)]: [bid.adserverTargeting[key]] };
-            }).filter(key => key) // remove empty elements
-          };
-        }
+        return {
+          [bid.adUnitCode]: Object.keys(bid.adserverTargeting)
+            // Get only the non-standard keys of the losing bids, since we
+            // don't want to override the standard keys of the winning bid.
+            .filter(key => standardKeys.indexOf(key) === -1)
+            .map(key => {
+              return {
+                [key.substring(0, 20)]: [bid.adserverTargeting[key]]
+              };
+            })
+        };
       })
       .filter(bid => bid); // removes empty elements in array;
   }
