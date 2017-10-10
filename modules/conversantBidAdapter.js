@@ -4,36 +4,33 @@ import { VIDEO } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//media.msg.dotomi.com/s2s/header/24';
+const SYNC_URL = '//media.msg.dotomi.com/w/user.sync';
 const VERSION = '2.2.0';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['cnvr'], // short code
+  aliases: ['conversant'], // short code
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    * 
-   * @param {BidRequest}
-   *          bid The bid params to validate.
+   * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    // console.log('did we get called?', JSON.stringify(bid));
-    return !!(bid.params.site_id);
+    return !!(bid && bid.params && bid.params.site_id);
   },
   /**
    * Make a server request from the list of BidRequests.
    * 
-   * @param {validBidRequests[]} -
-   *          an array of bids
+   * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
-    // console.log('hello world ', JSON.stringify(validBidRequests));
     const loc = utils.getTopWindowLocation();
+    const page = loc.pathname + loc.search + loc.hash;
     let siteId = '';
     let secure = 0;
-    let page = loc.pathname + loc.search + loc.hash;
     let requestId = '';
 
     const conversantImps = validBidRequests.map(function(bid) {
@@ -72,7 +69,6 @@ export const spec = {
 
         imp.banner = banner;
       }
-      // console.log(JSON.stringify(imp));
 
       return imp;
     });
@@ -88,9 +84,8 @@ export const spec = {
       device: getDevice(),
       at: 1
     };
-    const payloadString = JSON.stringify(payload);
-    // console.log('payload', payloadString);
 
+    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: URL,
@@ -101,22 +96,17 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    * 
-   * @param {*}
-   *          serverResponse A successful response from the server.
+   * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     const requestMap = {};
+    const currency = serverResponse.cur || 'USD';
 
     bidRequest.payload.imp.forEach(imp => requestMap[imp.id] = imp);
 
-    // console.log('response', JSON.stringify(serverResponse));
-    // console.log('request', JSON.stringify(bidRequest));
-    // console.log('map', JSON.stringify(requestMap));
-
     if (serverResponse && serverResponse.id) {
-      // console.log('processing serverResponse');
       serverResponse.seatbid.forEach(bidList => bidList.bid.forEach(conversantBid => {
         const responseCPM = parseFloat(conversantBid.price);
         if (responseCPM > 0.0 && conversantBid.impid) {
@@ -127,37 +117,37 @@ export const spec = {
           const bid = {
             requestId: conversantBid.impid,
             bidderCode: BIDDER_CODE,
-            currency: 'USD',
+            currency: currency,
             cpm: responseCPM,
             creativeId: conversantBid.crid || ''
           };
 
           if (request.video) {
             bid.vastUrl = responseAd;
-            // bid.descriptionUrl = responseAd;
             bid.mediaType = 'video';
+
+            if (request.video.format.length >= 1) {
+              bid.width = request.video.format[0].w;
+              bid.height = request.video.format[0].h;
+            }
           } else {
             bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+            bid.width = conversantBid.w;
+            bid.height = conversantBid.h;
           }
 
-          bid.width = conversantBid.w;
-          bid.height = conversantBid.h;
-
-          // console.log('bid', JSON.stringify(bid));
           bidResponses.push(bid);
         }
       }));
     }
 
-    // console.log('response', JSON.stringify(bidResponses));
-
     return bidResponses;
   },
   getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//cmedia102.dev2.vcmedia.com/w/user.sync'
+        url: SYNC_URL
       }];
     }
   }
