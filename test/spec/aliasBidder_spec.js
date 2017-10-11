@@ -7,7 +7,6 @@ describe('Publisher API _ Alias Bidder', function () {
   var prebid = require('../../src/prebid');
 
   before(function () {
-
     var topSlotCode = '/19968336/header-bid-tag1';
     var topSlotSizes = [[728, 90], [970, 90]];
     var adUnit = {
@@ -23,7 +22,7 @@ describe('Publisher API _ Alias Bidder', function () {
       ]
     };
 
-    pbjs.addAdUnits(adUnit);
+    $$PREBID_GLOBAL$$.addAdUnits(adUnit);
   });
 
   after(function () {
@@ -31,12 +30,8 @@ describe('Publisher API _ Alias Bidder', function () {
   });
 
   describe('set Alias Bidder', function () {
-
     it('should have both of target bidder and alias bidder', function () {
-
-      pbjs.aliasBidder('appnexus', 'bRealTime1');
-
+      $$PREBID_GLOBAL$$.aliasBidder('appnexus', 'bRealTime1');
     });
   });
-
 });

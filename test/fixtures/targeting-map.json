@@ -1,8 +1,29 @@
 {
-  "/123456/header-bid-tag-0": {
-    "hb_bidder": "rubicon",
-    "hb_adid": "148018fe5e",
-    "hb_pb": "10.00",
-    "foobar": "300x250"
-  }
+  "/19968336/header-bid-tag-0": [
+    {
+      "hb_bidder": [
+        "appnexus"
+      ]
+    },
+    {
+      "hb_adid": [
+        "233bcbee889d46d"
+      ]
+    },
+    {
+      "hb_pb": [
+        "10.00"
+      ]
+    },
+    {
+      "hb_size": [
+        "300x250"
+      ]
+    },
+    {
+      "foobar": [
+        "300x250"
+      ]
+    }
+  ]
 }

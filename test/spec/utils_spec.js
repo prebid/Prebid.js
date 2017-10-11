@@ -1,22 +1,22 @@
+import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+
 var assert = require('assert');
 var utils = require('../../src/utils');
 
 describe('Utils', function () {
-
   var obj_string = 's',
-      obj_number = 1,
-      obj_object = {},
-      obj_array = [],
-      obj_function = function () {};
+    obj_number = 1,
+    obj_object = {},
+    obj_array = [],
+    obj_function = function () {};
 
   var type_string = 'String',
-  type_number = 'Number',
-  type_object = 'Object',
-  type_array = 'Array',
-  type_function = 'Function';
+    type_number = 'Number',
+    type_object = 'Object',
+    type_array = 'Array',
+    type_function = 'Function';
 
   describe('replaceTokenInString', function () {
-
     it('should replace all given tokens in a String', function () {
       var tokensToReplace = {
         foo: 'bar',
@@ -34,13 +34,13 @@ describe('Utils', function () {
     });
   });
 
-  describe('getBidIdParamater', function () {
+  describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('a', obj);
+      var output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
     });
 
@@ -49,7 +49,7 @@ describe('Utils', function () {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParamater('c', obj);
+      var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
     });
   });
@@ -79,8 +79,8 @@ describe('Utils', function () {
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
       var obj = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
 
       var output = utils.parseQueryStringParameters(obj);
@@ -97,14 +97,11 @@ describe('Utils', function () {
 
   describe('transformAdServerTargetingObj', function () {
     it('should append query string to existing using the input obj', function () {
-      var obj = {
-        a:'1',
-        b:'2'
-      };
+      var obj = getAdServerTargeting();
 
-      var output = utils.transformAdServerTargetingObj(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
-      assert.equal(output, expectedResult);
+      var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
+      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      assert.equal(output, expected);
     });
 
     it('should return an empty string, if input obj is empty', function () {
@@ -117,48 +114,47 @@ describe('Utils', function () {
   describe('extend', function () {
     it('should merge two input object', function () {
       var target = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
 
       var source = {
-        c:'3'
+        c: '3'
       };
 
       var expectedResult = {
-        a:'1',
-        b:'2',
-        c:'3'
+        a: '1',
+        b: '2',
+        c: '3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, expectedResult);
     });
 
     it('should merge two input object even though target object is empty', function () {
       var target = {};
       var source = {
-        c:'3'
+        c: '3'
       };
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, source);
     });
 
     it('just return target object, if the source object is empty', function () {
       var target = {
-        a:'1',
-        b:'2'
+        a: '1',
+        b: '2'
       };
       var source = {};
 
-      var output = utils.extend(target, source);
+      var output = Object.assign(target, source);
       assert.deepEqual(output, target);
     });
   });
 
   describe('parseSizesInput', function () {
-
     it('should return query string using multi size array', function () {
       var sizes = [[728, 90], [970, 90]];
       var output = utils.parseSizesInput(sizes);
@@ -185,7 +181,6 @@ describe('Utils', function () {
   });
 
   describe('parseGPTSingleSizeArray', function () {
-
     it('should return size string with input single size array', function () {
       var size = [300, 250];
       var output = utils.parseGPTSingleSizeArray(size);
@@ -334,7 +329,6 @@ describe('Utils', function () {
       var output = utils.isStr(obj_function);
       assert.deepEqual(output, false);
     });
-
   });
 
   describe('isArray', function () {
@@ -362,7 +356,6 @@ describe('Utils', function () {
       var output = utils.isArray(obj_function);
       assert.deepEqual(output, false);
     });
-
   });
 
   describe('isEmpty', function () {
@@ -372,7 +365,7 @@ describe('Utils', function () {
     });
 
     it('should return false with non-empty object', function () {
-      var obj = { a:'b' };
+      var obj = { a: 'b' };
       var output = utils.isEmpty(obj);
       assert.deepEqual(output, false);
     });
@@ -411,24 +404,24 @@ describe('Utils', function () {
     	});
 
     	it('return value array with vaild input object', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v) {return v;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
     	});
 
     	it('return value array with vaild input object_callback func changed 1', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v, k) {return v + k;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
     	});
 
     	it('return value array with vaild input object_callback func changed 2', function () {
-      var input = { a:'A', b:'B' };
-      var callback = function (v, k, o) {return o;};
+      var input = { a: 'A', b: 'B' };
+      var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
@@ -450,10 +443,6 @@ describe('Utils', function () {
       assert.deepEqual(output.width, 0);
     });
 
-    it('return iframe - border', function () {
-      assert.deepEqual(output.border, '0px');
-    });
-
     it('return iframe - hspace', function () {
       assert.deepEqual(output.hspace, '0');
     });
@@ -470,9 +459,6 @@ describe('Utils', function () {
       assert.deepEqual(output.marginHeight, '0');
     });
 
-    //it('return iframe - style.border',function(){
-    //	assert.deepEqual(output.style.border,'0px');
-    //});
     it('return iframe - scrolling', function () {
       assert.deepEqual(output.scrolling, 'no');
     });
@@ -490,4 +476,199 @@ describe('Utils', function () {
     });
   });
 
+  describe('getHighestCpm', function () {
+    it('should pick the existing highest cpm', function () {
+      var previous = {
+        cpm: 2,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      assert.equal(utils.getHighestCpm(previous, current), previous);
+    });
+
+    it('should pick the new highest cpm', function () {
+      var previous = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 2,
+        timeToRespond: 100
+      };
+      assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the fastest cpm in case of tie', function () {
+      var previous = {
+        cpm: 1,
+        timeToRespond: 100
+      };
+      var current = {
+        cpm: 1,
+        timeToRespond: 50
+      };
+      assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+  });
+
+  describe('polyfill test', function () {
+    it('should not add polyfill to array', function() {
+      var arr = ['hello', 'world'];
+      var count = 0;
+      for (var key in arr) {
+        count++;
+      }
+      assert.equal(arr.length, count, 'Polyfill test fails');
+    });
+  });
+
+  describe('cookie support', function () {
+    // store original cookie getter and setter so we can reset later
+    var origCookieSetter = document.__lookupSetter__('cookie');
+    var origCookieGetter = document.__lookupGetter__('cookie');
+
+    // store original cookieEnabled getter and setter so we can reset later
+    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
+    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
+
+    // Replace the document cookie set function with the output of a custom function for testing
+    let setCookie = (v) => v;
+
+    beforeEach(() => {
+      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
+      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = v;
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
+
+      // Reset the setCookie cookie function before each test
+      setCookie = (v) => v;
+      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
+      Object.defineProperty(window.document, 'cookie', (function (_value) {
+        return {
+          get: function _get() {
+            return _value;
+          },
+          set: function _set(v) {
+            _value = setCookie(v);
+          },
+          configurable: true
+        };
+      })(window.navigator.cookieEnabled));
+    });
+
+    afterEach(() => {
+      // redefine window.navigator.cookieEnabled to original getter and setter
+      Object.defineProperty(window.navigator, 'cookieEnabled', {
+        get: origCookieEnabledGetter,
+        set: origCookieEnabledSetter,
+        configurable: true
+      });
+      // redefine document.cookie to original getter and setter
+      Object.defineProperty(document, 'cookie', {
+        get: origCookieGetter,
+        set: origCookieSetter,
+        configurable: true
+      });
+    });
+
+    it('should be detected', function() {
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
+    });
+
+    it('should be not available', function() {
+      setCookie = () => '';
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
+    });
+
+    it('should be available', function() {
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = 'key=value';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should already be set');
+      window.navigator.cookieEnabled = false;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should settable');
+      setCookie = () => '';
+      window.navigator.cookieEnabled = true;
+      window.document.cookie = '';
+      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be on via on window.navigator');
+      // Reset the setCookie
+      setCookie = (v) => v;
+    });
+  });
+
+  describe('delayExecution', function () {
+    it('should execute the core function after the correct number of calls', function () {
+      const callback = sinon.spy();
+      const delayed = utils.delayExecution(callback, 5);
+      for (let i = 0; i < 4; i++) {
+        delayed();
+      }
+      assert(callback.notCalled);
+      delayed(3);
+      assert(callback.called)
+      assert.equal(callback.firstCall.args[0], 3);
+    });
+  });
+
+  describe('deepAccess', function() {
+    var obj = {
+      1: 2,
+      test: {
+        first: 11
+      }
+    };
+
+    it('should allow deep access of object properties', function() {
+      var value1 = utils.deepAccess(obj, 'test');
+      assert.deepEqual(value1, obj.test);
+
+      var value2 = utils.deepAccess(obj, 'test.first');
+      assert.equal(value2, 11);
+
+      var value3 = utils.deepAccess(obj, 1);
+      assert.equal(value3, 2);
+    });
+
+    it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function() {
+      var value;
+
+      assert.doesNotThrow(function() {
+        value = utils.deepAccess(obj, 'test.second.third');
+      });
+
+      assert.equal(value, undefined);
+    });
+  });
+
+  describe('getDefinedParams', () => {
+    it('builds an object consisting of defined params', () => {
+      const adUnit = {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+        notNeeded: 'do not include',
+      };
+
+      const builtObject = utils.getDefinedParams(adUnit, [
+        'mediaType', 'comeWithMe'
+      ]);
+
+      assert.deepEqual(builtObject, {
+        mediaType: 'video',
+        comeWithMe: 'ifuwant2live',
+      });
+    });
+  });
 });
