@@ -142,7 +142,7 @@ The new code will reside under the modules directory with the name of the bidder
 Compared to previous versions of Prebid, the new BaseAdapter model saves the adapter from having to make the AJAX call and provides consistency in how adapters are structured. Instead of a single entry point, the BaseAdapter approach defines 4 entry points:
 
 * `isBidRequestValid` - Verify the the `AdUnits.bids`, respond with `true` (valid) or `false` (invalid)
-* `buildRequests` - Takes an array of validBidRequests, if of which is guaranteed to have passed the isBidRequestValid() test.
+* `buildRequests` - Takes an array of validBidRequests, all of which are guaranteed to have passed the isBidRequestValid() test.
 * `interpretResponse` - Parse the response and generate one or more bid objects
 * `getUserSyncs` - If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.
 
