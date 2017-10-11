@@ -19,7 +19,7 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: bid => (
-    !!(bid && bid.params && bid.params.zoneId)
+    !!(bid && bid.params && (bid.params.zoneId || bid.params.networkId))
   ),
 
   /**
@@ -124,10 +124,12 @@ function buildCdbRequest(context, bidRequests) {
       networkId = bidRequest.params.networkId || networkId;
       const slot = {
         impid: bidRequest.bidId,
-        zoneid: bidRequest.params.zoneId,
         transactionid: bidRequest.transactionId,
         sizes: bidRequest.sizes.map(size => size[0] + 'x' + size[1]),
       };
+      if (bidRequest.params.zoneId) {
+        slot.zoneid = bidRequest.params.zoneId;
+      }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
