@@ -12,11 +12,16 @@ Module that connects to Beachfront's demand sources
 ```
     var adUnits = [
         {
-            code: 'test-div',
+            code: 'test-video',
             sizes: [[640, 360]],
+            mediaTypes: {
+                video: {
+                    context: 'instream'
+                }
+            },
             bids: [
                 {
-                    bidder: "beachfront",
+                    bidder: 'beachfront',
                     params: {
                         bidfloor: 0.01,
                         appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
