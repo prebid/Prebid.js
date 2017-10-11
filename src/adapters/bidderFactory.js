@@ -249,7 +249,7 @@ export function newBidder(spec) {
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               {
                 method: 'POST',
-                contentType: 'application/json',
+                contentType: 'text/plain',
                 withCredentials: true
               }
             );
