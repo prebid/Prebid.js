@@ -1,8 +1,8 @@
 
 /**
- * @typedef {function} PluginFunction
+ * @typedef {function} HookedFunction
  * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
- *  to the PluginFunction
+ *  to the HookedFunction
  * @property {function(function())} removeHook A method to remove attached hooks
  */
 
@@ -18,7 +18,7 @@ export const hooks = {};
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
  *  the addPlugin and removePlugin methods for that hook (which are usually accessed as methods on the function itself)
- * @returns {PluginFunction} A new function that implements the PluginFunction interface
+ * @returns {HookedFunction} A new function that implements the HookedFunction interface
  */
 export function createHook(type, fn, hookName) {
   let _hooks = [{fn, priority: 0}];
