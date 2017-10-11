@@ -105,7 +105,6 @@
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
     "core-js": "^2.4.1",
-    "gulp-sourcemaps": "^2.6.0",
-    "tinyqueue": "^1.2.2"
+    "gulp-sourcemaps": "^2.6.0"
   }
 }
