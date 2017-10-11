@@ -17,7 +17,7 @@ export const hooks = {};
  * @param {string} type The method for applying all attached hooks when this hooked function is called
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
- *  the addPlugin and removePlugin methods for that hook (which are usually accessed as methods on the function itself)
+ *  the addHook and removeHook methods for that hook (which are usually accessed as methods on the function itself)
  * @returns {HookedFunction} A new function that implements the HookedFunction interface
  */
 export function createHook(type, fn, hookName) {
