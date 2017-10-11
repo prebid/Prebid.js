@@ -13,18 +13,18 @@ export const spec = {
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
-   * 
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
+   *
+   * @param {BidRequest} bid - The bid params to validate.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     return !!(bid && bid.params && bid.params.site_id);
   },
   /**
    * Make a server request from the list of BidRequests.
-   * 
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
     const loc = utils.getTopWindowLocation();
@@ -85,17 +85,15 @@ export const spec = {
       at: 1
     };
 
-    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: URL,
-      data: payloadString,
-      payload: payload
+      data: payload,
     };
   },
   /**
    * Unpack the response from the server into a list of bids.
-   * 
+   *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -104,7 +102,7 @@ export const spec = {
     const requestMap = {};
     const currency = serverResponse.cur || 'USD';
 
-    bidRequest.payload.imp.forEach(imp => requestMap[imp.id] = imp);
+    bidRequest.data.imp.forEach(imp => requestMap[imp.id] = imp);
 
     if (serverResponse && serverResponse.id) {
       serverResponse.seatbid.forEach(bidList => bidList.bid.forEach(conversantBid => {
@@ -143,6 +141,12 @@ export const spec = {
 
     return bidResponses;
   },
+  /**
+   * Return use sync info
+   *
+   * @param {SyncOptions} syncOptions - Info about usersyncs that the adapter should obey
+   * @return {UserSync} Adapter sync type and url
+   */
   getUserSyncs: function(syncOptions) {
     if (syncOptions.pixelEnabled) {
       return [{
@@ -153,10 +157,20 @@ export const spec = {
   }
 }
 
+/**
+ * Determine do-not-track state
+ *
+ * @returns {boolean}
+ */
 function getDNT() {
   return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
+/**
+ * Return openrtb device object that includes ua, width, and height.
+ *
+ * @returns {Device} Openrtb device object
+ */
 function getDevice() {
   const language = navigator.language ? 'language' : 'userLanguage';
   return {
@@ -169,6 +183,13 @@ function getDevice() {
   };
 }
 
+/**
+ * Convert arrays of widths and heights to an array of objects with w and h properties. [[300, 250],
+ * [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
+ *
+ * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
+ * @returns {object[]} Array of objects with w and h
+ */
 function convertSizes(bidSizes) {
   let format;
 
@@ -181,10 +202,24 @@ function convertSizes(bidSizes) {
   return format;
 }
 
+/**
+ * Check if it's a video bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a video bid
+ */
 function isVideoRequest(bid) {
   return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
 }
 
+/**
+ * Copy property if exists from src to dst
+ *
+ * @param {object} src
+ * @param {string} srcName
+ * @param {object} dst
+ * @param {string} [dstName] - Optional. If not specified then srcName is used.
+ */
 function copyOptProperty(src, srcName, dst, dstName) {
   dstName = dstName || srcName;
   const obj = utils.getBidIdParameter(srcName, src);
