@@ -1,7 +1,9 @@
 # Overview
 
 Module Name: Beachfront Bid Adapter
+
 Module Type: Bidder Adapter
+
 Maintainer: johnsalis@beachfront.com
 
 # Description
@@ -9,7 +11,7 @@ Maintainer: johnsalis@beachfront.com
 Module that connects to Beachfront's demand sources
 
 # Test Parameters
-```
+```javascript
     var adUnits = [
         {
             code: 'test-video',
