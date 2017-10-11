@@ -1,5 +1,6 @@
 import { videoAdapters } from './adaptermanager';
 import { getBidRequest, deepAccess } from './utils';
+import { auctionManager } from './auctionManager';
 
 const VIDEO_MEDIA_TYPE = 'video';
 const OUTSTREAM = 'outstream';
@@ -23,7 +24,7 @@ export const hasNonVideoBidder = adUnit =>
  * @return {boolean} If object is valid
  */
 export function isValidVideoBid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
+  const bidRequest = getBidRequest(bid.adId, auctionManager.getBidsRequested());
 
   const videoMediaType =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
