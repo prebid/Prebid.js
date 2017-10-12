@@ -49,7 +49,7 @@ export const spec = {
           requestId: slot.impid,
           cpm: slot.cpm,
           // currency: 'USD', // FIXME: should return currency from CDB
-          // netRevenue: true, // FIXME: are bids net or gross?
+          netRevenue: true,
           ad: slot.creative,
           width: slot.width,
           height: slot.height,
