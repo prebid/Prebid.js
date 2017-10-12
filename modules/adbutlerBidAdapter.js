@@ -9,7 +9,6 @@ const BIDDER_CODE = 'adbutler';
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
-  zoneCounters: {},
 
   isBidRequestValid: function (bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
@@ -24,6 +23,7 @@ export const spec = {
     var domain;
     var requestURI;
     var serverRequests = [];
+    var zoneCounters = {};
 
     for (i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
@@ -32,8 +32,8 @@ export const spec = {
       keyword = utils.getBidIdParameter('keyword', bidRequest.params);
       domain = utils.getBidIdParameter('domain', bidRequest.params);
 
-      if (!(zoneID in spec.zoneCounters)) {
-        spec.zoneCounters[zoneID] = 0;
+      if (!(zoneID in zoneCounters)) {
+        zoneCounters[zoneID] = 0;
       }
 
       if (typeof domain === 'undefined' || domain.length === 0) {
@@ -44,14 +44,14 @@ export const spec = {
       requestURI += 'ID=' + encodeURIComponent(accountID) + ';';
       requestURI += 'setID=' + encodeURIComponent(zoneID) + ';';
       requestURI += 'pid=' + encodeURIComponent(spec.pageID) + ';';
-      requestURI += 'place=' + encodeURIComponent(spec.zoneCounters[zoneID]) + ';';
+      requestURI += 'place=' + encodeURIComponent(zoneCounters[zoneID]) + ';';
 
       // append the keyword for targeting if one was passed in
       if (keyword !== '') {
         requestURI += 'kw=' + encodeURIComponent(keyword) + ';';
       }
 
-      spec.zoneCounters[zoneID]++;
+      zoneCounters[zoneID]++;
       serverRequests.push({
         method: 'GET',
         url: requestURI,
