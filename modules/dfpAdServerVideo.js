@@ -56,6 +56,16 @@ const defaultParamConstants = {
  *   demand in DFP.
  */
 export default function buildDfpVideoUrl(options) {
+  if (!options.params && !options.url) {
+    logError(`A params object or a url is required to use pbjs.adServers.dfp.buildVideoUrl`);
+    return;
+  }
+
+  if (options.params && options.url) {
+    logError(`Passing both a params object and a url to pbjs.adServers.dfp.buildVideoUrl is invalid.`);
+    return;
+  }
+
   const adUnit = options.adUnit;
   const bid = options.bid || getWinningBids(adUnit.code)[0];
 
