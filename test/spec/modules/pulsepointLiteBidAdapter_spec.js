@@ -215,13 +215,23 @@ describe('PulsePoint Lite Adapter Tests', () => {
   });
 
   it('Verifies sync options', () => {
-    expect(spec.getUserSyncs({})).to.be.undefined;
-    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
+    expect(spec.getUserSyncs({})).to.be.empty;
+    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.empty;
     const options = spec.getUserSyncs({ iframeEnabled: true});
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+  });
+
+  it('Verifies iframe and image options', () => {
+    const options = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true});
+    expect(options).to.not.be.undefined;
+    expect(options).to.have.lengthOf(2);
+    expect(options[0].type).to.equal('iframe');
+    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+    expect(options[1].type).to.equal('image');
+    expect(options[1].url).to.equal('//bh.contextweb.com/visitormatch/prebid');
   });
 
   it('Verify app requests', () => {
