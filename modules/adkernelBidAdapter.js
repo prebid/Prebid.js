@@ -295,11 +295,11 @@ const AdKernelAdapter = function AdKernelAdapter() {
     }
   }
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     getBidderCode: baseAdapter.getBidderCode
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new AdKernelAdapter(), 'adkernel', {

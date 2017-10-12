@@ -56,8 +56,10 @@ const KargoAdapter = function KargoAdapter() {
 
   function _readCookie(name) {
     let nameEquals = `${name}=`;
+    let cookies = document.cookie.split(';');
 
-    for (let cookie of document.cookie.split(';')) {
+    for (let key in cookies) {
+      let cookie = cookies[key];
       while (cookie.charAt(0) === ' ') {
         cookie = cookie.substring(1, cookie.length);
       }
@@ -84,8 +86,7 @@ const KargoAdapter = function KargoAdapter() {
       }
 
       return syncIds;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
@@ -100,8 +101,7 @@ const KargoAdapter = function KargoAdapter() {
       }
 
       return vData;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
@@ -131,8 +131,7 @@ const KargoAdapter = function KargoAdapter() {
   function _getLocalStorageSafely(key) {
     try {
       return localStorage.getItem(key);
-    }
-    catch (e) {
+    } catch (e) {
       return null;
     }
   }

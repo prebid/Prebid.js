@@ -24,6 +24,12 @@ const XhbAdapter = function XhbAdapter() {
         val: function (bidResponse) {
           return bidResponse.adId;
         }
+      },
+      {
+        key: 'hb_xhb_size',
+        val: function (bidResponse) {
+          return bidResponse.width + 'x' + bidResponse.height;
+        }
       }
     ]
   };
@@ -154,11 +160,11 @@ const XhbAdapter = function XhbAdapter() {
     }
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildJPTCall: buildJPTCall
-  };
+  });
 };
 
 adaptermanager.registerBidAdapter(new XhbAdapter(), 'xhb');

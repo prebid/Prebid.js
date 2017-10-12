@@ -127,7 +127,7 @@ const createSuccessBidResponse = (placementId, size, format, bidId, cpmCents, pa
   bid.fb_placementid = placementId;
   // Video attributes
   if (isVideo(format)) {
-    const vast = `https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=${encodeURIComponent(pageurl)}&playerwidth=${bid.width}&playerheight=${bid.height}&bidid=${bidId}`;
+    const vast = `https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=${pageurl}&playerwidth=${bid.width}&playerheight=${bid.height}&bidid=${bidId}`;
     bid.mediaType = 'video';
     bid.vastUrl = vast;
     bid.descriptionUrl = vast;
@@ -183,7 +183,7 @@ const callBids = bidRequest => {
   if (placementids.length) {
     // Build URL
     const testmode = isTestmode();
-    const pageurl = location.href;
+    const pageurl = encodeURIComponent(location.href);
     const search = {
       placementids,
       adformats,
@@ -242,7 +242,13 @@ const callBids = bidRequest => {
  * @property {Function} setBidderCode - used for bidder aliasing
  * @property {Function} getBidderCode - unique 'audienceNetwork' identifier
  */
-const AudienceNetwork = () => ({ callBids, setBidderCode, getBidderCode });
+function AudienceNetwork() {
+  return Object.assign(this, {
+    callBids,
+    setBidderCode,
+    getBidderCode
+  });
+}
 
 adaptermanager.registerBidAdapter(new AudienceNetwork(), 'audienceNetwork', {
   supportedMediaTypes: ['video']

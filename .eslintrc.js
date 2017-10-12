@@ -19,12 +19,9 @@ module.exports = {
     // Violations of these styles should be fixed, and the exceptions removed over time.
     //
     // See Issue #1111.
-    "brace-style": "off",
     "camelcase": "off",
     "eqeqeq": "off",
-    "import/first": "off",
     "no-control-regex": "off",
-    "no-redeclare": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",

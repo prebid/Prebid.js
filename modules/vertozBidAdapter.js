@@ -6,7 +6,7 @@ var adloader = require('src/adloader.js');
 var adaptermanager = require('src/adaptermanager');
 
 function VertozAdapter() {
-  const BASE_URI = '//banner.vrtzads.com/vzhbidder/bid?';
+  const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
   const BIDDER_NAME = 'vertoz';
   const QUERY_PARAM_KEY = 'q';
 
@@ -33,7 +33,8 @@ function VertozAdapter() {
         _rqsrc: reqSrc,
         _cb: cb,
         _slotBidId: slotBidId,
-        _cpm: cpm
+        _cpm: cpm,
+        _cbn: '$$PREBID_GLOBAL$$'
       };
 
       let queryParamValue = JSON.stringify(vzReq);

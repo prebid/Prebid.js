@@ -27,8 +27,7 @@ function TrionAdapter() {
         userTag.sectionId = utils.getBidIdParameter('sectionId', bids[0].params);
         if (!userTag.to) {
           getBids(bids);
-        }
-        else {
+        } else {
           setTimeout(function () {
             getBids(bids);
           }, userTag.to);
@@ -118,11 +117,11 @@ function TrionAdapter() {
     bidmanager.addBidResponse(placementCode, bid);
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     buildTrionUrl: buildTrionUrl
-  };
+  });
 }
 
 adaptermanager.registerBidAdapter(new TrionAdapter(), 'trion');

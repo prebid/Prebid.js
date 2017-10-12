@@ -74,9 +74,9 @@ describe('carambolaAdapter', function () {
         expect(requests[0]).to.be.empty;
       });
 
-      it('should hit the default route.carambo.la endpoint', () => {
+      it('should hit the default hb.carambo.la endpoint', () => {
         adapter.callBids(DEFAULT_BIDDER_REQUEST);
-        expect(requests[0].url).to.contain('route.carambo.la');
+        expect(requests[0].url).to.contain('hb.carambo.la');
       });
 
       it('should verifiy that a page_view_id is sent', () => {

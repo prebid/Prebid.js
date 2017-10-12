@@ -12,6 +12,7 @@ const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+const SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
 
 const LIBRARY = 'library';
 const ENDPOINT = 'endpoint';
@@ -102,6 +103,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
         [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),
+        [SET_TARGETING]: args => this.enqueue({ eventType: SET_TARGETING, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AUCTION_INIT]: args => {
           args.config = config.options; // enableAnaltyics configuration object

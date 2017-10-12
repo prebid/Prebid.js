@@ -114,7 +114,6 @@ const JustpremiumAdapter = function JustpremiumAdapter() {
         return rec.length ? rec.pop() : false;
       }
     }
-
     return false;
   }
 

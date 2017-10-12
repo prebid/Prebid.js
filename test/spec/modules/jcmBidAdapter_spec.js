@@ -198,7 +198,7 @@ describe('jcm adapter tests', function () {
     var response = '{"bids":[{"width":300,"cpm":3,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_300x250.png%22%3E","callbackId":"3c9408cdbf2f68","height":250},{"width":728,"cpm":0,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_728x90.png%22%3E","callbackId":"3c9408cdbf2f69","height":90}]}';
 
     it('callback function should exist', function () {
-      expect($$PREBID_GLOBAL$$.processJCMResponse).to.exist.and.to.be.a('function');
+      expect(pbjs.processJCMResponse).to.exist.and.to.be.a('function');
     });
 
     it('bidmanager.addBidResponse should be called twice with correct arguments', function () {
@@ -219,7 +219,7 @@ describe('jcm adapter tests', function () {
         $$PREBID_GLOBAL$$._bidsRequested.push(params);
       }
       $$PREBID_GLOBAL$$.adUnits = adUnits;
-      $$PREBID_GLOBAL$$.processJCMResponse(response);
+      pbjs.processJCMResponse(response);
 
       var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
       var bidObject1 = stubAddBidResponse.getCall(0).args[1];

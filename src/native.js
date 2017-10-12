@@ -1,4 +1,4 @@
-import { getBidRequest, logError, insertPixel } from './utils';
+import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
 
 export const nativeAdapters = [];
 
@@ -9,6 +9,7 @@ export const NATIVE_KEYS = {
   image: 'hb_native_image',
   icon: 'hb_native_icon',
   clickUrl: 'hb_native_linkurl',
+  cta: 'hb_native_cta',
 };
 
 export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
@@ -16,12 +17,12 @@ export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
 );
 
 const IMAGE = {
-  image: {required: true},
-  title: {required: true},
-  sponsoredBy: {required: true},
-  clickUrl: {required: true},
-  body: {required: false},
-  icon: {required: false},
+  image: { required: true },
+  title: { required: true },
+  sponsoredBy: { required: true },
+  clickUrl: { required: true },
+  body: { required: false },
+  icon: { required: false },
 };
 
 const SUPPORTED_TYPES = {
@@ -58,7 +59,11 @@ function typeIsSupported(type) {
  * TODO: abstract this and the video helper functions into general
  * adunit validation helper functions
  */
-export const nativeAdUnit = adUnit => adUnit.mediaType === 'native';
+export const nativeAdUnit = adUnit => {
+  const mediaType = adUnit.mediaType === 'native';
+  const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
+  return mediaType || mediaTypes;
+}
 export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
@@ -69,15 +74,21 @@ export const hasNonNativeBidder = adUnit =>
  */
 export function nativeBidIsValid(bid) {
   const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) { return false; }
+  if (!bidRequest) {
+    return false;
+  }
 
   const requestedAssets = bidRequest.nativeParams;
-  if (!requestedAssets) { return true; }
+  if (!requestedAssets) {
+    return true;
+  }
 
   const requiredAssets = Object.keys(requestedAssets).filter(
     key => requestedAssets[key].required
   );
-  const returnedAssets = Object.keys(bid.native).filter(key => bid.native[key]);
+  const returnedAssets = Object.keys(bid['native']).filter(
+    key => bid['native'][key]
+  );
 
   return requiredAssets.every(asset => returnedAssets.includes(asset));
 }
@@ -87,10 +98,10 @@ export function nativeBidIsValid(bid) {
  * impression tracker urls for the given ad object and fires them.
  */
 export function fireNativeImpressions(adObject) {
-  const impressionTrackers = adObject.native &&
-    adObject.native.impressionTrackers;
+  const impressionTrackers =
+    adObject['native'] && adObject['native'].impressionTrackers;
 
   (impressionTrackers || []).forEach(tracker => {
-    insertPixel(tracker);
+    triggerPixel(tracker);
   });
 }
