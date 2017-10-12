@@ -48,20 +48,17 @@ export const spec = {
   ),
 
   getUserSyncs: syncOptions => {
-    const syncs = [];
     if (syncOptions.iframeEnabled) {
-      syncs.push({
+      return [{
         type: 'iframe',
         url: '//bh.contextweb.com/visitormatch'
-      });
-    }
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
+      }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
         type: 'image',
         url: '//bh.contextweb.com/visitormatch/prebid'
-      });
+      }];
     }
-    return syncs;
   }
 
 };
