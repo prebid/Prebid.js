@@ -66,7 +66,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {('GET'|'POST')} method The type of request which this is.
  * @property {string} url The endpoint for the request. For example, "//bids.example.com".
  * @property {string|object} data Data to be sent in the request.
- * @property {string} contentType Content-Type set in the header of the bid request, overrides default 'text/plain'.
+ * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
  *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
  *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
  *   JSON-serialized into the Request body.
@@ -225,6 +225,11 @@ export function newBidder(spec) {
       requests.forEach(processRequest);
 
       function processRequest(request) {
+        for (var member in request.options) {
+          if (!request.options[member]) {
+            delete request.options[member];
+          }
+        }
         switch (request.method) {
           case 'GET':
             ajax(
@@ -248,11 +253,11 @@ export function newBidder(spec) {
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-              {
+              Object.assign({}, {
                 method: 'POST',
-                contentType: request.contentType || 'text/plain',
+                contentType: 'text/plain',
                 withCredentials: true
-              }
+              }, request.options)
             );
             break;
           default:
