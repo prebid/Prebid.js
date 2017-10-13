@@ -172,31 +172,6 @@ describe('bidders created by newBidder', () => {
       });
     });
 
-    it('should ignore options if passed null/undefined/empty values for POST request', () => {
-      const bidder = newBidder(spec);
-      const url = 'test.url.com';
-      const data = { arg: 2 };
-      const options = { contentType: null, withCredentials: undefined }
-      spec.isBidRequestValid.returns(true);
-      spec.buildRequests.returns({
-        method: 'POST',
-        url: url,
-        data: data,
-        options: options
-      });
-
-      bidder.callBids(MOCK_BIDS_REQUEST);
-
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal(url);
-      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
-        method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
-      });
-    });
-
     it('should make the appropriate GET request', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
@@ -216,6 +191,30 @@ describe('bidders created by newBidder', () => {
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',
         withCredentials: true
+      });
+    });
+
+    it('should make the appropriate GET request when options are passed', () => {
+      const bidder = newBidder(spec);
+      const url = 'test.url.com';
+      const data = { arg: 2 };
+      const opt = { withCredentials: false }
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'GET',
+        url: url,
+        data: data,
+        options: opt
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[2]).to.be.undefined;
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+        method: 'GET',
+        withCredentials: false
       });
     });
 

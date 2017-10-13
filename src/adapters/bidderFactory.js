@@ -225,12 +225,6 @@ export function newBidder(spec) {
       requests.forEach(processRequest);
 
       function processRequest(request) {
-        // check for undefined or null request.options
-        for (var member in request.options) {
-          if (!request.options[member]) {
-            delete request.options[member];
-          }
-        }
         switch (request.method) {
           case 'GET':
             ajax(
@@ -240,10 +234,10 @@ export function newBidder(spec) {
                 error: onFailure
               },
               undefined,
-              {
+              Object.assign({}, {
                 method: 'GET',
                 withCredentials: true
-              }
+              }, request.options)
             );
             break;
           case 'POST':
