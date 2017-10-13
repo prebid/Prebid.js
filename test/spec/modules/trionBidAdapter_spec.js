@@ -50,7 +50,7 @@ describe('Trion adapter tests', () => {
   afterEach(() => document.body.appendChild.restore());
 
   it('should exist and be a function', function () {
-    expect(pbjs.handleTrionCB).to.exist.and.to.be.a('function');
+    expect($$PREBID_GLOBAL$$.handleTrionCB).to.exist.and.to.be.a('function');
   });
 
   describe('request function', () => {

@@ -11,13 +11,22 @@
 
 import { ajax } from './ajax';
 
-const PUT_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
+const BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
 
 /**
- * These are the properties required on a Bid in order to cache and retrieve it.
- *
- * @typedef {object} CacheableBid
+ * @typedef {object} CacheableUrlBid
  * @property {string} vastUrl A URL which loads some valid VAST XML.
+ */
+
+/**
+ * @typedef {object} CacheablePayloadBid
+ * @property {string} vastPayload Some VAST XML which loads an ad in a video player.
+ */
+
+/**
+ * A CacheableBid describes the types which the videoCache can store.
+ *
+ * @typedef {CacheableUrlBid|CacheablePayloadBid} CacheableBid
  */
 
 /**
@@ -49,9 +58,10 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
+  const vastValue = bid.vastPayload ? bid.vastPayload : wrapURI(bid.vastUrl);
   return {
     type: 'xml',
-    value: wrapURI(bid.vastUrl)
+    value: vastValue
   };
 }
 
@@ -80,13 +90,16 @@ function shimStorageCallback(done) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
-      }
-      catch (e) {
+      } catch (e) {
         done(e, []);
         return;
       }
 
-      done(null, ids);
+      if (ids) {
+        done(null, ids);
+      } else {
+        done(new Error("The cache server didn't respond with a responses property."), []);
+      }
     },
     error: function(statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
@@ -106,8 +119,12 @@ export function store(bids, done) {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(PUT_URL, shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(BASE_URL, shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
+}
+
+export function getCacheUrl(id) {
+  return `${BASE_URL}?uuid=${id}`;
 }

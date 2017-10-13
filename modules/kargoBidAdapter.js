@@ -84,8 +84,7 @@ const KargoAdapter = function KargoAdapter() {
       }
 
       return syncIds;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
@@ -100,8 +99,7 @@ const KargoAdapter = function KargoAdapter() {
       }
 
       return vData;
-    }
-    catch (e) {
+    } catch (e) {
       return {};
     }
   }
@@ -131,8 +129,7 @@ const KargoAdapter = function KargoAdapter() {
   function _getLocalStorageSafely(key) {
     try {
       return localStorage.getItem(key);
-    }
-    catch (e) {
+    } catch (e) {
       return null;
     }
   }

@@ -116,7 +116,8 @@ describe('AudienceNetwork adapter', () => {
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=300x250');
+        .and.to.contain('adformats[]=300x250')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -144,7 +145,8 @@ describe('AudienceNetwork adapter', () => {
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id&placementids[]=test-placement-id')
         .and.to.contain('adformats[]=320x50')
-        .and.to.contain('adformats[]=300x250');
+        .and.to.contain('adformats[]=300x250')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -170,7 +172,8 @@ describe('AudienceNetwork adapter', () => {
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=fullwidth');
+        .and.to.contain('adformats[]=fullwidth')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -196,7 +199,8 @@ describe('AudienceNetwork adapter', () => {
       expect(requests[0].url)
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
-        .and.to.contain('adformats[]=native');
+        .and.to.contain('adformats[]=native')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });
@@ -223,7 +227,8 @@ describe('AudienceNetwork adapter', () => {
         .to.contain('https://an.facebook.com/v2/placementbid.json?')
         .and.to.contain('placementids[]=test-placement-id')
         .and.to.contain('adformats[]=video')
-        .and.to.contain('sdk[]=');
+        .and.to.contain('sdk[]=')
+        .and.to.contain('pageurl=http%3A%2F%2F');
       // Verify no attempt to log error
       expect(logError.called).to.equal(false);
     });

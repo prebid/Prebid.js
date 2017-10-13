@@ -7,6 +7,8 @@ import { STATUS, S2S } from 'src/constants';
 import { queueSync, cookieSet } from 'src/cookie';
 import adaptermanager from 'src/adaptermanager';
 import { config } from 'src/config';
+import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
+
 const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
@@ -52,7 +54,17 @@ const paramTypes = {
   'pubmatic': {
     'publisherId': tryConvertString,
     'adSlot': tryConvertString
-  }
+  },
+  'districtm': {
+    'member': tryConvertString,
+    'invCode': tryConvertString,
+    'placementId': tryConvertNumber
+  },
+  'pulsepoint': {
+    'cf': tryConvertString,
+    'cp': tryConvertNumber,
+    'ct': tryConvertNumber
+  },
 };
 
 let _cookiesQueued = false;
@@ -105,8 +117,13 @@ function PrebidServer() {
       is_debug: isDebug
     };
 
+    // in case config.bidders contains invalid bidders, we only process those we sent requests for.
+    const requestedBidders = requestJson.ad_units.map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques)).reduce(utils.flatten).filter(utils.uniques);
+    function processResponse(response) {
+      handleResponse(response, requestedBidders);
+    }
     const payload = JSON.stringify(requestJson);
-    ajax(config.endpoint, handleResponse, payload, {
+    ajax(config.endpoint, processResponse, payload, {
       contentType: 'text/plain',
       withCredentials: true
     });
@@ -118,7 +135,7 @@ function PrebidServer() {
   }
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
+  function handleResponse(response, requestedBidders) {
     let result;
     try {
       result = JSON.parse(response);
@@ -162,7 +179,7 @@ function PrebidServer() {
         const receivedBidIds = result.bids ? result.bids.map(bidObj => bidObj.bid_id) : [];
 
         // issue a no-bid response for every bid request that can not be matched with received bids
-        config.bidders.forEach(bidder => {
+        requestedBidders.forEach(bidder => {
           utils
             .getBidderRequestAllAdUnits(bidder)
             .bids.filter(bidRequest => !receivedBidIds.includes(bidRequest.bidId))
@@ -192,26 +209,30 @@ function PrebidServer() {
    * @param  {} {bidders} list of bidders to request user syncs for.
    */
   baseAdapter.queueSync = function({bidderCodes}) {
-    if (!_cookiesQueued) {
-      _cookiesQueued = true;
-      const payload = JSON.stringify({
-        uuid: utils.generateUUID(),
-        bidders: bidderCodes
-      });
-      ajax(config.syncEndpoint, (response) => {
-        try {
-          response = JSON.parse(response);
-          response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
-        }
-        catch (e) {
-          utils.logError(e);
-        }
-      },
-      payload, {
-        contentType: 'text/plain',
-        withCredentials: true
-      });
+    let syncedList = StorageManager.get(pbjsSyncsKey) || [];
+    if (_cookiesQueued || syncedList.length === bidderCodes.length) {
+      return;
     }
+    _cookiesQueued = true;
+    const payload = JSON.stringify({
+      uuid: utils.generateUUID(),
+      bidders: bidderCodes
+    });
+    ajax(config.syncEndpoint, (response) => {
+      try {
+        response = JSON.parse(response);
+        if (response.status === 'ok') {
+          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
+        }
+        response.bidder_status.forEach(bidder => queueSync({bidder: bidder.bidder, url: bidder.usersync.url, type: bidder.usersync.type}));
+      } catch (e) {
+        utils.logError(e);
+      }
+    },
+    payload, {
+      contentType: 'text/plain',
+      withCredentials: true
+    });
   }
 
   return Object.assign(this, {
