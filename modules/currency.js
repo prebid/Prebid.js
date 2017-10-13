@@ -89,8 +89,10 @@ function initCurrency(url) {
   }
 
   if (!currencyRates.conversions) {
-    var useSSL = 'https:' == document.location.protocol;
-    (useSSL ? url = url.replace('http://', 'https://') : '');
+    var useSSL = document.location.protocol == 'https:';
+    if (useSSL) {
+      url = url.replace('http://', 'https://');
+    }
     
     ajax(url, function (response) {
       try {
