@@ -262,7 +262,6 @@ var getParameterByName = function (name) {
 
   return decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
-exports.getParameterByName = getParameterByName;
 
 exports.getParameterByName = getParameterByName;
 
