@@ -78,6 +78,11 @@ export function nativeBidIsValid(bid) {
     return false;
   }
 
+  // all native bid responses must defined a landing page url
+  if (!deepAccess(bid, 'native.clickUrl')) {
+    return false;
+  }
+
   const requestedAssets = bidRequest.nativeParams;
   if (!requestedAssets) {
     return true;
