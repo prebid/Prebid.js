@@ -89,6 +89,9 @@ function initCurrency(url) {
   }
 
   if (!currencyRates.conversions) {
+    var useSSL = 'https:' == document.location.protocol;
+    (useSSL ? url = url.replace("http://", 'https://') : "");
+    
     ajax(url, function (response) {
       try {
         currencyRates = JSON.parse(response);
