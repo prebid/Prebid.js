@@ -31,7 +31,9 @@
       var videoAdUnit = {
         code: 'video1',
         sizes: [640,480],
-        mediaType: 'video',
+        mediaTypes: {
+          video: {context: 'instream'}
+        },
         bids: [
           {
             bidder: 'appnexusAst',

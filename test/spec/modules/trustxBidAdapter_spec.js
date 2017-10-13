@@ -8,10 +8,10 @@ describe('trustx adapter tests', function () {
   var bidmanager = require('src/bidmanager');
   var adLoader = require('src/adloader');
   var utils = require('src/utils');
-  window.pbjs = window.pbjs || {};
+  window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
 
   if (typeof (pbjs) === 'undefined') {
-    var pbjs = window.pbjs;
+    var pbjs = window.$$PREBID_GLOBAL$$;
   }
   let stubLoadScript;
   beforeEach(function () {
@@ -73,7 +73,7 @@ describe('trustx adapter tests', function () {
       sinon.assert.calledWith(stubLoadScript, bidUrl);
       var parsedBidUrl = urlParse(bidUrl);
       var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-      var generatedCallback = 'pbjs.trustx_callback_wrapper_5_6';
+      var generatedCallback = '$$PREBID_GLOBAL$$.trustx_callback_wrapper_5_6';
       expect(parsedBidUrl.hostname).to.equal('sofia.trustx.org');
       expect(parsedBidUrl.pathname).to.equal('/hb');
       expect(parsedBidUrlQueryString).to.have.property('auids').and.to.equal('5,6');
