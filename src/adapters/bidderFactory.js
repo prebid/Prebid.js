@@ -234,7 +234,7 @@ export function newBidder(spec) {
                 error: onFailure
               },
               undefined,
-              Object.assign({}, {
+              Object.assign({
                 method: 'GET',
                 withCredentials: true
               }, request.options)
@@ -248,7 +248,7 @@ export function newBidder(spec) {
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-              Object.assign({}, {
+              Object.assign({
                 method: 'POST',
                 contentType: 'text/plain',
                 withCredentials: true
