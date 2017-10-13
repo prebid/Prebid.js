@@ -93,7 +93,7 @@ function initCurrency(url) {
     if (useSSL) {
       url = url.replace('http://', 'https://');
     }
-    
+
     ajax(url, function (response) {
       try {
         currencyRates = JSON.parse(response);
