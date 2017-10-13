@@ -125,22 +125,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode)
-    .map(targeting => {
-      return {
-        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
-          .map(target => {
-            return {
-              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
-            };
-          }).reduce((p, c) => Object.assign(c, p), {})
-      };
-    })
-    .reduce(function (accumulator, targeting) {
-      var key = Object.keys(targeting)[0];
-      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
-      return accumulator;
-    }, {});
+  return targeting.getAllTargeting(adUnitCode);
 };
 
 /**

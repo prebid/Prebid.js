@@ -1,4 +1,4 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, adUnitsFilter, groupBy } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, groupBy } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
@@ -49,25 +49,41 @@ export function newTargeting(auctionManager) {
         });
       });
     });
+
+    targeting = targeting.map(targeting => {
+      return {
+        [Object.keys(targeting)[0]]: targeting[Object.keys(targeting)[0]]
+          .map(target => {
+            return {
+              [Object.keys(target)[0]]: target[Object.keys(target)[0]].join(', ')
+            };
+          }).reduce((p, c) => Object.assign(c, p), {})
+      };
+    }).reduce(function (accumulator, targeting) {
+      var key = Object.keys(targeting)[0];
+      accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
+      return accumulator;
+    }, {});
+
     return targeting;
   };
 
   targeting.setTargeting = function(targetingConfig) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      targetingConfig.filter(targeting => Object.keys(targeting)[0] === slot.getAdUnitPath() ||
-        Object.keys(targeting)[0] === slot.getSlotElementId())
-        .forEach(targeting => targeting[Object.keys(targeting)[0]]
-          .forEach(key => {
-            key[Object.keys(key)[0]]
-              .map((value) => {
-                utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${Object.keys(key)[0]} value: ${value}`);
-                return value;
-              })
-              .forEach(value => {
-                slot.setTargeting(Object.keys(key)[0], value);
-              });
-          }));
-    });
+      Object.keys(targetingConfig).filter(targetId => targetId === slot.getSlotElementId() || targetId === slot.getAdUnitPath())
+        .forEach(targetId =>
+          Object.keys(targetingConfig[targetId]).forEach(key => {
+            let valueArr = targetingConfig[targetId][key].split(',');
+            valueArr = (valueArr.length > 1) ? [valueArr] : valueArr;
+            valueArr.map((value) => {
+              utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${key} value: ${value}`);
+              return value;
+            }).forEach(value => {
+              slot.setTargeting(key, value);
+            });
+          })
+        )
+    })
   };
 
   /**
@@ -103,16 +119,16 @@ export function newTargeting(auctionManager) {
   };
 
   targeting.setTargetingForAst = function() {
-    let targeting = $$PREBID_GLOBAL$$.getAdserverTargeting();
-    Object.keys(targeting).forEach(targetId =>
-      Object.keys(targeting[targetId]).forEach(key => {
-        utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${targeting[targetId][key]}`);
+    let astTargeting = targeting.getAllTargeting();
+    Object.keys(astTargeting).forEach(targetId =>
+      Object.keys(astTargeting[targetId]).forEach(key => {
+        utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);
         // setKeywords supports string and array as value
-        if (utils.isStr(targeting[targetId][key]) || utils.isArray(targeting[targetId][key])) {
+        if (utils.isStr(astTargeting[targetId][key]) || utils.isArray(astTargeting[targetId][key])) {
           let keywordsObj = {};
           let input = 'hb_adid';
           let nKey = (key.substring(0, input.length) === input) ? key.toUpperCase() : key;
-          keywordsObj[nKey] = targeting[targetId][key];
+          keywordsObj[nKey] = astTargeting[targetId][key];
           window.apntag.setKeywords(targetId, keywordsObj);
         }
       })
@@ -136,7 +152,7 @@ export function newTargeting(auctionManager) {
             winner.sendStandardTargeting ||
             standardKeys.indexOf(key) === -1)
           .map(key => ({
-            [(key === 'hb_deal' || key === 'hb_adid') ? `${key}_${winner.bidderCode}`.substring(0, 20) : key.substring(0, 20)]: [winner.adserverTargeting[key]]
+            [(key === 'hb_deal') ? `${key}_${winner.bidderCode}`.substring(0, 20) : key.substring(0, 20)]: [winner.adserverTargeting[key]]
           }))
       };
     });
@@ -158,6 +174,27 @@ export function newTargeting(auctionManager) {
 
     return auctionManager.getBidsReceived()
       .filter(bid => adUnitCodes.includes(bid.adUnitCode))
+      .map(bid => Object.assign({}, bid))
+      .reduce(function(acc, bid, index, arr) {
+        Object.keys(bid.adserverTargeting)
+          .filter(key => standardKeys.indexOf(key) === -1)
+          .forEach(function(key) {
+            if (acc.length) {
+              acc.filter(function(bidVal) {
+                return bidVal.adUnitCode === bid.adUnitCode && bidVal.adserverTargeting[key]
+              }).forEach(function(bidVal) {
+                if (typeof bidVal.adserverTargeting[key] === 'string') {
+                  bidVal.adserverTargeting[key] = [bidVal.adserverTargeting[key], bid.adserverTargeting[key]].filter(uniques);
+                } else {
+                  bidVal.adserverTargeting[key] = bidVal.adserverTargeting[key].concat(bid.adserverTargeting[key]).filter(uniques);
+                }
+                delete bid.adserverTargeting[key];
+              })
+            }
+          });
+        acc.push(bid);
+        return acc;
+      }, [])
       .map(bid => {
         return {
           [bid.adUnitCode]: Object.keys(bid.adserverTargeting)

@@ -81,14 +81,11 @@ describe('targeting tests', () => {
     it('selects the top bid when _sendAllBids true', () => {
       config.setConfig({ enableSendAllBids: true });
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-      let flattened = [];
-      targeting.filter(obj => obj['/123456/header-bid-tag-0'] !== undefined).forEach(item => flattened = flattened.concat(item['/123456/header-bid-tag-0']));
-      let sendAllBidCpm = flattened.filter(obj => obj.hb_pb_rubicon !== undefined);
-      let winningBidCpm = flattened.filter(obj => obj.hb_pb !== undefined);
+      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf('hb_pb_') != -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
       // expect the winning CPM to be equal to the sendAllBidCPM
-      expect(sendAllBidCpm[0]['hb_pb_rubicon']).to.deep.equal(winningBidCpm[0]['hb_pb']);
+      expect(targeting['/123456/header-bid-tag-0']['hb_pb_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0']['hb_pb']);
     });
   }); // end getAllTargeting tests
 });
