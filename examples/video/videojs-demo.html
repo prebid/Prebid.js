@@ -2,7 +2,16 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Prebid.js video adUnit example</title>
+  <title>Prebid Video -- video.js</title>
+
+  <!--
+       INCLUDE VIDEOJS ASSETS
+
+       Add the VideoJS script and CSS file to your page, along with
+       the script and CSS files for any plugins you want, which should
+       include an advertising plugin. For this demo we'll be using the
+       vast-vpaid plugin.
+     -->
 
   <!-- videojs -->
   <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">
@@ -21,9 +30,8 @@
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
-    /*
-    Prebid Video adUnit
-    */
+
+    /* Prebid video ad unit */
 
     var videoAdUnit = {
       code: 'video1',
@@ -39,7 +47,7 @@
           params: {
             placementId: '9333431',
             video: {
-              skipppable: true,
+              skippable: true,
               playback_method: ['auto_play_sound_off']
             }
           }
@@ -140,10 +148,24 @@
       page_load_time = new Date().getTime() - performance.timing.navigationStart;
       console.log(page_load_time + "ms -- Prebid VAST url = " + url);
 
+      /* Access the player instance by calling `videojs()` and passing
+         in the player's ID. Add a `ready` listener to make sure the
+         player is ready before interacting with it. */
+
       videojs("vid1").ready(function() {
 
         page_load_time = new Date().getTime() - performance.timing.navigationStart;
         console.log(page_load_time + "ms -- Player is ready!");
+
+        /* PASS SETTINGS TO VAST PLUGIN
+
+           Pass in a JSON object to the player's `vastClient` (defined
+           by the VAST/VPAID plugin we're using). The requires an
+           `adTagUrl`, which will be the URL returned by Prebid. You
+           can view all the options available for the `vastClient`
+           here:
+
+           https://github.com/MailOnline/videojs-vast-vpaid#options */
 
         var player = this;
         var vastAd = player.vastClient({
