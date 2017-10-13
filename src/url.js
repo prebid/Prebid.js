@@ -38,7 +38,7 @@ export function parse(url, options) {
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host
+    host: parsed.host || window.location.host
   };
 }
 

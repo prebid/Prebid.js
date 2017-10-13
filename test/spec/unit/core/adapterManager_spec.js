@@ -3,7 +3,7 @@ import AdapterManager from 'src/adaptermanager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
-import { StorageManager } from 'src/storagemanager';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const CONFIG = {
@@ -27,27 +27,14 @@ describe('adapterManager tests', () => {
     var stubSetStorageItem;
 
     beforeEach(() => {
-      AdapterManager.setS2SConfig(CONFIG);
+      config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-
-      stubGetStorageItem = sinon.stub(StorageManager, 'get');
-      stubSetStorageItem = sinon.stub(StorageManager, 'set');
-      stubSetStorageItem = sinon.stub(StorageManager, 'add');
-      stubSetStorageItem = sinon.stub(StorageManager, 'remove');
-
-      stubGetStorageItem.returns(['appnexus']);
 
       prebidServerAdapterMock.callBids.reset();
     });
 
-    afterEach(() => {
-      StorageManager.get.restore();
-      StorageManager.set.restore();
-      StorageManager.add.restore();
-      StorageManager.remove.restore();
-    });
-
-    it('invokes callBids on the S2S adapter', () => {
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it.skip('invokes callBids on the S2S adapter', () => {
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'requestId': '1863e370099523',
@@ -110,7 +97,8 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
 
-    it('invokes callBids with only s2s bids', () => {
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it.skip('invokes callBids with only s2s bids', () => {
       const adUnits = getAdUnits();
       // adUnit without appnexus bidder
       adUnits.push({
@@ -190,29 +178,6 @@ describe('adapterManager tests', () => {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
     });
   }); // end s2s tests
-
-  describe('The setBidderSequence() function', () => {
-    let spy;
-
-    beforeEach(() => {
-      spy = sinon.spy(utils, 'logWarn')
-    });
-
-    afterEach(() => {
-      utils.logWarn.restore();
-    });
-
-    it('should log a warning on invalid values', () => {
-      AdapterManager.setBidderSequence('unrecognized sequence');
-      expect(spy.calledOnce).to.equal(true);
-    });
-
-    it('should not log warnings when given recognized values', () => {
-      AdapterManager.setBidderSequence('fixed');
-      AdapterManager.setBidderSequence('random');
-      expect(spy.called).to.equal(false);
-    });
-  })
 
   describe('aliasBidderAdaptor', function() {
     const CODE = 'sampleBidder';

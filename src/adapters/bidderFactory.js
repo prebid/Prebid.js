@@ -22,7 +22,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   aliases: ['alias1', 'alias2'],
  *   supportedMediaTypes: ['video', 'native'],
  *   isBidRequestValid: function(paramsObject) { return true/false },
- *   buildRequests: function(bidRequests) { return some ServerRequest(s) },
+ *   buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
  *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
  * });
  *
@@ -39,7 +39,7 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
  * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
  *   needed to make a valid request.
- * @property {function(BidRequest[]): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
+ * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
  *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
  *   passed the isBidRequestValid() test.
  * @property {function(*, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
@@ -77,6 +77,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
  * @property {string} currency The currency code for the cpm value
  * @property {number} cpm The bid price, in US cents per thousand impressions.
+ * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
+ * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
  *
@@ -169,17 +171,17 @@ export function newBidder(spec) {
         }
       }
 
-      const bidRequests = bidderRequest.bids.filter(filterAndWarn);
-      if (bidRequests.length === 0) {
+      const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      if (validBidRequests.length === 0) {
         afterAllResponses();
         return;
       }
       const bidRequestMap = {};
-      bidRequests.forEach(bid => {
+      validBidRequests.forEach(bid => {
         bidRequestMap[bid.bidId] = bid;
       });
 
-      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      let requests = spec.buildRequests(validBidRequests, bidderRequest);
       if (!requests || requests.length === 0) {
         afterAllResponses();
         return;

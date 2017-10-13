@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { config } from 'src/config';
-import { StorageManager, pbjsSyncsKey } from 'src/storagemanager';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 let { newUserSync } = require('../../src/userSync');
@@ -173,5 +172,16 @@ describe('user sync', () => {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('http://example.com/');
     expect(triggerPixelStub.getCall(1)).to.be.null;
+  });
+
+  it('should register config set after instantiation', () => {
+    // start with userSync off
+    const userSync = newTestUserSync({syncEnabled: false});
+    // turn it on with setConfig()
+    config.setConfig({userSync: {syncEnabled: true}});
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+    expect(triggerPixelStub.getCall(0)).to.not.be.null;
+    expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
 });
