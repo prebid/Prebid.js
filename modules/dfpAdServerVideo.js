@@ -119,10 +119,12 @@ export default function buildDfpVideoUrl(options) {
 function buildUrlFromAdserverUrl(url, bid) {
   const components = parse(url);
 
-  if (!components.search.description_url) {
-    components.search.description_url = encodeURIComponent(bid.vastUrl);
-  } else {
-    logError(`input url cannnot contain description_url`);
+  if (!config.getConfig('usePrebidCache')) {
+    if (!deepAccess(components, 'search.description_url')) {
+      components.search.description_url = encodeURIComponent(bid.vastUrl);
+    } else {
+      logError(`input url cannnot contain description_url`);
+    }
   }
 
   const customParams = Object.assign({},
