@@ -1,128 +1,155 @@
-const utils = require('src/utils.js');
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const ajax = require('src/ajax.js');
-const CONSTANTS = require('src/constants.json');
-const adaptermanager = require('src/adaptermanager');
-const QUANTCAST_CALLBACK_URL = 'http://global.qc.rtb.quantserve.com:8080/qchb';
+import adapterManager from "src/adaptermanager";
+import * as utils from "src/utils";
+import { registerBidder } from "src/adapters/bidderFactory";
 
-var QuantcastAdapter = function QuantcastAdapter() {
-  const BIDDER_CODE = 'quantcast';
+const BIDDER_CODE = "quantcast";
+const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
+const DEFAULT_BID_FLOOR = 0.0000000001;
 
-  const DEFAULT_BID_FLOOR = 0.0000000001;
-  let bidRequests = {};
+let publisherTagURL;
+switch (window.location.protocol) {
+  case "https:":
+    _publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
+    break;
+  default:
+    _publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
+}
 
-  let returnEmptyBid = function(bidId) {
-    var bidRequested = utils.getBidRequest(bidId);
-    if (!utils.isEmpty(bidRequested)) {
-      let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequested);
-      bid.bidderCode = BIDDER_CODE;
-      bidmanager.addBidResponse(bidRequested.placementCode, bid);
-    }
-  };
+/**
+ * The documentation for Prebid.js Adapter 1.0 can be found at link below,
+ * http://prebid.org/dev-docs/bidder-adapter-1.html
+ */
+export const spec = {
+  code: BIDDER_CODE,
 
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.handleQuantcastCB = function (responseText) {
-    if (utils.isEmpty(responseText)) {
-      return;
-    }
-    let response = null;
-    try {
-      response = JSON.parse(responseText);
-    } catch (e) {
-      // Malformed JSON
-      utils.logError("Malformed JSON received from server - can't do anything here");
-      return;
-    }
+  // `BaseAdapter` model saves adapter from having to make the AJAX call
+  // provides consistency adapter structure.
+  // `BaseAdapter` defines 4 entry points,
+  // - `isBidRequestValid`
+  // - `buildRequests`
+  // - `interpretResponse`
+  // - `getUserSyncs`
 
-    if (response === null || !response.hasOwnProperty('bids') || utils.isEmpty(response.bids)) {
-      utils.logError("Sub-optimal JSON received from server - can't do anything here");
-      return;
-    }
+  /**
+   * Verify the `AdUnits.bids` response with `true` for valid request and `false`
+   * for invalid request.
+   *
+   * @param {object} bid
+   * @return boolean `true` is this is a valid bid, and `false` otherwise
+   */
+  isBidRequestValid(bid) {
+    // TODO: How to validate a bid request? @tmax
+  },
 
-    for (let i = 0; i < response.bids.length; i++) {
-      let seatbid = response.bids[i];
-      let key = seatbid.placementCode;
-      var request = bidRequests[key];
-      if (request === null || request === undefined) {
-        return returnEmptyBid(seatbid.placementCode);
-      }
-      // This line is required since this is the field
-      // that bidfactory.createBid looks for
-      request.bidId = request.imp[0].placementCode;
-      let responseBid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, request);
+  /**
+   * Make a server request when the page asks Prebid.js for bids from a list of
+   * `BidRequests`.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be send to Quantcast server
+   * @return ServerRequest information describing the request to the server.
+   */
+  buildRequests(bidRequests) {
+    const bids = bidRequests || [];
 
-      responseBid.cpm = seatbid.cpm;
-      responseBid.ad = seatbid.ad;
-      responseBid.height = seatbid.height;
-      responseBid.width = seatbid.width;
-      responseBid.bidderCode = response.bidderCode;
-      responseBid.requestId = request.requestId;
-      responseBid.bidderCode = BIDDER_CODE;
+    const referrer = utils.getTopWindowUrl();
+    const loc = utils.getTopWindowLocation();
+    const domain = loc.hostname;
 
-      bidmanager.addBidResponse(request.bidId, responseBid);
-    }
-  };
+    const bidRequests = bids.map(bid => {
+      const bidSizes = [];
 
-  function callBids(params) {
-    let bids = params.bids || [];
-    if (bids.length === 0) {
-      return;
-    }
-
-    let referrer = utils.getTopWindowUrl();
-    let loc = utils.getTopWindowLocation();
-    let domain = loc.hostname;
-    let publisherId = 0;
-
-    publisherId = '' + bids[0].params.publisherId;
-    utils._each(bids, function(bid) {
-      let key = bid.placementCode;
-      var bidSizes = [];
-      utils._each(bid.sizes, function (size) {
+      bid.sizes.forEach(size => {
         bidSizes.push({
-          'width': size[0],
-          'height': size[1]
+          width: size[0],
+          height: size[1]
         });
       });
 
-      bidRequests[key] = bidRequests[key] || {
-        'publisherId': publisherId,
-        'requestId': bid.bidId,
-        'bidId': bid.bidId,
-        'site': {
-          'page': loc.href,
-          'referrer': referrer,
-          'domain': domain,
+      // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
+      const requestData = {
+        publisherId: bid.params.publisherId,
+        requestId: bid.bidId,
+        imp: [
+          {
+            banner: {
+              batter: bid.params.battr,
+              size: bidSizes
+            },
+            placementCode: bid.placementCode,
+            bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+          }
+        ],
+        site: {
+          page: loc.href,
+          referrer,
+          domain
         },
-        'imp': [{
+        bidId: bid.bidId
+      };
 
-          'banner': {
-            'battr': bid.params.battr,
-            'sizes': bidSizes,
-          },
-          'placementCode': bid.placementCode,
-          'bidFloor': bid.params.bidFloor || DEFAULT_BID_FLOOR,
-        }]
+      return {
+        method: "POST",
+        url: publisherTagURL,
+        data: JSON.stringify(requestData),
+        withCredentials: true
       };
     });
 
-    utils._each(bidRequests, function (bidRequest) {
-      ajax.ajax(QUANTCAST_CALLBACK_URL, $$PREBID_GLOBAL$$.handleQuantcastCB, JSON.stringify(bidRequest), {
-        method: 'POST',
-        withCredentials: true
-      });
-    });
-  }
+    return bidRequests;
+  },
 
-  // Export the `callBids` function, so that Prebid.js can execute
-  // this function when the page asks to send out bid requests.
-  return {
-    callBids: callBids,
-    QUANTCAST_CALLBACK_URL: QUANTCAST_CALLBACK_URL
-  };
+  /**
+   * Function get called when the browser has received the response from Quantcast server.
+   * The function parse the response and create a `bidResponse` object containing one/more bids.
+   * Returns an empty array if no valid bids
+   *
+   * Response Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
+   *
+   * @param {*} serverResponse A successful response from Quantcast server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   *
+   */
+  interpretResponse(serverResponse) {
+    if (utils.isEmpty(serverResponse)) {
+      return [];
+    }
+
+    let response;
+    try {
+      response = JSON.parse(serverResponse);
+    } catch (error) {
+      utils.logError("Malformed JSON received from Quantcast server");
+      return [];
+    }
+
+    if (
+      response === null ||
+      !response.hasOwnProperty("bids") ||
+      utils.isEmpty(response.bids)
+    ) {
+      utils.logError("Sub-optimal JSON received from Quantcast server");
+      return;
+    }
+
+    const bidResponses = response.bids.map(bid => {
+      const { ad, cpm, width, height } = bid;
+
+      return {
+        ad,
+        cpm,
+        width,
+        height,
+        requestId: response.requestId,
+        bidderCode: response.bidderCode || BIDDER_CODE
+      };
+    });
+
+    return bidResponses;
+  },
+
+  getUserSyncs(syncOptions) {
+    // TODO: What does user syncs do? @tmax
+  }
 };
 
-adaptermanager.registerBidAdapter(new QuantcastAdapter(), 'quantcast');
-
-module.exports = QuantcastAdapter;
+registerBidder(spec);
