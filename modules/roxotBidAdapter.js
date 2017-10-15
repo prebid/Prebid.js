@@ -4,9 +4,11 @@ var bidfactory = require('src/bidfactory.js');
 var bidmanager = require('src/bidmanager.js');
 var adloader = require('src/adloader');
 var adaptermanager = require('src/adaptermanager');
+import {parse} from "../src/url";
 
 var RoxotAdapter = function RoxotAdapter() {
-  var roxotUrl = 'r.rxthdr.com';
+  let customHost = parse(window.location).search['roxot_auction_url'];
+  var roxotUrl = customHost || 'r.rxthdr.com';
 
   $$PREBID_GLOBAL$$.roxotResponseHandler = roxotResponseHandler;
 
