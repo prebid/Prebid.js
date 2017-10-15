@@ -13,9 +13,9 @@ function FeatureForwardAdapter() {
     contentType: 'text/plain'
   };
 
-  function _callBids(bidderRequest) {
-    var i = 0;
+  function _callBids(bidderRequest) {    
     bidderRequest.bids.forEach(bidRequest => {
+      var i = 0;
       try {
         while (bidRequest.sizes[i] !== undefined) {
           var params = Object.assign({}, environment(), bidRequest.params, {'size': bidRequest.sizes[i]});
