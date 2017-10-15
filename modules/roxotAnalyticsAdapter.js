@@ -39,6 +39,8 @@ adaptermanager.registerAnalyticsAdapter({
     code: 'roxot'
 });
 
+export default roxotAdapter;
+
 // FUNCTIONS ========================
 
 function RoxotAnalyticAdapter() {
@@ -51,7 +53,7 @@ function RoxotAnalyticAdapter() {
 
             ensureRequestPresented: function (requestId) {
                 if (!this.stack[requestId]) {
-                    this.stack[requestId] = new Request(requestId, new Date());
+                    this.stack[requestId] = new Request(requestId, new Date(), options.publisherId);
                 }
             },
 
@@ -62,6 +64,11 @@ function RoxotAnalyticAdapter() {
         current: null,
         track({eventType, args}) {
             args = args || {};
+
+            if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+                options.publisherId = args['config']['publisherIds'][0];
+            }
+
             let requestId = args['requestId'];
             if (requestId) {
 
@@ -74,9 +81,6 @@ function RoxotAnalyticAdapter() {
             this.eventStack.ensureRequestPresented(requestId);
             let request = this.eventStack.findRequest(requestId);
 
-            if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-                options.publisherId = args['config']['publisherIds'][0];
-            }
 
             if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
                 let placementCodes = args.bids.map((bid) => bid.placementCode);
@@ -197,7 +201,6 @@ function Request(requestId, startedAt, publisherId) {
                 "bids": []
             },
             bidderRequested: function (bidder) {
-                console.log(this);
                 this.auctionInfo.requestedBids[bidder.bidderCode] = bidder;
             },
             bidReceived: function (bidderCode, timeToRespond, size, cpm) {
