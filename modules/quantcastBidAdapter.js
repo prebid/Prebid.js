@@ -9,10 +9,10 @@ const DEFAULT_BID_FLOOR = 0.0000000001;
 let publisherTagURL;
 switch (window.location.protocol) {
   case "https:":
-    _publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
+    publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
     break;
   default:
-    _publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
+    publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
 }
 
 /**
