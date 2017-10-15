@@ -13,7 +13,7 @@ function FeatureForwardAdapter() {
     contentType: 'text/plain'
   };
 
-  function _callBids(bidderRequest) {    
+  function _callBids(bidderRequest) {
     bidderRequest.bids.forEach(bidRequest => {
       var i = 0;
       try {
