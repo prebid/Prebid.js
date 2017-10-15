@@ -99,7 +99,7 @@ describe('komoonaAdapter', () => {
     });
 
     afterEach(() => {
-      server.restore()
+      server.restore();
       bidmanager.addBidResponse.restore();
     });
 

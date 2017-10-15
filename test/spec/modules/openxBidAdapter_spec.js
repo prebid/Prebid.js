@@ -136,12 +136,15 @@ describe('openx adapter tests', function () {
   });
   describe('test openx ad requests', () => {
     let spyAjax;
+    let spyBtoa;
     beforeEach(() => {
       spyAjax = sinon.spy(ajax, 'ajax');
+      spyBtoa = sinon.spy(window, 'btoa');
       sinon.stub(document.body, 'appendChild');
     });
     afterEach(() => {
       spyAjax.restore();
+      spyBtoa.restore();
       document.body.appendChild.restore();
     });
 
@@ -179,19 +182,96 @@ describe('openx adapter tests', function () {
             params: {
               delDomain: 'testdelDomain',
               unit: 1234,
-              customParams: {'test1': 'testval1'}
+              customParams: {'test1': 'testval1+', 'test2': ['testval2/', 'testval3']}
             }
           }
         ]
       };
       adapter.callBids(params);
-      sinon.assert.calledOnce(spyAjax);
 
+      sinon.assert.calledOnce(spyAjax);
+      sinon.assert.calledWith(spyBtoa, 'test1=testval1.&test2=testval2_,testval3');
       let bidUrl = spyAjax.getCall(0).args[0];
       expect(bidUrl).to.include('testdelDomain');
       expect(bidUrl).to.include('1234');
       expect(bidUrl).to.include('300x250,300x600');
-      expect(bidUrl).to.include('c.test1=testval1');
+    });
+
+    it('should send out custom floors on bids that have customFloors specified', () => {
+      let params = {
+        bids: [
+          {
+            sizes: [[300, 250], [300, 600]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234,
+              customFloor: 1
+            }
+          },
+          {
+            sizes: [[320, 50]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234
+            }
+          },
+          {
+            sizes: [[728, 90]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234,
+              customFloor: 1.5
+            }
+          }
+        ]
+      };
+      adapter.callBids(params);
+
+      sinon.assert.calledOnce(spyAjax);
+      let bidUrl = spyAjax.getCall(0).args[0];
+      expect(bidUrl).to.include('testdelDomain');
+      expect(bidUrl).to.include('1234');
+      expect(bidUrl).to.include('300x250,300x600|320x50|728x90');
+      expect(bidUrl).to.include('aumfs=1000%2C0%2C1500');
+    });
+
+    it('should change bc param if configureable bc is specified', () => {
+      let params = {
+        bids: [
+          {
+            sizes: [[300, 250], [300, 600]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234,
+              bc: 'hb_pb_test'
+            }
+          },
+          {
+            sizes: [[320, 50]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234,
+              bc: 'hb_pb_test'
+            }
+          },
+          {
+            sizes: [[728, 90]],
+            params: {
+              delDomain: 'testdelDomain',
+              unit: 1234,
+              bc: 'hb_pb_test'
+            }
+          }
+        ]
+      };
+      adapter.callBids(params);
+
+      sinon.assert.calledOnce(spyAjax);
+      let bidUrl = spyAjax.getCall(0).args[0];
+      expect(bidUrl).to.include('testdelDomain');
+      expect(bidUrl).to.include('1234');
+      expect(bidUrl).to.include('300x250,300x600|320x50|728x90');
+      expect(bidUrl).to.include('bc=hb_pb_test');
     });
   });
 });
