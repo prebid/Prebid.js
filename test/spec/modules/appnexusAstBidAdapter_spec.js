@@ -304,8 +304,9 @@ describe('AppNexusAdapter', () => {
           'mediaType': 'banner'
         }
       ];
+      let bidderRequest;
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response, {bidderRequest});
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
@@ -319,8 +320,9 @@ describe('AppNexusAdapter', () => {
           'nobid': true
         }]
       };
+      let bidderRequest;
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response, {bidderRequest});
       expect(result.length).to.equal(0);
     });
 
@@ -339,8 +341,9 @@ describe('AppNexusAdapter', () => {
           }]
         }]
       };
+      let bidderRequest;
 
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
       expect(result[0]).to.have.property('descriptionUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
@@ -371,8 +374,9 @@ describe('AppNexusAdapter', () => {
         },
         'impression_trackers': ['http://example.com'],
       };
+      let bidderRequest;
 
-      let result = spec.interpretResponse(response1);
+      let result = spec.interpretResponse(response1, {bidderRequest});
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
