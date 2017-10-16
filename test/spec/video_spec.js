@@ -2,12 +2,16 @@ import { isValidVideoBid } from 'src/video';
 import { auctionManager } from 'src/auctionManager';
 
 describe('video.js', () => {
+	beforeEach(() => {
+		sinon.stub(auctionManager, 'getBidsRequested');
+	});
+
   afterEach(() => {
 	  auctionManager.getBidsRequested.restore();
   });
 
   it('validates valid instream bids', () => {
-	  sinon.stub(auctionManager, 'getBidsRequested', () => [
+	  auctionManager.getBidsRequested.returns([
 		  {
 			  bids: [{
 				  bidId: '123abc',
@@ -28,7 +32,7 @@ describe('video.js', () => {
   });
 
   it('catches invalid instream bids', () => {
-	  sinon.stub(auctionManager, 'getBidsRequested', () => [
+	  auctionManager.getBidsRequested.returns([
 		  {
 			  bids: [{
 				  bidId: '123abc',
@@ -48,7 +52,7 @@ describe('video.js', () => {
   });
 
   it('validates valid outstream bids', () => {
-	  sinon.stub(auctionManager, 'getBidsRequested', () => [
+	  auctionManager.getBidsRequested.returns([
 		  {
 			  bids: [{
 				  bidId: '123abc',
@@ -72,7 +76,7 @@ describe('video.js', () => {
   });
 
   it('catches invalid outstream bids', () => {
-	  sinon.stub(auctionManager, 'getBidsRequested', () => [
+	  auctionManager.getBidsRequested.returns([
 		  {
 			  bids: [{
 				  bidId: '123abc',
