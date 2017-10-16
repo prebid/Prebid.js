@@ -7,12 +7,10 @@ const adloader = require('src/adloader.js');
 const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
-// var AppnexusAdapter = require('./appnexusBidAdapter.js');
 
 var RealVuAdapter = function RealVuAdapter() {
   var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
-    // utils.logMessage('realvuBidAdapter params: ' + JSON.stringify(params));
     var pbids = params.bids;
     var boost_back = function() {
       var top1 = window;
@@ -43,7 +41,6 @@ var RealVuAdapter = function RealVuAdapter() {
   baseAdapter.boostCall = function(rez) {
     var bid_request = rez.pin.pbjs_bid;
     var callbackId = bid_request.bidId;
-    // utils.logMessage('realvuBidAdapter boost callback "' + callbackId + '", rez.realvu=' + rez.realvu);
     if (rez.realvu === 'yes') {
       var adap = new RvAppNexusAdapter();
       adloader.loadScript(adap.buildJPTCall(bid_request, callbackId));
@@ -58,26 +55,6 @@ var RealVuAdapter = function RealVuAdapter() {
   var RvAppNexusAdapter = function RvAppNexusAdapter() {
     var baseAdapter = new Adapter('appnexus');
     var usersync = false;
-
-    baseAdapter.callBids = function (params) {
-      // var bidCode = baseAdapter.getBidderCode();
-
-      var anArr = params.bids;
-
-      // var bidsCount = anArr.length;
-
-      // set expected bids count for callback execution
-      // bidmanager.setExpectedBidsCount(bidCode, bidsCount);
-
-      for (var i = 0; i < anArr.length; i++) {
-        var bidRequest = anArr[i];
-        var callbackId = bidRequest.bidId;
-        adloader.loadScript(buildJPTCall(bidRequest, callbackId));
-
-        // store a reference to the bidRequest from the callback id
-        // bidmanager.pbCallbackMap[callbackId] = bidRequest;
-      }
-    };
 
     this.buildJPTCall = function (bid, callbackId) {
       // determine tag params
@@ -176,7 +153,6 @@ var RealVuAdapter = function RealVuAdapter() {
 
       // @if NODE_ENV='debug'
       utils.logMessage('jpt request built: ' + jptCall);
-
       // @endif
 
       // append a timer here to track latency
@@ -230,12 +206,7 @@ var RealVuAdapter = function RealVuAdapter() {
 
           bidmanager.addBidResponse(placementCode, bid);
         } else {
-          // no response data
-          // @if NODE_ENV='debug'
-          utils.logMessage('No prebid response from AppNexus for placement code ' + placementCode);
-
-          // @endif
-          // indicate that there is no bid for this placement
+          // no bid
           bid = bidfactory.createBid(2, bidObj);
           bid.bidderCode = bidCode;
           bidmanager.addBidResponse(placementCode, bid);
@@ -252,20 +223,9 @@ var RealVuAdapter = function RealVuAdapter() {
           usersync = true;
         }
       } else {
-        // no response data
-        // @if NODE_ENV='debug'
         utils.logMessage('No prebid response for placement %%PLACEMENT%%');
-
-        // @endif
       }
     };
-    /*
-    return Object.assign(this, {
-      callBids: baseAdapter.callBids,
-      setBidderCode: baseAdapter.setBidderCode,
-      buildJPTCall: buildJPTCall
-    });
-    */
   };
   // -copy/pasted appnexusBidAdapter
   return Object.assign(this, {
