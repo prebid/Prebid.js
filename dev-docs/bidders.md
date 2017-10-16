@@ -99,13 +99,14 @@ The following parameters in the `bidResponse` object are common across all bidde
 
 Demand from the bidders listed below is available via the [Prebid Server integration]({{site.baseurl}}/dev-docs/get-started-with-prebid-server.html).
 
-- [appnexus](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L628)
-- [districtm](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L629)
-- [indexExchange](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L630)
-- [pubmatic](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L631)
-- [pulsepoint](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L632)
-- [rubicon](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L633)
-- [audienceNetwork](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L635)
+- [appnexus](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L598)
+- [districtm](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L599)
+- [indexExchange](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L600)
+- [pubmatic](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L601)
+- [pulsepoint](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L602)
+- [rubicon](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L603)
+- [audienceNetwork](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L605)
+- [lifestreet](https://github.com/prebid/prebid-server/blob/master/pbs_light.go#L606)
 
 </div>
 
