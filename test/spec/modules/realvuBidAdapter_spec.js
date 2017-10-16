@@ -29,21 +29,32 @@ describe('RealVu Adapter Test', () => {
     start: 1504628062271
   };
 
-  var bidResponseStub = sinon.stub(bidmanager, 'addBidResponse');
-  var adloaderStub = sinon.stub(adloader, 'loadScript');
+  var bidResponseStub;
+  var adloaderStub;
+
+  beforeEach(function(){
+    bidResponseStub = sinon.stub(bidmanager, 'addBidResponse');
+    adloaderStub = sinon.stub(adloader, 'loadScript');
+  });
+
+  afterEach(function(){
+    adloaderStub.restore();
+    bidResponseStub.restore();
+  });
+
   adapter = new Adapter();
 
-  describe('load boost', () => {
+  it('load boost', () => {
     adapter.callBids(REQUEST);
     expect(adloaderStub.getCall(0).args[0]).to.contain('realvu_boost.js');
   });
 
-  describe('callBid "yes"', () => {
+  it('callBid "yes"', () => {
     adapter.boostCall({realvu: 'yes', pin: {pbjs_bid: REQUEST.bids[0]}});
-    expect(adloaderStub.getCall(1).args[0]).to.contain('id=9339508');
+    expect(adloaderStub.getCall(0).args[0]).to.contain('id=9339508');
   });
 
-  describe('callBid "no"', () => {
+  it('callBid "no"', () => {
     adapter.boostCall({realvu: 'no', pin: {pbjs_bid: REQUEST.bids[0]}});
     expect(bidResponseStub.getCall(0).args[1].getStatusCode()).to.equal(2);
   });
