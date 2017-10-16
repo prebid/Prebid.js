@@ -30,24 +30,25 @@ var adUnits = [
    {
       code: 'native-div',
       sizes: [[300, 250], [300,600]],
-      mediaType: "native",
-      nativeParams: {
-        title: {
-          required: true,
-          len: 80
-        },
-        body: {
-          required: true
-        },
-        brand: {
-          required: true
-        },
-        image: {
-          required: true
-        },
-        clickUrl: {
-          required: true
-        },
+      mediaTypes: {
+        native: {
+          title: {
+            required: true,
+            len: 80
+          },
+          body: {
+            required: true
+          },
+          brand: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          clickUrl: {
+            required: true
+          },
+        }
       },
       bids: [{
         bidder: 'appnexusAst',
@@ -62,7 +63,7 @@ var adUnits = [
       sizes: [640, 480],
       mediaTypes: {
         video: {
-          context: "instream"
+          context: 'instream'
         },
       },
       bids: [{
