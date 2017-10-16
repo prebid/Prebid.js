@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import * as utils from 'src/utils';
 import AolAdapter from 'modules/aolBidAdapter';
 import bidmanager from 'src/bidmanager';
+import {spec} from 'modules/aolBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
 
 let getDefaultBidResponse = () => {
   return {
@@ -67,13 +69,18 @@ let getDefaultBidRequest = () => {
   };
 };
 
+let getPixels = () => {
+  return '<script>document.write(\'<img src="img.org"></iframe>' +
+    '<iframe src="pixels1.org"></iframe>\');</script>';
+};
+
 describe('AolAdapter', () => {
   const MARKETPLACE_URL = 'adserver-us.adtech.advertising.com/pubapi/3.0/';
   const NEXAGE_URL = 'hb.nexage.com/bidRequest?';
 
   let adapter;
 
-  beforeEach(() => adapter = new AolAdapter());
+  beforeEach(() => adapter = newBidder(spec));
 
   function createBidderRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -407,7 +414,7 @@ describe('AolAdapter', () => {
             params: bidConfig
           }));
           expect(requests[0].url).to.contain(NEXAGE_URL);
-          expect(requests[0].requestBody).to.deep.equal(bidConfig);
+          expect(requests[0].requestBody).to.deep.equal(JSON.stringify(bidConfig));
           expect(requests[0].requestHeaders).to.have.property('x-openrtb-version');
         });
 
@@ -420,8 +427,7 @@ describe('AolAdapter', () => {
             params: bidConfig
           }));
           expect(requests).to.be.empty;
-        })
-        ;
+        });
       });
     });
 
@@ -521,18 +527,6 @@ describe('AolAdapter', () => {
         expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
       });
 
-      it('should have adId matching the bidId from bid request in case of no bid data', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid = [];
-        server.respondWith(JSON.stringify(bidResponse));
-
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1])
-          .to.have.property('adId', '84ab500420319d');
-      });
-
       it('should be added to bidmanager as invalid in case of empty price', () => {
         let bidResponse = getDefaultBidResponse();
         bidResponse.seatbid[0].bid[0].price = undefined;
@@ -603,72 +597,6 @@ describe('AolAdapter', () => {
         let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
         expect(addedBidResponse.cpm).to.equal('a9334987');
       });
-
-      it('should not render pixels on pubapi response when no parameter is set', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="pixels.org"></iframe>\');</script>'
-        };
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
-      });
-
-      it('should render pixels from pubapi response when param userSyncOn is set with \'bidResponse\'', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="pixels.org"></iframe>' +
-          '<iframe src="pixels1.org"></iframe>\');</script>'
-        };
-
-        server.respondWith(JSON.stringify(bidResponse));
-        let bidRequest = getDefaultBidRequest();
-        bidRequest.bids[0].params.userSyncOn = 'bidResponse';
-        adapter.callBids(bidRequest);
-        server.respond();
-
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-
-        let assertPixelsItem = (pixelsItemSelector) => {
-          let pixelsItem = document.body.querySelectorAll(pixelsItemSelector)[0];
-
-          expect(pixelsItem.width).to.equal('1');
-          expect(pixelsItem.height).to.equal('1');
-          expect(pixelsItem.style.display).to.equal('none');
-        };
-
-        assertPixelsItem('iframe[src="pixels.org"]');
-        assertPixelsItem('iframe[src="pixels1.org"]');
-        expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
-      });
-
-      it('should not render pixels if it was rendered before', () => {
-        $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="test.com"></iframe>' +
-          '<iframe src="test2.org"></iframe>\');</script>'
-        };
-        server.respondWith(JSON.stringify(bidResponse));
-
-        let bidRequest = getDefaultBidRequest();
-        bidRequest.bids[0].params.userSyncOn = 'bidResponse';
-        adapter.callBids(bidRequest);
-        server.respond();
-
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-
-        let assertPixelsItem = (pixelsItemSelector) => {
-          let pixelsItems = document.body.querySelectorAll(pixelsItemSelector);
-
-          expect(pixelsItems.length).to.equal(0);
-        };
-
-        assertPixelsItem('iframe[src="test.com"]');
-        assertPixelsItem('iframe[src="test2.com"]');
-      });
     });
 
     describe('when bidCpmAdjustment is set', () => {
@@ -700,6 +628,50 @@ describe('AolAdapter', () => {
         server.respond();
         expect(utils.logWarn.calledOnce).to.be.true;
       });
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    let bidResponse;
+    let bidRequest;
+
+    beforeEach(() => {
+      bidResponse = getDefaultBidResponse();
+      bidResponse.ext = {
+        pixels: getPixels()
+      };
+      bidRequest = {
+        userSyncOn: 'bidResponse'
+      };
+      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = false;
+    });
+
+    it('should return user syncs only if userSyncOn equals to "bidResponse"', () => {
+      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
+
+      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
+      expect(userSyncs).to.deep.equal([
+        {type: 'image', url: 'img.org'},
+        {type: 'iframe', url: 'pixels1.org'}
+      ]);
+    });
+
+    it('should not return user syncs if it has already been returned', () => {
+      $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
+
+      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
+
+      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
+      expect(userSyncs).to.deep.equal([]);
+    });
+
+    it('should not return user syncs if pixels are not present', () => {
+      bidResponse.ext.pixels = null;
+
+      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
+
+      expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.false;
+      expect(userSyncs).to.deep.equal([]);
     });
   });
 });

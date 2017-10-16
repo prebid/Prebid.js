@@ -180,13 +180,13 @@ export function newBidder(spec) {
       // After all the responses have come back, fill up the "no bid" bids and
       // register any required usersync pixels.
       const responses = [];
-      function afterAllResponses() {
+      function afterAllResponses(request) {
         fillNoBids();
         if (spec.getUserSyncs) {
           let syncs = spec.getUserSyncs({
             iframeEnabled: config.getConfig('userSync.iframeEnabled'),
             pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-          }, responses);
+          }, responses, request);
           if (syncs) {
             if (!Array.isArray(syncs)) {
               syncs = [syncs];
@@ -223,11 +223,19 @@ export function newBidder(spec) {
       const onResponse = delayExecution(afterAllResponses, requests.length)
       requests.forEach(processRequest);
 
+      function formatGetParameters(data) {
+        if (data) {
+          return `?${typeof data === 'object' ? parseQueryStringParameters(data) : data}`;
+        }
+
+        return '';
+      }
+
       function processRequest(request) {
         switch (request.method) {
           case 'GET':
             ajax(
-              `${request.url}?${typeof request.data === 'object' ? parseQueryStringParameters(request.data) : request.data}`,
+              `${request.url}${formatGetParameters(request.data)}`,
               {
                 success: onSuccess,
                 error: onFailure
@@ -249,7 +257,8 @@ export function newBidder(spec) {
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               {
                 method: 'POST',
-                contentType: 'text/plain',
+                contentType: request.contentType || 'text/plain',
+                customHeaders: request.customHeaders || {},
                 withCredentials: true
               }
             );
@@ -284,7 +293,7 @@ export function newBidder(spec) {
               addBidUsingRequestMap(bids);
             }
           }
-          onResponse();
+          onResponse(request);
 
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];

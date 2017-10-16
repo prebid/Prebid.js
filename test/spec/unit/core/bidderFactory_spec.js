@@ -124,7 +124,7 @@ describe('bidders created by newBidder', () => {
       expect(ajaxStub.called).to.equal(false);
     });
 
-    it('should make the appropriate POST request', () => {
+    it('should make the appropriate POST request with default settings ', () => {
       const bidder = newBidder(spec);
       const url = 'test.url.com';
       const data = { arg: 2 };
@@ -132,7 +132,7 @@ describe('bidders created by newBidder', () => {
       spec.buildRequests.returns({
         method: 'POST',
         url: url,
-        data: data
+        data: data,
       });
 
       bidder.callBids(MOCK_BIDS_REQUEST);
@@ -143,7 +143,33 @@ describe('bidders created by newBidder', () => {
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'POST',
         contentType: 'text/plain',
-        withCredentials: true
+        withCredentials: true,
+        customHeaders: {}
+      });
+    });
+
+    it('should make the appropriate POST request with custom contentType and headers', () => {
+      const bidder = newBidder(spec);
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: 'test.url.com',
+        contentType: 'application/json',
+        customHeaders: {
+          'custom-header': 'header-value'
+        }
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+        method: 'POST',
+        contentType: 'application/json',
+        withCredentials: true,
+        customHeaders: {
+          'custom-header': 'header-value'
+        }
       });
     });
 
