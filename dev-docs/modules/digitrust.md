@@ -33,28 +33,22 @@ curl -o digitrust.js http://cdn.digitru.st/prod/1/digitrust.min.js
 
 Note that the DigiTrust URL may change from time to time, check with them for the latest.
 
-### Step 3: Combine the DigiTrust code and Prebid
+### Step 3: Create a file with the initialization code
 
-The DigiTrust code must be loaded first, so prepend the digitrust.js file to the top of the Prebid build file.
-
-{% highlight js %}
-cat digitrust.js build/dist/prebid.js > build/dist/prebid_digitrust.js
-{% endhighlight %}
-
-### Step 4: Append the following code to the end of the file:
+For example, store this code in a new file called `digitrustInit.js`:
 
 {% highlight js %}
 DigiTrust.initialize({
-  member: "PUBLISHER_DIGITRUST_MEMBER_ID",
-  site: "PUBLISHER_DIGITRUST_SITE_ID",
-  redirects: true
-});
-var identityResponse = DigiTrust.getUser({
-  "member": "PUBLISHER_DIGITRUST_MEMBER_ID"
-});
-if (typeof identityResponse === 'object' && identityResponse.success) {
-  pbjs.setConfig({digiTrustId: identityResponse});
-}
+    member: "PUBLISHER_DIGITRUST_MEMBER_ID",
+    site: "PUBLISHER_DIGITRUST_SITE_ID",
+    redirects: true
+    },
+    function (digiTrustResult) {
+      if (typeof digiTrustResult === 'object' && digiTrustResult.success) {
+         pbjs.setConfig({digiTrustId: digiTrustResult.identity});
+      }
+    }
+);
 {% endhighlight %}
 
 **Notes**:
@@ -62,6 +56,14 @@ if (typeof identityResponse === 'object' && identityResponse.success) {
 * you'll need replace the placeholders PUBLISHER_DIGITRUST_MEMBER_ID and PUBLISHER_DIGITRUST_SITE_ID.
 * the 'redirects' option to DigiTrust.initialize() may be set to false in order to disable the link-rewriting behavior to acquire a first party cookie context.
  
+### Step 4: Combine the DigiTrust code and Prebid
+
+The DigiTrust code must be loaded first, so prepend the digitrust files to the top of the Prebid build file.
+
+{% highlight js %}
+cat digitrust.js digitrustInit.js build/dist/prebid.js > build/dist/prebid_digitrust.js
+{% endhighlight %}
+
 ### Step 5: Publish
 
 The combined Prebid/DigiTrust file is now ready to follow your normal acceptance process.
