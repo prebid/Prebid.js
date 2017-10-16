@@ -37,12 +37,12 @@ function buildRequest(masterBidRequests, masterId) {
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
-    const masterId = bidRequest.masterId || bidRequest.slaveId;
+    const masterId = bidRequest.masterId;
     bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [];
     bidRequestsByMaster[masterId].push(bidRequest);
 }
 
-function interpretRespons(placementResponse, bidRequest, bids) {
+function interpretResponse(placementResponse, bidRequest, bids) {
     if (!placementResponse.error) {
         let adCode = "<script type=\"application/javascript\">(function(){var wu='" + (placementResponse.winUrl || '') + "',su='" + (placementResponse.statsUrl || '') + "'.replace(/\\[TIMESTAMP\\]/,(new Date()).getTime());";
         adCode += "if(navigator.sendBeacon){if(wu){navigator.sendBeacon(wu)||((new Image(1,1)).src=wu)};if(su){navigator.sendBeacon(su)||((new Image(1,1)).src=su)}}";
@@ -72,8 +72,8 @@ export const spec = {
     },
 
     buildRequests: function(validBidRequests) {
-        let bidRequestsByMaster = {},
-            requests = [];
+        const bidRequestsByMaster = {},
+	      requests = [];
 
         utils._each(validBidRequests, function(v) {
             assignToMaster(v, bidRequestsByMaster);
@@ -90,7 +90,7 @@ export const spec = {
 
         if (utils.isArray(serverResponse)) {
             utils._each(serverResponse, function(placementResponse) {
-                interpretRespons(placementResponse, bidRequest, bids);
+                interpretResponse(placementResponse, bidRequest, bids);
             });
         }
 
@@ -100,5 +100,5 @@ export const spec = {
     getUserSyncs: function(syncOptions) {
         // empty
     }
-}
+};
 registerBidder(spec);
