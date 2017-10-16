@@ -324,8 +324,6 @@ describe('justpremium adapter', () => {
       expect(bidPlacementCode).to.equal('div-gpt-ad-1471513102552-1');
       expect(bidResponse.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.NO_BID);
       expect(bidResponse.bidderCode).to.equal('justpremium');
-
-      stubAddBidResponse.restore();
     });
 
     it('should add bid if tag contains any', () => {
@@ -383,8 +381,6 @@ describe('justpremium adapter', () => {
       expect(bidResponse1.cpm).to.equal(responseData.cpm);
       expect(bidResponse1.format).to.equal(responseData.format);
       expect(bidResponse1.ad).to.equal(responseData.ad);
-
-      stubAddBidResponse.restore();
     });
   });
 });

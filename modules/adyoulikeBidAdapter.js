@@ -8,7 +8,7 @@ import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
-  const _VERSION = '0.1';
+  const _VERSION = '0.2';
 
   const baseAdapter = new Adapter('adyoulike');
 
@@ -21,7 +21,7 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
 
     const placements = validBids.map(bid => bid.params.placement);
     if (!utils.isEmpty(placements)) {
-      const body = createBody(placements);
+      const body = createBody(bidRequests, placements);
       const endpoint = createEndpoint();
       ajax(endpoint,
         (response) => {
@@ -61,10 +61,11 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
   }
 
   /* Create request body */
-  function createBody(placements) {
+  function createBody(bidRequests, placements) {
     const body = {
       Version: _VERSION,
       Placements: placements,
+      TransactionIds: {}
     };
 
     // performance isn't supported by mobile safari iOS7. window.performance works, but
@@ -79,6 +80,8 @@ var AdyoulikeAdapter = function AdyoulikeAdapter() {
     } catch (e) {
       body.PageRefreshed = false;
     }
+
+    placements.forEach(placement => { body.TransactionIds[placement] = bidRequests[placement].transactionId; });
 
     return JSON.stringify(body);
   }

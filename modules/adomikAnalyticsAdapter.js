@@ -117,7 +117,7 @@ adomikAdapter.sendTypedEvent = function() {
   splittedUrl.forEach((split, i) => {
     const partUrl = `${split}&id=${adomikAdapter.currentContext.id}&part=${i}&on=${splittedUrl.length - 1}`;
     const img = new Image(1, 1);
-    img.src = 'http://' + adomikAdapter.currentContext.url + '/?q=' + partUrl;
+    img.src = 'https://' + adomikAdapter.currentContext.url + '/?q=' + partUrl;
   })
 };
 
