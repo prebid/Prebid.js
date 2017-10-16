@@ -43,8 +43,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
   };
 
   function _initConf() {
-    var conf = {},
-      currTime = new Date();
+    var conf = {};
+    var currTime = new Date();
 
     conf.SAVersion = '1100';
     conf.wp = 'PreBid';
@@ -112,7 +112,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
     return conf;
   }
 
-  function _cleanSlot(slotName){
+  function _cleanSlot(slotName) {
     // istanbul ignore else
     if (utils.isStr(slotName)) {
       return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
@@ -148,8 +148,8 @@ var PubmaticAdapter = function PubmaticAdapter() {
   }
 
   function _callBids(params) {
-    var conf = _initConf(),
-      slots = [];
+    var conf = _initConf();
+    var slots = [];
 
     conf.pubId = 0;
     bids = params.bids || [];
@@ -180,7 +180,7 @@ var PubmaticAdapter = function PubmaticAdapter() {
 
     if (!bidResponseMap || !bidInfoMap) {
       return;
-    }  
+    }
 
     for (i = 0; i < bids.length; i++) {
       var adResponse;

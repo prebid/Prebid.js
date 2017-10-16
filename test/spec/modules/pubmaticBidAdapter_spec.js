@@ -30,8 +30,8 @@ describe('PubMaticAdapter', () => {
   let adapter;
 
   function createBidderRequest({
-      bids,
-      params
+    bids,
+    params
   } = {}) {
     var bidderRequest = getDefaultBidRequest();
     if (bids && Array.isArray(bids)) {
@@ -89,7 +89,6 @@ describe('PubMaticAdapter', () => {
       });
 
       it('for publisherId 9990 call is made to gads.pubmatic.com', () => {
-
         var bidRequest = createBidderRequest({
           params: {
             publisherId: 9990,
@@ -101,8 +100,8 @@ describe('PubMaticAdapter', () => {
             pmzoneid: 'abcd123, efg345',
             dctr: 'key=1234,5678'
           }
-        });        
-        adapter.callBids(bidRequest);        
+        });
+        adapter.callBids(bidRequest);
         var callURL = utils.createContentToExecuteExtScriptInFriendlyFrame.getCall(0).args[0];
         expect(bidRequest.bids[0].params.adSlot).to.equal('abcd@728x90');
         expect(callURL).to.contain('gads.pubmatic.com/AdServer/AdCallAggregator?');

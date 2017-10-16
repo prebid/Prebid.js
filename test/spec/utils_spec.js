@@ -670,7 +670,7 @@ describe('Utils', function () {
         comeWithMe: 'ifuwant2live',
       });
     });
-  });  
+  });
 
   describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
     it('should return empty string if url is not passed', function () {
