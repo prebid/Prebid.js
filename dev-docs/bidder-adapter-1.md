@@ -43,9 +43,11 @@ Example markdown file:
 
 # Overview
 
+```
 Module Name: Example Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: prebid@example.com
+```
 
 # Description
 
