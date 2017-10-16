@@ -173,7 +173,7 @@ describe('sharethrough adapter', () => {
 
     describe('when bidResponse string cannot be JSON parsed', () => {
       beforeEach(() => {
-        pbjs._bidsRequested.push(bidderRequest);
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         adapter.str.placementCodeSet['foo'] = {};
 
         server.respondWith(/aaaa1111/, 'non JSON string');
@@ -199,7 +199,7 @@ describe('sharethrough adapter', () => {
 
     describe('when no fill', () => {
       beforeEach(() => {
-        pbjs._bidsRequested.push(bidderRequest);
+        $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
         adapter.str.placementCodeSet['foo'] = {};
 
         let bidderResponse1 = {
