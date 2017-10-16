@@ -28,8 +28,8 @@ The Rubicon Project adapter requires setup and approval from the Rubicon Project
 | `zoneId` | 0.6.0 | required | The zone ID | `"23948"` |
 | `sizes` | 0.6.0 | optional | Array of Rubicon Project size IDs. If not specified, the system will try to convert from bid.sizes. | `[15]` |
 | `keywords` | 0.6.0 | optional | Array of page-specific keywords. May be referenced in Rubicon Project reports. | `["travel", "tourism"]` |
-| `inventory` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the page for use in targeting. | `{"rating":"5-star", "prodtype":"tech"}` |
-| `visitor` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the visitor for use in targeting. | `{"ucat":"new", "search":"iphone"}` |
+| `inventory` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the page for use in targeting. The values must be arrays. | `{"rating":["5-star"], "prodtype":["tech","mobile"]}` |
+| `visitor` | 0.6.0 | optional | An object defining arbitrary key-value pairs concerning the visitor for use in targeting. The values must be arrays. | `{"ucat":["new"], "search":["iphone"]}` |
 | `position` | 0.6.0 | optional | Set the page position. Valid values are "atf" and "btf". | `"atf"` |
 | `userId` | 0.6.0 | optional | Site-specific user ID may be reflected back in creatives for analysis. Note that userId needs to be the same for all slots. | `"12345abc"` |
 | `floor` | 0.19.0 | optional | Sets the global floor -- no bids will be made under this value. | `0.50` |
