@@ -95,6 +95,7 @@ Fields in the `setS2SConfig` object:
 | `adapter`   | String        |           | Adapter code; default: `"prebidServer"`                                |
 | `endpoint`  | String        |           | Will override the default endpoint                                     |
 | `cookieSet` | Boolean       |           | Set to `false` to opt out of cookieset/link rewriting; default: `true` |
+| `secure`    | Integer       |           | Override Prebid Server's determination of whether the request needs secure assets. Set to `1` to force secure assets on the response, or `0` for non-secure assets. |
 
 {: .alert.alert-info :}
 **Additional `cookieSet` details**  
