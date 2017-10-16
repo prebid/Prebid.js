@@ -28,7 +28,6 @@ const SOURCE = 'pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['brealtime'],
   supportedMediaTypes: [VIDEO, NATIVE],
 
   /**
