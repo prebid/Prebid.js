@@ -21,13 +21,12 @@ function mapSizes(adUnit) {
   }
   let sizes = '';
   const mapping = adUnit.sizeMapping.find(sizeMapping => {
-    return width > sizeMapping.minWidth;
+    return width >= sizeMapping.minWidth;
   });
   if (mapping && mapping.sizes && mapping.sizes.length) {
     sizes = mapping.sizes;
     utils.logMessage(`AdUnit : ${adUnit.code} resized based on device width to : ${sizes}`);
-  }
-  else {
+  } else {
     utils.logMessage(`AdUnit : ${adUnit.code} not mapped to any sizes for device width. This request will be suppressed.`);
   }
   return sizes;
@@ -47,11 +46,9 @@ function getScreenWidth(win) {
 
   if (w.innerWidth) {
     return w.innerWidth;
-  }
-  else if (d.body.clientWidth) {
+  } else if (d.body.clientWidth) {
     return d.body.clientWidth;
-  }
-  else if (d.documentElement.clientWidth) {
+  } else if (d.documentElement.clientWidth) {
     return d.documentElement.clientWidth;
   }
   return 0;

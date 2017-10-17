@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter.js';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -81,15 +81,22 @@ function HuddledMassesAdapter() {
     }
 
     var secure = 0;
-    if (window.location.protocol !== 'http:') {
+    var win;
+    try {
+      win = window.top;
+    } catch (e) {
+      win = window;
+    }
+
+    if (win.location.protocol !== 'http:') {
       secure = 1;
     }
 
-    var host = window.location.host;
-    var page = window.location.pathname;
+    var host = win.location.host;
+    var page = win.location.pathname;
     var language = navigator.language;
-    var deviceWidth = window.screen.width;
-    var deviceHeight = window.screen.height;
+    var deviceWidth = win.screen.width;
+    var deviceHeight = win.screen.height;
 
     var queryString = [
       'banner_id', bid.params.placement_id,
@@ -129,9 +136,8 @@ function HuddledMassesAdapter() {
     bidmanager.addBidResponse(bidRequest.placementCode, bid);
   }
 
-  return Object.assign(Adapter.createNew(BIDDER_CODE), { // BIDDER_CODE huddledmasses
-    callBids: _callBids,
-    createNew: HuddledMassesAdapter.createNew
+  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE huddledmasses
+    callBids: _callBids
   });
 }
 
@@ -161,10 +167,6 @@ HuddledMassesAdapter.masSizeOrdering = function (sizes) {
 
       return first - second;
     });
-};
-
-HuddledMassesAdapter.createNew = function () {
-  return new HuddledMassesAdapter();
 };
 
 adaptermanager.registerBidAdapter(new HuddledMassesAdapter(), 'huddledmasses');

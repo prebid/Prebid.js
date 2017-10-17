@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import Adapter from '../../../modules/sharethroughBidAdapter';
 import bidManager from '../../../src/bidmanager';
+import bidfactory from '../../../src/bidfactory';
 
 describe('sharethrough adapter', () => {
   let adapter;
@@ -69,9 +70,11 @@ describe('sharethrough adapter', () => {
     let firstBid;
     let secondBid;
     let server;
+    let stubAddBidResponse;
+    let stubCreateBid;
 
     beforeEach(() => {
-      sandbox.stub(bidManager, 'addBidResponse');
+      stubAddBidResponse = sandbox.stub(bidManager, 'addBidResponse');
       server = sinon.fakeServer.create();
 
       $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
@@ -117,6 +120,7 @@ describe('sharethrough adapter', () => {
 
     afterEach(() => {
       server.restore();
+      stubAddBidResponse.reset();
     });
 
     it('should add a bid object for each bid', () => {
@@ -166,6 +170,71 @@ describe('sharethrough adapter', () => {
     it('should include the pkey', () => {
       expect(firstBid).to.have.property('pkey', 'aaaa1111');
       expect(secondBid).to.have.property('pkey', 'bbbb2222');
+    });
+
+    describe('when bidResponse string cannot be JSON parsed', () => {
+      beforeEach(() => {
+        pbjs._bidsRequested.push(bidderRequest);
+        adapter.str.placementCodeSet['foo'] = {};
+
+        server.respondWith(/aaaa1111/, 'non JSON string');
+        adapter.callBids(bidderRequest);
+
+        server.respond();
+      });
+
+      afterEach(() => {
+        server.restore();
+        stubAddBidResponse.reset();
+      });
+
+      it('should add a bid response', () => {
+        sinon.assert.called(bidManager.addBidResponse);
+      });
+
+      it('should set bidder code on invalid bid response', () => {
+        let bidResponse = bidManager.addBidResponse.firstCall.args[1]
+        expect(bidResponse).to.have.property('bidderCode', 'sharethrough')
+      });
+    });
+
+    describe('when no fill', () => {
+      beforeEach(() => {
+        pbjs._bidsRequested.push(bidderRequest);
+        adapter.str.placementCodeSet['foo'] = {};
+
+        let bidderResponse1 = {
+          'adserverRequestId': '40b6afd5-6134-4fbb-850a-bb8972a46994',
+          'bidId': 'bidId1',
+          'creatives': [
+            {
+              'cpm': 12.34,
+              'auctionWinId': 'b2882d5e-bf8b-44da-a91c-0c11287b8051',
+              'version': 1
+            }
+          ],
+          'stxUserId': ''
+        };
+
+        server.respondWith(/aaaa1111/, JSON.stringify(bidderResponse1));
+        adapter.callBids(bidderRequest);
+
+        server.respond();
+      });
+
+      afterEach(() => {
+        server.restore();
+        stubAddBidResponse.reset();
+      });
+
+      it('should add a bid response', () => {
+        sinon.assert.called(bidManager.addBidResponse);
+      });
+
+      it('should set bidder code on invalid bid response', () => {
+        let bidResponse = bidManager.addBidResponse.firstCall.args[1]
+        expect(bidResponse).to.have.property('bidderCode', 'sharethrough')
+      });
     });
   });
 });

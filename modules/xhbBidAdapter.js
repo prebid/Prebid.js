@@ -1,4 +1,4 @@
-import * as Adapter from 'src/adapter';
+import Adapter from 'src/adapter';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -7,7 +7,7 @@ import adaptermanager from 'src/adaptermanager';
 import { loadScript } from 'src/adloader';
 
 const XhbAdapter = function XhbAdapter() {
-  const baseAdapter = Adapter.createNew('xhb');
+  const baseAdapter = new Adapter('xhb');
   let usersync = false;
 
   const _defaultBidderSettings = {
@@ -16,13 +16,19 @@ const XhbAdapter = function XhbAdapter() {
       {
         key: 'hb_xhb_deal',
         val: function (bidResponse) {
-          return bidResponse.adId;
+          return bidResponse.dealId;
         }
       },
       {
         key: 'hb_xhb_adid',
         val: function (bidResponse) {
           return bidResponse.adId;
+        }
+      },
+      {
+        key: 'hb_xhb_size',
+        val: function (bidResponse) {
+          return bidResponse.width + 'x' + bidResponse.height;
         }
       }
     ]
@@ -107,7 +113,7 @@ const XhbAdapter = function XhbAdapter() {
       let responseCPM;
       const id = jptResponseObj.callback_uid;
       let placementCode = '';
-      const bidObj = getBidRequest(id);
+      const bidObj = utils.getBidRequest(id);
       if (bidObj) {
         bidCode = bidObj.bidder;
         placementCode = bidObj.placementCode;
@@ -154,16 +160,11 @@ const XhbAdapter = function XhbAdapter() {
     }
   };
 
-  return {
+  return Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
-    createNew: XhbAdapter.createNew,
     buildJPTCall: buildJPTCall
-  };
-};
-
-XhbAdapter.createNew = function () {
-  return new XhbAdapter();
+  });
 };
 
 adaptermanager.registerBidAdapter(new XhbAdapter(), 'xhb');

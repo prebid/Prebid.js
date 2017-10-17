@@ -87,7 +87,7 @@ describe('spotx adapter tests', () => {
     let adapter;
 
     beforeEach(() => {
-      adapter = Adapter.createNew();
+      adapter = new Adapter();
 
       var slot = document.createElement('div');
       slot.setAttribute('id', 'contentSpotx');
@@ -207,7 +207,6 @@ describe('spotx adapter tests', () => {
           expect(bid.bidderCode).to.equal('spotx');
           expect(bid.statusMessage).to.equal('Bid returned empty or error response');
           expect(bid.cpm).to.be.undefined;
-          expect(bid.mediaType).to.be.undefined;
           expect(bid.vastUrl).to.be.undefined;
 
           bidManager.addBidResponse.restore();

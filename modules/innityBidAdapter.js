@@ -7,15 +7,19 @@ var adaptermanager = require('src/adaptermanager');
 
 var InnityAdapter = function InnityAdapter() {
   function _callBids(params) {
-    var bidURL, bids = params.bids || [], requestURL = window.location.protocol + '//as.innity.com/synd/?cb=' + new Date().getTime() + '&ver=2&hb=1&output=js&';
+    var bidURL;
+    const bids = params.bids || [];
+    const requestURL = window.location.protocol + '//as.innity.com/synd/?cb=' + new Date().getTime() + '&ver=2&hb=1&output=js&';
     for (var i = 0; i < bids.length; i++) {
-      var requestParams = {}, bid = bids[i];
+      const requestParams = {};
+      const bid = bids[i];
       requestParams.pub = bid.params.pub;
       requestParams.zone = bid.params.zone;
       // Page URL
       requestParams.url = utils.getTopWindowUrl();
       // Sizes
-      var parseSized = utils.parseSizesInput(bid.sizes), arrSize = parseSized[0].split('x');
+      const parseSized = utils.parseSizesInput(bid.sizes);
+      const arrSize = parseSized[0].split('x');
       requestParams.width = arrSize[0];
       requestParams.height = arrSize[1];
       // Callback function
@@ -30,7 +34,10 @@ var InnityAdapter = function InnityAdapter() {
   }
 
   $$PREBID_GLOBAL$$._doInnityCallback = function(response) {
-    var bidObject, bidRequest, callbackID, libURL = window.location.protocol + '//cdn.innity.net/frame_util.js';
+    var bidObject;
+    var bidRequest;
+    var callbackID;
+    var libURL = window.location.protocol + '//cdn.innity.net/frame_util.js';
     callbackID = response.callback_uid;
     bidRequest = utils.getBidRequest(callbackID);
     if (response.cpm > 0) {
