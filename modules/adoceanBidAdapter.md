@@ -19,8 +19,8 @@ Banner formats are supported.
                    {
                        bidder: "adocean",
                        params: {
-                           slaveId: 'adoceanmyaoujfrkmihdi',
-                           masterId: 'TjoArMYvNzznfyIiD2MuWOGqz0N3gY_GbGvRX5rucGH.W7',
+                           slaveId: 'adoceanmyaozpniqismex',
+                           masterId: 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
                            emiter: 'myao.adocean.pl'
                        }
                    }
