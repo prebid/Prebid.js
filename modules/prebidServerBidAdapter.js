@@ -105,6 +105,14 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
+    bidRequest.ad_units.forEach(adUnit => {
+      let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (videoMediaType) {
+        // pbs expects a ad_unit.video attribute if the imp is video
+        adUnit.video = Object.assign({}, videoMediaType);
+        delete adUnit.mediaTypes.video;
+      }
+    })
     convertTypes(bidRequest.ad_units);
     let requestJson = {
       account_id: config.accountId,
