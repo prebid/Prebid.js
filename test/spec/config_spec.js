@@ -1,4 +1,4 @@
-import { excpet } from 'chai';
+import { expect } from 'chai';
 import { assert } from 'chai';
 import { newConfig } from 'src/config';
 
@@ -31,6 +31,11 @@ describe('config API', () => {
   it('sets and gets arbitrary configuarion properties', () => {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
+  });
+
+  it('only accepts objects', () => {
+    setConfig('invalid');
+    expect(getConfig('0')).to.not.equal('i');
   });
 
   it('sets multiple config properties', () => {
