@@ -166,6 +166,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     }
   }
 
+  let _bidderRequests = [];
   // client side adapters
   let adUnitsClientCopy = utils.cloneJson(adUnits);
   // filter out s2s bids
@@ -189,20 +190,29 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         requestId,
         bidderRequestId,
         bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsClientCopy}),
-        start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout
       };
       if (bidderRequest.bids && bidderRequest.bids.length !== 0) {
-        utils.logMessage(`CALLING BIDDER ======= ${bidderCode}`);
         $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
-        adapter.callBids(bidderRequest);
+        _bidderRequests.push(bidderRequest);
       }
-    } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
   });
+
+  _bidderRequests.forEach(bidRequest => {
+    bidRequest.start = new Date().getTime();
+    const adapter = _bidderRegistry[bidRequest.bidderCode];
+    if (adapter) {
+      if (bidRequest.bids && bidRequest.bids.length !== 0) {
+        utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
+        events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+        adapter.callBids(bidRequest);
+      }
+    } else {
+      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+    }
+  })
 };
 
 function transformHeightWidth(adUnit) {
