@@ -447,6 +447,8 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+  // emit event
+  events.emit(ADD_AD_UNITS)
 };
 
 /**
