@@ -664,6 +664,7 @@ describe('Utils', function () {
       var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
       var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
       assert.equal(output, expected);
+    });
   });
 
   describe('getDefinedParams', () => {
