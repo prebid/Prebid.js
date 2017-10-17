@@ -52,18 +52,22 @@ Be sure to duplicate your line item and video creative for each Prebid price buc
    https://prebid.adnxs.com/pbc/v1/cache?uuid=%%PATTERN:hb_uuid%%
    ```
 
+   {: .alert.alert-warning :}
+   This creative URL is **required** in order to show video ads.  It points to
+   a server-side cache hosted by Prebid Server.
+
+   {: .alert.alert-info :}
+   **Prebid Cache and the VAST creative URL warning**  
+   DFP will show you a warning that fetching VAST from the creative
+   URL failed.  This is expected, since the creative URL above points
+   to a server-side asset cache hosted by Prebid Server.
+
 4. Set the **duration** to **1**
 
 The resulting creative should look something like the following:
 
 {: .pb-img.pb-md-img :}
 ![DFP Video Creative Setup]({{site.baseurl}}/assets/images/ad-ops/dfp-creative-setup/dfp-creative-setup-04.png)
-
-{: .alert.alert-warning :}
-**VAST creative URL warning**  
-DFP will show you a warning that fetching VAST from the creative URL failed.  This is expected, since the creative URL above points to a cache hosted by Prebid Server.  Why do we do this caching?  For several reasons:  
-&bull; Sets [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) headers appropriately on the DFP VAST URL so video players can access the content across multiple devices/platforms.  When these headers are absent, video will fail on certain devices/browsers.  
-&bull; Without the cache, each new demand partner would have to provide their own VAST creative URL/configure their own custom DFP VAST Creative, which could create too much overhead for publishers who would have to configure custom line items and creatives per bidder.
 
 That's it as far as Prebid setup is concerned.  At this point you can add any other options you would normally use, e.g., labels or tracking URLs.
 
