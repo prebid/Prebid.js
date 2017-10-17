@@ -324,7 +324,6 @@ describe('justpremium adapter', () => {
       expect(bidPlacementCode).to.equal('div-gpt-ad-1471513102552-1');
       expect(bidResponse.getStatusCode()).to.equal(PREBID_CONSTANTS.STATUS.NO_BID);
       expect(bidResponse.bidderCode).to.equal('justpremium');
-
     });
 
     it('should add bid if tag contains any', () => {
