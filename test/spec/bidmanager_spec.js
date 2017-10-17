@@ -590,7 +590,10 @@ describe('bidmanager.js', function () {
         {
           bidderCode: 'appnexusAst',
           mediaType: 'native',
-          native: {title: 'foo'}
+          native: {
+            title: 'foo',
+            clickUrl: 'example.link'
+          }
         }
       );
 
