@@ -53,8 +53,41 @@ describe('cpmBucketManager', () => {
       }
       ]
     };
-    let expected = '{"low":"552.45","med":"1824.09","high":"1824.09","auto":"1824.09","dense":"1824.09","custom":"1824.0882"}';
+    let expected = '{"low":"552.45","med":"1823.09","high":"1823.09","auto":"1823.09","dense":"1823.09","custom":"1823.0850"}';
     let output = getPriceBucketString(cpm, customConfig, 110.49);
+    expect(JSON.stringify(output)).to.deep.equal(expected);
+  });
+
+  it('gets custom bucket strings and it should honor 0', () => {
+    let cpm = 16.50908;
+    let customConfig = {
+      'buckets': [
+        {
+          'precision': 0,
+          'min': 3,
+          'max': 18,
+          'increment': 0.05,
+        }
+      ]
+    };
+    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"17"}';
+    let output = getPriceBucketString(cpm, customConfig);
+    expect(JSON.stringify(output)).to.deep.equal(expected);
+  });
+
+  it('gets the custom bucket strings without passing precision and it should honor the default precision', () => {
+    let cpm = 16.50908;
+    let customConfig = {
+      'buckets': [
+        {
+          'min': 3,
+          'max': 18,
+          'increment': 0.05,
+        }
+      ]
+    };
+    let expected = '{"low":"5.00","med":"16.50","high":"16.50","auto":"16.50","dense":"16.50","custom":"16.50"}';
+    let output = getPriceBucketString(cpm, customConfig);
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
