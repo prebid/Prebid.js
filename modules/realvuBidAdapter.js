@@ -8,7 +8,7 @@ const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
 
-var realvuAdapter = function realvuAdapter() {
+var RealVuAdapter = function RealVuAdapter() {
   var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
     var pbids = params.bids;
@@ -234,6 +234,6 @@ var realvuAdapter = function realvuAdapter() {
   });
 };
 
-adaptermanager.registerBidAdapter(new realvuAdapter(), 'realvu');
+adaptermanager.registerBidAdapter(new RealVuAdapter(), 'realvu');
 
-module.exports = realvuAdapter;
+module.exports = RealVuAdapter;
