@@ -11,33 +11,55 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['conversant'], // short code
   supportedMediaTypes: [VIDEO],
+
   /**
    * Determines whether or not the given bid request is valid.
-   *
+   * 
    * @param {BidRequest} bid - The bid params to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.site_id);
+    if (!bid || !bid.params) {
+      utils.logWarn(BIDDER_CODE + ': Missing bid parameters');
+      return false;
+    }
+
+    if (!bid.params.site_id || !utils.isStr(bid.params.site_id)) {
+      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string')
+      return false;
+    }
+
+    if (isVideoRequest(bid)) {
+      if (!bid.params.mimes) {
+        // Give a warning but let it pass
+        utils.logWarn(BIDDER_CODE + ': mimes should be specified for videos');
+      } else if (!utils.isArray(bid.params.mimes) || !bid.params.mimes.every(s => utils.isStr(s))) {
+        utils.logWarn(BIDDER_CODE + ': mimes must be an array of strings');
+        return false;
+      }
+    }
+
+    return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
-   *
+   * 
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
     const loc = utils.getTopWindowLocation();
     const page = loc.pathname + loc.search + loc.hash;
+    const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
     let siteId = '';
-    let secure = 0;
     let requestId = '';
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
-      secure = utils.getBidIdParameter('secure', bid.params) ? 1 : secure;
       requestId = bid.requestId;
 
       const format = convertSizes(bid.sizes);
@@ -93,7 +115,7 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
+   * 
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -141,9 +163,10 @@ export const spec = {
 
     return bidResponses;
   },
+
   /**
    * Return use sync info
-   *
+   * 
    * @param {SyncOptions} syncOptions - Info about usersyncs that the adapter should obey
    * @return {UserSync} Adapter sync type and url
    */
@@ -159,7 +182,7 @@ export const spec = {
 
 /**
  * Determine do-not-track state
- *
+ * 
  * @returns {boolean}
  */
 function getDNT() {
@@ -168,7 +191,7 @@ function getDNT() {
 
 /**
  * Return openrtb device object that includes ua, width, and height.
- *
+ * 
  * @returns {Device} Openrtb device object
  */
 function getDevice() {
@@ -186,7 +209,7 @@ function getDevice() {
 /**
  * Convert arrays of widths and heights to an array of objects with w and h properties. [[300, 250],
  * [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
- *
+ * 
  * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
  * @returns {object[]} Array of objects with w and h
  */
@@ -204,7 +227,7 @@ function convertSizes(bidSizes) {
 
 /**
  * Check if it's a video bid request
- *
+ * 
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
@@ -214,7 +237,7 @@ function isVideoRequest(bid) {
 
 /**
  * Copy property if exists from src to dst
- *
+ * 
  * @param {object} src
  * @param {string} srcName
  * @param {object} dst

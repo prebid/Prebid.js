@@ -139,6 +139,17 @@ describe('Conversant adapter tests', function() {
     expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[2])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[3])).to.be.true;
+
+    const simpleVideo = JSON.parse(JSON.stringify(bidRequests[3]));
+    simpleVideo.params.site_id = 123;
+    expect(spec.isBidRequestValid(simpleVideo)).to.be.false;
+    simpleVideo.params.site_id = siteId;
+    simpleVideo.params.mimes = [1, 2, 3];
+    expect(spec.isBidRequestValid(simpleVideo)).to.be.false;
+    simpleVideo.params.mimes = 'bad type';
+    expect(spec.isBidRequestValid(simpleVideo)).to.be.false;
+    delete simpleVideo.params.mimes;
+    expect(spec.isBidRequestValid(simpleVideo)).to.be.true;
   });
 
   it('Verify buildRequest', function() {
