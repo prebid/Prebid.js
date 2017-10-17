@@ -1,6 +1,6 @@
 import { uniques, flatten, adUnitsFilter, getBidderRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
-import { nativeBidIsValid, setNativeTargeting } from './native';
+import { nativeBidIsValid, getNativeTargeting } from './native';
 import { isValidVideoBid } from './video';
 import { getCacheUrl, store } from './videoCache';
 import { Renderer } from 'src/Renderer';
@@ -276,7 +276,7 @@ function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   }
 
   if (custBidObj['native']) {
-    keyValues = Object.assign({}, keyValues, setNativeTargeting(custBidObj));
+    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
   return keyValues;

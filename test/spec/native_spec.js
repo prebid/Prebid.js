@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, setNativeTargeting } from 'src/native';
+import { fireNativeTrackers, getNativeTargeting } from 'src/native';
+const utils = require('src/utils');
 
 const bid = {
   native: {
@@ -14,20 +15,32 @@ const bid = {
 };
 
 describe('native.js', () => {
-  it('sets native targeting keys', () => {
-    const targeting = setNativeTargeting(bid);
+  let triggerPixelStub;
+
+  beforeEach(() => {
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+  });
+
+  afterEach(() => {
+    utils.triggerPixel.restore();
+  });
+
+  it('gets native targeting keys', () => {
+    const targeting = getNativeTargeting(bid);
     expect(targeting.hb_native_title).to.equal(bid.native.title);
     expect(targeting.hb_native_body).to.equal(bid.native.body);
     expect(targeting.hb_native_linkurl).to.equal(bid.native.clickUrl);
   });
 
   it('fires impression trackers', () => {
-    const fired = fireNativeTrackers({}, bid);
-    expect(fired).to.deep.equal(bid.native.impressionTrackers);
+    fireNativeTrackers({}, bid);
+    sinon.assert.calledOnce(triggerPixelStub);
+    sinon.assert.calledWith(triggerPixelStub, bid.native.impressionTrackers[0]);
   });
 
   it('fires click trackers', () => {
-    const fired = fireNativeTrackers({ action: 'click' }, bid);
-    expect(fired).to.deep.equal(bid.native.clickTrackers);
+    fireNativeTrackers({ action: 'click' }, bid);
+    sinon.assert.calledOnce(triggerPixelStub);
+    sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
   });
 });

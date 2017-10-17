@@ -78,7 +78,7 @@ export function nativeBidIsValid(bid) {
     return false;
   }
 
-  // all native bid responses must defined a landing page url
+  // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
     return false;
   }
@@ -134,16 +134,14 @@ export function fireNativeTrackers(message, adObject) {
   }
 
   (trackers || []).forEach(triggerPixel);
-
-  return trackers;
 }
 
 /**
- * Sets native targeting key-value paris
+ * Gets native targeting key-value paris
  * @param {Object} bid
  * @return {Object} targeting
  */
-export function setNativeTargeting(bid) {
+export function getNativeTargeting(bid) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
