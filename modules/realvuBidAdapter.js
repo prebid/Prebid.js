@@ -8,7 +8,7 @@ const bidmanager = require('src/bidmanager.js');
 const bidfactory = require('src/bidfactory.js');
 const Adapter = require('src/adapter.js').default;
 
-var RealVuAdapter = function RealVuAdapter() {
+var realvuAdapter = function realvuAdapter() {
   var baseAdapter = new Adapter('realvu');
   baseAdapter.callBids = function (params) {
     var pbids = params.bids;
@@ -53,7 +53,6 @@ var RealVuAdapter = function RealVuAdapter() {
 
   // +copy/pasted appnexusBidAdapter, "handleAnCB" replaced with "handleRvAnCB"
   var RvAppNexusAdapter = function RvAppNexusAdapter() {
-    var baseAdapter = new Adapter('appnexus');
     var usersync = false;
 
     this.buildJPTCall = function (bid, callbackId) {
@@ -235,6 +234,6 @@ var RealVuAdapter = function RealVuAdapter() {
   });
 };
 
-adaptermanager.registerBidAdapter(new RealVuAdapter(), 'realvu');
+adaptermanager.registerBidAdapter(new realvuAdapter(), 'realvu');
 
-module.exports = RealVuAdapter;
+module.exports = realvuAdapter;
