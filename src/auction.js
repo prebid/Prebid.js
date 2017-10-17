@@ -82,7 +82,7 @@ events.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
   *
   * @returns {Auction} auction instance
   */
-function newAuction({adUnits, adUnitCodes}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
   let _adUnits = adUnits;
   let _adUnitCodes = adUnitCodes;
   let _bidderRequests = [];
@@ -90,17 +90,17 @@ function newAuction({adUnits, adUnitCodes}) {
   let _auctionStart;
   let _auctionId = utils.getUniqueIdentifierStr();
   let _auctionStatus;
-  let _callback;
+  let _callback = callback;
   let _timer;
+  let _timeout = cbTimeout;
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
 
-  function startAuctionTimer(callback, cbtimeout) {
-    _callback = callback;
+  function startAuctionTimer() {
     const timedOut = true;
     const timeoutCallback = executeCallback.bind(null, timedOut);
-    let timer = setTimeout(timeoutCallback, cbtimeout);
+    let timer = setTimeout(timeoutCallback, _timeout);
     _timer = timer;
   }
 
@@ -301,7 +301,7 @@ function newAuction({adUnits, adUnitCodes}) {
     }
 
     function doCallbacksIfNeeded() {
-      if (bid.timeToRespond > $$PREBID_GLOBAL$$.cbTimeout + $$PREBID_GLOBAL$$.timeoutBuffer) {
+      if (bid.timeToRespond > _timeout + config.getConfig('timeoutBuffer')) {
         executeCallback(true);
       }
     }
@@ -334,18 +334,19 @@ function newAuction({adUnits, adUnitCodes}) {
     }
   }
 
-  function callBids(cbTimeout) {
+  function callBids() {
+    startAuctionTimer();
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
     const auctionInit = {
       timestamp: _auctionStart,
       auctionId: _auctionId,
-      timeout: cbTimeout
+      timeout: _timeout
     };
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, auctionInit);
 
-    let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, cbTimeout);
+    let bidRequests = adaptermanager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
       addBidRequests(bidRequest);
@@ -361,7 +362,6 @@ function newAuction({adUnits, adUnitCodes}) {
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
-    startAuctionTimer,
     callBids
   }
 }
@@ -512,8 +512,4 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
-}
-
-export function createAuction({adUnits, adUnitCodes}) {
-  return newAuction({adUnits, adUnitCodes});
 }

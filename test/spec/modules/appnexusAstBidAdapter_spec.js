@@ -155,7 +155,7 @@ describe('AppNexusAdapter', () => {
       });
     });
 
-    it('should set required native asset params when not provided on adunit', () => {
+    it('sets minimum native asset params when not provided on adunit', () => {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -171,6 +171,38 @@ describe('AppNexusAdapter', () => {
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
         main_image: {required: true, sizes: [{}] },
+      });
+    });
+
+    it('does not overwrite native ad unit params with mimimum params', () => {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'native',
+          nativeParams: {
+            image: {
+              aspect_ratios: [{
+                min_width: 100,
+                ratio_width: 2,
+                ratio_height: 3,
+              }]
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
+        main_image: {
+          required: true,
+          aspect_ratios: [{
+            min_width: 100,
+            ratio_width: 2,
+            ratio_height: 3,
+          }]
+        },
       });
     });
 

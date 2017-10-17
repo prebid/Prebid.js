@@ -14,13 +14,15 @@ const NATIVE_MAPPING = {
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] },
   },
   icon: {
     serverName: 'icon',
-    serverParams: { required: true, sizes: [{}] }
+    requiredParams: { required: true },
+    minimumParams: { sizes: [{}] },
   },
-  sponsoredBy: 'sponsored_by'
+  sponsoredBy: 'sponsored_by',
 };
 const SOURCE = 'pbjs';
 
@@ -190,17 +192,17 @@ function newBid(serverBid, rtbBid) {
       bid.adResponse.ad = bid.adResponse.ads[0];
       bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
     }
-  } else if (rtbBid.rtb.native) {
-    const native = rtbBid.rtb.native;
-    bid.native = {
-      title: native.title,
-      body: native.desc,
-      cta: native.ctatext,
-      sponsoredBy: native.sponsored,
-      image: native.main_img && native.main_img.url,
-      icon: native.icon && native.icon.url,
-      clickUrl: native.link.url,
-      impressionTrackers: native.impression_trackers,
+  } else if (rtbBid.rtb['native']) {
+    const nativeAd = rtbBid.rtb['native'];
+    bid['native'] = {
+      title: nativeAd.title,
+      body: nativeAd.desc,
+      cta: nativeAd.ctatext,
+      sponsoredBy: nativeAd.sponsored,
+      image: nativeAd.main_img && nativeAd.main_img.url,
+      icon: nativeAd.icon && nativeAd.icon.url,
+      clickUrl: nativeAd.link.url,
+      impressionTrackers: nativeAd.impression_trackers,
     };
   } else {
     Object.assign(bid, {
@@ -261,33 +263,12 @@ function bidToTag(bid) {
     tag.keywords = getKeywords(bid.params.keywords);
   }
 
-  if (bid.mediaType === 'native') {
+  if (bid.mediaType === 'native' || utils.deepAccess(bid, 'mediaTypes.native')) {
     tag.ad_types = ['native'];
 
     if (bid.nativeParams) {
-      const nativeRequest = {};
-
-      // map standard prebid native asset identifier to /ut parameters
-      // e.g., tag specifies `body` but /ut only knows `description`
-      // mapping may be in form {tag: '<server name>'} or
-      // {tag: {serverName: '<server name>', serverParams: {...}}}
-      Object.keys(bid.nativeParams).forEach(key => {
-        // check if one of the <server name> forms is used, otherwise
-        // a mapping wasn't specified so pass the key straight through
-        const requestKey =
-          (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-          NATIVE_MAPPING[key] ||
-          key;
-
-        // if the mapping for this identifier specifies required server
-        // params via the `serverParams` object, merge that in
-        nativeRequest[requestKey] = Object.assign({},
-          NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverParams,
-          bid.nativeParams[key]
-        );
-      });
-
-      tag.native = {layouts: [nativeRequest]};
+      const nativeRequest = buildNativeRequest(bid.nativeParams);
+      tag['native'] = {layouts: [nativeRequest]};
     }
   }
 
@@ -342,6 +323,44 @@ function hasMemberId(bid) {
 
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
+}
+
+function buildNativeRequest(params) {
+  const request = {};
+
+  // map standard prebid native asset identifier to /ut parameters
+  // e.g., tag specifies `body` but /ut only knows `description`.
+  // mapping may be in form {tag: '<server name>'} or
+  // {tag: {serverName: '<server name>', requiredParams: {...}}}
+  Object.keys(params).forEach(key => {
+    // check if one of the <server name> forms is used, otherwise
+    // a mapping wasn't specified so pass the key straight through
+    const requestKey =
+      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+      NATIVE_MAPPING[key] ||
+      key;
+
+    // required params are always passed on request
+    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
+    request[requestKey] = Object.assign({}, requiredParams, params[key]);
+
+    // minimum params are passed if no non-required params given on adunit
+    const minimumParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].minimumParams;
+
+    if (requiredParams && minimumParams) {
+      // subtract required keys from adunit keys
+      const adunitKeys = Object.keys(params[key]);
+      const requiredKeys = Object.keys(requiredParams);
+      const remaining = adunitKeys.filter(key => !requiredKeys.includes(key));
+
+      // if none are left over, the minimum params needs to be sent
+      if (remaining.length === 0) {
+        request[requestKey] = Object.assign({}, request[requestKey], minimumParams);
+      }
+    }
+  });
+
+  return request;
 }
 
 function outstreamRender(bid) {

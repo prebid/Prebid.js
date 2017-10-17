@@ -15,6 +15,15 @@ var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
+  let fakeCurrencyFileServer;
+  beforeEach(() => {
+    fakeCurrencyFileServer = sinon.fakeServer.create();
+  });
+
+  afterEach(() => {
+    fakeCurrencyFileServer.restore();
+  });
+
   describe('setConfig', () => {
     it('results in currencySupportEnabled = false when currency not configured', () => {
       setConfig({});
@@ -22,7 +31,6 @@ describe('currency', function () {
     });
 
     it('results in currencySupportEnabled = true and currencyRates being loaded when configured', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -103,7 +111,6 @@ describe('currency', function () {
     it('not run until currency rates file is loaded', () => {
       setConfig({});
 
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
 
       var marker = false;
@@ -158,7 +165,6 @@ describe('currency', function () {
     });
 
     it('should result in NO_BID when fromCurrency is not supported in file', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -172,7 +178,6 @@ describe('currency', function () {
     });
 
     it('should result in NO_BID when adServerCurrency is not supported in file', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
@@ -186,7 +191,6 @@ describe('currency', function () {
     });
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
@@ -201,7 +205,6 @@ describe('currency', function () {
     });
 
     it('should return direct conversion rate when fromCurrency is one of the configured bases', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
@@ -216,7 +219,6 @@ describe('currency', function () {
     });
 
     it('should return reciprocal conversion rate when adServerCurrency is one of the configured bases, but fromCurrency is not', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'GBP' });
       fakeCurrencyFileServer.respond();
@@ -231,7 +233,6 @@ describe('currency', function () {
     });
 
     it('should return intermediate conversion rate when neither fromCurrency nor adServerCurrency is one of the configured bases', () => {
-      var fakeCurrencyFileServer = sinon.fakeServer.create();
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'CNY' });
       fakeCurrencyFileServer.respond();
