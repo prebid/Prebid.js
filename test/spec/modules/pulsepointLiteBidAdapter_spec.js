@@ -224,6 +224,14 @@ describe('PulsePoint Lite Adapter Tests', () => {
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
   });
 
+  it('Verifies image pixel sync', () => {
+    const options = spec.getUserSyncs({ pixelEnabled: true});
+    expect(options).to.not.be.undefined;
+    expect(options).to.have.lengthOf(1);
+    expect(options[0].type).to.equal('image');
+    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch/prebid');
+  });
+
   it('Verify app requests', () => {
     const request = spec.buildRequests(appSlotConfig);
     const ortbRequest = JSON.parse(request.data);

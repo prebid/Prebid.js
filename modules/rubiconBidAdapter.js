@@ -226,12 +226,11 @@ export const spec = {
   },
   /**
    * @param {*} responseObj
-   * @param {bidRequest} bidRequest
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function(responseObj, {bidRequest}) {
     let ads = responseObj.ads;
-    const adResponseKey = bidRequest.placementCode;
 
     // check overall response
     if (typeof responseObj !== 'object' || responseObj.status !== 'ok') {
@@ -239,8 +238,8 @@ export const spec = {
     }
 
     // video ads array is wrapped in an object
-    if (bidRequest.mediaType === 'video' && typeof ads === 'object') {
-      ads = ads[adResponseKey];
+    if (typeof bidRequest === 'object' && bidRequest.mediaType === 'video' && typeof ads === 'object') {
+      ads = ads[bidRequest.placementCode];
     }
 
     // check the ad response
@@ -251,9 +250,9 @@ export const spec = {
     // if there are multiple ads, sort by CPM
     ads = ads.sort(_adCpmSort);
 
-    let bids = ads.reduce((bids, ad) => {
+    return ads.reduce((bids, ad) => {
       if (ad.status !== 'ok') {
-        return;
+        return [];
       }
 
       let bid = {
@@ -286,8 +285,6 @@ export const spec = {
 
       return bids;
     }, []);
-
-    return bids;
   },
   getUserSyncs: function() {
     if (!hasSynced) {

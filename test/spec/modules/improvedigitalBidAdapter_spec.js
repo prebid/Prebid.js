@@ -387,7 +387,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -402,7 +402,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pubid%22%3A1032%2C%22pkey%22%3A%22data_team_test_hb_smoke_test%22%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pubid%22%3A1032%2C%22pkey%22%3A%22data_team_test_hb_smoke_test%22%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -417,7 +417,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -432,7 +432,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -447,8 +447,8 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript twice with correct parameters', () => {
       sinon.assert.calledTwice(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -463,9 +463,9 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript thrice with correct parameters', () => {
       sinon.assert.calledThrice(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543212%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%227g8h9i%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543211%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543212%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%227g8h9i%22%2C%22pid%22%3A1012546%2C%22kvw%22%3A%7B%22hbkv%22%3A%5B%2201%22%5D%7D%2C%22banner%22%3A%7B%7D%7D%5D%7D%7D', null);
     });
   });
 
@@ -493,7 +493,7 @@ describe('improvedigital adapter tests', function () {
     });
     it('should call loadScript twice with correct parameters', () => {
       sinon.assert.calledOnce(adloader.loadScript);
-      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22pbjs.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%2C%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
+      sinon.assert.calledWith(adloader.loadScript, 'http://ad.360yield.com/hb?jsonp=%7B%22bid_request%22%3A%7B%22id%22%3A%229876543210%22%2C%22callback%22%3A%22$$PREBID_GLOBAL$$.improveDigitalResponse%22%2C%22secure%22%3A0%2C%22version%22%3A%22' + improveDigitalAdapter.LIB_VERSION + '-' + improveDigitalAdapter.idClient.CONSTANTS.CLIENT_VERSION + '%22%2C%22imp%22%3A%5B%7B%22id%22%3A%221a2b3c%22%2C%22pid%22%3A1012544%2C%22banner%22%3A%7B%7D%7D%2C%7B%22id%22%3A%224d5e6f%22%2C%22pid%22%3A1012545%2C%22banner%22%3A%7B%22w%22%3A800%2C%22h%22%3A600%7D%7D%5D%7D%7D', null);
     });
   });
 
