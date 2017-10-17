@@ -12,11 +12,11 @@ nav_section: prebid-server
 # Get Started with Prebid Server
 {:.no_toc}
 
-This page has instructions for setting up Prebid.js with [Prebid Server](https://prebid.adnxs.com).
+This page has instructions for adding Prebid Server to Prebid.js.
 
 For many publishers, client-side header bidding is a balancing act between the inclusion of demand partners and impact to the page.
 
-Using [Prebid Server](https://prebid.adnxs.com), you can move demand partners server-side, eliminating most of the latency impact that comes with adding more partners.
+Using Prebid Server, you can move demand partners server-side, eliminating most of the latency impact that comes with adding more partners.
 
 This should help you make more money without sacrificing user experience.
 
@@ -27,13 +27,18 @@ Prebid Server is an open source project.  [The source code is hosted under the P
 * TOC
 {:toc}
 
-## Step 1. Register for a Prebid Server account
+## Step 1. Choose Your Server Host
 
-- Go to the [Prebid Server sign-up page](https://prebid.adnxs.com) and click the button to sign up.
+- If you plan to host Prebid Server on your own server, please skip to **Step 2** below. If you do *not* have your own server, please choose from one of the Prebid.org members below to get started.
 
-- Fill out the form details, including your email address.
+- **AppNexus**
+  - Go to the [Prebid Server sign-up page](https://prebid.adnxs.com) and click the button to sign up.
+  - Fill out the form details, including your email address.
+  - When approved, you will receive an email with your assigned `accountId`. You will need this for configuring Prebid.js to use Prebid Server.
 
-- When approved, you will receive an email with your assigned `accountId`. You will need this for configuring Prebid.js to use Prebid Server.
+- **Rubicon Project**
+  - Please send an email to prebidserver@rubiconproject.com and proceed to **Step 2** below. You do not have to wait for a verification email to get started.
+
 
 ## Step 2. Download Prebid.js with Prebid Server enabled
 
@@ -106,6 +111,6 @@ We recommend that users leave `cookieSet` enabled since it's essential for serve
 ## Related Topics
 
 + [Prebid.js Developer Docs]({{site.github.url}}/dev-docs/getting-started.html)
-+ [Prebid Server homepage](https://prebid.adnxs.com/)
+
 
 </div>
