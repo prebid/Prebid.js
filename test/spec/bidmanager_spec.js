@@ -198,7 +198,7 @@ describe('bidmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    it('Custom bidCpmAdjustment for one bidder and inherit standard', function () {
+    it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
@@ -207,6 +207,9 @@ describe('bidmanager.js', function () {
           },
         },
         standard: {
+          bidCpmAdjustment: function (bidCpm) {
+            return 200;
+          },
           adserverTargeting: [
             {
               key: 'hb_bidder',
@@ -233,6 +236,27 @@ describe('bidmanager.js', function () {
       var expected = { 'hb_bidder': bidderCode, 'hb_adid': adId, 'hb_pb': 10.0 };
       var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
       assert.deepEqual(response, expected);
+    });
+
+    it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[5]
+      );
+
+      assert.equal(bid.cpm, 0.5);
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        standard: {
+          bidCpmAdjustment: function (bidCpm) {
+            return bidCpm * 0.5;
+          }
+        }
+      };
+
+      bidmanager.adjustBids(bid)
+      assert.equal(bid.cpm, 0.25);
     });
 
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
