@@ -81,7 +81,6 @@ function getBids({bidderCode, requestId, bidderRequestId, adUnits, labels}) {
         }, [])
       );
     }
-    
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
