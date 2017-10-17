@@ -55,7 +55,7 @@ export const spec = {
     let siteId = '';
     let requestId = '';
 
-    const conversantImps = validBidRequests.map(function(bid) {
+    const conversantImps = utils._map(validBidRequests, function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
@@ -124,41 +124,45 @@ export const spec = {
     const requestMap = {};
     const currency = serverResponse.cur || 'USD';
 
-    bidRequest.data.imp.forEach(imp => requestMap[imp.id] = imp);
+    if (bidRequest && bidRequest.data && bidRequest.data.imp) {
+      utils._each(bidRequest.data.imp, imp => requestMap[imp.id] = imp);
+    }
 
-    if (serverResponse && serverResponse.id) {
-      serverResponse.seatbid.forEach(bidList => bidList.bid.forEach(conversantBid => {
-        const responseCPM = parseFloat(conversantBid.price);
-        if (responseCPM > 0.0 && conversantBid.impid) {
-          const responseAd = conversantBid.adm || '';
-          const responseNurl = conversantBid.nurl || '';
-          const request = requestMap[conversantBid.impid];
+    if (serverResponse && utils.isArray(serverResponse.seatbid)) {
+      utils._each(serverResponse.seatbid, function(bidList) {
+        utils._each(bidList.bid, function(conversantBid) {
+          const responseCPM = parseFloat(conversantBid.price);
+          if (responseCPM > 0.0 && conversantBid.impid) {
+            const responseAd = conversantBid.adm || '';
+            const responseNurl = conversantBid.nurl || '';
+            const request = requestMap[conversantBid.impid];
 
-          const bid = {
-            requestId: conversantBid.impid,
-            bidderCode: BIDDER_CODE,
-            currency: currency,
-            cpm: responseCPM,
-            creativeId: conversantBid.crid || ''
-          };
+            const bid = {
+              requestId: conversantBid.impid,
+              bidderCode: BIDDER_CODE,
+              currency: currency,
+              cpm: responseCPM,
+              creativeId: conversantBid.crid || ''
+            };
 
-          if (request.video) {
-            bid.vastUrl = responseAd;
-            bid.mediaType = 'video';
+            if (request.video) {
+              bid.vastUrl = responseAd;
+              bid.mediaType = 'video';
 
-            if (request.video.format.length >= 1) {
-              bid.width = request.video.format[0].w;
-              bid.height = request.video.format[0].h;
+              if (request.video.format.length >= 1) {
+                bid.width = request.video.format[0].w;
+                bid.height = request.video.format[0].h;
+              }
+            } else {
+              bid.ad = responseAd + '<img src="' + responseNurl + '" />';
+              bid.width = conversantBid.w;
+              bid.height = conversantBid.h;
             }
-          } else {
-            bid.ad = responseAd + '<img src="' + responseNurl + '" />';
-            bid.width = conversantBid.w;
-            bid.height = conversantBid.h;
-          }
 
-          bidResponses.push(bid);
-        }
-      }));
+            bidResponses.push(bid);
+          }
+        })
+      });
     }
 
     return bidResponses;
@@ -178,7 +182,7 @@ export const spec = {
       }];
     }
   }
-}
+};
 
 /**
  * Determine do-not-track state
@@ -207,8 +211,9 @@ function getDevice() {
 }
 
 /**
- * Convert arrays of widths and heights to an array of objects with w and h properties. [[300, 250],
- * [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
+ * Convert arrays of widths and heights to an array of objects with w and h properties.
+ * 
+ * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
  * 
  * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
  * @returns {object[]} Array of objects with w and h
@@ -219,7 +224,7 @@ function convertSizes(bidSizes) {
   if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
     format = [{w: bidSizes[0], h: bidSizes[1]}];
   } else {
-    format = bidSizes.map(d => { return {w: d[0], h: d[1]}; });
+    format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
   }
 
   return format;

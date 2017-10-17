@@ -263,4 +263,13 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('vastUrl', 'markup003');
     expect(bid).to.have.property('mediaType', 'video');
   });
+
+  it('Verify handling of bad responses', function() {
+    let response = spec.interpretResponse({}, {});
+    expect(response).to.be.an('array').with.lengthOf(0);
+    response = spec.interpretResponse({id: '123'}, {});
+    expect(response).to.be.an('array').with.lengthOf(0);
+    response = spec.interpretResponse({id: '123', seatbid: []}, {});
+    expect(response).to.be.an('array').with.lengthOf(0);
+  });
 })
