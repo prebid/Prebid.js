@@ -102,7 +102,6 @@ function calculateBidSources(s2sConfig = {}) {
  * @function getSource() gets a random source based on the given sourceWeights (export just for testing)
  * @param sourceWeights mapping of relative weights of potential sources. for example {server: 1, client: 3} should do a server request 25% of the time and a client request 75% of the time.
  * @param bidSources list of possible bid sources: "server", "client".  In theory could get the sources from the sourceWeights keys, but this is publisher config defined, so bidSources let's us constrain that.
- * @param testRand a random number for testing
  * @return the chosen source ("server" or "client"), or undefined if none chosen
  */
 export function getSource(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {

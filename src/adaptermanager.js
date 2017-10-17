@@ -8,7 +8,7 @@ import { newBidder } from './adapters/bidderFactory';
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
-var s2sTestingModule; // store s2sTesting module if it's loaded
+let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
