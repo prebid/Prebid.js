@@ -165,12 +165,17 @@ const AolAdapter = function AolAdapter() {
 
   function _buildNexageApiUrl(bid) {
     let {dcn, pos} = bid.params;
+    let isSecure = (document.location.protocol === 'https:');
     let nexageApi = nexageBaseApiTemplate({
-      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      protocol: isSecure ? 'https' : 'http',
       host: bid.params.host || NEXAGE_SERVER
     });
     if (dcn && pos) {
       let ext = '';
+      if (isSecure) {
+        bid.params.ext = bid.params.ext || {};
+        bid.params.ext.secure = 1;
+      }
       utils._each(bid.params.ext, (value, key) => {
         ext += `&${key}=${encodeURIComponent(value)}`;
       });
