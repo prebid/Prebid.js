@@ -1,0 +1,34 @@
+[
+    "aardvark",
+    "adequant",
+    "adform",
+    "admedia",
+    "aol",
+    "appnexus",
+    "indexExchange",
+    "kruxlink",
+    "openx",
+    "pubmatic",
+    "pulsepoint",
+    "rubicon",
+    "sekindo",
+    "sonobi",
+    "sovrn",
+    "springserve",
+    "triplelift",
+    "yieldbot",
+    "nginad",
+    "brightcom",
+    "wideorbit",
+    "jcm",
+    {
+      "appnexus": {
+        "alias": "brealtime"
+      }
+    },
+    {
+      "appnexus": {
+        "alias": "pagescience"
+      }
+    }
+]
