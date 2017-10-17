@@ -8,6 +8,7 @@ import { newBidder } from './adapters/bidderFactory';
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
+let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -100,25 +101,34 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     s2sAdapter.queueSync({bidderCodes});
   }
 
+  let clientTestAdapters = [];
+  let s2sTesting = false;
   if (_s2sConfig.enabled) {
+    // if s2sConfig.bidderControl testing is turned on
+    s2sTesting = _s2sConfig.testing && typeof s2sTestingModule !== 'undefined';
+    if (s2sTesting) {
+      // get all adapters doing client testing
+      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+    }
+
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
-    // don't call these client side
+    // don't call these client side (unless client request is needed for testing)
     bidderCodes = bidderCodes.filter((elm) => {
-      return !adaptersServerSide.includes(elm);
+      return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
     });
-    let adUnitsCopy = utils.cloneJson(adUnits);
+    let adUnitsS2SCopy = utils.cloneJson(adUnits);
 
     // filter out client side bids
-    adUnitsCopy.forEach((adUnit) => {
+    adUnitsS2SCopy.forEach((adUnit) => {
       if (adUnit.sizeMapping) {
         adUnit.sizes = mapSizes(adUnit);
         delete adUnit.sizeMapping;
       }
       adUnit.sizes = transformHeightWidth(adUnit);
       adUnit.bids = adUnit.bids.filter((bid) => {
-        return adaptersServerSide.includes(bid.bidder);
+        return adaptersServerSide.includes(bid.bidder) && (!s2sTesting || bid.finalSource !== s2sTestingModule.CLIENT);
       }).map((bid) => {
         bid.bid_id = utils.getUniqueIdentifierStr();
         return bid;
@@ -126,7 +136,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
     });
 
     // don't send empty requests
-    adUnitsCopy = adUnitsCopy.filter(adUnit => {
+    adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnit => {
       return adUnit.bids.length !== 0;
     });
 
@@ -138,7 +148,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         requestId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsCopy}),
+        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsS2SCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
@@ -149,12 +159,26 @@ exports.callBids = ({adUnits, cbTimeout}) => {
       }
     });
 
-    let s2sBidRequest = {tid, 'ad_units': adUnitsCopy};
+    let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
     utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.join(',')}`);
     if (s2sBidRequest.ad_units.length) {
       s2sAdapter.callBids(s2sBidRequest);
     }
   }
+
+  // client side adapters
+  let adUnitsClientCopy = utils.cloneJson(adUnits);
+  // filter out s2s bids
+  adUnitsClientCopy.forEach((adUnit) => {
+    adUnit.bids = adUnit.bids.filter((bid) => {
+      return !s2sTesting || bid.finalSource !== s2sTestingModule.SERVER;
+    })
+  });
+
+  // don't send empty requests
+  adUnitsClientCopy = adUnitsClientCopy.filter(adUnit => {
+    return adUnit.bids.length !== 0;
+  });
 
   bidderCodes.forEach(bidderCode => {
     const adapter = _bidderRegistry[bidderCode];
@@ -164,7 +188,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         bidderCode,
         requestId,
         bidderRequestId,
-        bids: getBids({bidderCode, requestId, bidderRequestId, adUnits}),
+        bids: getBids({bidderCode, requestId, bidderRequestId, 'adUnits': adUnitsClientCopy}),
         start: new Date().getTime(),
         auctionStart: auctionStart,
         timeout: cbTimeout
@@ -295,4 +319,10 @@ exports.setBidderSequence = function (order) {
 
 exports.setS2SConfig = function (config) {
   _s2sConfig = config;
+};
+
+// the s2sTesting module is injected when it's loaded rather than being imported
+// importing it causes the packager to include it even when it's not explicitly included in the build
+exports.setS2STestingModule = function (module) {
+  s2sTestingModule = module;
 };
