@@ -732,7 +732,7 @@ export function deepAccess(obj, path) {
 
 /**
  * Returns content for a friendly iframe to execute a URL in script tag
- * @param {url} URL to be executed in a script tag in friendly iframe
+ * @param {url} URL to be executed in a script tag in a friendly iframe
  * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
  */
 export function createContentToExecuteExtScriptInFriendlyFrame(url) {
