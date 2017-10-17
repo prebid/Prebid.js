@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import realvuAdapter from '../../../modules/realvuBidAdapter';
+import RealVuAdapter from '../../../modules/realvuBidAdapter';
 import bidmanager from '../../../src/bidmanager';
 import adloader from '../../../src/adloader';
 
@@ -42,7 +42,7 @@ describe('RealVu Adapter Test', () => {
     bidResponseStub.restore();
   });
 
-  adapter = new realvuAdapter();
+  adapter = new RealVuAdapter();
 
   it('load boost', () => {
     adapter.callBids(REQUEST);
