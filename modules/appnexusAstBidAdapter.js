@@ -46,7 +46,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = bidRequests.find(hasUserInfo);
     let userObj;
@@ -76,6 +76,7 @@ export const spec = {
       method: 'POST',
       url: URL,
       data: payloadString,
+      bidderRequest
     };
   },
 
@@ -85,18 +86,27 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, {bidderRequest}) {
     const bids = [];
-    serverResponse.tags.forEach(serverBid => {
-      const rtbBid = getRtbBid(serverBid);
-      if (rtbBid) {
-        if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
-          const bid = newBid(serverBid, rtbBid);
-          bid.mediaType = parseMediaType(rtbBid);
-          bids.push(bid);
+    if (!serverResponse || serverResponse.error) {
+      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
+      utils.logError(errorMessage);
+      return bids;
+    }
+
+    if (serverResponse.tags) {
+      serverResponse.tags.forEach(serverBid => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid) {
+          if (rtbBid.cpm !== 0 && SUPPORTED_AD_TYPES.includes(rtbBid.ad_type)) {
+            const bid = newBid(serverBid, rtbBid);
+            bid.mediaType = parseMediaType(rtbBid);
+            bids.push(bid);
+          }
         }
-      }
-    });
+      });
+    }
     return bids;
   },
 
