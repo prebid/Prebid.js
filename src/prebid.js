@@ -28,6 +28,7 @@ const { syncUsers, triggerUserSyncs } = userSync;
 
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -447,6 +448,8 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+  // emit event
+  events.emit(ADD_AD_UNITS);
 };
 
 /**
