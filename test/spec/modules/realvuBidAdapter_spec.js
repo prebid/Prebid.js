@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import Adapter from '../../../modules/realvuBidAdapter';
+import realvuAdapter from '../../../modules/realvuBidAdapter';
 import bidmanager from '../../../src/bidmanager';
 import adloader from '../../../src/adloader';
 
@@ -32,17 +32,17 @@ describe('RealVu Adapter Test', () => {
   var bidResponseStub;
   var adloaderStub;
 
-  beforeEach(function(){
+  beforeEach(function() {
     bidResponseStub = sinon.stub(bidmanager, 'addBidResponse');
     adloaderStub = sinon.stub(adloader, 'loadScript');
   });
 
-  afterEach(function(){
+  afterEach(function() {
     adloaderStub.restore();
     bidResponseStub.restore();
   });
 
-  adapter = new Adapter();
+  adapter = new realvuAdapter();
 
   it('load boost', () => {
     adapter.callBids(REQUEST);
