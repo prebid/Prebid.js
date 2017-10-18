@@ -53,6 +53,11 @@ export const spec = {
         type: 'iframe',
         url: '//bh.contextweb.com/visitormatch'
       }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//bh.contextweb.com/visitormatch/prebid'
+      }];
     }
   }
 

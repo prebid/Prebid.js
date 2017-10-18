@@ -105,15 +105,25 @@ function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(bidRequest) {
     const isDebug = !!getConfig('debug');
-    convertTypes(bidRequest.ad_units);
+    const adUnits = utils.cloneJson(bidRequest.ad_units);
+    adUnits.forEach(adUnit => {
+      let videoMediaType = utils.deepAccess(adUnit, 'mediaTypes.video');
+      if (videoMediaType) {
+        // pbs expects a ad_unit.video attribute if the imp is video
+        adUnit.video = Object.assign({}, videoMediaType);
+        delete adUnit.mediaTypes.video;
+      }
+    })
+    convertTypes(adUnits);
     let requestJson = {
       account_id: config.accountId,
       tid: bidRequest.tid,
       max_bids: config.maxBids,
       timeout_millis: config.timeout,
+      secure: config.secure,
       url: utils.getTopWindowUrl(),
       prebid_version: '$prebid.version$',
-      ad_units: bidRequest.ad_units.filter(hasSizes),
+      ad_units: adUnits.filter(hasSizes),
       is_debug: isDebug
     };
 
@@ -245,9 +255,6 @@ function PrebidServer() {
     ajax(config.syncEndpoint, (response) => {
       try {
         response = JSON.parse(response);
-        if (response.status === 'ok') {
-          bidderCodes.forEach(code => StorageManager.add(pbjsSyncsKey, code, true));
-        }
         response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
       } catch (e) {
         utils.logError(e);
