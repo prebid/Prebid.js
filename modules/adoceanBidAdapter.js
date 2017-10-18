@@ -24,19 +24,19 @@ function buildRequest(masterBidRequests, masterId) {
   const bidIdMap = {};
 
   utils._each(masterBidRequests, function(v) {
-    bidIdMap[v.slaveId] = v.bidId;
+    bidIdMap[v.params.slaveId] = v.bidId;
   });
 
   return {
     method: 'GET',
-    url: buildEndpointUrl(firstBid.emiter, payload),
+    url: buildEndpointUrl(firstBid.params.emiter, payload),
     data: {},
     bidIdMap: bidIdMap
   };
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
-  const masterId = bidRequest.masterId;
+  const masterId = bidRequest.params.masterId;
   bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [];
   bidRequestsByMaster[masterId].push(bidRequest);
 }
@@ -67,7 +67,7 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    return !!(bid.slaveId && bid.masterId && bid.emiter);
+    return !!(bid.params.slaveId && bid.params.masterId && bid.params.emiter);
   },
 
   buildRequests: function(validBidRequests) {
