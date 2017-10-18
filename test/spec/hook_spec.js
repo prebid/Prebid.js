@@ -63,6 +63,28 @@ describe('the hook module', () => {
     ]);
   });
 
+  it('should allow context to be passed to hooks, but keep bound contexts', () => {
+    let context;
+    let fn = function() {
+      context = this;
+    };
+
+    let boundContext = {};
+    let calledBoundContext;
+    let hook = function() {
+      calledBoundContext = this;
+    }.bind(boundContext);
+
+    let hookFn = createHook('sync', fn);
+    hookFn.addHook(hook);
+
+    let newContext = {};
+    hookFn.withContext(newContext)();
+
+    expect(context).to.equal(newContext);
+    expect(calledBoundContext).to.equal(boundContext);
+  });
+
   describe('asyncSeries', () => {
     it('should call function as normal if no hooks attached', () => {
       let fn = sandbox.spy();
