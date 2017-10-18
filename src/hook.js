@@ -74,11 +74,5 @@ export function createHook(type, fn, hookName) {
     return types[type].apply(this, args);
   }
 
-  hookedFn.withContext = function(context) {
-    return function hookedFnWithContext(...args) {
-      hookedFn.apply(context, args);
-    }
-  };
-
   return Object.assign(hookedFn, methods);
 }

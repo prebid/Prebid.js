@@ -79,7 +79,7 @@ describe('the hook module', () => {
     hookFn.addHook(hook);
 
     let newContext = {};
-    hookFn.withContext(newContext)();
+    hookFn.bind(newContext)();
 
     expect(context).to.equal(newContext);
     expect(calledBoundContext).to.equal(boundContext);
