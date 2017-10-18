@@ -1,8 +1,5 @@
 [
-  "adyoulikeBidAdapter",
-  "aolBidAdapter",
   "appnexusAstBidAdapter",
-  "audienceNetworkBidAdapter",
   "criteoBidAdapter",
   "districtmDMXBidAdapter",
   "indexExchangeBidAdapter",
