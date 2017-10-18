@@ -33,7 +33,8 @@ function VertozAdapter() {
         _rqsrc: reqSrc,
         _cb: cb,
         _slotBidId: slotBidId,
-        _cpm: cpm
+        _cpm: cpm,
+        _cbn: '$$PREBID_GLOBAL$$'
       };
 
       let queryParamValue = JSON.stringify(vzReq);

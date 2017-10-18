@@ -88,14 +88,22 @@ function bundle(dev, moduleArr) {
 
   var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
+  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+
+  // change output filename if argument --tag given
+  if (argv.tag && argv.tag.length) {
+    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+  }
+
   gutil.log('Concatenating files:\n', entries);
   gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  gutil.log('Generating bundle:', outputFileName);
 
   return gulp.src(
       entries
     )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
-    .pipe(concat(argv.bundleName ? argv.bundleName : 'prebid.js'))
+    .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
         global: prebid.globalVarName
       }
@@ -141,11 +149,6 @@ gulp.task('devpack', ['clean'], function () {
 
 gulp.task('webpack', ['clean'], function () {
   var cloned = _.cloneDeep(webpackConfig);
-
-  // change output filename if argument --tag given
-  if (argv.tag && argv.tag.length) {
-    cloned.output.filename = 'prebid.' + argv.tag + '.js';
-  }
 
   delete cloned.devtool;
 
