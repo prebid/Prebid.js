@@ -137,7 +137,6 @@ describe('BeachfrontAdapter', () => {
         cpm: serverResponse.bidPrice,
         creativeId: serverResponse.cmpId,
         vastUrl: serverResponse.url,
-        descriptionUrl: serverResponse.url,
         width: 640,
         height: 480,
         mediaType: 'video',

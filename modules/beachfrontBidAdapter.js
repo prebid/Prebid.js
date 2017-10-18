@@ -34,7 +34,6 @@ export const spec = {
       cpm: response.bidPrice,
       creativeId: response.cmpId,
       vastUrl: response.url,
-      descriptionUrl: response.url,
       width: size.width,
       height: size.height,
       mediaType: 'video',
