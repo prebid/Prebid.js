@@ -12,7 +12,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     var BidRequestStr = {
-       bids: []
+      bids: []
     };
 
     for (var i = 0; i < validBidRequests.length; i++) {
@@ -33,12 +33,12 @@ export const spec = {
     }
 
     var JSONStr = JSON.stringify(BidRequestStr);
-    var dataStr = 't=hb&ver=1.0&compact=true&bids='+encodeURIComponent(JSONStr);
+    var dataStr = 't=hb&ver=1.0&compact=true&bids=' + encodeURIComponent(JSONStr);
 
     return {
       method: 'GET',
       url: URL,
-      data: dataStr 
+      data: dataStr
     }
   },
 
@@ -46,10 +46,10 @@ export const spec = {
     const bidResponses = [];
     // loop through serverResponses
     if (serverResponse) {
-       if (serverResponse.bids){
+      if (serverResponse.bids) {
         var bids = serverResponse.bids;
         for (var i = 0; i < bids.length; i++) {
-         var bid = bids[i];
+          var bid = bids[i];
           const bidResponse = {
             requestId: bid.callbackId,
             bidderCode: spec.code,
@@ -64,13 +64,12 @@ export const spec = {
           };
           bidResponses.push(bidResponse);
         };
-
       };
     }
-   return bidResponses;
+    return bidResponses;
   },
 
-    getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
