@@ -1,4 +1,3 @@
-import * as Adapter from 'src/adapter.js';
 import bidfactory from 'src/bidfactory';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
@@ -9,7 +8,7 @@ import adaptermanager from 'src/adaptermanager';
 const VER = 'ADGENT_PREBID-2017051801';
 const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
 
-function ucfunnelAdapter() {
+function UcfunnelAdapter() {
   function _callBids(params) {
     let bids = params.bids || [];
 
@@ -44,11 +43,11 @@ function ucfunnelAdapter() {
   function buildOptimizedCall(bid) {
     bid.startTime = new Date().getTime();
 
-    let host = utils.getTopWindowLocation().host,
-      page = utils.getTopWindowLocation().pathname,
-      refer = document.referrer,
-      language = navigator.language,
-      dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
+    const host = utils.getTopWindowLocation().host;
+    const page = utils.getTopWindowLocation().pathname;
+    const refer = document.referrer;
+    const language = navigator.language;
+    const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
 
     let queryString = [
       'ifr', 0,
@@ -59,8 +58,6 @@ function ucfunnelAdapter() {
       'u', page,
       'ru', refer,
       'adid', bid.params.adid,
-      'w', bid.params.width,
-      'h', bid.params.height,
       'ver', VER
     ];
 
@@ -93,6 +90,6 @@ function ucfunnelAdapter() {
   };
 };
 
-adaptermanager.registerBidAdapter(new ucfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
+adaptermanager.registerBidAdapter(new UcfunnelAdapter(), UCFUNNEL_BIDDER_CODE);
 
-module.exports = ucfunnelAdapter;
+module.exports = UcfunnelAdapter;

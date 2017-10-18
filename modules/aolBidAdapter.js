@@ -4,7 +4,7 @@ const bidfactory = require('src/bidfactory.js');
 const bidmanager = require('src/bidmanager.js');
 const constants = require('src/constants.json');
 const adaptermanager = require('src/adaptermanager');
-const BaseAdapter = require('src/adapter');
+const BaseAdapter = require('src/adapter').default;
 
 const AOL_BIDDERS_CODES = {
   aol: 'aol',
@@ -165,12 +165,17 @@ const AolAdapter = function AolAdapter() {
 
   function _buildNexageApiUrl(bid) {
     let {dcn, pos} = bid.params;
+    let isSecure = (document.location.protocol === 'https:');
     let nexageApi = nexageBaseApiTemplate({
-      protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+      protocol: isSecure ? 'https' : 'http',
       host: bid.params.host || NEXAGE_SERVER
     });
     if (dcn && pos) {
       let ext = '';
+      if (isSecure) {
+        bid.params.ext = bid.params.ext || {};
+        bid.params.ext.secure = 1;
+      }
       utils._each(bid.params.ext, (value, key) => {
         ext += `&${key}=${encodeURIComponent(value)}`;
       });
@@ -324,11 +329,8 @@ const AolAdapter = function AolAdapter() {
     });
   }
 
-  return Object.assign(BaseAdapter.createNew(AOL_BIDDERS_CODES.aol), {
-    callBids: _callBids,
-    createNew: function () {
-      return new AolAdapter();
-    }
+  return Object.assign(this, new BaseAdapter(AOL_BIDDERS_CODES.aol), {
+    callBids: _callBids
   });
 };
 

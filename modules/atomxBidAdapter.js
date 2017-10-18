@@ -26,11 +26,14 @@ var AtomxAdapter = function AtomxAdapter() {
     for (var i = 0, ln = bids.length; i < ln; i++) {
       var bid = bids[i];
       if (bid.params && bid.params.id) {
-        Ajax.ajax(url, _responseCallback.bind(this, bid), {
-          id: bid.params.id,
-          size: utils.parseSizesInput(bid.sizes)[0],
-          prebid: bid.placementCode
-        }, {method: 'GET'});
+        var sizes = utils.parseSizesInput(bid.sizes);
+        for (var j = 0; j < sizes.length; j++) {
+          Ajax.ajax(url, _responseCallback.bind(this, bid), {
+            id: bid.params.id,
+            size: sizes[j],
+            prebid: bid.placementCode
+          }, {method: 'GET', noDecodeWholeURL: true});
+        }
       } else {
         var bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
         bidObject.bidderCode = 'atomx';
@@ -72,7 +75,6 @@ var AtomxAdapter = function AtomxAdapter() {
     responseCallback: _responseCallback
   };
 };
-
 
 adaptermanager.registerBidAdapter(new AtomxAdapter(), 'atomx');
 

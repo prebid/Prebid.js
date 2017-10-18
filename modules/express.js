@@ -20,6 +20,8 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
+  // store gpt slots in a more performant hash lookup by elementId (adUnit code)
+  var gptSlotCache = {};
   // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
@@ -41,7 +43,6 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       return;
     }
     utils.logMessage('running');
-
 
     // function to convert google tag slot sizes to [[w,h],...]
     function mapGptSlotSizes(aGPTSlotSizes) {
@@ -68,12 +69,12 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       var adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
       for (var i = gptSlots.length - 1; i > -1; i--) {
-        var gptSlot = gptSlots[i],
-          elemId = gptSlot.getSlotElementId(),
-          adUnit = adUnitsCache[elemId];
+        const gptSlot = gptSlots[i];
+        const elemId = gptSlot.getSlotElementId();
+        const adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
-          adUnit._gptSlot = gptSlot;
+          gptSlotCache[elemId] = gptSlot; // store by elementId
           adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
@@ -142,7 +143,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
               $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
               fGptRefresh.apply(pads(), [
                 adUnits.map(function (adUnit) {
-                  return adUnit._gptSlot;
+                  return gptSlotCache[adUnit.code];
                 })
               ]);
             }
@@ -158,7 +159,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
       var adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
-        return adUnit._gptSlot._displayed;
+        return gptSlotCache[adUnit.code]._displayed;
       });
 
       if (aGptSlots.length) {
@@ -172,7 +173,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
             $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
             fGptRefresh.apply(pads(), [
               adUnits.map(function (adUnit) {
-                return adUnit._gptSlot
+                return gptSlotCache[adUnit.code];
               }),
               options
             ]);

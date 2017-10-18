@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import trionAdapter from 'modules/trionBidAdapter';
+import TrionAdapter from 'modules/trionBidAdapter';
 import bidmanager from 'src/bidmanager';
 import * as utils from 'src/utils';
 const CONSTANTS = require('src/constants.json');
@@ -10,6 +10,7 @@ const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest?';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.js';
 
 const TRION_BID_REQUEST = {
+  start: new Date().getTime(),
   bidderCode: 'trion',
   bids: [
     {
@@ -43,14 +44,14 @@ describe('Trion adapter tests', () => {
   let adapter;
 
   beforeEach(() => {
-    adapter = trionAdapter.createNew();
+    adapter = new TrionAdapter();
     sinon.stub(document.body, 'appendChild');
   });
 
   afterEach(() => document.body.appendChild.restore());
 
   it('should exist and be a function', function () {
-    expect(pbjs.handleTrionCB).to.exist.and.to.be.a('function');
+    expect($$PREBID_GLOBAL$$.handleTrionCB).to.exist.and.to.be.a('function');
   });
 
   describe('request function', () => {

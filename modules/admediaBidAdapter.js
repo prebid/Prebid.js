@@ -12,7 +12,8 @@ var adaptermanager = require('src/adaptermanager');
  */
 var AdmediaAdapter = function AdmediaAdapter() {
   function _callBids(params) {
-    var bids, bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
+    var bids;
+    const bidderUrl = (window.location.protocol) + '//b.admedia.com/banner/prebid/bidder/?';
     bids = params.bids || [];
     for (var i = 0; i < bids.length; i++) {
       var request_obj = {};

@@ -43,7 +43,7 @@ var RESPONSE = {
 describe('VertamediaAdater', () => {
   let adapter;
 
-  beforeEach(() => adapter = Adapter.createNew());
+  beforeEach(() => adapter = new Adapter());
 
   describe('request function', () => {
     let xhr;
