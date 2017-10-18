@@ -34,39 +34,34 @@ describe('jcmAdapter', () => {
       let bid = Object.assign({}, bid);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
-    }); 
+    });
   });
 
   describe('buildRequests', () => {
     let bidRequests = [
-       {
-      'bidder': 'jcm',
-      'params': {
-      'siteId': '3608'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-    }
+      {
+        'bidder': 'jcm',
+        'params': {
+          'siteId': '3608'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
 
     ];
-
 
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('GET');
     });
-  }); 
+  });
 
   describe('interpretResponse', () => {
-
     it('should get correct bid response', () => {
-
-      
-     let serverResponse = {"bids":[{"width": 300,"height": 250, "creativeId": "29681110","ad": "<!-- Creative -->","cpm": 0.5,"callbackId": "30b31c1838de1e"}]};
-
+      let serverResponse = {'bids': [{'width': 300, 'height': 250, 'creativeId': '29681110', 'ad': '<!-- Creative -->', 'cpm': 0.5, 'callbackId': '30b31c1838de1e'}]};
 
       let expectedResponse = [
         {
@@ -84,54 +79,45 @@ describe('jcmAdapter', () => {
       ];
 
       let result = spec.interpretResponse(serverResponse);
-      expect(Object.keys(result[0]).length).to.equal(Object.keys(expectedResponse[0]).length); 
+      expect(Object.keys(result[0]).length).to.equal(Object.keys(expectedResponse[0]).length);
       expect(Object.keys(result[0]).requestId).to.equal(Object.keys(expectedResponse[0]).requestId);
       expect(Object.keys(result[0]).bidderCode).to.equal(Object.keys(expectedResponse[0]).bidderCode);
       expect(Object.keys(result[0]).cpm).to.equal(Object.keys(expectedResponse[0]).cpm);
-      expect(Object.keys(result[0]).creativeId).to.equal(Object.keys(expectedResponse[0]).creativeId); 
+      expect(Object.keys(result[0]).creativeId).to.equal(Object.keys(expectedResponse[0]).creativeId);
       expect(Object.keys(result[0]).width).to.equal(Object.keys(expectedResponse[0]).width);
       expect(Object.keys(result[0]).height).to.equal(Object.keys(expectedResponse[0]).height);
-      expect(Object.keys(result[0]).ttl).to.equal(Object.keys(expectedResponse[0]).ttl); 
+      expect(Object.keys(result[0]).ttl).to.equal(Object.keys(expectedResponse[0]).ttl);
       expect(Object.keys(result[0]).currency).to.equal(Object.keys(expectedResponse[0]).currency);
       expect(Object.keys(result[0]).netRevenue).to.equal(Object.keys(expectedResponse[0]).netRevenue);
-       
+
       expect(Object.keys(result[0]).ad).to.equal(Object.keys(expectedResponse[0]).ad);
     });
 
     it('handles nobid responses', () => {
-      let serverResponse = {"bids":[]};
+      let serverResponse = {'bids': []};
 
       let result = spec.interpretResponse(serverResponse);
       expect(result.length).to.equal(0);
     });
-
-  }); 
-  
+  });
   describe('getUserSyncs', () => {
     it('Verifies sync iframe option', () => {
-    expect(spec.getUserSyncs({})).to.be.undefined;
-    expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
-    const options = spec.getUserSyncs({ iframeEnabled: true});
-    expect(options).to.not.be.undefined;
-    expect(options).to.have.lengthOf(1);
-    expect(options[0].type).to.equal('iframe');
-    expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.html');
+      expect(spec.getUserSyncs({})).to.be.undefined;
+      expect(spec.getUserSyncs({ iframeEnabled: false})).to.be.undefined;
+      const options = spec.getUserSyncs({ iframeEnabled: true});
+      expect(options).to.not.be.undefined;
+      expect(options).to.have.lengthOf(1);
+      expect(options[0].type).to.equal('iframe');
+      expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.html');
     });
 
     it('Verifies sync image option', () => {
-    expect(spec.getUserSyncs({ image: false})).to.be.undefined;
-    const options = spec.getUserSyncs({ image: true});
-    expect(options).to.not.be.undefined;
-    expect(options).to.have.lengthOf(1);
-    expect(options[0].type).to.equal('image');
-    expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.png');
+      expect(spec.getUserSyncs({ image: false})).to.be.undefined;
+      const options = spec.getUserSyncs({ image: true});
+      expect(options).to.not.be.undefined;
+      expect(options).to.have.lengthOf(1);
+      expect(options[0].type).to.equal('image');
+      expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.png');
     });
-
-
-    
-
-
-
- });  
-
+  });
 });
