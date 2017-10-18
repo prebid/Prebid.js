@@ -53,20 +53,26 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function getUserSyncs(syncOptions) {
-    window.addEventListener('message', acceptPostMessage);
-    var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
-    var pubId = unParsedPubAndSection.split(':')[0] || -1;
-    var sectionId = unParsedPubAndSection.split(':')[1] || -1;
-    var url = utils.getTopWindowUrl();
-    var syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
-    return [{
-      type: 'iframe',
-      url: USER_SYNC_URL + syncString
-    }];
+    if (syncOptions.iframeEnabled) {
+      handlePostMessage();
+      return [{
+        type: 'iframe',
+        url: getSyncUrl()
+      }];
+    }
   }
 
 };
 registerBidder(spec);
+
+function getSyncUrl() {
+  var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
+  var pubSectionArray = unParsedPubAndSection.split(':') || [];
+  var pubId = pubSectionArray[0] || -1;
+  var sectionId = pubSectionArray[1] || -1;
+  var url = utils.getTopWindowUrl();
+  return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}&u=${url}`;
+}
 
 function buildTrionUrlParams(bid) {
   var pubId = utils.getBidIdParameter('pubId', bid.params);
@@ -104,6 +110,15 @@ function buildTrionUrlParams(bid) {
     trionUrl = trionUrl.substring(0, trionUrl.length - 1);
   }
   return trionUrl;
+}
+
+function handlePostMessage() {
+  try {
+    if (window.addEventListener) {
+      window.addEventListener('message', acceptPostMessage);
+    }
+  } catch (e) {
+  }
 }
 
 export function getStorageData(key) {

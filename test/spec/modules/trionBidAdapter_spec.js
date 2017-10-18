@@ -45,12 +45,12 @@ describe('Trion adapter tests', () => {
 
   afterEach(() => document.body.appendChild.restore());
 
-  describe('isBidRequestValid', function() {
-    it('should return true with correct params', function () {
+  describe('isBidRequestValid', () => {
+    it('should return true with correct params', () => {
       expect(spec.isBidRequestValid(TRION_BID)).to.equal(true);
     });
 
-    it('should return false when params are missing', function () {
+    it('should return false when params are missing', () => {
       TRION_BID.params = {};
 
       expect(spec.isBidRequestValid(TRION_BID)).to.equal(false);
@@ -60,7 +60,7 @@ describe('Trion adapter tests', () => {
       };
     });
 
-    it('should return false when pubId is missing', function () {
+    it('should return false when pubId is missing', () => {
       TRION_BID.params = {
         sectionId: '2'
       };
@@ -72,7 +72,7 @@ describe('Trion adapter tests', () => {
       };
     });
 
-    it('should return false when sectionId is missing', function () {
+    it('should return false when sectionId is missing', () => {
       TRION_BID.params = {
         pubId: '1'
       };
@@ -86,19 +86,19 @@ describe('Trion adapter tests', () => {
   });
 
   describe('buildRequests', () => {
-    it('should return bids requests with empty params', function () {
-      var bidRequests = spec.buildRequests([]);
+    it('should return bids requests with empty params', () => {
+      let bidRequests = spec.buildRequests([]);
       expect(bidRequests.length).to.equal(0);
     });
 
-    it('should include the base bidrequest url', function () {
+    it('should include the base bidrequest url', () => {
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
 
       let bidUrl = bidRequests[0].url;
       expect(bidUrl).to.include(BID_REQUEST_BASE_URL);
     });
 
-    it('should call buildRequests with the correct required params', function () {
+    it('should call buildRequests with the correct required params', () => {
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
 
       let bidUrlParams = bidRequests[0].data;
@@ -107,7 +107,7 @@ describe('Trion adapter tests', () => {
       expect(bidUrlParams).to.include('sizes=300x250,300x600');
     });
 
-    it('should call buildRequests with the correct optional params', function () {
+    it('should call buildRequests with the correct optional params', () => {
       let params = TRION_BID_REQUEST[0].params;
       params.re = 1;
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
@@ -120,55 +120,55 @@ describe('Trion adapter tests', () => {
   });
 
   describe('interpretResponse', () => {
-    it('when there is no response do not bid', function () {
+    it('when there is no response do not bid', () => {
       let response = spec.interpretResponse(null, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
     });
 
-    it('when place bid is returned as false', function () {
+    it('when place bid is returned as false', () => {
       TRION_BID_RESPONSE.result.placeBid = false;
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
 
       expect(response).to.deep.equal([]);
 
       TRION_BID_RESPONSE.result.placeBid = true;
     });
 
-    it('when no cpm is in the response', function () {
+    it('when no cpm is in the response', () => {
       TRION_BID_RESPONSE.result.cpm = 0;
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.cpm = 1;
     });
 
-    it('when no ad is in the response', function () {
+    it('when no ad is in the response', () => {
       TRION_BID_RESPONSE.result.ad = null;
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
       expect(response).to.deep.equal([]);
       TRION_BID_RESPONSE.result.ad = 'test';
     });
 
-    it('bid response is formatted correctly', function () {
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+    it('bid response is formatted correctly', () => {
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
       expect(response[0].bidderCode).to.equal('trion');
     });
 
-    it('height and width are appropriately set', function () {
+    it('height and width are appropriately set', () => {
       let bidWidth = '1';
       let bidHeight = '2';
       TRION_BID_RESPONSE.result.width = bidWidth;
       TRION_BID_RESPONSE.result.height = bidHeight;
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
       expect(response[0].width).to.equal(bidWidth);
       expect(response[0].height).to.equal(bidHeight);
       TRION_BID_RESPONSE.result.width = '300';
       TRION_BID_RESPONSE.result.height = '250';
     });
 
-    it('cpm is properly set and transformed to cents', function () {
+    it('cpm is properly set and transformed to cents', () => {
       let bidCpm = 2;
       TRION_BID_RESPONSE.result.cpm = bidCpm * 100;
-      var response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
+      let response = spec.interpretResponse(TRION_BID_RESPONSE, {bidRequest: TRION_BID});
       expect(response[0].cpm).to.equal(bidCpm);
       TRION_BID_RESPONSE.result.cpm = 100;
     });
@@ -192,11 +192,11 @@ describe('Trion adapter tests', () => {
     });
 
     it('should register trion user script', () => {
-      let syncs = spec.getUserSyncs();
+      let syncs = spec.getUserSyncs({iframeEnabled: true});
       let url = utils.getTopWindowUrl();
       let pubId = 1;
       let sectionId = 2;
-      var syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
+      let syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 
