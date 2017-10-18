@@ -5,6 +5,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
+var s2sTesting = require('../../../../modules/s2sTesting');
 
 const CONFIG = {
   enabled: true,
@@ -20,12 +21,21 @@ var prebidServerAdapterMock = {
   setConfig: sinon.stub(),
   queueSync: sinon.stub()
 };
+var adequantAdapterMock = {
+  bidder: 'adequant',
+  callBids: sinon.stub(),
+  setConfig: sinon.stub(),
+  queueSync: sinon.stub()
+};
+var appnexusAdapterMock = {
+  bidder: 'appnexus',
+  callBids: sinon.stub(),
+  setConfig: sinon.stub(),
+  queueSync: sinon.stub()
+};
 
 describe('adapterManager tests', () => {
   describe('S2S tests', () => {
-    var stubGetStorageItem;
-    var stubSetStorageItem;
-
     beforeEach(() => {
       config.setConfig({s2sConfig: CONFIG});
       AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;

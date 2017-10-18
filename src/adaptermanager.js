@@ -10,6 +10,7 @@ import { config, RANDOM } from 'src/config';
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
 var events = require('./events');
+let s2sTestingModule; // store s2sTesting module if it's loaded
 
 var _bidderRegistry = {};
 exports.bidderRegistry = _bidderRegistry;
@@ -79,7 +80,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
     }
     adUnit.sizes = transformHeightWidth(adUnit);
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return adaptersServerSide.includes(bid.bidder);
+      return adaptersServerSide.includes(bid.bidder) && (!s2sTesting || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -106,15 +107,24 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
     s2sAdapter.queueSync({bidderCodes});
   }
 
+  let clientTestAdapters = [];
+  let s2sTesting = false;
   if (_s2sConfig.enabled) {
+    // if s2sConfig.bidderControl testing is turned on
+    s2sTesting = _s2sConfig.testing && typeof s2sTestingModule !== 'undefined';
+    if (s2sTesting) {
+      // get all adapters doing client testing
+      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+    }
+
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
-    // don't call these client side
+    // don't call these client side (unless client request is needed for testing)
     bidderCodes = bidderCodes.filter((elm) => {
-      return !adaptersServerSide.includes(elm);
+      return !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm);
     });
-    let adUnitsCopy = getAdUnitCopyForPrebidServer(adUnits);
+    let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
 
     let tid = utils.generateUUID();
     adaptersServerSide.forEach(bidderCode => {
@@ -124,7 +134,7 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsCopy}),
+        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': adUnitsS2SCopy}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC
@@ -134,6 +144,20 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout) 
       }
     });
   }
+
+  // client side adapters
+  let adUnitsClientCopy = utils.cloneJson(adUnits);
+  // filter out s2s bids
+  adUnitsClientCopy.forEach((adUnit) => {
+    adUnit.bids = adUnit.bids.filter((bid) => {
+      return !s2sTesting || bid.finalSource !== s2sTestingModule.SERVER;
+    })
+  });
+
+  // don't send empty requests
+  adUnitsClientCopy = adUnitsClientCopy.filter(adUnit => {
+    return adUnit.bids.length !== 0;
+  });
 
   bidderCodes.forEach(bidderCode => {
     const bidderRequestId = utils.getUniqueIdentifierStr();
@@ -289,4 +313,10 @@ exports.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
+};
+
+// the s2sTesting module is injected when it's loaded rather than being imported
+// importing it causes the packager to include it even when it's not explicitly included in the build
+exports.setS2STestingModule = function (module) {
+  s2sTestingModule = module;
 };
