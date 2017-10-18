@@ -26,18 +26,18 @@ export function createHook(type, fn, hookName) {
   let types = {
     sync: function(...args) {
       _hooks.forEach(hook => {
-        hook.fn.apply(null, args);
+        hook.fn.apply(this, args);
       });
     },
     asyncSeries: function(...args) {
       let curr = 0;
 
-      return _hooks[curr].fn.apply(null, args.concat(asyncSeriesNext));
+      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
 
       function asyncSeriesNext(...args) {
         let hook = _hooks[++curr];
         if (typeof hook === 'object' && typeof hook.fn === 'function') {
-          return hook.fn.apply(null, args.concat(asyncSeriesNext))
+          return hook.fn.apply(this, args.concat(asyncSeriesNext))
         }
       }
     }
@@ -69,10 +69,16 @@ export function createHook(type, fn, hookName) {
 
   function hookedFn(...args) {
     if (_hooks.length === 0) {
-      return fn.apply(null, args);
+      return fn.apply(this, args);
     }
-    return types[type].apply(null, args);
+    return types[type].apply(this, args);
   }
+
+  hookedFn.withContext = function(context) {
+    return function hookedFnWithContext(...args) {
+      hookedFn.apply(context, args);
+    }
+  };
 
   return Object.assign(hookedFn, methods);
 }
