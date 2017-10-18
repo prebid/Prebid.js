@@ -110,5 +110,4 @@ describe('GetIntent Adapter Tests:', () => {
     expect(spec.isBidRequestValid({ params: { test: 123 } })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { pid: 111, tid: 222 } })).to.equal(true);
   });
-
 });
