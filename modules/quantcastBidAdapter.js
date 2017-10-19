@@ -8,20 +8,6 @@ const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
 const QUANTCAST_CALLBACK_URL_TEST = "s2s-canary.quantserve.com";
 const QUANTCAST_TEST_PUBLISHER = "test-publisher";
 
-let publisherTagURL;
-let publisherTagURLTest;
-
-// TODO: Change the callback URL to Canary endpoint if under test
-switch (window.location.protocol) {
-  case "https:":
-    publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
-    publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
-    break;
-  default:
-    publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
-    publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
-}
-
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
@@ -66,7 +52,27 @@ export const spec = {
     const loc = utils.getTopWindowLocation();
     const domain = loc.hostname;
 
+    let publisherTagURL;
+    let publisherTagURLTest;
+
+    // Switch the callback URL to Quantcast Canary Endpoint for testing purpose
+    // `//` is not used because we have different port setting at our end
+    switch (window.location.protocol) {
+      case "https:":
+        publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
+        publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
+        break;
+      default:
+        publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
+        publisherTagURLTest = `http://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
+    }
+
     const bidRequestsList = bids.map(bid => {
+      const url =
+        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
+          ? publisherTagURLTest
+          : publisherTagURL;
+
       const bidSizes = [];
 
       bid.sizes.forEach(size => {
@@ -98,13 +104,10 @@ export const spec = {
         bidId: bid.bidId
       };
 
-      const url =
-        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
-          ? publisherTagURLTest
-          : publisherTagURL;
+      const data = JSON.stringify(requestData);
 
       return {
-        data: JSON.stringify(requestData),
+        data,
         method: "POST",
         url,
         withCredentials: true
@@ -144,7 +147,7 @@ export const spec = {
       utils.isEmpty(response.bids)
     ) {
       utils.logError("Sub-optimal JSON received from Quantcast server");
-      return;
+      return [];
     }
 
     const bidResponsesList = response.bids.map(bid => {
@@ -166,6 +169,7 @@ export const spec = {
   getUserSyncs(syncOptions) {
     // Quantcast does not do `UserSyncs` at the moment.
     // This feature will be supported at a later time.
+    return;
   }
 };
 
