@@ -19,7 +19,7 @@ export const spec = {
     };
     return {
       method: 'POST',
-      url: '//piohbdisp.hb.adx1.com/',
+      url: '//piohbdisp.rtb.adx1.com/',
       data: JSON.stringify(request),
     };
   },
