@@ -92,10 +92,10 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode) {
+module.exports = function(codeCoverage, browserstack, watchMode, file) {
   var webpackConfig = newWebpackConfig(codeCoverage);
   var plugins = newPluginsArray(browserstack);
-  var files = [
+  var files = file ? [file] : [
     'test/helpers/prebidGlobal.js',
     'test/**/*_spec.js'
   ];
