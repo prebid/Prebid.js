@@ -28,7 +28,7 @@ describe('Platformio Adapter Tests', () => {
   }];
   it('Verify build request', () => {
     const request = spec.buildRequests(slotConfigs);
-    expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
+    expect(request.url).to.equal('//piohbdisp.rtb.adx1.com/');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     // site object
