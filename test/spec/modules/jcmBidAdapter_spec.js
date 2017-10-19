@@ -53,9 +53,25 @@ describe('jcmAdapter', () => {
 
     ];
 
+    const request = spec.buildRequests(bidRequests);
+
     it('sends bid request to ENDPOINT via GET', () => {
-      const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('GET');
+    });
+    
+    it('sends correct bid parameters', () => {
+      const payloadArr = request.data.split("&");
+      expect(request.method).to.equal('GET');
+      expect(payloadArr.length).to.equal(4);
+      expect(payloadArr[0]).to.equal('t=hb'); 
+      expect(payloadArr[1]).to.equal('ver=1.0'); 
+      expect(payloadArr[2]).to.equal('compact=true');
+      const adReqStr = request.data.split("&bids=")[1];
+      const adReq = JSON.parse(decodeURIComponent(adReqStr));
+      const adReqBid = JSON.parse(decodeURIComponent(adReqStr)).bids[0];
+      expect(adReqBid.siteId).to.equal('3608');   
+      expect(adReqBid.callbackId).to.equal('30b31c1838de1e');
+      expect(adReqBid.adSizes).to.equal('300x250,300x600');
     });
   });
 
