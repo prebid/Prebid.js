@@ -3,7 +3,7 @@
 ```
 Module Name: AerServ Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: dlawrence@aerserv.com, techology@aerserv.com
+Maintainer: techology@aerserv.com
 ```
 
 # Description
