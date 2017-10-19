@@ -12,17 +12,27 @@ describe("Quantcast adapter", () => {
   });
 
   describe("`isBidRequestValid`", () => {
-    let bid = {};
+    it("should return `false` when bid `mediaType` is `video`", () => {
+      const bidRequest = { mediaType: "video" };
 
-    it("should return true when bid contains required params", () => {});
+      expect(qcSpec.isBidRequestValid(bidRequest)).to.be(false);
+    });
 
-    it("should return `false` when bid does NOT contains required params", () => {});
+    it("should return `true` when bid contains required params", () => {
+      const bidRequest = { mediaType: "banner" };
+
+      expect(qcSpec.isBidRequestValid(bidRequest)).to.be(true);
+    });
   });
 
   describe("`buildRequests`", () => {
+    it("sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`", () => {});
+
     it("sends bid requests to Quantcast Header Bidding Endpoints via POST", () => {});
 
     it("sends bid requests with `withCredentials` enabled", () => {});
+
+    it("sends bid requests contains all the required parameters", () => {});
   });
 
   describe("`interpretResponse`", () => {
@@ -42,6 +52,16 @@ describe("Quantcast adapter", () => {
         }
       ]
     };
+
+    it("should return an empty array if `serverResponse` is empty", () => {});
+
+    it("should return an empty array if there is an error to parse the `serverResponse`", () => {});
+
+    it("should return an empty array if the parsed response does NOT include `bids`", () => {});
+
+    it("should return an empty array if the parsed response has an empty `bids`", () => {});
+
+    it("should return an empty array if the parsed response is `null`", () => {});
 
     it("should get correct bid response", () => {
       const expectedResponse = [];
