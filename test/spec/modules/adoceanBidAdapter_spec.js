@@ -12,7 +12,7 @@ describe('AdoceanAdapter', () => {
   });
 
   describe('isBidRequestValid', () => {
-    let bid = {
+    const bid = {
       'bidder': 'adocean',
       'params': {
         'masterId': 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
@@ -31,7 +31,7 @@ describe('AdoceanAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, bid);
+      const bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'masterId': 0
@@ -41,7 +41,7 @@ describe('AdoceanAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'adocean',
         'params': {
@@ -67,7 +67,7 @@ describe('AdoceanAdapter', () => {
     it('sends bid request to url via GET', () => {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp('^https://' + bidRequests[0].params.emiter + '/ad.json'));
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
     });
 
     it('should attach id to url', () => {
