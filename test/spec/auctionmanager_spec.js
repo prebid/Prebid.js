@@ -569,7 +569,10 @@ describe('auctionmanager.js', function () {
         bids[0],
         {
           mediaType: 'native',
-          native: {title: 'foo'}
+          native: {
+            title: 'Native Creative',
+            clickUrl: 'https://www.link.example',
+          },
         }
       );
 

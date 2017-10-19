@@ -202,11 +202,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout}) {
         utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
         return false;
       }
-      if (bid.mediaType === 'native' && !nativeBidIsValid(bid)) {
+      if (bid.mediaType === 'native' && !nativeBidIsValid(bid, _bidderRequests)) {
         utils.logError(errorMessage('Native bid missing some required properties.'));
         return false;
       }
-      if (bid.mediaType === 'video' && !isValidVideoBid(bid)) {
+      if (bid.mediaType === 'video' && !isValidVideoBid(bid, _bidderRequests)) {
         utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
         return false;
       }
