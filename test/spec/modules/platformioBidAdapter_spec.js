@@ -1,4 +1,3 @@
-
 import {expect} from 'chai';
 import {spec} from 'modules/platformioBidAdapter';
 import bidManager from 'src/bidmanager';
