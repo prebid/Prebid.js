@@ -4,6 +4,8 @@ import { config } from 'src/config';
 import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync';
+import { nativeBidIsValid } from 'src/native';
+import { isValidVideoBid } from 'src/video';
 
 import { logWarn, logError, parseQueryStringParameters, delayExecution } from 'src/utils';
 
@@ -148,7 +150,9 @@ export function newBidder(spec) {
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        addBidResponse(adUnitCode, bid);
+        if (isValid(adUnitCode, bid, bidderRequest.bids)) {
+          addBidResponse(adUnitCode, bid);
+        }
       }
 
       // After all the responses have come back, call done() and
@@ -287,5 +291,60 @@ export function newBidder(spec) {
       return false;
     }
     return true;
+  }
+
+  // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
+  function isValid(adUnitCode, bid, bidRequests) {
+    // TODO validate currency, ttl, netRevenue
+    function errorMessage(msg) {
+      return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
+    }
+
+    if (!adUnitCode) {
+      utils.logWarn('No adUnitCode was supplied to addBidResponse.');
+      return false;
+    }
+
+    if (!bid) {
+      utils.logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
+      return false;
+    }
+    if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+      utils.logError(errorMessage('Native bid missing some required properties.'));
+      return false;
+    }
+    if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
+      utils.logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
+      return false;
+    }
+    if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+      utils.logError(errorMessage(`Banner bids require a width and height`));
+      return false;
+    }
+
+    return true;
+  }
+
+  // check that the bid has a width and height set
+  function validBidSize(adUnitCode, bid, bidRequests) {
+    if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+      return true;
+    }
+
+    const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+
+    const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+    const parsedSizes = utils.parseSizesInput(sizes);
+
+    // if a banner impression has one valid size, we assign that size to any bid
+    // response that does not explicitly set width or height
+    if (parsedSizes.length === 1) {
+      const [ width, height ] = parsedSizes[0].split('x');
+      bid.width = width;
+      bid.height = height;
+      return true;
+    }
+
+    return false;
   }
 }

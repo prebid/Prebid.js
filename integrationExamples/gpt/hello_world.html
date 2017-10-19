@@ -15,14 +15,27 @@
 <head>
     <script>
       var PREBID_TIMEOUT = 700;
-
+      var slot1, slot2;
       var adUnits = [{
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300,600]],
 
         // Replace this object to test a new Adapter!
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'appnexusAst',
+          params: {
+            placementId: '10433394'
+          }
+        }]
+
+      },
+      {
+        code: 'div-gpt-ad-1460505748561-1',
+        sizes: [[300, 250], [300,600]],
+
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'appnexusAst',
           params: {
             placementId: '10433394'
           }
@@ -44,9 +57,16 @@
       });
 
       pbjs.que.push(function() {
-        pbjs.addAdUnits(adUnits);
+        // pbjs.addAdUnits(adUnits);
         pbjs.requestBids({
+          adUnits : [adUnits[0]],
+          timeout: 1000,
           bidsBackHandler: sendAdserverRequest
+        });
+        pbjs.requestBids({
+          adUnits : [adUnits[1]],
+          timeout: 1000,
+          bidsBackHandler: sendAdserverRequest2
         });
       });
 
@@ -55,8 +75,19 @@
         pbjs.adserverRequestSent = true;
         googletag.cmd.push(function() {
           pbjs.que.push(function() {
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
+            pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
+            googletag.pubads().refresh([slot1]);
+          });
+        });
+      }
+
+      function sendAdserverRequest2() {
+        if (pbjs.adserverRequestSent2) return;
+        pbjs.adserverRequestSent2 = true;
+        googletag.cmd.push(function() {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-1');
+            googletag.pubads().refresh([slot2]);
           });
         });
       }
@@ -81,8 +112,10 @@
     </script>
 
     <script>
+
       googletag.cmd.push(function () {
-        googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+        slot1 = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+        slot2 = googletag.defineSlot('/19968336/header-bid-tag-1', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-1').addService(googletag.pubads());
 
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
@@ -96,6 +129,11 @@
 <div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
       googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+</div>
+<div id='div-gpt-ad-1460505748561-1'>
+    <script type='text/javascript'>
+      googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-1'); });
     </script>
 </div>
 </body>
