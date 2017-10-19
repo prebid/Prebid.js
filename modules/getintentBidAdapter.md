@@ -12,8 +12,8 @@ Module that connects to GetIntent's demand sources.
 Banner and Video formats are supported.
 
 # Required parameters
- * ```pid``` for Publisher ID 
- * ```tid``` for Tag ID. 
+* ```pid``` for Publisher ID 
+* ```tid``` for Tag ID. 
 
 # Test Parameters
 ```
