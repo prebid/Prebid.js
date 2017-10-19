@@ -237,7 +237,5 @@ describe('AerServ Adapter', () => {
       let bids = spec.interpretResponse({}, {bidRequest: bannerBidRequest});
       expect(bids.length).to.equal(0);
     });
-
-
   });
 });
