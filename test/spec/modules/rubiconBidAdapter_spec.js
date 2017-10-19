@@ -4,6 +4,7 @@ import { spec, masSizeOrdering, resetUserSync } from 'modules/rubiconBidAdapter'
 import { parse as parseQuery } from 'querystring';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { userSync } from 'src/userSync';
+import { config } from 'src/config';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -779,13 +780,17 @@ describe('the rubicon adapter', () => {
     });
 
     it('should register the Emily iframe', () => {
-      let syncs = spec.getUserSyncs();
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
 
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
     });
 
     it('should not register the Emily iframe more than once', () => {
-      let syncs = spec.getUserSyncs();
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
       expect(syncs).to.deep.equal({type: 'iframe', url: emilyUrl});
 
       // when called again, should still have only been called once
