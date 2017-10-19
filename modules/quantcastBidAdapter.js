@@ -3,16 +3,23 @@ import * as utils from "src/utils";
 import { registerBidder } from "src/adapters/bidderFactory";
 
 const BIDDER_CODE = "quantcast";
-const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
 const DEFAULT_BID_FLOOR = 0.0000000001;
+const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
+const QUANTCAST_CALLBACK_URL_TEST = "s2s-canary.quantserve.com";
+const QUANTCAST_TEST_PUBLISHER = "test-publisher";
 
 let publisherTagURL;
+let publisherTagURLTest;
+
+// TODO: Change the callback URL to Canary endpoint if under test
 switch (window.location.protocol) {
   case "https:":
     publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
+    publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
     break;
   default:
     publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
+    publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
 }
 
 /**
@@ -38,7 +45,11 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
-    // TODO: How to validate a bid request? @tmax
+    if (bid.mediaType === "video") {
+      return false;
+    }
+
+    return true;
   },
 
   /**
@@ -55,7 +66,7 @@ export const spec = {
     const loc = utils.getTopWindowLocation();
     const domain = loc.hostname;
 
-    const bidRequests = bids.map(bid => {
+    const bidRequestsList = bids.map(bid => {
       const bidSizes = [];
 
       bid.sizes.forEach(size => {
@@ -72,7 +83,7 @@ export const spec = {
         imp: [
           {
             banner: {
-              batter: bid.params.battr,
+              battr: bid.params.battr,
               size: bidSizes
             },
             placementCode: bid.placementCode,
@@ -87,15 +98,20 @@ export const spec = {
         bidId: bid.bidId
       };
 
+      const url =
+        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
+          ? publisherTagURLTest
+          : publisherTagURL;
+
       return {
-        method: "POST",
-        url: publisherTagURL,
         data: JSON.stringify(requestData),
+        method: "POST",
+        url,
         withCredentials: true
       };
     });
 
-    return bidRequests;
+    return bidRequestsList;
   },
 
   /**
@@ -131,7 +147,7 @@ export const spec = {
       return;
     }
 
-    const bidResponses = response.bids.map(bid => {
+    const bidResponsesList = response.bids.map(bid => {
       const { ad, cpm, width, height } = bid;
 
       return {
@@ -144,11 +160,12 @@ export const spec = {
       };
     });
 
-    return bidResponses;
+    return bidResponsesList;
   },
 
   getUserSyncs(syncOptions) {
-    // TODO: What does user syncs do? @tmax
+    // Quantcast does not do `UserSyncs` at the moment.
+    // This feature will be supported at a later time.
   }
 };
 
