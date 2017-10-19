@@ -62,8 +62,6 @@ ServerBidAdapter = function ServerBidAdapter() {
   sizeMap[123] = '970x250';
   sizeMap[43] = '300x600';
 
-  const bidIds = [];
-
   baseAdapter.callBids = function(params) {
     if (params && params.bids &&
         utils.isArray(params.bids) &&
@@ -115,8 +113,6 @@ ServerBidAdapter = function ServerBidAdapter() {
     for (let i = 0; i < bids.length; i++) {
       const bid = bids[i];
 
-      bidIds.push(bid.bidId);
-
       const placement = Object.assign({
         divName: bid.bidId,
         adTypes: bid.adTypes || getSize(bid.sizes)
@@ -128,50 +124,52 @@ ServerBidAdapter = function ServerBidAdapter() {
     }
 
     if (data.placements.length) {
-      ajax(config.BASE_URI, _responseCallback, JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
+      ajax(config.BASE_URI, _responseCallback(bids), JSON.stringify(data), { method: 'POST', withCredentials: true, contentType: 'application/json' });
     }
   }
 
-  function _responseCallback(result) {
-    let bid;
-    let bidId;
-    let bidObj;
-    let bidCode;
-    let placementCode;
+  function _responseCallback(bids) {
+    return (function (result) {
+      let bid;
+      let bidId;
+      let bidObj;
+      let bidCode;
+      let placementCode;
 
-    try {
-      result = JSON.parse(result);
-    } catch (error) {
-      utils.logError(error);
-    }
+      try {
+        result = JSON.parse(result);
+      } catch (error) {
+        utils.logError(error);
+      }
 
-    for (let i = 0; i < bidIds.length; i++) {
-      bidId = bidIds[i];
-      bidObj = utils.getBidRequest(bidId);
-      bidCode = bidObj.bidder;
-      placementCode = bidObj.placementCode;
+      for (let i = 0; i < bids.length; i++) {
+        bidObj = bids[i];
+        bidId = bidObj.bidId;
+        bidCode = bidObj.bidder;
+        placementCode = bidObj.placementCode;
 
-      if (result) {
-        const decision = result.decisions && result.decisions[bidId];
-        const price = decision && decision.pricing && decision.pricing.clearPrice;
+        if (result) {
+          const decision = result.decisions && result.decisions[bidId];
+          const price = decision && decision.pricing && decision.pricing.clearPrice;
 
-        if (decision && price) {
-          bid = bidfactory.createBid(1, bidObj);
-          bid.bidderCode = bidCode;
-          bid.cpm = price;
-          bid.width = decision.width;
-          bid.height = decision.height;
-          bid.ad = retrieveAd(decision);
+          if (decision && price) {
+            bid = bidfactory.createBid(1);
+            bid.bidderCode = bidCode;
+            bid.cpm = price;
+            bid.width = decision.width;
+            bid.height = decision.height;
+            bid.ad = retrieveAd(decision);
+          } else {
+            bid = bidfactory.createBid(2);
+            bid.bidderCode = bidCode;
+          }
         } else {
-          bid = bidfactory.createBid(2, bidObj);
+          bid = bidfactory.createBid(2);
           bid.bidderCode = bidCode;
         }
-      } else {
-        bid = bidfactory.createBid(2, bidObj);
-        bid.bidderCode = bidCode;
+        bidmanager.addBidResponse(placementCode, bid);
       }
-      bidmanager.addBidResponse(placementCode, bid);
-    }
+    });
   }
 
   function retrieveAd(decision) {
