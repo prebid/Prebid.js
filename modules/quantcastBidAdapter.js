@@ -1,4 +1,3 @@
-import adapterManager from 'src/adaptermanager';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
@@ -163,7 +162,6 @@ export const spec = {
   getUserSyncs(syncOptions) {
     // Quantcast does not do `UserSyncs` at the moment.
     // This feature will be supported at a later time.
-    return;
   }
 };
 
