@@ -111,7 +111,9 @@ function PrebidServer() {
       if (videoMediaType) {
         // pbs expects a ad_unit.video attribute if the imp is video
         adUnit.video = Object.assign({}, videoMediaType);
-        delete adUnit.mediaTypes.video;
+        delete adUnit.mediaTypes;
+        // default is assumed to be 'banner' so if there is a video type we assume video only until PBS can support multi format auction.
+        adUnit.media_types = ['video'];
       }
     })
     convertTypes(adUnits);
@@ -196,10 +198,15 @@ function PrebidServer() {
             bidObject.creative_id = bidObj.creative_id;
             bidObject.bidderCode = bidObj.bidder;
             bidObject.cpm = cpm;
-            bidObject.ad = bidObj.adm;
-            if (bidObj.nurl) {
-              bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+            if (bidObj.media_type === 'video') {
+              bidObject.vastUrl = bidObj.nurl;
+            } else {
+              bidObject.ad = bidObj.adm;
+              if (bidObj.nurl) {
+                bidObject.ad += utils.createTrackPixelHtml(decodeURIComponent(bidObj.nurl));
+              }
             }
+
             bidObject.width = bidObj.width;
             bidObject.height = bidObj.height;
             bidObject.adserverTargeting = bidObj.ad_server_targeting;
@@ -223,7 +230,6 @@ function PrebidServer() {
               bidObject.source = TYPE;
               bidObject.adUnitCode = bidRequest.placementCode;
               bidObject.bidderCode = bidRequest.bidder;
-
               bidmanager.addBidResponse(bidObject.adUnitCode, bidObject);
             });
         });
