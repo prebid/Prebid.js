@@ -41,6 +41,7 @@ This page has documentation for the public API methods of Prebid.js.
   * [.setBidderSequence(order)](#module_pbjs.setBidderSequence)
   * [.onEvent(event, handler, id)](#module_pbjs.onEvent)
   * [.offEvent(event, handler, id)](#module_pbjs.onEvent)
+  * [.enableAnalytics(config)](#module_pbjs.enableAnalytics)
   * [.aliasBidder(adapterName, aliasedName)](#module_pbjs.aliasBidder)
   * [.setConfig(options)](#module_pbjs.setConfig)
   * [.getConfig([string])](#module_pbjs.getConfig)
@@ -1043,6 +1044,16 @@ The example below shows how to use these methods:
                 ...
 
 {% endhighlight %}
+
+<a name="module_pbjs.enableAnalytics"></a>
+
+### pbjs.enableAnalytics(config)
+
+Enable sending analytics data to the analytics provider of your choice.
+
+For usage, see [Integrate with the Prebid Analytics API]({{site.baseurl}}/dev-docs/integrate-with-the-prebid-analytics-api.html).
+
+For a list of analytics adapters, see [Analytics for Prebid]({{site.baseurl}}/overview/analytics.html).
 
 <a name="module_pbjs.aliasBidder"></a>
 
