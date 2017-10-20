@@ -63,12 +63,12 @@ export const spec = {
     // `//` is not used because we have different port setting at our end
     switch (window.location.protocol) {
       case "https:":
-        publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
-        publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
+        publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
+        publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
         break;
       default:
-        publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
-        publisherTagURLTest = `http://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
+        publisherTagURL = `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`;
+        publisherTagURLTest = `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`;
     }
 
     const bidRequestsList = bids.map(bid => {
