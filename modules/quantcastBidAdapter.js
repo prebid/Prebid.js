@@ -1,12 +1,12 @@
-import adapterManager from "src/adaptermanager";
-import * as utils from "src/utils";
-import { registerBidder } from "src/adapters/bidderFactory";
+import adapterManager from 'src/adaptermanager';
+import * as utils from 'src/utils';
+import { registerBidder } from 'src/adapters/bidderFactory';
 
-const BIDDER_CODE = "quantcast";
+const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
-export const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
-export const QUANTCAST_CALLBACK_URL_TEST = "s2s-canary.quantserve.com";
-export const QUANTCAST_TEST_PUBLISHER = "test-publisher";
+export const QUANTCAST_CALLBACK_URL = 'global.qc.rtb.quantserve.com';
+export const QUANTCAST_CALLBACK_URL_TEST = 's2s-canary.quantserve.com';
+export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
@@ -35,7 +35,7 @@ export const spec = {
       return false;
     }
 
-    if (bid.mediaType === "video") {
+    if (bid.mediaType === 'video') {
       return false;
     }
 
@@ -62,7 +62,7 @@ export const spec = {
     // Switch the callback URL to Quantcast Canary Endpoint for testing purpose
     // `//` is not used because we have different port setting at our end
     switch (window.location.protocol) {
-      case "https:":
+      case 'https:':
         publisherTagURL = `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`;
         publisherTagURLTest = `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`;
         break;
@@ -112,7 +112,7 @@ export const spec = {
 
       return {
         data,
-        method: "POST",
+        method: 'POST',
         url,
         withCredentials: true
       };
@@ -137,10 +137,10 @@ export const spec = {
 
     if (
       response === undefined ||
-      !response.hasOwnProperty("bids") ||
+      !response.hasOwnProperty('bids') ||
       utils.isEmpty(response.bids)
     ) {
-      utils.logError("Sub-optimal JSON received from Quantcast server");
+      utils.logError('Sub-optimal JSON received from Quantcast server');
       return [];
     }
 
