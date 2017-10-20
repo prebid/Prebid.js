@@ -301,13 +301,16 @@ describe('AppNexusAdapter', () => {
           'width': 300,
           'height': 250,
           'ad': '<!-- Creative -->',
-          'mediaType': 'banner'
+          'mediaType': 'banner',
+          'currency': 'USD',
+          'ttl': 300,
+          'netRevenue': true
         }
       ];
       let bidderRequest;
 
       let result = spec.interpretResponse(response, {bidderRequest});
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', () => {
