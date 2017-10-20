@@ -82,7 +82,6 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
-      expect(payload).to.have.property('reqid', '22edbae2733bf6');
     });
 
     it('auids must not be duplicated', () => {
@@ -92,31 +91,28 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
-      expect(payload).to.have.property('reqid', '22edbae2733bf6');
     });
 
-    it('pt parameter must be "gross" if window.globalPrebidTrustxPriceType === "gross"', () => {
-      window.globalPrebidTrustxPriceType = 'gross';
+    it('pt parameter must be "gross" if params.priceType === "gross"', () => {
+      bidRequests[1].params.priceType = 'gross';
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,45');
-      expect(payload).to.have.property('reqid', '22edbae2733bf6');
-      delete window.globalPrebidTrustxPriceType;
+      delete bidRequests[1].params.priceType;
     });
 
     it('pt parameter must be "net" or "gross"', () => {
-      window.globalPrebidTrustxPriceType = 'some';
+      bidRequests[1].params.priceType = 'some';
       const request = spec.buildRequests(bidRequests);
       const payload = request.data;
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,45');
-      expect(payload).to.have.property('reqid', '22edbae2733bf6');
-      delete window.globalPrebidTrustxPriceType;
+      delete bidRequests[1].params.priceType;
     });
   });
 

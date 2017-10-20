@@ -15,7 +15,6 @@ const LOG_ERROR_MESS = {
   hasEmptySeatbidArray: 'Response has empty seatbid array',
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
-const bidsRequestMap = {};
 export const spec = {
   code: BIDDER_CODE,
   /**
@@ -25,7 +24,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.uid && bid.adUnitCode);
+    return !!bid.params.uid;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -37,9 +36,12 @@ export const spec = {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
-    const bidderRequestId = bids[0] && bids[0].bidderRequestId;
+    let priceType = 'net';
 
     bids.forEach(bid => {
+      if (bid.params.priceType === 'gross') {
+        priceType = 'gross';
+      }
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
@@ -48,20 +50,17 @@ export const spec = {
       }
     });
 
-    bidsRequestMap[bidderRequestId] = bidsMap;
-
     const payload = {
       u: utils.getTopWindowUrl(),
-      pt: window.globalPrebidTrustxPriceType === 'gross' ? 'gross' : 'net',
+      pt: priceType,
       auids: auids.join(','),
-      reqid: bidderRequestId,
     };
 
-    // const payloadString = JSON.stringify(payload);
     return {
       method: 'GET',
       url: ENDPOINT_URL,
       data: payload,
+      bidsMap: bidsMap,
     };
   },
   /**
@@ -73,7 +72,8 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    const bidsMap = bidsRequestMap[bidRequest.data.reqid];
+    const bidsMap = bidRequest.bidsMap;
+    const priceType = bidRequest.data.pt;
 
     let errorMessage;
 
@@ -84,7 +84,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
@@ -111,7 +111,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -128,7 +128,7 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
           height: serverBid.h,
           creativeId: serverBid.auid, // bid.bidId,
           currency: 'USD',
-          netRevenue: window.globalPrebidTrustxPriceType !== 'gross',
+          netRevenue: priceType !== 'gross',
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid
