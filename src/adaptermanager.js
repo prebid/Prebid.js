@@ -198,7 +198,7 @@ exports.callBids = ({adUnits, cbTimeout}) => {
         _bidderRequests.push(bidderRequest);
       }
     } else {
-      utils.logError(`Adapter trying to be called which does not exist: ${bidRequest.bidderCode} adaptermanager.callBids`);
+      utils.logError(`Adapter trying to be called which does not exist: ${bidderCode} adaptermanager.callBids`);
     }
   });
 

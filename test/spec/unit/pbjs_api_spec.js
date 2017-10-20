@@ -779,6 +779,24 @@ describe('Unit: Prebid Module', function () {
       adaptermanager.callBids.restore();
     });
 
+    it('should log an error if a bidder is used that does not exist', () => {
+      sinon.stub(utils, 'logError');
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'fakeBidder', params: {placementId: 'id'}}
+        ]
+      }];
+
+      $$PREBID_GLOBAL$$.requestBids({adUnits});
+
+      sinon.assert.called(utils.logError);
+
+      utils.logError.restore();
+    });
+
     it('should not callBids if a video adUnit has non-video bidders', () => {
       sinon.spy(adaptermanager, 'callBids');
       const videoAdaptersBackup = adaptermanager.videoAdapters;
