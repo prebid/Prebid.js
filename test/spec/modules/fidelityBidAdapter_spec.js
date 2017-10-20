@@ -125,6 +125,7 @@ describe('FidelityAdapter', () => {
           ad: '<!-- Creative -->',
           netRevenue: true,
           currency: 'USD',
+          ttl: 360,
         }
       ];
 
