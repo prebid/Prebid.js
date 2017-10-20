@@ -17,6 +17,10 @@ ServerBidAdapter = function ServerBidAdapter() {
     'connectad': {
       'BASE_URI': 'https://i.connectad.io/api/v2',
       'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
+    },
+    'onefiftytwo': {
+      'BASE_URI': 'https://e.serverbid.com/api/v2',
+      'SMARTSYNC_BASE_URI': 'https://s.zkcdn.net/ss'
     }
   };
 
@@ -199,5 +203,6 @@ ServerBidAdapter.createNew = function() {
 
 adaptermanager.registerBidAdapter(new ServerBidAdapter(), 'serverbid');
 adaptermanager.aliasBidAdapter('serverbid', 'connectad');
+adaptermanager.aliasBidAdapter('serverbid', 'onefiftytwo');
 
 module.exports = ServerBidAdapter;

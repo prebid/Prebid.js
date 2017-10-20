@@ -28,6 +28,7 @@ const { syncUsers, triggerUserSyncs } = userSync;
 
 var BID_WON = CONSTANTS.EVENTS.BID_WON;
 var SET_TARGETING = CONSTANTS.EVENTS.SET_TARGETING;
+var ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 var auctionRunning = false;
 var bidRequestQueue = [];
@@ -455,6 +456,8 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
+  // emit event
+  events.emit(ADD_AD_UNITS);
 };
 
 /**
@@ -616,8 +619,17 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 };
 
 /**
- * Will enable sending a prebid.js to data provider specified
- * @param  {Object} config object {provider : 'string', options : {}}
+ * Enable sending analytics data to the analytics provider of your
+ * choice.
+ *
+ * For usage, see [Integrate with the Prebid Analytics
+ * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
+ *
+ * For a list of supported analytics adapters, see [Analytics for
+ * Prebid](http://prebid.org/overview/analytics.html).
+ * @param  {Object} config
+ * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.
+ * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
  */
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -662,6 +674,45 @@ $$PREBID_GLOBAL$$.enableSendAllBids = function () {
   config.setConfig({ enableSendAllBids: true });
 };
 
+/**
+ * The bid response object returned by an external bidder adapter during the auction.
+ * @typedef {Object} AdapterBidResponse
+ * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
+ * @property {string} pbCg Custom price bucket.  For example setup, see {@link setPriceGranularity}.  Example: `"0.84"`.
+ * @property {string} pbDg Dense granularity price bucket; CPM <= 3 ? increment = 0.01 : CPM > 3 && CPM <= 8 ? increment = 0.05 : CPM > 8 && CPM <= 20 ? increment = 0.50 : CPM > 20? priceCap = 20.00.  Example: `"0.84"`.
+ * @property {string} pbLg Low granularity price bucket; $0.50 increment, capped at $5, floored to two decimal places.  Example: `"0.50"`.
+ * @property {string} pbMg Medium granularity price bucket; $0.10 increment, capped at $20, floored to two decimal places.  Example: `"0.80"`.
+ * @property {string} pbHg High granularity price bucket; $0.01 increment, capped at $20, floored to two decimal places.  Example: `"0.84"`.
+ *
+ * @property {string} bidder The string name of the bidder.  This *may* be the same as the `bidderCode`.  For For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
+ * @property {string} bidderCode The unique string that identifies this bidder.  For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
+ *
+ * @property {string} requestId The [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) representing the bid request.
+ * @property {number} requestTimestamp The time at which the bid request was sent out, expressed in milliseconds.
+ * @property {number} responseTimestamp The time at which the bid response was received, expressed in milliseconds.
+ * @property {number} timeToRespond How long it took for the bidder to respond with this bid, expressed in milliseconds.
+ *
+ * @property {string} size The size of the ad creative, expressed in `"AxB"` format, where A and B are numbers of pixels.  Example: `"320x50"`.
+ * @property {string} width The width of the ad creative in pixels.  Example: `"320"`.
+ * @property {string} height The height of the ad creative in pixels.  Example: `"50"`.
+ *
+ * @property {string} ad The actual ad creative content, often HTML with CSS, JavaScript, and/or links to additional content.  Example: `"<div id='beacon_-YQbipJtdxmMCgEPHExLhmqzEm' style='position: absolute; left: 0px; top: 0px; visibility: hidden;'><img src='http://aplus-...'/></div><iframe src=\"http://aax-us-east.amazon-adsystem.com/e/is/8dcfcd..." width=\"728\" height=\"90\" frameborder=\"0\" ...></iframe>",`.
+ * @property {number} ad_id The ad ID of the creative, as understood by the bidder's system.  Used by the line item's [creative in the ad server](http://prebid.org/adops/send-all-bids-adops.html#step-3-add-a-creative).
+ * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page.
+ *
+ * @property {string} statusMessage The status of the bid.  Allowed values: `"Bid available"` or `"Bid returned empty or error response"`.
+ * @property {number} cpm The exact bid price from the bidder, expressed to the thousandths place.  Example: `"0.849"`.
+ *
+ * @property {Object} adserverTargeting An object whose values represent the ad server's targeting on the bid.
+ * @property {string} adserverTargeting.hb_adid The ad ID of the creative, as understood by the ad server.
+ * @property {string} adserverTargeting.hb_pb The price paid to show the creative, as logged in the ad server.
+ * @property {string} adserverTargeting.hb_bidder The winning bidder whose ad creative will be served by the ad server.
+*/
+
+/**
+ * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+*/
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return $$PREBID_GLOBAL$$._winningBids;
 };
@@ -766,8 +817,50 @@ $$PREBID_GLOBAL$$.setS2SConfig = function (options) {
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
 /**
- * Set Prebid config options
- * @param {Object} options
+ * Set Prebid config options.
+ * (Added in version 0.27.0).
+ *
+ * `setConfig` is designed to allow for advanced configuration while
+ * reducing the surface area of the public API.  For more information
+ * about the move to `setConfig` (and the resulting deprecations of
+ * some other public methods), see [the Prebid 1.0 public API
+ * proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
+ *
+ * #### Troubleshooting your configuration
+ *
+ * If you call `pbjs.setConfig` without an object, e.g.,
+ *
+ * `pbjs.setConfig('debug', 'true'))`
+ *
+ * then Prebid.js will print an error to the console that says:
+ *
+ * ```
+ * ERROR: setConfig options must be an object
+ * ```
+ *
+ * If you don't see that message, you can assume the config object is valid.
+ *
+ * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @param {string} options.bidderSequence The order in which bidders are called.  Example: `pbjs.setConfig({ bidderSequence: "fixed" })`.  Allowed values: `"fixed"` (order defined in `adUnit.bids` array on page), `"random"`.
+ * @param {boolean} options.debug Turn debug logging on/off. Example: `pbjs.setConfig({ debug: true })`.
+ * @param {string} options.priceGranularity The bid price granularity to use.  Example: `pbjs.setConfig({ priceGranularity: "medium" })`. Allowed values: `"low"` ($0.50), `"medium"` ($0.10), `"high"` ($0.01), `"auto"` (sliding scale), `"dense"` (like `"auto"`, with smaller increments at lower CPMs), or a custom price bucket object, e.g., `{ "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]}`.
+ * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
+ * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
+ * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
+ * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
+ * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
+ * ```
+ * pbjs.setConfig({
+ *     s2sConfig: {
+ *         accountId: '1',
+ *         enabled: true,
+ *         bidders: ['appnexus', 'pubmatic'],
+ *         timeout: 1000,
+ *         adapter: 'prebidServer',
+ *         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
+ *     }
+ * })
+ * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 

@@ -463,7 +463,7 @@ exports.triggerPixel = function (url) {
  * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  */
 exports.insertUserSyncIframe = function(url) {
-  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts');
+  let iframeHtml = this.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
   let div = document.createElement('div');
   div.innerHTML = iframeHtml;
   let iframe = div.firstChild;
