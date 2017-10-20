@@ -37,7 +37,7 @@ var TrustxAdapter = function TrustxAdapter() {
     query.push('u=' + encodeURIComponent(location.href));
     query.push('auids=' + encodeURIComponent(auids.join(',')));
     query.push('cb=' + _makeHandler(auids, placementMap));
-    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'net' ? 'net' : 'gross'));
+    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'gross' ? 'gross' : 'net'));
 
     adloader.loadScript(reqHost + path + query.join('&'));
   }
