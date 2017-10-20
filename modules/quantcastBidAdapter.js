@@ -4,9 +4,9 @@ import { registerBidder } from "src/adapters/bidderFactory";
 
 const BIDDER_CODE = "quantcast";
 const DEFAULT_BID_FLOOR = 0.0000000001;
-const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
-const QUANTCAST_CALLBACK_URL_TEST = "s2s-canary.quantserve.com";
-const QUANTCAST_TEST_PUBLISHER = "test-publisher";
+export const QUANTCAST_CALLBACK_URL = "global.qc.rtb.quantserve.com";
+export const QUANTCAST_CALLBACK_URL_TEST = "s2s-canary.quantserve.com";
+export const QUANTCAST_TEST_PUBLISHER = "test-publisher";
 
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
@@ -31,6 +31,10 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
+    if (!bid) {
+      return false;
+    }
+
     if (bid.mediaType === "video") {
       return false;
     }
@@ -68,11 +72,6 @@ export const spec = {
     }
 
     const bidRequestsList = bids.map(bid => {
-      const url =
-        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
-          ? publisherTagURLTest
-          : publisherTagURL;
-
       const bidSizes = [];
 
       bid.sizes.forEach(size => {
@@ -106,6 +105,11 @@ export const spec = {
 
       const data = JSON.stringify(requestData);
 
+      const url =
+        bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
+          ? publisherTagURLTest
+          : publisherTagURL;
+
       return {
         data,
         method: "POST",
@@ -129,20 +133,10 @@ export const spec = {
    *
    */
   interpretResponse(serverResponse) {
-    if (utils.isEmpty(serverResponse)) {
-      return [];
-    }
-
-    let response;
-    try {
-      response = JSON.parse(serverResponse);
-    } catch (error) {
-      utils.logError("Malformed JSON received from Quantcast server");
-      return [];
-    }
+    const response = serverResponse;
 
     if (
-      response === null ||
+      response === undefined ||
       !response.hasOwnProperty("bids") ||
       utils.isEmpty(response.bids)
     ) {
