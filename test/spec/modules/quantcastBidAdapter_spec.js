@@ -51,34 +51,51 @@ describe("Quantcast adapter", () => {
   });
 
   describe("`buildRequests`", () => {
-    // it("sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`", () => {
-    //   const requests = qcSpec.buildRequests([bidRequest]);
+    it("sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`", () => {
+      const requests = qcSpec.buildRequests([bidRequest]);
 
-    //   expect(requests[0]["url"]).to.satisfy(URl => {
-    //     switch (URL) {
-    //       case `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`:
-    //       case `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`:
-    //         return true;
-    //       default:
-    //         return false;
-    //     }
-    //   });
-    // });
+      switch (window.location.protocol) {
+        case "https:":
+          expect(requests[0]["url"]).to.equal(
+            `https://${QUANTCAST_CALLBACK_URL_TEST}:8443/qchb`
+          );
+          break;
+        default:
+          expect(requests[0]["url"]).to.equal(
+            `http://${QUANTCAST_CALLBACK_URL_TEST}:8080/qchb`
+          );
+          break;
+      }
+    });
 
-    // it("sends bid requests to Quantcast Global Endpoint for regular `publisherId`", () => {
-    //   const bidRequest = { publisherId: "regular-publisher" };
-    //   const requests = qcSpec.buildRequests([bidRequest]);
+    it("sends bid requests to Quantcast Global Endpoint for regular `publisherId`", () => {
+      const bidRequest = {
+        bidder: "quantcast",
+        bidId: "2f7b179d443f14",
+        requestId: "595ffa73-d78a-46c9-b18e-f99548a5be6b",
+        bidderRequestId: "1cc026909c24c8",
+        placementCode: "div-gpt-ad-1438287399331-0",
+        params: {
+          publisherId: "regular-publisher", // REQUIRED - Publisher ID provided by Quantcast
+          battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
+        },
+        sizes: [[300, 250]]
+      };
+      const requests = qcSpec.buildRequests([bidRequest]);
 
-    //   expect(requests[0].url).to.satisfy(URL => {
-    //     switch (URL) {
-    //       case `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`:
-    //       case `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`:
-    //         return true;
-    //       default:
-    //         return false;
-    //     }
-    //   });
-    // });
+      switch (window.location.protocol) {
+        case "https:":
+          expect(requests[0]["url"]).to.equal(
+            `https://${QUANTCAST_CALLBACK_URL}:8443/qchb`
+          );
+          break;
+        default:
+          expect(requests[0]["url"]).to.equal(
+            `http://${QUANTCAST_CALLBACK_URL}:8080/qchb`
+          );
+          break;
+      }
+    });
 
     it("sends bid requests to Quantcast Header Bidding Endpoints via POST", () => {
       const requests = qcSpec.buildRequests([bidRequest]);
@@ -134,7 +151,7 @@ describe("Quantcast adapter", () => {
           placementCode: "imp1", // Changing this to placementCode to be reflective
           cpm: 4.5,
           ad:
-            '<!DOCTYPE html>\n\n\n<div style="height: 250; width: 300; display: table-cell; vertical-align: middle;">\n<div style="width: 300px; margin-left: auto; margin-right: auto;">  \n\n  <script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script>\n\n<img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/>\n\n</div>\n</div>',
+            '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
           width: 300,
           height: 250
         }
@@ -162,20 +179,16 @@ describe("Quantcast adapter", () => {
     it("should get correct bid response", () => {
       const expectedResponse = {
         ad:
-          '<!DOCTYPE html> <div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"> <div style="width: 300px; margin-left: auto; margin-right: auto;"> <script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script> <img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/> </div> </div>',
+          '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
         cpm: 4.5,
         width: 300,
         height: 250,
         requestId: "erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458",
         bidderCode: "qcx"
       };
-      const expectedResponse0 =
-        '{"ad":"<!DOCTYPE html>\\n\\n\\n<div style=\\"height: 250; width: 300; display: table-cell; vertical-align: middle;\\">\\n<div style=\\"width: 300px; margin-left: auto; margin-right: auto;\\">  \\n\\n  <script src=\\"https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=\\" type=\\"text/javascript\\"></script>\\n\\n<img src=\\"https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=\\" style=\\"display: none;\\" border=\\"0\\" height=\\"1\\" width=\\"1\\" alt=\\"Quantcast\\"/>\\n\\n</div>\\n</div>","cpm":4.5,"width":300,"height":250,"requestId":"erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458","bidderCode":"qcx"}';
       const interpretedResponse = qcSpec.interpretResponse(response);
 
-      expect(JSON.stringify(interpretedResponse[0])).to.equal(
-        expectedResponse0
-      );
+      expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
 
     it("handles no bid response", () => {
