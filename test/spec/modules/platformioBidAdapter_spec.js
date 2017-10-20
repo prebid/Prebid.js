@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/platformioBidAdapter';
-import bidManager from 'src/bidmanager';
 import {getTopWindowLocation} from 'src/utils';
-import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('Platformio Adapter Tests', () => {
   const slotConfigs = [{
