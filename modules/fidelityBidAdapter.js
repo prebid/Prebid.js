@@ -50,6 +50,7 @@ export const spec = {
           ad: bid.adm,
           netRevenue: bid.netRevenue,
           currency: bid.cur,
+          ttl: bid.ttl,
         };
 
         bidResponses.push(bidResponse);
