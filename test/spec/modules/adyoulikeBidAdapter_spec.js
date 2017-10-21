@@ -5,9 +5,10 @@ import bidmanager from 'src/bidmanager';
 import { STATUS } from 'src/constants';
 
 describe('Adyoulike Adapter', () => {
-  const endpoint = 'http://hb-api.omnitagjs.com/hb-api/prebid';
+  const defaultDC = 'hb-api';
   const canonicalUrl = 'http://canonical.url/?t=%26';
   const bidderCode = 'adyoulike';
+  const version = '0.3';
   const bidRequestWithEmptyPlacement = {
     'bidderCode': 'adyoulike',
     'bids': [
@@ -92,6 +93,22 @@ describe('Adyoulike Adapter', () => {
     ],
   };
 
+  const bidRequestWithDCInPlacement = {
+    'bidderCode': 'adyoulike',
+    'bids': [
+      {
+        'bidId': 'bid_id_0',
+        'bidder': 'adyoulike',
+        'placementCode': 'adunit/hb-0',
+        'params': {
+          'placement': 'placement_3',
+          'DC': 'us01'
+        },
+        'sizes': '300x250'
+      }
+    ],
+  };
+
   const responseWithEmptyPlacement = [
     {
       'Placement': 'placement_0'
@@ -118,6 +135,7 @@ describe('Adyoulike Adapter', () => {
   ];
 
   let adapter;
+  let getEndpoint = (dc = defaultDC) => `http://${dc}.omnitagjs.com/hb-api/prebid`;
 
   beforeEach(() => {
     adapter = new AdyoulikAdapter();
@@ -175,13 +193,13 @@ describe('Adyoulike Adapter', () => {
 
     it('sends bid request to endpoint with single placement', () => {
       adapter.callBids(bidRequestWithSinglePlacement);
-      expect(requests[0].url).to.contain(endpoint);
+      expect(requests[0].url).to.contain(getEndpoint());
       expect(requests[0].method).to.equal('POST');
 
       expect(requests[0].url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.2');
+      expect(body.Version).to.equal(version);
       expect(body.Placements).deep.equal(['placement_0']);
       expect(body.PageRefreshed).to.equal(false);
       expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id'});
@@ -191,13 +209,13 @@ describe('Adyoulike Adapter', () => {
       canonicalQuery.restore();
 
       adapter.callBids(bidRequestWithSinglePlacement);
-      expect(requests[0].url).to.contain(endpoint);
+      expect(requests[0].url).to.contain(getEndpoint());
       expect(requests[0].method).to.equal('POST');
 
       expect(requests[0].url).to.not.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.2');
+      expect(body.Version).to.equal(version);
       expect(body.Placements).deep.equal(['placement_0']);
       expect(body.PageRefreshed).to.equal(false);
       expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id'});
@@ -205,16 +223,30 @@ describe('Adyoulike Adapter', () => {
 
     it('sends bid request to endpoint with multiple placements', () => {
       adapter.callBids(bidRequestMultiPlacements);
-      expect(requests[0].url).to.contain(endpoint);
+      expect(requests[0].url).to.contain(getEndpoint());
       expect(requests[0].method).to.equal('POST');
 
       expect(requests[0].url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
 
       let body = JSON.parse(requests[0].requestBody);
-      expect(body.Version).to.equal('0.2');
+      expect(body.Version).to.equal(version);
       expect(body.Placements).deep.equal(['placement_0', 'placement_1']);
       expect(body.PageRefreshed).to.equal(false);
       expect(body.TransactionIds).deep.equal({'placement_0': 'bid_id_0_transaction_id', 'placement_1': 'bid_id_1_transaction_id'});
+    });
+
+    it('url request without DC parameter ', () => {
+      adapter.callBids(bidRequestMultiPlacements);
+      expect(requests[0].method).to.equal('POST');
+
+      expect(requests[0].url).to.contains(getEndpoint());
+    });
+
+    it('url request with DC parameter ', () => {
+      let expectedDc = `${defaultDC}-us01`;
+      adapter.callBids(bidRequestWithDCInPlacement);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.contains(getEndpoint(expectedDc));
     });
   });
 

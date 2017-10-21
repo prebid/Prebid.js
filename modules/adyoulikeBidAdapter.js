@@ -8,36 +8,41 @@ import { STATUS } from 'src/constants';
 import adaptermanager from 'src/adaptermanager';
 
 var AdyoulikeAdapter = function AdyoulikeAdapter() {
-  const _VERSION = '0.2';
-
+  const _VERSION = '0.3';
+  const DEFAULT_DC = 'hb-api';
   const baseAdapter = new Adapter('adyoulike');
 
   baseAdapter.callBids = function (bidRequest) {
     const bidRequests = {};
     const bids = bidRequest.bids || [];
+    let dcHostname = '';
 
     const validBids = bids.filter(valid);
-    validBids.forEach(bid => { bidRequests[bid.params.placement] = bid; });
+    validBids.forEach(bid => {
+      bidRequests[bid.params.placement] = bid;
+      if (!dcHostname && bid.params.DC) {
+        dcHostname = `-${bid.params.DC}`;
+      }
+    });
 
     const placements = validBids.map(bid => bid.params.placement);
     if (!utils.isEmpty(placements)) {
       const body = createBody(bidRequests, placements);
-      const endpoint = createEndpoint();
-      ajax(endpoint,
-        (response) => {
-          handleResponse(bidRequests, response);
-        }, body, {
-          contentType: 'text/json',
-          withCredentials: true
-        });
+      const endpoint = createEndpoint(dcHostname);
+      ajax(endpoint, (response) => {
+        handleResponse(bidRequests, response);
+      }, body, {
+        contentType: 'text/json',
+        withCredentials: true
+      });
     }
   };
 
   /* Create endpoint url */
-  function createEndpoint() {
+  function createEndpoint(host) {
     return format({
       protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
-      host: 'hb-api.omnitagjs.com',
+      host: `${DEFAULT_DC}${host}.omnitagjs.com`,
       pathname: '/hb-api/prebid',
       search: createEndpointQS()
     });
