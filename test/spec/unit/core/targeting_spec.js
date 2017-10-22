@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import Targeting from 'src/targeting';
+import { targeting as targetingInstance } from 'src/targeting';
 import { config } from 'src/config';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
+import { auctionManager } from 'src/auctionManager';
 
 const bid1 = {
   'bidderCode': 'rubicon',
@@ -60,32 +61,26 @@ const bid2 = {
 
 describe('targeting tests', () => {
   describe('getAllTargeting', () => {
+    let amBidsReceivedStub;
+    let amGetAdUnitsStub;
     beforeEach(() => {
       $$PREBID_GLOBAL$$._sendAllBids = false;
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-      $$PREBID_GLOBAL$$._adUnitCodes = [];
-      $$PREBID_GLOBAL$$.adUnits = [];
+      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived', function() {
+        return [bid1, bid2];
+      });
+      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes', function() {
+        return ['/123456/header-bid-tag-0'];
+      });
+    });
+
+    afterEach(() => {
+      auctionManager.getBidsReceived.restore();
+      auctionManager.getAdUnitCodes.restore();
     });
 
     it('selects the top bid when _sendAllBids true', () => {
-      $$PREBID_GLOBAL$$.adUnits = [{
-        code: '/123456/header-bid-tag-0',
-        sizes: [300, 250],
-        bids: [
-          {
-            'bidder': 'rubicon',
-            'params': {
-              'accountId': 10617,
-              'siteId': 23635,
-              'zoneId': 453908
-            }
-          }
-        ]
-      }];
       config.setConfig({ enableSendAllBids: true });
-      $$PREBID_GLOBAL$$._bidsReceived.push(bid1, bid2);
-      $$PREBID_GLOBAL$$._adUnitCodes = ['/123456/header-bid-tag-0'];
-      let targeting = Targeting.getAllTargeting(['/123456/header-bid-tag-0']);
+      let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
       let flattened = [];
       targeting.filter(obj => obj['/123456/header-bid-tag-0'] !== undefined).forEach(item => flattened = flattened.concat(item['/123456/header-bid-tag-0']));
       let sendAllBidCpm = flattened.filter(obj => obj.hb_pb_rubicon !== undefined);
